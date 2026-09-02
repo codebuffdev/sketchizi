@@ -1414,10 +1414,6 @@ function App() {
         onDragOverCapture={handleDragOver}
         onDropCapture={handleDrop}
       >
-        <div className="canvas-hint">
-          Drag an icon from the library onto the canvas
-        </div>
-
         <Excalidraw
           initialData={savedSketch ? {
             elements: savedSketch.elements || [],

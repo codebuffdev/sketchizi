@@ -1,4 +1,4 @@
-const CACHE = "sketchizi-v1.0.12";
+const CACHE = "sketchizi-v1.0.15";
 const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/sketchizi-favicon.svg"];
 
 self.addEventListener("install", event => {
