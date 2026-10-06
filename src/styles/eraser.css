@@ -1,0 +1,84 @@
+/* v0.16 Eraser library */
+.eraser-library-status { margin: 10px 0 14px; padding: 10px; border: 1px solid var(--border, #ddd); border-radius: 10px; background: var(--panel, #fff); }
+.eraser-library-status > div:first-child { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; font-size:12px; }
+.eraser-library-status > div:first-child span { opacity:.65; }
+.icon-grid { max-height: calc(100vh - 300px); overflow-y:auto; overscroll-behavior:contain; }
+.library-scroll-hint { padding: 8px; text-align:center; font-size:11px; opacity:.6; }
+
+
+/* v0.17.0 — Eraser library interaction/theme fixes.
+ * The status panel uses theme variables explicitly so it never falls back
+ * to a white surface in dark mode.
+ */
+.eraser-library-status {
+  border-color: var(--ui-border, #dedede);
+  background: var(--ui-surface-soft, #fafafa);
+  color: var(--ui-text, #333);
+}
+
+.eraser-library-status > div:first-child strong {
+  color: var(--ui-text, #333);
+}
+
+.eraser-library-status > div:first-child span {
+  color: var(--ui-text-muted, #777);
+}
+
+.app.theme-dark .eraser-library-status {
+  border-color: var(--ui-border);
+  background: var(--ui-surface-soft);
+  color: var(--ui-text);
+}
+
+.app.theme-dark .eraser-library-status > div:first-child strong {
+  color: var(--ui-text-strong);
+}
+
+.app.theme-dark .eraser-library-status > div:first-child span {
+  color: var(--ui-text-muted);
+}
+
+.app.theme-dark .eraser-library-status .connection-button {
+  background: #25252a;
+  border-color: var(--ui-border);
+  color: var(--ui-text);
+}
+
+.app.theme-dark .eraser-library-status .connection-button:hover:not(:disabled) {
+  background: var(--ui-hover);
+  border-color: #4b4868;
+}
+
+.app.theme-dark .eraser-library-status .connection-button:disabled {
+  opacity: .55;
+}
+
+/* v0.17.1 reliable library-to-canvas pointer drag */
+.icon-card { touch-action: none; cursor: grab; user-select: none; }
+.icon-card { -webkit-user-drag: none; }
+.icon-card * { -webkit-user-drag: none; }
+.icon-card:active { cursor: grabbing; }
+.icon-card.is-drag-source { opacity: .55; }
+.icon-card img { pointer-events: none; }
+.icon-drag-ghost {
+  position: fixed;
+  z-index: 10000;
+  width: 96px;
+  height: 96px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--border, #444);
+  border-radius: 10px;
+  background: var(--panel, #222);
+  box-shadow: 0 10px 28px rgba(0,0,0,.28);
+  padding: 6px;
+}
+.icon-drag-ghost img { width: 64px; height: 64px; object-fit: contain; pointer-events: none; }
+.icon-drag-ghost span { max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+
+

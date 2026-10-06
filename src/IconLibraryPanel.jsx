@@ -1,9 +1,9 @@
 export default function IconLibraryPanel({
   searchRef, search, setSearch, activeCategory, setActiveCategory, favorites, recentIcons,
-  eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary,
-  remoteLoading, visibleIcons,
+  eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
+  remoteLoading, visibleIcons, umlIcons, mindMapIcons, createStarterMindMap,
   iconDisplayLimit, setIconDisplayLimit, iconListRef, draggingIcon, handleIconClick,
-  handleIconPointerDown, handleDragStart, isFavorite, toggleFavorite, remoteError,
+  handleIconPointerDown, handleIconMouseDown, handleDragStart, isFavorite, toggleFavorite, remoteError,
 }) {
   return (
   <aside className="library-panel">
@@ -23,8 +23,11 @@ export default function IconLibraryPanel({
 
     <nav className="quick-categories">
       {[
-        ["Favorites", favorites.filter((item) => item.source === "eraser").length, "★"],
-        ["Recently Used", recentIcons.filter((item) => item.source === "eraser").length, "◷"],
+        ["Eraser Icons", eraserCatalog.length, "◆"],
+        ["UML Diagrams", umlIcons.length, "◇"],
+        ["Mind Maps", mindMapIcons.length, "●"],
+        ["Favorites", favorites.length, "★"],
+        ["Recently Used", recentIcons.length, "◷"],
       ].map(([category, count, icon]) => (
         <button
           key={category}
@@ -38,18 +41,35 @@ export default function IconLibraryPanel({
       ))}
     </nav>
 
-    <div className="eraser-library-status">
-      <div><strong>Eraser Icons</strong><span>{eraserCatalog.length || "…"} icons</span></div>
-      <button type="button" className="connection-button secondary" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length}>
-        {eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : "Make available offline"}
-      </button>
-      {eraserSyncError && <div className="connection-help">{eraserSyncError}</div>}
-    </div>
+    {activeCategory === "Eraser Icons" && !search.trim() && (
+      <div className="eraser-library-status">
+        <div><strong>Eraser Icons</strong><span>{eraserCatalog.length ? `${eraserCatalog.length} icons` : "Loading…"}</span></div>
+        <button type="button" className="connection-button secondary" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length}>
+          {eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : eraserCachedCount > 0 ? `Available offline (${eraserCachedCount}/${eraserCatalog.length})` : "Make available offline"}
+        </button>
+        {eraserSyncError && <div className="connection-help">{eraserSyncError}</div>}
+      </div>
+    )}
+
+    {activeCategory === "UML Diagrams" && !search.trim() && (
+      <div className="uml-library-status">
+        <div><strong>Built-in UML elements</strong><span>{umlIcons.length} elements</span></div>
+        <div className="connection-help">Classes, interfaces, actors, components, notes and relationships are built into Sketchizi and available offline.</div>
+      </div>
+    )}
+
+    {activeCategory === "Mind Maps" && !search.trim() && (
+      <div className="mindmap-library-status">
+        <div><strong>Mind Map tools</strong><span>{mindMapIcons.length} elements</span></div>
+        <button type="button" className="connection-button secondary" onClick={createStarterMindMap}>Create starter mind map</button>
+        <div className="connection-help">Drag a central topic, main topic, subtopic or relationship onto the canvas, or start with a ready-made six-branch mind map.</div>
+      </div>
+    )}
 
     <section className="icons">
       <div className="section-heading">
         <div className="section-title">
-          {search.trim() ? "Search results" : "Eraser Icons"}
+          {search.trim() ? "Search results" : activeCategory}
         </div>
         <div className="icon-total">
           {search.trim()
@@ -58,11 +78,15 @@ export default function IconLibraryPanel({
               ? `${favorites.length} saved`
               : activeCategory === "Recently Used"
                 ? `${recentIcons.length} icons`
-                : `${eraserCatalog.length || "…"} icons`}
+                : activeCategory === "UML Diagrams"
+                  ? `${umlIcons.length} elements`
+                  : activeCategory === "Mind Maps"
+                    ? `${mindMapIcons.length} elements`
+                    : `${eraserCatalog.length || "…"} icons`}
         </div>
       </div>
 
-      {remoteLoading && visibleIcons.length === 0 ? (
+      {remoteLoading && activeCategory === "Eraser Icons" && visibleIcons.length === 0 ? (
         <div className="empty">Loading icons...</div>
       ) : visibleIcons.length > 0 ? (
         <>
@@ -83,6 +107,7 @@ export default function IconLibraryPanel({
               draggable={false}
               onClick={() => handleIconClick(icon)}
               onPointerDown={(event) => handleIconPointerDown(event, icon)}
+              onMouseDown={(event) => handleIconMouseDown(event, icon)}
               onDragStart={(event) => handleDragStart(event, icon)}
               title={`Drag ${icon.name} onto the canvas`}
             >
@@ -130,12 +155,15 @@ export default function IconLibraryPanel({
             ? "No favorite icons yet. Click ★ on an icon to save it."
             : activeCategory === "Recently Used"
               ? "No recently used icons yet."
-              : remoteError || "No matching icons."}
+              : activeCategory === "UML Diagrams"
+                ? "No matching UML elements."
+                : activeCategory === "Mind Maps"
+                  ? "No matching mind-map elements."
+                  : remoteError || "No matching icons."}
         </div>
       )}
     </section>
 
-    <div className="version">Sketchizi 1.0 · Eraser icon library</div>
   </aside>
   );
 }

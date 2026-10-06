@@ -1,8 +1,10 @@
 const DB_NAME = "sketchizi-local-state";
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 const STORE_NAME = "documents";
 const DOCUMENT_ID = "main";
 const RECENT_STORE_NAME = "recent-documents";
+const FILE_HANDLE_STORE_NAME = "file-handles";
+const DIRECTORY_HANDLE_STORE_NAME = "directory-handles";
 const EMERGENCY_KEY = "sketchizi-emergency-backup";
 
 export class PersistenceError extends Error {
@@ -58,6 +60,12 @@ function openDatabase() {
       }
       if (!db.objectStoreNames.contains(RECENT_STORE_NAME)) {
         db.createObjectStore(RECENT_STORE_NAME);
+      }
+      if (!db.objectStoreNames.contains(FILE_HANDLE_STORE_NAME)) {
+        db.createObjectStore(FILE_HANDLE_STORE_NAME);
+      }
+      if (!db.objectStoreNames.contains(DIRECTORY_HANDLE_STORE_NAME)) {
+        db.createObjectStore(DIRECTORY_HANDLE_STORE_NAME);
       }
     };
     request.onsuccess = () => {
@@ -287,5 +295,165 @@ export async function clearSketch() {
     });
   } catch {
     return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// File System Access handles.
+// FileSystemFileHandle objects are structured-cloneable, so IndexedDB is the
+// supported place to keep them between sessions. Only the opaque handle is
+// stored (never a path: browsers do not expose real paths). Permission must be
+// re-checked/re-requested after a reload before the handle can be used.
+// ---------------------------------------------------------------------------
+async function withFileHandleStore(mode, run) {
+  const db = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(FILE_HANDLE_STORE_NAME, mode);
+      const store = transaction.objectStore(FILE_HANDLE_STORE_NAME);
+      let result;
+      const request = run(store);
+      request.onsuccess = () => { result = request.result; };
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve(result);
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+    });
+  } finally {
+    try { db.close(); } catch {}
+  }
+}
+
+export async function saveFileHandle(id, handle) {
+  if (!id || !handle) return false;
+  try {
+    await withFileHandleStore("readwrite", (store) => store.put(handle, id));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadFileHandle(id) {
+  if (!id) return null;
+  try {
+    return (await withFileHandleStore("readonly", (store) => store.get(id))) || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteFileHandle(id) {
+  if (!id) return false;
+  try {
+    await withFileHandleStore("readwrite", (store) => store.delete(id));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadAllFileHandles() {
+  try {
+    const db = await openDatabase();
+    try {
+      return await new Promise((resolve, reject) => {
+        const transaction = db.transaction(FILE_HANDLE_STORE_NAME, "readonly");
+        const store = transaction.objectStore(FILE_HANDLE_STORE_NAME);
+        const keysRequest = store.getAllKeys();
+        const valuesRequest = store.getAll();
+        transaction.oncomplete = () => {
+          const keys = keysRequest.result || [];
+          const values = valuesRequest.result || [];
+          resolve(keys.map((key, index) => ({ id: key, handle: values[index] })));
+        };
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+      });
+    } finally {
+      try { db.close(); } catch {}
+    }
+  } catch {
+    return [];
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// File System Access directory handles.
+// Directory handles are structured-cloneable and therefore persistable in
+// IndexedDB. As with file handles, browsers may require permission again after
+// a reload before a directory is used.
+// ---------------------------------------------------------------------------
+async function withDirectoryHandleStore(mode, run) {
+  const db = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(DIRECTORY_HANDLE_STORE_NAME, mode);
+      const store = transaction.objectStore(DIRECTORY_HANDLE_STORE_NAME);
+      let result;
+      const request = run(store);
+      request.onsuccess = () => { result = request.result; };
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve(result);
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+    });
+  } finally {
+    try { db.close(); } catch {}
+  }
+}
+
+export async function saveDirectoryHandle(id, handle) {
+  if (!id || !handle) return false;
+  try {
+    await withDirectoryHandleStore("readwrite", (store) => store.put(handle, id));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadDirectoryHandle(id) {
+  if (!id) return null;
+  try {
+    return (await withDirectoryHandleStore("readonly", (store) => store.get(id))) || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteDirectoryHandle(id) {
+  if (!id) return false;
+  try {
+    await withDirectoryHandleStore("readwrite", (store) => store.delete(id));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadAllDirectoryHandles() {
+  try {
+    const db = await openDatabase();
+    try {
+      return await new Promise((resolve, reject) => {
+        const transaction = db.transaction(DIRECTORY_HANDLE_STORE_NAME, "readonly");
+        const store = transaction.objectStore(DIRECTORY_HANDLE_STORE_NAME);
+        const keysRequest = store.getAllKeys();
+        const valuesRequest = store.getAll();
+        transaction.oncomplete = () => {
+          const keys = keysRequest.result || [];
+          const values = valuesRequest.result || [];
+          resolve(keys.map((key, index) => ({ id: key, handle: values[index] })));
+        };
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+      });
+    } finally {
+      try { db.close(); } catch {}
+    }
+  } catch {
+    return [];
   }
 }

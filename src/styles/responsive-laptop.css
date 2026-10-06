@@ -1,0 +1,373 @@
+.diagramly-native-theme-section {
+  margin: 8px 0 4px;
+  padding: 10px 12px 8px;
+  border-top: 1px solid rgba(128,128,128,.18);
+}
+.diagramly-native-theme-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  opacity: .72;
+}
+.diagramly-native-theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.diagramly-native-theme-options button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid rgba(128,128,128,.24);
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.diagramly-native-theme-options button:hover {
+  background: rgba(128,128,128,.12);
+}
+.diagramly-native-theme-options button.selected {
+  border-color: #8b83ff;
+  background: rgba(139,131,255,.16);
+}
+@media (max-width: 520px) {
+  .diagramly-native-theme-section { padding-inline: 8px; }
+  .diagramly-native-theme-options { grid-template-columns: 1fr; }
+}
+
+
+/* v1.0.9 — 12–14 inch laptop responsive layout
+ * Common laptop viewports (1280×720, 1280×800, 1366×768, 1440×900) get a
+ * dedicated compact desktop lane. The canvas remains full-screen while the
+ * custom controls occupy the outer edges, leaving the native Excalidraw
+ * toolbar centered and unobstructed.
+ */
+@media (min-width: 1001px) and (max-width: 1440px) {
+  .app {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Top-left controls share one predictable lane. */
+  .library-toggle {
+    top: 14px;
+    left: 66px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .layout-toolbar,
+  .layout-toolbar.properties-open {
+    top: 14px;
+    left: 14px;
+    right: auto;
+    transform: none;
+  }
+
+  .layout-button {
+    min-height: 38px;
+    padding: 7px 10px;
+  }
+
+  /* Native Excalidraw menu remains the source of truth for theme. */
+  .theme-control { display: none !important; }
+
+  /* Custom panels never exceed the usable laptop viewport. */
+  .library-panel {
+    top: 60px;
+    left: 14px;
+    width: min(315px, calc(100vw - 28px));
+    max-height: calc(100dvh - 74px);
+  }
+
+  .properties-panel {
+    top: 60px;
+    right: 14px;
+    width: min(320px, calc(100vw - 28px));
+    max-height: calc(100dvh - 74px);
+  }
+
+  .layout-popover,
+  .app.panel-open-layout .layout-popover {
+    position: fixed;
+    top: 60px;
+    left: 14px;
+    right: auto;
+    width: min(320px, calc(100vw - 28px));
+    max-height: calc(100dvh - 74px);
+    overflow-y: auto;
+    transform: none;
+  }
+
+  .properties-toggle {
+    top: 14px;
+    right: 14px;
+    min-height: 38px;
+    padding: 7px 10px;
+  }
+
+  /* Keep the minimap out of the bottom undo/zoom controls. */
+  .minimap {
+    right: 14px;
+    bottom: 62px;
+    width: 248px;
+  }
+
+  .minimap-viewport {
+    width: 224px;
+    height: 126px;
+  }
+
+  .minimap-toggle {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  
+}
+
+/* Short laptop screens: reclaim vertical space without shrinking the
+ * drawing surface. Panels scroll internally instead of pushing anything. */
+@media (min-width: 1001px) and (max-width: 1440px) and (max-height: 820px) {
+  .library-panel,
+  .properties-panel,
+  .app.panel-open-layout .layout-popover {
+    top: 58px;
+    max-height: calc(100dvh - 68px);
+  }
+
+  .library-panel {
+    padding: 12px 9px;
+  }
+
+  .icon-card {
+    min-height: 104px;
+  }
+
+  .icon-preview {
+    height: 52px;
+  }
+
+  .icon-preview img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .minimap {
+    width: 228px;
+  }
+
+  .minimap-viewport {
+    width: 204px;
+    height: 114px;
+  }
+
+  
+}
+
+/* 12–13 inch portrait-ish laptop windows: make the two-column icon library
+ * slightly denser so the panel remains useful without taking over the canvas. */
+@media (min-width: 1001px) and (max-width: 1180px) {
+  .library-panel {
+    width: 300px;
+  }
+
+  .properties-panel,
+  .layout-popover,
+  .app.panel-open-layout .layout-popover {
+    width: 300px;
+  }
+
+  .icon-grid {
+    gap: 6px;
+  }
+
+  .icon-card {
+    padding-inline: 4px;
+  }
+}
+
+/* v1.0.10 — 12–14 inch laptop top-left control lane
+ * Keep the two native/custom left controls clear of Layout. The compact
+ * viewport can be produced by browser scaling, so use the CSS viewport width
+ * rather than physical screen pixels.
+ */
+@media (min-width: 761px) and (max-width: 1350px) {
+  .layout-toolbar,
+  .layout-toolbar.properties-open {
+    top: calc(16px + var(--safe-top));
+    left: calc(148px + var(--safe-left));
+    right: auto;
+    transform: none;
+    z-index: 60;
+  }
+
+  .layout-popover {
+    top: 48px;
+    left: 0;
+    right: auto;
+    transform: none;
+    width: min(330px, calc(100vw - 164px - var(--safe-left) - var(--safe-right)));
+    max-height: calc(100dvh - 76px - var(--safe-top) - var(--safe-bottom));
+    overflow-y: auto;
+  }
+
+  /* The Layout popover must sit below the top control row, never over the
+     hamburger/comments controls at the far left. */
+  .app.panel-open-layout .library-toggle,
+  .app.panel-open-layout .properties-toggle {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* Short 12–14 inch laptop screens: preserve the same horizontal lane while
+   giving the popover a bounded scroll area. */
+@media (min-width: 761px) and (max-width: 1350px) and (max-height: 760px) {
+  .layout-popover {
+    max-height: calc(100dvh - 72px - var(--safe-top) - var(--safe-bottom));
+  }
+}
+
+/* v1.0.11 — reserve the native top-left control lane
+ * The hamburger and Library controls own the first ~120px of the top row.
+ * Layout must always begin after that lane. The popover follows the Layout
+ * trigger instead of being viewport-anchored on laptop/desktop widths, so it
+ * can never cover those controls.
+ */
+@media (min-width: 761px) {
+  .layout-toolbar,
+  .layout-toolbar.properties-open {
+    left: max(148px, calc(50% - 650px));
+    right: auto;
+    transform: none;
+  }
+
+  .layout-popover,
+  .app.panel-open-layout .layout-popover,
+  .layout-toolbar .layout-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+    width: min(380px, calc(100vw - 164px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+    max-width: none;
+    max-height: calc(100dvh - 90px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    overflow-y: auto;
+    transform: none;
+    z-index: 70;
+  }
+}
+
+/* 12–14 inch laptops: keep a stable 148px top-left lane and use the full
+   available panel height. */
+@media (min-width: 761px) and (max-width: 1440px) {
+  .layout-toolbar,
+  .layout-toolbar.properties-open {
+    left: calc(148px + var(--safe-left, 0px));
+  }
+
+  .layout-popover,
+  .app.panel-open-layout .layout-popover,
+  .layout-toolbar .layout-popover {
+    width: min(380px, calc(100vw - 164px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+}
+
+/* Very narrow tablet: use a full-width panel, but still start below the
+   top control row so the hamburger/Library controls remain untouched. */
+@media (min-width: 761px) and (max-width: 900px) {
+  .layout-toolbar,
+  .layout-toolbar.properties-open {
+    left: calc(148px + var(--safe-left, 0px));
+  }
+
+  .layout-popover,
+  .app.panel-open-layout .layout-popover,
+  .layout-toolbar .layout-popover {
+    width: min(380px, calc(100vw - 164px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+}
+
+.sketch-restore-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--app-bg, #111);
+  z-index: 99999;
+}
+
+.sketch-restore-card {
+  width: min(360px, calc(100vw - 32px));
+  padding: 28px;
+  border: 1px solid var(--panel-border, #333);
+  border-radius: 18px;
+  background: var(--panel-bg, #1b1b1f);
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  text-align: center;
+}
+
+.sketch-restore-mark {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #4f46e5;
+  color: #fff;
+}
+
+.sketch-restore-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sketch-restore-text {
+  margin-top: 7px;
+  color: var(--text-muted, #888);
+  font-size: 13px;
+}
+
+.sketch-restore-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--app-bg, #111);
+  z-index: 99999;
+}
+.sketch-restore-card {
+  width: min(360px, calc(100vw - 32px));
+  padding: 28px;
+  border: 1px solid var(--panel-border, #333);
+  border-radius: 18px;
+  background: var(--panel-bg, #1b1b1f);
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  text-align: center;
+}
+.sketch-restore-mark {
+  width: 38px; height: 38px; margin: 0 auto 12px;
+  display: grid; place-items: center; border-radius: 10px;
+  background: #4f46e5; color: #fff;
+}
+.sketch-restore-title { font-size: 18px; font-weight: 700; }
+.sketch-restore-text { margin-top: 7px; color: var(--text-muted, #888); font-size: 13px; }
+
+
+/* v1.0.16 — native menu settings polish */
+
+/* v1.9.2 — use the local Sketchizi brand mark in the restore surface. */
+.sketch-restore-mark {
+  background: transparent;
+}
+.sketch-restore-mark img {
+  display: block;
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}

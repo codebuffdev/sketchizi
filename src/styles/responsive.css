@@ -1,0 +1,60 @@
+@import "./responsive-shell.css";
+@import "./responsive-panels.css";
+@import "./responsive-laptop.css";
+@import "./responsive-menu.css";
+@import "./responsive-touch.css";
+@import "./responsive-features.css";
+@import "./responsive-theme.css";
+@import "./responsive-collaboration.css";
+@import "./responsive-collaboration-narrow.css";
+
+
+/* v1.10.1 — Layout panel architecture: rendered through a document.body portal.
+ * This deliberately avoids the legacy .layout-toolbar positioning rules that
+ * belonged to the former floating canvas trigger. The portal is the viewport
+ * positioning context and is not clipped by the Sketchizi shell/sidebar. */
+.layout-panel-portal {
+  position: fixed;
+  top: max(72px, calc(72px + var(--safe-top, 0px)));
+  right: max(16px, calc(16px + var(--safe-right, 0px)));
+  left: auto;
+  z-index: 10060;
+  pointer-events: none;
+}
+
+.layout-panel-portal .layout-popover {
+  position: static;
+  width: min(330px, calc(100vw - 32px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  max-width: calc(100vw - 32px - var(--safe-left, 0px) - var(--safe-right, 0px));
+  max-height: calc(100dvh - 88px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  overflow-y: auto;
+  transform: none;
+  pointer-events: auto;
+}
+
+@media (max-width: 760px) {
+  .layout-panel-portal {
+    top: max(58px, calc(58px + var(--safe-top, 0px)));
+    right: calc(8px + var(--safe-right, 0px));
+    left: auto;
+  }
+  .layout-panel-portal .layout-popover {
+    width: min(380px, calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+    max-width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px));
+    max-height: calc(100dvh - 74px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  }
+}
+
+@media (max-width: 390px) {
+  .layout-panel-portal {
+    left: calc(8px + var(--safe-left, 0px));
+    right: calc(8px + var(--safe-right, 0px));
+  }
+  .layout-panel-portal .layout-popover {
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* Viewer role: the custom Sketchizi More Tools trigger is an editing affordance,
+ * so it is conditionally unmounted in App.jsx rather than visually hidden. */

@@ -1,0 +1,276 @@
+.minimap {
+  position: fixed;
+  right: 18px;
+  bottom: 66px;
+  z-index: 34;
+  width: 244px;
+  padding: 10px;
+  border: 1px solid #dcdcdc;
+  border-radius: 13px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+  user-select: none;
+}
+
+.minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 1px 8px;
+}
+
+.minimap-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.minimap-title {
+  color: #333;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.minimap-count {
+  color: #a0a0a0;
+  font-size: 8px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.minimap-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid #ececec;
+  border-radius: 7px;
+  background: #fafafa;
+}
+
+.minimap-action,
+.minimap-zoom-label {
+  height: 21px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  font: inherit;
+}
+
+.minimap-action {
+  width: 21px;
+  font-size: 15px;
+  line-height: 19px;
+}
+
+.minimap-zoom-label {
+  min-width: 42px;
+  padding: 0 4px;
+  font-size: 8px;
+}
+
+.minimap-action:hover,
+.minimap-zoom-label:hover {
+  background: #f0eff9;
+  color: #5b55c7;
+}
+
+.minimap-viewport {
+  position: relative;
+  width: 220px;
+  height: 126px;
+  overflow: hidden;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  background-color: #fbfbfb;
+  background-image: radial-gradient(#e3e3e3 .7px, transparent .7px);
+  background-size: 8px 8px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.minimap-viewport::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255,255,255,.7);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.minimap-element {
+  position: absolute;
+  display: block;
+  min-width: 1.5px;
+  min-height: 1.5px;
+  box-sizing: border-box;
+  border: 1px solid #9d9d9d;
+  border-radius: 2px;
+  background: #d7d7d7;
+  opacity: .82;
+  pointer-events: none;
+}
+
+.minimap-rectangle { border-radius: 2px; }
+.minimap-ellipse { border-radius: 50%; }
+.minimap-diamond { transform: rotate(45deg); border-radius: 1px; }
+.minimap-line,
+.minimap-arrow {
+  min-height: 2px;
+  height: 2px !important;
+  border: 0;
+  border-radius: 2px;
+  background: #858585;
+}
+.minimap-text {
+  height: 2px !important;
+  border: 0;
+  border-radius: 2px;
+  background: #8c8c8c;
+}
+.minimap-freedraw {
+  border-color: #8c8c8c;
+  background: #bcbcbc;
+  border-radius: 50%;
+}
+.minimap-image {
+  border-color: #8580d2;
+  background: #d0cdf1;
+}
+
+.minimap-element.selected {
+  border-color: #5b55c7;
+  background: #aaa6ed;
+  box-shadow: 0 0 0 1px rgba(91,85,199,.16);
+  opacity: 1;
+}
+
+.minimap-camera {
+  position: absolute;
+  display: block;
+  min-width: 10px;
+  min-height: 10px;
+  z-index: 3;
+  border: 1.5px solid #5b55c7;
+  border-radius: 3px;
+  background: rgba(91,85,199,.08);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.8), inset 0 0 0 1px rgba(91,85,199,.08);
+  box-sizing: border-box;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.minimap-camera:active { cursor: grabbing; }
+
+.minimap-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 7px 1px 0;
+  color: #999;
+  font-size: 8px;
+}
+
+.minimap-fit {
+  border: 1px solid #e4e1f6;
+  border-radius: 6px;
+  padding: 3px 8px;
+  background: #f7f6fc;
+  color: #5b55c7;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.minimap-fit:hover {
+  background: #eeecfb;
+}
+
+.minimap-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 35;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dedede;
+  border-radius: 9px;
+  background: rgba(255,255,255,.96);
+  color: #555;
+  box-shadow: 0 5px 18px rgba(0,0,0,.08);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.minimap-toggle:hover,
+.minimap-toggle.active {
+  background: #f0eff9;
+  border-color: #d9d6f4;
+  color: #5b55c7;
+}
+
+@media (max-width: 640px) {
+  .minimap {
+    right: 10px;
+    bottom: 58px;
+    width: 224px;
+  }
+
+  .minimap-viewport {
+    width: 200px;
+    height: 114px;
+  }
+
+  .minimap-toggle {
+    right: 10px;
+    bottom: 12px;
+  }
+}
+
+/* v0.12.2 layout-toolbar collision guard
+ * The Layout control must never sit on top of Excalidraw's native toolbar.
+ * On wide screens there is room to dock it immediately to the left. On
+ * compact widths it moves to its own row below the toolbar instead.
+ */
+.layout-toolbar {
+  top: 16px;
+  left: max(16px, calc(50% - 650px));
+  transform: none;
+  z-index: 60;
+}
+
+@media (min-width: 1351px) {
+  .layout-toolbar {
+    left: max(16px, calc(50% - 650px));
+  }
+
+  .layout-toolbar.properties-open {
+    left: max(16px, calc(50% - 650px));
+  }
+}
+
+@media (max-width: 1350px) {
+  .layout-toolbar,
+  .layout-toolbar.properties-open {
+    top: 72px;
+    left: 16px;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .layout-toolbar,
+  .layout-toolbar.properties-open {
+    top: 64px;
+    left: 12px;
+    right: auto;
+    transform: none;
+  }
+}
+
+/* v0.13.0 theme system — keep the locked spatial layout intact. */
