@@ -1,18 +1,20 @@
 {
   "name": "sketchizi",
   "private": true,
-  "version": "1.0.23",
+  "version": "1.10.9",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "sync:eraser": "node scripts/sync-eraser-icons.mjs"
+    "sync:eraser": "node scripts/sync-eraser-icons.mjs",
+    "collaboration-server": "node server/collaboration-server.mjs"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "0.18.1",
+    "@excalidraw/excalidraw": "0.18.0-c0ad61c",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

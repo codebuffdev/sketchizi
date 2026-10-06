@@ -1,0 +1,235 @@
+/* v1.0.21 — tablet / touch polish
+ * Give touch users comfortable targets, keep panel headers/controls reachable,
+ * and make long panel content scroll inside the panel instead of competing
+ * with the Excalidraw canvas for the same gesture.
+ */
+@media (pointer: coarse) and (min-width: 761px) {
+  .library-toggle,
+  .properties-toggle,
+  .layout-button,
+  .layout-grid-buttons button,
+  .layout-grid-buttons.two button,
+  .properties-close,
+  .category,
+  .connection-button,
+  .icon-card,
+  .favorite-button,
+  .property-segmented button,
+  .minimap-action,
+  .minimap-toggle {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .library-toggle,
+  .properties-toggle,
+  .layout-button {
+    min-height: 44px;
+  }
+
+  .library-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+  }
+
+  .properties-toggle {
+    min-width: 44px;
+    padding: 8px 12px;
+  }
+
+  .category {
+    min-height: 44px;
+    padding: 9px 11px;
+  }
+
+  .search {
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .library-panel,
+  .properties-panel,
+  .layout-popover {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .library-panel {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .library-panel > .icons {
+    min-height: 0;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .library-panel .icon-grid {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px 2px 8px;
+  }
+
+  .icon-card {
+    min-height: 116px;
+    touch-action: pan-y;
+    padding: 9px 6px;
+  }
+
+  .favorite-button {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+  }
+
+  .properties-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: max(14px, var(--safe-bottom, 0px));
+  }
+
+  .properties-close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -6px -6px -6px 0;
+  }
+
+  .property-row select,
+  .property-number,
+  .color-text,
+  .property-range {
+    min-height: 44px;
+  }
+
+  .property-row select,
+  .property-number,
+  .color-text {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .property-segmented {
+    min-height: 44px;
+  }
+
+  .property-segmented button {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+
+  .layout-grid-buttons button {
+    min-height: 44px;
+  }
+
+  .layout-grid-buttons,
+  .layout-grid-buttons.two {
+    gap: 8px;
+  }
+
+  .layout-popover {
+    padding-bottom: max(12px, var(--safe-bottom, 0px));
+  }
+}
+
+/* Tablet portrait: the panel becomes a near-full-height drawer. Keep the
+   canvas visible around it while giving the touch surface a single scroll
+   owner. */
+@media (pointer: coarse) and (min-width: 761px) and (max-width: 900px) {
+  .app.panel-open-library .library-panel,
+  .app.panel-open-properties .properties-panel {
+    top: calc(64px + var(--safe-top, 0px));
+    max-height: calc(100dvh - 76px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  }
+
+  .app.panel-open-library .library-panel {
+    width: min(420px, calc(100vw - 24px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+
+  .app.panel-open-properties .properties-panel {
+    width: min(420px, calc(100vw - 24px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+
+  .app.panel-open-library .library-panel .icon-grid {
+    max-height: none;
+  }
+}
+
+/* Tablet landscape: avoid covering too much of the drawing area. */
+@media (pointer: coarse) and (min-width: 901px) and (max-width: 1100px) {
+  .app.panel-open-library .library-panel,
+  .app.panel-open-properties .properties-panel,
+  .app.panel-open-layout .layout-popover {
+    max-height: calc(100dvh - 84px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  }
+
+  .app.panel-open-library .library-panel {
+    width: min(390px, calc(100vw - 24px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+
+  .app.panel-open-properties .properties-panel {
+    width: min(390px, calc(100vw - 24px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+}
+
+/* Touch devices should not zoom the app when repeatedly tapping controls. */
+@media (pointer: coarse) {
+  button,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  .library-panel,
+  .properties-panel,
+  .layout-popover {
+    touch-action: pan-y;
+  }
+}
+
+
+/* Recent local drawings inside Excalidraw's native menu. The real scroll
+   container is Excalidraw's `.dropdown-menu-container`; the Sketchizi-owned
+   sections are inserted inside that existing container. */
+.sketchizi-recent-files-section {
+  min-width: 250px;
+  overflow: visible;
+}
+.sketchizi-recent-save,
+.sketchizi-recent-item {
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 7px 9px;
+  font: inherit;
+}
+.sketchizi-recent-save:hover,
+.sketchizi-recent-item:hover { background: rgba(127,127,127,.12); }
+.sketchizi-recent-save { font-weight: 600; }
+.sketchizi-recent-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sketchizi-recent-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sketchizi-recent-item small { flex: 0 0 auto; color: #888; font-size: 10px; }
+.sketchizi-recent-empty { padding: 7px 9px; color: #888; font-size: 11px; }
+@media (pointer: coarse) {
+  .sketchizi-recent-save, .sketchizi-recent-item { min-height: 44px; }
+}
+
+/* v1.1.0 — current Excalidraw tool-system baseline. */

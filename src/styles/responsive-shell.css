@@ -1,0 +1,322 @@
+html,
+body,
+#root,
+.app,
+.canvas {
+  min-height: 100%;
+}
+
+.app,
+.canvas {
+  height: 100dvh;
+}
+
+/* Tablet: keep the top controls in separate lanes instead of competing for
+   the narrow native toolbar area. */
+@media (max-width: 1100px) {
+  .library-toggle {
+    top: calc(10px + var(--safe-top));
+    left: calc(58px + var(--safe-left));
+    width: 38px;
+    height: 38px;
+  }
+
+  .library-panel {
+    top: calc(58px + var(--safe-top));
+    left: calc(10px + var(--safe-left));
+    width: min(360px, calc(100vw - 20px - var(--safe-left) - var(--safe-right)));
+    max-height: calc(100dvh - 68px - var(--safe-top) - var(--safe-bottom));
+  }
+
+  .layout-toolbar {
+    top: calc(62px + var(--safe-top));
+    left: calc(10px + var(--safe-left));
+  }
+
+  .theme-control {
+    top: calc(62px + var(--safe-top));
+    right: calc(10px + var(--safe-right));
+  }
+
+  .properties-toggle {
+    top: calc(62px + var(--safe-top));
+    right: calc(118px + var(--safe-right));
+  }
+
+
+}
+
+/* Tablet portrait / large phone: custom panels use the full available width
+   without ever extending beyond the viewport. */
+@media (max-width: 760px) {
+  .library-toggle {
+    left: calc(10px + var(--safe-left));
+  }
+
+  .library-panel {
+    top: calc(58px + var(--safe-top));
+    left: calc(8px + var(--safe-left));
+    right: calc(8px + var(--safe-right));
+    width: auto;
+    max-height: calc(100dvh - 66px - var(--safe-top) - var(--safe-bottom));
+    padding: 14px 10px 12px;
+    border-radius: 13px;
+  }
+
+  .layout-toolbar {
+    top: calc(58px + var(--safe-top));
+    left: auto;
+    right: calc(62px + var(--safe-right));
+  }
+
+  .theme-control {
+    top: calc(58px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+  }
+
+  .properties-toggle {
+    top: calc(106px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+  }
+
+  .properties-panel {
+    top: calc(152px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+    width: min(360px, calc(100vw - 16px - var(--safe-left) - var(--safe-right)));
+    max-height: calc(100dvh - 160px - var(--safe-top) - var(--safe-bottom));
+  }
+
+  .layout-popover {
+    top: 46px;
+    width: min(320px, calc(100vw - 20px));
+  }
+
+  .icon-grid {
+    max-height: calc(100dvh - 350px);
+  }
+
+  .minimap {
+    right: calc(8px + var(--safe-right));
+    bottom: calc(52px + var(--safe-bottom));
+    width: min(214px, calc(100vw - 16px));
+  }
+
+  .minimap-viewport {
+    width: min(190px, calc(100vw - 36px));
+    height: 108px;
+  }
+
+  .minimap-toggle {
+    right: calc(8px + var(--safe-right));
+    bottom: calc(8px + var(--safe-bottom));
+  }
+
+
+}
+
+/* Phone: make the custom controls compact enough to coexist with the native
+   Excalidraw toolbar and keep tap targets at least 36px high. */
+@media (max-width: 520px) {
+  .library-toggle {
+    top: calc(8px + var(--safe-top));
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+  }
+
+  .layout-toolbar {
+    top: calc(52px + var(--safe-top));
+    right: calc(54px + var(--safe-right));
+  }
+
+  .theme-control {
+    top: calc(52px + var(--safe-top));
+  }
+
+  .layout-button,
+  .theme-toggle {
+    min-height: 36px;
+    padding: 7px 9px;
+    gap: 5px;
+    font-size: 10px;
+  }
+
+  .layout-icon,
+  .theme-toggle-icon {
+    font-size: 15px;
+  }
+
+  .properties-toggle {
+    top: calc(96px + var(--safe-top));
+    min-height: 36px;
+    padding: 7px 9px;
+    font-size: 10px;
+  }
+
+  .properties-panel {
+    top: calc(140px + var(--safe-top));
+    width: calc(100vw - 16px - var(--safe-left) - var(--safe-right));
+    max-height: calc(100dvh - 148px - var(--safe-top) - var(--safe-bottom));
+    padding: 12px;
+  }
+
+  .library-panel {
+    top: calc(52px + var(--safe-top));
+    max-height: calc(100dvh - 60px - var(--safe-top) - var(--safe-bottom));
+    padding: 12px 9px 10px;
+  }
+
+  .search {
+    height: 40px;
+  }
+
+  .icon-grid {
+    gap: 6px;
+    max-height: calc(100dvh - 330px);
+  }
+
+  .icon-card {
+    min-height: 108px;
+    padding: 7px 5px;
+  }
+
+  .icon-preview {
+    height: 54px;
+  }
+
+  .icon-preview img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-name {
+    font-size: 9.5px;
+  }
+
+  .icon-subtitle {
+    font-size: 7px;
+  }
+
+  .connections {
+    margin-top: 10px;
+  }
+
+  .connection-button {
+    min-height: 36px;
+  }
+
+  .eraser-library-status {
+    margin: 8px 0 10px;
+    padding: 8px;
+  }
+
+  .minimap {
+    width: 196px;
+    padding: 8px;
+  }
+
+  .minimap-viewport {
+    width: 178px;
+    height: 100px;
+  }
+
+  .minimap-title {
+    font-size: 10px;
+  }
+
+  .minimap-footer {
+    margin-top: 5px;
+  }
+
+  .shortcut-overlay {
+    align-items: flex-end;
+    padding: 8px;
+  }
+
+  .shortcut-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 16px);
+    padding: 15px;
+    border-radius: 14px;
+  }
+}
+
+/* Very narrow phones: icon-only custom controls free horizontal space while
+   retaining accessible labels through aria-label/title. */
+@media (max-width: 390px) {
+  .layout-button > span:not(.layout-icon),
+  .theme-toggle > span:not(.theme-toggle-icon),
+  .properties-toggle > span:not(.properties-toggle-icon) {
+    display: none;
+  }
+
+  .layout-button,
+  .theme-toggle,
+  .properties-toggle {
+    width: 38px;
+    justify-content: center;
+    padding: 7px;
+  }
+
+  .layout-toolbar {
+    right: calc(54px + var(--safe-right));
+  }
+
+  .properties-toggle {
+    top: calc(96px + var(--safe-top));
+  }
+
+  .layout-popover {
+    right: -8px;
+    width: min(310px, calc(100vw - 16px));
+  }
+
+  .theme-menu {
+    width: min(205px, calc(100vw - 16px));
+  }
+
+  .property-row {
+    grid-template-columns: 72px 1fr;
+  }
+}
+
+/* Landscape phones have very little vertical room. Turn the library into a
+   horizontal-height drawer and keep navigation controls compact. */
+@media (max-width: 760px) and (orientation: landscape) {
+  .library-panel {
+    max-height: calc(100dvh - 58px - var(--safe-top) - var(--safe-bottom));
+  }
+
+  .icon-grid {
+    max-height: calc(100dvh - 260px);
+  }
+
+  .properties-panel {
+    max-height: calc(100dvh - 120px - var(--safe-top) - var(--safe-bottom));
+  }
+
+  .minimap {
+    display: none;
+  }
+}
+
+/* Prevent accidental horizontal scrolling caused by long icon names or
+   controls on small screens. */
+.library-panel,
+.properties-panel,
+.layout-popover,
+.theme-menu,
+.shortcut-dialog {
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

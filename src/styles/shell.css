@@ -1,0 +1,209 @@
+/* Sketchizi 1.0 production polish */
+button,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--ui-accent, #6d66d9);
+  outline-offset: 2px;
+}
+
+/* Excalidraw owns focus styling for its native toolbar. Do not apply
+ * Sketchizi's generic focus ring to every nested canvas button. */
+.excalidraw button:focus-visible,
+.excalidraw [role="button"]:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+.app::after {
+  content: "Sketchizi";
+  position: fixed;
+  left: 50%;
+  bottom: 9px;
+  transform: translateX(-50%);
+  z-index: 8;
+  pointer-events: none;
+  color: var(--ui-text-faint, #999);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .08em;
+  opacity: .42;
+}
+
+.version {
+  margin: 12px 4px 2px;
+  color: var(--ui-text-faint, #999);
+  font-size: 9px;
+  text-align: center;
+  letter-spacing: .02em;
+}
+
+.shortcut-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,.28);
+  backdrop-filter: blur(3px);
+}
+
+.shortcut-dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(620px, calc(100vh - 48px));
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 16px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #222);
+  box-shadow: 0 24px 70px rgba(0,0,0,.22);
+}
+
+.shortcut-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ui-border-soft, #eee);
+}
+
+.shortcut-eyebrow,
+.app-error-eyebrow {
+  color: var(--ui-accent, #5b55c7);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.shortcut-header h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.shortcut-close {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text-muted, #777);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.shortcut-list { padding: 8px 0; }
+.shortcut-row {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+}
+.shortcut-row kbd,
+.shortcut-footer kbd {
+  min-width: 32px;
+  padding: 5px 7px;
+  border: 1px solid var(--ui-border, #ddd);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--ui-surface-soft, #fafafa);
+  color: var(--ui-text-strong, #222);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  text-align: center;
+}
+.shortcut-row span { font-size: 11px; color: var(--ui-text, #333); }
+.shortcut-footer {
+  padding-top: 11px;
+  border-top: 1px solid var(--ui-border-soft, #eee);
+  color: var(--ui-text-faint, #999);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.app-error {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #111;
+}
+.app-error-card {
+  width: min(460px, 100%);
+  padding: 28px;
+  border: 1px solid #34343a;
+  border-radius: 18px;
+  background: #1b1b1f;
+  color: #f5f5f6;
+  box-shadow: 0 24px 70px rgba(0,0,0,.45);
+}
+.app-error-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  background: #302e4b;
+  color: #a39cff;
+  font-weight: 800;
+}
+.app-error-card h1 { margin: 6px 0 8px; font-size: 22px; }
+.app-error-card p { margin: 0 0 14px; color: #aaaab3; font-size: 12px; line-height: 1.55; }
+.app-error-card code { display: block; margin-bottom: 16px; padding: 9px; border-radius: 8px; background: #111114; color: #aaaab3; font-size: 10px; overflow-wrap: anywhere; }
+.app-error-card button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid #4b4868;
+  border-radius: 9px;
+  background: #302e4b;
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+.app-error-card button:hover { background: #39365a; }
+
+.app.theme-dark .shortcut-dialog { box-shadow: 0 24px 70px rgba(0,0,0,.52); }
+.app.theme-dark::after { opacity: .32; }
+
+/* Install is browser chrome only. These selectors are intentionally scoped
+   to common legacy PWA helper classes so a stale helper cannot reappear. */
+.app .pwa-install,
+.app .install-button,
+.app [data-pwa-install],
+.app [data-testid="install-button"] { display: none !important; }
+
+/* v1.0: the browser owns PWA installation, so Theme sits directly beside
+   Excalidraw's native Library control with no reserved Install slot. */
+.theme-control { right: 94px; }
+@media (max-width: 1350px) {
+  .theme-control { top: 72px; right: 16px; }
+}
+@media (max-width: 640px) {
+  .theme-control { top: 64px; right: 12px; }
+}
+
+/* v1.0.3 responsive release
+ * The editor remains canvas-first at every viewport size. Custom controls
+ * reflow into compact rows on tablets and phones, while panels become
+ * touch-friendly drawers that stay inside the safe viewport.
+ */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}

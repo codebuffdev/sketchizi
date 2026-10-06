@@ -1,9 +1,9 @@
 export default function PropertiesPanel({
   selectedCount, propertiesOpen, setPropertiesOpen, firstSelected, hasShapeSelection,
-  hasArrowSelection, hasTextSelection, applyToSelected, applyToSelectedArrow, updateSingleSelected,
+  hasArrowSelection, hasTextSelection, applyToSelected, applyToSelectedArrow, updateSingleSelected, readOnly = false, authorship = {}, participants = [],
 }) {
   return (
-  <section className="properties-panel" aria-label="Properties and style">
+  <section className={`properties-panel${readOnly ? " read-only" : ""}`} aria-label="Properties and style">
     <div className="properties-header">
       <div>
         <div className="properties-title">Properties</div>
@@ -21,89 +21,153 @@ export default function PropertiesPanel({
       >×</button>
     </div>
 
-    <div className="properties-section">
+    <div className="properties-section properties-appearance">
       <div className="properties-section-title">Appearance</div>
 
       {hasShapeSelection && (
         <>
-          <div className="property-row">
-            <label htmlFor="prop-stroke-color">Stroke</label>
-            <div className="color-control">
-              <input
-                id="prop-stroke-color"
-                type="color"
-                value={/^#[0-9a-fA-F]{6}$/.test(firstSelected?.strokeColor || "") ? firstSelected.strokeColor : "#000000"}
-                onChange={(event) => applyToSelected({ strokeColor: event.target.value })}
-                aria-label="Stroke color"
-              />
-              <input
-                className="color-text"
-                value={/^#[0-9a-fA-F]{6}$/.test(firstSelected?.strokeColor || "") ? firstSelected.strokeColor : "#000000"}
-                onChange={(event) => applyToSelected({ strokeColor: event.target.value })}
-                aria-label="Stroke color hex"
-              />
+          <div className="style-group">
+            <div className="style-group-label">Stroke</div>
+            <div className="swatch-row">
+              {[
+                ["#2f2f33", "Ink"],
+                ["#d25555", "Red"],
+                ["#3f9b57", "Green"],
+                ["#3d79b9", "Blue"],
+                ["#d98a27", "Orange"],
+                ["#4d87bd", "Sky"],
+              ].map(([color, label]) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`style-swatch ${firstSelected?.strokeColor?.toLowerCase() === color ? "selected" : ""}`}
+                  style={{ background: color }}
+                  aria-label={`Stroke ${label}`}
+                  title={label}
+                  onClick={() => applyToSelected({ strokeColor: color })}
+                />
+              ))}
             </div>
           </div>
 
-          <div className="property-row">
-            <label htmlFor="prop-background">Background</label>
-            <div className="color-control">
-              <input
-                id="prop-background"
-                type="color"
-                value={/^#[0-9a-fA-F]{6}$/.test(firstSelected?.backgroundColor || "") ? firstSelected.backgroundColor : "#ffffff"}
-                onChange={(event) => applyToSelected({ backgroundColor: event.target.value })}
-                aria-label="Background color"
-              />
-              <input
-                className="color-text"
-                value={/^#[0-9a-fA-F]{6}$/.test(firstSelected?.backgroundColor || "") ? firstSelected.backgroundColor : "#ffffff"}
-                onChange={(event) => applyToSelected({ backgroundColor: event.target.value })}
-                aria-label="Background color hex"
-              />
+          <div className="style-group">
+            <div className="style-group-label">Background</div>
+            <div className="swatch-row">
+              {[
+                ["transparent", "Transparent"],
+                ["#e7bfc1", "Rose"],
+                ["#b9dfc0", "Mint"],
+                ["#a8c7e5", "Blue"],
+                ["#e2d8b9", "Sand"],
+                ["#a9c8e1", "Sky"],
+              ].map(([color, label]) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`style-swatch background-swatch ${firstSelected?.backgroundColor?.toLowerCase() === color ? "selected" : ""}`}
+                  style={color === "transparent" ? undefined : { background: color }}
+                  aria-label={`Background ${label}`}
+                  title={label}
+                  onClick={() => applyToSelected({ backgroundColor: color })}
+                >{color === "transparent" ? "" : null}</button>
+              ))}
             </div>
           </div>
 
-          <div className="property-row">
-            <label>Stroke width</label>
-            <select
-              value={firstSelected?.strokeWidth || 1}
-              onChange={(event) => applyToSelected({ strokeWidth: Number(event.target.value) })}
-            >
-              {[0, 1, 2, 4, 6, 8].map((value) => <option key={value} value={value}>{value}px</option>)}
-            </select>
+          <div className="style-group">
+            <div className="style-group-label">Fill</div>
+            <div className="style-options three">
+              {[
+                ["hachure", "Hachure", "///"],
+                ["cross-hatch", "Cross hatch", "###"],
+                ["solid", "Solid", "■"],
+              ].map(([value, label, glyph]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={firstSelected?.fillStyle === value ? "selected" : ""}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => applyToSelected({ fillStyle: value })}
+                ><span>{glyph}</span></button>
+              ))}
+            </div>
           </div>
 
-          <div className="property-row">
-            <label>Line style</label>
-            <select
-              value={firstSelected?.strokeStyle || "solid"}
-              onChange={(event) => applyToSelected({ strokeStyle: event.target.value })}
-            >
-              <option value="solid">Solid</option>
-              <option value="dashed">Dashed</option>
-              <option value="dotted">Dotted</option>
-            </select>
+          <div className="style-group">
+            <div className="style-group-label">Stroke width</div>
+            <div className="style-options three">
+              {[1, 2, 4].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={Number(firstSelected?.strokeWidth) === value ? "selected" : ""}
+                  aria-label={`${value}px stroke`}
+                  title={`${value}px`}
+                  onClick={() => applyToSelected({ strokeWidth: value })}
+                ><span className={`stroke-preview width-${value}`} /></button>
+              ))}
+            </div>
           </div>
 
-          <div className="property-row">
-            <label>Roughness</label>
-            <select
-              value={firstSelected?.roughness ?? 1}
-              onChange={(event) => applyToSelected({ roughness: Number(event.target.value) })}
-            >
-              <option value="0">Architect</option>
-              <option value="1">Artist</option>
-              <option value="2">Cartoonist</option>
-            </select>
+          {firstSelected?.type === "freedraw" && (
+            <div className="style-group">
+              <div className="style-group-label">Pressure</div>
+              <div className="style-options two">
+                {[
+                  ["constant", "Constant", "—"],
+                  ["variable", "Variable", "〰"],
+                ].map(([value, label, glyph]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={firstSelected?.strokeVariability === value ? "selected" : ""}
+                    aria-label={label}
+                    title={label}
+                    onClick={() => applyToSelected({ strokeVariability: value })}
+                  ><span>{glyph}</span></button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="style-group">
+            <div className="style-group-label">Line style</div>
+            <div className="style-options three">
+              {[
+                ["solid", "Solid", "━━━━"],
+                ["dashed", "Dashed", "— —"],
+                ["dotted", "Dotted", "· · ·"],
+              ].map(([value, label, glyph]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={firstSelected?.strokeStyle === value ? "selected" : ""}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => applyToSelected({ strokeStyle: value })}
+                ><span>{glyph}</span></button>
+              ))}
+            </div>
+          </div>
+
+          <div className="style-group">
+            <div className="style-group-label">Roughness</div>
+            <div className="style-options three">
+              {[[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]].map(([value, label]) => (
+                <button key={value} type="button" className={Number(firstSelected?.roughness ?? 1) === value ? "selected" : ""} onClick={() => applyToSelected({ roughness: value })} title={label} aria-label={label}>
+                  <span>{label.slice(0, 1)}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </>
       )}
 
-      <div className="property-row property-row-stack">
+      <div className="style-group opacity-group">
         <div className="property-label-line">
-          <label htmlFor="prop-opacity">Opacity</label>
-          <span>{Math.round((firstSelected?.opacity ?? 100))}%</span>
+          <div className="style-group-label">Opacity</div>
+          <span>{Math.round(firstSelected?.opacity ?? 100)}</span>
         </div>
         <input
           id="prop-opacity"
@@ -187,6 +251,14 @@ export default function PropertiesPanel({
           <label>Angle</label>
           <input className="property-number" type="number" value={Math.round(((firstSelected.angle || 0) * 180) / Math.PI)} onChange={(event) => updateSingleSelected({ angle: ((Number(event.target.value) || 0) * Math.PI) / 180 })} />
         </div>
+      </div>
+    )}
+
+    {selectedCount === 1 && firstSelected && (authorship[firstSelected.id]?.createdBy || authorship[firstSelected.id]?.lastModifiedBy) && (
+      <div className="properties-section collaboration-authorship">
+        <div className="properties-section-title">Collaboration</div>
+        <div className="property-row"><label>Created by</label><span>{participants.find((participant) => participant.participantId === authorship[firstSelected.id]?.createdBy)?.displayName || "Unknown"}</span></div>
+        {authorship[firstSelected.id]?.lastModifiedBy && <div className="property-row"><label>Last modified by</label><span>{participants.find((participant) => participant.participantId === authorship[firstSelected.id]?.lastModifiedBy)?.displayName || "Unknown"}</span></div>}
       </div>
     )}
   </section>

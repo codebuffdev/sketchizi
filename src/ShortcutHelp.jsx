@@ -1,4 +1,5 @@
 const SHORTCUTS = [
+  ["Ctrl+Shift+P", "Open command palette"],
   ["/", "Open icon library & focus search"],
   ["L", "Toggle Layout"],
   ["P", "Toggle Properties (when selected)"],

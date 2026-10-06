@@ -1,4 +1,5 @@
 import { Component } from "react";
+import { logger } from "./logging/logger";
 
 export default class ErrorBoundary extends Component {
   state = { hasError: false, message: "" };
@@ -8,7 +9,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error) {
-    console.error("Sketchizi runtime error:", error);
+    logger.error("Sketchizi runtime error", error, { category: "error", source: "react-error-boundary" });
   }
 
   handleReload = () => window.location.reload();

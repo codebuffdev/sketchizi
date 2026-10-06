@@ -1,0 +1,193 @@
+/* ========================================================================
+ * Sketchizi 1.8.5 — responsive shell
+ *
+ * The editor is a full-viewport canvas. Excalidraw owns its native toolbar
+ * and footer controls; Sketchizi-owned controls are placed into separate
+ * responsive lanes instead of competing for the same fixed bottom space.
+ *
+ * Breakpoints describe layout modes, not individual device hacks:
+ *   >= 1200px  desktop
+ *   761–1199  tablet / compact desktop
+ *   521–760   mobile / small tablet (Excalidraw bottom toolbar)
+ *   <= 520    narrow mobile
+ * ======================================================================== */
+:root {
+  --sketchizi-ui-gap: 10px;
+  --sketchizi-mobile-bottom-reserve: 76px;
+  --sketchizi-mobile-status-top: 140px;
+  --sketchizi-mobile-side: 8px;
+}
+
+/* Desktop: the collaboration bar can safely live in the bottom-center lane
+ * because Excalidraw's zoom/undo/redo and minimap occupy the outer lanes. */
+@media (min-width: 1200px) {
+  .collaboration-status-bar {
+    left: 50%;
+    right: auto;
+    bottom: calc(14px + var(--safe-bottom, 0px));
+    width: min(680px, calc(100vw - 32px));
+    max-width: 680px;
+  }
+}
+
+/* Tablet / compact desktop: keep custom controls in their own top lane and
+ * keep the collaboration bar out of the native toolbar's footprint. */
+@media (min-width: 761px) and (max-width: 1199px) {
+  .collaboration-status-bar {
+    left: 50%;
+    right: auto;
+    bottom: calc(14px + var(--safe-bottom, 0px));
+    width: min(620px, calc(100vw - 32px));
+    max-width: 620px;
+  }
+
+  .minimap {
+    right: calc(12px + var(--safe-right, 0px));
+    bottom: calc(70px + var(--safe-bottom, 0px));
+    max-width: min(248px, calc(100vw - 24px));
+  }
+
+  .minimap-toggle {
+    right: calc(12px + var(--safe-right, 0px));
+    bottom: calc(14px + var(--safe-bottom, 0px));
+  }
+}
+
+/* Mobile: Excalidraw moves its main tool row into the bottom area. The
+ * collaboration status therefore moves to a dedicated top status lane.
+ * This is the key separation that prevents the collision seen at 593x699. */
+@media (max-width: 760px) {
+  .app,
+  .canvas,
+  .canvas .excalidraw,
+  .canvas .excalidraw-container {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .collaboration-status-bar {
+    position: fixed;
+    top: calc(var(--sketchizi-mobile-status-top) + var(--safe-top, 0px));
+    right: var(--sketchizi-mobile-side);
+    bottom: auto;
+    left: var(--sketchizi-mobile-side);
+    transform: none;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px 9px 12px;
+  }
+
+  .collaboration-status-info strong {
+    max-width: 100%;
+  }
+
+  .collaboration-status-actions {
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  .collaboration-status-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Never let the minimap claim the same bottom lane as Excalidraw's mobile
+   * toolbar. Its toggle remains accessible, but sits above that native lane. */
+  .minimap {
+    right: var(--sketchizi-mobile-side);
+    bottom: calc(var(--sketchizi-mobile-bottom-reserve) + var(--safe-bottom, 0px));
+    max-width: calc(100vw - 16px);
+  }
+
+  .minimap-toggle {
+    right: var(--sketchizi-mobile-side);
+    bottom: calc(var(--sketchizi-mobile-bottom-reserve) + 8px + var(--safe-bottom, 0px));
+  }
+
+  /* Excalidraw owns the mobile toolbar. Do not reposition or resize it here;
+   * simply reserve its known bottom lane for Sketchizi-owned controls. */
+  .excalidraw .App-bottom-bar {
+    max-width: calc(100% - 16px);
+  }
+
+  .library-panel,
+  .properties-panel,
+  .layout-popover {
+    max-width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px));
+    max-height: calc(100dvh - 72px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  }
+
+  .library-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .properties-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Narrow mobile: the collaboration card becomes a compact two-row surface.
+ * All actions remain available; only the arrangement changes. */
+@media (max-width: 520px) {
+  :root {
+    --sketchizi-mobile-status-top: 142px;
+    --sketchizi-mobile-bottom-reserve: 76px;
+  }
+
+  .collaboration-status-bar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 9px 10px 10px;
+  }
+
+  .collaboration-status-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .collaboration-status-link,
+  .collaboration-lifecycle-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+  }
+
+  .minimap {
+    width: min(224px, calc(100vw - 16px));
+  }
+
+  .minimap-toggle {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --sketchizi-mobile-status-top: 138px;
+    --sketchizi-mobile-bottom-reserve: 78px;
+  }
+
+  .collaboration-status-bar {
+    padding-inline: 9px;
+  }
+
+  .collaboration-status-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .minimap {
+    width: calc(100vw - 16px);
+  }
+}

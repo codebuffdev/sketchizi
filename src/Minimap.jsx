@@ -1,3 +1,4 @@
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 export default function Minimap({
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
 }) {
@@ -19,7 +20,7 @@ export default function Minimap({
               const zoom = api.getAppState().zoom?.value || 1;
               api.updateScene({
                 appState: { ...api.getAppState(), zoom: { value: Math.max(0.1, zoom / 1.2) } },
-                commitToHistory: false,
+                captureUpdate: CaptureUpdateAction.NEVER,
               });
             }}
             title="Zoom out"
@@ -27,7 +28,13 @@ export default function Minimap({
           <button
             type="button"
             className="minimap-zoom-label"
-            onClick={() => apiRef.current?.scrollToContent?.(apiRef.current.getSceneElements(), { fitToViewport: true, animate: true })}
+            onClick={() => {
+              const api = apiRef.current;
+              if (!api) return;
+              const elements = api.getSceneElements().filter((element) => !element.isDeleted);
+              if (api.setViewport) api.setViewport({ target: elements, fit: "contain" });
+              else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
+            }}
             title="Fit diagram"
           >{Math.round((apiRef.current?.getAppState().zoom?.value || 1) * 100)}%</button>
           <button
@@ -39,7 +46,7 @@ export default function Minimap({
               const zoom = api.getAppState().zoom?.value || 1;
               api.updateScene({
                 appState: { ...api.getAppState(), zoom: { value: Math.min(8, zoom * 1.2) } },
-                commitToHistory: false,
+                captureUpdate: CaptureUpdateAction.NEVER,
               });
             }}
             title="Zoom in"
@@ -93,7 +100,7 @@ export default function Minimap({
                 scrollX: drag.startScrollX - dx,
                 scrollY: drag.startScrollY - dy,
               },
-              commitToHistory: false,
+              captureUpdate: CaptureUpdateAction.NEVER,
             });
           };
           const stopCamera = () => {
@@ -158,7 +165,13 @@ export default function Minimap({
         <button
           type="button"
           className="minimap-fit"
-          onClick={() => apiRef.current?.scrollToContent?.(apiRef.current.getSceneElements(), { fitToViewport: true, animate: true })}
+          onClick={() => {
+              const api = apiRef.current;
+              if (!api) return;
+              const elements = api.getSceneElements().filter((element) => !element.isDeleted);
+              if (api.setViewport) api.setViewport({ target: elements, fit: "contain" });
+              else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
+            }}
         >Fit</button>
       </div>
     </div>
