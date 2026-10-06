@@ -55,3 +55,7 @@ temp/
 # Generated Eraser icon assets (local sync)
 public/eraser-icons/
 public/eraser-icons-manifest.json
+
+# Cloudflare Workers
+.wrangler/
+.dev.vars*

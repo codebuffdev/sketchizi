@@ -1,13 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { onRequestGet as eraserCatalog } from "./functions/api/eraser-catalog.js";
 import { onRequestGet as eraserIcon } from "./functions/api/eraser-icon.js";
 
 async function handlePagesFunction(handler, req, res) {
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
-  const host = req.headers.host || 'localhost:5173';
+  const protocol = req.headers["x-forwarded-proto"] || "http";
+  const host = req.headers.host || "localhost:5173";
   const request = new Request(`${protocol}://${host}${req.url}`, {
-    method: 'GET',
+    method: "GET",
     headers: new Headers(req.headers),
   });
   const response = await handler({ request });
@@ -19,23 +20,32 @@ async function handlePagesFunction(handler, req, res) {
 
 function sketchiziPagesFunctionsDev() {
   return {
-    name: 'sketchizi-pages-functions-dev',
+    name: "sketchizi-pages-functions-dev",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (req.method !== 'GET') return next();
-        const path = new URL(req.url || '/', 'http://localhost').pathname;
-        const handler = path === '/api/eraser-catalog'
-          ? eraserCatalog
-          : path === '/api/eraser-icon'
-            ? eraserIcon
-            : null;
+        if (req.method !== "GET") return next();
+
+        const path = new URL(req.url || "/", "http://localhost").pathname;
+
+        const handler =
+          path === "/api/eraser-catalog"
+            ? eraserCatalog
+            : path === "/api/eraser-icon"
+              ? eraserIcon
+              : null;
+
         if (!handler) return next();
+
         try {
           await handlePagesFunction(handler, req, res);
         } catch (error) {
           res.statusCode = 502;
-          res.setHeader('content-type', 'application/json; charset=utf-8');
-          res.end(JSON.stringify({ error: error?.message || 'Eraser API failed.' }));
+          res.setHeader("content-type", "application/json; charset=utf-8");
+          res.end(
+            JSON.stringify({
+              error: error?.message || "Eraser API failed.",
+            }),
+          );
         }
       });
     },
@@ -43,7 +53,11 @@ function sketchiziPagesFunctionsDev() {
 }
 
 export default defineConfig({
-  plugins: [react(), sketchiziPagesFunctionsDev()],
+  plugins: [
+    react(),
+    cloudflare(),
+    sketchiziPagesFunctionsDev(),
+  ],
   server: {
     proxy: {
       "/collaboration": {
