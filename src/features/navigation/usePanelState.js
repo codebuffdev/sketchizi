@@ -24,5 +24,6 @@ export function usePanelState({ apiRef, closeNativeMenu }) {
     propertiesOpen: activePanel === "properties",
     moreToolsOpen: activePanel === "more-tools",
     shortcutHelpOpen: activePanel === "shortcuts",
+    architectureValidationOpen: activePanel === "architecture-validation",
   };
 }

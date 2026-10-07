@@ -3,9 +3,13 @@ import { fetchEraserCatalog, cacheEraserIcons, registerEraserServiceWorker, load
 import { umlIcons } from "../../umlLibrary";
 import { mindMapIcons } from "../../mindMapLibrary";
 import { logger } from "../../logging/logger";
+import { awsIcons } from "../../awsArchitectureLibrary";
+import { kubernetesIcons } from "../../kubernetesArchitectureLibrary";
 
 export function useIconCatalog() {
   const [activeCategory, setActiveCategory] = useState("Eraser Icons");
+  const [activeAwsCategory, setActiveAwsCategory] = useState("All");
+  const [activeKubernetesCategory, setActiveKubernetesCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [remoteIcons, setRemoteIcons] = useState([]);
   const [eraserCatalog, setEraserCatalog] = useState([]);
@@ -63,9 +67,41 @@ export function useIconCatalog() {
 
   useEffect(() => {
     const query = search.trim().toLowerCase();
-    const base = activeCategory === "UML Diagrams" ? umlIcons : activeCategory === "Mind Maps" ? mindMapIcons : eraserCatalog;
-    setRemoteIcons(query ? base.filter((icon) => icon.name.toLowerCase().includes(query) || icon.id.toLowerCase().includes(query)) : base);
-  }, [eraserCatalog, search, activeCategory]);
+    let base;
+    if (activeCategory === "UML Diagrams") {
+      base = umlIcons;
+    } else if (activeCategory === "Mind Maps") {
+      base = mindMapIcons;
+    } else if (activeCategory === "AWS Architecture") {
+      base = activeAwsCategory === "All"
+        ? awsIcons
+        : awsIcons.filter((icon) => icon.category === activeAwsCategory);
+    } else if (activeCategory === "Kubernetes") {
+      base = activeKubernetesCategory === "All"
+        ? kubernetesIcons
+        : kubernetesIcons.filter((icon) => icon.category === activeKubernetesCategory);
+    } else {
+      base = eraserCatalog;
+    }
+
+    if (!query) {
+      setRemoteIcons(base);
+      return;
+    }
+
+    setRemoteIcons(base.filter((icon) => {
+      const haystack = [
+        icon.name,
+        icon.id,
+        icon.subtitle,
+        ...(Array.isArray(icon.searchAliases) ? icon.searchAliases : []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    }));
+  }, [eraserCatalog, search, activeCategory, activeAwsCategory, activeKubernetesCategory]);
 
   const syncEraserLibrary = async () => {
     if (!eraserCatalog.length || eraserSyncing) return;
@@ -101,7 +137,7 @@ export function useIconCatalog() {
   });
 
   return {
-    activeCategory, setActiveCategory, search, setSearch, remoteIcons, eraserCatalog,
+    activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, remoteIcons, eraserCatalog,
     eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError,
     favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit,
     visibleIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed,

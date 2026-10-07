@@ -13,6 +13,7 @@ export function useNativeSketchiziMenu({
   propertiesAutoOpen,
   setPropertiesAutoOpen,
   toggleLayout,
+  togglePanel,
   layoutOpen,
   canEdit = true,
 }) {
@@ -53,7 +54,7 @@ export function useNativeSketchiziMenu({
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [fileActionsRef, toggleLayout]);
+  }, [fileActionsRef, toggleLayout, togglePanel]);
 
   useEffect(() => {
     const githubUrl = "https://github.com/codebuffdev";
@@ -101,7 +102,7 @@ export function useNativeSketchiziMenu({
             const propertiesSection = document.createElement("div");
             propertiesSection.dataset.sketchiziPropertiesMenu = "true";
             propertiesSection.className = "sketchizi-native-settings-section sketchizi-properties-section";
-            propertiesSection.innerHTML = `<div class="sketchizi-native-settings-title" data-sketchizi-properties-title>Properties</div><div class="sketchizi-native-settings-actions"><button type="button" class="sketchizi-collab-menu-button" data-sketchizi-collaborate aria-label="Open collaboration"><span class="sketchizi-collab-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 12.5 12 9a3.5 3.5 0 0 1 5 0l.5.5a3.5 3.5 0 0 1 0 5L14 18"/><path d="M15.5 11.5 12 15a3.5 3.5 0 0 1-5 0l-.5-.5a3.5 3.5 0 0 1 0-5L10 6"/></svg></span><span>Collab</span></button></div>`;
+            propertiesSection.innerHTML = `<div class="sketchizi-native-settings-title" data-sketchizi-properties-title>Properties</div><div class="sketchizi-native-settings-actions"><button type="button" class="sketchizi-collab-menu-button" data-sketchizi-collaborate aria-label="Open collaboration"><span class="sketchizi-collab-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 12.5 12 9a3.5 3.5 0 0 1 5 0l.5.5a3.5 3.5 0 0 1 0 5L14 18"/><path d="M15.5 11.5 12 15a3.5 3.5 0 0 1-5 0l-.5-.5a3.5 3.5 0 0 1 0-5L10 6"/></svg></span><span>Collab</span></button><button type="button" class="sketchizi-property-setting" data-sketchizi-architecture-validation aria-label="Open Architecture Validation"><span>Architecture Validation</span></button></div>`;
             const layoutSection = document.createElement("div");
             layoutSection.dataset.sketchiziLayoutMenu = "true";
             layoutSection.className = "sketchizi-native-settings-section sketchizi-layout-bottom-section";
@@ -228,6 +229,17 @@ export function useNativeSketchiziMenu({
         }
         button.classList.toggle("selected", button.dataset.themeMode === themeMode);
       });
+      const architectureValidationButton = document.querySelector("[data-sketchizi-architecture-validation]");
+      if (architectureValidationButton && architectureValidationButton.dataset.bound !== "true") {
+        architectureValidationButton.dataset.bound = "true";
+        architectureValidationButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          togglePanel?.("architecture-validation");
+        });
+      }
+      architectureValidationButton?.classList.toggle("enabled", false);
+
       const propertiesMenu = document.querySelector("[data-sketchizi-properties-menu]");
       const propertiesButton = propertiesMenu?.querySelector("[data-properties-auto-open]");
       if (propertiesButton && propertiesButton.dataset.bound !== "true") {
@@ -242,5 +254,5 @@ export function useNativeSketchiziMenu({
     const observer = new MutationObserver(scheduleCleanup);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => { observer.disconnect(); if (frame) cancelAnimationFrame(frame); };
-  }, [canEdit, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, layoutOpen, propertiesAutoOpen, recentFiles, recentFolders, refreshCurrentFolderFiles, setPropertiesAutoOpen, setThemeMode, themeMode]);
+  }, [canEdit, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, layoutOpen, propertiesAutoOpen, recentFiles, recentFolders, refreshCurrentFolderFiles, setPropertiesAutoOpen, setThemeMode, themeMode, togglePanel]);
 }

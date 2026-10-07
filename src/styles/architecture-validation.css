@@ -1,0 +1,276 @@
+.architecture-validation-toggle {
+  position: fixed;
+  top: 16px;
+  right: 210px;
+  z-index: 36;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid #e1e1e1;
+  border-radius: 9px;
+  background: rgba(255,255,255,.96);
+  color: #444;
+  box-shadow: 0 5px 18px rgba(0,0,0,.08);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.architecture-validation-toggle:hover,
+.architecture-validation-toggle.active {
+  background: #f0eff9;
+  border-color: #d9d6f4;
+}
+
+.architecture-validation-toggle-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.architecture-validation-panel {
+  position: fixed;
+  top: 68px;
+  right: 18px;
+  z-index: 45;
+  width: min(380px, calc(100vw - 36px));
+  max-height: calc(100vh - 86px);
+  overflow-y: auto;
+  padding: 15px;
+  border: 1px solid #dedede;
+  border-radius: 13px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 16px 42px rgba(0,0,0,.15);
+}
+
+.architecture-validation-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.architecture-validation-title {
+  font-size: 14px;
+  font-weight: 750;
+  color: #333;
+}
+
+.architecture-validation-subtitle {
+  margin-top: 3px;
+  color: #999;
+  font-size: 9px;
+}
+
+.architecture-validation-close {
+  width: 27px;
+  height: 27px;
+  border: 0;
+  border-radius: 7px;
+  background: #f2f2f2;
+  color: #555;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.architecture-validation-close:hover {
+  background: #e9e9e9;
+}
+
+.architecture-validation-empty {
+  padding: 28px 4px 12px;
+  color: #777;
+  font-size: 12px;
+  text-align: center;
+}
+
+.architecture-validation-content {
+  padding-top: 4px;
+}
+
+.architecture-validation-section {
+  padding: 11px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.architecture-validation-section:last-child {
+  border-bottom: 0;
+}
+
+.architecture-validation-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #777;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.architecture-validation-count {
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: 10px;
+  background: #f2f2f2;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.architecture-validation-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.architecture-validation-diagnostic {
+  padding: 9px 10px;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.architecture-validation-diagnostic-message {
+  color: #444;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.architecture-validation-diagnostic-code {
+  margin-top: 4px;
+  color: #999;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 9px;
+}
+
+.app.theme-dark .architecture-validation-toggle,
+.app.theme-dark .architecture-validation-panel {
+  background: rgba(31,31,34,.98);
+  border-color: #45454a;
+  color: #eee;
+}
+
+.app.theme-dark .architecture-validation-toggle {
+  color: #ddd;
+}
+
+.app.theme-dark .architecture-validation-toggle:hover,
+.app.theme-dark .architecture-validation-toggle.active {
+  background: #35343d;
+  border-color: #5b5870;
+}
+
+.app.theme-dark .architecture-validation-header {
+  border-color: #414146;
+}
+
+.app.theme-dark .architecture-validation-title,
+.app.theme-dark .architecture-validation-diagnostic-message {
+  color: #eee;
+}
+
+.app.theme-dark .architecture-validation-section {
+  border-color: #3c3c40;
+}
+
+.app.theme-dark .architecture-validation-close,
+.app.theme-dark .architecture-validation-diagnostic,
+.app.theme-dark .architecture-validation-count {
+  background: #29292d;
+  border-color: #414146;
+  color: #ccc;
+}
+
+.app.theme-dark .architecture-validation-close:hover {
+  background: #343438;
+}
+
+.app.theme-dark .architecture-validation-diagnostic-code,
+.app.theme-dark .architecture-validation-subtitle,
+.app.theme-dark .architecture-validation-section-title,
+.app.theme-dark .architecture-validation-empty {
+  color: #999;
+}
+
+@media (max-width: 760px) {
+  .architecture-validation-toggle {
+    top: calc(52px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+  }
+
+  .app.panel-open-architecture-validation .architecture-validation-toggle {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .architecture-validation-panel {
+    top: calc(100px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+    width: min(380px, calc(100vw - 16px - var(--safe-left) - var(--safe-right)));
+    max-height: calc(100dvh - 108px - var(--safe-top) - var(--safe-bottom));
+  }
+}
+
+.architecture-validation-diagnostic-action {
+  width: 100%;
+  border: 1px solid #ececec;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.architecture-validation-diagnostic-action:hover {
+  border-color: #d7d4ed;
+  background: #f5f4fb;
+}
+
+.architecture-validation-diagnostic-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  color: #666;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.architecture-validation-diagnostic-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+}
+
+.architecture-validation-provider {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: #f0f0f0;
+  color: #777;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.architecture-validation-diagnostic-meta .architecture-validation-diagnostic-code {
+  margin-top: 0;
+}
+
+.app.theme-dark .architecture-validation-diagnostic-action:hover {
+  border-color: #5b5870;
+  background: #35343d;
+}
+
+.app.theme-dark .architecture-validation-diagnostic-details {
+  color: #bbb;
+}
+
+.app.theme-dark .architecture-validation-provider {
+  background: #343438;
+  color: #aaa;
+}

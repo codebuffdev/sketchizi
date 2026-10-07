@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
+import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
 import LayoutToolbar from "./LayoutToolbar";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
@@ -14,6 +15,8 @@ import { useFileManager } from "./features/files/useFileManager";
 import { useIconCatalog } from "./features/icon-library/useIconCatalog";
 import { umlIcons } from "./umlLibrary";
 import { mindMapIcons } from "./mindMapLibrary";
+import { awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives, AWS_CATALOG_LOGO, AWS_CATALOG_LOGO_DARK } from "./awsArchitectureLibrary";
+import { kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives } from "./kubernetesArchitectureLibrary";
 import { useCanvasTools } from "./features/layout/useCanvasTools";
 import { useMinimapController } from "./features/canvas/useMinimapController";
 import { useExcalidrawScene } from "./features/canvas/useExcalidrawScene";
@@ -23,17 +26,27 @@ import MoreTools from "./components/app/MoreTools";
 import { useIconInsertion } from "./features/icon-library/useIconInsertion";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
+import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
+import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinitions";
+import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
+import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
+import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
+import { getSelectedKubernetesResource, updateKubernetesResource } from "./features/kubernetes-resources/kubernetesResourceService";
+import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } from "./features/aws-relationships/awsRelationshipService";
+import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 
 function App() {
   const iconCatalog = useIconCatalog();
-  const { activeCategory, setActiveCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
+  const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
+  const [architectureValidation, setArchitectureValidation] = useState({ errors: [], warnings: [], info: [] });
+  const architectureValidationSignatureRef = useRef("");
   const lastSelectionSignature = useRef("");
   const apiRef = useRef(null);
   const [apiReady, setApiReady] = useState(false);
@@ -63,7 +76,7 @@ function App() {
   const panelState = usePanelState({ apiRef, closeNativeMenu });
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
-  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, layoutOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen } = panelState;
+  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, layoutOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   const persistence = useSketchPersistence({ apiRef });
   const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, retryLocalSave, downloadRecoveryBackup } = persistence;
@@ -85,6 +98,74 @@ function App() {
 
   const canvasTools = useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit: collaborationCanEdit });
   const { applyLayout, setGrid, toggleGrid, activateArrowTool, activateSelectionTool, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected, hasTextSelection, hasArrowSelection, hasShapeSelection } = canvasTools;
+  const selectedAwsResource = getSelectedAwsResource(selectedElements);
+  const selectedAwsResourceDefinition = getAwsResourceDefinitionById(selectedAwsResource?.definitionId);
+  const selectedKubernetesResource = getSelectedKubernetesResource(selectedElements);
+  const selectedKubernetesResourceDefinition = getKubernetesResourceDefinitionById(selectedKubernetesResource?.definitionId);
+  const selectedAwsRelationship = selectedElements.length === 1 ? getAwsRelationship(selectedElements[0]) : null;
+  const selectedKubernetesRelationship = selectedElements.length === 1 ? getKubernetesRelationship(selectedElements[0]) : null;
+  const updateArchitectureValidation = useCallback((elements) => {
+    const graph = analyzeArchitectureGraph(elements);
+    const result = validateArchitectureWithAwsRules(graph);
+    const signature = JSON.stringify(result);
+    if (signature === architectureValidationSignatureRef.current) return;
+    architectureValidationSignatureRef.current = signature;
+    setArchitectureValidation(result);
+  }, []);
+  const selectArchitectureDiagnostic = useCallback((diagnostic) => {
+    const api = apiRef.current;
+    if (!api || (!diagnostic?.relationshipId && !diagnostic?.resourceId)) return;
+
+    const elements = api.getSceneElements();
+    const target = elements.find((element) => {
+      const metadata = diagnostic.relationshipId
+        ? [element.customData?.awsRelationship, element.customData?.kubernetesRelationship]
+        : [element.customData?.awsResource, element.customData?.kubernetesResource];
+      return metadata.some((entry) => {
+        if (!entry) return false;
+        if (diagnostic.provider && entry.provider !== diagnostic.provider) return false;
+        return diagnostic.relationshipId
+          ? entry.relationshipId === diagnostic.relationshipId
+          : entry.awsResourceId === diagnostic.resourceId || entry.kubernetesResourceId === diagnostic.resourceId;
+      });
+    });
+
+    if (!target) return;
+
+    api.updateScene({
+      appState: {
+        ...api.getAppState(),
+        selectedElementIds: { [target.id]: true },
+        selectedGroupIds: {},
+        selectedGroupForOperation: null,
+      },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+    api.scrollToContent?.([target], { fitToViewport: false, animate: true });
+  }, []);
+  const updateSelectedAwsResource = useCallback((patch) => {
+    if (!collaborationCanEdit || !selectedAwsResource?.awsResourceId) return;
+    updateAwsResource(apiRef.current, selectedAwsResource.awsResourceId, patch);
+  }, [collaborationCanEdit, selectedAwsResource?.awsResourceId]);
+  const updateSelectedKubernetesResource = useCallback((patch) => {
+    if (!collaborationCanEdit || !selectedKubernetesResource?.kubernetesResourceId) return;
+    updateKubernetesResource(apiRef.current, selectedKubernetesResource.kubernetesResourceId, patch);
+  }, [collaborationCanEdit, selectedKubernetesResource?.kubernetesResourceId]);
+  const updateSelectedAwsRelationshipType = useCallback((relationshipType) => {
+    if (!collaborationCanEdit || !selectedAwsRelationship?.relationshipId || !apiRef.current) return;
+    const currentElements = apiRef.current.getSceneElements();
+    const result = updateRelationshipType(currentElements, selectedAwsRelationship.relationshipId, relationshipType);
+    if (!result.changed) return;
+    apiRef.current.updateScene({ elements: result.elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+  }, [collaborationCanEdit, selectedAwsRelationship?.relationshipId]);
+  const updateSelectedKubernetesRelationshipType = useCallback((relationshipType) => {
+    if (!collaborationCanEdit || !selectedKubernetesRelationship?.relationshipId || !apiRef.current) return;
+    const currentElements = apiRef.current.getSceneElements();
+    const result = updateKubernetesRelationshipMetadata(currentElements, selectedKubernetesRelationship.relationshipId, { relationshipType });
+    if (!result.changed) return;
+    apiRef.current.updateScene({ elements: result.elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+  }, [collaborationCanEdit, selectedKubernetesRelationship?.relationshipId]);
+
   useSketchiziEscape({ activePanel, closePanel, commandPaletteOpen, closeCommandPalette, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef });
   useEffect(() => {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
@@ -114,11 +195,12 @@ function App() {
     currentFolder,
     fileActionsRef,
   });
-  useNativeSketchiziMenu({ fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, themeMode, setThemeMode, propertiesAutoOpen, setPropertiesAutoOpen, toggleLayout: togglePanel, layoutOpen, canEdit: collaborationCanEdit });
+  useNativeSketchiziMenu({ fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, themeMode, setThemeMode, propertiesAutoOpen, setPropertiesAutoOpen, toggleLayout: togglePanel, togglePanel, layoutOpen, canEdit: collaborationCanEdit });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, propertiesAutoOpen, updateMinimap, queueSketchSave,
     collaborationRemoteUpdateRef, collaborationRef, gridEnabled, gridSize, canEdit: collaborationCanEdit,
+    onArchitectureSceneChange: updateArchitectureValidation,
   });
 
   if (!sketchReady) {
@@ -171,13 +253,13 @@ function App() {
       {collaborationCanEdit && libraryOpen && (
         <IconLibraryPanel
           searchRef={searchRef} search={search} setSearch={setSearch}
-          activeCategory={activeCategory} setActiveCategory={setActiveCategory}
+          activeCategory={activeCategory} setActiveCategory={setActiveCategory} activeAwsCategory={activeAwsCategory} setActiveAwsCategory={setActiveAwsCategory} activeKubernetesCategory={activeKubernetesCategory} setActiveKubernetesCategory={setActiveKubernetesCategory}
           favorites={favorites} recentIcons={recentIcons} eraserCatalog={eraserCatalog}
           eraserSyncing={eraserSyncing} eraserSyncProgress={eraserSyncProgress}
           eraserSyncError={eraserSyncError} syncEraserLibrary={syncEraserLibrary} eraserCachedCount={eraserCachedCount}
           connectionMode={connectionMode} activateArrowTool={activateArrowTool}
           activateSelectionTool={activateSelectionTool} remoteLoading={remoteLoading}
-          visibleIcons={visibleIcons} umlIcons={umlIcons} mindMapIcons={mindMapIcons} iconDisplayLimit={iconDisplayLimit}
+          visibleIcons={visibleIcons} umlIcons={umlIcons} mindMapIcons={mindMapIcons} awsIcons={awsIcons} awsCategories={awsCategories} awsCategoryCounts={awsCategoryCounts} awsCategoryRepresentatives={awsCategoryRepresentatives} awsCatalogLogo={AWS_CATALOG_LOGO} awsCatalogLogoDark={AWS_CATALOG_LOGO_DARK} kubernetesIcons={kubernetesIcons} kubernetesCategories={kubernetesCategories} kubernetesCategoryCounts={kubernetesCategoryCounts} kubernetesCategoryRepresentatives={kubernetesCategoryRepresentatives} iconDisplayLimit={iconDisplayLimit}
           setIconDisplayLimit={setIconDisplayLimit} iconListRef={iconListRef}
           draggingIcon={draggingIcon} handleIconClick={handleIconClick}
           handleIconPointerDown={handleIconPointerDown} handleIconMouseDown={handleIconMouseDown} handleDragStart={handleDragStart} createStarterMindMap={createStarterMindMap}
@@ -192,7 +274,31 @@ function App() {
           hasShapeSelection={hasShapeSelection} hasArrowSelection={hasArrowSelection}
           hasTextSelection={hasTextSelection} applyToSelected={applyToSelected}
           applyToSelectedArrow={applyToSelectedArrow} updateSingleSelected={updateSingleSelected}
+          awsResource={selectedAwsResource} awsResourceDefinition={selectedAwsResourceDefinition} updateAwsResource={updateSelectedAwsResource}
+          kubernetesResource={selectedKubernetesResource} kubernetesResourceDefinition={selectedKubernetesResourceDefinition} updateKubernetesResource={updateSelectedKubernetesResource}
+          awsRelationship={selectedAwsRelationship} relationshipTypes={AWS_RELATIONSHIP_TYPES} updateAwsRelationshipType={updateSelectedAwsRelationshipType}
+          kubernetesRelationship={selectedKubernetesRelationship} kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES} updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
           readOnly={!collaborationCanEdit} authorship={collaborationAuthorship} selfId={collaborationClientId} participants={collaborationParticipants}
+        />
+      )}
+
+      <button
+        type="button"
+        className={architectureValidationOpen ? "architecture-validation-toggle active" : "architecture-validation-toggle"}
+        onClick={() => togglePanel("architecture-validation")}
+        title="Architecture validation"
+        aria-label="Architecture validation"
+        aria-expanded={architectureValidationOpen}
+      >
+        <span className="architecture-validation-toggle-icon">✓</span>
+        <span>Validation</span>
+      </button>
+
+      {architectureValidationOpen && (
+        <ArchitectureValidationPanel
+          validation={architectureValidation}
+          onClose={() => closePanel("architecture-validation")}
+          onSelectDiagnostic={selectArchitectureDiagnostic}
         />
       )}
 

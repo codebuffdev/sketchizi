@@ -1,6 +1,11 @@
 export default function PropertiesPanel({
   selectedCount, propertiesOpen, setPropertiesOpen, firstSelected, hasShapeSelection,
-  hasArrowSelection, hasTextSelection, applyToSelected, applyToSelectedArrow, updateSingleSelected, readOnly = false, authorship = {}, participants = [],
+  hasArrowSelection, hasTextSelection, applyToSelected, applyToSelectedArrow, updateSingleSelected,
+  awsResource = null, awsResourceDefinition = null, updateAwsResource = () => {},
+  kubernetesResource = null, kubernetesResourceDefinition = null, updateKubernetesResource = () => {},
+  awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
+  kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {},
+  readOnly = false, authorship = {}, participants = [],
 }) {
   return (
   <section className={`properties-panel${readOnly ? " read-only" : ""}`} aria-label="Properties and style">
@@ -20,6 +25,114 @@ export default function PropertiesPanel({
         aria-label="Close properties"
       >×</button>
     </div>
+
+    {awsRelationship && (
+      <div className="properties-section aws-relationship-properties">
+        <div className="properties-section-title">AWS Relationship</div>
+        <div className="property-row">
+          <label htmlFor="aws-relationship-type">Type</label>
+          <select
+            id="aws-relationship-type"
+            value={awsRelationship.relationshipType}
+            disabled={readOnly}
+            onChange={(event) => updateAwsRelationshipType(event.target.value)}
+          >
+            {relationshipTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+          </select>
+        </div>
+      </div>
+    )}
+
+    {kubernetesRelationship && (
+      <div className="properties-section kubernetes-relationship-properties">
+        <div className="properties-section-title">Kubernetes Relationship</div>
+        <div className="property-row">
+          <label htmlFor="kubernetes-relationship-type">Type</label>
+          <select
+            id="kubernetes-relationship-type"
+            value={kubernetesRelationship.relationshipType}
+            disabled={readOnly}
+            onChange={(event) => updateKubernetesRelationshipType(event.target.value)}
+          >
+            {kubernetesRelationshipTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+          </select>
+        </div>
+      </div>
+    )}
+
+    {awsResource && awsResourceDefinition && (
+      <div className="properties-section aws-resource-properties">
+        <div className="properties-section-title">AWS Resource</div>
+        <div className="aws-resource-meta">
+          <strong>{awsResourceDefinition.displayName}</strong>
+          <span>{awsResource.service} · {awsResource.resourceType}</span>
+        </div>
+        {awsResourceDefinition.properties.map((property) => {
+          const value = awsResource.properties?.[property.key] ?? property.defaultValue ?? "";
+          return (
+            <div className="property-row" key={property.key}>
+              <label htmlFor={`aws-resource-${property.key}`}>{property.label}</label>
+              {property.type === "select" ? (
+                <select
+                  id={`aws-resource-${property.key}`}
+                  value={value}
+                  disabled={readOnly}
+                  onChange={(event) => updateAwsResource({ [property.key]: event.target.value })}
+                >
+                  {property.options.map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              ) : (
+                <input
+                  id={`aws-resource-${property.key}`}
+                  className="property-number"
+                  type="text"
+                  value={value}
+                  disabled={readOnly}
+                  onChange={(event) => updateAwsResource({ [property.key]: event.target.value })}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
+
+    {kubernetesResource && kubernetesResourceDefinition && (
+      <div className="properties-section kubernetes-resource-properties">
+        <div className="properties-section-title">Kubernetes Resource</div>
+        <div className="aws-resource-meta">
+          <strong>{kubernetesResourceDefinition.displayName}</strong>
+          <span>Kubernetes · {kubernetesResource.resourceType}</span>
+        </div>
+        {kubernetesResourceDefinition.properties.map((property) => {
+          const value = kubernetesResource.properties?.[property.key] ?? property.defaultValue ?? "";
+          return (
+            <div className="property-row" key={property.key}>
+              <label htmlFor={`kubernetes-resource-${property.key}`}>{property.label}</label>
+              {property.type === "select" ? (
+                <select
+                  id={`kubernetes-resource-${property.key}`}
+                  value={value}
+                  disabled={readOnly}
+                  onChange={(event) => updateKubernetesResource({ [property.key]: event.target.value })}
+                >
+                  {property.options.map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              ) : (
+                <input
+                  id={`kubernetes-resource-${property.key}`}
+                  className="property-number"
+                  type={property.type === "number" ? "number" : "text"}
+                  value={value}
+                  disabled={readOnly}
+                  onChange={(event) => updateKubernetesResource({ [property.key]: property.type === "number" ? Number(event.target.value) : event.target.value })}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
 
     <div className="properties-section properties-appearance">
       <div className="properties-section-title">Appearance</div>

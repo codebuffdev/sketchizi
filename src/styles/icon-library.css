@@ -72,3 +72,19 @@
 }
 
 /* v0.12.1 enhanced minimap + large-diagram navigation */
+
+
+/* AWS Architecture catalog */
+.aws-catalog-logo-wrap { width: 22px; height: 22px; display: block; position: relative; }
+.aws-catalog-logo { width: 22px; height: 22px; display: block; object-fit: contain; }
+.aws-catalog-logo-dark { display: none; }
+.app.theme-dark .aws-catalog-logo-light { display: none; }
+.app.theme-dark .aws-catalog-logo-dark { display: block; }
+.aws-library-status { display: grid; gap: 10px; margin: 0 12px 12px; padding: 10px; border: 1px solid var(--ui-border-soft); border-radius: 10px; background: var(--ui-surface-soft); }
+.aws-library-status > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.aws-library-status > div:first-child span { color: var(--ui-text-muted); }
+.aws-category-list { display: grid; grid-template-columns: 1fr; gap: 4px; max-height: 260px; overflow: auto; }
+.aws-category { width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 7px 8px; border-radius: 7px; }
+.aws-category-label { display: inline-flex; align-items: center; min-width: 0; gap: 8px; }
+.aws-category-icon { width: 18px; height: 18px; flex: 0 0 18px; object-fit: contain; display: block; }
+.aws-category .category-count { margin-left: 8px; }

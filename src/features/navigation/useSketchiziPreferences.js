@@ -9,7 +9,7 @@ export function useSketchiziPreferences({ apiRef, closePanel, openPanel, toggleP
   });
   const [systemDark, setSystemDark] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   const [propertiesAutoOpen, setPropertiesAutoOpen] = useState(() => {
-    try { const saved = localStorage.getItem("sketchizi-properties-auto-open"); return saved === null ? false : saved === "true"; }
+    try { const saved = localStorage.getItem("sketchizi-properties-auto-open"); return saved === null ? true : saved === "true"; }
     catch { return false; }
   });
   const isDarkTheme = themeMode === "dark" || (themeMode === "system" && systemDark);

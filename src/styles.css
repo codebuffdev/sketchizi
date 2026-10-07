@@ -2,6 +2,7 @@
 @import "./styles/library.css";
 @import "./styles/layout.css";
 @import "./styles/properties.css";
+@import "./styles/architecture-validation.css";
 @import "./styles/icon-library.css";
 @import "./styles/minimap.css";
 @import "./styles/theme.css";
@@ -9,3 +10,11 @@
 @import "./styles/shell.css";
 @import "./styles/command-palette.css";
 @import "./styles/responsive.css";
+
+.kubernetes-library-status { margin: 10px 0 14px; }
+.kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
+.kubernetes-library-status > div:first-child span { color: var(--text-muted); font-size: 12px; }
+.kubernetes-category-list { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow: auto; }
+.kubernetes-category { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.kubernetes-category-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.kubernetes-category-icon { width: 22px; height: 22px; object-fit: contain; flex: 0 0 auto; }

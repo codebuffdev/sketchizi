@@ -8,7 +8,10 @@
 .app.panel-open-properties .layout-toolbar,
 .app.panel-open-properties .library-toggle,
 .app.panel-open-layout .library-toggle,
-.app.panel-open-layout .properties-toggle {
+.app.panel-open-layout .properties-toggle,
+.app.panel-open-architecture-validation .library-toggle,
+.app.panel-open-architecture-validation .properties-toggle,
+.app.panel-open-architecture-validation .layout-toolbar {
   visibility: hidden;
   pointer-events: none;
 }
@@ -16,6 +19,11 @@
 .app.panel-open-library .library-toggle,
 .app.panel-open-properties .properties-toggle,
 .app.panel-open-layout .layout-toolbar {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.app.panel-open-architecture-validation .architecture-validation-toggle {
   visibility: visible;
   pointer-events: auto;
 }

@@ -1,5 +1,7 @@
 import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
 import { logger } from "../../logging/logger";
+import { insertAwsResource, isIntelligentAwsResourceIcon } from "../aws-resources/awsResourceService";
+import { insertKubernetesResource, isIntelligentKubernetesResourceIcon } from "../kubernetes-resources/kubernetesResourceService";
 
 export function createEditableLibraryElements(icon, x, y) {
     const source = icon?.source;
@@ -286,6 +288,16 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
 
     if (icon.source === "uml" || icon.source === "mindmap") {
       commitInsertedElements(createEditableLibraryElements(icon, x, y));
+      return;
+    }
+
+    if (isIntelligentAwsResourceIcon(icon)) {
+      void insertAwsResource({ api, icon, x, y, markRecentlyUsed });
+      return;
+    }
+
+    if (isIntelligentKubernetesResourceIcon(icon)) {
+      void insertKubernetesResource({ api, icon, x, y, markRecentlyUsed });
       return;
     }
 

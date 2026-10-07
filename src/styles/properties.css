@@ -254,3 +254,26 @@
   }
 }
 
+
+.aws-resource-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.aws-resource-meta strong {
+  color: #444;
+  font-size: 11px;
+}
+
+.aws-resource-meta span {
+  color: #999;
+  font-size: 9px;
+}
+
+.aws-resource-properties input:disabled,
+.aws-resource-properties select:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
