@@ -41,13 +41,6 @@ export default function SketchiziCanvas({
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />
-      <button
-        type="button"
-        className={minimapOpen ? "minimap-toggle active" : "minimap-toggle"}
-        onClick={() => setMinimapOpen((open) => !open)}
-        aria-label={minimapOpen ? "Hide minimap" : "Show minimap"}
-        title={minimapOpen ? "Hide minimap" : "Show minimap"}
-      >{minimapOpen ? "▦" : "▧"}</button>
       <ShortcutHelp open={shortcutHelpOpen} onClose={closeShortcuts} />
     </main>
   );

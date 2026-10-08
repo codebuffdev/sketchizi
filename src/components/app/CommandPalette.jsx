@@ -83,16 +83,8 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
         className="sketchizi-command-palette"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="sketchizi-command-palette-title"
+        aria-label="Sketchizi command palette"
       >
-        <div className="sketchizi-command-palette-header">
-          <div className="sketchizi-command-palette-title-wrap">
-            <div className="sketchizi-command-palette-eyebrow">SKETCHIZI COMMANDS</div>
-            <h2 id="sketchizi-command-palette-title">Command Palette</h2>
-          </div>
-          <kbd className="sketchizi-command-palette-shortcut">Ctrl+Shift+P</kbd>
-        </div>
-
         <label className="sketchizi-command-search-wrap">
           <span className="sketchizi-command-search-icon" aria-hidden="true">⌕</span>
           <input
@@ -118,7 +110,10 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
             autoComplete="off"
             spellCheck="false"
           />
-          <span className="sketchizi-command-search-hint" aria-hidden="true">esc</span>
+          <span className="sketchizi-command-search-hints" aria-hidden="true">
+            <kbd>Ctrl+Shift+P</kbd>
+            <kbd>Esc</kbd>
+          </span>
         </label>
 
         <div className="sketchizi-command-results" role="listbox" aria-label="Commands">
@@ -126,7 +121,7 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
             <div className="sketchizi-command-empty">No commands found</div>
           ) : (
             categories.map((group) => (
-              <div className="sketchizi-command-group" key={group.category}>
+              <div className="sketchizi-command-group" key={group.category} data-category={group.category}>
                 <div className="sketchizi-command-group-title">{group.category}</div>
                 {group.commands.map((command) => {
                   const index = flattenedIndex++;

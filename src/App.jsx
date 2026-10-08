@@ -35,6 +35,7 @@ import { getSelectedKubernetesResource, updateKubernetesResource } from "./featu
 import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } from "./features/aws-relationships/awsRelationshipService";
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
+import DesktopAppHeader from "./components/app/DesktopAppHeader";
 
 function App() {
   const iconCatalog = useIconCatalog();
@@ -219,104 +220,172 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {collaborationCanEdit && (
-        <button
-          className={libraryOpen ? "library-toggle active" : "library-toggle"}
-          onClick={() => {
-            const nextOpen = !libraryOpen;
-            togglePanel("icon-library");
-            if (nextOpen) requestAnimationFrame(() => searchRef.current?.focus());
-          }}
-          type="button"
-          aria-label={libraryOpen ? "Close icon library" : "Open icon library"}
-          aria-expanded={libraryOpen}
-        >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5V5.5Z" />
-          <path d="M4 5.5v16" />
-          <path d="M8 7h8" />
-          <path d="M8 11h8" />
-        </svg>
-        </button>
-      )}
-
-      {collaborationCanEdit && libraryOpen && (
-        <IconLibraryPanel
-          searchRef={searchRef} search={search} setSearch={setSearch}
-          activeCategory={activeCategory} setActiveCategory={setActiveCategory} activeAwsCategory={activeAwsCategory} setActiveAwsCategory={setActiveAwsCategory} activeKubernetesCategory={activeKubernetesCategory} setActiveKubernetesCategory={setActiveKubernetesCategory}
-          favorites={favorites} recentIcons={recentIcons} eraserCatalog={eraserCatalog}
-          eraserSyncing={eraserSyncing} eraserSyncProgress={eraserSyncProgress}
-          eraserSyncError={eraserSyncError} syncEraserLibrary={syncEraserLibrary} eraserCachedCount={eraserCachedCount}
-          connectionMode={connectionMode} activateArrowTool={activateArrowTool}
-          activateSelectionTool={activateSelectionTool} remoteLoading={remoteLoading}
-          visibleIcons={visibleIcons} umlIcons={umlIcons} mindMapIcons={mindMapIcons} awsIcons={awsIcons} awsCategories={awsCategories} awsCategoryCounts={awsCategoryCounts} awsCategoryRepresentatives={awsCategoryRepresentatives} awsCatalogLogo={AWS_CATALOG_LOGO} awsCatalogLogoDark={AWS_CATALOG_LOGO_DARK} kubernetesIcons={kubernetesIcons} kubernetesCategories={kubernetesCategories} kubernetesCategoryCounts={kubernetesCategoryCounts} kubernetesCategoryRepresentatives={kubernetesCategoryRepresentatives} iconDisplayLimit={iconDisplayLimit}
-          setIconDisplayLimit={setIconDisplayLimit} iconListRef={iconListRef}
-          draggingIcon={draggingIcon} handleIconClick={handleIconClick}
-          handleIconPointerDown={handleIconPointerDown} handleIconMouseDown={handleIconMouseDown} handleDragStart={handleDragStart} createStarterMindMap={createStarterMindMap}
-          isFavorite={isFavorite} toggleFavorite={toggleFavorite} remoteError={remoteError}
-        />
-      )}
-
-      {collaborationCanEdit && selectedCount > 0 && propertiesOpen && (
-        <PropertiesPanel
-          selectedCount={selectedCount} propertiesOpen={propertiesOpen}
-          setPropertiesOpen={(next) => (next ? openPanel("properties") : closePanel("properties"))} firstSelected={firstSelected}
-          hasShapeSelection={hasShapeSelection} hasArrowSelection={hasArrowSelection}
-          hasTextSelection={hasTextSelection} applyToSelected={applyToSelected}
-          applyToSelectedArrow={applyToSelectedArrow} updateSingleSelected={updateSingleSelected}
-          awsResource={selectedAwsResource} awsResourceDefinition={selectedAwsResourceDefinition} updateAwsResource={updateSelectedAwsResource}
-          kubernetesResource={selectedKubernetesResource} kubernetesResourceDefinition={selectedKubernetesResourceDefinition} updateKubernetesResource={updateSelectedKubernetesResource}
-          awsRelationship={selectedAwsRelationship} relationshipTypes={AWS_RELATIONSHIP_TYPES} updateAwsRelationshipType={updateSelectedAwsRelationshipType}
-          kubernetesRelationship={selectedKubernetesRelationship} kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES} updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
-          readOnly={!collaborationCanEdit} authorship={collaborationAuthorship} selfId={collaborationClientId} participants={collaborationParticipants}
-        />
-      )}
-
-      <button
-        type="button"
-        className={architectureValidationOpen ? "architecture-validation-toggle active" : "architecture-validation-toggle"}
-        onClick={() => togglePanel("architecture-validation")}
-        title="Architecture validation"
-        aria-label="Architecture validation"
-        aria-expanded={architectureValidationOpen}
+      <DesktopAppHeader
+        commands={commands}
+        openCommandPalette={commandPalette.openCommandPalette}
+        setCollaborationOpen={setCollaborationOpen}
+        startCollaboration={startCollaboration}
+        collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}
+        libraryToggle={collaborationCanEdit ? (
+          <button
+            className={libraryOpen ? "library-toggle desktop-app-library-toggle active" : "library-toggle desktop-app-library-toggle"}
+            onClick={() => {
+              const nextOpen = !libraryOpen;
+              togglePanel("icon-library");
+              if (nextOpen) requestAnimationFrame(() => searchRef.current?.focus());
+            }}
+            type="button"
+            aria-label={libraryOpen ? "Close icon library" : "Open icon library"}
+            title={libraryOpen ? "Close Icon Library" : "Open Icon Library"}
+            aria-expanded={libraryOpen}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5V5.5Z" />
+              <path d="M4 5.5v16" />
+              <path d="M8 7h8" />
+              <path d="M8 11h8" />
+            </svg>
+          </button>
+        ) : null}
       >
-        <span className="architecture-validation-toggle-icon">✓</span>
-        <span>Validation</span>
-      </button>
+        {collaborationCanEdit && propertiesAutoOpen && selectedCount > 0 && (
+          <button
+            type="button"
+            className={propertiesOpen ? "properties-toggle active" : "properties-toggle"}
+            onClick={() => togglePanel("properties")}
+            title="Properties and style"
+            aria-label="Properties and style"
+            aria-expanded={propertiesOpen}
+          >
+            <span className="properties-toggle-icon">◧</span>
+            <span>Properties</span>
+          </button>
+        )}
 
-      {architectureValidationOpen && (
-        <ArchitectureValidationPanel
-          validation={architectureValidation}
-          onClose={() => closePanel("architecture-validation")}
-          onSelectDiagnostic={selectArchitectureDiagnostic}
-        />
-      )}
+        {collaborationCanEdit && (
+          <MoreTools
+            open={moreToolsOpen}
+            anchor={moreToolsAnchor}
+            position={positionMoreToolsButton}
+            activateTool={activateMoreTool}
+            toggle={togglePanel}
+            canEdit={collaborationCanEdit}
+            placement="header"
+          />
+        )}
 
-      {collaborationCanEdit && propertiesAutoOpen && selectedCount > 0 && (
         <button
           type="button"
-          className={propertiesOpen ? "properties-toggle active" : "properties-toggle"}
-          onClick={() => {
-            togglePanel("properties");
-          }}
-          title="Properties and style"
-          aria-label="Properties and style"
-          aria-expanded={propertiesOpen}
+          className={architectureValidationOpen ? "architecture-validation-toggle active" : "architecture-validation-toggle"}
+          onClick={() => togglePanel("architecture-validation")}
+          title="Architecture validation"
+          aria-label="Architecture validation"
+          aria-expanded={architectureValidationOpen}
         >
-          <span className="properties-toggle-icon">◧</span>
-          <span>Properties</span>
+          <span className="architecture-validation-toggle-icon">✓</span>
+          <span>Validation</span>
         </button>
-      )}
+
+      </DesktopAppHeader>
+
+      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
+        <aside className={`desktop-resources-region ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
+          {collaborationCanEdit && (
+            <IconLibraryPanel
+              searchRef={searchRef} search={search} setSearch={setSearch}
+              activeCategory={activeCategory} setActiveCategory={setActiveCategory} activeAwsCategory={activeAwsCategory} setActiveAwsCategory={setActiveAwsCategory} activeKubernetesCategory={activeKubernetesCategory} setActiveKubernetesCategory={setActiveKubernetesCategory}
+              favorites={favorites} recentIcons={recentIcons} eraserCatalog={eraserCatalog}
+              eraserSyncing={eraserSyncing} eraserSyncProgress={eraserSyncProgress}
+              eraserSyncError={eraserSyncError} syncEraserLibrary={syncEraserLibrary} eraserCachedCount={eraserCachedCount}
+              connectionMode={connectionMode} activateArrowTool={activateArrowTool}
+              activateSelectionTool={activateSelectionTool} remoteLoading={remoteLoading}
+              visibleIcons={visibleIcons} umlIcons={umlIcons} mindMapIcons={mindMapIcons} awsIcons={awsIcons} awsCategories={awsCategories} awsCategoryCounts={awsCategoryCounts} awsCategoryRepresentatives={awsCategoryRepresentatives} awsCatalogLogo={AWS_CATALOG_LOGO} awsCatalogLogoDark={AWS_CATALOG_LOGO_DARK} kubernetesIcons={kubernetesIcons} kubernetesCategories={kubernetesCategories} kubernetesCategoryCounts={kubernetesCategoryCounts} kubernetesCategoryRepresentatives={kubernetesCategoryRepresentatives} iconDisplayLimit={iconDisplayLimit}
+              setIconDisplayLimit={setIconDisplayLimit} iconListRef={iconListRef}
+              draggingIcon={draggingIcon} handleIconClick={handleIconClick}
+              handleIconPointerDown={handleIconPointerDown} handleIconMouseDown={handleIconMouseDown} handleDragStart={handleDragStart} createStarterMindMap={createStarterMindMap}
+              isFavorite={isFavorite} toggleFavorite={toggleFavorite} remoteError={remoteError}
+              onClose={() => closePanel("icon-library")}
+            />
+          )}
+        </aside>
+
+        <section className="desktop-canvas-region" aria-label="Canvas workspace">
+          <SketchiziCanvas
+            savedSketch={savedSketch}
+            isDarkTheme={isDarkTheme}
+            handleExcalidrawAPI={handleExcalidrawAPI}
+            handleChange={handleExcalidrawChange}
+            handleDrop={handleDrop}
+            minimapOpen={minimapOpen}
+            minimapScene={minimapScene}
+            apiRef={apiRef}
+            minimapDragRef={minimapDragRef}
+            centerOnMinimap={centerOnMinimap}
+            closeShortcuts={() => closePanel("shortcuts")}
+            shortcutHelpOpen={shortcutHelpOpen}
+            setMinimapOpen={setMinimapOpen}
+            collaborationParticipants={collaborationParticipants}
+            collaborationSelfId={collaborationClientId}
+            updateCollaborationCursor={updateCollaborationCursor}
+            onViewportChange={markLocalViewportNavigation}
+            viewModeEnabled={collaborationPermission === "viewer"}
+          />
+
+          {draggingIcon && (
+            <div
+              className="icon-drag-ghost"
+              style={{ left: draggingIcon.x, top: draggingIcon.y }}
+              aria-hidden="true"
+            >
+              <img src={draggingIcon.icon.src} alt="" draggable={false} />
+              <span>{draggingIcon.icon.name}</span>
+            </div>
+          )}
+
+        </section>
+
+        <aside
+          className={`desktop-context-region ${propertiesOpen ? "properties-state-open" : "properties-state-closed"} ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
+          aria-label="Properties and architecture validation"
+        >
+          {collaborationCanEdit && selectedCount > 0 && (propertiesOpen || architectureValidationOpen) && (
+            <div className={`desktop-properties-host ${propertiesOpen ? "is-open" : "is-closed"}`}>
+              <PropertiesPanel
+                selectedCount={selectedCount} propertiesOpen={propertiesOpen}
+                setPropertiesOpen={(next) => (next ? openPanel("properties") : closePanel("properties"))} firstSelected={firstSelected}
+                hasShapeSelection={hasShapeSelection} hasArrowSelection={hasArrowSelection}
+                hasTextSelection={hasTextSelection} applyToSelected={applyToSelected}
+                applyToSelectedArrow={applyToSelectedArrow} updateSingleSelected={updateSingleSelected}
+                awsResource={selectedAwsResource} awsResourceDefinition={selectedAwsResourceDefinition} updateAwsResource={updateSelectedAwsResource}
+                kubernetesResource={selectedKubernetesResource} kubernetesResourceDefinition={selectedKubernetesResourceDefinition} updateKubernetesResource={updateSelectedKubernetesResource}
+                awsRelationship={selectedAwsRelationship} relationshipTypes={AWS_RELATIONSHIP_TYPES} updateAwsRelationshipType={updateSelectedAwsRelationshipType}
+                kubernetesRelationship={selectedKubernetesRelationship} kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES} updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
+                readOnly={!collaborationCanEdit} authorship={collaborationAuthorship} selfId={collaborationClientId} participants={collaborationParticipants}
+              />
+            </div>
+          )}
+
+          {(propertiesOpen || architectureValidationOpen) && (
+            <div className={`desktop-validation-host ${architectureValidationOpen ? "is-open" : "is-closed"}`}>
+              <ArchitectureValidationPanel
+                validation={architectureValidation}
+                onClose={() => closePanel("architecture-validation")}
+                onSelectDiagnostic={selectArchitectureDiagnostic}
+              />
+            </div>
+          )}
+        </aside>
+      </div>
 
       <LayoutToolbar
         showTrigger={false}
@@ -329,22 +398,6 @@ function App() {
         applyLayout={applyLayout} gridEnabled={gridEnabled} toggleGrid={toggleGrid}
         setGrid={setGrid} gridSize={gridSize} readOnly={!collaborationCanEdit}
       />
-
-
-      {draggingIcon && (
-        <div
-          className="icon-drag-ghost"
-          style={{ left: draggingIcon.x, top: draggingIcon.y }}
-          aria-hidden="true"
-        >
-          <img src={draggingIcon.icon.src} alt="" draggable={false} />
-          <span>{draggingIcon.icon.name}</span>
-        </div>
-      )}
-
-      {collaborationCanEdit && (
-        <MoreTools open={moreToolsOpen} anchor={moreToolsAnchor} position={positionMoreToolsButton} activateTool={activateMoreTool} toggle={togglePanel} canEdit={collaborationCanEdit} />
-      )}
 
       <CommandPalette
         open={commandPaletteOpen}
@@ -402,29 +455,7 @@ function App() {
           </div>
         </div>
       )}
-
-      <SketchiziCanvas
-        savedSketch={savedSketch}
-        isDarkTheme={isDarkTheme}
-        handleExcalidrawAPI={handleExcalidrawAPI}
-        handleChange={handleExcalidrawChange}
-        handleDrop={handleDrop}
-        minimapOpen={minimapOpen}
-        minimapScene={minimapScene}
-        apiRef={apiRef}
-        minimapDragRef={minimapDragRef}
-        centerOnMinimap={centerOnMinimap}
-        closeShortcuts={() => closePanel("shortcuts")}
-        shortcutHelpOpen={shortcutHelpOpen}
-        setMinimapOpen={setMinimapOpen}
-        collaborationParticipants={collaborationParticipants}
-        collaborationSelfId={collaborationClientId}
-        updateCollaborationCursor={updateCollaborationCursor}
-        onViewportChange={markLocalViewportNavigation}
-        viewModeEnabled={collaborationPermission === "viewer"}
-      />
     </div>
   );
 }
-
 export default App;

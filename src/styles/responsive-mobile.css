@@ -1,0 +1,515 @@
+/* Sketchizi mobile responsive model
+ * Phone layout only. Desktop/tablet rules remain the source of truth above.
+ * This file is intentionally loaded last so the phone interaction model is
+ * explicit and does not require changes to application behavior. */
+
+.library-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.library-panel-label-mobile {
+  display: none;
+}
+
+.mobile-panel-close {
+  display: none;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ui-surface-soft, #f2f2f4);
+  color: var(--ui-text, #444);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.more-tools-menu-header,
+.more-tools-menu-close {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  :root {
+    --sketchizi-mobile-bottom-reserve: 68px;
+  }
+
+  html,
+  body,
+  #root,
+  .app,
+  .canvas,
+  .canvas .excalidraw,
+  .canvas .excalidraw-container {
+    width: 100%;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .app::after {
+    display: none;
+  }
+
+  /* Keep Sketchizi-owned access points compact and outside the drawing area.
+     They remain overlays, so opening/closing them never resizes the canvas. */
+  .library-toggle,
+  .properties-toggle,
+  .architecture-validation-toggle {
+    top: calc(50px + var(--safe-top, 0px));
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 11px;
+    box-shadow: 0 5px 18px rgba(0,0,0,.10);
+    z-index: 90;
+  }
+
+  .library-toggle {
+    left: calc(8px + var(--safe-left, 0px));
+  }
+
+  .properties-toggle {
+    right: calc(8px + var(--safe-right, 0px));
+  }
+
+  .architecture-validation-toggle {
+    right: calc(60px + var(--safe-right, 0px));
+  }
+
+  .library-toggle svg,
+  .properties-toggle-icon,
+  .architecture-validation-toggle-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 19px;
+  }
+
+  .properties-toggle > span:not(.properties-toggle-icon),
+  .architecture-validation-toggle > span:not(.architecture-validation-toggle-icon) {
+    display: none;
+  }
+
+  /* Excalidraw owns the native mobile toolbar. Keep it compact and centered,
+     while Sketchizi's More Tools action occupies the same bottom lane. */
+  .excalidraw .App-bottom-bar {
+    max-width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px));
+  }
+
+  .excalidraw .App-toolbar {
+    max-width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px));
+  }
+
+  .excalidraw .App-toolbar__extra-tools-trigger {
+    visibility: hidden !important;
+  }
+
+  /* Minimap is secondary on phones; removing it gives the canvas the full
+     workspace requested by the mobile design model. */
+  .minimap,
+  .minimap-toggle {
+    display: none !important;
+  }
+
+  /* Resource drawer: left slide-in surface, full phone height, internal scroll. */
+  .library-panel,
+  .app.panel-open-library .library-panel {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: min(92vw, 390px);
+    height: 100dvh;
+    max-width: 92vw;
+    max-height: none;
+    padding: calc(12px + var(--safe-top, 0px)) 12px calc(12px + var(--safe-bottom, 0px));
+    border-radius: 0 18px 18px 0;
+    border-left: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    overscroll-behavior: contain;
+    z-index: 200;
+    box-shadow: 12px 0 42px rgba(0,0,0,.18);
+  }
+
+  .library-panel-header {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 2px 10px;
+  }
+
+  .library-panel-header .label {
+    padding: 0;
+    font-size: 15px;
+    letter-spacing: 0;
+    color: var(--ui-text-strong, #202020);
+  }
+
+  .library-panel-label-desktop {
+    display: none;
+  }
+
+  .library-panel-label-mobile {
+    display: inline;
+  }
+
+  .mobile-panel-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .library-panel .search-wrap,
+  .library-panel .quick-categories,
+  .library-panel .eraser-library-status,
+  .library-panel .uml-library-status,
+  .library-panel .mindmap-library-status,
+  .library-panel .kubernetes-library-status,
+  .library-panel .aws-library-status,
+  .library-panel .icons {
+    flex: 0 0 auto;
+  }
+
+  .library-panel .search {
+    height: 44px;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .library-panel .quick-categories {
+    max-height: 154px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .library-panel .category {
+    min-height: 44px;
+  }
+
+  .library-panel .icons {
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    margin-top: 12px;
+  }
+
+  .library-panel .section-heading {
+    flex: 0 0 auto;
+  }
+
+  .library-panel .icon-grid {
+    min-height: 0;
+    flex: 1 1 auto;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .library-panel .icon-card {
+    min-height: 112px;
+    touch-action: pan-y;
+  }
+
+  .library-panel .favorite-button {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  /* Properties drawer: right side, same full-height interaction model. */
+  .properties-panel,
+  .app.panel-open-properties .properties-panel {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: min(92vw, 390px);
+    height: 100dvh;
+    max-width: 92vw;
+    max-height: none;
+    padding: calc(12px + var(--safe-top, 0px)) 14px calc(12px + var(--safe-bottom, 0px));
+    border-radius: 18px 0 0 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 200;
+    box-shadow: -12px 0 42px rgba(0,0,0,.18);
+  }
+
+  .properties-header {
+    min-height: 44px;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+
+  .properties-close,
+  .architecture-validation-close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 24px;
+  }
+
+  .property-row select,
+  .property-number,
+  .color-text,
+  .property-range,
+  .property-segmented button,
+  .style-options button {
+    min-height: 44px;
+  }
+
+  .property-row select,
+  .property-number,
+  .color-text {
+    height: 44px;
+    font-size: 12px;
+  }
+
+  /* Validation drawer: preserve the K6 data/selection behavior, changing only
+     the surface geometry and typography needed for a phone viewport. */
+  .architecture-validation-panel,
+  .app.panel-open-architecture-validation .architecture-validation-panel {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: min(92vw, 390px);
+    height: 100dvh;
+    max-width: 92vw;
+    max-height: none;
+    padding: calc(12px + var(--safe-top, 0px)) 14px calc(12px + var(--safe-bottom, 0px));
+    border-radius: 18px 0 0 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 200;
+    box-shadow: -12px 0 42px rgba(0,0,0,.18);
+  }
+
+  .architecture-validation-header {
+    min-height: 44px;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+
+  .architecture-validation-title {
+    font-size: 15px;
+  }
+
+  .architecture-validation-subtitle {
+    font-size: 10px;
+  }
+
+  .architecture-validation-section-title {
+    min-height: 32px;
+    font-size: 10px;
+  }
+
+  .architecture-validation-diagnostic,
+  .architecture-validation-diagnostic-action {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .architecture-validation-diagnostic-message {
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .architecture-validation-diagnostic-details {
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+
+  .architecture-validation-diagnostic-code {
+    font-size: 9px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* More Tools becomes a real bottom sheet on phones. Actions still delegate
+     to the existing useMoreTools/Excalidraw commands. */
+  .sketchizi-more-tools {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 300;
+    pointer-events: none;
+  }
+
+  .sketchizi-more-tools-trigger {
+    position: fixed;
+    left: auto !important;
+    top: auto !important;
+    right: calc(8px + var(--safe-right, 0px));
+    bottom: calc(8px + var(--safe-bottom, 0px));
+    transform: none;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    border: 1px solid var(--ui-border, #ddd);
+    border-radius: 11px;
+    background: var(--ui-surface-solid, #fff);
+    color: var(--ui-text, #333);
+    box-shadow: 0 5px 18px rgba(0,0,0,.12);
+    font-size: 22px;
+  }
+
+  .sketchizi-more-tools-menu {
+    position: fixed;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    max-height: min(78dvh, 620px);
+    overflow-y: auto;
+    padding: 10px 10px calc(10px + var(--safe-bottom, 0px));
+    border: 1px solid var(--ui-border, #ddd);
+    border-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    background: var(--ui-surface-solid, #fff);
+    box-shadow: 0 -16px 42px rgba(0,0,0,.18);
+  }
+
+  .more-tools-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 4px 8px;
+    border-bottom: 1px solid var(--ui-border-soft, #eee);
+    color: var(--ui-text-strong, #222);
+    font-size: 15px;
+    font-weight: 750;
+  }
+
+  .more-tools-menu-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: var(--ui-surface-soft, #f2f2f4);
+    color: var(--ui-text, #444);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .sketchizi-more-tools-menu button[role="menuitem"] {
+    min-height: 48px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+
+  .more-tools-section-title {
+    padding: 12px 10px 6px;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  /* When a mobile drawer is open, its own close button is the primary control;
+     keep the canvas tools underneath it rather than stacking extra chrome. */
+  .app.panel-open-library .library-toggle,
+  .app.panel-open-properties .properties-toggle,
+  .app.panel-open-architecture-validation .architecture-validation-toggle {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .app.panel-open-library .library-panel,
+  .app.panel-open-properties .properties-panel,
+  .app.panel-open-architecture-validation .architecture-validation-panel {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* Active collaboration status may coexist with a drawer. The drawer is an
+     overlay and does not move the canvas or the collaboration state. */
+  .app:has(.collaboration-status-bar) .library-panel,
+  .app:has(.collaboration-status-bar) .properties-panel,
+  .app:has(.collaboration-status-bar) .layout-popover,
+  .app:has(.collaboration-status-bar).panel-open-library .library-panel,
+  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel {
+    top: 0;
+    max-height: none;
+  }
+
+  .collaboration-status-bar {
+    max-width: calc(100vw - 16px);
+  }
+
+  /* Prevent long labels from producing page-level horizontal overflow. */
+  .library-panel,
+  .properties-panel,
+  .architecture-validation-panel,
+  .sketchizi-more-tools-menu {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 480px) and (orientation: landscape) {
+  .library-panel,
+  .properties-panel,
+  .architecture-validation-panel {
+    width: min(78vw, 380px);
+    max-width: 78vw;
+  }
+
+  .library-panel .quick-categories {
+    max-height: 96px;
+  }
+
+  .library-panel .icon-grid {
+    gap: 6px;
+  }
+
+  .library-panel .icon-card {
+    min-height: 96px;
+  }
+
+  .architecture-validation-panel,
+  .properties-panel {
+    padding-top: calc(8px + var(--safe-top, 0px));
+  }
+
+  .sketchizi-more-tools-menu {
+    max-height: 88dvh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-panel,
+  .properties-panel,
+  .architecture-validation-panel,
+  .sketchizi-more-tools-menu {
+    scroll-behavior: auto;
+  }
+}

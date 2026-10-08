@@ -1,12 +1,16 @@
-export default function MoreTools({ open, anchor, position, activateTool, toggle, canEdit = true }) {
+export default function MoreTools({ open, anchor, position, activateTool, toggle, canEdit = true, placement = "canvas" }) {
   const items = [
     ["image", "▧", "Insert image", "9"], ["frame", "⌗", "Frame tool", "F"], ["embeddable", "◇", "Web Embed", ""],
     ["autoshape", "◌", "Draw to shape", "⇧X"], ["laser", "✧", "Laser pointer", "K"], ["bucketfill", "◒", "Bucket fill", "B"], ["lasso", "◌", "Lasso selection", ""],
   ];
   return (
-    <div className={`sketchizi-more-tools ${open ? "open" : ""}`} style={{ "--sketchizi-more-tools-left": `${anchor.left}px`, "--sketchizi-more-tools-top": `${anchor.top}px` }}>
+    <div className={`sketchizi-more-tools sketchizi-more-tools-${placement} ${open ? "open" : ""}`} style={{ "--sketchizi-more-tools-left": `${anchor.left}px`, "--sketchizi-more-tools-top": `${anchor.top}px` }}>
       <button type="button" className="sketchizi-more-tools-trigger" aria-label="More tools" aria-haspopup="menu" aria-expanded={open} onClick={(event) => { event.preventDefault(); event.stopPropagation(); position(); toggle("more-tools"); }}><span aria-hidden="true">⋮</span></button>
       {open && <div className="sketchizi-more-tools-menu" role="menu" aria-label="More tools">
+        <div className="more-tools-menu-header">
+          <span>More Tools</span>
+          <button type="button" className="more-tools-menu-close" aria-label="Close More Tools" onClick={() => toggle("more-tools")}>×</button>
+        </div>
         {items.map(([tool, icon, label, key]) => <button key={tool} type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool(tool)}><span className="more-tools-icon">{icon}</span><span>{label}</span><kbd>{key}</kbd></button>)}
         <div className="more-tools-section-title">Generate</div>
         <button type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool("text-to-diagram")}><span className="more-tools-icon">✿</span><span>Text to diagram</span><em>AI</em></button>

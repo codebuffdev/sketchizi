@@ -10,6 +10,8 @@
 @import "./styles/shell.css";
 @import "./styles/command-palette.css";
 @import "./styles/responsive.css";
+@import "./styles/responsive-mobile.css";
+@import "./styles/responsive-desktop.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }

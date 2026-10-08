@@ -3,11 +3,22 @@ export default function IconLibraryPanel({
   eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
   remoteLoading, visibleIcons, umlIcons, mindMapIcons, createStarterMindMap, awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives, awsCatalogLogo, awsCatalogLogoDark, kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives,
   iconDisplayLimit, setIconDisplayLimit, iconListRef, draggingIcon, handleIconClick,
-  handleIconPointerDown, handleIconMouseDown, handleDragStart, isFavorite, toggleFavorite, remoteError,
+  handleIconPointerDown, handleIconMouseDown, handleDragStart, isFavorite, toggleFavorite, remoteError, onClose,
 }) {
   return (
   <aside className="library-panel">
-    <div className="label">ICON LIBRARY</div>
+    <div className="library-panel-header">
+      <div className="label">
+        <span className="library-panel-label-desktop">ICON LIBRARY</span>
+        <span className="library-panel-label-mobile">Resources</span>
+      </div>
+      <button
+        type="button"
+        className="mobile-panel-close"
+        onClick={onClose}
+        aria-label="Close resources"
+      >×</button>
+    </div>
 
     <div className="search-wrap">
       <input
