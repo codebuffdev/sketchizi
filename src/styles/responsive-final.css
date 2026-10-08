@@ -1,4 +1,4 @@
-/* Sketchizi 1.10.29 — responsive UI final coordination layer
+/* Sketchizi 1.10.30 — dropdown layering fix on the responsive shell
  *
  * This file is intentionally loaded after the historical responsive layers.
  * It only resolves presentation/layout conflicts that remained between the
@@ -573,7 +573,7 @@
 @media (min-width: 1025px) {
   .desktop-app-header {
     min-width: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .desktop-app-nav,
