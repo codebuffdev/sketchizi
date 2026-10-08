@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ThemeControl from "../../ThemeControl.jsx";
 
 const MENU_DEFINITIONS = [
   {
@@ -64,10 +65,14 @@ function runNativeEditAction(pattern) {
 export default function DesktopAppHeader({
   commands,
   openCommandPalette,
-  setCollaborationOpen,
   startCollaboration,
   collaborationActive,
+  collaborationCreationState = "idle",
+  createCollaboration,
+  dismissCollaborationCreationFailure,
   libraryToggle,
+  setThemeMode,
+  isDarkTheme,
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
@@ -156,14 +161,34 @@ export default function DesktopAppHeader({
 
       <div className="desktop-app-header-panel-actions">{children}</div>
 
+      {collaborationCreationState === "creating" && (
+        <div className="collaboration-header-status creating" role="status" aria-live="polite">
+          <span className="collaboration-header-spinner" aria-hidden="true" />
+          <span>Creating collaboration…</span>
+        </div>
+      )}
+      {collaborationCreationState === "failed" && (
+        <div className="collaboration-header-status failed" role="alert" aria-live="assertive">
+          <div className="collaboration-header-status-copy">
+            <strong>Collaboration failed</strong>
+            <span>Couldn't create the collaboration.</span>
+          </div>
+          <button type="button" onClick={createCollaboration}>Try again</button>
+          <button type="button" className="secondary" onClick={dismissCollaborationCreationFailure} aria-label="Dismiss collaboration failure">×</button>
+        </div>
+      )}
+
+      <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
+
       {!collaborationActive && (
         <button
           type="button"
           className="desktop-app-start-collaboration-button"
           onClick={() => { setOpenMenu(null); startCollaboration?.(); }}
-          aria-label="Start Collaboration"
+          disabled={collaborationCreationState === "creating"}
+          aria-label={collaborationCreationState === "creating" ? "Creating Collaboration" : "Start Collaboration"}
         >
-          Start Collaboration
+          {collaborationCreationState === "creating" ? "Creating…" : "Start Collaboration"}
         </button>
       )}
 
@@ -177,14 +202,6 @@ export default function DesktopAppHeader({
           aria-label="Search commands"
           title="Search commands"
         >⌕</button>
-        <button
-          type="button"
-          className="desktop-app-share-button"
-          onClick={() => { setOpenMenu(null); setCollaborationOpen?.(true); }}
-          aria-label="Share"
-        >
-          Share
-        </button>
       </div>
     </header>
   );

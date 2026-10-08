@@ -1,3 +1,19 @@
+/* v1.10.26 — the command palette is portaled to document.body, outside
+ * .app.theme-dark, so it cannot inherit the app-scoped theme tokens directly.
+ * Reuse the existing theme state attribute and the same token values only for
+ * this palette subtree; light mode and all other UI remain unchanged. */
+html[data-sketchizi-theme="dark"] .sketchizi-command-palette {
+  --ui-surface-solid: #1b1b1b;
+  --ui-surface-soft: #222226;
+  --ui-border: #34343a;
+  --ui-border-soft: #2b2b30;
+  --ui-text: #f2f2f4;
+  --ui-text-muted: #a4a4ad;
+  --ui-text-faint: #777780;
+  --ui-accent: #8b83ff;
+  color-scheme: dark;
+}
+
 .sketchizi-command-palette-overlay {
   position: fixed;
   inset: 0;

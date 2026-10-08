@@ -3,23 +3,43 @@ export default function IconLibraryPanel({
   eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
   remoteLoading, visibleIcons, umlIcons, mindMapIcons, createStarterMindMap, awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives, awsCatalogLogo, awsCatalogLogoDark, kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives,
   iconDisplayLimit, setIconDisplayLimit, iconListRef, draggingIcon, handleIconClick,
-  handleIconPointerDown, handleIconMouseDown, handleDragStart, isFavorite, toggleFavorite, remoteError, onClose,
+  handleIconPointerDown, handleIconMouseDown, handleDragStart, isFavorite, toggleFavorite, remoteError,
+  iconLibraryPinned, setIconLibraryPinned, onClose,
 }) {
   return (
   <aside className="library-panel">
     <div className="library-panel-header">
-      <div className="label">
-        <span className="library-panel-label-desktop">ICON LIBRARY</span>
-        <span className="library-panel-label-mobile">Resources</span>
+      <div className="library-panel-heading">
+        <div className="label">
+          <span className="library-panel-label-desktop">ICON LIBRARY</span>
+          <span className="library-panel-label-mobile">Resources</span>
+        </div>
+        <div className="library-panel-subtitle">Browse and insert icons</div>
       </div>
-      <button
-        type="button"
-        className="mobile-panel-close"
-        onClick={onClose}
-        aria-label="Close resources"
-      >×</button>
+      <div className="library-panel-header-actions">
+        <button
+          type="button"
+          className={iconLibraryPinned ? "library-pin-button active" : "library-pin-button"}
+          onClick={() => setIconLibraryPinned((pinned) => !pinned)}
+          aria-label={iconLibraryPinned ? "Unpin Icon Library" : "Pin Icon Library"}
+          aria-pressed={iconLibraryPinned}
+          title={iconLibraryPinned ? "Unpin Icon Library" : "Pin Icon Library"}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 4h8l-1 5 3 3v2h-5v6l-1 1-1-1v-6H6v-2l3-3-1-5Z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          className="mobile-panel-close"
+          onClick={onClose}
+          aria-label="Close resources"
+          title="Close resources"
+        >×</button>
+      </div>
     </div>
 
+    <div className="library-panel-body">
     <div className="search-wrap">
       <input
         ref={searchRef}
@@ -256,6 +276,7 @@ export default function IconLibraryPanel({
         </div>
       )}
     </section>
+    </div>
 
   </aside>
   );

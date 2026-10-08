@@ -83,6 +83,49 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const [collaborationRequestState, setCollaborationRequestState] = useState("none");
   const [collaborationRequests, setCollaborationRequests] = useState([]);
   const [collaborationAuthorship, setCollaborationAuthorship] = useState({});
+  const [collaborationCreationState, setCollaborationCreationState] = useState("idle");
+  const collaborationCreationAttemptRef = useRef(false);
+  const collaborationCreationTimeoutRef = useRef(null);
+
+  const clearCollaborationCreationTimeout = useCallback(() => {
+    if (collaborationCreationTimeoutRef.current) {
+      clearTimeout(collaborationCreationTimeoutRef.current);
+      collaborationCreationTimeoutRef.current = null;
+    }
+  }, []);
+
+  const failCollaborationCreation = useCallback((message = "Collaboration failed") => {
+    clearCollaborationCreationTimeout();
+    collaborationCreationAttemptRef.current = false;
+    collaborationRef.current?.close();
+    setCollaborationRoom(null);
+    setCollaborationLink(null);
+    setCollaborationSessionName("");
+    setCollaborationUsers(0);
+    setCollaborationParticipants([]);
+    setCollaborationStatus("disconnected");
+    setCollaborationRole(null);
+    setCollaborationPermission(null);
+    setCollaborationRequestState("none");
+    setCollaborationRequests([]);
+    setCollaborationAuthorship({});
+    setCollaborationError("");
+    setCollaborationCreationState("failed");
+    setCollaborationOpen(false);
+    return message;
+  }, [clearCollaborationCreationTimeout]);
+
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api?.onPointerUp) return undefined;
+
+    const unsubscribe = api.onPointerUp((activeTool) => {
+      if (activeTool?.type !== "freedraw") return;
+      collaborationRef.current?.flushPendingUpdates();
+    });
+
+    return () => unsubscribe?.();
+  }, [apiRef, apiReady]);
 
   const mergeCollaborativeElements = useCallback((remoteElements) => {
     const api = apiRef.current;
@@ -142,7 +185,6 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     setCollaborationSessionName(sessionName.trim());
     setCollaborationError("");
     setCollaborationRole(null);
-
     const client = new SketchiziCollaboration({
       roomId,
       sessionName,
@@ -153,8 +195,29 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
         setCollaborationParticipants(next);
         setCollaborationUsers(next.filter((participant) => participant.status === "connected").length);
       },
-      onStatus: setCollaborationStatus,
-      onError: setCollaborationError,
+      onStatus: (nextStatus) => {
+        setCollaborationStatus(nextStatus);
+        if (!collaborationCreationAttemptRef.current) return;
+        if (nextStatus === "connected") {
+          clearCollaborationCreationTimeout();
+          collaborationCreationAttemptRef.current = false;
+          setCollaborationCreationState("success");
+          setCollaborationOpen(false);
+          return;
+        }
+        if (nextStatus === "reconnecting") {
+          // Keep the initial creation state visible while the client gives the
+          // connection a chance to recover. The timeout below prevents an
+          // indefinite creating state.
+        }
+      },
+      onError: (message) => {
+        if (collaborationCreationAttemptRef.current) {
+          failCollaborationCreation();
+          return;
+        }
+        setCollaborationError(message);
+      },
       onRole: setCollaborationRole,
       onPermission: ({ permission, requestState }) => {
         setCollaborationPermission(permission || null);
@@ -184,7 +247,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     });
     collaborationRef.current = client;
     client.connect();
-  }, [apiRef, applyCollaborationState, collaborationDisplayName, showToast]);
+  }, [apiRef, applyCollaborationState, collaborationDisplayName, clearCollaborationCreationTimeout, failCollaborationCreation, showToast]);
 
   useEffect(() => {
     const api = apiRef.current;
@@ -211,26 +274,43 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   }, []);
 
   const startCollaboration = useCallback(() => {
+    if (collaborationCreationAttemptRef.current) return;
     closeNativeMenu();
     if (collaborationRoom && collaborationRole) setCollaborationMode("active");
     else {
+      collaborationCreationAttemptRef.current = false;
+      clearCollaborationCreationTimeout();
+      setCollaborationCreationState("idle");
       setCollaborationMode("create");
       setCollaborationDraftName("");
       setCollaborationDisplayName((current) => current || getCollaborationDisplayName());
     }
     setCollaborationOpen(true);
-  }, [closeNativeMenu, collaborationRoom, collaborationRole]);
+  }, [clearCollaborationCreationTimeout, closeNativeMenu, collaborationRoom, collaborationRole]);
+
+  const dismissCollaborationCreationFailure = useCallback(() => {
+    if (collaborationCreationState !== "failed") return;
+    setCollaborationCreationState("idle");
+    setCollaborationError("");
+  }, [collaborationCreationState]);
 
   const createCollaboration = useCallback(() => {
+    if (collaborationCreationAttemptRef.current) return;
     const name = collaborationDraftName.trim();
     const displayName = saveCollaborationDisplayName(collaborationDisplayName);
     if (!name || !displayName) return;
     setCollaborationDisplayName(displayName);
     const roomId = createCollaborationRoomId();
-    setCollaborationMode("active");
+    collaborationCreationAttemptRef.current = true;
+    setCollaborationCreationState("creating");
+    setCollaborationMode("create");
     setCollaborationOpen(false);
     connectCollaboration(roomId, name, displayName);
-  }, [collaborationDisplayName, collaborationDraftName, connectCollaboration]);
+    collaborationCreationTimeoutRef.current = setTimeout(() => {
+      if (!collaborationCreationAttemptRef.current) return;
+      failCollaborationCreation();
+    }, 15000);
+  }, [collaborationDisplayName, collaborationDraftName, connectCollaboration, failCollaborationCreation]);
 
   const leaveOrEndCollaboration = useCallback(() => {
     const isHost = collaborationRole === "host";
@@ -255,6 +335,9 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
 
   useEffect(() => {
     if (!sketchReady || !apiReady || !collaborationRoomId) return;
+    collaborationCreationAttemptRef.current = false;
+    clearCollaborationCreationTimeout();
+    setCollaborationCreationState("idle");
     setCollaborationOpen(true);
     setCollaborationMode("join");
     setCollaborationRoom(null);
@@ -265,7 +348,11 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     setCollaborationStatus("disconnected");
   }, [sketchReady, apiReady, collaborationRoomId]);
 
-  useEffect(() => () => collaborationRef.current?.close(), []);
+  useEffect(() => () => {
+    clearCollaborationCreationTimeout();
+    collaborationCreationAttemptRef.current = false;
+    collaborationRef.current?.close();
+  }, [clearCollaborationCreationTimeout]);
 
   return {
     collaborationRef,
@@ -284,6 +371,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationRoom,
     collaborationLink,
     collaborationStatus,
+    collaborationCreationState,
     collaborationUsers,
     collaborationParticipants,
     collaborationError,
@@ -296,6 +384,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     connectCollaboration,
     startCollaboration,
     createCollaboration,
+    dismissCollaborationCreationFailure,
     leaveOrEndCollaboration,
     requestEditAccess,
     decideEditRequest,

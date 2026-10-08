@@ -12,6 +12,7 @@
 @import "./styles/responsive.css";
 @import "./styles/responsive-mobile.css";
 @import "./styles/responsive-desktop.css";
+@import "./styles/responsive-final.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
@@ -20,3 +21,378 @@
 .kubernetes-category { width: 100%; display: flex; align-items: center; justify-content: space-between; }
 .kubernetes-category-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .kubernetes-category-icon { width: 22px; height: 22px; object-fit: contain; flex: 0 0 auto; }
+
+/* Sketchizi 1.10.17 — Icon Library UI/UX refinement */
+.library-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #333);
+}
+
+.library-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--ui-border-soft, #eee);
+}
+
+.library-panel-heading {
+  min-width: 0;
+}
+
+.library-panel-header .label {
+  padding: 0;
+  color: var(--ui-text-strong, #202020);
+  font-size: 14px;
+  font-weight: 760;
+  letter-spacing: -.015em;
+}
+
+.library-panel-subtitle {
+  margin-top: 3px;
+  color: var(--ui-text-muted, #777);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.library-panel-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+
+.library-pin-button,
+.library-panel .mobile-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 8px;
+  background: var(--ui-surface-soft, #fafafa);
+  color: var(--ui-text-muted, #777);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.library-pin-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.library-pin-button:hover,
+.library-pin-button.active {
+  border-color: var(--ui-accent, #6c63d9);
+  background: var(--ui-active, #eeecff);
+  color: var(--ui-accent, #5b55c7);
+}
+
+.library-pin-button.active svg {
+  transform: rotate(-20deg);
+}
+
+.library-pin-button:focus-visible,
+.library-panel .mobile-panel-close:focus-visible {
+  outline: 2px solid var(--ui-accent, #6c63d9);
+  outline-offset: 2px;
+}
+
+.library-panel-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 10px;
+}
+
+.library-panel-body > .search-wrap {
+  flex: 0 0 auto;
+  margin-bottom: 8px;
+}
+
+.library-panel-body > .quick-categories {
+  flex: 0 0 auto;
+  max-height: none;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 0 0 8px;
+  overflow: visible;
+}
+
+.library-panel-body > .eraser-library-status,
+.library-panel-body > .uml-library-status,
+.library-panel-body > .mindmap-library-status,
+.library-panel-body > .kubernetes-library-status,
+.library-panel-body > .aws-library-status {
+  flex: 0 0 auto;
+}
+
+.library-panel-body > .icons {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 10px;
+}
+
+.library-panel-body > .icons > .section-heading {
+  flex: 0 0 auto;
+  margin-bottom: 2px;
+}
+
+.library-panel .icon-grid {
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border, #c7c7c7) transparent;
+  padding: 2px 4px 10px 1px;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar,
+.library-panel .quick-categories::-webkit-scrollbar,
+.library-panel .aws-category-list::-webkit-scrollbar,
+.library-panel .kubernetes-category-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar-track,
+.library-panel .quick-categories::-webkit-scrollbar-track,
+.library-panel .aws-category-list::-webkit-scrollbar-track,
+.library-panel .kubernetes-category-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar-thumb,
+.library-panel .quick-categories::-webkit-scrollbar-thumb,
+.library-panel .aws-category-list::-webkit-scrollbar-thumb,
+.library-panel .kubernetes-category-list::-webkit-scrollbar-thumb {
+  min-height: 34px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--ui-border, #c7c7c7);
+  background-clip: padding-box;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar-thumb:hover,
+.library-panel .quick-categories::-webkit-scrollbar-thumb:hover,
+.library-panel .aws-category-list::-webkit-scrollbar-thumb:hover,
+.library-panel .kubernetes-category-list::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-text-muted, #777);
+  background-clip: padding-box;
+}
+
+.library-panel .quick-category {
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ui-text, #333);
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.library-panel .quick-category:hover {
+  background: var(--ui-hover, #f4f4f4);
+}
+
+.library-panel .quick-category.active {
+  border-color: color-mix(in srgb, var(--ui-accent, #5b55c7) 20%, transparent);
+  background: var(--ui-active, #eeecff);
+  color: var(--ui-text-strong, #202020);
+}
+
+.library-panel .quick-category.active .category-count {
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-accent, #5b55c7);
+}
+
+.library-panel .category-count {
+  min-width: 26px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: var(--ui-surface-soft, #f5f5f5);
+  color: var(--ui-text-muted, #777);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.library-panel .eraser-library-status,
+.library-panel .uml-library-status,
+.library-panel .mindmap-library-status,
+.library-panel .kubernetes-library-status,
+.library-panel .aws-library-status {
+  margin: 8px 0 0;
+  padding: 10px;
+  border: 1px solid var(--ui-border-soft, #eee);
+  border-radius: 10px;
+  background: var(--ui-surface-soft, #fafafa);
+}
+
+.library-panel .section-heading {
+  padding: 0 3px 8px;
+}
+
+.library-panel .section-title {
+  color: var(--ui-text-strong, #202020);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.library-panel .icon-total {
+  color: var(--ui-text-muted, #777);
+  font-size: 9px;
+}
+
+.library-panel .icon-card {
+  min-height: 108px;
+  padding: 9px 6px 8px;
+  border-color: var(--ui-border, #dedede);
+  border-radius: 10px;
+  background: var(--ui-surface-solid, #fff);
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+
+.library-panel .icon-card:hover {
+  border-color: var(--ui-accent, #8b86e8);
+  background: var(--ui-surface-soft, #fafafa);
+  box-shadow: 0 5px 14px rgba(15, 23, 42, .07);
+  transform: translateY(-1px);
+}
+
+.library-panel .icon-card:focus-visible {
+  outline: 2px solid var(--ui-accent, #6c63d9);
+  outline-offset: 1px;
+}
+
+.library-panel .icon-preview {
+  height: 58px;
+}
+
+.library-panel .icon-preview img {
+  width: 50px;
+  height: 50px;
+}
+
+.library-panel .icon-name {
+  margin-top: 5px;
+  color: var(--ui-text-strong, #202020);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.library-panel .icon-subtitle {
+  margin-top: 3px;
+  color: var(--ui-text-muted, #777);
+  font-size: 8px;
+}
+
+.library-panel .library-scroll-hint {
+  flex: 0 0 auto;
+  padding: 5px 4px 0;
+  color: var(--ui-text-faint, #999);
+  font-size: 9px;
+  text-align: center;
+}
+
+.app.theme-dark .library-panel .quick-category.active {
+  border-color: rgba(126, 117, 255, .3);
+  background: rgba(91, 85, 199, .24);
+  color: var(--ui-text-strong);
+}
+
+.app.theme-dark .library-panel .quick-category.active .category-count {
+  background: var(--ui-surface-solid);
+  color: var(--ui-text-strong);
+}
+
+.app.theme-dark .library-panel .icon-card:hover {
+  background: var(--ui-hover);
+  border-color: var(--ui-accent);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .22);
+}
+
+.app.theme-dark .library-panel .library-pin-button.active {
+  background: rgba(91, 85, 199, .28);
+}
+
+@media (min-width: 1025px) {
+  .desktop-resources-region .library-panel-body > .quick-categories {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .desktop-resources-region .library-panel .icon-grid {
+    scrollbar-gutter: stable;
+  }
+
+  .desktop-resources-region .library-panel-header {
+    min-height: 42px;
+    padding-bottom: 10px;
+  }
+
+  .desktop-resources-region .library-panel-subtitle {
+    font-size: 9px;
+  }
+
+  .desktop-resources-region .library-panel .icon-card {
+    min-height: 104px;
+  }
+
+  .desktop-resources-region .library-panel .icon-preview {
+    height: 52px;
+  }
+
+  .desktop-resources-region .library-panel .icon-preview img {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .library-panel-body {
+    padding-top: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .library-panel-header {
+    min-height: 46px;
+  }
+
+  .library-panel-subtitle {
+    font-size: 9px;
+  }
+
+  .library-panel-body > .quick-categories {
+    max-height: 154px;
+    overflow-y: auto;
+    padding-right: 3px;
+  }
+
+  .library-panel .icon-grid {
+    padding-right: 4px;
+  }
+}

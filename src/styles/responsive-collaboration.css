@@ -192,3 +192,10 @@
   }
 }
 
+
+/* Keep the share popover visible outside the compact collaboration surface. */
+@media (max-width: 760px) {
+  .collaboration-status-bar {
+    overflow: visible;
+  }
+}

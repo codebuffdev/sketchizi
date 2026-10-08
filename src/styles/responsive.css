@@ -58,3 +58,20 @@
 
 /* Viewer role: the custom Sketchizi More Tools trigger is an editing affordance,
  * so it is conditionally unmounted in App.jsx rather than visually hidden. */
+
+
+/* v1.10.24 — move the existing Excalidraw drawing toolbar to a stable
+ * top-center application lane on supported desktop/tablet widths. The native
+ * toolbar remains the single source of truth; this only changes its viewport
+ * positioning. Mobile/phone layouts keep Excalidraw's existing bottom toolbar. */
+@media (min-width: 761px) {
+  .excalidraw .App-toolbar-container {
+    position: fixed !important;
+    top: calc(var(--sketchizi-desktop-header-height, 58px) + 10px) !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 120 !important;
+  }
+}

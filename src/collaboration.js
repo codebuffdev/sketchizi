@@ -6,6 +6,8 @@ const DISPLAY_NAME_KEY = "sketchizi-collaboration-display-name";
 const PRESENCE_CURSOR_INTERVAL = 50;
 const PRESENCE_NAME_MAX = 48;
 const MAX_MESSAGE_BYTES = 8 * 1024 * 1024;
+const COLLAB_BACKPRESSURE_HIGH_WATER_MARK = 256 * 1024;
+const COLLAB_BACKPRESSURE_RETRY_MS = 16;
 
 function randomId(length = 24) {
   const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
@@ -165,6 +167,7 @@ export class SketchiziCollaboration {
     this.pendingElements = new Map();
     this.pendingFiles = new Map();
     this.flushFrame = null;
+    this.backpressureTimer = null;
   }
 
   connect() {
@@ -175,6 +178,7 @@ export class SketchiziCollaboration {
 
   close() {
     this.cancelPendingFlush();
+    this.cancelBackpressureRetry();
     this.cancelPresenceCursor();
     if (this.activityTimer) clearTimeout(this.activityTimer);
     this.activityTimer = null;
@@ -201,7 +205,7 @@ export class SketchiziCollaboration {
   leave() {
     logger.info("Collaboration leave requested", { category: "collaboration", roomId: this.roomId, clientId: this.clientId });
     if (this.joined) {
-      this.flushPendingUpdates();
+      this.flushPendingUpdates({ force: true });
       this.send({ type: "leave", roomId: this.roomId, clientId: this.clientId });
     }
     this.close();
@@ -210,7 +214,7 @@ export class SketchiziCollaboration {
   disconnect() {
     logger.info("Collaboration end requested", { category: "collaboration", roomId: this.roomId, clientId: this.clientId });
     if (this.joined) {
-      this.flushPendingUpdates();
+      this.flushPendingUpdates({ force: true });
       this.send({ type: "terminate", roomId: this.roomId, clientId: this.clientId });
     }
     this.close();
@@ -400,6 +404,34 @@ export class SketchiziCollaboration {
     return true;
   }
 
+  cancelBackpressureRetry() {
+    if (this.backpressureTimer !== null) clearTimeout(this.backpressureTimer);
+    this.backpressureTimer = null;
+  }
+
+  scheduleBackpressureRetry() {
+    if (this.backpressureTimer !== null || this.closed) return;
+    this.backpressureTimer = setTimeout(() => {
+      this.backpressureTimer = null;
+      this.flushPendingUpdates();
+    }, COLLAB_BACKPRESSURE_RETRY_MS);
+  }
+
+  sendSceneUpdate(message, { force = false } = {}) {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    const payload = JSON.stringify(message);
+    if (payload.length > MAX_MESSAGE_BYTES) {
+      this.fail("This collaboration update is too large.");
+      return false;
+    }
+    if (!force && this.socket.bufferedAmount > COLLAB_BACKPRESSURE_HIGH_WATER_MARK) {
+      this.scheduleBackpressureRetry();
+      return false;
+    }
+    this.socket.send(payload);
+    return true;
+  }
+
   snapshot() {
     const elements = this.api.getSceneElementsIncludingDeleted?.() || this.api.getSceneElements();
     const files = this.api.getFiles?.() || {};
@@ -414,6 +446,7 @@ export class SketchiziCollaboration {
 
   syncBaseline(elements, files) {
     this.cancelPendingFlush();
+    this.cancelBackpressureRetry();
     const pendingElements = new Map(this.pendingElements);
     const pendingFiles = new Map(this.pendingFiles);
     this.remember(elements, files);
@@ -449,9 +482,13 @@ export class SketchiziCollaboration {
     this.flushFrame = null;
   }
 
-  flushPendingUpdates() {
+  flushPendingUpdates({ force = false } = {}) {
     if (!this.pendingElements.size && !this.pendingFiles.size) return true;
     if (!this.joined || !this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    if (!force && this.socket.bufferedAmount > COLLAB_BACKPRESSURE_HIGH_WATER_MARK) {
+      this.scheduleBackpressureRetry();
+      return false;
+    }
 
     const changedElements = [];
     for (const element of this.pendingElements.values()) {
@@ -476,13 +513,13 @@ export class SketchiziCollaboration {
       return true;
     }
 
-    const sent = this.send({
+    const sent = this.sendSceneUpdate({
       type: "update",
       roomId: this.roomId,
       clientId: this.clientId,
       elements: changedElements,
       files: changedFiles,
-    });
+    }, { force });
     if (!sent) return false;
 
     for (const element of changedElements) this.lastElements.set(element.id, elementSignature(element));

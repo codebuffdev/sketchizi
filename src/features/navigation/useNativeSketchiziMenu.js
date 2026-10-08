@@ -10,8 +10,6 @@ export function useNativeSketchiziMenu({
   handleFileError,
   themeMode,
   setThemeMode,
-  propertiesAutoOpen,
-  setPropertiesAutoOpen,
   toggleLayout,
   togglePanel,
   layoutOpen,
@@ -115,11 +113,7 @@ export function useNativeSketchiziMenu({
             themeSection.dataset.diagramlyThemeMenu = "true";
             themeSection.className = "diagramly-native-theme-section";
             themeSection.innerHTML = `<div class="diagramly-native-theme-title">Theme</div><div class="diagramly-native-theme-options" role="group" aria-label="Theme selection"><button type="button" data-theme-mode="dark">☾ Dark</button><button type="button" data-theme-mode="light">☀ Light</button><button type="button" data-theme-mode="system">▣ System</button></div>`;
-            const autoOpenSection = document.createElement("div");
-            autoOpenSection.dataset.sketchiziAutoOpenMenu = "true";
-            autoOpenSection.className = "sketchizi-native-settings-section sketchizi-auto-open-section";
-            autoOpenSection.innerHTML = `<button type="button" class="sketchizi-property-setting" data-properties-auto-open><span>Auto-open on selection</span><span class="sketchizi-switch" aria-hidden="true"><span></span></span></button>`;
-            customBlock.append(propertiesSection, recentSection, themeSection, autoOpenSection);
+            customBlock.append(propertiesSection, recentSection, themeSection);
             menuParent.insertBefore(customBlock, firstNativeMenuChild);
             menuParent.appendChild(layoutSection);
 
@@ -130,8 +124,6 @@ export function useNativeSketchiziMenu({
       const propertiesMenuSection = document.querySelector("[data-sketchizi-properties-menu]");
       const propertiesTitle = propertiesMenuSection?.querySelector("[data-sketchizi-properties-title]");
       if (propertiesTitle) propertiesTitle.textContent = canEdit ? "Properties" : "Collaboration";
-      const autoOpenMenuSection = document.querySelector("[data-sketchizi-auto-open-menu]");
-      if (autoOpenMenuSection) autoOpenMenuSection.style.display = canEdit ? "" : "none";
       const layoutMenuSection = document.querySelector("[data-sketchizi-layout-menu]");
       if (layoutMenuSection?.parentElement) {
         const parent = layoutMenuSection.parentElement;
@@ -240,19 +232,11 @@ export function useNativeSketchiziMenu({
       }
       architectureValidationButton?.classList.toggle("enabled", false);
 
-      const propertiesMenu = document.querySelector("[data-sketchizi-properties-menu]");
-      const propertiesButton = propertiesMenu?.querySelector("[data-properties-auto-open]");
-      if (propertiesButton && propertiesButton.dataset.bound !== "true") {
-        propertiesButton.dataset.bound = "true";
-        propertiesButton.addEventListener("click", () => setPropertiesAutoOpen((value) => !value));
-      }
-      propertiesButton?.classList.toggle("enabled", propertiesAutoOpen);
-      propertiesButton?.setAttribute("aria-pressed", String(propertiesAutoOpen));
     };
     const scheduleCleanup = () => { if (!frame) frame = requestAnimationFrame(cleanNativeMenu); };
     scheduleCleanup();
     const observer = new MutationObserver(scheduleCleanup);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => { observer.disconnect(); if (frame) cancelAnimationFrame(frame); };
-  }, [canEdit, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, layoutOpen, propertiesAutoOpen, recentFiles, recentFolders, refreshCurrentFolderFiles, setPropertiesAutoOpen, setThemeMode, themeMode, togglePanel]);
+  }, [canEdit, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, layoutOpen, recentFiles, recentFolders, refreshCurrentFolderFiles, setThemeMode, themeMode, togglePanel]);
 }

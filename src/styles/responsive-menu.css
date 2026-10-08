@@ -75,11 +75,6 @@
 .sketchizi-properties-section {
   margin-bottom: 0;
 }
-.sketchizi-auto-open-section {
-  margin-top: 0;
-  padding-top: 9px;
-  padding-bottom: 4px;
-}
 [data-sketchizi-custom-menu-block] {
   min-width: 250px;
 }
@@ -88,32 +83,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.sketchizi-switch {
-  position: relative;
-  flex: 0 0 auto;
-  width: 34px;
-  height: 20px;
-  padding: 2px;
-  border-radius: 999px;
-  background: rgba(128,128,128,.24);
-  transition: background .15s ease;
-}
-.sketchizi-switch > span {
-  display: block;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,.22);
-  transform: translateX(0);
-  transition: transform .15s ease;
-}
-.sketchizi-property-setting.enabled .sketchizi-switch {
-  background: #7168e8;
-}
-.sketchizi-property-setting.enabled .sketchizi-switch > span {
-  transform: translateX(14px);
 }
 
 /* The native menu provides its own surface. Keep our injected sections

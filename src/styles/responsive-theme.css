@@ -52,13 +52,6 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button:hover {
   background: var(--ui-hover, #27272d);
 }
 
-html[data-sketchizi-theme="dark"] .sketchizi-switch {
-  background: var(--ui-border, #34343a);
-}
-
-html[data-sketchizi-theme="dark"] .sketchizi-switch > span {
-  background: var(--ui-text-strong, #ffffff);
-}
 
 html[data-sketchizi-theme="dark"] .sketchizi-current-folder,
 html[data-sketchizi-theme="dark"] .sketchizi-folder-files-title,
@@ -194,6 +187,109 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
   color: #9a2c2c;
   font-size: 11px;
 }
+
+/* v1.10.21 — collaboration creation is a non-blocking header status. */
+.collaboration-header-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(430px, calc(100% - 32px));
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--ui-border-soft, #ddd);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ui-surface, #fff) 96%, transparent);
+  color: var(--ui-text-strong, #222);
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.collaboration-header-status.creating {
+  white-space: nowrap;
+}
+.collaboration-header-spinner {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid var(--ui-border-soft, #ddd);
+  border-top-color: var(--ui-text-strong, #222);
+  border-radius: 50%;
+  animation: collaboration-status-spin .8s linear infinite;
+}
+.collaboration-header-status.failed {
+  pointer-events: auto;
+  gap: 10px;
+}
+.collaboration-header-status-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.collaboration-header-status-copy strong {
+  color: var(--ui-text-strong, #222);
+  font-size: 11px;
+}
+.collaboration-header-status-copy span {
+  color: var(--ui-text-muted, #777);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.collaboration-header-status.failed button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--ui-border, #ccc);
+  border-radius: 7px;
+  background: var(--ui-text-strong, #222);
+  color: var(--ui-surface, #fff);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 650;
+}
+.collaboration-header-status.failed button.secondary {
+  min-width: 28px;
+  padding: 0 6px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ui-text-muted, #777);
+  font-size: 17px;
+  line-height: 1;
+}
+@keyframes collaboration-status-spin {
+  to { transform: rotate(360deg); }
+}
+.theme-dark .collaboration-header-status {
+  border-color: #444;
+  background: rgba(35,35,35,.96);
+  color: #f1f1f1;
+}
+.theme-dark .collaboration-header-spinner {
+  border-color: #444;
+  border-top-color: #f1f1f1;
+}
+.theme-dark .collaboration-header-status-copy strong {
+  color: #f1f1f1;
+}
+.theme-dark .collaboration-header-status-copy span {
+  color: #aaa;
+}
+.theme-dark .collaboration-header-status.failed button {
+  border-color: #666;
+  background: #f1f1f1;
+  color: #222;
+}
+.theme-dark .collaboration-header-status.failed button.secondary {
+  border-color: transparent;
+  background: transparent;
+  color: #aaa;
+}
 .theme-dark .collaboration-error {
   background: #3a2020;
   color: #ffb1b1;
@@ -294,6 +390,7 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
 .theme-dark .collaboration-status-info span { color: #aaa; }
 .theme-dark .collaboration-status-link {
   border-color: #444;
+  background: transparent;
   color: #ddd;
 }
 .theme-dark .collaboration-lifecycle-button {
@@ -301,6 +398,10 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
   background: #f1f1f1;
   color: #222;
 }
+@media (max-width: 1024px) {
+  .collaboration-header-status { display: none; }
+}
+
 @media (max-width: 640px) {
   .collaboration-status-bar {
     bottom: calc(58px + var(--safe-bottom, 0px));
@@ -539,4 +640,223 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
 @media (max-width: 520px) {
   .collaboration-request-pill { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
   .collaboration-permission-action { padding: 3px 5px; }
+}
+
+/* Collaboration sharing ------------------------------------------------ */
+.collaboration-share-container {
+  position: relative;
+  display: inline-flex;
+}
+.collaboration-share-trigger {
+  min-height: 35px;
+  padding: 0 12px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.collaboration-share-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 560;
+  width: min(410px, calc(100vw - 28px));
+  padding: 20px;
+  border: 1px solid var(--ui-border, #d9dce2);
+  border-radius: 18px;
+  background: var(--ui-surface, #fff);
+  color: var(--ui-text, #222);
+  box-shadow: 0 16px 38px rgba(20, 28, 45, .16);
+}
+.collaboration-share-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 2px 18px;
+}
+.collaboration-share-heading > div {
+  min-width: 0;
+}
+.collaboration-share-heading strong {
+  display: block;
+  color: var(--ui-text-strong, #17213a);
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 700;
+}
+.collaboration-share-heading span {
+  display: block;
+  margin-top: 3px;
+  color: var(--ui-text-muted, #667085);
+  font-size: 11px;
+  line-height: 16px;
+}
+.collaboration-share-header-icon {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 auto;
+  color: var(--ui-text-strong, #17213a);
+}
+.collaboration-share-copy,
+.collaboration-share-services button,
+.collaboration-share-services a {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ui-border-soft, #e3e6eb);
+  border-radius: 12px;
+  background: var(--ui-surface-subtle, #f8f9fb);
+  color: var(--ui-text, #222);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.collaboration-share-copy {
+  width: 100%;
+  min-height: 58px;
+  justify-content: flex-start;
+  padding: 0 14px;
+  gap: 11px;
+}
+.collaboration-share-copy-leading,
+.collaboration-share-copy-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.collaboration-share-copy-leading svg {
+  width: 28px;
+  height: 28px;
+}
+.collaboration-share-copy-label {
+  flex: 1;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 650;
+}
+.collaboration-share-copy-action svg {
+  width: 23px;
+  height: 23px;
+  color: var(--ui-text-muted, #667085);
+}
+.collaboration-share-services {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ui-border-soft, #e5e7eb);
+}
+.collaboration-share-services button,
+.collaboration-share-services a {
+  min-width: 0;
+  min-height: 116px;
+  padding: 13px 7px 10px;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 650;
+}
+.collaboration-share-brand-icon {
+  width: 49px;
+  height: 49px;
+  flex: 0 0 auto;
+}
+.collaboration-share-copy:hover,
+.collaboration-share-services button:hover,
+.collaboration-share-services a:hover,
+.collaboration-share-trigger:hover {
+  filter: brightness(.975);
+}
+.collaboration-share-copy:focus-visible,
+.collaboration-share-services button:focus-visible,
+.collaboration-share-services a:focus-visible,
+.collaboration-share-trigger:focus-visible {
+  outline: 2px solid #7bb5ff;
+  outline-offset: 2px;
+}
+.theme-dark .collaboration-share-trigger {
+  border-color: #666;
+  background: #f1f1f1;
+  color: #222;
+}
+.theme-dark .collaboration-share-panel {
+  border-color: #444;
+  background: #242424;
+  color: #ddd;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, .42);
+}
+.theme-dark .collaboration-share-heading strong,
+.theme-dark .collaboration-share-header-icon {
+  color: #f1f1f1;
+}
+.theme-dark .collaboration-share-heading span {
+  color: #aaa;
+}
+.theme-dark .collaboration-share-copy,
+.theme-dark .collaboration-share-services button,
+.theme-dark .collaboration-share-services a {
+  border-color: #444;
+  background: #2d2d31;
+  color: #eee;
+}
+.theme-dark .collaboration-share-copy-action svg {
+  color: #aaa;
+}
+.theme-dark .collaboration-share-services {
+  border-top-color: #444;
+}
+.collaboration-status-actions .collaboration-share-container {
+  flex: 0 0 auto;
+}
+.collaboration-status-actions .collaboration-share-trigger {
+  min-height: 31px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border-soft, #ddd);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ui-text, #444);
+  font-size: 11px;
+}
+.theme-dark .collaboration-status-actions .collaboration-share-trigger {
+  border-color: #444;
+  background: transparent;
+  color: #ddd;
+}
+@media (max-width: 640px) {
+  .collaboration-share-panel {
+    right: 0;
+    width: min(410px, calc(100vw - 20px));
+  }
+  .collaboration-status-actions .collaboration-share-trigger {
+    min-height: 34px;
+  }
+}
+@media (max-width: 420px) {
+  .collaboration-share-panel {
+    padding: 15px;
+    border-radius: 15px;
+  }
+  .collaboration-share-heading {
+    margin-bottom: 14px;
+  }
+  .collaboration-share-services {
+    gap: 7px;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+  .collaboration-share-services button,
+  .collaboration-share-services a {
+    min-height: 96px;
+    font-size: 10px;
+  }
+  .collaboration-share-brand-icon {
+    width: 42px;
+    height: 42px;
+  }
 }

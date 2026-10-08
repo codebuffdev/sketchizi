@@ -1,12 +1,13 @@
 import CollaborationPresence from "./CollaborationPresence";
+import CollaborationShare from "./CollaborationShare";
 
 function permissionLabel(permission) {
   return permission === "host" ? "Host" : permission === "editor" ? "Editor" : "Viewer";
 }
 
 export default function CollaborationUI({
-  open, setOpen, mode, status, draftName, setDraftName, displayName, setDisplayName, sessionName, link, users, participants, selfId, error, setError,
-  createCollaboration, connectCollaboration, roomId, role, permission, requestState, requests = [], onRequestEditAccess, onDecideEditRequest, onRevokeEditAccess, onLeaveOrEnd, showToast,
+  open, setOpen, mode, status, draftName, setDraftName, displayName, setDisplayName, sessionName, link, users, participants, selfId, error,
+  createCollaboration, connectCollaboration, roomId, role, permission, requestState, requests = [], onRequestEditAccess, onOpenDetails, onDecideEditRequest, onRevokeEditAccess, onLeaveOrEnd, showToast, collaborationCreationState,
 }) {
   const count = Math.max(users, 1);
   const activeActivity = participants?.find((participant) => participant.participantId !== selfId && participant.status === "connected" && participant.activity !== "idle");
@@ -24,7 +25,7 @@ export default function CollaborationUI({
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close collaboration">×</button>
             </div>
-            {mode === "create" && <>
+            {mode === "create" && collaborationCreationState === "idle" && <>
               <label className="collaboration-field"><span>Collaboration name</span><input autoFocus value={draftName} maxLength={120} placeholder="e.g. Backend Architecture Discussion" onChange={(event) => setDraftName(event.target.value)} /></label>
               <label className="collaboration-field"><span>Your name</span><input value={displayName} maxLength={48} placeholder="e.g. Alex" onChange={(event) => setDisplayName(event.target.value)} /></label>
               <div className="collaboration-actions"><button type="button" disabled={!draftName.trim() || !displayName.trim()} onClick={createCollaboration}>Create collaboration</button><button type="button" className="secondary" onClick={() => setOpen(false)}>Cancel</button></div>
@@ -43,7 +44,7 @@ export default function CollaborationUI({
               {role === "host" && requests.length > 0 && <div className="collaboration-request-list"><strong>Edit requests</strong>{requests.map((request) => <div className="collaboration-request-row" key={request.participantId}><div><b>{request.displayName}</b><span>wants to edit</span></div><div><button type="button" onClick={() => onDecideEditRequest(request.participantId, "approve")}>Allow</button><button type="button" className="secondary" onClick={() => onDecideEditRequest(request.participantId, "deny")}>Deny</button></div></div>)}</div>}
               <CollaborationPresence participants={participants} selfId={selfId} activityLabel={activityLabel} role={role} onRevokeEditAccess={onRevokeEditAccess} />
               <div className="collaboration-field"><span>Share link</span><input readOnly value={link || ""} /></div>
-              <div className="collaboration-actions"><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(link || ""); showToast("Collaboration link copied"); } catch { setError("Clipboard access was denied. Copy the link manually."); } }}>Copy link</button><button type="button" className="secondary" onClick={() => setOpen(false)}>Close</button></div>
+              <div className="collaboration-actions"><CollaborationShare link={link} sessionName={sessionName} showToast={showToast} /><button type="button" className="secondary" onClick={() => setOpen(false)}>Close</button></div>
             </>}
             {error && <div className="collaboration-error" role="alert">{error}</div>}
           </section>
@@ -56,7 +57,8 @@ export default function CollaborationUI({
           <div className="collaboration-status-actions">
             {role === "host" && requests.length > 0 && <button type="button" className="collaboration-request-pill" onClick={() => setOpen(true)}>{requests.length} edit request{requests.length === 1 ? "" : "s"}</button>}
             {isViewer && <button type="button" className="collaboration-request-pill" disabled={requestState === "pending"} onClick={onRequestEditAccess}>{requestState === "pending" ? "Request pending" : "Request edit access"}</button>}
-            <button type="button" className="collaboration-status-link" onClick={() => setOpen(true)}>Details</button>
+            {role === "host" && <CollaborationShare link={link} sessionName={sessionName} showToast={showToast} compact />}
+            <button type="button" className="collaboration-status-link" onClick={onOpenDetails}>Details</button>
             <button type="button" className="collaboration-lifecycle-button" onClick={onLeaveOrEnd}>{role === "host" ? "End collaboration" : "Leave"}</button>
           </div>
         </div>

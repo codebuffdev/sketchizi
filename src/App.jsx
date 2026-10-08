@@ -25,6 +25,7 @@ import CollaborationUI from "./components/app/CollaborationUI";
 import MoreTools from "./components/app/MoreTools";
 import { useIconInsertion } from "./features/icon-library/useIconInsertion";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
+import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
 import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
 import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinitions";
@@ -52,7 +53,8 @@ function App() {
   const apiRef = useRef(null);
   const [apiReady, setApiReady] = useState(false);
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
-  const [minimapOpen, setMinimapOpen] = useState(true);
+  const [minimapOpen, setMinimapOpen] = useState(false);
+  const [iconLibraryPinned, setIconLibraryPinned] = useState(false);
   const minimapDragRef = useRef(null);
   const minimapController = useMinimapController({ apiRef, minimapOpen });
   const { minimapScene, updateMinimap, centerOnMinimap } = minimapController;
@@ -83,13 +85,34 @@ function App() {
   const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, retryLocalSave, downloadRecoveryBackup } = persistence;
 
   const collaboration = useCollaboration({ apiRef, showToast, closeNativeMenu, sketchReady, apiReady });
-  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
+  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
 
   const fileManager = useFileManager({
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch,
     lastSelectionSignature, startCollaboration,
   });
   const { recentFiles, recentFolders, currentFolder, currentFolderFiles, fileActionsRef, refreshCurrentFolderFiles, handleFileError } = fileManager;
+
+  const closeExportDialog = useCallback(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    const appState = api.getAppState?.();
+    if (appState?.openDialog?.name !== "imageExport") return;
+    api.updateScene({
+      appState: { ...appState, openDialog: null },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+  }, []);
+
+  const openCollaborationDetails = useCallback(() => {
+    const activeCollaboration = Boolean(
+      collaborationRoom &&
+      collaborationRole &&
+      collaborationStatus !== "disconnected",
+    );
+    if (activeCollaboration) setCollaborationMode("active");
+    setCollaborationOpen(true);
+  }, [collaborationRole, collaborationRoom, collaborationStatus, setCollaborationMode, setCollaborationOpen]);
 
   const collaborationCanEdit = !collaborationRoom || collaborationPermission === "host" || collaborationPermission === "editor";
   const moreTools = useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit: collaborationCanEdit });
@@ -167,15 +190,16 @@ function App() {
     apiRef.current.updateScene({ elements: result.elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   }, [collaborationCanEdit, selectedKubernetesRelationship?.relationshipId]);
 
-  useSketchiziEscape({ activePanel, closePanel, commandPaletteOpen, closeCommandPalette, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef });
+  useSketchiziEscape({ activePanel, closePanel, iconLibraryPinned, commandPaletteOpen, closeCommandPalette, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef, apiRef, closeExportDialog });
+  useSketchiziExportLifecycle({ apiRef, showToast, closeExportDialog });
   useEffect(() => {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
   }, [closePanel, collaborationCanEdit, libraryOpen]);
   const preferences = useSketchiziPreferences({
-    apiRef, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid,
+    apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid,
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, canEdit: collaborationCanEdit,
   });
-  const { themeMode, setThemeMode, isDarkTheme, propertiesAutoOpen, setPropertiesAutoOpen } = preferences;
+  const { themeMode, setThemeMode, isDarkTheme } = preferences;
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -196,10 +220,10 @@ function App() {
     currentFolder,
     fileActionsRef,
   });
-  useNativeSketchiziMenu({ fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, themeMode, setThemeMode, propertiesAutoOpen, setPropertiesAutoOpen, toggleLayout: togglePanel, togglePanel, layoutOpen, canEdit: collaborationCanEdit });
+  useNativeSketchiziMenu({ fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, themeMode, setThemeMode, toggleLayout: togglePanel, togglePanel, layoutOpen, canEdit: collaborationCanEdit });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
-    setSelectedCount, setSelectedElements, setSelectedConnector, propertiesAutoOpen, updateMinimap, queueSketchSave,
+    setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
     collaborationRemoteUpdateRef, collaborationRef, gridEnabled, gridSize, canEdit: collaborationCanEdit,
     onArchitectureSceneChange: updateArchitectureValidation,
   });
@@ -223,9 +247,13 @@ function App() {
       <DesktopAppHeader
         commands={commands}
         openCommandPalette={commandPalette.openCommandPalette}
-        setCollaborationOpen={setCollaborationOpen}
         startCollaboration={startCollaboration}
         collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}
+        collaborationCreationState={collaboration.collaborationCreationState}
+        createCollaboration={createCollaboration}
+        dismissCollaborationCreationFailure={collaboration.dismissCollaborationCreationFailure}
+        setThemeMode={setThemeMode}
+        isDarkTheme={isDarkTheme}
         libraryToggle={collaborationCanEdit ? (
           <button
             className={libraryOpen ? "library-toggle desktop-app-library-toggle active" : "library-toggle desktop-app-library-toggle"}
@@ -258,7 +286,7 @@ function App() {
           </button>
         ) : null}
       >
-        {collaborationCanEdit && propertiesAutoOpen && selectedCount > 0 && (
+        {collaborationCanEdit && selectedCount > 0 && (
           <button
             type="button"
             className={propertiesOpen ? "properties-toggle active" : "properties-toggle"}
@@ -314,6 +342,7 @@ function App() {
               draggingIcon={draggingIcon} handleIconClick={handleIconClick}
               handleIconPointerDown={handleIconPointerDown} handleIconMouseDown={handleIconMouseDown} handleDragStart={handleDragStart} createStarterMindMap={createStarterMindMap}
               isFavorite={isFavorite} toggleFavorite={toggleFavorite} remoteError={remoteError}
+              iconLibraryPinned={iconLibraryPinned} setIconLibraryPinned={setIconLibraryPinned}
               onClose={() => closePanel("icon-library")}
             />
           )}
@@ -421,7 +450,7 @@ function App() {
         participants={collaborationParticipants}
         selfId={collaborationClientId}
         error={collaborationError}
-        setError={collaboration.setCollaborationError}
+        collaborationCreationState={collaboration.collaborationCreationState}
         createCollaboration={createCollaboration}
         connectCollaboration={connectCollaboration}
         roomId={collaborationRoomId}
@@ -434,6 +463,7 @@ function App() {
         onRevokeEditAccess={revokeEditAccess}
         onLeaveOrEnd={leaveOrEndCollaboration}
         showToast={showToast}
+        onOpenDetails={openCollaborationDetails}
       />
 
       {toast && (
