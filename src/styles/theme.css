@@ -42,7 +42,6 @@
 
 .app.theme-dark .library-toggle,
 .app.theme-dark .properties-toggle,
-.app.theme-dark .layout-button,
 .app.theme-dark .connector-inspector,
 .app.theme-dark .properties-panel,
 .app.theme-dark .minimap,
@@ -58,8 +57,6 @@
 .app.theme-dark .library-toggle.active,
 .app.theme-dark .properties-toggle:hover,
 .app.theme-dark .properties-toggle.active,
-.app.theme-dark .layout-button:hover,
-.app.theme-dark .layout-button.active,
 .app.theme-dark .minimap-toggle:hover,
 .app.theme-dark .minimap-toggle.active {
   background: var(--ui-hover);
@@ -71,8 +68,6 @@
 .app.theme-dark .icon-card,
 .app.theme-dark .connection-button,
 .app.theme-dark .connector-segmented button,
-.app.theme-dark .layout-grid-buttons button,
-.app.theme-dark .grid-size-row input,
 .app.theme-dark .property-row select,
 .app.theme-dark .property-number,
 .app.theme-dark .color-text {
@@ -91,8 +86,6 @@
 
 .app.theme-dark .category,
 .app.theme-dark .connection-button,
-.app.theme-dark .layout-grid-buttons button,
-.app.theme-dark .grid-toggle,
 .app.theme-dark .minimap-action,
 .app.theme-dark .minimap-zoom-label,
 .app.theme-dark .minimap-fit,
@@ -106,7 +99,6 @@
 .app.theme-dark .category:hover,
 .app.theme-dark .category.active,
 .app.theme-dark .connection-button:hover,
-.app.theme-dark .layout-grid-buttons button:hover:not(:disabled),
 .app.theme-dark .minimap-action:hover,
 .app.theme-dark .minimap-zoom-label:hover,
 .app.theme-dark .minimap-fit:hover,
@@ -119,7 +111,6 @@
 .app.theme-dark .category.active,
 .app.theme-dark .connection-button.active,
 .app.theme-dark .connector-segmented button.selected,
-.app.theme-dark .grid-toggle.enabled,
 .app.theme-dark .selection-badge {
   background: var(--ui-active);
   border-color: #4f4a82;
@@ -128,8 +119,7 @@
 
 .app.theme-dark .category-count,
 .app.theme-dark .library-badge,
-.app.theme-dark .search-wrap kbd,
-.app.theme-dark .layout-key {
+.app.theme-dark .search-wrap kbd{
   background: #25252a;
   border-color: var(--ui-border);
   color: var(--ui-text-muted);
@@ -148,7 +138,6 @@
 .app.theme-dark .version,
 .app.theme-dark .connection-help,
 .app.theme-dark .grid-description,
-.app.theme-dark .layout-shortcuts,
 .app.theme-dark .properties-subtitle,
 .app.theme-dark .properties-section-title,
 .app.theme-dark .connector-subtitle,
@@ -164,27 +153,13 @@
 .app.theme-dark .minimap-title,
 .app.theme-dark .property-row > label,
 .app.theme-dark .property-grid-2 > label,
-.app.theme-dark .connector-row > span,
-.app.theme-dark .layout-popover-title,
-.app.theme-dark .layout-section-label {
+.app.theme-dark .connector-row > span{
   color: var(--ui-text);
 }
 
 .app.theme-dark .properties-section,
-.app.theme-dark .properties-header,
-.app.theme-dark .layout-divider {
+.app.theme-dark .properties-header{
   border-color: var(--ui-border-soft);
-}
-
-.app.theme-dark .layout-popover {
-  border-color: var(--ui-border);
-  background: var(--ui-surface);
-  color: var(--ui-text);
-  box-shadow: var(--ui-shadow);
-}
-
-.app.theme-dark .grid-toggle {
-  background: #25252a;
 }
 
 .app.theme-dark .minimap-actions {

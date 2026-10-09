@@ -43,15 +43,13 @@
    * session is active. This prevents a panel from simply covering the status
    * card. Without collaboration, the existing 1.8.5 positions are retained. */
   .app:has(.collaboration-status-bar) .library-panel,
-  .app:has(.collaboration-status-bar) .properties-panel,
-  .app:has(.collaboration-status-bar) .layout-popover {
+  .app:has(.collaboration-status-bar) .properties-panel{
     top: calc(164px + var(--safe-top, 0px));
     max-height: calc(100dvh - 176px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }
 
   .app:has(.collaboration-status-bar).panel-open-library .library-panel,
-  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel,
-  .app:has(.collaboration-status-bar).panel-open-layout .layout-popover {
+  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel{
     top: calc(164px + var(--safe-top, 0px));
   }
 }
@@ -62,15 +60,13 @@
  * status or its lifecycle action. */
 @media (max-width: 760px) {
   .app:has(.collaboration-status-bar) .library-panel,
-  .app:has(.collaboration-status-bar) .properties-panel,
-  .app:has(.collaboration-status-bar) .layout-popover {
+  .app:has(.collaboration-status-bar) .properties-panel{
     top: calc(238px + var(--safe-top, 0px));
     max-height: calc(100dvh - 250px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }
 
   .app:has(.collaboration-status-bar).panel-open-library .library-panel,
-  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel,
-  .app:has(.collaboration-status-bar).panel-open-layout .layout-popover {
+  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel{
     top: calc(238px + var(--safe-top, 0px));
   }
 }
@@ -79,25 +75,8 @@
  * vertical reservation so the panel still has a useful scroll area. */
 @media (max-width: 760px) and (max-height: 720px) {
   .app:has(.collaboration-status-bar) .library-panel,
-  .app:has(.collaboration-status-bar) .properties-panel,
-  .app:has(.collaboration-status-bar) .layout-popover {
+  .app:has(.collaboration-status-bar) .properties-panel{
     top: calc(224px + var(--safe-top, 0px));
     max-height: calc(100dvh - 236px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
-  }
-}
-
-/* v1.9.8 — Layout is a menu-triggered panel; do not reuse the old floating
- * trigger coordinates when the panel is open. */
-.app.panel-open-layout .layout-toolbar.layout-panel {
-  top: calc(72px + var(--safe-top, 0px));
-  right: calc(16px + var(--safe-right, 0px));
-  left: auto;
-  transform: none;
-}
-@media (max-width: 760px) {
-  .app.panel-open-layout .layout-toolbar.layout-panel {
-    top: calc(58px + var(--safe-top, 0px));
-    left: calc(8px + var(--safe-left, 0px));
-    right: calc(8px + var(--safe-right, 0px));
   }
 }

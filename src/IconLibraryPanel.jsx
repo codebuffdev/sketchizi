@@ -1,11 +1,23 @@
+import { useState } from "react";
+
 export default function IconLibraryPanel({
   searchRef, search, setSearch, activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, favorites, recentIcons,
   eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
-  remoteLoading, visibleIcons, umlIcons, mindMapIcons, createStarterMindMap, awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives, awsCatalogLogo, awsCatalogLogoDark, kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives,
+  remoteLoading, visibleIcons, umlIcons, mindMapIcons, createStarterMindMap, awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives, awsCatalogLogo, awsCatalogLogoDark, kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives, networkingIcons,
   iconDisplayLimit, setIconDisplayLimit, iconListRef, draggingIcon, handleIconClick,
   handleIconPointerDown, handleIconMouseDown, handleDragStart, isFavorite, toggleFavorite, remoteError,
   iconLibraryPinned, setIconLibraryPinned, onClose,
 }) {
+  const [architectureExpanded, setArchitectureExpanded] = useState(false);
+
+  const selectCategory = (category) => {
+    setActiveCategory(category);
+    if (category === "AWS Architecture") setActiveAwsCategory("All");
+    if (category === "Kubernetes") setActiveKubernetesCategory("All");
+    setSearch("");
+    requestAnimationFrame(() => searchRef.current?.focus());
+  };
+
   return (
   <aside className="library-panel">
     <div className="library-panel-header">
@@ -52,26 +64,17 @@ export default function IconLibraryPanel({
       <kbd>/</kbd>
     </div>
 
-    <nav className="quick-categories">
+    <nav className="quick-categories" aria-label="Icon Library categories">
       {[
         ["Eraser Icons", eraserCatalog.length, "◆"],
-        ["UML Diagrams", umlIcons.length, "◇"],
         ["Mind Maps", mindMapIcons.length, "●"],
         ["AWS Architecture", awsIcons.length, null],
         ["Kubernetes", kubernetesIcons.length, "⬡"],
-        ["Favorites", favorites.length, "★"],
-        ["Recently Used", recentIcons.length, "◷"],
       ].map(([category, count, icon]) => (
         <button
           key={category}
           className={activeCategory === category && !search.trim() ? "category quick-category active" : "category quick-category"}
-          onClick={() => {
-            setActiveCategory(category);
-            if (category === "AWS Architecture") setActiveAwsCategory("All");
-            if (category === "Kubernetes") setActiveKubernetesCategory("All");
-            setSearch("");
-            requestAnimationFrame(() => searchRef.current?.focus());
-          }}
+          onClick={() => selectCategory(category)}
           type="button"
         >
           <span className="quick-category-label">
@@ -85,6 +88,59 @@ export default function IconLibraryPanel({
             </span>
             {category}
           </span>
+          <span className="category-count">{count}</span>
+        </button>
+      ))}
+      <div className="architecture-category-group">
+        <button
+          type="button"
+          className={activeCategory === "UML Diagrams" || activeCategory === "Networking" ? "category quick-category architecture-parent active" : "category quick-category architecture-parent"}
+          aria-expanded={architectureExpanded}
+          aria-controls="architecture-subcategories"
+          onClick={() => setArchitectureExpanded((expanded) => !expanded)}
+        >
+          <span className="quick-category-label">
+            <span className="quick-category-icon" aria-hidden="true">⌘</span>
+            Architecture
+          </span>
+          <span className="architecture-category-trailing">
+            <span className="category-count">{umlIcons.length + networkingIcons.length}</span>
+            <span className={architectureExpanded ? "architecture-chevron expanded" : "architecture-chevron"} aria-hidden="true">▸</span>
+          </span>
+        </button>
+        {architectureExpanded && (
+          <div className="architecture-subcategories" id="architecture-subcategories" role="group" aria-label="Architecture subcategories">
+            {[
+              ["UML Diagrams", umlIcons.length, "◇"],
+              ["Networking", networkingIcons.length, "⌘"],
+            ].map(([category, count, icon]) => (
+              <button
+                key={category}
+                type="button"
+                className={activeCategory === category && !search.trim() ? "category quick-category architecture-child active" : "category quick-category architecture-child"}
+                onClick={() => selectCategory(category)}
+              >
+                <span className="quick-category-label">
+                  <span className="quick-category-icon" aria-hidden="true">{icon}</span>
+                  {category}
+                </span>
+                <span className="category-count">{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {[
+        ["Favorites", favorites.length, "★"],
+        ["Recently Used", recentIcons.length, "◷"],
+      ].map(([category, count, icon]) => (
+        <button
+          key={category}
+          className={activeCategory === category && !search.trim() ? "category quick-category active" : "category quick-category"}
+          onClick={() => selectCategory(category)}
+          type="button"
+        >
+          <span className="quick-category-label"><span className="quick-category-icon">{icon}</span>{category}</span>
           <span className="category-count">{count}</span>
         </button>
       ))}
@@ -193,6 +249,8 @@ export default function IconLibraryPanel({
                     ? `${mindMapIcons.length} elements`
                     : activeCategory === "Kubernetes"
                       ? `${kubernetesIcons.length} icons`
+                      : activeCategory === "Networking"
+                        ? `${networkingIcons.length} resources`
                       : `${eraserCatalog.length || "…"} icons`}
         </div>
       </div>
@@ -270,7 +328,9 @@ export default function IconLibraryPanel({
                 ? "No matching UML elements."
                 : activeCategory === "Mind Maps"
                   ? "No matching mind-map elements."
-                  : activeCategory === "Kubernetes"
+                  : activeCategory === "Networking"
+                    ? "No matching networking resources."
+                    : activeCategory === "Kubernetes"
                     ? "No matching Kubernetes icons."
                     : remoteError || "No matching icons."}
         </div>

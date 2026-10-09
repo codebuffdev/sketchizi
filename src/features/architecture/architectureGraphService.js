@@ -1,5 +1,6 @@
 import { AWS_RELATIONSHIP_TYPES } from "../aws-relationships/awsRelationshipService.js";
 import { KUBERNETES_RELATIONSHIP_TYPES } from "../kubernetes-relationships/kubernetesRelationshipService.js";
+import { networkingResourceDefinitions } from "../../networkingResourceDefinitions.js";
 
 const DIAGNOSTIC_CODES = Object.freeze({
   MALFORMED_RESOURCE: "MALFORMED_RESOURCE",
@@ -10,7 +11,7 @@ const DIAGNOSTIC_CODES = Object.freeze({
   MALFORMED_RELATIONSHIP: "MALFORMED_RELATIONSHIP",
 });
 
-const PROVIDERS = Object.freeze({ AWS: "aws", KUBERNETES: "kubernetes" });
+const PROVIDERS = Object.freeze({ AWS: "aws", KUBERNETES: "kubernetes", NETWORKING: "networking" });
 const RESOURCE_METADATA = Object.freeze({
   [PROVIDERS.AWS]: {
     key: "awsResource",
@@ -24,6 +25,7 @@ const RESOURCE_METADATA = Object.freeze({
     relationshipKey: "kubernetesRelationship",
     relationshipTypes: KUBERNETES_RELATIONSHIP_TYPES,
   },
+  [PROVIDERS.NETWORKING]: { key: "networkingResource", idKey: "networkingResourceId", relationshipKey: "networkingRelationship", relationshipTypes: ["connects-to", "contains", "routes-to", "traffic-flow", "depends-on"] },
 });
 
 function diagnostic(code, message, details = {}) {
@@ -136,7 +138,7 @@ export function analyzeArchitectureGraph(elements = []) {
       if (!isValidResourceMetadata(resource, provider)) {
         diagnostics.push(diagnostic(
           DIAGNOSTIC_CODES.MALFORMED_RESOURCE,
-          `${provider === PROVIDERS.AWS ? "AWS" : "Kubernetes"} resource metadata is malformed.`,
+          `${provider === PROVIDERS.AWS ? "AWS" : provider === PROVIDERS.KUBERNETES ? "Kubernetes" : "Networking"} resource metadata is malformed.`,
           { elementId: element.id },
         ));
         continue;
@@ -163,7 +165,7 @@ export function analyzeArchitectureGraph(elements = []) {
       if (!hasRelationshipStructure(relationship)) {
         diagnostics.push(diagnostic(
           DIAGNOSTIC_CODES.MALFORMED_RELATIONSHIP,
-          `${provider === PROVIDERS.AWS ? "AWS" : "Kubernetes"} relationship metadata is malformed.`,
+          `${provider === PROVIDERS.AWS ? "AWS" : provider === PROVIDERS.KUBERNETES ? "Kubernetes" : "Networking"} relationship metadata is malformed.`,
           { elementId: element.id, relationshipId: relationship.relationshipId },
         ));
         continue;
@@ -214,11 +216,33 @@ export function analyzeArchitectureGraph(elements = []) {
     }
   }
 
-  return {
-    resources: [...resourcesByKey.values()],
-    relationships,
-    diagnostics,
-  };
+  // Native Excalidraw connectors between any intelligent resources are also
+  // represented in the unified graph, including cross-provider connections.
+  const resourceByElementId = new Map();
+  for (const element of scene) {
+    if (element?.isDeleted) continue;
+    for (const provider of Object.keys(RESOURCE_METADATA)) {
+      const metadata = getProviderResourceMetadata(element, provider);
+      if (metadata && isValidResourceMetadata(metadata, provider)) {
+        resourceByElementId.set(element.id, normalizedResource(metadata, provider));
+        break;
+      }
+    }
+  }
+  for (const element of scene) {
+    if (!element || element.isDeleted || !["arrow", "line"].includes(element.type)) continue;
+    const source = resourceByElementId.get(element.startBinding?.elementId);
+    const target = resourceByElementId.get(element.endBinding?.elementId);
+    if (!source || !target) continue;
+    const crossProvider = source.provider !== target.provider;
+    if (!crossProvider && source.provider !== "networking" && !element.customData?.architectureRelationship) continue;
+    const relationshipId = `architecture:${element.id}`;
+    if (relationshipIds.has(relationshipId)) continue;
+    relationshipIds.add(relationshipId);
+    relationships.push({ relationshipId, provider: "architecture", sourceResourceId: source.resourceId, sourceProvider: source.provider, targetResourceId: target.resourceId, targetProvider: target.provider, relationshipType: element.customData?.architectureRelationship?.relationshipType || "traffic-flow", elementId: element.id });
+  }
+
+  return { resources: [...resourcesByKey.values()], relationships, diagnostics };
 }
 
 export function getResource(graph, resourceId, provider = null) {

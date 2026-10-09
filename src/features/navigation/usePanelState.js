@@ -20,7 +20,6 @@ export function usePanelState({ apiRef, closeNativeMenu }) {
     togglePanel,
     closePanel,
     libraryOpen: activePanel === "icon-library",
-    layoutOpen: activePanel === "layout",
     propertiesOpen: activePanel === "properties",
     moreToolsOpen: activePanel === "more-tools",
     shortcutHelpOpen: activePanel === "shortcuts",

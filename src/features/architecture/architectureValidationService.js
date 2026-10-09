@@ -33,13 +33,16 @@ function validateOrphanResources(graph) {
   const diagnostics = [];
 
   for (const resource of graph.resources) {
+    if (resource.provider === "networking") continue;
     if (relationshipsForResource(graph, resource.resourceId).length === 0) {
       diagnostics.push(createDiagnostic({
         code: "RESOURCE_HAS_NO_RELATIONSHIPS",
         severity: "info",
         message: resource.provider === "kubernetes"
           ? "Kubernetes resource has no relationships."
-          : "AWS resource has no relationships.",
+          : resource.provider === "networking"
+            ? "Networking resource has no relationships."
+            : "AWS resource has no relationships.",
         resourceId: resource.resourceId,
       }));
     }
@@ -98,8 +101,8 @@ function validateRelationshipEndpoints(graph) {
 
   for (const relationship of graph.relationships) {
     const provider = relationship.provider || "unknown";
-    const hasSource = resourceKeys.has(`${provider}:${relationship.sourceResourceId}`);
-    const hasTarget = resourceKeys.has(`${provider}:${relationship.targetResourceId}`);
+    const hasSource = resourceKeys.has(`${relationship.sourceProvider || provider}:${relationship.sourceResourceId}`);
+    const hasTarget = resourceKeys.has(`${relationship.targetProvider || provider}:${relationship.targetResourceId}`);
 
     if (!hasSource || !hasTarget) {
       diagnostics.push(createDiagnostic({
@@ -118,7 +121,7 @@ function validateRelationshipTypes(graph) {
   const diagnostics = [];
 
   for (const relationship of graph.relationships) {
-    if (relationship.provider === "kubernetes") continue;
+    if (relationship.provider === "kubernetes" || relationship.provider === "architecture") continue;
 
     const validTypes = VALID_RELATIONSHIP_TYPES_BY_PROVIDER[relationship.provider] || new Set(AWS_RELATIONSHIP_TYPES);
     if (!validTypes.has(relationship.relationshipType)) {

@@ -15,7 +15,6 @@ Create diagrams, flowcharts, system designs, architecture diagrams, and visual n
 * 📁 Recent Files for quickly reopening saved drawings
 * 📄 Native `.excalidraw` file support
 * 🌓 Light / Dark / System theme
-* 📐 Layout controls
 * 🗺️ Minimap
 * ⌨️ Keyboard shortcuts
 * 📱 Tablet and touch support
@@ -85,7 +84,8 @@ sketchizi/
 │   ├── features/
 │   │   ├── canvas/
 │   │   │   ├── useExcalidrawScene.js
-│   │   │   └── useMinimapController.js
+│   │   │   ├── useMinimapController.js
+│   │   │   └── useCanvasTools.js
 │   │   ├── collaboration/
 │   │   │   └── useCollaboration.js
 │   │   ├── files/
@@ -95,8 +95,6 @@ sketchizi/
 │   │   │   ├── useIconCatalog.js
 │   │   │   ├── useIconInsertion.js
 │   │   │   └── iconInsertionService.js
-│   │   ├── layout/
-│   │   │   └── useCanvasTools.js
 │   │   ├── navigation/
 │   │   │   ├── useMoreTools.js
 │   │   │   ├── useNativeSketchiziMenu.js
@@ -107,7 +105,6 @@ sketchizi/
 │   ├── App.jsx
 │   ├── IconLibraryPanel.jsx
 │   ├── PropertiesPanel.jsx
-│   ├── LayoutToolbar.jsx
 │   ├── Minimap.jsx
 │   ├── ShortcutHelp.jsx
 │   ├── persistence.js
@@ -115,7 +112,6 @@ sketchizi/
 │   └── styles/
 │       ├── base.css
 │       ├── library.css
-│       ├── layout.css
 │       ├── properties.css
 │       ├── icon-library.css
 │       ├── minimap.css
@@ -174,7 +170,7 @@ Drawings can therefore be exported and reopened using Excalidraw-compatible tool
 | `/`         | Focus icon search       |
 | `L`         | Toggle Library          |
 | `P`         | Open Properties         |
-| `D`         | Toggle Layout           |
+| `D`         | Toggle Dark / Light Theme |
 | `Shift + G` | Toggle grid             |
 | `M`         | Toggle Minimap          |
 | `F`         | Toggle fullscreen       |
@@ -269,7 +265,7 @@ The Vite development server now mounts the same functions locally, so `npm run d
 
 ### Narrow responsive layout
 
-Version 1.8.6 keeps the 1.8.5 responsive shell intact. At compact tablet widths the collaboration status uses a bounded center lane; at 761–900px it moves to a dedicated top status lane. When collaboration is active, Sketchizi Library, Properties, and Layout surfaces begin below that status lane so they do not cover lifecycle controls. Excalidraw’s native toolbar is left under Excalidraw’s own responsive layout.
+Version 1.8.6 keeps the 1.8.5 responsive shell intact. At compact tablet widths the collaboration status uses a bounded center lane; at 761–900px it moves to a dedicated top status lane. When collaboration is active, Sketchizi Library and Properties surfaces begin below that status lane so they do not cover lifecycle controls. Excalidraw’s native toolbar is left under Excalidraw’s own responsive layout.
 
 ## Collaboration capacity
 

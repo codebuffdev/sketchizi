@@ -10,15 +10,26 @@ export function useNativeSketchiziMenu({
   handleFileError,
   themeMode,
   setThemeMode,
-  toggleLayout,
   togglePanel,
-  layoutOpen,
   canEdit = true,
+  useThemeDefaultBackground = () => {},
+  markCanvasBackgroundCustom = () => {},
 }) {
   useEffect(() => {
     const onClick = (event) => {
       const target = event.target?.closest?.('button, [role="button"], [role="menuitem"], a, [data-testid]');
       if (!target) return;
+      const menu = target.closest?.(".dropdown-menu-container");
+      const buttonStyle = target.tagName === "BUTTON" ? target.style : null;
+      const classText = typeof target.className === "string" ? target.className : "";
+      const swatchLike = /color-picker|color-swatch|background-swatch/i.test(classText)
+        || Boolean(buttonStyle?.backgroundColor)
+        || /color/i.test(`${target.getAttribute?.("aria-label") || ""} ${target.getAttribute?.("data-testid") || ""}`);
+      if (menu && swatchLike && [...menu.querySelectorAll("*")].some((node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background")) {
+        // Mark custom on the click itself, even when the chosen swatch matches
+        // the current color and Excalidraw therefore emits no state change.
+        markCanvasBackgroundCustom();
+      }
       const testId = target.getAttribute?.("data-testid");
       const text = target.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "";
       const inMenu = Boolean(target.closest?.(".dropdown-menu, [class*='dropdown-menu']"));
@@ -52,12 +63,44 @@ export function useNativeSketchiziMenu({
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [fileActionsRef, toggleLayout, togglePanel]);
+  }, [fileActionsRef, markCanvasBackgroundCustom]);
 
   useEffect(() => {
     const githubUrl = "https://github.com/codebuffdev";
     let frame = 0;
     const escapeHtml = (value) => String(value).replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
+    const constrainCanvasBackgroundMenu = () => {
+      // The dropdown is anchored to the toolbar, so a viewport-wide max-height
+      // calculation that subtracts a guessed header height can still leave the
+      // scroll area taller than the space below its actual on-screen position.
+      // Measure the real scroll container after Excalidraw positions it.
+      const label = [...document.querySelectorAll("body *")].find(
+        (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
+      );
+      const scrollContainer = label?.closest?.(".dropdown-menu-container");
+      if (!scrollContainer) return;
+
+      const dropdown = scrollContainer.closest?.(".dropdown-menu");
+      const top = Math.max(0, scrollContainer.getBoundingClientRect().top);
+      const bottomGap = 12;
+      const availableHeight = Math.max(1, Math.floor(window.innerHeight - top - bottomGap));
+
+      // Keep exactly one vertical scroll owner. The wrapper must not impose a
+      // second viewport-relative cap that clips the bottom of the scroll area.
+      if (dropdown) {
+        dropdown.style.setProperty("max-height", "none", "important");
+        dropdown.style.setProperty("overflow", "visible", "important");
+      }
+      scrollContainer.style.setProperty("box-sizing", "border-box", "important");
+      scrollContainer.style.setProperty("height", "auto", "important");
+      scrollContainer.style.setProperty("min-height", "0", "important");
+      scrollContainer.style.setProperty("max-height", `${availableHeight}px`, "important");
+      scrollContainer.style.setProperty("overflow-x", "hidden", "important");
+      scrollContainer.style.setProperty("overflow-y", "auto", "important");
+      scrollContainer.style.setProperty("overscroll-behavior-y", "contain", "important");
+      scrollContainer.style.setProperty("-webkit-overflow-scrolling", "touch", "important");
+    };
+
     const cleanNativeMenu = () => {
       frame = 0;
       const replaceExactTextNode = (root, from, to) => {
@@ -101,10 +144,6 @@ export function useNativeSketchiziMenu({
             propertiesSection.dataset.sketchiziPropertiesMenu = "true";
             propertiesSection.className = "sketchizi-native-settings-section sketchizi-properties-section";
             propertiesSection.innerHTML = `<div class="sketchizi-native-settings-title" data-sketchizi-properties-title>Properties</div><div class="sketchizi-native-settings-actions"><button type="button" class="sketchizi-collab-menu-button" data-sketchizi-collaborate aria-label="Open collaboration"><span class="sketchizi-collab-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 12.5 12 9a3.5 3.5 0 0 1 5 0l.5.5a3.5 3.5 0 0 1 0 5L14 18"/><path d="M15.5 11.5 12 15a3.5 3.5 0 0 1-5 0l-.5-.5a3.5 3.5 0 0 1 0-5L10 6"/></svg></span><span>Collab</span></button><button type="button" class="sketchizi-property-setting" data-sketchizi-architecture-validation aria-label="Open Architecture Validation"><span>Architecture Validation</span></button></div>`;
-            const layoutSection = document.createElement("div");
-            layoutSection.dataset.sketchiziLayoutMenu = "true";
-            layoutSection.className = "sketchizi-native-settings-section sketchizi-layout-bottom-section";
-            layoutSection.innerHTML = `<button type="button" class="sketchizi-layout-menu-button" data-sketchizi-layout aria-label="Open layout"><span class="sketchizi-layout-menu-icon" aria-hidden="true">⌗</span><span>Layout</span><kbd>L</kbd></button>`;
             const recentSection = document.createElement("div");
             recentSection.dataset.sketchiziRecentFilesMenu = "true";
             recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
@@ -115,41 +154,50 @@ export function useNativeSketchiziMenu({
             themeSection.innerHTML = `<div class="diagramly-native-theme-title">Theme</div><div class="diagramly-native-theme-options" role="group" aria-label="Theme selection"><button type="button" data-theme-mode="dark">☾ Dark</button><button type="button" data-theme-mode="light">☀ Light</button><button type="button" data-theme-mode="system">▣ System</button></div>`;
             customBlock.append(propertiesSection, recentSection, themeSection);
             menuParent.insertBefore(customBlock, firstNativeMenuChild);
-            menuParent.appendChild(layoutSection);
 
           }
+        }
+      }
+
+      const backgroundLabel = [...document.querySelectorAll("body *")].find(
+        (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
+      );
+      const backgroundMenu = backgroundLabel?.closest?.(".dropdown-menu-container");
+      if (backgroundMenu && !backgroundMenu.querySelector("[data-sketchizi-theme-background-default]")) {
+        const swatches = [...backgroundMenu.querySelectorAll("button")].filter((button) => {
+          const classes = typeof button.className === "string" ? button.className : "";
+          return /color-picker|color-swatch|background-swatch/i.test(classes)
+            || Boolean(button.style?.backgroundColor)
+            || /color/i.test(`${button.getAttribute("aria-label") || ""} ${button.getAttribute("data-testid") || ""}`);
+        });
+        if (swatches.length) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.sketchiziThemeBackgroundDefault = "true";
+          button.className = "sketchizi-theme-background-default";
+          button.textContent = "Use theme default";
+          button.title = "Automatically match the canvas background to the application theme";
+          button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            useThemeDefaultBackground();
+          });
+          const firstSwatch = swatches[0];
+          const palette = firstSwatch.closest?.(".color-picker, [class*='color-picker'], [data-testid*='color-picker']")
+            || firstSwatch.parentElement;
+          if (palette && backgroundLabel.parentElement?.contains(palette)) palette.insertAdjacentElement("afterend", button);
+          else backgroundMenu.appendChild(button);
         }
       }
 
       const propertiesMenuSection = document.querySelector("[data-sketchizi-properties-menu]");
       const propertiesTitle = propertiesMenuSection?.querySelector("[data-sketchizi-properties-title]");
       if (propertiesTitle) propertiesTitle.textContent = canEdit ? "Properties" : "Collaboration";
-      const layoutMenuSection = document.querySelector("[data-sketchizi-layout-menu]");
-      if (layoutMenuSection?.parentElement) {
-        const parent = layoutMenuSection.parentElement;
-        if (parent.lastElementChild !== layoutMenuSection) {
-          parent.appendChild(layoutMenuSection);
-        }
-      }
-
       const recentMenu = document.querySelector("[data-sketchizi-recent-files-menu]");
       const bind = (node, key, handler) => {
         if (!node || node.dataset[key] === "true") return;
         node.dataset[key] = "true"; node.addEventListener("click", handler);
       };
-      const layoutButton = document.querySelector("[data-sketchizi-layout]");
-      if (layoutButton) {
-        if (layoutButton.dataset.layoutClickBound !== "true") {
-          layoutButton.dataset.layoutClickBound = "true";
-          layoutButton.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            toggleLayout?.("layout");
-          });
-        }
-        layoutButton.classList.toggle("enabled", Boolean(layoutOpen));
-        layoutButton.setAttribute("aria-pressed", String(Boolean(layoutOpen)));
-      }
       bind(recentMenu?.querySelector("[data-sketchizi-open-folder]"), "bound", () => fileActionsRef.current.openFolderFromDisk?.());
       const currentFolderNode = recentMenu?.querySelector("[data-current-folder]");
       if (currentFolderNode) {
@@ -231,12 +279,20 @@ export function useNativeSketchiziMenu({
         });
       }
       architectureValidationButton?.classList.toggle("enabled", false);
+      constrainCanvasBackgroundMenu();
 
     };
     const scheduleCleanup = () => { if (!frame) frame = requestAnimationFrame(cleanNativeMenu); };
     scheduleCleanup();
     const observer = new MutationObserver(scheduleCleanup);
     observer.observe(document.body, { childList: true, subtree: true });
-    return () => { observer.disconnect(); if (frame) cancelAnimationFrame(frame); };
-  }, [canEdit, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, layoutOpen, recentFiles, recentFolders, refreshCurrentFolderFiles, setThemeMode, themeMode, togglePanel]);
+    window.addEventListener("resize", scheduleCleanup);
+    window.visualViewport?.addEventListener("resize", scheduleCleanup);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", scheduleCleanup);
+      window.visualViewport?.removeEventListener("resize", scheduleCleanup);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [canEdit, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, recentFiles, recentFolders, refreshCurrentFolderFiles, setThemeMode, themeMode, togglePanel, useThemeDefaultBackground]);
 }

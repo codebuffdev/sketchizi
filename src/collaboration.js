@@ -1,4 +1,14 @@
 import { logger } from "./logging/logger";
+import {
+  measureSyncDiagnostic,
+  recordSyncDiagnostic,
+  summarizeSyncMessage,
+  summarizeSyncRecords,
+  syncDiagnosticNow,
+  syncDiagnosticRef,
+  syncDiagnosticsEnabled,
+  syncUtf8ByteLength,
+} from "./features/collaboration/syncDiagnostics";
 
 const ROOM_PATTERN = /^[A-Za-z0-9_-]{20,64}$/;
 const CLIENT_KEY = "sketchizi-collaboration-client-id";
@@ -125,6 +135,9 @@ export class SketchiziCollaboration {
     onPermission,
     onPermissionRequest,
     onAuthorship,
+    onChatMessage,
+    onChatHistory,
+    onChatError,
   }) {
     if (!ROOM_PATTERN.test(roomId)) throw new Error("Invalid collaboration room.");
     this.roomId = roomId;
@@ -141,6 +154,9 @@ export class SketchiziCollaboration {
     this.onPermission = onPermission;
     this.onPermissionRequest = onPermissionRequest;
     this.onAuthorship = onAuthorship;
+    this.onChatMessage = onChatMessage;
+    this.onChatHistory = onChatHistory;
+    this.onChatError = onChatError;
     this.displayName = getCollaborationDisplayName() || "Guest";
     this.color = colorForParticipant(this.clientId);
     this.role = null;
@@ -168,15 +184,30 @@ export class SketchiziCollaboration {
     this.pendingFiles = new Map();
     this.flushFrame = null;
     this.backpressureTimer = null;
+    this.syncDiagnosticDeferredAt = null;
   }
 
   connect() {
     this.closed = false;
+    if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.connection.requested", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      reconnectAttempt: this.reconnectAttempt,
+      previouslyInitialized: this.hasInitialized,
+    });
     logger.info("Collaboration connection requested", { category: "collaboration", roomId: this.roomId, clientId: this.clientId });
     this.openSocket();
   }
 
   close() {
+    if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.connection.closeRequested", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      wasJoined: this.joined,
+      readyState: this.socket?.readyState ?? null,
+      pendingElementCount: this.pendingElements.size,
+      pendingFileCount: this.pendingFiles.size,
+    });
     this.cancelPendingFlush();
     this.cancelBackpressureRetry();
     this.cancelPresenceCursor();
@@ -184,6 +215,7 @@ export class SketchiziCollaboration {
     this.activityTimer = null;
     this.pendingElements.clear();
     this.pendingFiles.clear();
+    this.syncDiagnosticDeferredAt = null;
     this.authorship.clear();
     this.onAuthorship?.({});
     this.permission = null;
@@ -241,6 +273,20 @@ export class SketchiziCollaboration {
     if (!this.joined || this.role !== "host" || !participantId || participantId === this.clientId) return false;
     logger.info("Collaboration edit access revoked", { category: "collaboration", roomId: this.roomId, clientId: this.clientId });
     return this.send({ type: "permission:revoke", roomId: this.roomId, clientId: this.clientId, participantId });
+  }
+
+  sendChatMessage(text, audience = "everyone", recipientId = null) {
+    if (!this.joined || !["everyone", "host"].includes(audience)) return false;
+    const normalized = String(text || "").trim();
+    if (!normalized || normalized.length > 4000) return false;
+    return this.send({
+      type: "chat:send",
+      roomId: this.roomId,
+      clientId: this.clientId,
+      text: normalized,
+      audience,
+      ...(recipientId ? { recipientId } : {}),
+    });
   }
 
   updateLocalAuthorship(elements) {
@@ -327,6 +373,12 @@ export class SketchiziCollaboration {
     const wsUrl = configured || `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/collaboration`;
     this.onStatus?.("connecting");
     logger.debug("Collaboration socket connecting", { category: "collaboration", roomId: this.roomId, clientId: this.clientId });
+    if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.connecting", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      reconnectAttempt: this.reconnectAttempt,
+      urlProtocol: wsUrl.startsWith("wss:") ? "wss" : "ws",
+    });
 
     const socket = new WebSocket(wsUrl);
     this.socket = socket;
@@ -334,6 +386,11 @@ export class SketchiziCollaboration {
     socket.onopen = () => {
       this.reconnectAttempt = 0;
       logger.debug("Collaboration socket connected", { category: "collaboration", roomId: this.roomId });
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.open", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        clientRef: syncDiagnosticRef(this.clientId),
+        hasInitialized: this.hasInitialized,
+      });
       this.send({
         type: "join",
         roomId: this.roomId,
@@ -345,26 +402,69 @@ export class SketchiziCollaboration {
     };
 
     socket.onmessage = (event) => {
+      const diagnosticsEnabled = syncDiagnosticsEnabled();
+      const receivedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
       if (typeof event.data !== "string" || event.data.length > MAX_MESSAGE_BYTES) {
+        if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.messageRejected", {
+          roomRef: syncDiagnosticRef(this.roomId),
+          reason: typeof event.data !== "string" ? "non-text" : "message-too-large",
+          payloadLength: typeof event.data === "string" ? event.data.length : null,
+        });
         this.fail("The collaboration server sent an invalid message.");
         return;
       }
       let message;
+      const parseStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
       try {
         message = JSON.parse(event.data);
       } catch {
+        if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.messageRejected", {
+          roomRef: syncDiagnosticRef(this.roomId),
+          reason: "malformed-json",
+          payloadBytes: diagnosticsEnabled ? syncUtf8ByteLength(event.data) : null,
+        });
         this.fail("The collaboration server sent malformed data.");
         return;
       }
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.websocket.messageReceived", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        clientRef: syncDiagnosticRef(this.clientId),
+        ...summarizeSyncMessage(message),
+        payloadBytes: syncUtf8ByteLength(event.data),
+        parseDurationMs: Math.max(0, syncDiagnosticNow() - parseStartedAt),
+      });
+      const handleStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
       this.handleMessage(message);
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.websocket.messageHandled", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        messageType: message?.type || "unknown",
+        durationMs: Math.max(0, syncDiagnosticNow() - handleStartedAt),
+        receiveToHandledMs: Math.max(0, syncDiagnosticNow() - receivedAt),
+      });
     };
 
     socket.onerror = (error) => {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.error", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        clientRef: syncDiagnosticRef(this.clientId),
+        errorName: error?.type || error?.name || "WebSocketError",
+        readyState: socket.readyState,
+        bufferedAmount: socket.bufferedAmount,
+      });
       logger.error("Collaboration socket error", error, { category: "collaboration", roomId: this.roomId });
       if (!this.closed) this.onStatus?.("reconnecting");
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.closed", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        clientRef: syncDiagnosticRef(this.clientId),
+        intentional: this.closed,
+        closeCode: event?.code ?? null,
+        readyState: socket.readyState,
+        pendingElementCount: this.pendingElements.size,
+        pendingFileCount: this.pendingFiles.size,
+      });
       logger.info("Collaboration socket closed", { category: "collaboration", roomId: this.roomId, intentional: this.closed });
       this.joined = false;
       this.socket = null;
@@ -380,6 +480,12 @@ export class SketchiziCollaboration {
   scheduleReconnect() {
     if (this.reconnectTimer || this.closed) return;
     const delay = Math.min(1000 * (2 ** this.reconnectAttempt), 10000);
+    if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.reconnectScheduled", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      delayMs: delay,
+      reconnectAttempt: this.reconnectAttempt,
+    });
     logger.debug("Collaboration reconnect scheduled", { category: "collaboration", roomId: this.roomId, delayMs: delay });
     this.reconnectAttempt += 1;
     this.reconnectTimer = setTimeout(() => {
@@ -394,14 +500,50 @@ export class SketchiziCollaboration {
   }
 
   send(message) {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sendSkipped", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        messageType: message?.type || "unknown",
+        reason: "socket-not-open",
+        readyState: this.socket?.readyState ?? null,
+      });
+      return false;
+    }
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const serializeStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     const payload = JSON.stringify(message);
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.serialization.completed", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      ...summarizeSyncMessage(message),
+      payloadBytes: syncUtf8ByteLength(payload),
+      serializationDurationMs: Math.max(0, syncDiagnosticNow() - serializeStartedAt),
+      readyState: this.socket.readyState,
+      bufferedAmountBefore: this.socket.bufferedAmount,
+    });
     if (payload.length > MAX_MESSAGE_BYTES) {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sendRejected", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        messageType: message?.type || "unknown",
+        reason: "message-too-large",
+        payloadLength: payload.length,
+      });
       this.fail("This collaboration update is too large.");
       return false;
     }
-    this.socket.send(payload);
-    return true;
+    const sendStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    try {
+      this.socket.send(payload);
+      return true;
+    } finally {
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.websocket.sendCompleted", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        messageType: message?.type || "unknown",
+        payloadBytes: syncUtf8ByteLength(payload),
+        sendCallDurationMs: Math.max(0, syncDiagnosticNow() - sendStartedAt),
+        bufferedAmountAfter: this.socket?.bufferedAmount ?? null,
+      });
+    }
   }
 
   cancelBackpressureRetry() {
@@ -411,40 +553,135 @@ export class SketchiziCollaboration {
 
   scheduleBackpressureRetry() {
     if (this.backpressureTimer !== null || this.closed) return;
+    if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.backpressure.retryScheduled", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      delayMs: COLLAB_BACKPRESSURE_RETRY_MS,
+      pendingElementCount: this.pendingElements.size,
+      pendingFileCount: this.pendingFiles.size,
+      bufferedAmount: this.socket?.bufferedAmount ?? null,
+    });
     this.backpressureTimer = setTimeout(() => {
       this.backpressureTimer = null;
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.backpressure.retryFired", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        pendingElementCount: this.pendingElements.size,
+        pendingFileCount: this.pendingFiles.size,
+        bufferedAmount: this.socket?.bufferedAmount ?? null,
+      });
       this.flushPendingUpdates();
     }, COLLAB_BACKPRESSURE_RETRY_MS);
   }
 
   sendSceneUpdate(message, { force = false } = {}) {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sceneUpdateSendSkipped", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        reason: "socket-not-open",
+        readyState: this.socket?.readyState ?? null,
+        force,
+      });
+      return false;
+    }
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const serializeStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     const payload = JSON.stringify(message);
+    const payloadBytes = diagnosticsEnabled ? syncUtf8ByteLength(payload) : null;
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.sceneUpdateSerialized", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      ...summarizeSyncMessage(message),
+      payloadBytes,
+      serializationDurationMs: Math.max(0, syncDiagnosticNow() - serializeStartedAt),
+      bufferedAmount: this.socket.bufferedAmount,
+      force,
+    });
     if (payload.length > MAX_MESSAGE_BYTES) {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sceneUpdateSendRejected", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        reason: "message-too-large",
+        payloadLength: payload.length,
+        payloadBytes,
+      });
       this.fail("This collaboration update is too large.");
       return false;
     }
     if (!force && this.socket.bufferedAmount > COLLAB_BACKPRESSURE_HIGH_WATER_MARK) {
+      if (diagnosticsEnabled && this.syncDiagnosticDeferredAt === null) this.syncDiagnosticDeferredAt = syncDiagnosticNow();
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sceneUpdateDeferred", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        pendingElementCount: this.pendingElements.size,
+        pendingFileCount: this.pendingFiles.size,
+        payloadBytes,
+        bufferedAmount: this.socket.bufferedAmount,
+        highWaterMarkBytes: COLLAB_BACKPRESSURE_HIGH_WATER_MARK,
+        force,
+      });
       this.scheduleBackpressureRetry();
       return false;
     }
-    this.socket.send(payload);
-    return true;
+    const sendStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    try {
+      this.socket.send(payload);
+      if (diagnosticsEnabled) {
+        const deferredDurationMs = this.syncDiagnosticDeferredAt === null ? null : Math.max(0, syncDiagnosticNow() - this.syncDiagnosticDeferredAt);
+        this.syncDiagnosticDeferredAt = null;
+        if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sceneUpdateSent", {
+          roomRef: syncDiagnosticRef(this.roomId),
+          ...summarizeSyncMessage(message),
+          payloadBytes,
+          sendCallDurationMs: Math.max(0, syncDiagnosticNow() - sendStartedAt),
+          bufferedAmountAfter: this.socket.bufferedAmount,
+          deferredDurationMs,
+          force,
+        });
+      }
+      return true;
+    } catch (error) {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sceneUpdateSendError", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        errorName: error?.name || "Error",
+        payloadBytes,
+        bufferedAmount: this.socket?.bufferedAmount ?? null,
+      });
+      throw error;
+    }
   }
 
   snapshot() {
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     const elements = this.api.getSceneElementsIncludingDeleted?.() || this.api.getSceneElements();
     const files = this.api.getFiles?.() || {};
     this.remember(elements, files);
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.snapshot.created", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      elementCount: elements.length,
+      fileCount: Object.keys(files).length,
+      deletedCount: summarizeSyncRecords(elements).deletedCount,
+      durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+    });
     return { elements, files };
   }
 
   remember(elements, files) {
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     this.lastElements = new Map((elements || []).map((element) => [element.id, elementSignature(element)]));
     this.lastFiles = new Map(Object.entries(files || {}).map(([id, file]) => [id, fileSignature(file)]));
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.baseline.remembered", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      elementCount: (elements || []).length,
+      fileCount: Object.keys(files || {}).length,
+      durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+    });
   }
 
   syncBaseline(elements, files) {
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    const pendingElementsBefore = this.pendingElements.size;
+    const pendingFilesBefore = this.pendingFiles.size;
     this.cancelPendingFlush();
     this.cancelBackpressureRetry();
     const pendingElements = new Map(this.pendingElements);
@@ -452,18 +689,51 @@ export class SketchiziCollaboration {
     this.remember(elements, files);
 
     this.pendingElements.clear();
+    let pendingElementsRetained = 0;
     for (const [id, element] of pendingElements) {
-      if (this.lastElements.get(id) !== elementSignature(element)) this.pendingElements.set(id, element);
+      if (this.lastElements.get(id) !== elementSignature(element)) {
+        this.pendingElements.set(id, element);
+        pendingElementsRetained += 1;
+      }
     }
     this.pendingFiles.clear();
+    let pendingFilesRetained = 0;
     for (const [id, file] of pendingFiles) {
-      if (this.lastFiles.get(id) !== fileSignature(file)) this.pendingFiles.set(id, file);
+      if (this.lastFiles.get(id) !== fileSignature(file)) {
+        this.pendingFiles.set(id, file);
+        pendingFilesRetained += 1;
+      }
     }
     if (this.pendingElements.size || this.pendingFiles.size) this.schedulePendingFlush();
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.baseline.synchronized", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      baselineElementCount: (elements || []).length,
+      baselineFileCount: Object.keys(files || {}).length,
+      pendingElementsBefore,
+      pendingFilesBefore,
+      pendingElementsRetained,
+      pendingFilesRetained,
+      pendingElementsDropped: pendingElementsBefore - pendingElementsRetained,
+      pendingFilesDropped: pendingFilesBefore - pendingFilesRetained,
+      durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+    });
   }
 
   schedulePendingFlush() {
-    if (this.flushFrame !== null) return;
+    if (this.flushFrame !== null) {
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.flushSchedule.coalesced", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        pendingElementCount: this.pendingElements.size,
+        pendingFileCount: this.pendingFiles.size,
+      });
+      return;
+    }
+    if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.flushSchedule.created", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      pendingElementCount: this.pendingElements.size,
+      pendingFileCount: this.pendingFiles.size,
+      schedulingMethod: typeof requestAnimationFrame === "function" ? "requestAnimationFrame" : "setTimeout-16ms",
+    });
     const flush = () => {
       this.flushFrame = null;
       this.flushPendingUpdates();
@@ -483,14 +753,46 @@ export class SketchiziCollaboration {
   }
 
   flushPendingUpdates({ force = false } = {}) {
-    if (!this.pendingElements.size && !this.pendingFiles.size) return true;
-    if (!this.joined || !this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    const pendingElementsBefore = this.pendingElements.size;
+    const pendingFilesBefore = this.pendingFiles.size;
+    if (!pendingElementsBefore && !pendingFilesBefore) return true;
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.flush.started", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      pendingElementsBefore,
+      pendingFilesBefore,
+      force,
+      joined: this.joined,
+      readyState: this.socket?.readyState ?? null,
+      bufferedAmount: this.socket?.bufferedAmount ?? null,
+    });
+    if (!this.joined || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.flush.deferred", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        reason: "not-joined-or-socket-not-open",
+        durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+      });
+      return false;
+    }
     if (!force && this.socket.bufferedAmount > COLLAB_BACKPRESSURE_HIGH_WATER_MARK) {
+      if (diagnosticsEnabled && this.syncDiagnosticDeferredAt === null) this.syncDiagnosticDeferredAt = syncDiagnosticNow();
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.flush.deferred", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        reason: "backpressure-high-water-mark",
+        pendingElementsBefore,
+        pendingFilesBefore,
+        bufferedAmount: this.socket.bufferedAmount,
+        highWaterMarkBytes: COLLAB_BACKPRESSURE_HIGH_WATER_MARK,
+        durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+      });
       this.scheduleBackpressureRetry();
       return false;
     }
 
     const changedElements = [];
+    let transientCreatedThenDeleted = 0;
+    let unchangedElements = 0;
     for (const element of this.pendingElements.values()) {
       const signature = elementSignature(element);
       const baseline = this.lastElements.get(element.id);
@@ -498,34 +800,84 @@ export class SketchiziCollaboration {
       // If an element was created and deleted before the next animation frame,
       // the remote side never needed to see it. Existing elements still send
       // their deletion normally because their baseline signature is present.
-      if (baseline === undefined && element.isDeleted) continue;
+      if (baseline === undefined && element.isDeleted) {
+        transientCreatedThenDeleted += 1;
+        continue;
+      }
       if (baseline !== signature) changedElements.push(element);
+      else unchangedElements += 1;
     }
 
     const changedFiles = [];
+    let unchangedFiles = 0;
     for (const file of this.pendingFiles.values()) {
       if (this.lastFiles.get(file.id) !== fileSignature(file)) changedFiles.push(file);
+      else unchangedFiles += 1;
     }
 
     if (!changedElements.length && !changedFiles.length) {
       this.pendingElements.clear();
       this.pendingFiles.clear();
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.flush.completed", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        outcome: "no-changes",
+        pendingElementsBefore,
+        pendingFilesBefore,
+        changedElementCount: 0,
+        changedFileCount: 0,
+        unchangedElements,
+        unchangedFiles,
+        transientCreatedThenDeleted,
+        pendingElementsAfter: 0,
+        pendingFilesAfter: 0,
+        durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+      });
       return true;
     }
 
-    const sent = this.sendSceneUpdate({
+    const updateMessage = {
       type: "update",
       roomId: this.roomId,
       clientId: this.clientId,
       elements: changedElements,
       files: changedFiles,
-    }, { force });
-    if (!sent) return false;
+    };
+    const sent = this.sendSceneUpdate(updateMessage, { force });
+    if (!sent) {
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.flush.completed", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        outcome: "deferred-or-rejected",
+        pendingElementsBefore,
+        pendingFilesBefore,
+        changedElementCount: changedElements.length,
+        changedFileCount: changedFiles.length,
+        transientCreatedThenDeleted,
+        pendingElementsAfter: this.pendingElements.size,
+        pendingFilesAfter: this.pendingFiles.size,
+        durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+      });
+      return false;
+    }
 
     for (const element of changedElements) this.lastElements.set(element.id, elementSignature(element));
     for (const file of changedFiles) this.lastFiles.set(file.id, fileSignature(file));
     this.pendingElements.clear();
     this.pendingFiles.clear();
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.flush.completed", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      outcome: "sent",
+      pendingElementsBefore,
+      pendingFilesBefore,
+      changedElementCount: changedElements.length,
+      changedDeletedElementCount: changedElements.filter((element) => element.isDeleted).length,
+      changedFileCount: changedFiles.length,
+      unchangedElements,
+      unchangedFiles,
+      transientCreatedThenDeleted,
+      pendingElementsAfter: this.pendingElements.size,
+      pendingFilesAfter: this.pendingFiles.size,
+      durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+    });
     return true;
   }
 
@@ -549,30 +901,73 @@ export class SketchiziCollaboration {
 
   broadcastLocalChange(elements, files, appState = null) {
     if (!this.joined || !["host", "editor"].includes(this.permission)) return;
-    this.updateLocalAuthorship(elements);
-
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    const elementList = elements || [];
+    const fileEntries = Object.entries(files || {});
     let changedElement = false;
-    for (const element of elements || []) {
+    let changedElementCount = 0;
+    let coalescedElementCount = 0;
+    let changedDeletedElementCount = 0;
+    let changedFileCount = 0;
+    let coalescedFileCount = 0;
+    measureSyncDiagnostic("client.localAuthorshipUpdate", { elementCount: elementList.length }, () => this.updateLocalAuthorship(elementList));
+
+    for (const element of elementList) {
       const signature = elementSignature(element);
       if (this.lastElements.get(element.id) !== signature) {
+        if (diagnosticsEnabled && this.pendingElements.has(element.id)) coalescedElementCount += 1;
         this.pendingElements.set(element.id, element);
         changedElement = true;
+        changedElementCount += 1;
+        if (element.isDeleted) changedDeletedElementCount += 1;
       }
     }
     if (changedElement) this.setActivity(appState?.draggingElement || appState?.editingElement ? "editing/moving" : "drawing");
 
-    for (const [id, file] of Object.entries(files || {})) {
-      if (this.lastFiles.get(id) !== fileSignature(file)) this.pendingFiles.set(id, file);
+    for (const [id, file] of fileEntries) {
+      if (this.lastFiles.get(id) !== fileSignature(file)) {
+        if (diagnosticsEnabled && this.pendingFiles.has(id)) coalescedFileCount += 1;
+        this.pendingFiles.set(id, file);
+        changedFileCount += 1;
+      }
     }
 
     this.schedulePendingFlush();
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.localChange.detected", {
+      roomRef: syncDiagnosticRef(this.roomId),
+      clientRef: syncDiagnosticRef(this.clientId),
+      elementsExamined: elementList.length,
+      filesExamined: fileEntries.length,
+      changedElementCount,
+      changedDeletedElementCount,
+      changedFileCount,
+      coalescedElementCount,
+      coalescedFileCount,
+      pendingElementsAfter: this.pendingElements.size,
+      pendingFilesAfter: this.pendingFiles.size,
+      durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+    });
   }
 
   handleMessage(message) {
     if (!message || message.roomId !== this.roomId) return;
 
     switch (message.type) {
-      case "joined":
+      case "joined": {
+        const diagnosticsEnabled = syncDiagnosticsEnabled();
+        const snapshotKind = this.hasInitialized ? "reconnect" : "initial";
+        if (diagnosticsEnabled) recordSyncDiagnostic("client.joined.snapshotReceived", {
+          roomRef: syncDiagnosticRef(this.roomId),
+          clientRef: syncDiagnosticRef(this.clientId),
+          snapshotKind,
+          elementCount: Array.isArray(message.elements) ? message.elements.length : 0,
+          fileCount: message.files && typeof message.files === "object" ? Object.keys(message.files).length : 0,
+          participantCount: Array.isArray(message.participants) ? message.participants.length : 0,
+          authorshipCount: message.authorship && typeof message.authorship === "object" ? Object.keys(message.authorship).length : 0,
+          chatHistoryCount: Array.isArray(message.chatHistory) ? message.chatHistory.length : 0,
+          deletedElementCount: Array.isArray(message.elements) ? summarizeSyncRecords(message.elements).deletedCount : 0,
+        });
         this.joined = true;
         this.role = message.role === "host" ? "host" : "joinee";
         this.permission = message.permission === "host" ? "host" : message.permission === "editor" ? "editor" : "viewer";
@@ -592,16 +987,24 @@ export class SketchiziCollaboration {
         this.lastPresenceSignature = [this.localPresence.displayName, this.localPresence.color, this.localPresence.activity, this.localPresence.selectedElementIds.join(",")].join("|");
         this.onPresence?.(this.presence);
         this.onStatus?.("connected");
+        this.onChatHistory?.(Array.isArray(message.chatHistory) ? message.chatHistory : []);
         if (Array.isArray(message.elements)) {
+          const stateStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
           this.onState?.({
-            kind: this.hasInitialized ? "reconnect" : "initial",
+            kind: snapshotKind,
             elements: message.elements,
             files: message.files && typeof message.files === "object" ? message.files : {},
           });
           this.hasInitialized = true;
+          if (diagnosticsEnabled) recordSyncDiagnostic("client.joined.snapshotAppliedCallbackCompleted", {
+            roomRef: syncDiagnosticRef(this.roomId),
+            snapshotKind,
+            elementCount: message.elements.length,
+            durationMs: Math.max(0, syncDiagnosticNow() - stateStartedAt),
+          });
         }
         break;
-
+      }
       case "permission:request":
         if (this.role === "host") {
           logger.info("Collaboration edit request received", { category: "collaboration", roomId: this.roomId });
@@ -665,8 +1068,21 @@ export class SketchiziCollaboration {
         }
         break;
 
-      case "update":
-        if (!Array.isArray(message.elements)) return;
+      case "update": {
+        if (!Array.isArray(message.elements)) {
+          if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.remoteUpdate.rejected", {
+            roomRef: syncDiagnosticRef(this.roomId),
+            reason: "elements-not-array",
+          });
+          return;
+        }
+        const diagnosticsEnabled = syncDiagnosticsEnabled();
+        const remoteStateStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+        if (diagnosticsEnabled) recordSyncDiagnostic("client.remoteUpdate.received", {
+          roomRef: syncDiagnosticRef(this.roomId),
+          sourceClientRef: message.clientId ? syncDiagnosticRef(message.clientId) : "unknown",
+          ...summarizeSyncMessage(message),
+        });
         if (message.authorship && typeof message.authorship === "object") {
           for (const [id, value] of Object.entries(message.authorship)) this.authorship.set(id, value);
           this.onAuthorship?.(Object.fromEntries(this.authorship));
@@ -677,6 +1093,23 @@ export class SketchiziCollaboration {
           elements: message.elements,
           files: Array.isArray(message.files) ? message.files : [],
         });
+        if (diagnosticsEnabled) recordSyncDiagnostic("client.remoteUpdate.stateCallbackCompleted", {
+          roomRef: syncDiagnosticRef(this.roomId),
+          sourceClientRef: message.clientId ? syncDiagnosticRef(message.clientId) : "unknown",
+          elementCount: message.elements.length,
+          durationMs: Math.max(0, syncDiagnosticNow() - remoteStateStartedAt),
+        });
+        break;
+      }
+
+      case "chat:message":
+        if (message.message && typeof message.message.id === "string" && typeof message.message.text === "string") {
+          this.onChatMessage?.(message.message);
+        }
+        break;
+
+      case "chat:error":
+        this.onChatError?.(typeof message.message === "string" ? message.message : "Unable to send chat message.");
         break;
 
       case "session-ended":

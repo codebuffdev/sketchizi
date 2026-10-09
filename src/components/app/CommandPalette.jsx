@@ -6,7 +6,6 @@ const CATEGORY_ORDER = [
   "Collaboration",
   "Files",
   "View",
-  "Layout",
   "Tools",
   "Export",
   "Application",

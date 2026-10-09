@@ -929,14 +929,6 @@
     color: #fff;
   }
 
-  /* Layout popover belongs above the central canvas, away from the right
-     context column. The trigger itself remains the existing component. */
-  .layout-panel-portal {
-    top: calc(var(--sketchizi-desktop-header-height) + 8px);
-    right: calc(var(--sketchizi-desktop-context-width) + 14px);
-    z-index: 540;
-  }
-
   /* No page-level overflow on the desktop shell. */
   body,
   #root,

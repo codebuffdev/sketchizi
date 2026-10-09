@@ -9,6 +9,13 @@ import {
   getCollaborationClientId,
   saveCollaborationDisplayName,
 } from "../../collaboration";
+import {
+  measureSyncDiagnostic,
+  recordSyncDiagnostic,
+  summarizeSyncRecords,
+  syncDiagnosticNow,
+  syncDiagnosticsEnabled,
+} from "./syncDiagnostics";
 
 export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchReady, apiReady }) {
   const collaborationRef = useRef(null);
@@ -84,6 +91,8 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const [collaborationRequests, setCollaborationRequests] = useState([]);
   const [collaborationAuthorship, setCollaborationAuthorship] = useState({});
   const [collaborationCreationState, setCollaborationCreationState] = useState("idle");
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatError, setChatError] = useState("");
   const collaborationCreationAttemptRef = useRef(false);
   const collaborationCreationTimeoutRef = useRef(null);
 
@@ -99,6 +108,8 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationCreationAttemptRef.current = false;
     collaborationRef.current?.close();
     setCollaborationRoom(null);
+    setChatMessages([]);
+    setChatError("");
     setCollaborationLink(null);
     setCollaborationSessionName("");
     setCollaborationUsers(0);
@@ -130,47 +141,87 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const mergeCollaborativeElements = useCallback((remoteElements) => {
     const api = apiRef.current;
     if (!api || !Array.isArray(remoteElements)) return;
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     const existingElements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements();
-    const restoredRemote = restoreElements(remoteElements, existingElements, { repairBindings: true });
-    const reconciled = reconcileElements(existingElements, restoredRemote, api.getAppState());
-    collaborationRemoteUpdateRef.current = true;
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.remoteSceneApply.started", {
+      incomingElementCount: remoteElements.length,
+      existingElementCount: existingElements.length,
+      incomingDeletedCount: summarizeSyncRecords(remoteElements).deletedCount,
+    });
     try {
-      api.updateScene({ elements: reconciled, captureUpdate: CaptureUpdateAction.NEVER });
+      const restoredRemote = measureSyncDiagnostic("client.restoreRemoteElements", { incomingElementCount: remoteElements.length, existingElementCount: existingElements.length }, () => restoreElements(remoteElements, existingElements, { repairBindings: true }));
+      const reconciled = measureSyncDiagnostic("client.reconcileRemoteElements", { existingElementCount: existingElements.length, restoredElementCount: restoredRemote.length }, () => reconcileElements(existingElements, restoredRemote, api.getAppState()));
+      collaborationRemoteUpdateRef.current = true;
+      try {
+        measureSyncDiagnostic("client.remoteUpdateScene", { reconciledElementCount: reconciled.length }, () => api.updateScene({ elements: reconciled, captureUpdate: CaptureUpdateAction.NEVER }));
+      } finally {
+        collaborationRemoteUpdateRef.current = false;
+      }
     } finally {
-      collaborationRemoteUpdateRef.current = false;
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.remoteSceneApply.completed", {
+        durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+        incomingElementCount: remoteElements.length,
+        existingElementCount: existingElements.length,
+      });
     }
   }, [apiRef]);
 
   const applyCollaborationState = useCallback(({ kind, elements, files, sourceClientId }) => {
     const api = apiRef.current;
     if (!api) return;
-    if (kind === "initial") {
-      const restored = restoreElements(elements || [], null, { repairBindings: true });
-      collaborationRemoteUpdateRef.current = true;
-      try {
-        api.updateScene({
-          elements: restored,
-          appState: { ...api.getAppState(), selectedElementIds: {}, selectedGroupIds: {} },
-          captureUpdate: CaptureUpdateAction.NEVER,
-        });
-        if (files && typeof files === "object") api.addFiles?.(Object.values(files));
-        collaborationRef.current?.syncBaseline(
-          api.getSceneElementsIncludingDeleted?.() || api.getSceneElements(),
-          api.getFiles?.() || {},
-        );
-      } finally {
-        collaborationRemoteUpdateRef.current = false;
+    const diagnosticsEnabled = syncDiagnosticsEnabled();
+    const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    const incomingElements = Array.isArray(elements) ? elements : [];
+    const incomingFiles = Array.isArray(files) ? files : files && typeof files === "object" ? Object.values(files) : [];
+    if (diagnosticsEnabled) recordSyncDiagnostic("client.remoteState.received", {
+      kind,
+      incomingElementCount: incomingElements.length,
+      incomingFileCount: incomingFiles.length,
+      sourceClientRef: sourceClientId ? String(sourceClientId).slice(-6) : "snapshot",
+    });
+    try {
+      if (kind === "initial") {
+        const restored = measureSyncDiagnostic("client.restoreInitialSnapshot", { incomingElementCount: incomingElements.length }, () => restoreElements(elements || [], null, { repairBindings: true }));
+        collaborationRemoteUpdateRef.current = true;
+        try {
+          measureSyncDiagnostic("client.applyInitialSnapshot", { restoredElementCount: restored.length }, () => api.updateScene({
+            elements: restored,
+            appState: { ...api.getAppState(), selectedElementIds: {}, selectedGroupIds: {} },
+            captureUpdate: CaptureUpdateAction.NEVER,
+          }));
+          if (files && typeof files === "object") api.addFiles?.(Object.values(files));
+          measureSyncDiagnostic("client.syncBaselineAfterSnapshot", diagnosticsEnabled ? {
+            sceneElementCount: (api.getSceneElementsIncludingDeleted?.() || api.getSceneElements()).length,
+            sceneFileCount: Object.keys(api.getFiles?.() || {}).length,
+          } : {}, () => collaborationRef.current?.syncBaseline(
+            api.getSceneElementsIncludingDeleted?.() || api.getSceneElements(),
+            api.getFiles?.() || {},
+          ));
+        } finally {
+          collaborationRemoteUpdateRef.current = false;
+        }
+        return;
       }
-      return;
+      mergeCollaborativeElements(elements);
+      if (sourceClientId && sourceClientId !== collaborationClientId) focusRemoteEditingArea(elements);
+      if (Array.isArray(files) && files.length) api.addFiles?.(files);
+      else if (files && typeof files === "object" && Object.keys(files).length) api.addFiles?.(Object.values(files));
+      measureSyncDiagnostic("client.syncBaselineAfterRemoteUpdate", diagnosticsEnabled ? {
+        sceneElementCount: (api.getSceneElementsIncludingDeleted?.() || api.getSceneElements()).length,
+        sceneFileCount: Object.keys(api.getFiles?.() || {}).length,
+      } : {}, () => collaborationRef.current?.syncBaseline(
+        api.getSceneElementsIncludingDeleted?.() || api.getSceneElements(),
+        api.getFiles?.() || {},
+      ));
+    } finally {
+      if (diagnosticsEnabled) recordSyncDiagnostic("client.remoteState.completed", {
+        kind,
+        durationMs: Math.max(0, syncDiagnosticNow() - startedAt),
+        incomingElementCount: incomingElements.length,
+        incomingFileCount: incomingFiles.length,
+      });
     }
-    mergeCollaborativeElements(elements);
-    if (sourceClientId && sourceClientId !== collaborationClientId) focusRemoteEditingArea(elements);
-    if (Array.isArray(files) && files.length) api.addFiles?.(files);
-    else if (files && typeof files === "object" && Object.keys(files).length) api.addFiles?.(Object.values(files));
-    collaborationRef.current?.syncBaseline(
-      api.getSceneElementsIncludingDeleted?.() || api.getSceneElements(),
-      api.getFiles?.() || {},
-    );
   }, [apiRef, collaborationClientId, focusRemoteEditingArea, mergeCollaborativeElements]);
 
   const connectCollaboration = useCallback((roomId, sessionName = "", participantName = "") => {
@@ -180,6 +231,8 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     if (!normalizedParticipantName) return;
     setCollaborationDisplayName(normalizedParticipantName);
     collaborationRef.current?.close();
+    setChatMessages([]);
+    setChatError("");
     setCollaborationRoom(roomId);
     setCollaborationLink(getCollaborationLink(roomId));
     setCollaborationSessionName(sessionName.trim());
@@ -227,8 +280,13 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
         if (request?.participantId) setCollaborationRequests((current) => current.some((item) => item.participantId === request.participantId) ? current : [...current, request]);
       },
       onAuthorship: setCollaborationAuthorship,
+      onChatHistory: (messages) => { setChatMessages(Array.isArray(messages) ? messages.map((message) => ({ ...message, __history: true })) : []); setChatError(""); },
+      onChatMessage: (message) => setChatMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]),
+      onChatError: setChatError,
       onSessionInfo: ({ name }) => setCollaborationSessionName(name || "Collaboration"),
       onSessionEnded: (message) => {
+        setChatMessages([]);
+        setChatError("");
         setCollaborationRoom(null);
         setCollaborationLink(null);
         setCollaborationSessionName("");
@@ -317,6 +375,8 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     if (!window.confirm(isHost ? "End collaboration session?" : "Leave collaboration?")) return false;
     if (isHost) collaborationRef.current?.disconnect();
     else collaborationRef.current?.leave();
+    setChatMessages([]);
+    setChatError("");
     setCollaborationRoom(null);
     setCollaborationLink(null);
     setCollaborationSessionName("");
@@ -354,6 +414,13 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationRef.current?.close();
   }, [clearCollaborationCreationTimeout]);
 
+  const sendChatMessage = useCallback((text, audience, recipientId) => {
+    setChatError("");
+    const sent = collaborationRef.current?.sendChatMessage(text, audience, recipientId) || false;
+    if (!sent) setChatError("Message could not be sent. Check the connection and message length.");
+    return sent;
+  }, []);
+
   return {
     collaborationRef,
     collaborationRemoteUpdateRef,
@@ -381,6 +448,9 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationRequestState,
     collaborationRequests,
     collaborationAuthorship,
+    chatMessages,
+    chatError,
+    sendChatMessage,
     connectCollaboration,
     startCollaboration,
     createCollaboration,

@@ -161,7 +161,7 @@
   }
 
   /* Keep the workspace below the real header while retaining the existing
-     overlay behavior for Library, Properties, Validation, and Layout. */
+     overlay behavior for Library, Properties, and Validation. */
   .desktop-workspace {
     position: relative;
     display: block;
@@ -243,8 +243,7 @@
      width. */
   .library-panel,
   .properties-panel,
-  .architecture-validation-panel,
-  .layout-popover {
+  .architecture-validation-panel{
     max-width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px));
     max-height: calc(100dvh - 66px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }
@@ -282,12 +281,7 @@
      below the real header introduced by this responsive layer. */
   .library-panel,
   .properties-panel,
-  .architecture-validation-panel,
-  .layout-popover {
-    top: calc(var(--sketchizi-responsive-header-height) + 6px);
-  }
-
-  .layout-panel-portal {
+  .architecture-validation-panel{
     top: calc(var(--sketchizi-responsive-header-height) + 6px);
   }
 }
@@ -478,10 +472,8 @@
   .app:has(.collaboration-status-bar) .library-panel,
   .app:has(.collaboration-status-bar) .properties-panel,
   .app:has(.collaboration-status-bar) .architecture-validation-panel,
-  .app:has(.collaboration-status-bar) .layout-popover,
   .app:has(.collaboration-status-bar).panel-open-library .library-panel,
-  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel,
-  .app:has(.collaboration-status-bar).panel-open-layout .layout-popover {
+  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel{
     top: calc(196px + var(--safe-top, 0px));
     max-height: calc(100dvh - 208px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }
@@ -537,10 +529,8 @@
   .app:has(.collaboration-status-bar) .library-panel,
   .app:has(.collaboration-status-bar) .properties-panel,
   .app:has(.collaboration-status-bar) .architecture-validation-panel,
-  .app:has(.collaboration-status-bar) .layout-popover,
   .app:has(.collaboration-status-bar).panel-open-library .library-panel,
-  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel,
-  .app:has(.collaboration-status-bar).panel-open-layout .layout-popover {
+  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel{
     top: calc(196px + var(--safe-top, 0px));
     max-height: calc(100dvh - 208px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }
@@ -558,10 +548,8 @@
   .app:has(.collaboration-status-bar) .library-panel,
   .app:has(.collaboration-status-bar) .properties-panel,
   .app:has(.collaboration-status-bar) .architecture-validation-panel,
-  .app:has(.collaboration-status-bar) .layout-popover,
   .app:has(.collaboration-status-bar).panel-open-library .library-panel,
-  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel,
-  .app:has(.collaboration-status-bar).panel-open-layout .layout-popover {
+  .app:has(.collaboration-status-bar).panel-open-properties .properties-panel{
     top: calc(184px + var(--safe-top, 0px));
     max-height: calc(100dvh - 196px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }

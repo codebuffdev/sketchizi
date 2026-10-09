@@ -1,6 +1,7 @@
 import { architectureValidationRules, validateArchitecture } from "./architectureValidationService.js";
 import { awsArchitectureRules } from "./awsArchitectureRules.js";
 import { kubernetesArchitectureRules } from "./kubernetesArchitectureRules.js";
+import { networkingArchitectureRules } from "./networkingArchitectureRules.js";
 
 function isProviderOrphanDiagnostic(diagnostic, code) {
   return diagnostic?.code === code && Boolean(diagnostic.resourceId);
@@ -28,12 +29,12 @@ function enrichDiagnosticsWithGraphContext(result, graph) {
     const resource = diagnostic.resourceId ? findResource(diagnostic) : null;
     const sourceResource = relationship
       ? resources.find((candidate) =>
-        candidate.provider === relationship.provider && candidate.resourceId === relationship.sourceResourceId
+        candidate.provider === (relationship.sourceProvider || relationship.provider) && candidate.resourceId === relationship.sourceResourceId
       )
       : null;
     const targetResource = relationship
       ? resources.find((candidate) =>
-        candidate.provider === relationship.provider && candidate.resourceId === relationship.targetResourceId
+        candidate.provider === (relationship.targetProvider || relationship.provider) && candidate.resourceId === relationship.targetResourceId
       )
       : null;
     const provider = diagnostic.provider || relationship?.provider || resource?.provider || null;
@@ -85,6 +86,7 @@ export function validateArchitectureWithProviderRules(graph) {
     ...architectureValidationRules,
     ...awsArchitectureRules,
     ...kubernetesArchitectureRules,
+    ...networkingArchitectureRules,
   ]);
 
   return deduplicateProviderSpecificDiagnostics(enrichDiagnosticsWithGraphContext(result, graph));

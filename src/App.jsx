@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
-import LayoutToolbar from "./LayoutToolbar";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
@@ -17,7 +16,7 @@ import { umlIcons } from "./umlLibrary";
 import { mindMapIcons } from "./mindMapLibrary";
 import { awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives, AWS_CATALOG_LOGO, AWS_CATALOG_LOGO_DARK } from "./awsArchitectureLibrary";
 import { kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives } from "./kubernetesArchitectureLibrary";
-import { useCanvasTools } from "./features/layout/useCanvasTools";
+import { useCanvasTools } from "./features/canvas/useCanvasTools";
 import { useMinimapController } from "./features/canvas/useMinimapController";
 import { useExcalidrawScene } from "./features/canvas/useExcalidrawScene";
 import SketchiziCanvas from "./components/app/SketchiziCanvas";
@@ -29,10 +28,12 @@ import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziE
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
 import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
 import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinitions";
+import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
 import { getSelectedKubernetesResource, updateKubernetesResource } from "./features/kubernetes-resources/kubernetesResourceService";
+import { getSelectedNetworkingResource, updateNetworkingResource } from "./features/networking/networkingResourceService.js";
 import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } from "./features/aws-relationships/awsRelationshipService";
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
@@ -40,7 +41,7 @@ import DesktopAppHeader from "./components/app/DesktopAppHeader";
 
 function App() {
   const iconCatalog = useIconCatalog();
-  const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
+  const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
@@ -79,13 +80,13 @@ function App() {
   const panelState = usePanelState({ apiRef, closeNativeMenu });
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
-  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, layoutOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
+  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   const persistence = useSketchPersistence({ apiRef });
   const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, retryLocalSave, downloadRecoveryBackup } = persistence;
 
   const collaboration = useCollaboration({ apiRef, showToast, closeNativeMenu, sketchReady, apiReady });
-  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
+  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, chatMessages, chatError, sendChatMessage, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
 
   const fileManager = useFileManager({
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch,
@@ -121,13 +122,25 @@ function App() {
   const { draggingIcon, handleDragStart, handleIconMouseDown, handleIconPointerDown, handleIconClick, handleDragOver, handleDrop, createStarterMindMap } = iconInsertion;
 
   const canvasTools = useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit: collaborationCanEdit });
-  const { applyLayout, setGrid, toggleGrid, activateArrowTool, activateSelectionTool, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected, hasTextSelection, hasArrowSelection, hasShapeSelection } = canvasTools;
+  const { toggleGrid, activateArrowTool, activateSelectionTool, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected, hasTextSelection, hasArrowSelection, hasShapeSelection } = canvasTools;
   const selectedAwsResource = getSelectedAwsResource(selectedElements);
   const selectedAwsResourceDefinition = getAwsResourceDefinitionById(selectedAwsResource?.definitionId);
   const selectedKubernetesResource = getSelectedKubernetesResource(selectedElements);
   const selectedKubernetesResourceDefinition = getKubernetesResourceDefinitionById(selectedKubernetesResource?.definitionId);
+  const selectedNetworkingResource = getSelectedNetworkingResource(selectedElements);
+  const selectedNetworkingResourceDefinition = getNetworkingResourceDefinitionById(selectedNetworkingResource?.definitionId);
   const selectedAwsRelationship = selectedElements.length === 1 ? getAwsRelationship(selectedElements[0]) : null;
   const selectedKubernetesRelationship = selectedElements.length === 1 ? getKubernetesRelationship(selectedElements[0]) : null;
+  const selectedArchitectureRelationship = (() => {
+    const connector = selectedElements.length === 1 && ["arrow", "line"].includes(selectedElements[0]?.type) ? selectedElements[0] : null;
+    if (!connector) return null;
+    if (connector.customData?.architectureRelationship) return { ...connector.customData.architectureRelationship, elementId: connector.id };
+    const scene = apiRef.current?.getSceneElements?.() || [];
+    const endpoints = [connector.startBinding?.elementId, connector.endBinding?.elementId].map((id) => scene.find((element) => element.id === id)).filter(Boolean);
+    const providerOf = (element) => element?.customData?.awsResource ? "aws" : element?.customData?.kubernetesResource ? "kubernetes" : element?.customData?.networkingResource ? "networking" : null;
+    const providers = new Set(endpoints.map(providerOf).filter(Boolean));
+    return (providers.size > 1 || providers.has("networking")) ? { relationshipId: `architecture:${connector.id}`, relationshipType: "traffic-flow", elementId: connector.id } : null;
+  })();
   const updateArchitectureValidation = useCallback((elements) => {
     const graph = analyzeArchitectureGraph(elements);
     const result = validateArchitectureWithAwsRules(graph);
@@ -143,14 +156,14 @@ function App() {
     const elements = api.getSceneElements();
     const target = elements.find((element) => {
       const metadata = diagnostic.relationshipId
-        ? [element.customData?.awsRelationship, element.customData?.kubernetesRelationship]
-        : [element.customData?.awsResource, element.customData?.kubernetesResource];
+        ? [element.customData?.awsRelationship, element.customData?.kubernetesRelationship, element.customData?.architectureRelationship]
+        : [element.customData?.awsResource, element.customData?.kubernetesResource, element.customData?.networkingResource];
       return metadata.some((entry) => {
         if (!entry) return false;
         if (diagnostic.provider && entry.provider !== diagnostic.provider) return false;
         return diagnostic.relationshipId
           ? entry.relationshipId === diagnostic.relationshipId
-          : entry.awsResourceId === diagnostic.resourceId || entry.kubernetesResourceId === diagnostic.resourceId;
+          : entry.awsResourceId === diagnostic.resourceId || entry.kubernetesResourceId === diagnostic.resourceId || entry.networkingResourceId === diagnostic.resourceId;
       });
     });
 
@@ -175,6 +188,19 @@ function App() {
     if (!collaborationCanEdit || !selectedKubernetesResource?.kubernetesResourceId) return;
     updateKubernetesResource(apiRef.current, selectedKubernetesResource.kubernetesResourceId, patch);
   }, [collaborationCanEdit, selectedKubernetesResource?.kubernetesResourceId]);
+  const updateSelectedNetworkingResource = useCallback((patch) => {
+    if (!collaborationCanEdit || !selectedNetworkingResource?.networkingResourceId) return;
+    const result = updateNetworkingResource(apiRef.current, selectedNetworkingResource.networkingResourceId, patch);
+    if (result?.error) showToast(result.error, "error");
+  }, [collaborationCanEdit, selectedNetworkingResource?.networkingResourceId, showToast]);
+  const updateSelectedArchitectureRelationshipType = useCallback((relationshipType) => {
+    if (!collaborationCanEdit || !selectedArchitectureRelationship?.elementId || !apiRef.current) return;
+    const allowed = ["traffic-flow", "contains", "routes-to", "depends-on", "connects-to"];
+    if (!allowed.includes(relationshipType)) return;
+    const elements = apiRef.current.getSceneElementsIncludingDeleted();
+    const next = elements.map((element) => element.id !== selectedArchitectureRelationship.elementId ? element : ({ ...element, customData: { ...(element.customData || {}), architectureRelationship: { relationshipId: `architecture:${element.id}`, relationshipType } }, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }));
+    apiRef.current.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+  }, [collaborationCanEdit, selectedArchitectureRelationship?.elementId]);
   const updateSelectedAwsRelationshipType = useCallback((relationshipType) => {
     if (!collaborationCanEdit || !selectedAwsRelationship?.relationshipId || !apiRef.current) return;
     const currentElements = apiRef.current.getSceneElements();
@@ -197,7 +223,7 @@ function App() {
   }, [closePanel, collaborationCanEdit, libraryOpen]);
   const preferences = useSketchiziPreferences({
     apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid,
-    activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, canEdit: collaborationCanEdit,
+    activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
   const commands = createSketchiziCommandRegistry({
@@ -220,7 +246,7 @@ function App() {
     currentFolder,
     fileActionsRef,
   });
-  useNativeSketchiziMenu({ fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, themeMode, setThemeMode, toggleLayout: togglePanel, togglePanel, layoutOpen, canEdit: collaborationCanEdit });
+  useNativeSketchiziMenu({ fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, themeMode, setThemeMode, togglePanel, canEdit: collaborationCanEdit, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
@@ -337,7 +363,7 @@ function App() {
               eraserSyncError={eraserSyncError} syncEraserLibrary={syncEraserLibrary} eraserCachedCount={eraserCachedCount}
               connectionMode={connectionMode} activateArrowTool={activateArrowTool}
               activateSelectionTool={activateSelectionTool} remoteLoading={remoteLoading}
-              visibleIcons={visibleIcons} umlIcons={umlIcons} mindMapIcons={mindMapIcons} awsIcons={awsIcons} awsCategories={awsCategories} awsCategoryCounts={awsCategoryCounts} awsCategoryRepresentatives={awsCategoryRepresentatives} awsCatalogLogo={AWS_CATALOG_LOGO} awsCatalogLogoDark={AWS_CATALOG_LOGO_DARK} kubernetesIcons={kubernetesIcons} kubernetesCategories={kubernetesCategories} kubernetesCategoryCounts={kubernetesCategoryCounts} kubernetesCategoryRepresentatives={kubernetesCategoryRepresentatives} iconDisplayLimit={iconDisplayLimit}
+              visibleIcons={visibleIcons} umlIcons={umlIcons} mindMapIcons={mindMapIcons} networkingIcons={networkingIcons} awsIcons={awsIcons} awsCategories={awsCategories} awsCategoryCounts={awsCategoryCounts} awsCategoryRepresentatives={awsCategoryRepresentatives} awsCatalogLogo={AWS_CATALOG_LOGO} awsCatalogLogoDark={AWS_CATALOG_LOGO_DARK} kubernetesIcons={kubernetesIcons} kubernetesCategories={kubernetesCategories} kubernetesCategoryCounts={kubernetesCategoryCounts} kubernetesCategoryRepresentatives={kubernetesCategoryRepresentatives} iconDisplayLimit={iconDisplayLimit}
               setIconDisplayLimit={setIconDisplayLimit} iconListRef={iconListRef}
               draggingIcon={draggingIcon} handleIconClick={handleIconClick}
               handleIconPointerDown={handleIconPointerDown} handleIconMouseDown={handleIconMouseDown} handleDragStart={handleDragStart} createStarterMindMap={createStarterMindMap}
@@ -397,6 +423,8 @@ function App() {
                 applyToSelectedArrow={applyToSelectedArrow} updateSingleSelected={updateSingleSelected}
                 awsResource={selectedAwsResource} awsResourceDefinition={selectedAwsResourceDefinition} updateAwsResource={updateSelectedAwsResource}
                 kubernetesResource={selectedKubernetesResource} kubernetesResourceDefinition={selectedKubernetesResourceDefinition} updateKubernetesResource={updateSelectedKubernetesResource}
+                networkingResource={selectedNetworkingResource} networkingResourceDefinition={selectedNetworkingResourceDefinition} updateNetworkingResource={updateSelectedNetworkingResource}
+                architectureRelationship={selectedArchitectureRelationship} architectureRelationshipTypes={["traffic-flow", "contains", "routes-to", "depends-on", "connects-to"]} updateArchitectureRelationshipType={updateSelectedArchitectureRelationshipType}
                 awsRelationship={selectedAwsRelationship} relationshipTypes={AWS_RELATIONSHIP_TYPES} updateAwsRelationshipType={updateSelectedAwsRelationshipType}
                 kubernetesRelationship={selectedKubernetesRelationship} kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES} updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
                 readOnly={!collaborationCanEdit} authorship={collaborationAuthorship} selfId={collaborationClientId} participants={collaborationParticipants}
@@ -415,18 +443,6 @@ function App() {
           )}
         </aside>
       </div>
-
-      <LayoutToolbar
-        showTrigger={false}
-        layoutOpen={layoutOpen}
-        setLayoutOpen={(next) => {
-          const resolved = typeof next === "function" ? next(layoutOpen) : next;
-          if (resolved) openPanel("layout"); else closePanel("layout");
-        }}
-        propertiesOpen={propertiesOpen} selectedCount={selectedCount}
-        applyLayout={applyLayout} gridEnabled={gridEnabled} toggleGrid={toggleGrid}
-        setGrid={setGrid} gridSize={gridSize} readOnly={!collaborationCanEdit}
-      />
 
       <CommandPalette
         open={commandPaletteOpen}
@@ -464,6 +480,9 @@ function App() {
         onLeaveOrEnd={leaveOrEndCollaboration}
         showToast={showToast}
         onOpenDetails={openCollaborationDetails}
+        chatMessages={chatMessages}
+        chatError={chatError}
+        sendChatMessage={sendChatMessage}
       />
 
       {toast && (

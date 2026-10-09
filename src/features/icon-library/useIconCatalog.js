@@ -5,11 +5,14 @@ import { mindMapIcons } from "../../mindMapLibrary";
 import { logger } from "../../logging/logger";
 import { awsIcons } from "../../awsArchitectureLibrary";
 import { kubernetesIcons } from "../../kubernetesArchitectureLibrary";
+import { networkingResourceDefinitions } from "../../networkingResourceDefinitions.js";
+import { networkingIconSvg } from "../networking/networkingIconArtwork.js";
 
 export function useIconCatalog() {
   const [activeCategory, setActiveCategory] = useState("Eraser Icons");
   const [activeAwsCategory, setActiveAwsCategory] = useState("All");
   const [activeKubernetesCategory, setActiveKubernetesCategory] = useState("All");
+  const networkingIcons = useMemo(() => networkingResourceDefinitions.map((definition) => ({ id: definition.iconId, name: definition.displayName, subtitle: "Networking resource · editable metadata", category: "Networking", source: "networking", src: `data:image/svg+xml,${encodeURIComponent(networkingIconSvg(definition.resourceType))}` })), []);
   const [search, setSearch] = useState("");
   const [remoteIcons, setRemoteIcons] = useState([]);
   const [eraserCatalog, setEraserCatalog] = useState([]);
@@ -80,6 +83,8 @@ export function useIconCatalog() {
       base = activeKubernetesCategory === "All"
         ? kubernetesIcons
         : kubernetesIcons.filter((icon) => icon.category === activeKubernetesCategory);
+    } else if (activeCategory === "Networking") {
+      base = networkingIcons;
     } else {
       base = eraserCatalog;
     }
@@ -101,7 +106,7 @@ export function useIconCatalog() {
         .toLowerCase();
       return haystack.includes(query);
     }));
-  }, [eraserCatalog, search, activeCategory, activeAwsCategory, activeKubernetesCategory]);
+  }, [eraserCatalog, search, activeCategory, activeAwsCategory, activeKubernetesCategory, networkingIcons]);
 
   const syncEraserLibrary = async () => {
     if (!eraserCatalog.length || eraserSyncing) return;
@@ -137,7 +142,7 @@ export function useIconCatalog() {
   });
 
   return {
-    activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, remoteIcons, eraserCatalog,
+    activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, remoteIcons, eraserCatalog, networkingIcons,
     eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError,
     favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit,
     visibleIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed,

@@ -88,3 +88,12 @@
 .aws-category-label { display: inline-flex; align-items: center; min-width: 0; gap: 8px; }
 .aws-category-icon { width: 18px; height: 18px; flex: 0 0 18px; object-fit: contain; display: block; }
 .aws-category .category-count { margin-left: 8px; }
+
+/* Architecture catalog hierarchy */
+.architecture-category-group { display: flex; flex-direction: column; gap: 2px; }
+.architecture-category-trailing { display: inline-flex; align-items: center; gap: 7px; }
+.architecture-chevron { display: inline-block; font-size: 15px; line-height: 1; transition: transform .15s ease; }
+.architecture-chevron.expanded { transform: rotate(90deg); }
+.architecture-subcategories { display: flex; flex-direction: column; gap: 3px; padding-left: 14px; }
+.architecture-child { padding-left: 10px; border-left: 2px solid var(--ui-border-soft); }
+.architecture-child.active { border-left-color: var(--ui-accent); }

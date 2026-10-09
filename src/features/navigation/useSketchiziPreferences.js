@@ -1,17 +1,48 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { clearEmergencyBackup, clearSketch } from "../../persistence";
+import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js";
+import { CANVAS_BACKGROUND_MODE_KEY, resolveCanvasBackgroundMode } from "./canvasBackgroundMode.js";
 
-export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, canEdit = true }) {
-  const [themeMode, setThemeMode] = useState(() => {
-    try { const saved = localStorage.getItem("diagram-app-theme"); return saved === "dark" || saved === "light" || saved === "system" ? saved : "light"; }
-    catch { return "light"; }
-  });
+export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
+  const [themeMode, setThemeMode] = useState(() => getInitialThemeMode());
   const [systemDark, setSystemDark] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   const isDarkTheme = themeMode === "dark" || (themeMode === "system" && systemDark);
-  const themeCanvasBackgroundRef = useRef(null);
+  const canvasBackgroundModeKey = CANVAS_BACKGROUND_MODE_KEY;
+  const [canvasBackgroundMode, setCanvasBackgroundMode] = useState(() => {
+    try {
+      const mode = localStorage.getItem(canvasBackgroundModeKey);
+      return mode === "theme" || mode === "custom" ? mode : null;
+    } catch { return null; }
+  });
 
-  useEffect(() => { try { localStorage.setItem("diagram-app-theme", themeMode); } catch {} }, [themeMode]);
+  // Older Sketchizi versions did not persist whether a scene background was
+  // automatic or explicitly chosen. When restoring such a scene, preserve its
+  // background as custom rather than silently replacing it on startup.
+  useEffect(() => {
+    if (!sketchReady || canvasBackgroundMode !== null) return;
+    let storedMode = null;
+    try { storedMode = localStorage.getItem(canvasBackgroundModeKey); } catch {}
+    const initialMode = resolveCanvasBackgroundMode(storedMode, Boolean(savedSketch));
+    setCanvasBackgroundMode(initialMode);
+    try { localStorage.setItem(canvasBackgroundModeKey, initialMode); } catch {}
+  }, [canvasBackgroundMode, savedSketch, sketchReady]);
+
+  const markCanvasBackgroundCustom = useCallback(() => {
+    setCanvasBackgroundMode("custom");
+    try { localStorage.setItem(canvasBackgroundModeKey, "custom"); } catch {}
+  }, []);
+
+  const useThemeDefaultBackground = useCallback(() => {
+    setCanvasBackgroundMode("theme");
+    try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
+    const api = apiRef.current;
+    if (!api || !apiReady) return;
+    const nextBackground = isDarkTheme ? "#121212" : "#ffffff";
+    api.updateScene({ appState: { viewBackgroundColor: nextBackground }, captureUpdate: CaptureUpdateAction.NEVER });
+  }, [apiRef, apiReady, isDarkTheme]);
+
+  useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);
   useEffect(() => {
     const media = window.matchMedia?.("(prefers-color-scheme: dark)"); if (!media) return undefined;
     const handleChange = (event) => setSystemDark(event.matches);
@@ -25,35 +56,16 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     const api = apiRef.current;
     if (!api || !apiReady || !sketchReady) return;
 
+    if (canvasBackgroundMode !== "theme") return;
+
     const current = String(api.getAppState().viewBackgroundColor || "").toLowerCase();
-    const lightThemeBackground = "#ffffff";
-    const darkThemeBackground = "#121212";
-    const initialThemeBackgrounds = new Set(["#ffffff", "#fff", "#e5e5e5", "#121212", "#1b1b1b"]);
+    const nextBackground = isDarkTheme ? "#121212" : "#ffffff";
+    if (current === nextBackground) return;
 
-    // The first observed theme/default background becomes the value managed by
-    // the theme toggle. If the user subsequently changes Canvas background
-    // manually, the value no longer matches this ref and automatic theme
-    // synchronization stops rather than overwriting the user's choice.
-    if (themeCanvasBackgroundRef.current === null) {
-      if (!initialThemeBackgrounds.has(current)) return;
-      themeCanvasBackgroundRef.current = current;
-    } else if (current !== themeCanvasBackgroundRef.current) {
-      themeCanvasBackgroundRef.current = null;
-      return;
-    }
-
-    const nextBackground = isDarkTheme ? darkThemeBackground : lightThemeBackground;
-    if (current === nextBackground) {
-      themeCanvasBackgroundRef.current = nextBackground;
-      return;
-    }
-
-    api.updateScene({
-      appState: { viewBackgroundColor: nextBackground },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-    themeCanvasBackgroundRef.current = nextBackground;
-  }, [apiRef, apiReady, isDarkTheme, sketchReady]);
+    // Update Excalidraw's real scene state (not a CSS layer), without adding a
+    // user-visible undo entry or touching elements/viewport state.
+    api.updateScene({ appState: { viewBackgroundColor: nextBackground }, captureUpdate: CaptureUpdateAction.NEVER });
+  }, [apiRef, apiReady, canvasBackgroundMode, isDarkTheme, sketchReady]);
 
   const fitDiagram = useCallback(() => {
     const api = apiRef.current; if (!api) return;
@@ -78,7 +90,6 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
         return;
       }
       if (!plainKey) return;
-      if (key === "l") { event.preventDefault(); togglePanel("layout"); return; }
       if (key === "d") { event.preventDefault(); setThemeMode((mode) => mode === "dark" ? "light" : "dark"); return; }
       if (event.shiftKey && key === "g") { event.preventDefault(); toggleGrid(); return; }
       if (key === "p" && selectedCount > 0) { event.preventDefault(); togglePanel("properties"); return; }
@@ -106,5 +117,5 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     return () => document.removeEventListener("click", handleResetCanvas, true);
   }, [apiRef, fileActionsRef, saveTimerRef, setStorageError]);
 
-  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram };
+  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, canvasBackgroundMode, markCanvasBackgroundCustom, useThemeDefaultBackground };
 }

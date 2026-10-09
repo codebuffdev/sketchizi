@@ -26,10 +26,6 @@ const MENU_DEFINITIONS = [
     ],
   },
   {
-    label: "Arrange",
-    ids: ["layout.open"],
-  },
-  {
     label: "Help",
     ids: ["application.shortcuts", "application.excalidraw-command-palette"],
   },

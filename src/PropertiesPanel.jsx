@@ -3,6 +3,8 @@ export default function PropertiesPanel({
   hasArrowSelection, hasTextSelection, applyToSelected, applyToSelectedArrow, updateSingleSelected,
   awsResource = null, awsResourceDefinition = null, updateAwsResource = () => {},
   kubernetesResource = null, kubernetesResourceDefinition = null, updateKubernetesResource = () => {},
+  networkingResource = null, networkingResourceDefinition = null, updateNetworkingResource = () => {},
+  architectureRelationship = null, architectureRelationshipTypes = [], updateArchitectureRelationshipType = () => {},
   awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
   kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {},
   readOnly = false, authorship = {}, participants = [],
@@ -25,6 +27,17 @@ export default function PropertiesPanel({
         aria-label="Close properties"
       >×</button>
     </div>
+
+    {architectureRelationship && (
+      <div className="properties-section architecture-relationship-properties">
+        <div className="properties-section-title">Architecture Relationship</div>
+        <div className="property-row"><label htmlFor="architecture-relationship-type">Type</label>
+          <select id="architecture-relationship-type" value={architectureRelationship.relationshipType} disabled={readOnly} onChange={(event) => updateArchitectureRelationshipType(event.target.value)}>
+            {architectureRelationshipTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+          </select>
+        </div>
+      </div>
+    )}
 
     {awsRelationship && (
       <div className="properties-section aws-relationship-properties">
@@ -93,6 +106,20 @@ export default function PropertiesPanel({
               )}
             </div>
           );
+        })}
+      </div>
+    )}
+
+    {networkingResource && networkingResourceDefinition && (
+      <div className="properties-section networking-resource-properties">
+        <div className="properties-section-title">Networking Resource</div>
+        <div className="aws-resource-meta"><strong>{networkingResourceDefinition.displayName}</strong><span>Networking · {networkingResource.resourceType}</span></div>
+        {networkingResourceDefinition.properties.map((property) => {
+          const value = networkingResource.properties?.[property.key] ?? property.defaultValue ?? "";
+          return <div className="property-row" key={property.key}>
+            <label htmlFor={`networking-resource-${property.key}`}>{property.label}</label>
+            {property.type === "select" ? <select id={`networking-resource-${property.key}`} value={value} disabled={readOnly} onChange={(event) => updateNetworkingResource({ [property.key]: event.target.value })}>{property.options.map((option) => <option key={option} value={option}>{option}</option>)}</select> : <input id={`networking-resource-${property.key}`} type="text" value={value} disabled={readOnly} placeholder={property.placeholder || ""} onChange={(event) => updateNetworkingResource({ [property.key]: event.target.value })}/>}
+          </div>;
         })}
       </div>
     )}

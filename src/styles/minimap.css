@@ -232,45 +232,4 @@
   }
 }
 
-/* v0.12.2 layout-toolbar collision guard
- * The Layout control must never sit on top of Excalidraw's native toolbar.
- * On wide screens there is room to dock it immediately to the left. On
- * compact widths it moves to its own row below the toolbar instead.
- */
-.layout-toolbar {
-  top: 16px;
-  left: max(16px, calc(50% - 650px));
-  transform: none;
-  z-index: 60;
-}
-
-@media (min-width: 1351px) {
-  .layout-toolbar {
-    left: max(16px, calc(50% - 650px));
-  }
-
-  .layout-toolbar.properties-open {
-    left: max(16px, calc(50% - 650px));
-  }
-}
-
-@media (max-width: 1350px) {
-  .layout-toolbar,
-  .layout-toolbar.properties-open {
-    top: 72px;
-    left: 16px;
-    transform: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .layout-toolbar,
-  .layout-toolbar.properties-open {
-    top: 64px;
-    left: 12px;
-    right: auto;
-    transform: none;
-  }
-}
-
 /* v0.13.0 theme system — keep the locked spatial layout intact. */

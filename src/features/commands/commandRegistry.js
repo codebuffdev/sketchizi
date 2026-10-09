@@ -109,17 +109,6 @@ export function createSketchiziCommandRegistry(context) {
       execute: () => openPanel("icon-library"),
     },
     {
-      id: "layout.open",
-      label: "Open Layout",
-      description: "Open alignment, distribution and grid controls",
-      keywords: ["layout", "align", "alignment", "distribute", "grid"],
-      category: "Layout",
-      shortcut: "L",
-      icon: "⌗",
-      available: () => true,
-      execute: () => openPanel("layout"),
-    },
-    {
       id: "properties.open",
       label: "Open Properties",
       description: "Open properties and style controls for the current selection",

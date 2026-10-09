@@ -573,14 +573,6 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
 .properties-panel.read-only .properties-section:not(.collaboration-authorship) select {
   pointer-events: none;
 }
-.layout-readonly-note {
-  margin: 0 12px 8px;
-  padding: 7px 9px;
-  border-radius: 7px;
-  background: var(--ui-hover, #f4f4f6);
-  color: var(--ui-text-muted, #666);
-  font-size: 11px;
-}
 .collaboration-permission-banner,
 .collaboration-permission-success,
 .collaboration-permission-denied {
@@ -630,8 +622,7 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
 .collaboration-authorship .property-row > span { color: var(--ui-text, #444); font-size: 11px; }
 .theme-dark .collaboration-permission-banner,
 .theme-dark .collaboration-permission-success,
-.theme-dark .collaboration-permission-denied,
-.theme-dark .layout-readonly-note { background: #2b2b2f; }
+.theme-dark .collaboration-permission-denied{ background: #2b2b2f; }
 .theme-dark .collaboration-request-list { border-color: #444; }
 .theme-dark .collaboration-permission-banner button,
 .theme-dark .collaboration-request-row button,

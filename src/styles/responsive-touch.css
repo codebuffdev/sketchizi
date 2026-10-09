@@ -6,9 +6,6 @@
 @media (pointer: coarse) and (min-width: 761px) {
   .library-toggle,
   .properties-toggle,
-  .layout-button,
-  .layout-grid-buttons button,
-  .layout-grid-buttons.two button,
   .properties-close,
   .category,
   .connection-button,
@@ -21,8 +18,7 @@
   }
 
   .library-toggle,
-  .properties-toggle,
-  .layout-button {
+  .properties-toggle{
     min-height: 44px;
   }
 
@@ -48,8 +44,7 @@
   }
 
   .library-panel,
-  .properties-panel,
-  .layout-popover {
+  .properties-panel{
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
@@ -129,19 +124,6 @@
     min-height: 44px;
     padding: 8px 10px;
   }
-
-  .layout-grid-buttons button {
-    min-height: 44px;
-  }
-
-  .layout-grid-buttons,
-  .layout-grid-buttons.two {
-    gap: 8px;
-  }
-
-  .layout-popover {
-    padding-bottom: max(12px, var(--safe-bottom, 0px));
-  }
 }
 
 /* Tablet portrait: the panel becomes a near-full-height drawer. Keep the
@@ -170,8 +152,7 @@
 /* Tablet landscape: avoid covering too much of the drawing area. */
 @media (pointer: coarse) and (min-width: 901px) and (max-width: 1100px) {
   .app.panel-open-library .library-panel,
-  .app.panel-open-properties .properties-panel,
-  .app.panel-open-layout .layout-popover {
+  .app.panel-open-properties .properties-panel{
     max-height: calc(100dvh - 84px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }
 
@@ -194,16 +175,44 @@
   }
 
   .library-panel,
-  .properties-panel,
-  .layout-popover {
+  .properties-panel{
     touch-action: pan-y;
   }
 }
 
 
-/* Recent local drawings inside Excalidraw's native menu. The real scroll
-   container is Excalidraw's `.dropdown-menu-container`; the Sketchizi-owned
-   sections are inserted inside that existing container. */
+/* Keep Excalidraw's native main-menu container as the sole vertical scroll
+   container. Target it through the menu wrapper rather than requiring an
+   `.excalidraw` ancestor: Excalidraw may render this dropdown outside that
+   subtree, in which case an ancestor-scoped rule silently misses the menu. */
+.dropdown-menu {
+  min-height: 0;
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  overflow: visible !important;
+}
+
+/* The dropdown wrapper positions the menu; the inner container owns scrolling.
+   Explicitly allow the inner container to shrink when injected sections make
+   the menu taller than the viewport. */
+
+.dropdown-menu > .dropdown-menu-container,
+.dropdown-menu-container {
+  box-sizing: border-box;
+  min-height: 0;
+  height: auto !important;
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The active dropdown's final max-height is measured from its actual rendered
+   top edge by useNativeSketchiziMenu. Avoid a second guessed desktop cap here. */
+
+/* Recent local drawings inside Excalidraw's native menu. The Sketchizi-owned
+   sections are inserted inside this same scroll container. */
 .sketchizi-recent-files-section {
   min-width: 250px;
   overflow: visible;
@@ -233,3 +242,19 @@
 }
 
 /* v1.1.0 — current Excalidraw tool-system baseline. */
+
+
+.sketchizi-theme-background-default {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--default-border-color, rgba(127, 127, 127, .45));
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sketchizi-theme-background-default:hover { background: rgba(127, 127, 127, .12); }

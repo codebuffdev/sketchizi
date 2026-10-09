@@ -455,7 +455,6 @@
      overlay and does not move the canvas or the collaboration state. */
   .app:has(.collaboration-status-bar) .library-panel,
   .app:has(.collaboration-status-bar) .properties-panel,
-  .app:has(.collaboration-status-bar) .layout-popover,
   .app:has(.collaboration-status-bar).panel-open-library .library-panel,
   .app:has(.collaboration-status-bar).panel-open-properties .properties-panel {
     top: 0;

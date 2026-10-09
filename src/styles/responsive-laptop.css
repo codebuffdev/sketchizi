@@ -59,19 +59,6 @@
     height: 38px;
   }
 
-  .layout-toolbar,
-  .layout-toolbar.properties-open {
-    top: 14px;
-    left: 14px;
-    right: auto;
-    transform: none;
-  }
-
-  .layout-button {
-    min-height: 38px;
-    padding: 7px 10px;
-  }
-
   /* Native Excalidraw menu remains the source of truth for theme. */
   .theme-control { display: none !important; }
 
@@ -88,18 +75,6 @@
     right: 14px;
     width: min(320px, calc(100vw - 28px));
     max-height: calc(100dvh - 74px);
-  }
-
-  .layout-popover,
-  .app.panel-open-layout .layout-popover {
-    position: fixed;
-    top: 60px;
-    left: 14px;
-    right: auto;
-    width: min(320px, calc(100vw - 28px));
-    max-height: calc(100dvh - 74px);
-    overflow-y: auto;
-    transform: none;
   }
 
   .properties-toggle {
@@ -133,8 +108,7 @@
  * drawing surface. Panels scroll internally instead of pushing anything. */
 @media (min-width: 1001px) and (max-width: 1440px) and (max-height: 820px) {
   .library-panel,
-  .properties-panel,
-  .app.panel-open-layout .layout-popover {
+  .properties-panel{
     top: 58px;
     max-height: calc(100dvh - 68px);
   }
@@ -175,9 +149,7 @@
     width: 300px;
   }
 
-  .properties-panel,
-  .layout-popover,
-  .app.panel-open-layout .layout-popover {
+  .properties-panel{
     width: 300px;
   }
 
@@ -187,108 +159,6 @@
 
   .icon-card {
     padding-inline: 4px;
-  }
-}
-
-/* v1.0.10 — 12–14 inch laptop top-left control lane
- * Keep the two native/custom left controls clear of Layout. The compact
- * viewport can be produced by browser scaling, so use the CSS viewport width
- * rather than physical screen pixels.
- */
-@media (min-width: 761px) and (max-width: 1350px) {
-  .layout-toolbar,
-  .layout-toolbar.properties-open {
-    top: calc(16px + var(--safe-top));
-    left: calc(148px + var(--safe-left));
-    right: auto;
-    transform: none;
-    z-index: 60;
-  }
-
-  .layout-popover {
-    top: 48px;
-    left: 0;
-    right: auto;
-    transform: none;
-    width: min(330px, calc(100vw - 164px - var(--safe-left) - var(--safe-right)));
-    max-height: calc(100dvh - 76px - var(--safe-top) - var(--safe-bottom));
-    overflow-y: auto;
-  }
-
-  /* The Layout popover must sit below the top control row, never over the
-     hamburger/comments controls at the far left. */
-  .app.panel-open-layout .library-toggle,
-  .app.panel-open-layout .properties-toggle {
-    visibility: hidden;
-    pointer-events: none;
-  }
-}
-
-/* Short 12–14 inch laptop screens: preserve the same horizontal lane while
-   giving the popover a bounded scroll area. */
-@media (min-width: 761px) and (max-width: 1350px) and (max-height: 760px) {
-  .layout-popover {
-    max-height: calc(100dvh - 72px - var(--safe-top) - var(--safe-bottom));
-  }
-}
-
-/* v1.0.11 — reserve the native top-left control lane
- * The hamburger and Library controls own the first ~120px of the top row.
- * Layout must always begin after that lane. The popover follows the Layout
- * trigger instead of being viewport-anchored on laptop/desktop widths, so it
- * can never cover those controls.
- */
-@media (min-width: 761px) {
-  .layout-toolbar,
-  .layout-toolbar.properties-open {
-    left: max(148px, calc(50% - 650px));
-    right: auto;
-    transform: none;
-  }
-
-  .layout-popover,
-  .app.panel-open-layout .layout-popover,
-  .layout-toolbar .layout-popover {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: auto;
-    width: min(380px, calc(100vw - 164px - var(--safe-left, 0px) - var(--safe-right, 0px)));
-    max-width: none;
-    max-height: calc(100dvh - 90px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
-    overflow-y: auto;
-    transform: none;
-    z-index: 70;
-  }
-}
-
-/* 12–14 inch laptops: keep a stable 148px top-left lane and use the full
-   available panel height. */
-@media (min-width: 761px) and (max-width: 1440px) {
-  .layout-toolbar,
-  .layout-toolbar.properties-open {
-    left: calc(148px + var(--safe-left, 0px));
-  }
-
-  .layout-popover,
-  .app.panel-open-layout .layout-popover,
-  .layout-toolbar .layout-popover {
-    width: min(380px, calc(100vw - 164px - var(--safe-left, 0px) - var(--safe-right, 0px)));
-  }
-}
-
-/* Very narrow tablet: use a full-width panel, but still start below the
-   top control row so the hamburger/Library controls remain untouched. */
-@media (min-width: 761px) and (max-width: 900px) {
-  .layout-toolbar,
-  .layout-toolbar.properties-open {
-    left: calc(148px + var(--safe-left, 0px));
-  }
-
-  .layout-popover,
-  .app.panel-open-layout .layout-popover,
-  .layout-toolbar .layout-popover {
-    width: min(380px, calc(100vw - 164px - var(--safe-left, 0px) - var(--safe-right, 0px)));
   }
 }
 

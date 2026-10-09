@@ -28,11 +28,6 @@ body,
     max-height: calc(100dvh - 68px - var(--safe-top) - var(--safe-bottom));
   }
 
-  .layout-toolbar {
-    top: calc(62px + var(--safe-top));
-    left: calc(10px + var(--safe-left));
-  }
-
   .theme-control {
     top: calc(62px + var(--safe-top));
     right: calc(10px + var(--safe-right));
@@ -63,12 +58,6 @@ body,
     border-radius: 13px;
   }
 
-  .layout-toolbar {
-    top: calc(58px + var(--safe-top));
-    left: auto;
-    right: calc(62px + var(--safe-right));
-  }
-
   .theme-control {
     top: calc(58px + var(--safe-top));
     right: calc(8px + var(--safe-right));
@@ -84,11 +73,6 @@ body,
     right: calc(8px + var(--safe-right));
     width: min(360px, calc(100vw - 16px - var(--safe-left) - var(--safe-right)));
     max-height: calc(100dvh - 160px - var(--safe-top) - var(--safe-bottom));
-  }
-
-  .layout-popover {
-    top: 46px;
-    width: min(320px, calc(100vw - 20px));
   }
 
   .icon-grid {
@@ -124,24 +108,15 @@ body,
     padding: 8px;
   }
 
-  .layout-toolbar {
-    top: calc(52px + var(--safe-top));
-    right: calc(54px + var(--safe-right));
-  }
-
   .theme-control {
     top: calc(52px + var(--safe-top));
   }
-
-  .layout-button,
   .theme-toggle {
     min-height: 36px;
     padding: 7px 9px;
     gap: 5px;
     font-size: 10px;
   }
-
-  .layout-icon,
   .theme-toggle-icon {
     font-size: 15px;
   }
@@ -244,13 +219,10 @@ body,
 /* Very narrow phones: icon-only custom controls free horizontal space while
    retaining accessible labels through aria-label/title. */
 @media (max-width: 390px) {
-  .layout-button > span:not(.layout-icon),
   .theme-toggle > span:not(.theme-toggle-icon),
   .properties-toggle > span:not(.properties-toggle-icon) {
     display: none;
   }
-
-  .layout-button,
   .theme-toggle,
   .properties-toggle {
     width: 38px;
@@ -258,17 +230,8 @@ body,
     padding: 7px;
   }
 
-  .layout-toolbar {
-    right: calc(54px + var(--safe-right));
-  }
-
   .properties-toggle {
     top: calc(96px + var(--safe-top));
-  }
-
-  .layout-popover {
-    right: -8px;
-    width: min(310px, calc(100vw - 16px));
   }
 
   .theme-menu {
@@ -304,7 +267,6 @@ body,
    controls on small screens. */
 .library-panel,
 .properties-panel,
-.layout-popover,
 .theme-menu,
 .shortcut-dialog {
   overflow-wrap: anywhere;
