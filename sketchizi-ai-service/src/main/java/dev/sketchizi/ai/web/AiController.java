@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequestMapping("/api/v1/ai")
 public class AiController {
@@ -60,9 +61,13 @@ public class AiController {
         return noStore(ResponseEntity.ok(chatService.requestStatus(account.accountId(), requestId)));
     }
 
-    private <T> ResponseEntity<T> noStore(ResponseEntity<T> response) {
-        response.getHeaders().setCacheControl(CacheControl.noStore().cachePrivate());
-        response.getHeaders().setPragma("no-cache");
-        return response;
+   private <T> ResponseEntity<T> noStore(ResponseEntity<T> response) {
+    return ResponseEntity.status(response.getStatusCode())
+            .headers(headers -> {
+                headers.addAll(response.getHeaders());
+                headers.setCacheControl(CacheControl.noStore().cachePrivate());
+                headers.setPragma("no-cache");
+            })
+            .body(response.getBody());
     }
 }
