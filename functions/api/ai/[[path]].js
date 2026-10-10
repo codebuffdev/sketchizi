@@ -9,8 +9,11 @@ const FRONTEND_PREFIX = "/api/ai";
 const MAX_REQUEST_BYTES = 900 * 1024;
 const ASSERTION_LIFETIME_SECONDS = 60;
 
-function jsonError(status, error, code) {
-  return Response.json({ error, ...(code ? { code } : {}) }, { status, headers: NO_CACHE });
+function jsonError(status, error, code, requestId) {
+  return Response.json(
+    { error, ...(code ? { code } : {}), ...(requestId ? { requestId } : {}) },
+    { status, headers: { ...NO_CACHE, ...(requestId ? { "x-request-id": requestId } : {}) } },
+  );
 }
 
 function validServiceOrigin(value) {
@@ -62,16 +65,17 @@ async function signAssertion(subject, secret) {
   return `${signingInput}.${bytesToBase64Url(new Uint8Array(signature))}`;
 }
 
-async function inspectSession(authOrigin, request) {
+async function inspectSession(authOrigin, request, requestId) {
   const session = cookieValue(request.headers.get("cookie"), "SESSION");
   if (!session) return null;
   let response;
   try {
     response = await fetch(new URL("/api/auth/me", authOrigin), {
       method: "GET",
-      headers: { accept: "application/json", cookie: `SESSION=${session}` },
+      headers: { accept: "application/json", cookie: `SESSION=${session}`, "x-request-id": requestId },
       cache: "no-store",
       redirect: "manual",
+      signal: AbortSignal.timeout(8000),
     });
   } catch {
     throw new Error("auth-unavailable");
@@ -108,28 +112,30 @@ function upstreamPath(pathname) {
 }
 
 export async function onRequest({ request, env }) {
+  const requestId = crypto.randomUUID();
+  const fail = (status, error, code) => jsonError(status, error, code, requestId);
   const incoming = new URL(request.url);
   const mappedPath = upstreamPath(incoming.pathname);
-  if (!mappedPath) return jsonError(400, "Invalid AI API path.", "invalid_path");
-  if (!["GET", "HEAD", "POST"].includes(request.method)) return jsonError(405, "Method not allowed.", "method_not_allowed");
+  if (!mappedPath) return fail(400, "Invalid AI API path.", "invalid_path");
+  if (!["GET", "HEAD", "POST"].includes(request.method)) return fail(405, "Method not allowed.", "method_not_allowed");
 
   const aiOrigin = validServiceOrigin(env.AI_SERVICE_ORIGIN);
-  if (!aiOrigin) return jsonError(503, "The AI service is not configured.", "ai_service_not_configured");
+  if (!aiOrigin) return fail(503, "The AI service is not configured.", "ai_service_not_configured");
   const isHealthCheck = incoming.pathname === `${FRONTEND_PREFIX}/health`;
   const upstream = new URL(mappedPath, aiOrigin);
   upstream.search = incoming.search;
 
   if (request.method === "POST") {
-    if (!requestIsSameOrigin(request, incoming, env)) return jsonError(403, "Cross-origin AI requests are not allowed.", "origin_rejected");
-    if (!csrfIsValid(request)) return jsonError(403, "The security token is missing or expired. Refresh the page and try again.", "csrf_rejected");
+    if (!requestIsSameOrigin(request, incoming, env)) return fail(403, "Cross-origin AI requests are not allowed.", "origin_rejected");
+    if (!csrfIsValid(request)) return fail(403, "The security token is missing or expired. Refresh the page and try again.", "csrf_rejected");
     const contentType = request.headers.get("content-type") || "";
-    if (!contentType.toLowerCase().startsWith("application/json")) return jsonError(415, "AI requests must use JSON.", "unsupported_media_type");
+    if (!contentType.toLowerCase().startsWith("application/json")) return fail(415, "AI requests must use JSON.", "unsupported_media_type");
     let contentLength = Number(request.headers.get("content-length") || 0);
     if (!request.headers.has("content-length")) {
       try { contentLength = (await request.clone().arrayBuffer()).byteLength; }
-      catch { return jsonError(400, "Could not read the AI request body.", "invalid_request_body"); }
+      catch { return fail(400, "Could not read the AI request body.", "invalid_request_body"); }
     }
-    if (contentLength > MAX_REQUEST_BYTES) return jsonError(413, "The AI request is too large.", "request_too_large");
+    if (contentLength > MAX_REQUEST_BYTES) return fail(413, "The AI request is too large.", "request_too_large");
   }
 
   let assertion = "";
@@ -137,17 +143,17 @@ export async function onRequest({ request, env }) {
     const authOrigin = validServiceOrigin(env.AUTH_SERVICE_ORIGIN);
     const secret = env.AI_IDENTITY_HMAC_SECRET;
     if (!authOrigin || typeof secret !== "string" || new TextEncoder().encode(secret).length < 32) {
-      return jsonError(503, "The AI identity gateway is not configured.", "identity_gateway_not_configured");
+      return fail(503, "The AI identity gateway is not configured.", "identity_gateway_not_configured");
     }
     let subject;
     try {
-      subject = await inspectSession(authOrigin, request);
+      subject = await inspectSession(authOrigin, request, requestId);
     } catch {
-      return jsonError(502, "Could not verify your Sketchizi sign-in session.", "identity_verification_unavailable");
+      return fail(502, "Could not verify your Sketchizi sign-in session.", "identity_verification_unavailable");
     }
-    if (!subject) return jsonError(401, "Sign in with Google to use AI Ask.", "authentication_required");
+    if (!subject) return fail(401, "Sign in with Google to use AI Ask.", "authentication_required");
     try { assertion = await signAssertion(subject, secret); }
-    catch { return jsonError(503, "The AI identity gateway is unavailable.", "identity_assertion_failed"); }
+    catch { return fail(503, "The AI identity gateway is unavailable.", "identity_assertion_failed"); }
   }
 
   const headers = new Headers(request.headers);
@@ -159,6 +165,7 @@ export async function onRequest({ request, env }) {
   ]) headers.delete(name);
   headers.set("accept-encoding", "identity");
   headers.set("cache-control", "no-store");
+  headers.set("x-request-id", requestId);
   if (assertion) headers.set("x-sketchizi-identity", assertion);
 
   try {
@@ -174,8 +181,9 @@ export async function onRequest({ request, env }) {
     responseHeaders.delete("set-cookie");
     responseHeaders.delete("location");
     responseHeaders.delete("content-length");
+    responseHeaders.set("x-request-id", requestId);
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers: responseHeaders });
   } catch {
-    return jsonError(502, "The AI service is temporarily unavailable. Your diagram has not been changed.", "ai_service_unavailable");
+    return fail(502, "The AI service is temporarily unavailable. Your diagram has not been changed.", "ai_service_unavailable");
   }
 }

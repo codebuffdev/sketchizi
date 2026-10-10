@@ -65,3 +65,23 @@ test("usage requests have a finite timeout and report a recoverable timeout code
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("HTTP errors retain safe status, code, and server correlation ID", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, options = {}) => {
+    if (String(_url) === "/api/auth/csrf") return jsonResponse({ token: "csrf-token", headerName: "X-XSRF-TOKEN" });
+    return new Response(JSON.stringify({ error: "AI identity verification is temporarily unavailable.", code: "identity_store_unavailable" }), {
+      status: 503,
+      headers: { "content-type": "application/json", "x-request-id": "123e4567-e89b-42d3-a456-426614174000" },
+    });
+  };
+  try {
+    await assert.rejects(
+      aiApiRequest("/chat", { method: "POST", body: { requestId: "logical-request-id" } }),
+      (error) => error.status === 503 && error.code === "identity_store_unavailable" && error.requestId === "123e4567-e89b-42d3-a456-426614174000",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

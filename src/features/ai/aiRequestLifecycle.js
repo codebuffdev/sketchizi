@@ -9,6 +9,9 @@ const PRE_ACCEPTANCE_CODES = new Set([
   "ai_service_not_configured",
   "identity_gateway_not_configured",
   "identity_verification_unavailable",
+  // The gateway assertion is consumed before the controller can reserve a chat request.
+  "identity_store_unavailable",
+  "identity_not_configured",
   "identity_assertion_failed",
   "authentication_required",
   "csrf_rejected",

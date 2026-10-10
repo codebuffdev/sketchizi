@@ -82,6 +82,7 @@
 .ai-ask-primary:disabled { opacity: .5; cursor: not-allowed; }
 .ai-ask-privacy-note { flex: 0 0 auto; padding: 0 13px 10px; color: var(--ui-text-faint, #999); font-size: 9px; line-height: 1.4; }
 .ai-ask-error { display: flex; justify-content: space-between; gap: 9px; margin: 0 13px 8px; padding: 9px 10px; border: 1px solid #d98f8f; border-radius: 8px; background: color-mix(in srgb, #c83434 8%, var(--ui-surface-solid, #fff)); color: var(--ui-text, #333); font-size: 11px; line-height: 1.45; }
+.ai-ask-error span { min-width: 0; overflow-wrap: anywhere; }
 .ai-ask-error button { align-self: flex-start; border: 0; background: transparent; color: inherit; font-size: 17px; cursor: pointer; }
 .ai-ask-signin-state { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 26px; text-align: center; }
 .ai-ask-signin-icon { width: 48px; height: 48px; margin-bottom: 17px; border-radius: 14px; font-size: 26px; }

@@ -45,11 +45,13 @@ export async function aiApiRequest(path, { method = "GET", body, signal } = {}) 
     }
 
     const payload = await response.json().catch(() => ({}));
+    const requestId = response.headers.get("x-request-id") || payload.requestId || null;
     if (!response.ok) {
       const message = typeof payload.error === "string" ? payload.error : "The AI service could not complete this request.";
       const error = new Error(message);
       error.status = response.status;
       error.code = typeof payload.code === "string" ? payload.code : "ai_request_failed";
+      error.requestId = requestId;
       throw error;
     }
     return payload;

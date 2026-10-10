@@ -102,3 +102,22 @@ The AI service logs request IDs and provider mode only (never prompts, responses
 If `AI chat request received` appears without `AI request reserved`, inspect the structured API error code and database logs: failure may have occurred during reservation before generation. If `AI request reserved` and provider-start appear without a terminal event, correlate the instance's restart/timeout logs; the final provider outcome may be unknown. If a success event exists but the browser saw an upstream error, status lookup should be tried with the original request ID. A successful DB status with no cached answer is explicitly reported as an unavailable-result case because storing answers durably is outside this privacy boundary.
 
 Usage loading has a 15-second client timeout and an explicit Retry usage control. It is independent of chat-request state. Usage errors do not weaken server-side quota enforcement; Neon and the AI service remain authoritative.
+
+
+### Diagnose AI identity verification failures safely
+
+The Pages gateway generates an `X-Request-ID` for each `/api/ai/*` HTTP request, replaces any browser-supplied value, forwards it to the AI service, and returns it as a response header. The frontend surfaces the HTTP status, safe error code, and request ID for failed API calls; it never displays the identity assertion or server secrets.
+
+If the response is `503` with code `identity_store_unavailable` and message `AI identity verification is temporarily unavailable.`, the AI service has already checked the assertion's HS256 signature and claims and then failed while consuming its one-time `jti` in PostgreSQL. This is a database access failure before chat reservation, usage lookup, or Gemini generation—not evidence that the user is signed out. The backend logs only the request ID, SQLState, database vendor code, and exception class (never the SQL error text, identity assertion, subject, cookie, prompts, or keys).
+
+Use the request ID shown in the UI to find `AI identity assertion store write failed` in Render's AI service logs. Interpret the logged SQLState before changing configuration: PostgreSQL `42P01` means an expected relation is absent in the active search path; `42501` indicates privileges; classes `08` indicate connection failures. If no corresponding AI-service log exists, inspect the Cloudflare response code and gateway route/configuration next.
+
+The additive `V2__ensure_identity_assertion_store.sql` migration repairs a missing `ai_identity_assertions` table and expiry index without dropping existing data. Confirm Render deployed the intended backend project and that Flyway completed migrations on the same Neon database/schema used by application connections. Do not enable baseline-on-migrate or change the HMAC secret speculatively.
+
+### Environment contract review
+
+- Cloudflare Pages Functions read `AUTH_SERVICE_ORIGIN`, `AI_SERVICE_ORIGIN`, `AI_IDENTITY_HMAC_SECRET`, and `PUBLIC_FRONTEND_ORIGIN` from server-side `env` bindings—not from the client bundle.
+- `AUTH_SERVICE_ORIGIN` and `AI_SERVICE_ORIGIN` must be HTTPS base origins without a path/query. In production, `PUBLIC_FRONTEND_ORIGIN` must be exactly `https://sketchizi.pages.dev`.
+- Render's AI service reads `AI_IDENTITY_HMAC_SECRET` through `app.identity.hmac-secret`. The Cloudflare and Render values must be exactly equal UTF-8 strings of at least 32 bytes. Compare them in the two dashboards without pasting the value into logs, support tickets, or the browser.
+- The gateway signs the exact `base64url(header) + "." + base64url(payload)` UTF-8 input with HMAC-SHA256 and emits an unpadded base64url signature. The AI verifier checks the signature in constant time, `alg=HS256`, `typ=JWT`, subject, audience, `iat`, `exp`, maximum lifetime, and a UUID `jti`; the database's unique primary key rejects replay.
+- The gateway's server-to-server session introspection calls `${AUTH_SERVICE_ORIGIN}/api/auth/me` with only the browser's `SESSION` cookie. A 401 means there is no active session; another non-2xx response or connection timeout is surfaced as `identity_verification_unavailable` with the gateway's request ID. This path does not require changing the auth service.

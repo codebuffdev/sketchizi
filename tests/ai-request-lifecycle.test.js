@@ -10,6 +10,8 @@ test("a provider failure returned after durable failure marking is terminal, eve
 test("a 503 before POST /chat is not classified as an accepted pending request", () => {
   assert.equal(classifyChatFailure({ status: 503, code: "identity_gateway_not_configured" }, false), "rejected_before_acceptance");
   assert.equal(classifyChatFailure({ status: 503, code: "ai_service_not_configured" }, true), "rejected_before_acceptance");
+  assert.equal(classifyChatFailure({ status: 503, code: "identity_store_unavailable" }, true), "rejected_before_acceptance");
+  assert.equal(classifyChatFailure({ status: 503, code: "identity_not_configured" }, true), "rejected_before_acceptance");
 });
 
 test("generic 5xx responses remain outcome-unknown, while known pre-acceptance errors are rejected", () => {

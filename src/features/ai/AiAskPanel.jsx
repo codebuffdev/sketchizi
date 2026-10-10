@@ -140,6 +140,14 @@ function timeLabel(value) {
   catch { return ""; }
 }
 
+function withRequestDiagnostics(message, error) {
+  const details = [];
+  if (Number.isInteger(error?.status)) details.push(`HTTP ${error.status}`);
+  if (typeof error?.code === "string" && error.code) details.push(`code ${error.code}`);
+  if (typeof error?.requestId === "string" && error.requestId) details.push(`request ID ${error.requestId}`);
+  return details.length ? `${message} (${details.join(" · ")})` : message;
+}
+
 export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, saveTimerRef }) {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
   const [chat, setChat] = useState(() => readTranscript());
@@ -181,9 +189,10 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       if (sequence !== usageRequestSequenceRef.current || activeAccountRef.current !== accountId) return null;
       setUsage(null);
       setUsageStatus("error");
-      setUsageError(error.code === "request_timeout"
+      const message = error.code === "request_timeout"
         ? "Loading the usage allowance timed out. Check the connection and retry."
-        : (error.message || "Could not load the current usage allowance."));
+        : (error.message || "Could not load the current usage allowance.");
+      setUsageError(withRequestDiagnostics(message, error));
       return null;
     }
   }, []);
@@ -340,7 +349,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       }));
       setAnnouncement("New conversation started.");
     } catch (error) {
-      setPanelError(error.message || "Could not start a new conversation.");
+      setPanelError(withRequestDiagnostics(error.message || "Could not start a new conversation.", error));
     } finally { setBusy(false); }
   }, [auth.user, busy, chat.provider, usage, pendingRequest]);
 
@@ -555,7 +564,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             outcomeUnknown: false,
           },
         }));
-        setPanelError(error.message || "The generation failed. You can retry this question without adding another message bubble.");
+        setPanelError(withRequestDiagnostics(error.message || "The generation failed. You can retry this question without adding another message bubble.", error));
         if (chat.provider === "builtin" && currentConversationId) await refreshUsage(currentConversationId, auth.user.id);
       } else if (failureKind === "unknown" || failureKind === "reservation_expired") {
         if (failureKind === "reservation_expired") {
@@ -586,9 +595,9 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           };
           setPendingRequest(pending);
           updateChat((current) => ({ ...current, retryAttempt: null }));
-          setPanelError(pending.sameIdRecoveryAvailable
+          setPanelError(withRequestDiagnostics(pending.sameIdRecoveryAvailable
             ? "The status endpoint cannot currently find this request record. That does not prove the original POST never reached the service. Retrying with the same ID reuses a durable reservation if it still exists, but cannot rule out a duplicate if that record was lost. Continue only if you accept that uncertainty."
-            : "The request outcome is not confirmed. Check status before submitting another generation.");
+            : "The request outcome is not confirmed. Check status before submitting another generation.", error));
         }
       } else {
         setPendingRequest(null);
@@ -605,7 +614,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             outcomeUnknown: false,
           },
         }));
-        setPanelError(error.message || "The request was rejected before it was accepted. You can retry without creating a duplicate question message.");
+        setPanelError(withRequestDiagnostics(error.message || "The request was rejected before it was accepted. You can retry without creating a duplicate question message.", error));
         if (chat.provider === "builtin" && currentConversationId) await refreshUsage(currentConversationId, auth.user.id);
       }
     } finally {
@@ -697,9 +706,9 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         setPendingRequest({ ...pendingRequest, sameIdRecoveryAvailable: true });
         setPanelError("The status lookup cannot find a request record. Its outcome remains unknown. Retrying with the same ID reuses an existing reservation if one remains, but cannot rule out a duplicate if that record was lost.");
       } else if (lookupFailure === "authentication") {
-        setPanelError("Your sign-in session expired while checking the request. Sign in again before recovering it.");
+        setPanelError(withRequestDiagnostics("Your sign-in session expired while checking the request. Sign in again before recovering it.", error));
       } else {
-        setPanelError(error.message || "Could not check the AI request status. No request was resubmitted.");
+        setPanelError(withRequestDiagnostics(error.message || "Could not check the AI request status. No request was resubmitted.", error));
       }
     } finally {
       requestInFlightRef.current = false;
