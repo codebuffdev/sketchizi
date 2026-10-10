@@ -16,7 +16,8 @@
 		"test:sync-performance": "node --import ./tests/register-sync-test-loader.mjs ./tests/sync-performance-sample.mjs",
 		"test:ui-defaults": "node --test tests/ui-defaults.test.js",
 		"test:auth-gateway": "node --test tests/auth-gateway.test.js",
-		"test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js"
+		"test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js",
+		"test:collaboration-host-auth": "node --test tests/collaboration-host-auth.test.js"
 	},
 	"dependencies": {
 		"@excalidraw/excalidraw": "0.18.0-c0ad61c",

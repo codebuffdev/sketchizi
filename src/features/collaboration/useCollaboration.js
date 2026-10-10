@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { fetchCurrentUser, fetchHostAuthorization } from "../auth/authClient.js";
 import { CaptureUpdateAction, reconcileElements, restoreElements } from "@excalidraw/excalidraw";
 import {
   SketchiziCollaboration,
@@ -94,6 +95,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const [chatMessages, setChatMessages] = useState([]);
   const [chatError, setChatError] = useState("");
   const collaborationCreationAttemptRef = useRef(false);
+  const hostAuthCheckRef = useRef(false);
   const collaborationCreationTimeoutRef = useRef(null);
 
   const clearCollaborationCreationTimeout = useCallback(() => {
@@ -224,7 +226,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     }
   }, [apiRef, collaborationClientId, focusRemoteEditingArea, mergeCollaborativeElements]);
 
-  const connectCollaboration = useCallback((roomId, sessionName = "", participantName = "") => {
+  const connectCollaboration = useCallback((roomId, sessionName = "", participantName = "", hostAuthorizationToken = "") => {
     const api = apiRef.current;
     if (!api || !roomId) return;
     const normalizedParticipantName = saveCollaborationDisplayName(participantName || collaborationDisplayName);
@@ -241,6 +243,8 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     const client = new SketchiziCollaboration({
       roomId,
       sessionName,
+      hostAuthorizationToken,
+      hostAuthorizationTokenProvider: hostAuthorizationToken ? () => fetchHostAuthorization(roomId) : null,
       api,
       onState: applyCollaborationState,
       onPresence: (participants) => {
@@ -331,20 +335,59 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationRef.current?.updateCursor(cursor);
   }, []);
 
-  const startCollaboration = useCallback(() => {
-    if (collaborationCreationAttemptRef.current) return;
+  const startCollaboration = useCallback(async () => {
+    if (collaborationCreationAttemptRef.current || hostAuthCheckRef.current) return;
     closeNativeMenu();
-    if (collaborationRoom && collaborationRole) setCollaborationMode("active");
-    else {
-      collaborationCreationAttemptRef.current = false;
+    if (collaborationRoom && collaborationRole) {
+      setCollaborationMode("active");
+      setCollaborationOpen(true);
+      return;
+    }
+    hostAuthCheckRef.current = true;
+    try {
+      const { authenticated, user } = await fetchCurrentUser();
+      if (!authenticated) {
+        window.dispatchEvent(new CustomEvent("sketchizi:auth-required", { detail: {
+          message: "Sign in with Google to host a collaboration. You can still join an existing collaboration without signing in.",
+          returnTo: "/?startCollaboration=1",
+        }}));
+        return;
+      }
+      const profileName = typeof user?.name === "string" && user.name.trim()
+        ? user.name.trim()
+        : typeof user?.email === "string" && user.email.trim() ? user.email.trim() : "";
+      if (!profileName) {
+        setCollaborationCreationState("blocked");
+        setCollaborationError("Your Google account does not provide a usable display name or email address. Update your profile and try again.");
+        setCollaborationMode("create");
+        setCollaborationOpen(true);
+        return;
+      }
       clearCollaborationCreationTimeout();
       setCollaborationCreationState("idle");
+      setCollaborationError("");
       setCollaborationMode("create");
       setCollaborationDraftName("");
-      setCollaborationDisplayName((current) => current || getCollaborationDisplayName());
+      setCollaborationDisplayName(profileName);
+      setCollaborationOpen(true);
+    } catch (error) {
+      setCollaborationCreationState("blocked");
+      setCollaborationError("Sign-in status is unavailable. Hosting is disabled until Sketchizi can verify your account. You can continue drawing or join an existing collaboration.");
+      setCollaborationMode("create");
+      setCollaborationOpen(true);
+    } finally {
+      hostAuthCheckRef.current = false;
     }
-    setCollaborationOpen(true);
-  }, [clearCollaborationCreationTimeout, closeNativeMenu, collaborationRoom, collaborationRole]);
+  }, [clearCollaborationCreationTimeout, closeNativeMenu, collaborationRoom, collaborationRole, setCollaborationDisplayName]);
+
+  useEffect(() => {
+    if (!sketchReady) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("startCollaboration") !== "1") return;
+    url.searchParams.delete("startCollaboration");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    void startCollaboration();
+  }, [sketchReady, startCollaboration]);
 
   const dismissCollaborationCreationFailure = useCallback(() => {
     if (collaborationCreationState !== "failed") return;
@@ -352,23 +395,33 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     setCollaborationError("");
   }, [collaborationCreationState]);
 
-  const createCollaboration = useCallback(() => {
+  const createCollaboration = useCallback(async () => {
     if (collaborationCreationAttemptRef.current) return;
     const name = collaborationDraftName.trim();
-    const displayName = saveCollaborationDisplayName(collaborationDisplayName);
-    if (!name || !displayName) return;
-    setCollaborationDisplayName(displayName);
-    const roomId = createCollaborationRoomId();
+    if (!name) return;
     collaborationCreationAttemptRef.current = true;
     setCollaborationCreationState("creating");
-    setCollaborationMode("create");
-    setCollaborationOpen(false);
-    connectCollaboration(roomId, name, displayName);
-    collaborationCreationTimeoutRef.current = setTimeout(() => {
+    setCollaborationError("");
+    try {
+      const roomId = createCollaborationRoomId();
+      const { token, name: authenticatedName } = await fetchHostAuthorization(roomId);
       if (!collaborationCreationAttemptRef.current) return;
-      failCollaborationCreation();
-    }, 15000);
-  }, [collaborationDisplayName, collaborationDraftName, connectCollaboration, failCollaborationCreation]);
+      setCollaborationDisplayName(authenticatedName);
+      saveCollaborationDisplayName(authenticatedName);
+      setCollaborationMode("create");
+      setCollaborationOpen(false);
+      connectCollaboration(roomId, name, authenticatedName, token);
+      collaborationCreationTimeoutRef.current = setTimeout(() => {
+        if (!collaborationCreationAttemptRef.current) return;
+        failCollaborationCreation();
+      }, 15000);
+    } catch (error) {
+      collaborationCreationAttemptRef.current = false;
+      setCollaborationCreationState("idle");
+      setCollaborationError(error?.message || "Collaboration creation failed. Please try again.");
+      setCollaborationOpen(true);
+    }
+  }, [collaborationDraftName, connectCollaboration, failCollaborationCreation, setCollaborationDisplayName]);
 
   const leaveOrEndCollaboration = useCallback(() => {
     const isHost = collaborationRole === "host";

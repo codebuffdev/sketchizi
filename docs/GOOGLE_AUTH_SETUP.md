@@ -127,3 +127,16 @@ mvn test
 ```
 
 The gateway tests mock the upstream and cover fixed-origin forwarding, POST body/method, CSRF header forwarding, non-caching, cookie forwarding, and callback path mapping. Java unit tests cover safe return destinations. These tests do not prove live Google login or deployed Neon/Render/Cloudflare behavior. The build/test report delivered with this archive records what was actually executable in the build environment.
+
+## Collaboration host authorization
+
+Hosting a collaboration now requires a server-issued, room-bound authorization token. The Spring Boot auth service signs the token only after validating the existing OIDC session; the Node.js collaboration server verifies its HMAC signature and expiry before creating a room. Guest joins to an existing room do not require this token.
+
+Configure the same randomly generated secret in both services:
+
+- Spring Boot Render service: `COLLAB_HOST_TOKEN_SECRET`
+- Node.js collaboration server: `COLLAB_HOST_TOKEN_SECRET`
+
+Use a cryptographically random value of at least 32 bytes. Generate one locally with `openssl rand -base64 48`, then set the same value independently in both service environments. Never add it to frontend/Vite/Cloudflare Pages variables or commit it to source control. The signed authorization expires after five minutes and is bound to the requested room ID. If this variable is missing or shorter than 32 bytes, the auth service will refuse to issue tokens and the collaboration server will fail closed for new room creation. Restart/redeploy both services after configuring it.
+
+The browser obtains the token via CSRF-protected `POST /api/auth/collaboration-host-token` with `{ "roomId": "..." }`. The Node.js service does not attempt to read the host-only browser session cookie and does not trust browser-supplied authentication flags or host display names.

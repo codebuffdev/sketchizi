@@ -19,6 +19,8 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockHttpSession;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +29,7 @@ import java.net.URI;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = "COLLAB_HOST_TOKEN_SECRET=test-only-secret-with-more-than-32-bytes")
 @Import(AuthSecurityIntegrationTest.MockOAuthClientConfig.class)
 class AuthSecurityIntegrationTest {
     @Autowired MockMvc mvc;
@@ -66,6 +69,26 @@ class AuthSecurityIntegrationTest {
             .andExpect(jsonPath("$.authenticated").value(true))
             .andExpect(jsonPath("$.user.id").value("google-subject-123"))
             .andExpect(jsonPath("$.user.email").value("test@example.test"));
+    }
+
+    @Test void collaborationHostTokenRequiresAuthenticationAndCsrf() throws Exception {
+        mvc.perform(post("/api/auth/collaboration-host-token")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"roomId\":\"room_123456789012345678901234\"}").with(csrf()))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/collaboration-host-token")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"roomId\":\"room_123456789012345678901234\"}").with(oidcLogin()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test void authenticatedUserReceivesRoomBoundHostAuthorization() throws Exception {
+        mvc.perform(post("/api/auth/collaboration-host-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"roomId\":\"room_123456789012345678901234\"}")
+                .with(oidcLogin().idToken(token -> token.subject("google-subject-123").claim("email", "test@example.test").claim("name", "Sketchizi Tester")))
+                .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Sketchizi Tester"))
+            .andExpect(jsonPath("$.token").isNotEmpty());
     }
 
     @Test void logoutRequiresCsrfToken() throws Exception {

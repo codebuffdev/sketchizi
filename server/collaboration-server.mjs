@@ -1,4 +1,5 @@
 import { serverLogger } from "./logger.mjs";
+import { verifyHostAuthorization } from "./hostAuthorization.mjs";
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { mergeSnapshot } from "./collaborationSyncCore.mjs";
@@ -272,8 +273,14 @@ wss.on("connection", (socket) => {
       }
 
       room = rooms.get(message.roomId);
+      const hostAuthorization = verifyHostAuthorization(message.hostAuthorizationToken, message.roomId);
       let isHost = false;
       if (!room) {
+        if (!hostAuthorization) {
+          send(socket, { type: "error", message: "Sign in is required to create a collaboration. Join an existing room or sign in to host." });
+          socket.close(1008, "Host authorization required");
+          return;
+        }
         const name = typeof message.sessionName === "string" ? message.sessionName.trim() : "";
         if (!name || name.length > MAX_ROOM_NAME_LENGTH) {
           if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.join.rejected", {
@@ -286,7 +293,7 @@ wss.on("connection", (socket) => {
           socket.close(1008, "Collaboration name required");
           return;
         }
-        room = { id: message.roomId, name, clients: new Set(), elements: new Map(), files: new Map(), authorship: new Map(), permissions: new Map(), pendingRequests: new Map(), presence: new Map(), host: null, terminated: false, chatMessages: [], chatRate: new Map() };
+        room = { id: message.roomId, name, clients: new Set(), elements: new Map(), files: new Map(), authorship: new Map(), permissions: new Map(), pendingRequests: new Map(), presence: new Map(), host: null, hostSubject: hostAuthorization.subject, hostName: hostAuthorization.name, terminated: false, chatMessages: [], chatRate: new Map() };
         rooms.set(room.id, room);
         isHost = true;
         if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.room.created", { roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId) });
@@ -295,6 +302,8 @@ wss.on("connection", (socket) => {
 
       const previousSocket = Array.from(room.clients).find((candidate) => candidate.__sketchiziClientId === clientId);
       const reconnectingHost = room.host === previousSocket || room.host?.__sketchiziClientId === clientId;
+      const authorizedHostReconnect = Boolean(hostAuthorization && room.hostSubject === hostAuthorization.subject && (!room.host || room.host.readyState !== 1));
+      if (authorizedHostReconnect) isHost = true;
       if (previousSocket && previousSocket !== socket) {
         if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.participant.reconnectSocketReplaced", {
           roomRef: syncDiagnosticRef(room.id),
@@ -328,7 +337,10 @@ wss.on("connection", (socket) => {
       const permission = socket === room.host ? "host" : (room.permissions.get(clientId) || "viewer");
       room.permissions.set(clientId, permission);
       const previousPresence = room.presence.get(clientId);
-      room.presence.set(clientId, sanitizePresence(clientId, message.presence, previousPresence, permission));
+      const verifiedPresence = socket === room.host && room.hostSubject
+        ? { ...(message.presence || {}), displayName: room.hostName }
+        : message.presence;
+      room.presence.set(clientId, sanitizePresence(clientId, verifiedPresence, previousPresence, permission));
       const requestState = room.pendingRequests.has(clientId) ? "pending" : (previousPresence?.permission === "editor" || permission === "editor" ? "approved" : "none");
       const snapshot = roomSnapshot(room);
       const chatHistory = filterAuthorizedChatHistory(room.chatMessages, clientId, socket === room.host);

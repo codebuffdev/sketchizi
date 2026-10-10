@@ -93,10 +93,11 @@ export default function CollaborationUI({
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close collaboration">×</button>
             </div>
+            {mode === "create" && collaborationCreationState === "blocked" && <div className="collaboration-copy" role="status">Hosting is currently unavailable. Close this dialog and try Start Collaboration again when sign-in is available.</div>}
+            {mode === "create" && collaborationCreationState === "creating" && <p className="collaboration-copy" role="status">Verifying your account and creating collaboration…</p>}
             {mode === "create" && collaborationCreationState === "idle" && <>
               <label className="collaboration-field"><span>Collaboration name</span><input autoFocus value={draftName} maxLength={120} placeholder="e.g. Backend Architecture Discussion" onChange={(event) => setDraftName(event.target.value)} /></label>
-              <label className="collaboration-field"><span>Your name</span><input value={displayName} maxLength={48} placeholder="e.g. Alex" onChange={(event) => setDisplayName(event.target.value)} /></label>
-              <div className="collaboration-actions"><button type="button" disabled={!draftName.trim() || !displayName.trim()} onClick={createCollaboration}>Create collaboration</button><button type="button" className="secondary" onClick={() => setOpen(false)}>Cancel</button></div>
+              <div className="collaboration-actions"><button type="button" disabled={!draftName.trim() || collaborationCreationState === "creating"} onClick={createCollaboration}>Create collaboration</button><button type="button" className="secondary" onClick={() => setOpen(false)}>Cancel</button></div>
             </>}
             {mode === "join" && <>
               <p className="collaboration-copy">You were invited to join this collaboration.</p>

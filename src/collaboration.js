@@ -124,6 +124,8 @@ export class SketchiziCollaboration {
   constructor({
     roomId,
     sessionName,
+    hostAuthorizationToken = "",
+    hostAuthorizationTokenProvider = null,
     api,
     onState,
     onPresence,
@@ -142,6 +144,8 @@ export class SketchiziCollaboration {
     if (!ROOM_PATTERN.test(roomId)) throw new Error("Invalid collaboration room.");
     this.roomId = roomId;
     this.sessionName = typeof sessionName === "string" ? sessionName.trim() : "";
+    this.hostAuthorizationToken = typeof hostAuthorizationToken === "string" ? hostAuthorizationToken : "";
+    this.hostAuthorizationTokenProvider = typeof hostAuthorizationTokenProvider === "function" ? hostAuthorizationTokenProvider : null;
     this.api = api;
     this.clientId = getClientId();
     this.onState = onState;
@@ -383,7 +387,8 @@ export class SketchiziCollaboration {
     const socket = new WebSocket(wsUrl);
     this.socket = socket;
 
-    socket.onopen = () => {
+    socket.onopen = async () => {
+      const isReconnect = this.reconnectAttempt > 0;
       this.reconnectAttempt = 0;
       logger.debug("Collaboration socket connected", { category: "collaboration", roomId: this.roomId });
       if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.open", {
@@ -391,11 +396,24 @@ export class SketchiziCollaboration {
         clientRef: syncDiagnosticRef(this.clientId),
         hasInitialized: this.hasInitialized,
       });
+      if (isReconnect && this.hostAuthorizationTokenProvider) {
+        try {
+          const refreshed = await this.hostAuthorizationTokenProvider();
+          if (this.closed || this.socket !== socket || socket.readyState !== WebSocket.OPEN) return;
+          this.hostAuthorizationToken = refreshed.token;
+          this.displayName = refreshed.name;
+        } catch {
+          this.fail("Your sign-in session could not be verified to reconnect as host. Sign in again and restart hosting if needed.");
+          return;
+        }
+      }
+      if (this.closed || this.socket !== socket || socket.readyState !== WebSocket.OPEN) return;
       this.send({
         type: "join",
         roomId: this.roomId,
         clientId: this.clientId,
         sessionName: this.sessionName,
+        hostAuthorizationToken: this.hostAuthorizationToken,
         snapshot: this.snapshot(),
         presence: { displayName: this.displayName, color: this.color },
       });
