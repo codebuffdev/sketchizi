@@ -12,8 +12,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -39,6 +39,8 @@ public class SecurityConfig {
             ObjectMapper mapper,
             @Value("${app.frontend-origin:https://sketchizi.pages.dev}") String frontendOrigin) throws Exception {
 
+        OidcUserService oidcUserService = new OidcUserService();
+
         http.csrf(
                         csrf ->
                                 csrf.
@@ -47,7 +49,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth -> auth.requestMatchers(
                                         "/auth/login/google",
-                                        "/auth/login/github",
                                         "/oauth2/**",
                                         "/login/oauth2/**",
                                         "/actuator/health",
@@ -61,18 +62,15 @@ public class SecurityConfig {
                                 .anyRequest()
                                 .authenticated())
                 .oauth2Login(
-                        oauth -> oauth.successHandler((request, response, authentication) -> {
-                                    OAuth2User user = (OAuth2User) authentication.getPrincipal();
-                                    String provider = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
-                                    String subject = String.valueOf(user.getAttribute(provider.equals("github") ? "id" : "sub"));
-                                    String email = (String) user.getAttribute("email");
-                                    String displayName = provider.equals("github") ? firstNonBlank((String) user.getAttribute("name"), (String) user.getAttribute("login")) : (String) user.getAttribute("name");
-                                    String picture = provider.equals("github") ? (String) user.getAttribute("avatar_url") : (String) user.getAttribute("picture");
+                        oauth -> oauth.userInfoEndpoint(
+                                        userInfo -> userInfo.oidcUserService(oidcUserService))
+                                .successHandler((request, response, authentication) -> {
+                                    OidcUser user = (OidcUser) authentication.getPrincipal();
                                     jdbc.update("""
                                                       INSERT INTO sketchizi_users
                                                                     (provider, provider_subject, email, display_name,
                                                                      picture_url, last_seen_at)
-                                                                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                                                VALUES ('google', ?, ?, ?, ?, CURRENT_TIMESTAMP)
                                                                 ON CONFLICT (provider, provider_subject)
                                                                 DO UPDATE SET
                                                                     email = EXCLUDED.email,
@@ -80,11 +78,10 @@ public class SecurityConfig {
                                                                     picture_url = EXCLUDED.picture_url,
                                                                     last_seen_at = CURRENT_TIMESTAMP
                                                     """,
-                                            provider,
-                                            subject,
-                                            email,
-                                            displayName,
-                                            picture);
+                                            user.getSubject(),
+                                            user.getEmail(),
+                                            user.getFullName(),
+                                            user.getPicture());
 
                                     String returnTo = AuthController.safeReturnTo(
                                             (String) request.getSession()
@@ -128,10 +125,6 @@ public class SecurityConfig {
                 )
                 .headers(headers -> headers.cacheControl(Customizer.withDefaults()));
         return http.build();
-    }
-
-    private static String firstNonBlank(String first, String second) {
-        return first != null && !first.isBlank() ? first : (second == null ? "" : second);
     }
 
 }

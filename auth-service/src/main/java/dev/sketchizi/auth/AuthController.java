@@ -7,7 +7,7 @@ import java.util.Map;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,27 +27,27 @@ public class AuthController {
     static final String RETURN_TO_SESSION_KEY = "SKETCHIZI_AUTH_RETURN_TO";
 
     @GetMapping("/api/auth/me")
-    public ResponseEntity<?> me(@AuthenticationPrincipal OAuth2User user) {
+    public ResponseEntity<?> me(@AuthenticationPrincipal OidcUser user) {
         if (user == null) return ResponseEntity.status(401).cacheControl(CacheControl.noStore()).body(Map.of("authenticated", false));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of(
             "authenticated", true,
-            "user", Map.of("id", subject(user), "email", safe(user.getAttribute("email")), "name", displayName(user), "picture", picture(user))
+            "user", Map.of("id", user.getSubject(), "email", safe(user.getEmail()), "name", safe(user.getFullName()), "picture", safe(user.getPicture()))
         ));
     }
 
 
     @PostMapping("/api/auth/collaboration-host-token")
-    public ResponseEntity<?> collaborationHostToken(@AuthenticationPrincipal OAuth2User user, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> collaborationHostToken(@AuthenticationPrincipal OidcUser user, @RequestBody Map<String, Object> body) {
         if (user == null) return ResponseEntity.status(401).cacheControl(CacheControl.noStore()).body(Map.of("error", "Sign in is required to host a collaboration."));
         Object roomValue = body.get("roomId");
         String roomId = roomValue instanceof String value ? value : "";
         if (!roomId.matches("[A-Za-z0-9_-]{20,64}")) return ResponseEntity.badRequest().cacheControl(CacheControl.noStore()).body(Map.of("error", "Invalid collaboration room."));
-        String name = displayName(user).trim();
-        if (name.isBlank()) name = safe(user.getAttribute("email")).trim();
-        if (name.isBlank()) return ResponseEntity.unprocessableEntity().cacheControl(CacheControl.noStore()).body(Map.of("error", "Your provider account does not provide a usable name or email address."));
+        String name = safe(user.getFullName()).trim();
+        if (name.isBlank()) name = safe(user.getEmail()).trim();
+        if (name.isBlank()) return ResponseEntity.unprocessableEntity().cacheControl(CacheControl.noStore()).body(Map.of("error", "Your Google account does not provide a usable name or email address."));
         if (name.length() > 48) name = name.substring(0, 48).trim();
         try {
-            String token = hostTokenService.issue(subject(user), name, roomId);
+            String token = hostTokenService.issue(user.getSubject(), name, roomId);
             return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("token", token, "name", name));
         } catch (IllegalStateException exception) {
             // Log only the safe diagnostic message; never log the assertion or signing secret.
@@ -61,12 +61,11 @@ public class AuthController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("token", token.getToken(), "headerName", token.getHeaderName()));
     }
 
-    @GetMapping({"/auth/login/google", "/auth/login/github"})
-    public RedirectView beginLogin(HttpServletRequest request) {
+    @GetMapping("/auth/login/google")
+    public RedirectView beginGoogleLogin(HttpServletRequest request) {
         String returnTo = safeReturnTo(request.getParameter("returnTo"));
         request.getSession(true).setAttribute(RETURN_TO_SESSION_KEY, returnTo);
-        String provider = request.getRequestURI().endsWith("/github") ? "github" : "google";
-        return new RedirectView("/oauth2/authorization/" + provider);
+        return new RedirectView("/oauth2/authorization/google");
     }
 
     static String safeReturnTo(String candidate) {
@@ -79,19 +78,5 @@ public class AuthController {
         } catch (IllegalArgumentException ex) { return "/"; }
     }
 
-    private static String subject(OAuth2User user) {
-        Object value = user.getAttribute("sub");
-        if (value == null) value = user.getAttribute("id");
-        return value == null ? user.getName() : String.valueOf(value);
-    }
-    private static String displayName(OAuth2User user) {
-        String name = safe(user.getAttribute("name")).trim();
-        if (!name.isBlank()) return name;
-        return safe(user.getAttribute("login")).trim();
-    }
-    private static String picture(OAuth2User user) {
-        String value = safe(user.getAttribute("picture"));
-        return value.isBlank() ? safe(user.getAttribute("avatar_url")) : value;
-    }
-    private static String safe(Object value) { return value == null ? "" : String.valueOf(value); }
+    private static String safe(String value) { return value == null ? "" : value; }
 }

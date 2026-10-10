@@ -10,14 +10,10 @@ export async function fetchCurrentUser(signal) {
   return { authenticated: Boolean(payload.authenticated), user: payload.user || null };
 }
 
-function startProviderSignIn(provider, returnTo = window.location.pathname + window.location.search + window.location.hash) {
-  if (provider !== "google" && provider !== "github") throw new Error("Unsupported sign-in provider.");
+export function startGoogleSignIn(returnTo = window.location.pathname + window.location.search + window.location.hash) {
   const safeReturnTo = typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\") ? returnTo : "/";
-  window.location.assign(`/api/auth/login/${provider}?returnTo=${encodeURIComponent(safeReturnTo)}`);
+  window.location.assign(`/api/auth/login/google?returnTo=${encodeURIComponent(safeReturnTo)}`);
 }
-
-export function startGoogleSignIn(returnTo) { return startProviderSignIn("google", returnTo); }
-export function startGitHubSignIn(returnTo) { return startProviderSignIn("github", returnTo); }
 
 export async function signOut() {
   const csrfResponse = await fetch(AUTH_CSRF_URL, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
@@ -49,7 +45,7 @@ export async function fetchHostAuthorization(roomId) {
   }
   const payload = await response.json();
   if (typeof payload.token !== "string" || typeof payload.name !== "string" || !payload.name.trim()) {
-    throw new Error("Your account does not have a usable display name. Update your provider profile and try again.");
+    throw new Error("Your account does not have a usable display name. Update your Google profile and try again.");
   }
   return { token: payload.token, name: payload.name.trim() };
 }
