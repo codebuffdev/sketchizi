@@ -24,6 +24,7 @@ export async function signOut() {
     headers: { accept: "application/json", [headerName || "X-XSRF-TOKEN"]: token },
   });
   if (!response.ok && response.status !== 204) throw new Error("Sign-out failed. Please try again.");
+  window.dispatchEvent(new CustomEvent("sketchizi:auth-changed", { detail: { authenticated: false, signedOut: true } }));
 }
 
 export async function fetchHostAuthorization(roomId) {

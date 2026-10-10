@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { onRequestGet as eraserCatalog } from "./functions/api/eraser-catalog.js";
 import { onRequestGet as eraserIcon } from "./functions/api/eraser-icon.js";
 import { onRequest as authGateway } from "./functions/api/auth/[[path]].js";
+import { onRequest as aiGateway } from "./functions/api/ai/[[path]].js";
 
 async function readRequestBody(req) {
   return new Promise((resolve, reject) => {
@@ -46,6 +47,11 @@ async function handlePagesFunction(handler, req, res) {
     env: {
       AUTH_SERVICE_ORIGIN:
         process.env.AUTH_SERVICE_ORIGIN || "http://localhost:8080",
+      AI_SERVICE_ORIGIN:
+        process.env.AI_SERVICE_ORIGIN || "http://localhost:8090",
+      AI_IDENTITY_HMAC_SECRET: process.env.AI_IDENTITY_HMAC_SECRET || "",
+      PUBLIC_FRONTEND_ORIGIN:
+        process.env.PUBLIC_FRONTEND_ORIGIN || "http://localhost:5173",
     },
   });
 
@@ -75,15 +81,18 @@ function sketchiziPagesFunctionsDev() {
           req.method === "GET" &&
           ["/api/eraser-catalog", "/api/eraser-icon"].includes(path);
         const isAuth = path === "/api/auth" || path.startsWith("/api/auth/");
+        const isAi = path === "/api/ai" || path.startsWith("/api/ai/");
 
-        if (!isEraser && !isAuth) return next();
+        if (!isEraser && !isAuth && !isAi) return next();
 
         const handler =
           path === "/api/eraser-catalog"
             ? eraserCatalog
             : path === "/api/eraser-icon"
               ? eraserIcon
-              : authGateway;
+              : isAi
+                ? aiGateway
+                : authGateway;
 
         try {
           await handlePagesFunction(handler, req, res);
@@ -105,7 +114,9 @@ function sketchiziPagesFunctionsDev() {
             JSON.stringify({
               error: isAuth
                 ? "Authentication gateway failed."
-                : "Eraser API failed.",
+                : isAi
+                  ? "AI gateway failed."
+                  : "Eraser API failed.",
             })
           );
         }

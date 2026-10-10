@@ -17,6 +17,7 @@
 		"test:ui-defaults": "node --test tests/ui-defaults.test.js",
 		"test:auth-gateway": "node --test tests/auth-gateway.test.js",
 		"test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js",
+		"test:ai": "node --test tests/ai-api-client.test.js tests/ai-diagram-context.test.js tests/ai-gateway.test.js",
 		"test:collaboration-host-auth": "node --test tests/collaboration-host-auth.test.js"
 	},
 	"dependencies": {

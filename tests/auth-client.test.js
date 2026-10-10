@@ -5,7 +5,8 @@ import { readFile } from "node:fs/promises";
 test("service worker bypasses authentication API cache handling", async () => {
   const source = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(source, /url\.pathname === "\/api\/auth" \|\| url\.pathname\.startsWith\("\/api\/auth\/"\)/);
-  assert.match(source, /never cache sessions, CSRF tokens, OAuth callbacks/);
+  assert.match(source, /url\.pathname === "\/api\/ai" \|\| url\.pathname\.startsWith\("\/api\/ai\/"\)/);
+  assert.match(source, /Never cache sessions, CSRF tokens, OAuth callbacks, usage quotas, chat responses, or diagram context/);
 });
 
 test("auth client uses same-origin endpoints and does not persist credentials", async () => {

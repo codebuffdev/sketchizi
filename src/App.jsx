@@ -38,11 +38,14 @@ import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } fr
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
+import AiAskPanel from "./features/ai/AiAskPanel.jsx";
+import "./styles/ai-ask.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
+  const [aiAskOpen, setAiAskOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
@@ -82,8 +85,16 @@ function App() {
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
+  useEffect(() => {
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.get("aiAsk") !== "1") return;
+    setAiAskOpen(true);
+    currentUrl.searchParams.delete("aiAsk");
+    window.history.replaceState(window.history.state, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
+  }, []);
+
   const persistence = useSketchPersistence({ apiRef });
-  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
 
   const collaboration = useCollaboration({ apiRef, showToast, closeNativeMenu, sketchReady, apiReady });
   const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, chatMessages, chatError, sendChatMessage, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
@@ -340,6 +351,18 @@ function App() {
 
         <button
           type="button"
+          className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
+          onClick={() => setAiAskOpen((value) => !value)}
+          title="Ask AI about this diagram"
+          aria-label="AI Ask"
+          aria-expanded={aiAskOpen}
+        >
+          <span className="ai-ask-toggle-icon" aria-hidden="true">✳</span>
+          <span>AI Ask</span>
+        </button>
+
+        <button
+          type="button"
           className={architectureValidationOpen ? "architecture-validation-toggle active" : "architecture-validation-toggle"}
           onClick={() => togglePanel("architecture-validation")}
           title="Architecture validation"
@@ -484,6 +507,8 @@ function App() {
         chatError={chatError}
         sendChatMessage={sendChatMessage}
       />
+
+      <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} />
 
       {toast && (
         <div className={`sketchizi-toast ${toast.kind === "error" ? "error" : ""}`} role="status" aria-live="polite" key={toast.id}>
