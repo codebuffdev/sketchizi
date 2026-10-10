@@ -50,3 +50,12 @@ test("gateway rewrites Spring's relative authorization redirect back through the
   assert.equal(target, "https://auth.example.test/auth/login/google?returnTo=%2Fcollab%2Froom");
   assert.equal(response.headers.get("location"), "https://sketchizi.pages.dev/api/auth/oauth2/authorization/google");
 });
+
+
+test("GitHub login route is forwarded through the same-origin gateway", async () => {
+  let target = "";
+  globalThis.fetch = async (url) => { target = String(url); return new Response(null, { status: 302, headers: { location: "https://auth.example.test/oauth2/authorization/github" } }); };
+  const response = await onRequest({ request: new Request("https://sketchizi.pages.dev/api/auth/login/github?returnTo=%2Fcollab%2Froom"), env: { AUTH_SERVICE_ORIGIN: "https://auth.example.test" } });
+  assert.equal(target, "https://auth.example.test/auth/login/github?returnTo=%2Fcollab%2Froom");
+  assert.equal(response.headers.get("location"), "https://sketchizi.pages.dev/api/auth/oauth2/authorization/github");
+});

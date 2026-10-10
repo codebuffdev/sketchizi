@@ -12,15 +12,16 @@
 .auth-dialog-backdrop { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgb(15 18 25 / 48%); backdrop-filter: blur(3px); }
 .auth-dialog { position: relative; width: min(100%, 390px); padding: 30px 28px 24px; border: 1px solid var(--ui-border, #dedee5); border-radius: 18px; background: var(--ui-surface-solid, #fff); color: var(--ui-text-strong, #202027); box-shadow: 0 24px 80px rgb(0 0 0 / 22%); text-align: center; }
 .auth-dialog-close { position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: inherit; font-size: 24px; cursor: pointer; }
-.auth-dialog-mark { display: grid; place-items: center; width: 44px; height: 44px; margin: 0 auto 16px; border-radius: 13px; background: #6d5dfc; color: white; font-size: 25px; font-weight: 800; }
 .auth-dialog h2 { margin: 0 0 9px; font-size: 21px; letter-spacing: -.025em; }
 .auth-dialog > p { margin: 0 auto 20px; color: var(--ui-text-muted, #777); font-size: 13px; line-height: 1.55; }
 .auth-dialog .auth-dialog-notice { padding: 9px 11px; border-radius: 8px; background: #fff7ed; color: #9a3412; font-size: 12px; }
-.auth-google-button { display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid var(--ui-border, #d5d5dd); border-radius: 9px; background: var(--ui-surface-solid, #fff); color: var(--ui-text-strong, #25252c); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
-.auth-google-button:hover { background: var(--ui-surface-hover, #f6f6f8); }
+.auth-provider-button { display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid var(--ui-border, #d5d5dd); border-radius: 9px; background: var(--ui-surface-solid, #fff); color: var(--ui-text-strong, #25252c); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.auth-provider-button + .auth-provider-button { margin-top: 12px; }
+.auth-provider-button:hover { background: var(--ui-surface-hover, #f6f6f8); }
 .auth-dialog .auth-dialog-footnote { margin: 14px 0 0; font-size: 11px; }
-.app.theme-dark .auth-header-button, .app.theme-dark .auth-dialog, .app.theme-dark .auth-google-button { background: var(--ui-surface-solid, #202127); color: var(--ui-text-strong, #f4f4f5); border-color: var(--ui-border, #41424b); }
-.app.theme-dark .auth-header-button:hover, .app.theme-dark .auth-google-button:hover { background: var(--ui-surface-hover, #2c2d34); }
+.app.theme-dark .auth-header-button, .app.theme-dark .auth-dialog, .app.theme-dark .auth-provider-button { background: var(--ui-surface-solid, #202127); color: var(--ui-text-strong, #f4f4f5); border-color: var(--ui-border, #41424b); }
+.app.theme-dark .auth-header-button:hover, .app.theme-dark .auth-provider-button + .auth-provider-button { margin-top: 12px; }
+.auth-provider-button:hover { background: var(--ui-surface-hover, #2c2d34); }
 .app.theme-dark .auth-account-name { color: var(--ui-text, #ddd); }
 @media (max-width: 620px) {
   .auth-account-name { display: none; }

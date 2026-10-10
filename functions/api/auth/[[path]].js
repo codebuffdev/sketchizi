@@ -6,11 +6,12 @@ const NO_CACHE = {
 
 function backendPath(pathname) {
   if (pathname === "/api/auth/login/google") return "/auth/login/google";
-  if (pathname === "/api/auth/oauth2/callback/google") {
-    return "/login/oauth2/code/google";
+  if (pathname === "/api/auth/login/github") return "/auth/login/github";
+  if (pathname === "/api/auth/oauth2/callback/google" || pathname === "/api/auth/oauth2/callback/github") {
+    return pathname.endsWith("/github") ? "/login/oauth2/code/github" : "/login/oauth2/code/google";
   }
-  if (pathname === "/api/auth/oauth2/authorization/google") {
-    return "/oauth2/authorization/google";
+  if (pathname === "/api/auth/oauth2/authorization/google" || pathname === "/api/auth/oauth2/authorization/github") {
+    return pathname.endsWith("/github") ? "/oauth2/authorization/github" : "/oauth2/authorization/google";
   }
   return pathname;
 }
@@ -84,10 +85,12 @@ export async function onRequest({ request, env }) {
           let path = target.pathname;
           if (path === "/auth/login/google") {
             path = "/api/auth/login/google";
-          } else if (path === "/oauth2/authorization/google") {
-            path = "/api/auth/oauth2/authorization/google";
-          } else if (path === "/login/oauth2/code/google") {
-            path = "/api/auth/oauth2/callback/google";
+          } else if (path === "/auth/login/github") {
+            path = "/api/auth/login/github";
+          } else if (path === "/oauth2/authorization/google" || path === "/oauth2/authorization/github") {
+            path = `/api/auth/oauth2/authorization/${path.endsWith("/github") ? "github" : "google"}`;
+          } else if (path === "/login/oauth2/code/google" || path === "/login/oauth2/code/github") {
+            path = `/api/auth/oauth2/callback/${path.endsWith("/github") ? "github" : "google"}`;
           } else if (path === "/login") {
             path = "/api/auth/login";
           }
