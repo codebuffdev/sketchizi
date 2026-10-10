@@ -6,9 +6,9 @@ Sketchizi supports Google and GitHub through the same Spring Security OAuth2 cli
 
 Create a GitHub OAuth App in GitHub Developer Settings. Set its Authorization callback URL to:
 
-`https://YOUR_AUTH_PUBLIC_BASE_URL/api/auth/oauth2/callback/github`
+`https://sketchizi.pages.dev/api/auth/oauth2/callback/github`
 
-`YOUR_AUTH_PUBLIC_BASE_URL` must be the same public base URL used by the Spring Boot service and the existing Pages gateway. Do not register a guessed Render hostname.
+Register the Cloudflare Pages origin as the callback, not the Render service URL. The Pages Function forwards this public path to Spring Security’s internal `/login/oauth2/code/github` handler.
 
 ## Render environment variables
 
@@ -17,7 +17,7 @@ Add these to the Spring Boot authentication service:
 - `GITHUB_CLIENT_ID` — OAuth App client ID.
 - `GITHUB_CLIENT_SECRET` — OAuth App client secret.
 
-Keep existing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL`, `FRONTEND_ORIGIN`, database settings, and `COLLAB_HOST_TOKEN_SECRET` unchanged. The Node.js collaboration service does not need GitHub credentials.
+Keep existing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FRONTEND_ORIGIN`, database settings, and `COLLAB_HOST_TOKEN_SECRET` unchanged. OAuth callback redirect URIs are now built from `FRONTEND_ORIGIN`; `PUBLIC_BASE_URL` is no longer used for the provider callback URL. The Node.js collaboration service does not need GitHub credentials.
 
 The callback path is `/api/auth/oauth2/callback/github`; the Pages Function maps it to Spring Security's `/login/oauth2/code/github`. Sign-in begins at `/api/auth/login/github`.
 

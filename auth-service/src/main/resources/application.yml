@@ -51,7 +51,7 @@ spring:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             authorization-grant-type: authorization_code
-            redirect-uri: "${PUBLIC_BASE_URL}/api/auth/oauth2/callback/{registrationId}"
+            redirect-uri: "${FRONTEND_ORIGIN:https://sketchizi.pages.dev}/api/auth/oauth2/callback/{registrationId}"
             scope:
               - read:user
               - user:email
@@ -62,7 +62,7 @@ spring:
               - openid
               - profile
               - email
-            redirect-uri: "${PUBLIC_BASE_URL}/api/auth/oauth2/callback/{registrationId}"
+            redirect-uri: "${FRONTEND_ORIGIN:https://sketchizi.pages.dev}/api/auth/oauth2/callback/{registrationId}"
         provider:
           github:
             authorization-uri: https://github.com/login/oauth/authorize

@@ -59,3 +59,16 @@ test("GitHub login route is forwarded through the same-origin gateway", async ()
   assert.equal(target, "https://auth.example.test/auth/login/github?returnTo=%2Fcollab%2Froom");
   assert.equal(response.headers.get("location"), "https://sketchizi.pages.dev/api/auth/oauth2/authorization/github");
 });
+
+test("GitHub callback path is rewritten to Spring Security callback", async () => {
+  let target;
+  globalThis.fetch = async (url) => { target = String(url); return new Response("ok"); };
+  await onRequest({ request: new Request("https://sketchizi.pages.dev/api/auth/oauth2/callback/github?code=fake&state=fake"), env: { AUTH_SERVICE_ORIGIN: "https://auth.example.test" } });
+  assert.equal(target, "https://auth.example.test/login/oauth2/code/github?code=fake&state=fake");
+});
+
+test("GitHub Spring Security redirect is rewritten back through Pages gateway", async () => {
+  globalThis.fetch = async () => new Response(null, { status: 302, headers: { location: "https://auth.example.test/login/oauth2/code/github" } });
+  const response = await onRequest({ request: new Request("https://sketchizi.pages.dev/api/auth/me"), env: { AUTH_SERVICE_ORIGIN: "https://auth.example.test" } });
+  assert.equal(response.headers.get("location"), "https://sketchizi.pages.dev/api/auth/oauth2/callback/github");
+});

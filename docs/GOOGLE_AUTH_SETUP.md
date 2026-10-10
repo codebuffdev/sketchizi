@@ -35,7 +35,7 @@ Set these in the Render service's environment settings. Use secrets for credenti
 | `PORT` | Render supplies this; application defaults to `8080` locally |
 | `GOOGLE_CLIENT_ID` | Google OAuth web client ID |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth web client secret |
-| `PUBLIC_BASE_URL` | `https://sketchizi.pages.dev` in production; `http://localhost:5173` locally |
+| `PUBLIC_BASE_URL` | Legacy configuration; not used to construct OAuth callback URIs after the callback-origin fix |
 | `FRONTEND_ORIGIN` | `https://sketchizi.pages.dev` in production; `http://localhost:5173` locally |
 | `DATABASE_URL` | JDBC URL, e.g. `jdbc:postgresql://HOST/DB?sslmode=require` (replace placeholders with Neon details) |
 | `DATABASE_USERNAME` | Neon database role/user |
@@ -75,7 +75,7 @@ The configured startup schema initialization is convenient for this first phase.
 
 1. Create a new Web Service from the repository.
 2. Set **Root Directory** to `auth-service` and select the **Docker** runtime (uses `auth-service/Dockerfile`).
-3. Set the environment variables listed above. `PUBLIC_BASE_URL` and `FRONTEND_ORIGIN` must be the actual public Sketchizi origin.
+3. Set the environment variables listed above. `FRONTEND_ORIGIN` must be the public Sketchizi origin because OAuth callback URIs are routed through the Pages gateway. `PUBLIC_BASE_URL` is not used to construct OAuth callback URIs.
 4. Set health-check path to `/actuator/health`.
 5. Deploy and confirm the health endpoint returns `UP`. Copy the real Render service origin into Cloudflare's `AUTH_SERVICE_ORIGIN`.
 6. Do not expose database URLs, OAuth secrets, cookie values, OAuth codes, or session identifiers in logs.
@@ -84,7 +84,7 @@ The configured startup schema initialization is convenient for this first phase.
 
 1. Keep the existing Pages project and `functions/api/eraser-catalog.js` and `functions/api/eraser-icon.js` files.
 2. Add `AUTH_SERVICE_ORIGIN` in Pages project settings. Redeploy so the function receives it.
-3. In Google Cloud Console, register the Pages callback URL above. In Render, use the same frontend origin for `PUBLIC_BASE_URL` and `FRONTEND_ORIGIN`.
+3. In Google Cloud Console, register the Pages callback URL above. In Render, set `FRONTEND_ORIGIN=https://sketchizi.pages.dev`. Register `https://sketchizi.pages.dev/api/auth/oauth2/callback/google` with Google. The gateway forwards this path to `/login/oauth2/code/google`.
 4. Deploy the frontend and test in a normal browser tab, not only a private window. Verify `SESSION` is HttpOnly, Secure, SameSite=Lax, host-only, and has no broad Domain attribute.
 5. Authentication routes use `Cache-Control: no-store`; the service worker explicitly bypasses `/api/auth/*`. Existing Eraser handlers are retained. The development Vite middleware routes Eraser requests to their existing handlers and auth requests to the same gateway handler.
 
