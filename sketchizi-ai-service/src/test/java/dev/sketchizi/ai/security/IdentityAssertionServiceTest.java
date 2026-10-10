@@ -12,6 +12,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -32,9 +33,24 @@ class IdentityAssertionServiceTest {
         String token = token("account-123", "sketchizi-ai", Instant.now().getEpochSecond(), Instant.now().getEpochSecond() + 60, jti);
         when(jdbc.update(anyString(), any(), any(), any())).thenReturn(1);
         assertEquals("account-123", service.verifyAndConsume(token).accountId());
-        verify(jdbc).update(anyString(), eq(UUID.fromString(jti)), eq("account-123"), any());
+        verify(jdbc).update(
+            eq("INSERT INTO sketchizi_ai.ai_identity_assertions (jti, account_id, expires_at) VALUES (?, ?, ?)"),
+            eq(UUID.fromString(jti)), eq("account-123"), any());
         when(jdbc.update(anyString(), any(), any(), any())).thenThrow(new DuplicateKeyException("replay"));
         assertNull(service.verifyAndConsume(token));
+    }
+
+    @Test
+    void propagatesDatabaseFailureInsteadOfAcceptingAnUnconsumedAssertion() throws Exception {
+        long now = Instant.now().getEpochSecond();
+        String token = token("account-123", "sketchizi-ai", now, now + 60, UUID.randomUUID().toString());
+        when(jdbc.update(anyString(), any(), any(), any()))
+            .thenThrow(new DataAccessResourceFailureException("database unavailable"));
+
+        assertThrows(DataAccessResourceFailureException.class, () -> service.verifyAndConsume(token));
+        verify(jdbc).update(
+            eq("INSERT INTO sketchizi_ai.ai_identity_assertions (jti, account_id, expires_at) VALUES (?, ?, ?)"),
+            any(), eq("account-123"), any());
     }
 
     @Test

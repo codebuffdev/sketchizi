@@ -23,9 +23,8 @@ spring:
       validation-timeout: 5000
       idle-timeout: 240000
       max-lifetime: 1500000
-      # Keep every application connection scoped to the AI service's schema.
-      # This avoids resolving similarly named tables in a pre-existing public schema.
-      connection-init-sql: SET search_path TO sketchizi_ai
+      # Runtime SQL explicitly qualifies every AI table with sketchizi_ai. Do not rely
+      # on SET search_path here: Neon pooled connections may use transaction pooling.
   flyway:
     enabled: true
     locations: classpath:db/migration

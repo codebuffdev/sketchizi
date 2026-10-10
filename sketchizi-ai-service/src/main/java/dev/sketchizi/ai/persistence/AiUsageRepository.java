@@ -43,7 +43,7 @@ public class AiUsageRepository {
     public UUID createConversation(String accountId) {
         lockAccount(accountId);
         UUID conversationId = UUID.randomUUID();
-        jdbc.update("INSERT INTO ai_conversations (conversation_id, account_id) VALUES (?, ?)", conversationId, accountId);
+        jdbc.update("INSERT INTO sketchizi_ai.ai_conversations (conversation_id, account_id) VALUES (?, ?)", conversationId, accountId);
         return conversationId;
     }
 
@@ -57,11 +57,11 @@ public class AiUsageRepository {
         if (already.isPresent()) return existingReservation(already.get(), request, accountId);
 
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        long recentSubmissions = count("SELECT COUNT(*) FROM ai_requests WHERE account_id = ? AND created_at >= ?", accountId, now.minusMinutes(1));
+        long recentSubmissions = count("SELECT COUNT(*) FROM sketchizi_ai.ai_requests WHERE account_id = ? AND created_at >= ?", accountId, now.minusMinutes(1));
         if (recentSubmissions >= maxSubmissionsPerMinute) {
             throw AiApiException.rateLimited("submission_rate_limited", "Too many AI questions were submitted recently. Wait a minute and try again.");
         }
-        long activeRequests = count("SELECT COUNT(*) FROM ai_requests WHERE account_id = ? AND status = 'pending' AND lease_expires_at > ?", accountId, now);
+        long activeRequests = count("SELECT COUNT(*) FROM sketchizi_ai.ai_requests WHERE account_id = ? AND status = 'pending' AND lease_expires_at > ?", accountId, now);
         if (activeRequests >= maxConcurrentRequests) {
             throw AiApiException.rateLimited("concurrency_limit", "You already have the maximum number of AI requests in progress. Wait for one to finish.");
         }
@@ -78,7 +78,7 @@ public class AiUsageRepository {
 
         OffsetDateTime leaseUntil = now.plusSeconds(leaseSeconds);
         int inserted = jdbc.update("""
-            INSERT INTO ai_requests (request_id, account_id, conversation_id, provider, status, reserved_at, lease_expires_at)
+            INSERT INTO sketchizi_ai.ai_requests (request_id, account_id, conversation_id, provider, status, reserved_at, lease_expires_at)
             VALUES (?, ?, ?, ?, 'pending', ?, ?)
             ON CONFLICT (request_id) DO NOTHING
             """, request.requestId(), accountId, request.conversationId(), request.provider(), now, leaseUntil);
@@ -97,16 +97,16 @@ public class AiUsageRepository {
 
     @Transactional
     public boolean markSucceeded(UUID requestId, String accountId) {
-        int changed = jdbc.update("UPDATE ai_requests SET status = 'succeeded', completed_at = CURRENT_TIMESTAMP, lease_expires_at = NULL, error_code = NULL WHERE request_id = ? AND account_id = ? AND status = 'pending'", requestId, accountId);
-        if (changed == 1) jdbc.update("UPDATE ai_conversations SET last_activity_at = CURRENT_TIMESTAMP WHERE conversation_id = (SELECT conversation_id FROM ai_requests WHERE request_id = ?)", requestId);
+        int changed = jdbc.update("UPDATE sketchizi_ai.ai_requests SET status = 'succeeded', completed_at = CURRENT_TIMESTAMP, lease_expires_at = NULL, error_code = NULL WHERE request_id = ? AND account_id = ? AND status = 'pending'", requestId, accountId);
+        if (changed == 1) jdbc.update("UPDATE sketchizi_ai.ai_conversations SET last_activity_at = CURRENT_TIMESTAMP WHERE conversation_id = (SELECT conversation_id FROM sketchizi_ai.ai_requests WHERE request_id = ?)", requestId);
         return changed == 1;
     }
 
     @Transactional
     public void markFailed(UUID requestId, String accountId, String safeCode) {
         String code = List.of("provider_error", "provider_timeout", "empty_generation", "reservation_lost", "internal_failure").contains(safeCode) ? safeCode : "provider_error";
-        jdbc.update("UPDATE ai_requests SET status = 'failed', error_code = ?, lease_expires_at = NULL WHERE request_id = ? AND account_id = ? AND status = 'pending'", code, requestId, accountId);
-        jdbc.update("UPDATE ai_conversations SET last_activity_at = CURRENT_TIMESTAMP WHERE conversation_id = (SELECT conversation_id FROM ai_requests WHERE request_id = ?)", requestId);
+        jdbc.update("UPDATE sketchizi_ai.ai_requests SET status = 'failed', error_code = ?, lease_expires_at = NULL WHERE request_id = ? AND account_id = ? AND status = 'pending'", code, requestId, accountId);
+        jdbc.update("UPDATE sketchizi_ai.ai_conversations SET last_activity_at = CURRENT_TIMESTAMP WHERE conversation_id = (SELECT conversation_id FROM sketchizi_ai.ai_requests WHERE request_id = ?)", requestId);
     }
 
     @Transactional
@@ -133,35 +133,35 @@ public class AiUsageRepository {
     @Transactional
     public void cleanupOperationalMetadata() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        jdbc.update("UPDATE ai_requests SET status = 'failed', error_code = 'reservation_expired', lease_expires_at = NULL WHERE status = 'pending' AND lease_expires_at < ?", now);
-        jdbc.update("DELETE FROM ai_identity_assertions WHERE expires_at < ?", now);
-        jdbc.update("DELETE FROM ai_rate_limits WHERE window_start < ?", now.minusDays(2));
+        jdbc.update("UPDATE sketchizi_ai.ai_requests SET status = 'failed', error_code = 'reservation_expired', lease_expires_at = NULL WHERE status = 'pending' AND lease_expires_at < ?", now);
+        jdbc.update("DELETE FROM sketchizi_ai.ai_identity_assertions WHERE expires_at < ?", now);
+        jdbc.update("DELETE FROM sketchizi_ai.ai_rate_limits WHERE window_start < ?", now.minusDays(2));
     }
 
     private void lockAccount(String accountId) {
-        jdbc.update("INSERT INTO ai_account_locks (account_id) VALUES (?) ON CONFLICT (account_id) DO NOTHING", accountId);
-        jdbc.queryForObject("SELECT account_id FROM ai_account_locks WHERE account_id = ? FOR UPDATE", String.class, accountId);
+        jdbc.update("INSERT INTO sketchizi_ai.ai_account_locks (account_id) VALUES (?) ON CONFLICT (account_id) DO NOTHING", accountId);
+        jdbc.queryForObject("SELECT account_id FROM sketchizi_ai.ai_account_locks WHERE account_id = ? FOR UPDATE", String.class, accountId);
     }
 
     private void lockAndVerifyConversation(UUID conversationId, String accountId) {
-        List<String> owners = jdbc.query("SELECT account_id FROM ai_conversations WHERE conversation_id = ? FOR UPDATE", (rs, row) -> rs.getString(1), conversationId);
+        List<String> owners = jdbc.query("SELECT account_id FROM sketchizi_ai.ai_conversations WHERE conversation_id = ? FOR UPDATE", (rs, row) -> rs.getString(1), conversationId);
         if (owners.isEmpty() || !owners.get(0).equals(accountId)) {
             throw AiApiException.notFound("conversation_not_found", "That AI conversation was not found for this account.");
         }
     }
 
     private void releaseExpiredForAccount(String accountId) {
-        jdbc.update("UPDATE ai_requests SET status = 'failed', error_code = 'reservation_expired', lease_expires_at = NULL WHERE account_id = ? AND status = 'pending' AND lease_expires_at < CURRENT_TIMESTAMP", accountId);
+        jdbc.update("UPDATE sketchizi_ai.ai_requests SET status = 'failed', error_code = 'reservation_expired', lease_expires_at = NULL WHERE account_id = ? AND status = 'pending' AND lease_expires_at < CURRENT_TIMESTAMP", accountId);
     }
 
     private QuotaCounts quotaCounts(String accountId, UUID conversationId, OffsetDateTime now) {
         OffsetDateTime cutoff = now.minusHours(windowHours);
-        int accountSucceeded = (int) count("SELECT COUNT(*) FROM ai_requests WHERE account_id = ? AND provider = 'builtin' AND status = 'succeeded' AND completed_at >= ?", accountId, cutoff);
-        int accountPending = (int) count("SELECT COUNT(*) FROM ai_requests WHERE account_id = ? AND provider = 'builtin' AND status = 'pending' AND lease_expires_at > ?", accountId, now);
+        int accountSucceeded = (int) count("SELECT COUNT(*) FROM sketchizi_ai.ai_requests WHERE account_id = ? AND provider = 'builtin' AND status = 'succeeded' AND completed_at >= ?", accountId, cutoff);
+        int accountPending = (int) count("SELECT COUNT(*) FROM sketchizi_ai.ai_requests WHERE account_id = ? AND provider = 'builtin' AND status = 'pending' AND lease_expires_at > ?", accountId, now);
         // Conversation quota is lifetime-scoped; only the account allowance rolls over after 12 hours.
-        int conversationSucceeded = (int) count("SELECT COUNT(*) FROM ai_requests WHERE conversation_id = ? AND provider = 'builtin' AND status = 'succeeded'", conversationId);
-        int conversationPending = (int) count("SELECT COUNT(*) FROM ai_requests WHERE conversation_id = ? AND provider = 'builtin' AND status = 'pending' AND lease_expires_at > ?", conversationId, now);
-        List<OffsetDateTime> oldest = jdbc.query("SELECT MIN(completed_at) FROM ai_requests WHERE account_id = ? AND provider = 'builtin' AND status = 'succeeded' AND completed_at >= ?", (rs, row) -> {
+        int conversationSucceeded = (int) count("SELECT COUNT(*) FROM sketchizi_ai.ai_requests WHERE conversation_id = ? AND provider = 'builtin' AND status = 'succeeded'", conversationId);
+        int conversationPending = (int) count("SELECT COUNT(*) FROM sketchizi_ai.ai_requests WHERE conversation_id = ? AND provider = 'builtin' AND status = 'pending' AND lease_expires_at > ?", conversationId, now);
+        List<OffsetDateTime> oldest = jdbc.query("SELECT MIN(completed_at) FROM sketchizi_ai.ai_requests WHERE account_id = ? AND provider = 'builtin' AND status = 'succeeded' AND completed_at >= ?", (rs, row) -> {
             var value = rs.getObject(1, java.time.OffsetDateTime.class);
             return value;
         }, accountId, cutoff);
@@ -174,7 +174,7 @@ public class AiUsageRepository {
     }
 
     private Optional<StoredRequest> findRequest(UUID requestId) {
-        List<StoredRequest> values = jdbc.query("SELECT request_id, account_id, conversation_id, provider, status, error_code FROM ai_requests WHERE request_id = ?", (rs, row) -> new StoredRequest(
+        List<StoredRequest> values = jdbc.query("SELECT request_id, account_id, conversation_id, provider, status, error_code FROM sketchizi_ai.ai_requests WHERE request_id = ?", (rs, row) -> new StoredRequest(
             rs.getObject("request_id", UUID.class), rs.getString("account_id"), rs.getObject("conversation_id", UUID.class),
             rs.getString("provider"), rs.getString("status"), rs.getString("error_code")), requestId);
         return values.stream().findFirst();

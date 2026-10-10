@@ -21,10 +21,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class RequestRateLimitFilter extends OncePerRequestFilter {
     private static final String UPSERT = """
-        INSERT INTO ai_rate_limits (account_id, window_start, request_count) VALUES (?, ?, 1)
+        INSERT INTO sketchizi_ai.ai_rate_limits AS current_limit (account_id, window_start, request_count) VALUES (?, ?, 1)
         ON CONFLICT (account_id, window_start) DO UPDATE
-        SET request_count = ai_rate_limits.request_count + 1
-        WHERE ai_rate_limits.request_count < ?
+        SET request_count = current_limit.request_count + 1
+        WHERE current_limit.request_count < ?
         RETURNING request_count
         """;
     private final JdbcTemplate jdbc;

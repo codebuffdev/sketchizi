@@ -58,7 +58,7 @@ public class IdentityAssertionService {
             if (issuedAt > now + 5 || expiresAt <= now || expiresAt <= issuedAt || expiresAt - issuedAt > 90) return null;
 
             try {
-                jdbc.update("INSERT INTO ai_identity_assertions (jti, account_id, expires_at) VALUES (?, ?, ?)",
+                jdbc.update("INSERT INTO sketchizi_ai.ai_identity_assertions (jti, account_id, expires_at) VALUES (?, ?, ?)",
                     jti, subject, OffsetDateTime.ofInstant(Instant.ofEpochSecond(expiresAt), ZoneOffset.UTC));
             } catch (DuplicateKeyException replay) {
                 return null;
