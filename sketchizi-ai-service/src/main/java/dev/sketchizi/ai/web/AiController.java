@@ -61,6 +61,8 @@ public class AiController {
     }
 
     private <T> ResponseEntity<T> noStore(ResponseEntity<T> response) {
-        return response.cacheControl(CacheControl.noStore().cachePrivate()).header("Pragma", "no-cache");
+        response.getHeaders().setCacheControl(CacheControl.noStore().cachePrivate());
+        response.getHeaders().setPragma("no-cache");
+        return response;
     }
 }

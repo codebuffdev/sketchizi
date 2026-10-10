@@ -12,6 +12,7 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -53,8 +54,10 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
         long epochMinute = Instant.now().getEpochSecond() / 60 * 60;
         OffsetDateTime windowStart = OffsetDateTime.ofInstant(Instant.ofEpochSecond(epochMinute), ZoneOffset.UTC);
         try {
-            Boolean allowed = jdbc.query(UPSERT, resultSet -> resultSet.next(), principal.accountId(), windowStart, maxRequestsPerMinute);
-            if (!Boolean.TRUE.equals(allowed)) {
+            boolean[] returnedRow = {false};
+            RowCallbackHandler callback = resultSet -> returnedRow[0] = true;
+            jdbc.query(UPSERT, callback, principal.accountId(), windowStart, maxRequestsPerMinute);
+            if (!returnedRow[0]) {
                 response.setStatus(429);
                 response.setHeader("Retry-After", "60");
                 response.setHeader("Cache-Control", "no-store");
