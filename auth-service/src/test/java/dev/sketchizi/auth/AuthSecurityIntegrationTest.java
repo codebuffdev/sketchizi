@@ -1,11 +1,18 @@
 package dev.sketchizi.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.net.URI;
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,17 +21,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.session.Session;
+import org.springframework.session.SessionRepository;
+import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.mock.web.MockHttpSession;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.net.URI;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -33,6 +42,9 @@ import java.net.URI;
 @Import(AuthSecurityIntegrationTest.MockOAuthClientConfig.class)
 class AuthSecurityIntegrationTest {
     @Autowired MockMvc mvc;
+    @Autowired JdbcTemplate jdbcTemplate;
+    @Autowired SessionRepository<?> sessionRepository;
+    @Autowired JdbcIndexedSessionRepository jdbcSessionRepository;
 
     @TestConfiguration
     static class MockOAuthClientConfig {
@@ -55,6 +67,34 @@ class AuthSecurityIntegrationTest {
         }
     }
 
+    @Test void jdbcSessionSchemaSupportsPersistReadAndExpiredSessionCleanup() {
+        Session session = (Session) sessionRepository.createSession();
+        assertEquals(Duration.ofDays(7), session.getMaxInactiveInterval(),
+                "Spring Session should retain the configured seven-day timeout");
+        session.setAttribute("schema-init-check", "persisted-value");
+        saveSession(sessionRepository, session);
+
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM SPRING_SESSION WHERE SESSION_ID = ?",
+                Integer.class, session.getId()));
+
+        Session restored = (Session) sessionRepository.findById(session.getId());
+        assertNotNull(restored, "saved session should be readable from JDBC storage");
+        assertEquals("persisted-value", restored.getAttribute("schema-init-check"));
+
+        jdbcTemplate.update("UPDATE SPRING_SESSION SET EXPIRY_TIME = 0 WHERE SESSION_ID = ?", session.getId());
+        jdbcSessionRepository.cleanUpExpiredSessions();
+
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM SPRING_SESSION WHERE SESSION_ID = ?",
+                Integer.class, session.getId()));
+        assertNull(sessionRepository.findById(session.getId()), "cleaned-up session should no longer be readable");
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void saveSession(SessionRepository<?> repository, Session session) {
+        ((SessionRepository) repository).save(session);
+    }
 
     @Test void unauthenticatedMeReturns401Json() throws Exception {
         mvc.perform(get("/api/auth/me"))

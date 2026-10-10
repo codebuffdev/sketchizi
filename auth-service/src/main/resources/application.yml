@@ -40,7 +40,9 @@ spring:
     store-type: jdbc
     timeout: 7d
     jdbc:
-      initialize-schema: always
+      # Session tables are managed idempotently by schema.sql because SQL init runs
+      # on every boot. Avoid running Spring Session's non-idempotent vendor script.
+      initialize-schema: never
       table-name: SPRING_SESSION
 
   security:

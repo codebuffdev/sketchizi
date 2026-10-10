@@ -17,11 +17,9 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
-@EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 604800)
 public class SecurityConfig {
     @Bean
     CookieCsrfTokenRepository csrfTokenRepository() {
