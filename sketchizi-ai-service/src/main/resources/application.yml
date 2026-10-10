@@ -23,9 +23,18 @@ spring:
       validation-timeout: 5000
       idle-timeout: 240000
       max-lifetime: 1500000
+      # Keep every application connection scoped to the AI service's schema.
+      # This avoids resolving similarly named tables in a pre-existing public schema.
+      connection-init-sql: SET search_path TO sketchizi_ai
   flyway:
     enabled: true
     locations: classpath:db/migration
+    # The database can already have unrelated objects in public. Use an isolated schema
+    # rather than baselining public (which could skip V1__ai_usage.sql).
+    schemas:
+      - sketchizi_ai
+    default-schema: sketchizi_ai
+    create-schemas: true
   ai:
     model:
       chat: google-genai
