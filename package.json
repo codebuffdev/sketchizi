@@ -1,33 +1,33 @@
 {
-	"name": "sketchizi",
-	"private": true,
-	"version": "1.10.38",
-	"type": "module",
-	"scripts": {
-		"dev": "vite",
-		"build": "vite build",
-		"preview": "vite preview",
-		"sync:eraser": "node scripts/sync-eraser-icons.mjs",
-		"collaboration-server": "node server/collaboration-server.mjs",
-		"test:networking": "node --test tests/networking.test.js",
-		"test:catalog": "node --test tests/architecture-catalog.test.js",
-		"test:chat": "node --test tests/chat-protocol.test.js",
-		"test:sync": "node --import ./tests/register-sync-test-loader.mjs --test tests/collaboration-sync-characterization.test.js tests/collaboration-sync-core.test.js tests/sync-diagnostics.test.js",
-		"test:sync-performance": "node --import ./tests/register-sync-test-loader.mjs ./tests/sync-performance-sample.mjs",
-		"test:ui-defaults": "node --test tests/ui-defaults.test.js",
-		"test:auth-gateway": "node --test tests/auth-gateway.test.js",
-		"test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js",
-		"test:ai": "node --test tests/ai-api-client.test.js tests/ai-diagram-context.test.js tests/ai-gateway.test.js",
-		"test:collaboration-host-auth": "node --test tests/collaboration-host-auth.test.js"
-	},
-	"dependencies": {
-		"@excalidraw/excalidraw": "0.18.0-c0ad61c",
-		"react": "^18.3.1",
-		"react-dom": "^18.3.1",
-		"ws": "^8.18.0"
-	},
-	"devDependencies": {
-		"@vitejs/plugin-react": "^4.3.1",
-		"vite": "^5.4.8"
-	}
+  "name": "sketchizi",
+  "private": true,
+  "version": "1.10.38",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sync:eraser": "node scripts/sync-eraser-icons.mjs",
+    "collaboration-server": "node server/collaboration-server.mjs",
+    "test:networking": "node --test tests/networking.test.js",
+    "test:catalog": "node --test tests/architecture-catalog.test.js",
+    "test:chat": "node --test tests/chat-protocol.test.js",
+    "test:sync": "node --import ./tests/register-sync-test-loader.mjs --test tests/collaboration-sync-characterization.test.js tests/collaboration-sync-core.test.js tests/sync-diagnostics.test.js",
+    "test:sync-performance": "node --import ./tests/register-sync-test-loader.mjs ./tests/sync-performance-sample.mjs",
+    "test:ui-defaults": "node --test tests/ui-defaults.test.js",
+    "test:auth-gateway": "node --test tests/auth-gateway.test.js",
+    "test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js",
+    "test:ai": "node --test tests/ai-api-client.test.js tests/ai-diagram-context.test.js tests/ai-gateway.test.js tests/ai-request-lifecycle.test.js",
+    "test:collaboration-host-auth": "node --test tests/collaboration-host-auth.test.js"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "0.18.0-c0ad61c",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
 }

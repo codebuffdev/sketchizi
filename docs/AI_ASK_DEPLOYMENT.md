@@ -86,3 +86,19 @@ mvn spring-boot:run
 ```
 
 Backend endpoints require a valid gateway-signed identity assertion on every `/api/v1/ai/*` request; direct browser testing without the Cloudflare/Vite gateway should receive a controlled 401. The project includes unit tests for diagram validation, identity assertions, successful-usage commit ordering, provider-failure reservation release, duplicate-request handling, and BYOK usage separation. Database-backed quota races and live Gemini/BYOK calls still need validation against the deployed database/provider. Never use a real production API key in test logs or committed fixtures.
+
+## AI Ask request lifecycle troubleshooting
+
+The frontend keeps a stable request ID for a logical generation. Transport retries and recovery after an ambiguous response reuse that ID. An explicit retry after a confirmed failure creates a new generation ID; an explicit new attempt after an uncertain outcome also gets a new ID and warns that the provider may be called again. A missing status record alone does not prove that the original POST never reached the service. Do not automatically resubmit with a new ID when the outcome is unknown.
+
+The AI service logs request IDs and provider mode only (never prompts, responses, diagram data, keys, cookies, account IDs, or identity assertions). For a failing request, locate the relevant `requestId` in Render logs and inspect these events in order:
+
+- `AI chat request received`: the request reached the AI controller and passed the earlier gateway/security checks.
+- `AI request reserved`: the database reservation was committed; a following provider-start event means the provider call began.
+- `AI provider request failed`: generation returned a controlled provider error and the service attempted to mark the reservation failed.
+- `AI request completed successfully`: the successful usage record was committed and the answer was placed in the short-lived process-local result cache.
+- `AI request is durably successful but its answer is not retained in this process`: usage was already recorded, but this service instance cannot return the cached answer. The UI must not regenerate automatically.
+
+If `AI chat request received` appears without `AI request reserved`, inspect the structured API error code and database logs: failure may have occurred during reservation before generation. If `AI request reserved` and provider-start appear without a terminal event, correlate the instance's restart/timeout logs; the final provider outcome may be unknown. If a success event exists but the browser saw an upstream error, status lookup should be tried with the original request ID. A successful DB status with no cached answer is explicitly reported as an unavailable-result case because storing answers durably is outside this privacy boundary.
+
+Usage loading has a 15-second client timeout and an explicit Retry usage control. It is independent of chat-request state. Usage errors do not weaken server-side quota enforcement; Neon and the AI service remain authoritative.

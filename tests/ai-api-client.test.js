@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { aiApiRequest, createRequestId } from "../src/features/ai/aiApiClient.js";
+import { aiApiRequest, aiApiRequestWithTimeout, createRequestId } from "../src/features/ai/aiApiClient.js";
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), { status, headers: { "content-type": "application/json" } });
@@ -51,4 +51,17 @@ test("chat HTTP errors are not automatically regenerated", async () => {
 
 test("request IDs are RFC 4122 UUIDs", () => {
   assert.match(createRequestId(), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+});
+
+
+test("usage requests have a finite timeout and report a recoverable timeout code", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, options = {}) => new Promise((_resolve, reject) => {
+    options.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
+  });
+  try {
+    await assert.rejects(aiApiRequestWithTimeout("/usage?conversationId=conv", {}, 10), (error) => error.code === "request_timeout");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

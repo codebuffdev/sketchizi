@@ -33,19 +33,29 @@ public class AiChatService {
 
     public ChatOutcome ask(String accountId, ChatRequest input) {
         ValidatedChatRequest request = validator.validate(input);
+        log.info("AI chat request received; requestId={} provider={}", request.requestId(), request.provider());
         Reservation reservation = repository.reserve(request, accountId);
         if (!reservation.newlyReserved()) {
-            if (reservation.status().equals("pending")) return ChatOutcome.processing(request.requestId());
+            if (reservation.status().equals("pending")) {
+                log.info("AI request remains pending; requestId={} provider={}", request.requestId(), request.provider());
+                return ChatOutcome.processing(request.requestId());
+            }
             if (reservation.status().equals("succeeded")) {
                 ChatResponse cached = resultCache.get(request.requestId());
                 if (cached != null) return ChatOutcome.completed(cached);
+                log.warn("AI request is durably successful but its answer is not retained in this process; requestId={} provider={}", request.requestId(), request.provider());
                 throw AiApiException.conflict("completed_result_not_retained", "This request already succeeded. Its response is no longer in the short-lived retry cache, so it was not generated or charged again.");
+            }
+            if ("reservation_expired".equals(reservation.errorCode())) {
+                throw AiApiException.conflict("reservation_lost", "This request reservation expired before its outcome could be recorded. Check its status before choosing whether to generate again.");
             }
             throw AiApiException.conflict("request_already_failed", "This request already failed. Submit a new question attempt to retry generation.");
         }
 
+        log.info("AI request reserved; requestId={} provider={}", request.requestId(), request.provider());
         String answer;
         try {
+            log.info("AI provider generation started; requestId={} provider={}", request.requestId(), request.provider());
             answer = generationService.generate(request);
         } catch (GeminiGenerationService.ProviderFailure failure) {
             repository.markFailed(request.requestId(), accountId, failure.code().equals("provider_timeout") ? "provider_timeout"
@@ -66,13 +76,20 @@ public class AiChatService {
             throw AiApiException.conflict("reservation_lost", "The request reservation expired before success could be recorded. Check usage before submitting another question.");
         }
 
+        // Publish the answer to the local retry cache immediately after the durable
+        // success commit. A duplicate POST/status poll should not see a transient
+        // succeeded-without-answer state while the separate usage lookup is running.
+        ChatResponse response = new ChatResponse(request.requestId(), "succeeded", answer, null);
+        resultCache.put(response);
+
         UsageResponse usage = null;
         if (request.provider().equals("builtin")) {
             try { usage = usageService.usage(accountId, request.conversationId()); }
             catch (RuntimeException ignored) { log.warn("AI answer was recorded but refreshed usage could not be loaded; requestId={}", request.requestId()); }
         }
-        ChatResponse response = new ChatResponse(request.requestId(), "succeeded", answer, usage);
+        response = new ChatResponse(request.requestId(), "succeeded", answer, usage);
         resultCache.put(response);
+        log.info("AI request completed successfully; requestId={} provider={}", request.requestId(), request.provider());
         return ChatOutcome.completed(response);
     }
 

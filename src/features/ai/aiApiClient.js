@@ -58,6 +58,24 @@ export async function aiApiRequest(path, { method = "GET", body, signal } = {}) 
   throw lastNetworkError || new Error("The AI request failed.");
 }
 
+/** Runs a read request with a finite deadline so UI loading states cannot hang forever. */
+export async function aiApiRequestWithTimeout(path, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), Math.max(1, timeoutMs));
+  try {
+    return await aiApiRequest(path, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      const timeoutError = new Error("The AI request timed out.");
+      timeoutError.code = "request_timeout";
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export function createRequestId() {
   if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
   const bytes = new Uint8Array(16);

@@ -10,6 +10,7 @@ import dev.sketchizi.ai.dto.UsageResponse;
 import dev.sketchizi.ai.persistence.AiUsageRepository;
 import dev.sketchizi.ai.persistence.AiUsageRepository.Reservation;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,24 @@ class AiChatServiceTest {
         assertEquals(9, outcome.response().usage().accountRemaining());
         verify(repository).markSucceeded(requestId, ACCOUNT);
         verify(repository, never()).markFailed(any(), anyString(), anyString());
+    }
+
+    @Test
+    void answerIsCachedImmediatelyAfterDurableSuccessBeforeUsageRefresh() {
+        when(repository.reserve(validated, ACCOUNT)).thenReturn(new Reservation(requestId, conversationId, "builtin", "pending", true, null));
+        when(generationService.generate(validated)).thenReturn("A client sends requests to the API.");
+        when(repository.markSucceeded(requestId, ACCOUNT)).thenReturn(true);
+        when(usageService.usage(ACCOUNT, conversationId)).thenAnswer(invocation -> {
+            ChatResponse cached = resultCache.get(requestId);
+            assertNotNull(cached, "the answer cache must be populated before usage refresh begins");
+            assertEquals("A client sends requests to the API.", cached.answer());
+            return new UsageResponse(1, 4, 1, 9, null);
+        });
+
+        AiChatService.ChatOutcome outcome = service.ask(ACCOUNT, input);
+
+        assertEquals("A client sends requests to the API.", outcome.response().answer());
+        assertEquals(9, outcome.response().usage().accountRemaining());
     }
 
     @Test
@@ -115,4 +134,36 @@ class AiChatServiceTest {
         verifyNoInteractions(usageService);
         verify(repository).markSucceeded(requestId, ACCOUNT);
     }
+    @Test
+    void succeededRequestWithoutCachedAnswerIsNotRegeneratedAndStatusRemainsDurablySucceeded() {
+        when(repository.reserve(validated, ACCOUNT)).thenReturn(new Reservation(requestId, conversationId, "builtin", "succeeded", false, null));
+        AiApiException failure = assertThrows(AiApiException.class, () -> service.ask(ACCOUNT, input));
+        assertEquals("completed_result_not_retained", failure.code());
+        verifyNoInteractions(generationService);
+
+        when(repository.getRequest(requestId, ACCOUNT)).thenReturn(Optional.of(
+            new AiUsageRepository.StoredRequest(requestId, ACCOUNT, conversationId, "builtin", "succeeded", null)));
+        var status = service.requestStatus(ACCOUNT, requestId);
+        assertEquals("succeeded", status.status());
+        assertNull(status.answer());
+        verifyNoInteractions(generationService);
+    }
+
+    @Test
+    void expiredReservationDoesNotMasqueradeAsConfirmedProviderFailure() {
+        when(repository.reserve(validated, ACCOUNT)).thenReturn(new Reservation(requestId, conversationId, "builtin", "failed", false, "reservation_expired"));
+        AiApiException failure = assertThrows(AiApiException.class, () -> service.ask(ACCOUNT, input));
+        assertEquals("reservation_lost", failure.code());
+        verifyNoInteractions(generationService);
+        verify(repository, never()).markSucceeded(any(), anyString());
+    }
+
+    @Test
+    void aConfirmedFailedRequestCannotBeGeneratedAgainUnderTheSameRequestId() {
+        when(repository.reserve(validated, ACCOUNT)).thenReturn(new Reservation(requestId, conversationId, "builtin", "failed", false, "provider_error"));
+        AiApiException failure = assertThrows(AiApiException.class, () -> service.ask(ACCOUNT, input));
+        assertEquals("request_already_failed", failure.code());
+        verifyNoInteractions(generationService);
+    }
+
 }
