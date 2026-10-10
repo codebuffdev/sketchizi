@@ -42,17 +42,20 @@ public class GeminiGenerationService implements AutoCloseable {
     private final String model;
     private final int timeoutSeconds;
     private final int maxAnswerChars;
+    private final int maxOutputTokens;
     private final ThreadPoolExecutor executor;
 
     public GeminiGenerationService(ChatModel chatModel, ObjectMapper mapper,
-            @Value("${spring.ai.google.genai.chat.model:gemini-2.5-flash}") String model,
+            @Value("${spring.ai.google.genai.chat.model:gemini-3.8-flash}") String model,
             @Value("${app.limits.provider-timeout-seconds:45}") int timeoutSeconds,
-            @Value("${app.limits.max-answer-chars:16000}") int maxAnswerChars) {
+            @Value("${app.limits.max-answer-chars:16000}") int maxAnswerChars,
+            @Value("${spring.ai.google.genai.chat.max-output-tokens:2048}") int maxOutputTokens) {
         this.builtInClient = ChatClient.create(chatModel);
         this.mapper = mapper;
         this.model = model;
         this.timeoutSeconds = Math.max(5, timeoutSeconds);
         this.maxAnswerChars = Math.max(1000, maxAnswerChars);
+        this.maxOutputTokens = Math.max(1, maxOutputTokens);
 
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
@@ -103,7 +106,7 @@ public class GeminiGenerationService implements AutoCloseable {
         String prompt = buildPrompt(request);
         Map<String, Object> systemInstruction = Map.of("parts", List.of(Map.of("text", SYSTEM_PROMPT)));
         Map<String, Object> contents = Map.of("role", "user", "parts", List.of(Map.of("text", prompt)));
-        Map<String, Object> generationConfig = Map.of("temperature", 0.2, "maxOutputTokens", 2048);
+        Map<String, Object> generationConfig = Map.of("maxOutputTokens", maxOutputTokens);
         Map<String, Object> body = Map.of("systemInstruction", systemInstruction, "contents", List.of(contents), "generationConfig", generationConfig);
         JsonNode response = byokClient.post()
             .uri("/v1beta/models/{model}:generateContent", model)

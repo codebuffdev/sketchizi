@@ -30,7 +30,7 @@ Use `.env.example` as a placeholder-only inventory. Production variables are set
 | `DATABASE_PASSWORD` | Yes | Neon database password |
 | `AI_IDENTITY_HMAC_SECRET` | Yes | Shared Cloudflare/AI identity assertion secret, 32+ UTF-8 bytes |
 | `GEMINI_API_KEY` | For Built-in | Server-side Gemini Developer API key |
-| `GEMINI_MODEL` | No | Model ID; default `gemini-2.5-flash` |
+| `GEMINI_MODEL` | No | Model ID; default `gemini-3.8-flash` |
 | `GEMINI_MAX_OUTPUT_TOKENS` | No | Maximum Built-in Gemini output tokens; default `2048` |
 | `PORT` | No | Render port; default 8090 |
 | `DB_POOL_SIZE` | No | Hikari maximum pool size; default 5 |
@@ -91,3 +91,12 @@ The model's answer is retained only in a bounded, short-lived in-memory response
 ## Testing and limitations
 
 Run `mvn test` and `mvn package` in a Java 17/Maven environment with dependencies available. Unit tests cover normalized diagram validation and signed-assertion expiry/audience/replay behavior. The current project does not include live credentials, and mocked/unit tests do not prove that the deployed Gemini key, Render networking, or Neon quota contention works in production. Perform the deployment verification above before describing the complete flow as production verified.
+
+### Safe API failure diagnostics
+
+Unexpected controller failures are logged with the `X-Request-ID`, HTTP method, path (without query parameters), exception class, root-cause class, SQLState/vendor code when present, and application stack-frame locations. Exception messages, SQL strings/parameters, cookies, identity assertions, prompts, diagram context, and provider credentials are not logged. Correlate the `X-Request-ID` shown by AI Ask with the AI Render log line. This diagnostic metadata is intended to identify the first failing application frame without exposing request content.
+
+
+### Gemini model configuration
+
+Built-in Gemini and BYOK use the model selected by `GEMINI_MODEL` (default `gemini-3.8-flash`). For Gemini 3.x, the custom Spring AI model options intentionally omit legacy sampling fields (`temperature`, `topP`, `topK`, `candidateCount`); BYOK requests likewise omit these fields and retain only the output-token cap. When updating an existing Render service, update its existing `GEMINI_MODEL` environment variable explicitly—changing `render.yaml` or the application fallback does not override a value already stored in the Render dashboard.
