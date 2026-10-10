@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchCurrentUser, signOut, startGoogleSignIn } from "./authClient.js";
+import { fetchCurrentUser, recheckCurrentUserIfStale, signOut, startGoogleSignIn } from "./authClient.js";
 
 export default function AuthenticationControl() {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
@@ -9,6 +9,11 @@ export default function AuthenticationControl() {
   const [signInContext, setSignInContext] = useState({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" });
 
   useEffect(() => {
+    let mounted = true;
+    let lastVisibleCheck = Date.now();
+    const applyStatus = ({ authenticated, user }) => {
+      if (mounted) setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
+    };
     const openForHost = (event) => {
       setSignInContext({
         message: event.detail?.message || "Sign in to host a collaboration. Joining an existing collaboration remains available without signing in.",
@@ -25,11 +30,37 @@ export default function AuthenticationControl() {
     }
     const controller = new AbortController();
     fetchCurrentUser(controller.signal)
-      .then(({ authenticated, user }) => setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" }))
+      .then(applyStatus)
       .catch((error) => {
-        if (error.name !== "AbortError") setAuth({ status: "unavailable", user: null, error: "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
+        if (!mounted || error.name === "AbortError") return;
+        setAuth({ status: "unavailable", user: null, error: "Sign-in status is temporarily unavailable. You can keep using Sketchizi; retry to check your session." });
       });
-    return () => { controller.abort(); window.removeEventListener("sketchizi:auth-required", openForHost); };
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastVisibleCheck < 30000) return;
+      lastVisibleCheck = now;
+      recheckCurrentUserIfStale()
+        .then(applyStatus)
+        .catch(() => {
+          if (!mounted) return;
+          setAuth((current) => ({ status: "unavailable", user: current.user || null, error: "Sign-in status is temporarily unavailable. You can keep using Sketchizi; retry to check your session." }));
+        });
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    const onAuthChanged = (event) => {
+      if (event.detail?.signedOut || event.detail?.authenticated === false) {
+        setAuth({ status: "anonymous", user: null, error: "" });
+      }
+    };
+    window.addEventListener("sketchizi:auth-changed", onAuthChanged);
+    return () => {
+      mounted = false;
+      controller.abort();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("sketchizi:auth-required", openForHost);
+      window.removeEventListener("sketchizi:auth-changed", onAuthChanged);
+    };
   }, []);
 
   useEffect(() => {
@@ -53,6 +84,13 @@ export default function AuthenticationControl() {
     <div className="auth-control-root">
       {auth.status === "loading" ? (
         <span className="auth-control-loading" role="status" aria-label="Checking sign-in status">Checking…</span>
+      ) : auth.status === "unavailable" ? (
+        <button className="auth-header-button" type="button" onClick={() => {
+          setAuth((current) => ({ ...current, status: "loading" }));
+          fetchCurrentUser(undefined, { force: true })
+            .then(({ authenticated, user }) => setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" }))
+            .catch(() => setAuth((current) => ({ ...current, status: "unavailable", error: "Sign-in status is temporarily unavailable. You can keep using Sketchizi; retry to check your session." })));
+        }}>Retry status check</button>
       ) : auth.status === "authenticated" ? (
         <div className="auth-account-control">
           {auth.user?.picture ? <img className="auth-account-avatar" src={auth.user.picture} alt="" referrerPolicy="no-referrer" /> : <span className="auth-account-avatar auth-account-avatar-fallback" aria-hidden="true">{(auth.user?.name || auth.user?.email || "U").slice(0, 1).toUpperCase()}</span>}
