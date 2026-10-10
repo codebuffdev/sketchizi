@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.view.RedirectView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Controller
 public class AuthController {
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     private final CollaborationHostTokenService hostTokenService;
 
     public AuthController(CollaborationHostTokenService hostTokenService) { this.hostTokenService = hostTokenService; }
@@ -47,6 +50,8 @@ public class AuthController {
             String token = hostTokenService.issue(user.getSubject(), name, roomId);
             return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("token", token, "name", name));
         } catch (IllegalStateException exception) {
+            // Log only the safe diagnostic message; never log the assertion or signing secret.
+            logger.warn("Collaboration host authorization could not be issued: {}", exception.getMessage());
             return ResponseEntity.status(503).cacheControl(CacheControl.noStore()).body(Map.of("error", "Secure collaboration hosting is temporarily unavailable."));
         }
     }
