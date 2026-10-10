@@ -14,7 +14,9 @@
 		"test:chat": "node --test tests/chat-protocol.test.js",
 		"test:sync": "node --import ./tests/register-sync-test-loader.mjs --test tests/collaboration-sync-characterization.test.js tests/collaboration-sync-core.test.js tests/sync-diagnostics.test.js",
 		"test:sync-performance": "node --import ./tests/register-sync-test-loader.mjs ./tests/sync-performance-sample.mjs",
-		"test:ui-defaults": "node --test tests/ui-defaults.test.js"
+		"test:ui-defaults": "node --test tests/ui-defaults.test.js",
+		"test:auth-gateway": "node --test tests/auth-gateway.test.js",
+		"test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js"
 	},
 	"dependencies": {
 		"@excalidraw/excalidraw": "0.18.0-c0ad61c",

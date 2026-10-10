@@ -1,0 +1,77 @@
+server:
+  port: ${PORT:8080}
+  address: 0.0.0.0
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        name: SESSION
+        http-only: true
+        secure: ${COOKIE_SECURE:true}
+        same-site: lax
+        path: /
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: sketchizi-auth
+
+  sql:
+    init:
+      mode: always
+      continue-on-error: false
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      minimum-idle: 0
+      connection-timeout: 30000
+      validation-timeout: 5000
+      idle-timeout: 240000
+      max-lifetime: 1500000
+
+  session:
+    store-type: jdbc
+    timeout: 7d
+    jdbc:
+      initialize-schema: always
+      table-name: SPRING_SESSION
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "${PUBLIC_BASE_URL}/api/auth/oauth2/callback/{registrationId}"
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+app:
+  frontend-origin: ${FRONTEND_ORIGIN:https://sketchizi.pages.dev}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: WARN

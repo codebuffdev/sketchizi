@@ -307,3 +307,7 @@ Sketchizi uses four responsive layout modes: desktop (`>=1200px`), tablet/compac
 On mobile, Excalidraw's native toolbar occupies the bottom interaction lane, so the collaboration status is moved to a dedicated top status lane rather than competing with the native footer. The minimap toggle/panel likewise reserves the native mobile bottom-toolbar lane. Collaboration actions remain available and stack at narrow widths.
 
 The application shell uses containing `100%` dimensions with document-level overflow disabled to avoid accidental browser horizontal/vertical scrolling. Panels are viewport-bounded and scroll internally.
+
+## Google Sign-In foundation (Phase 1)
+
+The optional Google Sign-In foundation and Spring Boot authentication service are documented in [`docs/GOOGLE_AUTH_SETUP.md`](docs/GOOGLE_AUTH_SETUP.md). Authentication is optional; diagramming and collaboration remain available without signing in. The current implementation does not include AI Ask, Spring AI, Gemini, or AI usage limits. See [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) for the verification status and remaining manual integration checks.

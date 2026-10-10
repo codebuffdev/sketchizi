@@ -57,3 +57,11 @@ public/eraser-icons/
 public/eraser-icons-manifest.json
 
 .wrangler
+
+**/.idea/
+# Spring Boot backend local/build files
+auth-service/target/
+**/target/
+auth-service/.env
+auth-service/.env.*
+**/.idea/

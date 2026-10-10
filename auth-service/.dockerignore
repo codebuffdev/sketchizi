@@ -1,0 +1,13 @@
+# Never send local IDE state or build output to the Docker builder.
+.git
+**/.git
+.idea
+**/.idea
+target
+**/target
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db

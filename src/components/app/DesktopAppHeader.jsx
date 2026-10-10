@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ThemeControl from "../../ThemeControl.jsx";
+import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
 
 const MENU_DEFINITIONS = [
   {
@@ -175,6 +176,7 @@ export default function DesktopAppHeader({
       )}
 
       <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
+      <AuthenticationControl />
 
       {!collaborationActive && (
         <button

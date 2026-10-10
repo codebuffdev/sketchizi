@@ -1,0 +1,40 @@
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+spring:
+  datasource:
+    url: jdbc:h2:mem:authdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+  session:
+    jdbc:
+      initialize-schema: always
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid,profile,email
+        provider:
+          google:
+            authorization-uri: https://oauth.example.test/authorize
+            token-uri: https://oauth.example.test/token
+            user-info-uri: https://oauth.example.test/userinfo
+            jwk-set-uri: https://oauth.example.test/jwks
+            user-name-attribute: sub
+  profiles:
+    active:
+      - dev
+app:
+  frontend-origin: http://localhost:5173
