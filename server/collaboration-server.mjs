@@ -411,7 +411,7 @@ wss.on("connection", (socket, request) => {
           invalidFileRef: error?.fileRef || "none",
           invalidFileIndex: Number.isInteger(error?.fileIndex) ? error.fileIndex : -1,
         });
-        serverLogger.warn("Collaboration initial snapshot rejected", {
+        serverLogger.error("Collaboration initial snapshot rejected", error, {
           connectionId,
           roomRef: syncDiagnosticRef(message.roomId),
           clientRef: syncDiagnosticRef(clientId),
@@ -420,6 +420,11 @@ wss.on("connection", (socket, request) => {
           rejectionReason: error?.reason || error?.code || "invalid-initial-state",
           invalidFileRef: error?.fileRef || "none",
           invalidFileIndex: Number.isInteger(error?.fileIndex) ? error.fileIndex : -1,
+          invalidFileKeyPresent: typeof error?.fileKeyPresent === "boolean" ? error.fileKeyPresent : null,
+          invalidFileIdPresent: typeof error?.fileIdPresent === "boolean" ? error.fileIdPresent : null,
+          invalidFileIdType: error?.fileIdType || "unknown",
+          invalidFileIdLength: Number.isInteger(error?.fileIdLength) ? error.fileIdLength : -1,
+          invalidFileKeyMatchesId: typeof error?.fileKeyMatchesId === "boolean" ? error.fileKeyMatchesId : null,
           snapshotElementCount: Array.isArray(message.snapshot?.elements) ? message.snapshot.elements.length : 0,
           snapshotFileCount: message.snapshot?.files && typeof message.snapshot.files === "object" ? Object.keys(message.snapshot.files).length : 0,
           errorMessage: String(error?.message || "Invalid initial state").slice(0, 240),
@@ -657,7 +662,7 @@ wss.on("connection", (socket, request) => {
           roomElementCountAfter: room.elements.size,
           roomFileCountAfter: room.files.size,
         });
-        serverLogger.warn("Collaboration scene update rejected", {
+        serverLogger.error("Collaboration scene update rejected", error, {
           connectionId,
           roomRef: syncDiagnosticRef(room.id),
           clientRef: syncDiagnosticRef(clientId),
@@ -665,6 +670,11 @@ wss.on("connection", (socket, request) => {
           rejectionReason: error?.reason || error?.code || "scene-update-invalid",
           invalidFileRef: error?.fileRef || "none",
           invalidFileIndex: Number.isInteger(error?.fileIndex) ? error.fileIndex : -1,
+          invalidFileKeyPresent: typeof error?.fileKeyPresent === "boolean" ? error.fileKeyPresent : null,
+          invalidFileIdPresent: typeof error?.fileIdPresent === "boolean" ? error.fileIdPresent : null,
+          invalidFileIdType: error?.fileIdType || "unknown",
+          invalidFileIdLength: Number.isInteger(error?.fileIdLength) ? error.fileIdLength : -1,
+          invalidFileKeyMatchesId: typeof error?.fileKeyMatchesId === "boolean" ? error.fileKeyMatchesId : null,
           incomingElementCount: Array.isArray(message.elements) ? message.elements.length : 0,
           incomingFileCount: Array.isArray(message.files) ? message.files.length : message.files && typeof message.files === "object" ? Object.keys(message.files).length : 0,
           errorMessage: String(error?.message || "Invalid scene update").slice(0, 240),

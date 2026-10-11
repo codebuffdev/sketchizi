@@ -238,6 +238,69 @@ test("the join snapshot seeds element and file signatures for reconciliation", (
   }
 });
 
+test("the join snapshot restores a missing file id from its file-registry key", () => {
+  const harness = createClient();
+  try {
+    const { client } = harness;
+    client.api.getFiles = () => ({
+      "legacy-file-key": { mimeType: "image/png", dataURL: "data:image/png;base64,AA==", version: 1 },
+    });
+    const snapshot = client.snapshot();
+    assert.equal(snapshot.files["legacy-file-key"].id, "legacy-file-key");
+    assert.equal(client.lastFiles.get("legacy-file-key"), "legacy-file-key:1:26");
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("scene updates restore a missing file id from the file-registry key", () => {
+  const harness = createClient();
+  try {
+    const { client, socket } = harness;
+    client.broadcastLocalChange([], {
+      "legacy-file-key": { mimeType: "image/png", dataURL: "data:image/png;base64,AA==", version: 1 },
+    });
+    assert.equal(harness.flushFrame(), true);
+    const updates = updateMessages(socket);
+    assert.equal(updates.length, 1);
+    assert.equal(updates[0].files[0].id, "legacy-file-key");
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("normalization does not silently rewrite a non-empty mismatched file id", () => {
+  const harness = createClient();
+  try {
+    const { client, socket } = harness;
+    client.broadcastLocalChange([], {
+      "registry-file-key": { id: "different-file-id", mimeType: "image/png", dataURL: "data:image/png;base64,AA==", version: 1 },
+    });
+    assert.equal(harness.flushFrame(), true);
+    const updates = updateMessages(socket);
+    assert.equal(updates.length, 1);
+    assert.equal(updates[0].files[0].id, "different-file-id");
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("normalization preserves a non-string malformed file id for server validation", () => {
+  const harness = createClient();
+  try {
+    const { client, socket } = harness;
+    client.broadcastLocalChange([], {
+      "registry-file-key": { id: 42, mimeType: "image/png", dataURL: "data:image/png;base64,AA==", version: 1 },
+    });
+    assert.equal(harness.flushFrame(), true);
+    const updates = updateMessages(socket);
+    assert.equal(updates.length, 1);
+    assert.equal(updates[0].files[0].id, 42);
+  } finally {
+    harness.cleanup();
+  }
+});
+
 test("a send exception leaves the batch pending because the baseline advances only after send returns", () => {
   for (const mode of ["before", "after"]) {
     const harness = createClient();

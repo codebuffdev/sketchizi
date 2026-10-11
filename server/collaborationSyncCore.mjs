@@ -51,6 +51,11 @@ function collaborationFileValidationError(id, file, fileIndex) {
   error.reason = reason;
   error.fileRef = syncDiagnosticRef(id);
   error.fileIndex = fileIndex;
+  error.fileKeyPresent = typeof id === "string" && id.length > 0;
+  error.fileIdPresent = typeof file?.id === "string" && file.id.trim().length > 0;
+  error.fileIdType = file?.id === null ? "null" : Array.isArray(file?.id) ? "array" : typeof file?.id;
+  error.fileIdLength = typeof file?.id === "string" ? file.id.length : -1;
+  error.fileKeyMatchesId = error.fileIdPresent && id === file.id;
   return error;
 }
 

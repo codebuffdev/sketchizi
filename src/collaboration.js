@@ -1,5 +1,6 @@
 import { logger } from "./logging/logger";
 import { resolveCollaborationWebSocketUrl } from "./features/collaboration/collaborationEndpoint.js";
+import { normalizeCollaborationFiles } from "./features/collaboration/normalizeCollaborationFiles.js";
 import {
   measureSyncDiagnostic,
   recordSyncDiagnostic,
@@ -699,7 +700,7 @@ export class SketchiziCollaboration {
     const diagnosticsEnabled = syncDiagnosticsEnabled();
     const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     const elements = this.api.getSceneElementsIncludingDeleted?.() || this.api.getSceneElements();
-    const files = this.api.getFiles?.() || {};
+    const files = normalizeCollaborationFiles(this.api.getFiles?.() || {});
     this.remember(elements, files);
     if (diagnosticsEnabled) recordSyncDiagnostic("client.snapshot.created", {
       roomRef: syncDiagnosticRef(this.roomId),
@@ -715,8 +716,9 @@ export class SketchiziCollaboration {
   remember(elements, files) {
     const diagnosticsEnabled = syncDiagnosticsEnabled();
     const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    const normalizedFiles = normalizeCollaborationFiles(files || {});
     this.lastElements = new Map((elements || []).map((element) => [element.id, elementSignature(element)]));
-    this.lastFiles = new Map(Object.entries(files || {}).map(([id, file]) => [id, fileSignature(file)]));
+    this.lastFiles = new Map(Object.entries(normalizedFiles).map(([id, file]) => [id, fileSignature(file)]));
     if (diagnosticsEnabled) recordSyncDiagnostic("client.baseline.remembered", {
       roomRef: syncDiagnosticRef(this.roomId),
       elementCount: (elements || []).length,
@@ -952,7 +954,8 @@ export class SketchiziCollaboration {
     const diagnosticsEnabled = syncDiagnosticsEnabled();
     const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     const elementList = elements || [];
-    const fileEntries = Object.entries(files || {});
+    const normalizedFiles = normalizeCollaborationFiles(files || {});
+    const fileEntries = Object.entries(normalizedFiles);
     let changedElement = false;
     let changedElementCount = 0;
     let coalescedElementCount = 0;

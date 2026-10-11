@@ -74,6 +74,21 @@ test("file records are accepted and an invalid file is rejected", () => {
 });
 
 
+test("invalid file diagnostics identify missing record IDs without exposing raw file IDs", () => {
+  const room = emptyRoom();
+  assert.throws(
+    () => mergeSnapshot(room, [], { "registry-key-sensitive-value": { mimeType: "image/png", dataURL: "data:image/png;base64,AA==" } }),
+    (error) => error.reason === "file-id-invalid" &&
+      error.fileKeyPresent === true &&
+      error.fileIdPresent === false &&
+      error.fileIdType === "undefined" &&
+      error.fileIdLength === -1 &&
+      error.fileKeyMatchesId === false &&
+      typeof error.fileRef === "string" &&
+      !JSON.stringify(error).includes("registry-key-sensitive-value"),
+  );
+});
+
 test("server accepts a collaboration image that fits the shared 8 MiB message budget", () => {
   const room = emptyRoom();
   const dataURL = `data:image/png;base64,${"A".repeat(7 * 1024 * 1024)}`;
