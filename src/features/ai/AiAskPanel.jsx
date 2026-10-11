@@ -155,6 +155,8 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const [usage, setUsage] = useState(null);
   const [usageStatus, setUsageStatus] = useState("loading");
   const [usageError, setUsageError] = useState("");
+  const [conversationStatus, setConversationStatus] = useState("idle");
+  const [conversationError, setConversationError] = useState("");
   const [busy, setBusy] = useState(false);
   const [panelError, setPanelError] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -167,6 +169,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const activeAccountRef = useRef(null);
   const requestInFlightRef = useRef(false);
   const usageRequestSequenceRef = useRef(0);
+  const conversationCreationRef = useRef(null);
 
   const refreshUsage = useCallback(async (conversationId, accountId = activeAccountRef.current) => {
     if (!conversationId) {
@@ -197,6 +200,48 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     }
   }, []);
 
+  const ensureConversation = useCallback((accountId, existingConversationId = null) => {
+    if (existingConversationId) {
+      setConversationStatus("ready");
+      setConversationError("");
+      return Promise.resolve(existingConversationId);
+    }
+    const inFlight = conversationCreationRef.current;
+    if (inFlight?.accountId === accountId) return inFlight.promise;
+
+    setConversationStatus("creating");
+    setConversationError("");
+    const entry = { accountId, promise: null };
+    const promise = aiApiRequestWithTimeout("/conversations", { method: "POST", body: {} }, 12000)
+      .then((created) => {
+        const conversationId = created?.conversationId;
+        if (!UUID_PATTERN.test(conversationId || "")) {
+          throw new Error("The AI service returned an invalid conversation ID.");
+        }
+        if (activeAccountRef.current === accountId) {
+          setChat((current) => current.accountId === accountId && !current.conversationId
+            ? { ...current, accountId, conversationId }
+            : current);
+          setConversationStatus("ready");
+          setConversationError("");
+        }
+        return conversationId;
+      })
+      .catch((error) => {
+        if (activeAccountRef.current === accountId) {
+          setConversationStatus("error");
+          setConversationError(withRequestDiagnostics(error.message || "Could not prepare your AI conversation.", error));
+        }
+        throw error;
+      })
+      .finally(() => {
+        if (conversationCreationRef.current === entry) conversationCreationRef.current = null;
+      });
+    entry.promise = promise;
+    conversationCreationRef.current = entry;
+    return promise;
+  }, []);
+
   useEffect(() => {
     if (!chat.accountId && !chat.conversationId && !chat.messages.length && !chat.draft && !chat.retryAttempt && !newAnswerQuestion) {
       try { sessionStorage.removeItem(TRANSCRIPT_KEY); } catch {}
@@ -210,13 +255,16 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   useEffect(() => {
     if (!open) return undefined;
     let cancelled = false;
+    const controller = new AbortController();
     setPanelError("");
     setAuth({ status: "loading", user: null, error: "" });
-    fetchCurrentUser().then(async ({ authenticated, user }) => {
+
+    fetchCurrentUser(controller.signal).then(({ authenticated, user }) => {
       if (cancelled) return;
       if (!authenticated || !user?.id) {
         clearAiSession();
         activeAccountRef.current = null;
+        conversationCreationRef.current = null;
         setPendingRequest(null);
         setNewAnswerQuestion("");
         hydratedAccountRef.current = null;
@@ -225,16 +273,21 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         setUsage(null);
         setUsageStatus("idle");
         setUsageError("");
+        setConversationStatus("idle");
+        setConversationError("");
         setAuth({ status: "anonymous", user: null, error: "" });
         return;
       }
+
       activeAccountRef.current = user.id;
+      let conversationId = chat.accountId === user.id ? chat.conversationId : null;
       if (hydratedAccountRef.current !== user.id) {
         const stored = readTranscript();
         if (stored.accountId && stored.accountId !== user.id) clearAiSession();
         const next = readTranscript();
         const matchesAccount = next.accountId === user.id;
         const initial = matchesAccount ? { ...next, accountId: user.id } : { ...EMPTY_STATE, accountId: user.id };
+        conversationId = initial.conversationId;
         const restoredKey = readApiKeyForAccount(user.id);
         setApiKey(restoredKey);
         setChat(initial);
@@ -244,22 +297,28 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           setPanelError("A previous AI request may still be processing. Check its status before submitting another generation.");
         }
         hydratedAccountRef.current = user.id;
-        if (!initial.conversationId) {
-          try {
-            const created = await aiApiRequest("/conversations", { method: "POST", body: {} });
-            if (cancelled || activeAccountRef.current !== user.id) return;
-            setChat((current) => ({ ...current, accountId: user.id, conversationId: created.conversationId }));
-          } catch (error) {
-            if (!cancelled) setPanelError(error.message || "Could not start an AI conversation.");
-          }
-        }
       }
-      if (!cancelled) setAuth({ status: "authenticated", user, error: "" });
+
+      // Render the authenticated experience immediately after session validation.
+      // Conversation creation is independent and has its own finite timeout.
+      setAuth({ status: "authenticated", user, error: "" });
+      if (conversationId) {
+        setConversationStatus("ready");
+        setConversationError("");
+      } else {
+        ensureConversation(user.id).catch(() => {});
+      }
     }).catch((error) => {
-      if (!cancelled) setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable." });
+      if (!cancelled && error.name !== "AbortError") {
+        setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable." });
+      }
     });
-    return () => { cancelled = true; };
-  }, [open, authAttempt]);
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [open, authAttempt, ensureConversation]);
 
   useEffect(() => {
     if (!open || auth.status !== "authenticated" || !auth.user?.id) return undefined;
@@ -272,7 +331,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     }
     if (!chat.conversationId) {
       setUsage(null);
-      setUsageStatus("loading");
+      setUsageStatus("idle");
       setUsageError("");
       return undefined;
     }
@@ -285,6 +344,9 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       if (event.detail?.authenticated === false || event.detail?.signedOut === true) {
         clearAiSession();
         activeAccountRef.current = null;
+        conversationCreationRef.current = null;
+        setConversationStatus("idle");
+        setConversationError("");
         setPendingRequest(null);
         hydratedAccountRef.current = null;
         setApiKey("");
@@ -336,12 +398,15 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     setPanelError("");
     setNewAnswerQuestion("");
     try {
-      const created = await aiApiRequest("/conversations", { method: "POST", body: {} });
+      setConversationStatus("creating");
+      const createdConversationId = await aiApiRequestWithTimeout("/conversations", { method: "POST", body: {} }, 12000).then((created) => created.conversationId);
       if (activeAccountRef.current !== auth.user.id) return;
+      setConversationStatus("ready");
+      setConversationError("");
       setChat((current) => ({
         ...current,
         accountId: auth.user.id,
-        conversationId: created.conversationId,
+        conversationId: createdConversationId,
         messages: [],
         draft: "",
         retryAttempt: null,
@@ -349,6 +414,8 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       }));
       setAnnouncement("New conversation started.");
     } catch (error) {
+      setConversationStatus("error");
+      setConversationError(withRequestDiagnostics(error.message || "Could not start a new conversation.", error));
       setPanelError(withRequestDiagnostics(error.message || "Could not start a new conversation.", error));
     } finally { setBusy(false); }
   }, [auth.user, busy, chat.provider, usage, pendingRequest]);
@@ -399,8 +466,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     try {
       let conversationId = currentConversationId;
       if (!conversationId) {
-        const created = await aiApiRequest("/conversations", { method: "POST", body: {} });
-        conversationId = created.conversationId;
+        conversationId = await ensureConversation(auth.user.id);
         currentConversationId = conversationId;
         if (activeAccountRef.current !== auth.user.id) return;
         updateChat((current) => ({ ...current, accountId: auth.user.id, conversationId }));
@@ -621,7 +687,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       requestInFlightRef.current = false;
       setBusy(false);
     }
-  }, [apiKey, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage]);
+  }, [apiKey, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage, ensureConversation]);
 
   const checkPendingRequest = useCallback(async () => {
     if (!pendingRequest || !auth.user?.id || busy || requestInFlightRef.current) return;
@@ -801,13 +867,18 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           </div>
           {chat.provider === "builtin" ? (
             <div className="ai-ask-usage" aria-live="polite">
-              {usageStatus === "loading" && <span>Loading usage allowance…</span>}
-              {usageStatus === "error" && <>
+              {!chat.conversationId && conversationStatus === "creating" && <span>Preparing your AI conversation…</span>}
+              {!chat.conversationId && conversationStatus === "error" && <>
+                <span>Could not prepare your AI conversation: {conversationError || "Please try again."}</span>
+                <button type="button" onClick={() => ensureConversation(auth.user.id).catch(() => {})} disabled={busy}>Retry conversation</button>
+              </>}
+              {chat.conversationId && usageStatus === "loading" && <span>Loading usage allowance…</span>}
+              {chat.conversationId && usageStatus === "error" && <>
                 <span>Usage allowance unavailable: {usageError || "Could not load usage."}</span>
                 <button type="button" onClick={() => refreshUsage(chat.conversationId, auth.user.id)} disabled={busy || !chat.conversationId}>Retry usage</button>
               </>}
-              {usageStatus === "idle" && <span>Usage allowance will load when a conversation is ready.</span>}
-              {usageStatus === "loaded" && usage && <>
+              {chat.conversationId && usageStatus === "idle" && <span>Usage allowance will load when ready.</span>}
+              {chat.conversationId && usageStatus === "loaded" && usage && <>
                 <span>Conversation: <strong>{usage.conversationRemaining ?? "—"}</strong> questions left</span>
                 <span>Rolling 12 hours: <strong>{usage.accountRemaining ?? "—"}</strong> left</span>
                 {usage.nextAvailableAt && usage.accountRemaining <= 0 && <small>Allowance expected to refresh {new Date(usage.nextAvailableAt).toLocaleString()}.</small>}

@@ -1,10 +1,11 @@
 const API_BASE = "/api/ai";
 
-async function csrfHeaders() {
+async function csrfHeaders(signal) {
   const response = await fetch("/api/auth/csrf", {
     credentials: "same-origin",
     cache: "no-store",
     headers: { accept: "application/json" },
+    signal,
   });
   if (!response.ok) throw new Error("Could not prepare a secure AI request. Refresh your sign-in session and try again.");
   const payload = await response.json();
@@ -22,7 +23,7 @@ export async function aiApiRequest(path, { method = "GET", body, signal } = {}) 
     const headers = { accept: "application/json" };
     if (body !== undefined) {
       headers["content-type"] = "application/json";
-      Object.assign(headers, await csrfHeaders());
+      Object.assign(headers, await csrfHeaders(signal));
     }
     let response;
     try {

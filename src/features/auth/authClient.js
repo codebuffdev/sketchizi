@@ -1,13 +1,130 @@
 const AUTH_ME_URL = "/api/auth/me";
 const AUTH_CSRF_URL = "/api/auth/csrf";
 const AUTH_LOGOUT_URL = "/api/auth/logout";
+const AUTH_CHECK_TIMEOUT_MS = 8000;
+const AUTHENTICATED_CACHE_MS = 20_000;
+const ANONYMOUS_CACHE_MS = 5000;
 
-export async function fetchCurrentUser(signal) {
-  const response = await fetch(AUTH_ME_URL, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" }, signal });
-  if (response.status === 401) return { authenticated: false, user: null };
-  if (!response.ok) throw new Error("Could not check sign-in status.");
-  const payload = await response.json();
-  return { authenticated: Boolean(payload.authenticated), user: payload.user || null };
+let currentUserCache = null;
+let currentUserPromise = null;
+let authCacheEpoch = 0;
+
+/**
+ * Invalidates only the in-memory status hint. Protected endpoints still verify
+ * the real server-managed session on every request.
+ */
+export function invalidateCurrentUserCache() {
+  authCacheEpoch += 1;
+  currentUserCache = null;
+  // Detach an older in-flight lookup so a post-login/logout lookup can start.
+  // Existing callers of that old promise may still finish independently.
+  currentUserPromise = null;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("sketchizi:auth-changed", invalidateCurrentUserCache);
+}
+
+function abortError() {
+  return new DOMException("The operation was aborted.", "AbortError");
+}
+
+function waitForCaller(promise, signal) {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(abortError());
+
+  // A caller can stop waiting without aborting the one network request shared
+  // by the header, AI Ask, and collaboration controls.
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => signal.removeEventListener("abort", onAbort);
+    const onAbort = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(abortError());
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(value);
+      },
+      (error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(error);
+      },
+    );
+  });
+}
+
+async function requestCurrentUser() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), AUTH_CHECK_TIMEOUT_MS);
+  try {
+    const response = await fetch(AUTH_ME_URL, {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (response.status === 401) return { authenticated: false, user: null };
+    if (!response.ok) {
+      const error = new Error("Could not check sign-in status.");
+      error.status = response.status;
+      error.code = "auth_status_unavailable";
+      throw error;
+    }
+    const payload = await response.json();
+    return { authenticated: Boolean(payload.authenticated), user: payload.user || null };
+  } catch (error) {
+    if (controller.signal.aborted) {
+      const timeoutError = new Error("Checking sign-in status timed out. Please retry.");
+      timeoutError.code = "auth_status_timeout";
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Checks the current user with one shared in-flight request and a short-lived
+ * in-memory hint cache. AbortSignal cancellation applies only to the caller's
+ * wait; it never cancels the shared network request for other components.
+ */
+export function fetchCurrentUser(signal) {
+  if (signal?.aborted) return Promise.reject(abortError());
+
+  const now = Date.now();
+  if (currentUserCache && currentUserCache.expiresAt > now) {
+    return waitForCaller(Promise.resolve(currentUserCache.value), signal);
+  }
+  if (currentUserCache) currentUserCache = null;
+
+  if (!currentUserPromise) {
+    const epochAtStart = authCacheEpoch;
+    let sharedPromise;
+    sharedPromise = requestCurrentUser()
+      .then((value) => {
+        if (authCacheEpoch === epochAtStart) {
+          const ttl = value.authenticated ? AUTHENTICATED_CACHE_MS : ANONYMOUS_CACHE_MS;
+          currentUserCache = { value, expiresAt: Date.now() + ttl };
+        }
+        return value;
+      })
+      .finally(() => {
+        if (currentUserPromise === sharedPromise) currentUserPromise = null;
+      });
+    currentUserPromise = sharedPromise;
+  }
+
+  return waitForCaller(currentUserPromise, signal);
 }
 
 export function startGoogleSignIn(returnTo = window.location.pathname + window.location.search + window.location.hash) {

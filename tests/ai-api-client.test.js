@@ -85,3 +85,27 @@ test("HTTP errors retain safe status, code, and server correlation ID", async ()
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("conversation creation timeout also aborts the preliminary CSRF request", async () => {
+  const originalFetch = globalThis.fetch;
+  let observedAbort = false;
+  globalThis.fetch = async (url, options = {}) => {
+    assert.equal(String(url), "/api/auth/csrf");
+    return new Promise((_resolve, reject) => {
+      options.signal?.addEventListener("abort", () => {
+        observedAbort = true;
+        reject(new DOMException("Aborted", "AbortError"));
+      }, { once: true });
+    });
+  };
+  try {
+    await assert.rejects(
+      aiApiRequestWithTimeout("/conversations", { method: "POST", body: {} }, 10),
+      (error) => error.code === "request_timeout",
+    );
+    assert.equal(observedAbort, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
