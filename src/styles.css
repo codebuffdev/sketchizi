@@ -13,6 +13,7 @@
 @import "./styles/responsive-desktop.css";
 @import "./styles/responsive-final.css";
 @import "./styles/auth.css";
+@import "./styles/icon-library-redesign.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }

@@ -99,6 +99,9 @@ export function useIconCatalog() {
         icon.name,
         icon.id,
         icon.subtitle,
+        icon.category,
+        icon.source,
+        ...(Array.isArray(icon.tags) ? icon.tags : []),
         ...(Array.isArray(icon.searchAliases) ? icon.searchAliases : []),
       ]
         .filter(Boolean)
