@@ -1,7 +1,7 @@
 {
   "name": "sketchizi",
   "private": true,
-  "version": "1.10.58",
+  "version": "1.10.57",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,7 @@
     "test:chat": "node --test tests/chat-protocol.test.js",
     "test:sync": "node --import ./tests/register-sync-test-loader.mjs --test tests/collaboration-sync-characterization.test.js tests/collaboration-sync-core.test.js tests/sync-diagnostics.test.js",
     "test:sync-performance": "node --import ./tests/register-sync-test-loader.mjs ./tests/sync-performance-sample.mjs",
-    "test:ui-defaults": "node --test tests/ui-defaults.test.js tests/file-menu-design.test.js",
+    "test:ui-defaults": "node --test tests/ui-defaults.test.js",
     "test:auth-gateway": "node --test tests/auth-gateway.test.js",
     "test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js",
     "test:ai": "node --test tests/ai-api-client.test.js tests/ai-diagram-context.test.js tests/ai-gateway.test.js tests/ai-request-lifecycle.test.js",
