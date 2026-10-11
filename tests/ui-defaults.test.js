@@ -48,7 +48,7 @@ test("canvas background mode is explicit and preserves legacy saved-scene colors
 test("canvas theme synchronization migrates legacy default-gray scenes but preserves chosen custom colors", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /canvasBackgroundMode !== "theme"/);
-  assert.match(source, /legacyDefaultBackgrounds = new Set\(\["#ffffff", "#fff", "#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
+  assert.match(source, /legacyDefaultBackgrounds = new Set\(\[LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
   assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
   assert.match(source, /viewBackgroundColor: nextBackground/);
   assert.match(source, /\[apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady\]/);
@@ -67,7 +67,7 @@ test("Use theme default immediately applies the effective theme background to th
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /const useThemeDefaultBackground = useCallback\(\(\) =>/);
   assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
-  assert.match(source, /const nextBackground = isDarkTheme \? "#121212" : "#ffffff"/);
+  assert.match(source, /const nextBackground = isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
   assert.match(source, /appState: \{ viewBackgroundColor: nextBackground \}/);
 });
 
@@ -79,4 +79,19 @@ test("hamburger menu keeps file management at the top without duplicate header c
   assert.doesNotMatch(source, /data-sketchizi-collaborate/);
   assert.doesNotMatch(source, /data-sketchizi-architecture-validation/);
   assert.doesNotMatch(source, /data-diagramly-theme-menu/);
+});
+
+
+test("hamburger removes duplicate Help and labels the file action Open file", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /toLowerCase\(\) === "help"/);
+  assert.match(source, /replaceExactTextNode\(item, "Open", "Open file"\)/);
+  assert.match(source, /openDrawingFromDisk/);
+});
+
+test("theme default canvas explicitly uses white in light mode and dark in dark mode", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
+  assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
+  assert.match(source, /const DARK_CANVAS_BACKGROUND = "#121212"/);
+  assert.match(source, /isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
 });

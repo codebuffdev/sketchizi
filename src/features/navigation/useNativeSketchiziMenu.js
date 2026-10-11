@@ -33,7 +33,7 @@ export function useNativeSketchiziMenu({
       if (target.matches?.("[data-sketchizi-open-folder]")) action = "openFolderFromDisk";
       else if (target.matches?.("[data-sketchizi-close-folder]")) action = "closeCurrentFolder";
       else if (target.matches?.("[data-sketchizi-new-file]")) action = "createNewFile";
-      else if (testId === "load-button" || (inMenu && /^open(\s|$)/.test(text) && text.length < 24)) action = "openDrawingFromDisk";
+      else if (testId === "load-button" || (inMenu && /^open(\s|$)/.test(text) && text.length < 32)) action = "openDrawingFromDisk";
       else if (testId === "json-export-button" || (inMenu && /^save to\.\.\./.test(text))) action = "saveDrawingAs";
       if (!action) return;
       event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
@@ -116,6 +116,33 @@ export function useNativeSketchiziMenu({
           if (text === "GitHub") replaceExactTextNode(node, "GitHub", "Connect with Coder");
         } else if (text === "Follow us" || text === "Discord chat") {
           (node.closest("li, .dropdown-menu-item, .context-menu-item, .menu-item") || node).remove();
+        }
+      });
+
+      // Clean up the hamburger's native menu items without touching the
+      // application header or the separate keyboard-help overlay.
+      document.querySelectorAll(".dropdown-menu-container").forEach((menu) => {
+        const exactLeaves = [...menu.querySelectorAll("*")].filter(
+          (node) => node.children.length === 0
+        );
+        const helpLabel = exactLeaves.find(
+          (node) => node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() === "help"
+        );
+        if (helpLabel) {
+          const item = helpLabel.closest(
+            "li, [role='menuitem'], .dropdown-menu-item, .context-menu-item, .menu-item, button, a"
+          ) || helpLabel.parentElement;
+          if (item && item !== menu) item.remove();
+        }
+
+        const openLabel = exactLeaves.find(
+          (node) => node.textContent?.replace(/\s+/g, " ").trim() === "Open"
+        );
+        if (openLabel) {
+          const item = openLabel.closest(
+            "li, [role='menuitem'], .dropdown-menu-item, .context-menu-item, .menu-item, button, a"
+          ) || openLabel.parentElement;
+          if (item && item !== menu) replaceExactTextNode(item, "Open", "Open file");
         }
       });
       document.querySelectorAll("body *").forEach((node) => {

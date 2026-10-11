@@ -4,6 +4,9 @@ import { clearEmergencyBackup, clearSketch } from "../../persistence";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js";
 import { CANVAS_BACKGROUND_MODE_KEY, resolveCanvasBackgroundMode } from "./canvasBackgroundMode.js";
 
+const LIGHT_CANVAS_BACKGROUND = "#ffffff";
+const DARK_CANVAS_BACKGROUND = "#121212";
+
 export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
   const [themeMode, setThemeMode] = useState(() => getInitialThemeMode());
   const [systemDark, setSystemDark] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
@@ -40,7 +43,7 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
     const api = apiRef.current;
     if (!api || !apiReady) return;
-    const nextBackground = isDarkTheme ? "#121212" : "#ffffff";
+    const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
     api.updateScene({
       appState: { viewBackgroundColor: nextBackground },
       captureUpdate: CaptureUpdateAction.NEVER,
@@ -69,7 +72,7 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     // Treat the standard white canvas as a theme default too. Older versions
     // commonly persisted #ffffff as "custom", which prevented dark mode from
     // updating the actual Excalidraw canvas background.
-    const legacyDefaultBackgrounds = new Set(["#ffffff", "#fff", "#dedede", "#dcdcdc", "#e0e0e0"]);
+    const legacyDefaultBackgrounds = new Set([LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0"]);
     const isLegacyDefault = canvasBackgroundMode === "custom" && legacyDefaultBackgrounds.has(current);
     if (isLegacyDefault) {
       setCanvasBackgroundMode("theme");
@@ -78,7 +81,7 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
 
     if (canvasBackgroundMode !== "theme" && !isLegacyDefault) return;
 
-    const nextBackground = isDarkTheme ? "#121212" : "#ffffff";
+    const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
     if (current === nextBackground) return;
 
     // Update Excalidraw's real scene state (not a CSS layer), without adding a
