@@ -48,7 +48,7 @@ test("canvas background mode is explicit and preserves legacy saved-scene colors
 test("canvas theme synchronization migrates legacy default-gray scenes but preserves chosen custom colors", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /canvasBackgroundMode !== "theme"/);
-  assert.match(source, /legacyDefaultBackgrounds = new Set\(\["#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
+  assert.match(source, /legacyDefaultBackgrounds = new Set\(\["#ffffff", "#fff", "#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
   assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
   assert.match(source, /viewBackgroundColor: nextBackground/);
   assert.match(source, /\[apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady\]/);
@@ -60,4 +60,13 @@ test("native Canvas background palette has an explicit automatic-mode action", a
   assert.match(source, /data-sketchizi-theme-background-default/);
   assert.match(source, /Use theme default/);
   assert.match(source, /markCanvasBackgroundCustom\(\)/);
+});
+
+
+test("Use theme default immediately applies the effective theme background to the canvas", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
+  assert.match(source, /const useThemeDefaultBackground = useCallback\(\(\) =>/);
+  assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
+  assert.match(source, /const nextBackground = isDarkTheme \? "#121212" : "#ffffff"/);
+  assert.match(source, /appState: \{ viewBackgroundColor: nextBackground \}/);
 });

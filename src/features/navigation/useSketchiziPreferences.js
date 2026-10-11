@@ -34,12 +34,17 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
   }, []);
 
   const useThemeDefaultBackground = useCallback(() => {
+    // Persist theme-following mode before updating the canvas so the sync effect
+    // and future theme changes use the same source of truth.
     setCanvasBackgroundMode("theme");
     try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
     const api = apiRef.current;
     if (!api || !apiReady) return;
     const nextBackground = isDarkTheme ? "#121212" : "#ffffff";
-    api.updateScene({ appState: { viewBackgroundColor: nextBackground }, captureUpdate: CaptureUpdateAction.NEVER });
+    api.updateScene({
+      appState: { viewBackgroundColor: nextBackground },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
   }, [apiRef, apiReady, isDarkTheme]);
 
   useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);
@@ -61,7 +66,10 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     // Older releases could persist Excalidraw's default gray as a custom color.
     // Also re-check when a saved scene hydrates: Excalidraw may apply initialData
     // after the API first becomes available.
-    const legacyDefaultBackgrounds = new Set(["#dedede", "#dcdcdc", "#e0e0e0"]);
+    // Treat the standard white canvas as a theme default too. Older versions
+    // commonly persisted #ffffff as "custom", which prevented dark mode from
+    // updating the actual Excalidraw canvas background.
+    const legacyDefaultBackgrounds = new Set(["#ffffff", "#fff", "#dedede", "#dcdcdc", "#e0e0e0"]);
     const isLegacyDefault = canvasBackgroundMode === "custom" && legacyDefaultBackgrounds.has(current);
     if (isLegacyDefault) {
       setCanvasBackgroundMode("theme");
