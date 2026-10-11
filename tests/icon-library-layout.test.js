@@ -7,8 +7,8 @@ const styles = await readFile(new URL("../src/styles/icon-library-redesign.css",
 
 test("Icon Library is a floating, viewport-constrained panel over the canvas", () => {
   assert.match(styles, /position:\s*fixed !important/);
-  assert.match(styles, /width:\s*min\(920px, 74vw\)/);
-  assert.match(styles, /height:\s*min\(680px, 72dvh\)/);
+  assert.match(styles, /width:\s*min\(780px, 68vw\)/);
+  assert.match(styles, /height:\s*min\(590px, 68dvh\)/);
   assert.match(styles, /desktop-workspace-library-open::before/);
   assert.match(styles, /grid-template-columns:\s*minmax\(0, 1fr\) !important/);
 });
@@ -33,4 +33,10 @@ test("Floating library uses a smaller footprint and light theme overrides all co
   assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign/);
   assert.match(appStyles, /library-icon-card \{[\s\S]*?background: #fff !important/);
   assert.match(appStyles, /desktop-workspace-library-open::before[\s\S]*?background: rgba\(30, 34, 52, \.20\) !important/);
+});
+
+test("Dialog uses a subtle translucent glass surface and accessible compact layout control", () => {
+  assert.match(styles, /backdrop-filter:\s*blur\(18px\) saturate\(125%\)/);
+  assert.match(panel, /aria-label="Card layout"/);
+  assert.equal(panel.includes('<span className="sr-only">Card layout</span>'), false);
 });
