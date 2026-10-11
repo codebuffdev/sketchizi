@@ -122,7 +122,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     setCollaborationRequestState("none");
     setCollaborationRequests([]);
     setCollaborationAuthorship({});
-    setCollaborationError("");
+    setCollaborationError(message || "Collaboration failed. Check the collaboration server and WebSocket configuration.");
     setCollaborationCreationState("failed");
     setCollaborationOpen(false);
     return message;
@@ -270,7 +270,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       },
       onError: (message) => {
         if (collaborationCreationAttemptRef.current) {
-          failCollaborationCreation();
+          failCollaborationCreation(message || "The collaboration connection failed. Check the server and WebSocket endpoint.");
           return;
         }
         setCollaborationError(message);
@@ -413,7 +413,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       connectCollaboration(roomId, name, authenticatedName, token);
       collaborationCreationTimeoutRef.current = setTimeout(() => {
         if (!collaborationCreationAttemptRef.current) return;
-        failCollaborationCreation();
+        failCollaborationCreation("The collaboration server did not establish a connection within 15 seconds. Check the deployed VITE_COLLAB_WS_URL and confirm the collaboration server is running.");
       }, 15000);
     } catch (error) {
       collaborationCreationAttemptRef.current = false;

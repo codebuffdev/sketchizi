@@ -287,6 +287,7 @@ function App() {
         startCollaboration={startCollaboration}
         collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}
         collaborationCreationState={collaboration.collaborationCreationState}
+        collaborationCreationError={collaborationError}
         createCollaboration={createCollaboration}
         dismissCollaborationCreationFailure={collaboration.dismissCollaborationCreationFailure}
         setThemeMode={setThemeMode}

@@ -65,6 +65,7 @@ export default function DesktopAppHeader({
   startCollaboration,
   collaborationActive,
   collaborationCreationState = "idle",
+  collaborationCreationError = "",
   createCollaboration,
   dismissCollaborationCreationFailure,
   libraryToggle,
@@ -171,7 +172,7 @@ export default function DesktopAppHeader({
         <div className="collaboration-header-status failed" role="alert" aria-live="assertive">
           <div className="collaboration-header-status-copy">
             <strong>Collaboration failed</strong>
-            <span>Couldn't create the collaboration.</span>
+            <span title={collaborationCreationError || "Collaboration connection failed."}>{collaborationCreationError || "Couldn't create the collaboration. Check the collaboration server."}</span>
           </div>
           <button type="button" onClick={createCollaboration}>Try again</button>
           <button type="button" className="secondary" onClick={dismissCollaborationCreationFailure} aria-label="Dismiss collaboration failure">×</button>
