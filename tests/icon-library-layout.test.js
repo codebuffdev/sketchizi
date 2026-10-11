@@ -7,8 +7,8 @@ const styles = await readFile(new URL("../src/styles/icon-library-redesign.css",
 
 test("Icon Library is a floating, viewport-constrained panel over the canvas", () => {
   assert.match(styles, /position:\s*fixed !important/);
-  assert.match(styles, /width:\s*min\(1080px, 82vw\)/);
-  assert.match(styles, /height:\s*min\(820px, 80dvh\)/);
+  assert.match(styles, /width:\s*min\(920px, 74vw\)/);
+  assert.match(styles, /height:\s*min\(680px, 72dvh\)/);
   assert.match(styles, /desktop-workspace-library-open::before/);
   assert.match(styles, /grid-template-columns:\s*minmax\(0, 1fr\) !important/);
 });
@@ -25,4 +25,12 @@ test("Search, recent-search chips, collection menu, and view controls are presen
   assert.match(panel, /library-recent-searches/);
   assert.match(panel, /library-collections-menu/);
   assert.match(panel, /library-view-toggle/);
+});
+
+test("Floating library uses a smaller footprint and light theme overrides all core surfaces", async () => {
+  const appStyles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(styles, /max-height:\s*calc\(100dvh - 64px\)/);
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign/);
+  assert.match(appStyles, /library-icon-card \{[\s\S]*?background: #fff !important/);
+  assert.match(appStyles, /desktop-workspace-library-open::before[\s\S]*?background: rgba\(30, 34, 52, \.20\) !important/);
 });

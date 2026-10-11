@@ -44,12 +44,12 @@
     display: flex;
     flex: 0 1 auto;
     flex-direction: column;
-    width: min(1080px, 82vw);
-    height: min(820px, 80dvh);
+    width: min(920px, 74vw);
+    height: min(680px, 72dvh);
     min-width: 0;
-    min-height: min(400px, calc(100dvh - 78px));
+    min-height: min(360px, calc(100dvh - 64px));
     max-width: calc(100vw - 48px);
-    max-height: calc(100dvh - 78px);
+    max-height: calc(100dvh - 64px);
     padding: 0;
     border: 1px solid #34394b;
     border-radius: 17px;

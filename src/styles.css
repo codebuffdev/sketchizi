@@ -398,3 +398,84 @@
   }
 }
 
+
+
+/* Sketchizi 1.10.40 — correct Icon Library surfaces in the effective light theme.
+   Higher specificity is intentional: the legacy .icon-card rules otherwise win the cascade. */
+.app.theme-light.desktop-workspace-library-open::before {
+  background: rgba(30, 34, 52, .20) !important;
+  backdrop-filter: blur(1px);
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign {
+  border-color: #d9ddec !important;
+  background: linear-gradient(145deg, #fbfcff 0%, #f4f5fb 74%, #f7f7fc 100%) !important;
+  color: #25283d !important;
+  box-shadow: 0 24px 70px rgba(31, 35, 66, .24), 0 0 0 1px rgba(109, 40, 217, .05) !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-header {
+  border-bottom-color: #e0e4ef !important;
+  background: transparent !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-header .label,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-results-heading .section-title,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card .icon-name {
+  color: #272a40 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-subtitle,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-results-heading .icon-total,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card .icon-subtitle {
+  color: #707791 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search {
+  border-color: #8b5cf6 !important;
+  background: #fff !important;
+  color: #292c43 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search::placeholder { color: #858ba4 !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-source-chip {
+  border-color: #e0e3ee !important; background: #eceef6 !important; color: #4d5572 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-source-chip.active {
+  border-color: #7c3aed !important; background: linear-gradient(135deg, #7c2dff, #5520d9) !important; color: #fff !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-heading { color: #30344b !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-chip {
+  border-color: #e0e3ef !important; background: #eceef6 !important; color: #505976 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-searches { border-bottom-color: #e0e3ef !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-layout-select,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-view-toggle {
+  border-color: #dfe3ef !important; background: #f0f2f9 !important; color: #505976 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card {
+  border-color: #e0e3ed !important; background: #fff !important; color: #272a40 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card:hover {
+  border-color: #b8a0ee !important; background: #faf8ff !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card:has(.favorite-button.active) { border-color: #b9a4e8 !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-preview {
+  border-color: #e1e4ef !important; background: #f2f3fa !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-tag {
+  background: #edf0f8 !important; color: #5a627e !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid {
+  scrollbar-color: #8750ed #eceef6 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-track { background: #eceef6 !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-thumb { border-color: #eceef6 !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-collections-menu {
+  border-color: #dfe3ee !important; background: #fff !important; color: #30344b !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-collections-menu button { color: #33364d !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-collections-menu button:hover { background: #f3efff !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-pin-button,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .mobile-panel-close {
+  border-color: #e0e3ef !important; background: #f0f2f9 !important; color: #535b78 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-pin-button:hover,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-pin-button.active,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .mobile-panel-close:hover {
+  border-color: #bba4ef !important; background: #f0eaff !important; color: #6d28d9 !important;
+}
