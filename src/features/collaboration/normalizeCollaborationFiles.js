@@ -1,9 +1,9 @@
 /**
- * Excalidraw's binary-file registry is keyed by file ID. Some file records
- * (notably imported/older records) omit `id` even though the registry key is
- * valid. Collaboration messages send record values, so restore a missing ID
- * from that trusted key before serializing. An existing, non-empty ID is left
- * untouched so a genuinely mismatched record still fails server validation.
+ * Excalidraw's binary-file registry is keyed by file ID. Some local records can
+ * carry a missing or malformed `id` even though their registry key is valid.
+ * Restore only invalid IDs from that trusted registry key before serializing.
+ * A valid but different ID is preserved so a genuine key/ID mismatch remains
+ * visible to server validation instead of being silently rewritten.
  */
 export function normalizeCollaborationFiles(files) {
   if (!files || typeof files !== "object" || Array.isArray(files)) return {};
@@ -15,8 +15,9 @@ export function normalizeCollaborationFiles(files) {
       continue;
     }
 
-    const idIsMissing = file.id === undefined || file.id === null || file.id === "";
-    normalized[key] = idIsMissing ? { ...file, id: key } : file;
+    const hasValidKey = typeof key === "string" && key.trim().length > 0 && key.length <= 128;
+    const hasValidId = typeof file.id === "string" && file.id.trim().length > 0 && file.id.length <= 128;
+    normalized[key] = !hasValidId && hasValidKey ? { ...file, id: key } : file;
   }
   return normalized;
 }

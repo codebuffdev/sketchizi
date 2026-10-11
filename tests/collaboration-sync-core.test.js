@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mergeSnapshot, chooseElement, collaborationFileValidationIssue, MAX_ELEMENTS, MAX_FILES, MAX_FILE_DATA_URL } from "../server/collaborationSyncCore.mjs";
+import { normalizeCollaborationFiles } from "../src/features/collaboration/normalizeCollaborationFiles.js";
 
 function sceneElement({ id = "e1", version = 1, versionNonce = 1, isDeleted = false, type = "rectangle", x = 0 } = {}) {
   return { id, version, versionNonce, isDeleted, type, x, y: 0, width: 20, height: 20 };
@@ -77,7 +78,7 @@ test("file records are accepted and an invalid file is rejected", () => {
 test("invalid file diagnostics identify missing record IDs without exposing raw file IDs", () => {
   const room = emptyRoom();
   assert.throws(
-    () => mergeSnapshot(room, [], { "registry-key-sensitive-value": { mimeType: "image/png", dataURL: "data:image/png;base64,AA==" } }),
+    () => mergeSnapshot(room, [], { ["registry-key-sensitive-value".repeat(5)]: { mimeType: "image/png", dataURL: "data:image/png;base64,AA==" } }),
     (error) => error.reason === "file-id-invalid" &&
       error.fileKeyPresent === true &&
       error.fileIdPresent === false &&
@@ -86,6 +87,46 @@ test("invalid file diagnostics identify missing record IDs without exposing raw 
       error.fileKeyMatchesId === false &&
       typeof error.fileRef === "string" &&
       !JSON.stringify(error).includes("registry-key-sensitive-value"),
+  );
+});
+
+
+test("keyed file registries repair missing and malformed IDs but preserve valid mismatches", () => {
+  const file = { mimeType: "image/png", dataURL: "data:image/png;base64,AA==" };
+  const normalized = normalizeCollaborationFiles({
+    missing: { ...file },
+    nullId: { ...file, id: null },
+    emptyId: { ...file, id: "" },
+    numericId: { ...file, id: 7 },
+    whitespaceId: { ...file, id: "   " },
+    oversizedId: { ...file, id: "x".repeat(129) },
+    mismatchKey: { ...file, id: "a-valid-but-different-id" },
+  });
+
+  for (const key of ["missing", "nullId", "emptyId", "numericId", "whitespaceId", "oversizedId"]) {
+    assert.equal(normalized[key].id, key, `${key} should use its valid registry key`);
+  }
+  assert.equal(normalized.mismatchKey.id, "a-valid-but-different-id", "a valid mismatch must remain visible to validation");
+});
+
+test("server repairs malformed IDs from keyed snapshot registry without accepting valid mismatches", () => {
+  const room = emptyRoom();
+  const file = { mimeType: "image/png", dataURL: "data:image/png;base64,AA==" };
+  const accepted = mergeSnapshot(room, [], {
+    "numeric-id-key": { ...file, id: 3 },
+    "missing-id-key": { ...file },
+    "whitespace-id-key": { ...file, id: " " },
+    "oversized-id-key": { ...file, id: "x".repeat(129) },
+  });
+  assert.equal(accepted.files.length, 4);
+  assert.equal(room.files.get("numeric-id-key").id, "numeric-id-key");
+  assert.equal(room.files.get("missing-id-key").id, "missing-id-key");
+  assert.equal(room.files.get("whitespace-id-key").id, "whitespace-id-key");
+  assert.equal(room.files.get("oversized-id-key").id, "oversized-id-key");
+
+  assert.throws(
+    () => mergeSnapshot(room, [], { "map-key": { ...file, id: "valid-other-id" } }),
+    (error) => error.reason === "file-id-key-mismatch",
   );
 });
 

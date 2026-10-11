@@ -285,7 +285,7 @@ test("normalization does not silently rewrite a non-empty mismatched file id", (
   }
 });
 
-test("normalization preserves a non-string malformed file id for server validation", () => {
+test("normalization repairs a non-string malformed file ID from its registry key", () => {
   const harness = createClient();
   try {
     const { client, socket } = harness;
@@ -295,7 +295,7 @@ test("normalization preserves a non-string malformed file id for server validati
     assert.equal(harness.flushFrame(), true);
     const updates = updateMessages(socket);
     assert.equal(updates.length, 1);
-    assert.equal(updates[0].files[0].id, 42);
+    assert.equal(updates[0].files[0].id, "registry-file-key");
   } finally {
     harness.cleanup();
   }

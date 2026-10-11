@@ -115,7 +115,20 @@ export function mergeSnapshot(room, elements, files, authorId = null) {
 
     let fileEntries = [];
     if (files && typeof files === "object") {
-      fileEntries = Array.isArray(files) ? files.map((file) => [file?.id, file]) : Object.entries(files);
+      fileEntries = Array.isArray(files)
+        ? files.map((file) => [file?.id, file])
+        : Object.entries(files).map(([key, file]) => {
+          // A keyed file registry is authoritative when a record's own ID is
+          // missing or malformed. Normalize that case at the server boundary
+          // too, so an older/stale client cannot make a valid file key fail.
+          // Do not repair a valid-but-different ID; that is a real mismatch.
+          const validKey = typeof key === "string" && key.trim().length > 0 && key.length <= 128;
+          const validId = typeof file?.id === "string" && file.id.trim().length > 0 && file.id.length <= 128;
+          const normalizedFile = file && typeof file === "object" && !Array.isArray(file) && !validId && validKey
+            ? { ...file, id: key }
+            : file;
+          return [key, normalizedFile];
+        });
       if (fileEntries.length > MAX_FILES) throw new Error("Too many collaboration files.");
       for (let index = 0; index < fileEntries.length; index += 1) {
         const [id, file] = fileEntries[index];
