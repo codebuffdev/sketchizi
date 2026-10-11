@@ -337,18 +337,6 @@ function App() {
           </button>
         )}
 
-        {collaborationCanEdit && (
-          <MoreTools
-            open={moreToolsOpen}
-            anchor={moreToolsAnchor}
-            position={positionMoreToolsButton}
-            activateTool={activateMoreTool}
-            toggle={togglePanel}
-            canEdit={collaborationCanEdit}
-            placement="header"
-          />
-        )}
-
         <button
           type="button"
           className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
@@ -372,6 +360,18 @@ function App() {
           <span className="architecture-validation-toggle-icon">✓</span>
           <span>Validation</span>
         </button>
+
+        {collaborationCanEdit && (
+          <MoreTools
+            open={moreToolsOpen}
+            anchor={moreToolsAnchor}
+            position={positionMoreToolsButton}
+            activateTool={activateMoreTool}
+            toggle={togglePanel}
+            canEdit={collaborationCanEdit}
+            placement="header"
+          />
+        )}
 
       </DesktopAppHeader>
 

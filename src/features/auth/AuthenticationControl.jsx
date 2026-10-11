@@ -4,6 +4,7 @@ import { fetchCurrentUser, invalidateCurrentUserCache, signOut, startGoogleSignI
 export default function AuthenticationControl() {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loginError, setLoginError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [signInContext, setSignInContext] = useState({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" });
@@ -39,6 +40,24 @@ export default function AuthenticationControl() {
     return () => document.removeEventListener("keydown", close);
   }, [dialogOpen]);
 
+  useEffect(() => {
+    if (!profileMenuOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest(".auth-account-control")) return;
+      setProfileMenuOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setProfileMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [profileMenuOpen]);
+
   const retryAuthStatus = async () => {
     invalidateCurrentUserCache();
     setAuth({ status: "loading", user: null, error: "" });
@@ -66,9 +85,31 @@ export default function AuthenticationControl() {
         <span className="auth-control-loading" role="status" aria-label="Checking sign-in status">Checking…</span>
       ) : auth.status === "authenticated" ? (
         <div className="auth-account-control">
-          {auth.user?.picture ? <img className="auth-account-avatar" src={auth.user.picture} alt="" referrerPolicy="no-referrer" /> : <span className="auth-account-avatar auth-account-avatar-fallback" aria-hidden="true">{(auth.user?.name || auth.user?.email || "U").slice(0, 1).toUpperCase()}</span>}
-          <span className="auth-account-name" title={auth.user?.email || auth.user?.name}>{auth.user?.name || auth.user?.email || "Signed in"}</span>
-          <button className="auth-header-button" type="button" onClick={handleSignOut} disabled={busy}>{busy ? "Signing out…" : "Sign out"}</button>
+          <button
+            type="button"
+            className="auth-account-trigger"
+            aria-haspopup="menu"
+            aria-expanded={profileMenuOpen}
+            aria-label="Open account menu"
+            title={auth.user?.email || auth.user?.name || "Account"}
+            onClick={() => setProfileMenuOpen((open) => !open)}
+          >
+            {auth.user?.picture ? <img className="auth-account-avatar" src={auth.user.picture} alt="" referrerPolicy="no-referrer" /> : <span className="auth-account-avatar auth-account-avatar-fallback" aria-hidden="true">{(auth.user?.name || auth.user?.email || "U").slice(0, 1).toUpperCase()}</span>}
+            <span className="auth-account-name">{auth.user?.name || auth.user?.email || "Signed in"}</span>
+            <svg className="auth-account-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+          </button>
+          {profileMenuOpen && (
+            <div className="auth-account-menu" role="menu" aria-label="Account menu">
+              <div className="auth-account-menu-heading">
+                <strong>{auth.user?.name || "Signed in"}</strong>
+                {auth.user?.email && <span>{auth.user.email}</span>}
+              </div>
+              <button className="auth-account-menu-item" type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); handleSignOut(); }} disabled={busy}>
+                <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H4.8A1.8 1.8 0 0 0 3 4.8v10.4A1.8 1.8 0 0 0 4.8 17H8" /><path d="M11 6l4 4-4 4M15 10H7" /></svg>
+                <span>{busy ? "Signing out…" : "Sign out"}</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <button className="auth-header-button" type="button" onClick={() => { setSignInContext({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" }); setDialogOpen(true); }}>Sign in</button>

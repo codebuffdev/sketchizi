@@ -102,6 +102,9 @@ export default function DesktopAppHeader({
 
   return (
     <header className="desktop-app-header">
+      <div className="desktop-app-brand-mark" role="img" aria-label="Sketchizi">
+        <img src="/sketchizi-logo.svg" alt="" />
+      </div>
       {libraryToggle}
 
       <nav className="desktop-app-nav" aria-label="Sketchizi application menu">
@@ -175,8 +178,10 @@ export default function DesktopAppHeader({
         </div>
       )}
 
-      <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
-      <AuthenticationControl />
+      <div className="desktop-app-header-account-zone">
+        <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
+        <AuthenticationControl />
+      </div>
 
       {!collaborationActive && (
         <button
@@ -185,8 +190,14 @@ export default function DesktopAppHeader({
           onClick={() => { setOpenMenu(null); startCollaboration?.(); }}
           disabled={collaborationCreationState === "creating"}
           aria-label={collaborationCreationState === "creating" ? "Creating Collaboration" : "Start Collaboration"}
+          title={collaborationCreationState === "creating" ? "Creating collaboration" : "Start collaboration"}
         >
-          {collaborationCreationState === "creating" ? "Creating…" : "Start Collaboration"}
+          <svg className="desktop-app-start-collaboration-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span className="desktop-app-start-collaboration-label">{collaborationCreationState === "creating" ? "Creating…" : "Start Collaboration"}</span>
         </button>
       )}
 
@@ -195,11 +206,18 @@ export default function DesktopAppHeader({
       <div className="desktop-app-header-actions">
         <button
           type="button"
-          className="desktop-app-header-icon-button"
+          className="desktop-app-header-icon-button desktop-app-search-button"
           onClick={() => { setOpenMenu(null); openCommandPalette?.(); }}
           aria-label="Search commands"
-          title="Search commands"
-        >⌕</button>
+          title="Search commands (Ctrl+K)"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.3" />
+            <path d="m16 16 4.2 4.2" />
+          </svg>
+          <span className="desktop-app-search-label">Search…</span>
+          <kbd className="desktop-app-search-shortcut">Ctrl+K</kbd>
+        </button>
       </div>
     </header>
   );
