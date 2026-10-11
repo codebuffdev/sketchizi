@@ -56,29 +56,27 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     const api = apiRef.current;
     if (!api || !apiReady || !sketchReady) return;
 
-    // Older releases could persist the Excalidraw default gray as "custom"
-    // merely because a scene already existed. Migrate that default canvas to
-    // theme-following mode, while preserving genuinely chosen custom colors.
-    if (canvasBackgroundMode === "custom") {
-      const current = String(api.getAppState().viewBackgroundColor || "").trim().toLowerCase();
-      const legacyDefaultBackgrounds = new Set(["#dedede", "#dcdcdc", "#e0e0e0"]);
-      if (legacyDefaultBackgrounds.has(current)) {
-        setCanvasBackgroundMode("theme");
-        try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
-        return;
-      }
+    const current = String(api.getAppState().viewBackgroundColor || "").trim().toLowerCase();
+
+    // Older releases could persist Excalidraw's default gray as a custom color.
+    // Also re-check when a saved scene hydrates: Excalidraw may apply initialData
+    // after the API first becomes available.
+    const legacyDefaultBackgrounds = new Set(["#dedede", "#dcdcdc", "#e0e0e0"]);
+    const isLegacyDefault = canvasBackgroundMode === "custom" && legacyDefaultBackgrounds.has(current);
+    if (isLegacyDefault) {
+      setCanvasBackgroundMode("theme");
+      try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
     }
 
-    if (canvasBackgroundMode !== "theme") return;
+    if (canvasBackgroundMode !== "theme" && !isLegacyDefault) return;
 
-    const current = String(api.getAppState().viewBackgroundColor || "").toLowerCase();
     const nextBackground = isDarkTheme ? "#121212" : "#ffffff";
     if (current === nextBackground) return;
 
     // Update Excalidraw's real scene state (not a CSS layer), without adding a
     // user-visible undo entry or touching elements/viewport state.
     api.updateScene({ appState: { viewBackgroundColor: nextBackground }, captureUpdate: CaptureUpdateAction.NEVER });
-  }, [apiRef, apiReady, canvasBackgroundMode, isDarkTheme, sketchReady]);
+  }, [apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady]);
 
   const fitDiagram = useCallback(() => {
     const api = apiRef.current; if (!api) return;

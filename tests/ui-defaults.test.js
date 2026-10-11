@@ -51,6 +51,8 @@ test("canvas theme synchronization migrates legacy default-gray scenes but prese
   assert.match(source, /legacyDefaultBackgrounds = new Set\(\["#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
   assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
   assert.match(source, /viewBackgroundColor: nextBackground/);
+  assert.match(source, /\[apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady\]/);
+  assert.match(source, /if \(canvasBackgroundMode !== "theme" && !isLegacyDefault\) return/);
 });
 
 test("native Canvas background palette has an explicit automatic-mode action", async () => {
