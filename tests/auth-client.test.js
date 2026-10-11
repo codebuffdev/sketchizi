@@ -96,3 +96,10 @@ test("header exposes a status retry when authentication lookup is unavailable", 
   assert.match(source, /invalidateCurrentUserCache\(\);[\s\S]*fetchCurrentUser\(\)/);
   assert.match(source, /auth\.status === "unavailable" && <button[^>]*onClick=\{retryAuthStatus\}/);
 });
+
+
+test("a successful authentication check clears a stale OAuth login error", async () => {
+  const source = await readFile(new URL("../src/features/auth/AuthenticationControl.jsx", import.meta.url), "utf8");
+  assert.match(source, /if \(authenticated\) setLoginError\(false\)/);
+  assert.match(source, /setLoginError\(false\); startGoogleSignIn/);
+});

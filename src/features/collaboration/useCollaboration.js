@@ -411,9 +411,11 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       setCollaborationMode("create");
       setCollaborationOpen(false);
       connectCollaboration(roomId, name, authenticatedName, token);
+      // Endpoint validation can fail synchronously before the timeout is needed.
+      if (!collaborationCreationAttemptRef.current) return;
       collaborationCreationTimeoutRef.current = setTimeout(() => {
         if (!collaborationCreationAttemptRef.current) return;
-        failCollaborationCreation("The collaboration server did not establish a connection within 15 seconds. Check the deployed VITE_COLLAB_WS_URL and confirm the collaboration server is running.");
+        failCollaborationCreation("The collaboration WebSocket did not complete its handshake within 15 seconds. Verify that VITE_COLLAB_WS_URL points to the running collaboration server, ends in /collaboration, and that the server's /health endpoint responds.");
       }, 15000);
     } catch (error) {
       collaborationCreationAttemptRef.current = false;

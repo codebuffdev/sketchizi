@@ -26,7 +26,12 @@ export default function AuthenticationControl() {
     }
     const controller = new AbortController();
     fetchCurrentUser(controller.signal)
-      .then(({ authenticated, user }) => setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" }))
+      .then(({ authenticated, user }) => {
+        setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
+        // An old OAuth failure flag can remain in component state after a later
+        // successful sign-in. A confirmed authenticated session wins over it.
+        if (authenticated) setLoginError(false);
+      })
       .catch((error) => {
         if (error.name !== "AbortError") setAuth({ status: "unavailable", user: null, error: "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
       });
@@ -64,6 +69,7 @@ export default function AuthenticationControl() {
     try {
       const { authenticated, user } = await fetchCurrentUser();
       setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
+      if (authenticated) setLoginError(false);
     } catch (error) {
       setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
     }
@@ -127,7 +133,7 @@ export default function AuthenticationControl() {
             <p>{signInContext.message}</p>
             {loginError && <p className="auth-dialog-notice" role="status">Google sign-in did not complete. Please try again.</p>}
             {auth.status === "unavailable" && <p className="auth-dialog-notice" role="status">{auth.error}</p>}
-            <button className="auth-google-button" type="button" onClick={() => startGoogleSignIn(signInContext.returnTo || undefined)}>
+            <button className="auth-google-button" type="button" onClick={() => { setLoginError(false); startGoogleSignIn(signInContext.returnTo || undefined); }}>
               <svg aria-hidden="true" viewBox="0 0 48 48" width="19" height="19"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 3.01 13.22l7.98 6.19C12.88 13.72 18.01 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.73 7.18l7.64 5.93c4.46-4.12 7.13-10.19 7.13-17.58Z"/><path fill="#FBBC05" d="M10.99 28.59A14.4 14.4 0 0 1 10.22 24c0-1.59.27-3.13.76-4.59L3.01 13.22A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 3.01 10.78l7.98-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.87l-7.64-5.93c-2.12 1.42-4.83 2.27-8.26 2.27-5.99 0-11.12-4.22-13.01-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>
               Continue with Google
             </button>

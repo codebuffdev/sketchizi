@@ -281,7 +281,7 @@ Run the collaboration server separately and set:
 VITE_COLLAB_WS_URL=wss://your-host.example/collaboration
 ```
 
-The WebSocket endpoint should be served over `wss://` when Sketchizi itself is served over HTTPS.
+The WebSocket endpoint should be served over `wss://` when Sketchizi itself is served over HTTPS. In a deployed build, `VITE_COLLAB_WS_URL` is required; without it, Sketchizi must not silently try the static Pages origin as though it were the collaboration server. Configure this variable in the Cloudflare Pages project for the intended environment and trigger a new build/deployment. The value must include the exact `/collaboration` path. Confirm the Node collaboration service is healthy at its `/health` endpoint before testing from the UI.
 
 ### Collaboration protocol
 

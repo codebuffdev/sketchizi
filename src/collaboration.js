@@ -1,4 +1,5 @@
 import { logger } from "./logging/logger";
+import { resolveCollaborationWebSocketUrl } from "./features/collaboration/collaborationEndpoint.js";
 import {
   measureSyncDiagnostic,
   recordSyncDiagnostic,
@@ -373,8 +374,13 @@ export class SketchiziCollaboration {
       return;
     }
 
-    const configured = import.meta.env.VITE_COLLAB_WS_URL;
-    const wsUrl = configured || `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/collaboration`;
+    let wsUrl;
+    try {
+      wsUrl = resolveCollaborationWebSocketUrl(import.meta.env.VITE_COLLAB_WS_URL, window.location);
+    } catch (error) {
+      this.fail(error?.message || "The collaboration WebSocket endpoint is not configured correctly.");
+      return;
+    }
     this.onStatus?.("connecting");
     logger.debug("Collaboration socket connecting", { category: "collaboration", roomId: this.roomId, clientId: this.clientId });
     if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.connecting", {
@@ -384,7 +390,14 @@ export class SketchiziCollaboration {
       urlProtocol: wsUrl.startsWith("wss:") ? "wss" : "ws",
     });
 
-    const socket = new WebSocket(wsUrl);
+    let socket;
+    try {
+      socket = new WebSocket(wsUrl);
+    } catch (error) {
+      this.fail("The collaboration WebSocket URL could not be opened. Check VITE_COLLAB_WS_URL and use a valid wss:// endpoint ending in /collaboration.");
+      logger.error("Collaboration WebSocket constructor failed", error, { category: "collaboration", roomId: this.roomId });
+      return;
+    }
     this.socket = socket;
 
     socket.onopen = async () => {

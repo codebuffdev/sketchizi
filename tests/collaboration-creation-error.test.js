@@ -7,7 +7,9 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 test("collaboration connection failures preserve an actionable reason", async () => {
   const hook = await read("../src/features/collaboration/useCollaboration.js");
   assert.match(hook, /failCollaborationCreation\(message \|\| "The collaboration connection failed/);
-  assert.match(hook, /did not establish a connection within 15 seconds/);
+  assert.match(hook, /did not complete its handshake within 15 seconds/);
+  assert.match(hook, /server's \/health endpoint responds/);
+  assert.match(hook, /connectCollaboration\(roomId, name, authenticatedName, token\);[\s\S]*?if \(!collaborationCreationAttemptRef\.current\) return;[\s\S]*?setTimeout/);
   assert.match(hook, /setCollaborationError\(message \|\| "Collaboration failed/);
 });
 
