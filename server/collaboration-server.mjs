@@ -348,6 +348,7 @@ wss.on("connection", (socket, request) => {
       const hostAuthorizationResult = inspectHostAuthorization(message.hostAuthorizationToken, message.roomId);
       const hostAuthorization = hostAuthorizationResult.authorization;
       let isHost = false;
+      let isNewRoom = false;
       if (!room) {
         if (!hostAuthorization) {
           serverLogger.warn("Collaboration host authorization rejected", {
@@ -378,10 +379,8 @@ wss.on("connection", (socket, request) => {
           return;
         }
         room = { id: message.roomId, name, clients: new Set(), elements: new Map(), files: new Map(), authorship: new Map(), permissions: new Map(), pendingRequests: new Map(), presence: new Map(), host: null, hostSubject: hostAuthorization.subject, hostName: hostAuthorization.name, terminated: false, chatMessages: [], chatRate: new Map() };
-        rooms.set(room.id, room);
         isHost = true;
-        if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.room.created", { roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId) });
-        serverLogger.info("Collaboration room created", { connectionId, roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId), hostAuthorizationVerified: true });
+        isNewRoom = true;
       }
 
       const previousSocket = Array.from(room.clients).find((candidate) => candidate.__sketchiziClientId === clientId);
@@ -408,14 +407,36 @@ wss.on("connection", (socket, request) => {
         if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.join.rejected", {
           roomRef: syncDiagnosticRef(room.id),
           clientRef: syncDiagnosticRef(clientId),
-          reason: error?.message || "invalid-initial-state",
+          reason: error?.reason || error?.code || error?.message || "invalid-initial-state",
+          invalidFileRef: error?.fileRef || "none",
+          invalidFileIndex: Number.isInteger(error?.fileIndex) ? error.fileIndex : -1,
         });
-        serverLogger.warn("Collaboration initial snapshot rejected", { connectionId, roomRef: syncDiagnosticRef(message.roomId), clientRef: syncDiagnosticRef(clientId), errorName: error?.name || "Error", errorMessage: String(error?.message || "Invalid initial state").slice(0, 180) });
-        send(socket, { type: "error", roomId: message.roomId, code: "INITIAL_SNAPSHOT_REJECTED", phase: "join", message: error.message });
+        serverLogger.warn("Collaboration initial snapshot rejected", {
+          connectionId,
+          roomRef: syncDiagnosticRef(message.roomId),
+          clientRef: syncDiagnosticRef(clientId),
+          errorName: error?.name || "Error",
+          errorCode: error?.code || "INITIAL_SNAPSHOT_REJECTED",
+          rejectionReason: error?.reason || error?.code || "invalid-initial-state",
+          invalidFileRef: error?.fileRef || "none",
+          invalidFileIndex: Number.isInteger(error?.fileIndex) ? error.fileIndex : -1,
+          snapshotElementCount: Array.isArray(message.snapshot?.elements) ? message.snapshot.elements.length : 0,
+          snapshotFileCount: message.snapshot?.files && typeof message.snapshot.files === "object" ? Object.keys(message.snapshot.files).length : 0,
+          errorMessage: String(error?.message || "Invalid initial state").slice(0, 240),
+        });
+        send(socket, { type: "error", roomId: message.roomId, code: error?.code || "INITIAL_SNAPSHOT_REJECTED", phase: "join", message: error.message });
         socket.close(1008, "Invalid initial state");
         return;
       }
 
+      // Do not publish a brand-new room until its initial scene and files pass
+      // validation. Otherwise a rejected snapshot can leave behind an empty,
+      // unhosted room that later join attempts may incorrectly reuse.
+      if (isNewRoom) {
+        rooms.set(room.id, room);
+        if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.room.created", { roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId) });
+        serverLogger.info("Collaboration room created", { connectionId, roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId), hostAuthorizationVerified: true });
+      }
       room.clients.add(socket);
       socket.__sketchiziClientId = clientId;
       if (isHost || reconnectingHost) room.host = socket;
@@ -636,7 +657,19 @@ wss.on("connection", (socket, request) => {
           roomElementCountAfter: room.elements.size,
           roomFileCountAfter: room.files.size,
         });
-        send(socket, { type: "error", message: error.message });
+        serverLogger.warn("Collaboration scene update rejected", {
+          connectionId,
+          roomRef: syncDiagnosticRef(room.id),
+          clientRef: syncDiagnosticRef(clientId),
+          errorCode: error?.code || "SCENE_UPDATE_REJECTED",
+          rejectionReason: error?.reason || error?.code || "scene-update-invalid",
+          invalidFileRef: error?.fileRef || "none",
+          invalidFileIndex: Number.isInteger(error?.fileIndex) ? error.fileIndex : -1,
+          incomingElementCount: Array.isArray(message.elements) ? message.elements.length : 0,
+          incomingFileCount: Array.isArray(message.files) ? message.files.length : message.files && typeof message.files === "object" ? Object.keys(message.files).length : 0,
+          errorMessage: String(error?.message || "Invalid scene update").slice(0, 240),
+        });
+        send(socket, { type: "error", roomId: room.id, code: error?.code || "SCENE_UPDATE_REJECTED", phase: "update", message: error.message });
         return;
       }
 

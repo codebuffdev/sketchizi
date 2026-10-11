@@ -7,7 +7,10 @@ import {
 
 export const MAX_ELEMENTS = 10000;
 export const MAX_FILES = 500;
-export const MAX_FILE_DATA_URL = 6 * 1024 * 1024;
+// Keep a per-file allowance near the 8 MiB message budget while leaving room
+// for the JSON envelope and scene metadata. The previous 6 MiB limit rejected
+// files that the client correctly allowed inside a single collaboration message.
+export const MAX_FILE_DATA_URL = 7 * 1024 * 1024 + 64 * 1024;
 
 export function validElement(element) {
   return element &&
@@ -18,14 +21,37 @@ export function validElement(element) {
     Number.isInteger(element.versionNonce);
 }
 
+export function collaborationFileValidationIssue(id, file) {
+  if (!file || typeof file !== "object" || Array.isArray(file)) return "file-record-invalid";
+  if (typeof file.id !== "string" || file.id.length === 0 || file.id.length > 128) return "file-id-invalid";
+  if (typeof file.mimeType !== "string" || !file.mimeType.trim()) return "file-mime-type-invalid";
+  if (typeof file.dataURL !== "string" || !file.dataURL) return "file-data-url-invalid";
+  if (file.dataURL.length > MAX_FILE_DATA_URL) return "file-data-url-too-large";
+  if (file.id !== id) return "file-id-key-mismatch";
+  return null;
+}
+
 export function validFile(file) {
-  return file &&
-    typeof file === "object" &&
-    typeof file.id === "string" &&
-    file.id.length <= 128 &&
-    typeof file.mimeType === "string" &&
-    typeof file.dataURL === "string" &&
-    file.dataURL.length <= MAX_FILE_DATA_URL;
+  return collaborationFileValidationIssue(file?.id, file) === null;
+}
+
+function collaborationFileValidationError(id, file, fileIndex) {
+  const reason = collaborationFileValidationIssue(id, file);
+  if (!reason) return null;
+  const messages = {
+    "file-record-invalid": "the file record is missing or malformed",
+    "file-id-invalid": "the file ID is missing or invalid",
+    "file-mime-type-invalid": "the file MIME type is missing or invalid",
+    "file-data-url-invalid": "the file data is missing or invalid",
+    "file-data-url-too-large": "the image data exceeds the supported collaboration file-size limit; reduce the image size and try again",
+    "file-id-key-mismatch": "the file ID does not match its record key; remove and re-add the affected image, then try again",
+  };
+  const error = new Error(`Invalid collaboration file: ${messages[reason] || "the file record is malformed"}.`);
+  error.code = reason === "file-data-url-too-large" ? "COLLAB_FILE_DATA_TOO_LARGE" : "COLLAB_FILE_INVALID";
+  error.reason = reason;
+  error.fileRef = syncDiagnosticRef(id);
+  error.fileIndex = fileIndex;
+  return error;
 }
 
 export function chooseElement(current, incoming) {
@@ -39,9 +65,9 @@ export function chooseElement(current, incoming) {
 }
 
 /**
- * The server's existing in-memory scene merge, isolated so it can be exercised
- * directly by the diagnostic characterization harness. Conflict choices and
- * mutation order are intentionally unchanged from the 1.10.36 baseline.
+ * The server's in-memory scene merge, isolated for deterministic testing. The
+ * conflict-resolution rule is stable; incoming batches are fully validated
+ * before any room state is mutated.
  */
 export function mergeSnapshot(room, elements, files, authorId = null) {
   const diagnosticsEnabled = syncDiagnosticsEnabled();
@@ -71,13 +97,31 @@ export function mergeSnapshot(room, elements, files, authorId = null) {
       throw new Error("Invalid collaboration scene.");
     }
 
-    const acceptedElements = [];
+    // Validate the complete incoming batch before mutating room state. In
+    // particular, a bad file must not leave accepted elements partially
+    // applied when the batch is rejected.
     for (const element of elements) {
       if (outcomes) outcomes.elementsExamined += 1;
       if (!validElement(element)) {
         if (outcomes) outcomes.invalidElements += 1;
         throw new Error("Invalid collaboration element.");
       }
+    }
+
+    let fileEntries = [];
+    if (files && typeof files === "object") {
+      fileEntries = Array.isArray(files) ? files.map((file) => [file?.id, file]) : Object.entries(files);
+      if (fileEntries.length > MAX_FILES) throw new Error("Too many collaboration files.");
+      for (let index = 0; index < fileEntries.length; index += 1) {
+        const [id, file] = fileEntries[index];
+        if (outcomes) outcomes.filesExamined += 1;
+        const validationError = collaborationFileValidationError(id, file, index);
+        if (validationError) throw validationError;
+      }
+    }
+
+    const acceptedElements = [];
+    for (const element of elements) {
       const current = room.elements.get(element.id);
       if (outcomes) {
         if (!current) outcomes.created += 1;
@@ -109,16 +153,10 @@ export function mergeSnapshot(room, elements, files, authorId = null) {
     }
 
     const acceptedFiles = [];
-    if (files && typeof files === "object") {
-      const entries = Array.isArray(files) ? files.map((file) => [file?.id, file]) : Object.entries(files);
-      if (entries.length > MAX_FILES) throw new Error("Too many collaboration files.");
-      for (const [id, file] of entries) {
-        if (outcomes) outcomes.filesExamined += 1;
-        if (!validFile(file) || file.id !== id) throw new Error("Invalid collaboration file.");
-        room.files.set(id, file);
-        acceptedFiles.push(file);
-        if (outcomes) outcomes.filesAccepted += 1;
-      }
+    for (const [id, file] of fileEntries) {
+      room.files.set(id, file);
+      acceptedFiles.push(file);
+      if (outcomes) outcomes.filesAccepted += 1;
     }
 
     const acceptedAuthorship = Object.fromEntries(acceptedElements.map((element) => [element.id, room.authorship.get(element.id)]).filter(([, value]) => value));
@@ -139,7 +177,10 @@ export function mergeSnapshot(room, elements, files, authorId = null) {
       roomRef: syncDiagnosticRef(room.id),
       authorRef: authorId ? syncDiagnosticRef(authorId) : "none",
       outcome: "rejected",
-      rejectionReason: error?.message || "merge-error",
+      rejectionReason: error?.reason || error?.code || error?.message || "merge-error",
+      rejectionMessage: error?.message || "Merge failed",
+      invalidFileRef: error?.fileRef || "none",
+      invalidFileIndex: Number.isInteger(error?.fileIndex) ? error.fileIndex : -1,
       incomingElementCount,
       incomingFileCount,
       ...outcomes,

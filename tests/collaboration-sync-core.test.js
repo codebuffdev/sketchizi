@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mergeSnapshot, chooseElement, MAX_ELEMENTS, MAX_FILES } from "../server/collaborationSyncCore.mjs";
+import { mergeSnapshot, chooseElement, collaborationFileValidationIssue, MAX_ELEMENTS, MAX_FILES, MAX_FILE_DATA_URL } from "../server/collaborationSyncCore.mjs";
 
 function sceneElement({ id = "e1", version = 1, versionNonce = 1, isDeleted = false, type = "rectangle", x = 0 } = {}) {
   return { id, version, versionNonce, isDeleted, type, x, y: 0, width: 20, height: 20 };
@@ -71,6 +71,42 @@ test("file records are accepted and an invalid file is rejected", () => {
   const valid = { id: "f1", mimeType: "image/png", dataURL: "data:image/png;base64,AA==" };
   assert.equal(mergeSnapshot(room, [], { f1: valid }).files.length, 1);
   assert.throws(() => mergeSnapshot(room, [], { f2: { id: "different", mimeType: "image/png", dataURL: "data" } }), /invalid collaboration file/i);
+});
+
+
+test("server accepts a collaboration image that fits the shared 8 MiB message budget", () => {
+  const room = emptyRoom();
+  const dataURL = `data:image/png;base64,${"A".repeat(7 * 1024 * 1024)}`;
+  const image = { id: "large-image", mimeType: "image/png", dataURL };
+  assert.ok(MAX_FILE_DATA_URL > 6 * 1024 * 1024, "per-file limit must not contradict the client's supported message size");
+  assert.equal(collaborationFileValidationIssue("large-image", image), null);
+  assert.equal(mergeSnapshot(room, [], { "large-image": image }).files.length, 1);
+});
+
+test("server returns a specific reason for oversized or mismatched collaboration files", () => {
+  const room = emptyRoom();
+  const oversized = { id: "large-image", mimeType: "image/png", dataURL: `data:image/png;base64,${"A".repeat(MAX_FILE_DATA_URL + 1)}` };
+  assert.throws(
+    () => mergeSnapshot(room, [], { "large-image": oversized }),
+    (error) => error.code === "COLLAB_FILE_DATA_TOO_LARGE" && /supported collaboration file-size limit/i.test(error.message),
+  );
+  const mismatch = { id: "different-id", mimeType: "image/png", dataURL: "data:image/png;base64,AA==" };
+  assert.throws(
+    () => mergeSnapshot(room, [], { "map-key": mismatch }),
+    (error) => error.code === "COLLAB_FILE_INVALID" && /does not match its record key/i.test(error.message),
+  );
+});
+
+
+test("invalid file batches are rejected before any element mutations are applied", () => {
+  const room = emptyRoom();
+  const existing = sceneElement({ id: "existing", version: 1, versionNonce: 1, x: 10 });
+  mergeSnapshot(room, [existing], []);
+  const incoming = sceneElement({ id: "incoming", version: 1, versionNonce: 1, x: 90 });
+  const invalidFile = { id: "incorrect-id", mimeType: "image/png", dataURL: "data:image/png;base64,AA==" };
+  assert.throws(() => mergeSnapshot(room, [incoming], { "file-key": invalidFile }), /file ID does not match its record key/i);
+  assert.equal(room.elements.has("incoming"), false);
+  assert.equal(room.elements.get("existing").x, 10);
 });
 
 test("existing server size limits remain in effect", () => {

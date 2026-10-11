@@ -50,3 +50,23 @@ test("collaboration service logs handshake, join, token rejection and close diag
   assert.match(auth, /credential-signature-invalid/);
   assert.match(auth, /claim-room-mismatch/);
 });
+
+
+test("invalid initial snapshots are diagnosed and new rooms are committed only after validation", async () => {
+  const server = await read("../server/collaboration-server.mjs");
+  const mergeAt = server.indexOf("mergeSnapshot(room, message.snapshot?.elements || [], message.snapshot?.files || {}, clientId)");
+  const commitAt = server.indexOf("rooms.set(room.id, room)", mergeAt);
+  assert.ok(mergeAt >= 0, "initial snapshot must be validated");
+  assert.ok(commitAt > mergeAt, "a new room must not be published before the initial snapshot validates");
+  assert.match(server, /invalidFileRef: error\?\.fileRef/);
+  assert.match(server, /invalidFileIndex: Number\.isInteger\(error\?\.fileIndex\)/);
+  assert.match(server, /Collaboration scene update rejected/);
+});
+
+
+test("logger preserves safe auth configuration metadata while redacting credentials", async () => {
+  const logger = await read("../server/logger.mjs");
+  assert.match(logger, /safeMetadataKeySuffix/);
+  assert.match(logger, /return redactKey\.test\(key\) && !safeMetadataKeySuffix\.test\(key\)/);
+  assert.match(logger, /isSensitiveKey\(key\) \? "\[redacted\]"/);
+});

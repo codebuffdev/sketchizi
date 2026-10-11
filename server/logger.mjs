@@ -9,6 +9,13 @@ try {
 const minimumLevel = LEVELS[String(process.env.SKETCHIZI_LOG_LEVEL || "info").toLowerCase()] ?? LEVELS.info;
 
 const redactKey = /(password|passwd|token|jwt|api[-_]?key|secret|cookie|authorization|auth[-_]?header|private[-_]?key)/i;
+const safeMetadataKeySuffix = /(?:configured|lengthvalid|present|length|count|enabled)$/i;
+
+function isSensitiveKey(key) {
+  // Redact credentials while preserving safe diagnostic metadata such as
+  // hostAuthorizationSecretConfigured and hostCredentialPresent.
+  return redactKey.test(key) && !safeMetadataKeySuffix.test(key);
+}
 
 function sanitize(value, depth = 0) {
   if (depth > 2) return "[truncated]";
@@ -18,7 +25,7 @@ function sanitize(value, depth = 0) {
   if (typeof value !== "object") return String(value);
   const output = {};
   for (const [key, entry] of Object.entries(value)) {
-    output[key] = redactKey.test(key) ? "[redacted]" : sanitize(entry, depth + 1);
+    output[key] = isSensitiveKey(key) ? "[redacted]" : sanitize(entry, depth + 1);
   }
   return output;
 }

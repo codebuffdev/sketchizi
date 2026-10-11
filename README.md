@@ -269,7 +269,7 @@ Version 1.8.6 keeps the 1.8.5 responsive shell intact. At compact tablet widths 
 
 ## Collaboration capacity
 
-The current collaboration server enforces **no explicit per-room participant limit**. A room's participants are tracked in an in-memory `Set` (`room.clients`), and each connected client is included in presence broadcasts. The server does enforce message/scene/file limits (`MAX_MESSAGE_BYTES`, `MAX_ELEMENTS`, `MAX_FILES`, and `MAX_FILE_DATA_URL`), but none of those is a participant-count limit.
+The current collaboration server enforces **no explicit per-room participant limit**. A room's participants are tracked in an in-memory `Set` (`room.clients`), and each connected client is included in presence broadcasts. The server does enforce message/scene/file limits (`MAX_MESSAGE_BYTES`, `MAX_ELEMENTS`, `MAX_FILES`, and `MAX_FILE_DATA_URL`), but none of those is a participant-count limit. The per-file data-URL allowance is kept below the 8 MiB WebSocket message ceiling with room for JSON overhead; an oversized or malformed file is rejected with a specific reason in the collaboration status and server logs.
 
 The practical ceiling is therefore determined by the resources and deployment constraints of the single collaboration-server process: memory, CPU, network bandwidth, WebSocket connection capacity, and the frequency/size of scene updates. No Cloudflare-specific or hosting-provider per-room participant limit is configured in this repository.
 
