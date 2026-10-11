@@ -860,9 +860,15 @@ export class SketchiziCollaboration {
 
     const changedFiles = [];
     let unchangedFiles = 0;
-    for (const file of this.pendingFiles.values()) {
-      if (this.lastFiles.get(file.id) !== fileSignature(file)) changedFiles.push(file);
-      else unchangedFiles += 1;
+    // Update messages carry files as an array, so the registry key is lost.
+    // Normalize again at the serialization boundary to guarantee every file
+    // has an own, enumerable ID even if a prior source record used a getter.
+    for (const [registryKey, file] of this.pendingFiles.entries()) {
+      const normalizedRecords = normalizeCollaborationFiles({ [registryKey]: file });
+      for (const normalizedFile of Object.values(normalizedRecords)) {
+        if (this.lastFiles.get(normalizedFile.id) !== fileSignature(normalizedFile)) changedFiles.push(normalizedFile);
+        else unchangedFiles += 1;
+      }
     }
 
     if (!changedElements.length && !changedFiles.length) {

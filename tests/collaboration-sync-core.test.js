@@ -107,6 +107,33 @@ test("keyed file registries repair missing and malformed IDs but preserve valid 
     assert.equal(normalized[key].id, key, `${key} should use its valid registry key`);
   }
   assert.equal(normalized.mismatchKey.id, "a-valid-but-different-id", "a valid mismatch must remain visible to validation");
+  assert.equal(Object.prototype.propertyIsEnumerable.call(normalized.missing, "id"), true);
+});
+
+test("normalization materializes getter and non-enumerable IDs before array serialization", () => {
+  const file = { mimeType: "image/png", dataURL: "data:image/png;base64,AA==" };
+  Object.defineProperty(file, "id", { value: "image-123", configurable: true, enumerable: false });
+
+  const normalized = normalizeCollaborationFiles({ "image-123": file });
+  assert.equal(Object.prototype.propertyIsEnumerable.call(normalized["image-123"], "id"), true);
+  const serializedArray = JSON.parse(JSON.stringify(Object.values(normalized)));
+  assert.equal(serializedArray[0].id, "image-123");
+
+  const room = emptyRoom();
+  assert.equal(mergeSnapshot(room, [], serializedArray).files.length, 1);
+});
+
+test("records whose ID getter is inherited are serialized with an explicit ID", () => {
+  const prototype = { get id() { return "inherited-image-id"; } };
+  const file = Object.assign(Object.create(prototype), {
+    mimeType: "image/png",
+    dataURL: "data:image/png;base64,AA==",
+  });
+  const normalized = normalizeCollaborationFiles({ "inherited-image-id": file });
+  const roundTripped = JSON.parse(JSON.stringify(Object.values(normalized)))[0];
+  assert.equal(roundTripped.id, "inherited-image-id");
+  assert.equal(roundTripped.mimeType, "image/png");
+  assert.equal(roundTripped.dataURL, "data:image/png;base64,AA==");
 });
 
 test("server repairs malformed IDs from keyed snapshot registry without accepting valid mismatches", () => {
