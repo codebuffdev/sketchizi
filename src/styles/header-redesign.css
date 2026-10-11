@@ -1,4 +1,6 @@
-/* Sketchizi 1.10.48 — premium-minimal single-row header */
+/* Sketchizi 1.10.50 — hamburger application-menu shortcut */
+.desktop-app-menu-trigger { display: none; }
+
 @media (min-width: 1025px) {
   :root {
     --sketchizi-desktop-header-height: 54px;
@@ -16,23 +18,37 @@
     color: var(--ui-text, #252631);
   }
 
-  .desktop-app-brand-mark {
+  .desktop-app-menu-trigger {
     display: grid;
     place-items: center;
     flex: 0 0 30px;
     width: 30px;
+    min-width: 30px;
     height: 30px;
+    min-height: 30px;
     margin-right: 8px;
-    overflow: hidden;
-    border-radius: 9px;
-    background: linear-gradient(145deg, #f1edff, #e4e9ff);
+    padding: 0;
+    border: 1px solid var(--ui-border, #e2e5ed);
+    border-radius: 8px;
+    background: var(--ui-surface-soft, #f7f8fc);
+    color: var(--ui-text, #333847);
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
   }
 
-  .desktop-app-brand-mark img {
+  .desktop-app-menu-trigger svg {
     display: block;
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+
+  .desktop-app-menu-trigger:hover,
+  .desktop-app-menu-trigger.active,
+  .desktop-app-menu-trigger:focus-visible {
+    border-color: #c8bbff;
+    background: #f1edff;
+    color: #5535bd;
   }
 
   .desktop-app-library-toggle {
@@ -520,8 +536,18 @@
   }
 
   /* Dark theme follows the Sketchizi palette without changing control order. */
-  .app.theme-dark .desktop-app-brand-mark {
-    background: linear-gradient(145deg, #292044, #212842);
+  .app.theme-dark .desktop-app-menu-trigger {
+    border-color: #363844;
+    background: #20222b;
+    color: #e6e7f1;
+  }
+
+  .app.theme-dark .desktop-app-menu-trigger:hover,
+  .app.theme-dark .desktop-app-menu-trigger.active,
+  .app.theme-dark .desktop-app-menu-trigger:focus-visible {
+    border-color: #6550a5;
+    background: #30264a;
+    color: #c8b8ff;
   }
 
   .app.theme-dark .desktop-app-library-toggle {
@@ -721,20 +747,25 @@
 }
 
 @media (min-width: 761px) and (max-width: 1024px) {
-  .desktop-app-brand-mark {
+  .desktop-app-menu-trigger {
     display: grid;
     place-items: center;
     flex: 0 0 28px;
     width: 28px;
+    min-width: 28px;
     height: 28px;
+    min-height: 28px;
     margin-right: 2px;
+    padding: 0;
+    border: 1px solid var(--ui-border, #e2e5ed);
     border-radius: 8px;
-    background: #eee9ff;
+    background: var(--ui-surface-soft, #f7f8fc);
+    color: var(--ui-text, #333847);
   }
 
-  .desktop-app-brand-mark img {
-    width: 22px;
-    height: 22px;
+  .desktop-app-menu-trigger svg {
+    width: 18px;
+    height: 18px;
   }
 
   .desktop-app-header-account-zone {
@@ -778,15 +809,29 @@
 }
 
 @media (min-width: 651px) and (max-width: 760px) {
-  .app.theme-dark .desktop-app-brand-mark {
-    background: linear-gradient(145deg, #292044, #212842);
+  .desktop-app-menu-trigger {
+    display: none;
+  }
+
+  .app.theme-dark .desktop-app-menu-trigger {
+    border-color: #363844;
+    background: #20222b;
+    color: #e6e7f1;
+  }
+
+  .app.theme-dark .desktop-app-menu-trigger:hover,
+  .app.theme-dark .desktop-app-menu-trigger.active,
+  .app.theme-dark .desktop-app-menu-trigger:focus-visible {
+    border-color: #6550a5;
+    background: #30264a;
+    color: #c8b8ff;
   }
 
   .desktop-app-header {
     gap: 3px;
   }
 
-  .desktop-app-brand-mark {
+  .desktop-app-menu-trigger {
     display: none;
   }
 
@@ -861,6 +906,10 @@
 }
 
 @media (min-width: 521px) and (max-width: 650px) {
+  .desktop-app-menu-trigger {
+    display: none;
+  }
+
   :root {
     --sketchizi-responsive-header-height: 54px;
   }
@@ -878,7 +927,7 @@
     overflow: visible;
   }
 
-  .desktop-app-brand-mark {
+  .desktop-app-menu-trigger {
     display: none;
   }
 
@@ -1021,7 +1070,7 @@
 }
 
 @media (max-width: 520px) {
-  .desktop-app-brand-mark {
+  .desktop-app-menu-trigger {
     display: none;
   }
 

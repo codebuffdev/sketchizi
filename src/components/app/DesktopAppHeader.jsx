@@ -66,6 +66,7 @@ export default function DesktopAppHeader({
   collaborationActive,
   collaborationCreationState = "idle",
   collaborationCreationError = "",
+  nativeMenuOpen = false,
   createCollaboration,
   dismissCollaborationCreationFailure,
   libraryToggle,
@@ -103,9 +104,23 @@ export default function DesktopAppHeader({
 
   return (
     <header className="desktop-app-header">
-      <div className="desktop-app-brand-mark" role="img" aria-label="Sketchizi">
-        <img src="/sketchizi-logo.svg" alt="" />
-      </div>
+      <button
+        type="button"
+        className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
+        onClick={() => {
+          const nativeMenuButton = document.querySelector(
+            ".desktop-canvas-region .excalidraw .App-menu_top .dropdown-menu-button",
+          ) || document.querySelector(".desktop-canvas-region .excalidraw .App-menu_top button");
+          nativeMenuButton?.click();
+        }}
+        aria-label={nativeMenuOpen ? "Close application menu" : "Open application menu"}
+        aria-expanded={nativeMenuOpen}
+        title={nativeMenuOpen ? "Close application menu" : "Open application menu"}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
       {libraryToggle}
 
       <nav className="desktop-app-nav" aria-label="Sketchizi application menu">

@@ -1142,6 +1142,16 @@
  * Keep the selectors scoped to the desktop canvas so no other Sketchizi
  * controls (including the Icon Library, Minimap, or header) are affected.
  */
+/* At desktop/tablet widths the application-menu button is exposed in the Sketchizi header.
+   Keep Excalidraw's original trigger in the DOM so its native dropdown positioning and actions
+   continue to work when the header shortcut forwards a click to it. */
+@media (min-width: 761px) {
+  .desktop-canvas-region .excalidraw .App-menu_top .dropdown-menu-button {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
 .desktop-canvas-region .excalidraw .layer-ui__wrapper__top-right .sidebar-trigger {
   display: none !important;
 }

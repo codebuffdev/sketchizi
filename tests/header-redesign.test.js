@@ -4,10 +4,15 @@ import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("header has a compact Sketchizi brand mark and an accessible library shortcut", async () => {
+test("header uses an accessible hamburger application-menu trigger and preserves the library shortcut", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
-  assert.match(header, /className="desktop-app-brand-mark"/);
-  assert.match(header, /src="\/sketchizi-logo\.svg"/);
+  assert.match(header, /className=\{nativeMenuOpen \?/);
+  assert.match(header, /desktop-app-menu-trigger active/);
+  assert.match(header, /Open application menu/);
+  assert.match(header, /\.App-menu_top \.dropdown-menu-button/);
+  assert.match(header, /aria-expanded=\{nativeMenuOpen\}/);
+  assert.doesNotMatch(header, /desktop-app-brand-mark/);
+  assert.doesNotMatch(header, /src="\/sketchizi-logo\.svg"/);
   assert.match(header, /\{libraryToggle\}/); // existing Icon Library shortcut is preserved
   assert.match(header, /aria-label="Search commands"/);
   assert.match(header, /Ctrl\+K/);
@@ -48,4 +53,12 @@ test("premium-minimal header stays single-row at tablet and desktop sizes", asyn
   assert.match(css, /\.app\.theme-dark \.desktop-app-search-button/);
   const styles = await read("../src/styles.css");
   assert.match(styles, /@import "\.\/styles\/header-redesign\.css"/);
+});
+
+test("desktop hamburger reuses native menu and suppresses duplicate trigger only on wide layouts", async () => {
+  const css = await read("../src/styles/responsive-desktop.css");
+  assert.match(css, /@media \(min-width: 761px\)[\s\S]*?\.App-menu_top \.dropdown-menu-button \{[\s\S]*?visibility: hidden !important/);
+  assert.match(css, /pointer-events: none !important/);
+  const app = await read("../src/App.jsx");
+  assert.match(app, /nativeMenuOpen=\{nativeMenuOpen\}/);
 });
