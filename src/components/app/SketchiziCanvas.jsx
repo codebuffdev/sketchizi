@@ -4,7 +4,7 @@ import ShortcutHelp from "../../ShortcutHelp";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 
 export default function SketchiziCanvas({
-  savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
+  savedSketch, isDarkTheme, canvasBackgroundPattern = "solid", handleExcalidrawAPI, handleChange, handleDrop,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
@@ -38,6 +38,7 @@ export default function SketchiziCanvas({
         onChange={handleChange}
         onScrollChange={onViewportChange}
       />
+      {canvasBackgroundPattern !== "solid" && <div className={`canvas-background-pattern-overlay pattern-${canvasBackgroundPattern}`} aria-hidden="true" />}
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />

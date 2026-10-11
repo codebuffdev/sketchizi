@@ -190,3 +190,309 @@
   .storage-warning-actions { width: 100%; padding-left: 40px; }
 }
 
+
+/* Compact developer-oriented file menu. The native Excalidraw menu remains
+   the host; these controls replace only the extra management UI. */
+[data-sketchizi-hidden-native-open-file="true"],
+[data-sketchizi-native-background-hidden="true"],
+[data-sketchizi-hidden-native-background-swatch="true"] {
+  display: none !important;
+}
+
+[data-sketchizi-custom-menu-block] {
+  min-width: 270px;
+  padding: 2px 0 8px;
+  color: inherit;
+}
+.sketchizi-file-open-actions {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 8px;
+  padding: 4px;
+  border: 1px solid rgba(128,128,128,.18);
+  border-radius: 10px;
+  background: rgba(128,128,128,.035);
+}
+.sketchizi-file-action {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 9px;
+  color: inherit;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.sketchizi-file-action > svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: #8b83ff;
+}
+.sketchizi-file-action > span { flex: 1; min-width: 0; }
+.sketchizi-file-action kbd {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 1px solid rgba(128,128,128,.2);
+  border-radius: 5px;
+  color: #9299ad;
+  background: rgba(128,128,128,.08);
+  font: inherit;
+  font-size: 11px;
+}
+.sketchizi-file-action:hover,
+.sketchizi-file-action:focus-visible {
+  outline: none;
+  background: rgba(124,58,237,.09);
+  border-color: rgba(124,58,237,.25);
+}
+.sketchizi-menu-disclosure {
+  margin: 5px 0;
+  border: 1px solid rgba(128,128,128,.2);
+  border-radius: 9px;
+  background: rgba(128,128,128,.04);
+  overflow: hidden;
+}
+.sketchizi-menu-disclosure > summary {
+  min-height: 49px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.sketchizi-menu-disclosure > summary::-webkit-details-marker { display: none; }
+.sketchizi-menu-disclosure > summary > svg:first-child {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: #8b83ff;
+}
+.sketchizi-menu-disclosure > summary > svg:last-child {
+  width: 15px;
+  height: 15px;
+  margin-left: auto;
+  flex: 0 0 15px;
+  transition: transform .15s ease;
+}
+.sketchizi-menu-disclosure[open] > summary > svg:last-child { transform: rotate(180deg); }
+.sketchizi-disclosure-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+.sketchizi-disclosure-copy strong { font-size: 12px; font-weight: 600; }
+.sketchizi-disclosure-copy small { opacity: .65; font-size: 11px; }
+.sketchizi-disclosure-content {
+  padding: 0 9px 9px;
+  border-top: 1px solid rgba(128,128,128,.14);
+}
+.sketchizi-current-folder {
+  overflow: hidden;
+  padding: 8px 1px 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  opacity: .72;
+}
+.sketchizi-folder-files-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+.sketchizi-folder-files-title { font-size: 11px; opacity: .75; }
+.sketchizi-folder-refresh {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.sketchizi-folder-refresh svg { width: 15px; height: 15px; }
+.sketchizi-folder-file-list,
+.sketchizi-recent-list,
+.sketchizi-recent-folder-list { display: grid; gap: 2px; }
+.sketchizi-folder-file,
+.sketchizi-recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 7px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.sketchizi-folder-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sketchizi-recent-row { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.sketchizi-recent-row .sketchizi-recent-item { min-width: 0; flex: 1; }
+.sketchizi-recent-item > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sketchizi-recent-item > span svg { display: inline-block; width: 13px; height: 13px; margin-right: 5px; vertical-align: -2px; color: #8b83ff; }
+.sketchizi-recent-item small { flex: 0 0 auto; opacity: .6; font-size: 10px; }
+.sketchizi-recent-remove {
+  flex: 0 0 auto;
+  width: 25px;
+  height: 25px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.sketchizi-recent-empty { padding: 8px 4px; font-size: 11px; opacity: .62; }
+.sketchizi-folder-action,
+.sketchizi-recent-clear {
+  width: 100%;
+  min-height: 30px;
+  margin-top: 5px;
+  padding: 5px 7px;
+  border: 1px solid rgba(128,128,128,.2);
+  border-radius: 7px;
+  color: inherit;
+  background: rgba(128,128,128,.04);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+.sketchizi-folder-action[hidden] { display: none !important; }
+.sketchizi-drop-review-link {
+  display: flex !important;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px !important;
+  margin: 6px 0 !important;
+  border: 1px solid rgba(124,58,237,.4) !important;
+  border-radius: 9px !important;
+  background: linear-gradient(100deg, rgba(124,58,237,.12), rgba(124,58,237,.04)) !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+.sketchizi-drop-review-link [data-sketchizi-git-icon] { width: 23px; height: 23px; flex: 0 0 23px; color: #8b83ff; }
+.sketchizi-background-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 55px;
+  margin: 6px 0 1px;
+  padding: 8px 10px;
+  border: 1px solid rgba(124,58,237,.32);
+  border-radius: 9px;
+  color: inherit;
+  background: rgba(124,58,237,.07);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sketchizi-background-trigger:hover,
+.sketchizi-background-trigger[aria-expanded="true"] {
+  border-color: rgba(124,58,237,.65);
+  background: rgba(124,58,237,.14);
+}
+.sketchizi-background-trigger-icon { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 8px; background: rgba(124,58,237,.12); color: #8b83ff; }
+.sketchizi-background-trigger-icon svg { width: 21px; height: 21px; }
+.sketchizi-background-trigger-copy { min-width: 0; flex: 1; display: grid; gap: 3px; }
+.sketchizi-background-trigger-copy strong { font-size: 12px; }
+.sketchizi-background-trigger-copy small { font-size: 10px; opacity: .68; }
+.sketchizi-background-trigger-chevron { font-size: 24px; line-height: 1; opacity: .7; }
+
+/* Floating, focused canvas-background popover */
+.sketchizi-bg-popover {
+  box-sizing: border-box;
+  width: min(380px, calc(100vw - 20px));
+  max-height: calc(100dvh - 20px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid rgba(128,128,128,.28);
+  border-radius: 14px;
+  color: #20212a;
+  background: rgba(250,250,252,.98);
+  box-shadow: 0 18px 55px rgba(0,0,0,.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.sketchizi-bg-popover[hidden] { display: none !important; }
+.sketchizi-bg-popover-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.sketchizi-bg-popover-header > span { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sketchizi-bg-popover-header svg { width: 22px; height: 22px; color: #6555d9; }
+.sketchizi-bg-popover-header strong { font-size: 14px; font-weight: 650; }
+.sketchizi-bg-close { width: 30px; height: 30px; border: 0; border-radius: 7px; background: transparent; color: inherit; font-size: 22px; cursor: pointer; }
+.sketchizi-bg-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; padding: 3px; margin-bottom: 12px; border: 1px solid rgba(128,128,128,.2); border-radius: 9px; background: rgba(128,128,128,.06); }
+.sketchizi-bg-tabs button { min-height: 32px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.sketchizi-bg-tabs button[aria-selected="true"] { color: white; background: linear-gradient(120deg, #7545ef, #5230bd); }
+.sketchizi-bg-section-title { margin: 10px 0 8px; font-size: 10px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; opacity: .7; }
+.sketchizi-bg-swatches { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 2px 1px 7px; }
+.sketchizi-bg-swatch { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; padding: 3px; border: 1px solid rgba(128,128,128,.27); border-radius: 9px; background: transparent; cursor: pointer; }
+.sketchizi-bg-swatch > span { display: block; width: 100%; height: 100%; border: 1px solid rgba(128,128,128,.18); border-radius: 6px; background: var(--swatch-color); }
+.sketchizi-bg-swatch[aria-pressed="true"] { border: 2px solid #8359ff; box-shadow: 0 0 0 2px rgba(131,89,255,.16); }
+.sketchizi-bg-patterns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sketchizi-bg-pattern { min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 5px; border: 1px solid transparent; border-radius: 8px; color: inherit; background: transparent; font: inherit; font-size: 10px; text-align: center; cursor: pointer; }
+.sketchizi-bg-pattern[aria-pressed="true"] { border-color: #8055ee; background: rgba(124,58,237,.08); }
+.sketchizi-bg-pattern-preview { display: block; aspect-ratio: 1.35; border: 1px solid rgba(128,128,128,.35); border-radius: 6px; background-color: #f6f7fa; background-position: center; background-size: 100% 100%; }
+.sketchizi-bg-note { margin: 8px 0 2px; color: inherit; opacity: .65; font-size: 10px; line-height: 1.4; }
+.sketchizi-bg-custom-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.sketchizi-bg-custom-row input[type="color"] { width: 42px; height: 38px; padding: 2px; border: 1px solid rgba(128,128,128,.3); border-radius: 7px; background: transparent; cursor: pointer; }
+.sketchizi-bg-custom-row input[type="text"] { min-width: 0; height: 38px; padding: 0 9px; border: 1px solid rgba(128,128,128,.3); border-radius: 7px; background: transparent; color: inherit; font: inherit; font-size: 12px; }
+.sketchizi-bg-custom-row input[aria-invalid="true"] { border-color: #d34b58; }
+.sketchizi-bg-custom-row button { min-height: 36px; padding: 0 10px; border: 0; border-radius: 7px; background: #6544d7; color: white; font: inherit; font-size: 12px; cursor: pointer; }
+.sketchizi-bg-theme { margin-top: 12px; padding-top: 2px; border-top: 1px solid rgba(128,128,128,.2); }
+.sketchizi-bg-theme > button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 7px 5px; border: 0; border-radius: 7px; color: inherit; background: transparent; text-align: left; font: inherit; cursor: pointer; }
+.sketchizi-bg-theme > button:hover { background: rgba(128,128,128,.08); }
+.sketchizi-bg-theme > button > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.sketchizi-bg-theme strong { font-size: 12px; font-weight: 600; }
+.sketchizi-bg-theme small { font-size: 10px; opacity: .65; }
+.sketchizi-bg-radio { width: 16px; height: 16px; flex: 0 0 16px; border: 2px solid #9197a8; border-radius: 50%; }
+.sketchizi-bg-theme button[aria-pressed="true"] .sketchizi-bg-radio { border: 4px solid #7446ed; box-shadow: 0 0 0 1px #7446ed; }
+
+.sketchizi-bg-pattern-preview.pattern-solid { background-image: none; }
+.sketchizi-bg-pattern-preview.pattern-grid { background-image: linear-gradient(rgba(84,98,126,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(84,98,126,.24) 1px, transparent 1px); background-size: 15px 15px; }
+.sketchizi-bg-pattern-preview.pattern-dot-grid { background-image: radial-gradient(rgba(84,98,126,.5) 1px, transparent 1.3px); background-size: 12px 12px; }
+.sketchizi-bg-pattern-preview.pattern-graph-paper { background-image: linear-gradient(rgba(84,98,126,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(84,98,126,.16) 1px, transparent 1px), linear-gradient(rgba(84,98,126,.35) 1px, transparent 1px), linear-gradient(90deg, rgba(84,98,126,.35) 1px, transparent 1px); background-size: 8px 8px, 8px 8px, 40px 40px, 40px 40px; }
+.sketchizi-bg-pattern-preview.pattern-horizontal { background-image: linear-gradient(transparent calc(100% - 1px), rgba(84,98,126,.38) calc(100% - 1px)); background-size: 100% 10px; }
+.sketchizi-bg-pattern-preview.pattern-vertical { background-image: linear-gradient(90deg, transparent calc(100% - 1px), rgba(84,98,126,.38) calc(100% - 1px)); background-size: 10px 100%; }
+.sketchizi-bg-pattern-preview.pattern-diagonal { background-image: repeating-linear-gradient(135deg, transparent 0 8px, rgba(84,98,126,.35) 8px 9px); }
+.sketchizi-bg-pattern-preview.pattern-crosshatch { background-image: repeating-linear-gradient(45deg, transparent 0 8px, rgba(84,98,126,.3) 8px 9px), repeating-linear-gradient(-45deg, transparent 0 8px, rgba(84,98,126,.3) 8px 9px); }
+.sketchizi-bg-pattern-preview.pattern-isometric { background-image: repeating-linear-gradient(30deg, transparent 0 12px, rgba(84,98,126,.34) 12px 13px), repeating-linear-gradient(-30deg, transparent 0 12px, rgba(84,98,126,.34) 12px 13px), repeating-linear-gradient(90deg, transparent 0 20px, rgba(84,98,126,.22) 20px 21px); }
+
+.canvas-background-pattern-overlay {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  opacity: .24;
+  background-repeat: repeat;
+  background-position: 0 0;
+}
+.canvas-background-pattern-overlay.pattern-grid { background-image: linear-gradient(rgba(84,98,126,.28) 1px, transparent 1px), linear-gradient(90deg, rgba(84,98,126,.28) 1px, transparent 1px); background-size: 24px 24px; }
+.canvas-background-pattern-overlay.pattern-dot-grid { background-image: radial-gradient(rgba(84,98,126,.55) 1px, transparent 1.4px); background-size: 20px 20px; }
+.canvas-background-pattern-overlay.pattern-graph-paper { background-image: linear-gradient(rgba(84,98,126,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(84,98,126,.2) 1px, transparent 1px), linear-gradient(rgba(84,98,126,.38) 1px, transparent 1px), linear-gradient(90deg, rgba(84,98,126,.38) 1px, transparent 1px); background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px; }
+.canvas-background-pattern-overlay.pattern-horizontal { background-image: linear-gradient(transparent calc(100% - 1px), rgba(84,98,126,.33) calc(100% - 1px)); background-size: 100% 24px; }
+.canvas-background-pattern-overlay.pattern-vertical { background-image: linear-gradient(90deg, transparent calc(100% - 1px), rgba(84,98,126,.33) calc(100% - 1px)); background-size: 24px 100%; }
+.canvas-background-pattern-overlay.pattern-diagonal { background-image: repeating-linear-gradient(135deg, transparent 0 17px, rgba(84,98,126,.28) 17px 18px); }
+.canvas-background-pattern-overlay.pattern-crosshatch { background-image: repeating-linear-gradient(45deg, transparent 0 16px, rgba(84,98,126,.23) 16px 17px), repeating-linear-gradient(-45deg, transparent 0 16px, rgba(84,98,126,.23) 16px 17px); }
+.canvas-background-pattern-overlay.pattern-isometric { background-image: repeating-linear-gradient(30deg, transparent 0 22px, rgba(84,98,126,.28) 22px 23px), repeating-linear-gradient(-30deg, transparent 0 22px, rgba(84,98,126,.28) 22px 23px), repeating-linear-gradient(90deg, transparent 0 38px, rgba(84,98,126,.16) 38px 39px); }
+@media (max-width: 520px) {
+  .sketchizi-bg-popover { padding: 10px; }
+  .sketchizi-bg-swatches { gap: 6px; }
+}

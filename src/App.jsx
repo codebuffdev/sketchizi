@@ -257,7 +257,7 @@ function App() {
     currentFolder,
     fileActionsRef,
   });
-  useNativeSketchiziMenu({ fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
+  useNativeSketchiziMenu({ apiRef, fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, canvasBackgroundPattern: preferences.canvasBackgroundPattern, setCanvasBackgroundPattern: preferences.setCanvasBackgroundPattern, applyCanvasBackgroundColor: preferences.applyCanvasBackgroundColor, setCanvasBackgroundModePreference: preferences.setCanvasBackgroundModePreference, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
@@ -403,6 +403,7 @@ function App() {
           <SketchiziCanvas
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
+            canvasBackgroundPattern={preferences.canvasBackgroundPattern}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleExcalidrawChange}
             handleDrop={handleDrop}

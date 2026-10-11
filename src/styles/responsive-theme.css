@@ -854,3 +854,70 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
     height: 42px;
   }
 }
+
+html[data-sketchizi-theme="dark"] .sketchizi-file-open-actions,
+html[data-sketchizi-theme="dark"] .sketchizi-menu-disclosure {
+  border-color: var(--ui-border, #343744);
+  background: rgba(255,255,255,.025);
+}
+html[data-sketchizi-theme="dark"] .sketchizi-file-action:hover,
+html[data-sketchizi-theme="dark"] .sketchizi-menu-disclosure > summary:hover {
+  background: rgba(139,131,255,.1);
+}
+html[data-sketchizi-theme="dark"] .sketchizi-file-action kbd {
+  border-color: #393d4d;
+  color: #c4c9d9;
+  background: #252a37;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-disclosure-copy small,
+html[data-sketchizi-theme="dark"] .sketchizi-current-folder,
+html[data-sketchizi-theme="dark"] .sketchizi-folder-files-title,
+html[data-sketchizi-theme="dark"] .sketchizi-recent-empty,
+html[data-sketchizi-theme="dark"] .sketchizi-recent-item small {
+  color: var(--ui-text-muted, #a7aec0);
+}
+html[data-sketchizi-theme="dark"] .sketchizi-disclosure-content,
+html[data-sketchizi-theme="dark"] .sketchizi-bg-theme,
+html[data-sketchizi-theme="dark"] .sketchizi-bg-tabs {
+  border-color: #343746;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-folder-action,
+html[data-sketchizi-theme="dark"] .sketchizi-recent-clear {
+  border-color: #343746;
+  background: rgba(255,255,255,.035);
+  color: #e4e7ef;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-folder-file:hover,
+html[data-sketchizi-theme="dark"] .sketchizi-recent-item:hover,
+html[data-sketchizi-theme="dark"] .sketchizi-recent-remove:hover,
+html[data-sketchizi-theme="dark"] .sketchizi-folder-refresh:hover {
+  background: #282d3a;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-drop-review-link {
+  border-color: rgba(139,131,255,.42) !important;
+  background: linear-gradient(100deg, rgba(124,58,237,.2), rgba(124,58,237,.08)) !important;
+  color: #f4f2ff !important;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-background-trigger {
+  border-color: rgba(139,131,255,.4);
+  background: rgba(124,58,237,.12);
+  color: #f1efff;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-bg-popover {
+  border-color: #363b4d;
+  color: #f0f2fa;
+  background: rgba(23,26,35,.98);
+}
+html[data-sketchizi-theme="dark"] .sketchizi-bg-tabs,
+html[data-sketchizi-theme="dark"] .sketchizi-bg-custom-row input[type="text"] {
+  border-color: #373c4e;
+  background-color: rgba(255,255,255,.035);
+}
+html[data-sketchizi-theme="dark"] .sketchizi-bg-pattern-preview { background-color: #1a1d27; border-color: #454b5e; }
+html[data-sketchizi-theme="dark"] .sketchizi-bg-pattern-preview.pattern-grid { background-image: linear-gradient(rgba(180,190,220,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(180,190,220,.18) 1px, transparent 1px); }
+html[data-sketchizi-theme="dark"] .sketchizi-bg-pattern-preview.pattern-dot-grid { background-image: radial-gradient(rgba(180,190,220,.45) 1px, transparent 1.3px); }
+html[data-sketchizi-theme="dark"] .sketchizi-bg-pattern-preview.pattern-graph-paper { background-image: linear-gradient(rgba(180,190,220,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(180,190,220,.13) 1px, transparent 1px), linear-gradient(rgba(180,190,220,.28) 1px, transparent 1px), linear-gradient(90deg, rgba(180,190,220,.28) 1px, transparent 1px); }
+html[data-sketchizi-theme="dark"] .canvas-background-pattern-overlay { opacity: .3; }
+html[data-sketchizi-theme="dark"] .canvas-background-pattern-overlay.pattern-grid { background-image: linear-gradient(rgba(180,190,220,.27) 1px, transparent 1px), linear-gradient(90deg, rgba(180,190,220,.27) 1px, transparent 1px); }
+html[data-sketchizi-theme="dark"] .canvas-background-pattern-overlay.pattern-dot-grid { background-image: radial-gradient(rgba(180,190,220,.5) 1px, transparent 1.4px); }
+html[data-sketchizi-theme="dark"] .canvas-background-pattern-overlay.pattern-graph-paper { background-image: linear-gradient(rgba(180,190,220,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(180,190,220,.16) 1px, transparent 1px), linear-gradient(rgba(180,190,220,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(180,190,220,.3) 1px, transparent 1px); }

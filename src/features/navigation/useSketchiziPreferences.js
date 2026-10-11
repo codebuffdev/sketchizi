@@ -3,6 +3,7 @@ import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { clearEmergencyBackup, clearSketch } from "../../persistence";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js";
 import { CANVAS_BACKGROUND_MODE_KEY, resolveCanvasBackgroundMode } from "./canvasBackgroundMode.js";
+import { CANVAS_BACKGROUND_EXPLICIT_COLOR_KEY, CANVAS_BACKGROUND_PATTERN_KEY, CANVAS_BACKGROUND_PATTERNS, normalizeHexColor } from "./canvasBackgroundOptions.js";
 
 const LIGHT_CANVAS_BACKGROUND = "#ffffff";
 const DARK_CANVAS_BACKGROUND = "#121212";
@@ -15,9 +16,24 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
   const [canvasBackgroundMode, setCanvasBackgroundMode] = useState(() => {
     try {
       const mode = localStorage.getItem(canvasBackgroundModeKey);
-      return mode === "theme" || mode === "custom" ? mode : null;
+      return ["theme", "custom", "light", "dark"].includes(mode) ? mode : null;
     } catch { return null; }
   });
+  const explicitCustomBackgroundRef = useRef((() => {
+    try { return normalizeHexColor(localStorage.getItem(CANVAS_BACKGROUND_EXPLICIT_COLOR_KEY)); }
+    catch { return null; }
+  })());
+  const [canvasBackgroundPattern, setCanvasBackgroundPatternState] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CANVAS_BACKGROUND_PATTERN_KEY);
+      return CANVAS_BACKGROUND_PATTERNS.some((item) => item.id === saved) ? saved : "solid";
+    } catch { return "solid"; }
+  });
+  const setCanvasBackgroundPattern = useCallback((pattern) => {
+    if (!CANVAS_BACKGROUND_PATTERNS.some((item) => item.id === pattern)) return;
+    setCanvasBackgroundPatternState(pattern);
+    try { localStorage.setItem(CANVAS_BACKGROUND_PATTERN_KEY, pattern); } catch {}
+  }, []);
 
   // Older Sketchizi versions did not persist whether a scene background was
   // automatic or explicitly chosen. When restoring such a scene, preserve its
@@ -32,25 +48,52 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
   }, [canvasBackgroundMode, savedSketch, sketchReady]);
 
   const markCanvasBackgroundCustom = useCallback(() => {
+    explicitCustomBackgroundRef.current = null;
     setCanvasBackgroundMode("custom");
-    try { localStorage.setItem(canvasBackgroundModeKey, "custom"); } catch {}
-  }, []);
+    try {
+      localStorage.setItem(canvasBackgroundModeKey, "custom");
+      localStorage.removeItem(CANVAS_BACKGROUND_EXPLICIT_COLOR_KEY);
+    } catch {}
+  }, [canvasBackgroundModeKey]);
 
-  const useThemeDefaultBackground = useCallback(() => {
-    // Persist theme-following mode before updating the canvas so the sync effect
-    // and future theme changes use the same source of truth.
-    setCanvasBackgroundMode("theme");
-    try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
+  const setCanvasBackgroundModePreference = useCallback((mode) => {
+    if (!["theme", "light", "dark"].includes(mode)) return;
+    explicitCustomBackgroundRef.current = null;
+    setCanvasBackgroundMode(mode);
+    try {
+      localStorage.setItem(canvasBackgroundModeKey, mode);
+      localStorage.removeItem(CANVAS_BACKGROUND_EXPLICIT_COLOR_KEY);
+    } catch {}
     const api = apiRef.current;
     if (!api || !apiReady) return;
-    const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
-    api.updateScene({
-      appState: { viewBackgroundColor: nextBackground },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-  }, [apiRef, apiReady, isDarkTheme]);
+    const nextBackground = mode === "light"
+      ? LIGHT_CANVAS_BACKGROUND
+      : mode === "dark"
+        ? DARK_CANVAS_BACKGROUND
+        : isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
+    api.updateScene({ appState: { viewBackgroundColor: nextBackground }, captureUpdate: CaptureUpdateAction.NEVER });
+  }, [apiRef, apiReady, canvasBackgroundModeKey, isDarkTheme]);
+
+  const applyCanvasBackgroundColor = useCallback((value) => {
+    const color = normalizeHexColor(value);
+    if (!color) return false;
+    explicitCustomBackgroundRef.current = color;
+    setCanvasBackgroundMode("custom");
+    try {
+      localStorage.setItem(canvasBackgroundModeKey, "custom");
+      localStorage.setItem(CANVAS_BACKGROUND_EXPLICIT_COLOR_KEY, color);
+    } catch {}
+    const api = apiRef.current;
+    if (api && apiReady) api.updateScene({ appState: { viewBackgroundColor: color }, captureUpdate: CaptureUpdateAction.NEVER });
+    return true;
+  }, [apiRef, apiReady, canvasBackgroundModeKey]);
+
+  const useThemeDefaultBackground = useCallback(() => {
+    setCanvasBackgroundModePreference("theme");
+  }, [setCanvasBackgroundModePreference]);
 
   useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);
+  useEffect(() => { try { localStorage.setItem(CANVAS_BACKGROUND_PATTERN_KEY, canvasBackgroundPattern); } catch {} }, [canvasBackgroundPattern]);
   useEffect(() => {
     const media = window.matchMedia?.("(prefers-color-scheme: dark)"); if (!media) return undefined;
     const handleChange = (event) => setSystemDark(event.matches);
@@ -66,28 +109,30 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
 
     const current = String(api.getAppState().viewBackgroundColor || "").trim().toLowerCase();
 
-    // Older releases could persist Excalidraw's default gray as a custom color.
-    // Also re-check when a saved scene hydrates: Excalidraw may apply initialData
-    // after the API first becomes available.
-    // Treat the standard white canvas as a theme default too. Older versions
-    // commonly persisted #ffffff as "custom", which prevented dark mode from
-    // updating the actual Excalidraw canvas background.
+    // Migrate legacy background defaults only when they weren't just explicitly
+    // selected with the custom color picker in this session.
     const legacyDefaultBackgrounds = new Set([LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0"]);
-    const isLegacyDefault = canvasBackgroundMode === "custom" && legacyDefaultBackgrounds.has(current);
+    const isLegacyDefault = canvasBackgroundMode === "custom"
+      && legacyDefaultBackgrounds.has(current)
+      && explicitCustomBackgroundRef.current !== current;
     if (isLegacyDefault) {
       setCanvasBackgroundMode("theme");
       try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
     }
 
-    if (canvasBackgroundMode !== "theme" && !isLegacyDefault) return;
+    if (canvasBackgroundMode === "custom" && !isLegacyDefault) return;
+    if (!isLegacyDefault && !["theme", "light", "dark"].includes(canvasBackgroundMode)) return;
 
-    const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
+    const nextBackground = canvasBackgroundMode === "light"
+      ? LIGHT_CANVAS_BACKGROUND
+      : canvasBackgroundMode === "dark"
+        ? DARK_CANVAS_BACKGROUND
+        : isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
     if (current === nextBackground) return;
 
-    // Update Excalidraw's real scene state (not a CSS layer), without adding a
-    // user-visible undo entry or touching elements/viewport state.
+    // Update Excalidraw's real scene background without creating an undo entry.
     api.updateScene({ appState: { viewBackgroundColor: nextBackground }, captureUpdate: CaptureUpdateAction.NEVER });
-  }, [apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady]);
+  }, [apiRef, apiReady, canvasBackgroundMode, canvasBackgroundModeKey, isDarkTheme, savedSketch, sketchReady]);
 
   const fitDiagram = useCallback(() => {
     const api = apiRef.current; if (!api) return;
@@ -139,5 +184,5 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     return () => document.removeEventListener("click", handleResetCanvas, true);
   }, [apiRef, fileActionsRef, saveTimerRef, setStorageError]);
 
-  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, canvasBackgroundMode, markCanvasBackgroundCustom, useThemeDefaultBackground };
+  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, canvasBackgroundMode, canvasBackgroundPattern, setCanvasBackgroundPattern, applyCanvasBackgroundColor, setCanvasBackgroundModePreference, markCanvasBackgroundCustom, useThemeDefaultBackground };
 }

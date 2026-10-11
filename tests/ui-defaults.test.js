@@ -29,9 +29,9 @@ test("the hamburger menu constrains and owns its vertical scroll region", async 
   assert.match(menuRule[1], /overscroll-behavior-y:\s*contain/);
   const menuHook = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   assert.match(menuHook, /getBoundingClientRect\(\)\.top/);
-  assert.match(menuHook, /window\.innerHeight - top - bottomGap/);
+  assert.match(menuHook, /window\.innerHeight - top - 12/);
   assert.match(menuHook, /setProperty\("max-height", `\$\{availableHeight\}px`, "important"\)/);
-  assert.match(menuHook, /visualViewport\?\.addEventListener\("resize", scheduleCleanup\)/);
+  assert.match(menuHook, /visualViewport\?\.addEventListener\("resize", schedule\)/);
   assert.doesNotMatch(css, /\.excalidraw \.dropdown-menu-container/,
     "scroll handling must not depend on the menu being nested under .excalidraw");
 });
@@ -41,24 +41,28 @@ test("canvas background mode is explicit and preserves legacy saved-scene colors
   const { resolveCanvasBackgroundMode } = await import("../src/features/navigation/canvasBackgroundMode.js");
   assert.equal(resolveCanvasBackgroundMode("theme", true), "theme");
   assert.equal(resolveCanvasBackgroundMode("custom", false), "custom");
+  assert.equal(resolveCanvasBackgroundMode("light", true), "light");
+  assert.equal(resolveCanvasBackgroundMode("dark", true), "dark");
   assert.equal(resolveCanvasBackgroundMode(null, true), "custom");
   assert.equal(resolveCanvasBackgroundMode(null, false), "theme");
 });
 
 test("canvas theme synchronization migrates legacy default-gray scenes but preserves chosen custom colors", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
-  assert.match(source, /canvasBackgroundMode !== "theme"/);
+  assert.match(source, /canvasBackgroundMode === "custom" && !isLegacyDefault/);
   assert.match(source, /legacyDefaultBackgrounds = new Set\(\[LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
   assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
   assert.match(source, /viewBackgroundColor: nextBackground/);
-  assert.match(source, /\[apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady\]/);
-  assert.match(source, /if \(canvasBackgroundMode !== "theme" && !isLegacyDefault\) return/);
+  assert.match(source, /\[apiRef, apiReady, canvasBackgroundMode, canvasBackgroundModeKey, isDarkTheme, savedSketch, sketchReady\]/);
+  assert.match(source, /canvasBackgroundMode === "light"/);
+  assert.match(source, /canvasBackgroundMode === "dark"/);
 });
 
 test("native Canvas background palette has an explicit automatic-mode action", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.match(source, /data-sketchizi-theme-background-default/);
+  assert.match(source, /data-bg-mode="theme"/);
   assert.match(source, /Use theme default/);
+  assert.match(source, /applyCanvasBackgroundColor/);
   assert.match(source, /markCanvasBackgroundCustom\(\)/);
 });
 
@@ -66,16 +70,18 @@ test("native Canvas background palette has an explicit automatic-mode action", a
 test("Use theme default immediately applies the effective theme background to the canvas", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /const useThemeDefaultBackground = useCallback\(\(\) =>/);
-  assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
-  assert.match(source, /const nextBackground = isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
+  assert.match(source, /setCanvasBackgroundModePreference\("theme"\)/);
+  assert.match(source, /setCanvasBackgroundModePreference\("theme"\)/);
   assert.match(source, /appState: \{ viewBackgroundColor: nextBackground \}/);
 });
 
 
 test("hamburger menu keeps file management at the top without duplicate header controls", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.match(source, /customBlock\.append\(recentSection\)/);
   assert.match(source, /menuParent\.insertBefore\(customBlock, menuParent\.firstChild\)/);
+  assert.match(source, /data-recent-files-disclosure/);
+  assert.match(source, /data-recent-folders-disclosure/);
+  assert.match(source, /data-sketchizi-open-file/);
   assert.doesNotMatch(source, /data-sketchizi-collaborate/);
   assert.doesNotMatch(source, /data-sketchizi-architecture-validation/);
   assert.doesNotMatch(source, /data-diagramly-theme-menu/);
@@ -93,5 +99,6 @@ test("theme default canvas explicitly uses white in light mode and dark in dark 
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
   assert.match(source, /const DARK_CANVAS_BACKGROUND = "#121212"/);
-  assert.match(source, /isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
+  assert.match(source, /mode === "dark"\s*\? DARK_CANVAS_BACKGROUND/);
+  assert.match(source, /mode === "light"\s*\? LIGHT_CANVAS_BACKGROUND/);
 });
