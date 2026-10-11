@@ -132,6 +132,8 @@ export class SketchiziCollaboration {
     onState,
     onPresence,
     onStatus,
+    onSocketOpen,
+    onJoinSent,
     onError,
     onRole,
     onSessionInfo,
@@ -153,6 +155,8 @@ export class SketchiziCollaboration {
     this.onState = onState;
     this.onPresence = onPresence;
     this.onStatus = onStatus;
+    this.onSocketOpen = onSocketOpen;
+    this.onJoinSent = onJoinSent;
     this.onError = onError;
     this.onRole = onRole;
     this.onSessionInfo = onSessionInfo;
@@ -400,11 +404,14 @@ export class SketchiziCollaboration {
       return;
     }
     this.socket = socket;
+    let socketOpenedAt = null;
 
     socket.onopen = async () => {
+      socketOpenedAt = Date.now();
       const isReconnect = this.reconnectAttempt > 0;
       this.reconnectAttempt = 0;
       logger.info("Collaboration WebSocket handshake completed", { category: "collaboration", roomId: this.roomId, clientId: this.clientId, reconnect: isReconnect });
+      this.onSocketOpen?.({ reconnect: isReconnect, openedAt: socketOpenedAt });
       if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.open", {
         roomRef: syncDiagnosticRef(this.roomId),
         clientRef: syncDiagnosticRef(this.clientId),
@@ -422,13 +429,25 @@ export class SketchiziCollaboration {
         }
       }
       if (this.closed || this.socket !== socket || socket.readyState !== WebSocket.OPEN) return;
+      const snapshotStartedAt = Date.now();
+      const snapshot = this.snapshot();
+      const snapshotPreparedAt = Date.now();
+      logger.info("Collaboration initial snapshot prepared", {
+        category: "collaboration",
+        roomId: this.roomId,
+        clientId: this.clientId,
+        elementCount: snapshot.elements.length,
+        fileCount: Object.keys(snapshot.files).length,
+        snapshotPreparationMs: snapshotPreparedAt - snapshotStartedAt,
+        elapsedSinceSocketOpenMs: socketOpenedAt === null ? null : snapshotPreparedAt - socketOpenedAt,
+      });
       const joinMessage = {
         type: "join",
         roomId: this.roomId,
         clientId: this.clientId,
         sessionName: this.sessionName,
         hostAuthorizationToken: this.hostAuthorizationToken,
-        snapshot: this.snapshot(),
+        snapshot,
         presence: { displayName: this.displayName, color: this.color },
       };
       logger.info("Collaboration join message sending", {
@@ -437,8 +456,22 @@ export class SketchiziCollaboration {
         clientId: this.clientId,
         hostCredentialPresent: Boolean(this.hostAuthorizationToken),
         sessionNamePresent: Boolean(this.sessionName.trim()),
+        elementCount: snapshot.elements.length,
+        fileCount: Object.keys(snapshot.files).length,
       });
-      this.send(joinMessage);
+      const joinSendStartedAt = Date.now();
+      const joinSent = this.send(joinMessage);
+      logger.info("Collaboration join message send completed", {
+        category: "collaboration",
+        roomId: this.roomId,
+        clientId: this.clientId,
+        acceptedByBrowserSocket: joinSent,
+        sendCallDurationMs: Date.now() - joinSendStartedAt,
+        elapsedSinceSocketOpenMs: socketOpenedAt === null ? null : Date.now() - socketOpenedAt,
+        elementCount: snapshot.elements.length,
+        fileCount: Object.keys(snapshot.files).length,
+      });
+      if (joinSent) this.onJoinSent?.({ sentAt: Date.now(), elapsedSinceSocketOpenMs: socketOpenedAt === null ? null : Date.now() - socketOpenedAt });
     };
 
     socket.onmessage = (event) => {
@@ -560,7 +593,17 @@ export class SketchiziCollaboration {
     }
     const diagnosticsEnabled = syncDiagnosticsEnabled();
     const serializeStartedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
+    const wallClockSerializeStartedAt = Date.now();
     const payload = JSON.stringify(message);
+    if (message?.type === "join") {
+      logger.info("Collaboration join payload serialized", {
+        category: "collaboration",
+        roomId: this.roomId,
+        clientId: this.clientId,
+        payloadCharacters: payload.length,
+        serializationDurationMs: Date.now() - wallClockSerializeStartedAt,
+      });
+    }
     if (diagnosticsEnabled) recordSyncDiagnostic("client.serialization.completed", {
       roomRef: syncDiagnosticRef(this.roomId),
       clientRef: syncDiagnosticRef(this.clientId),

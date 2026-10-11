@@ -7,9 +7,11 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 test("collaboration connection failures preserve an actionable reason", async () => {
   const hook = await read("../src/features/collaboration/useCollaboration.js");
   assert.match(hook, /failCollaborationCreation\(message \|\| "The collaboration connection failed/);
-  assert.match(hook, /did not complete its handshake within 15 seconds/);
+  assert.match(hook, /WebSocket handshake did not complete within 15 seconds/);
   assert.match(hook, /server's \/health endpoint responds/);
-  assert.match(hook, /connectCollaboration\(roomId, name, authenticatedName, token\);[\s\S]*?if \(!collaborationCreationAttemptRef\.current\) return;[\s\S]*?setTimeout/);
+  assert.match(hook, /onJoinSent:\s*\(\)\s*=>/);
+  assert.match(hook, /did not acknowledge the join request within 60 seconds after it was sent/);
+  assert.match(hook, /onJoinSent[\s\S]*?clearCollaborationCreationTimeout\(\)[\s\S]*?setTimeout[\s\S]*?60000/);
   assert.match(hook, /setCollaborationError\(message \|\| "Collaboration failed/);
 });
 
@@ -69,4 +71,18 @@ test("logger preserves safe auth configuration metadata while redacting credenti
   assert.match(logger, /safeMetadataKeySuffix/);
   assert.match(logger, /return redactKey\.test\(key\) && !safeMetadataKeySuffix\.test\(key\)/);
   assert.match(logger, /isSensitiveKey\(key\) \? "\[redacted\]"/);
+});
+
+
+test("initial join acknowledgement timeout starts after the payload is queued", async () => {
+  const client = await read("../src/collaboration.js");
+  const openHandler = client.indexOf("socket.onopen = async () => {");
+  const sendJoin = client.indexOf("const joinSent = this.send(joinMessage);", openHandler);
+  const callback = client.indexOf("if (joinSent) this.onJoinSent?.(", sendJoin);
+  assert.ok(openHandler >= 0, "WebSocket open handler must exist");
+  assert.ok(sendJoin > openHandler, "join payload should be sent after socket opens");
+  assert.ok(callback > sendJoin, "the acknowledgement deadline must be armed after the join payload is queued");
+  assert.match(client, /Collaboration initial snapshot prepared/);
+  assert.match(client, /Collaboration join payload serialized/);
+  assert.match(client, /Collaboration join message send completed/);
 });

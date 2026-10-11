@@ -95,6 +95,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const [chatMessages, setChatMessages] = useState([]);
   const [chatError, setChatError] = useState("");
   const collaborationCreationAttemptRef = useRef(false);
+  const collaborationSocketOpenedRef = useRef(false);
   const hostAuthCheckRef = useRef(false);
   const collaborationCreationTimeoutRef = useRef(null);
 
@@ -252,6 +253,21 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
         setCollaborationParticipants(next);
         setCollaborationUsers(next.filter((participant) => participant.status === "connected").length);
       },
+      onSocketOpen: () => {
+        collaborationSocketOpenedRef.current = true;
+      },
+      onJoinSent: () => {
+        if (!collaborationCreationAttemptRef.current) return;
+        // The initial snapshot can be large, and WebSocket.send() only queues
+        // it locally. Start the server-acknowledgement timeout after the join
+        // payload has actually been serialized and handed to the browser socket,
+        // rather than consuming the entire budget while preparing/uploading it.
+        clearCollaborationCreationTimeout();
+        collaborationCreationTimeoutRef.current = setTimeout(() => {
+          if (!collaborationCreationAttemptRef.current) return;
+          failCollaborationCreation("The collaboration server did not acknowledge the join request within 60 seconds after it was sent. Check the Render logs for the join request, room creation, and participant-joined events.");
+        }, 60000);
+      },
       onStatus: (nextStatus) => {
         setCollaborationStatus(nextStatus);
         if (!collaborationCreationAttemptRef.current) return;
@@ -400,6 +416,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     const name = collaborationDraftName.trim();
     if (!name) return;
     collaborationCreationAttemptRef.current = true;
+    collaborationSocketOpenedRef.current = false;
     setCollaborationCreationState("creating");
     setCollaborationError("");
     try {
@@ -415,7 +432,10 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       if (!collaborationCreationAttemptRef.current) return;
       collaborationCreationTimeoutRef.current = setTimeout(() => {
         if (!collaborationCreationAttemptRef.current) return;
-        failCollaborationCreation("The collaboration WebSocket did not complete its handshake within 15 seconds. Verify that VITE_COLLAB_WS_URL points to the running collaboration server, ends in /collaboration, and that the server's /health endpoint responds.");
+        const message = collaborationSocketOpenedRef.current
+          ? "The WebSocket connected, but Sketchizi did not send its initial join request within 15 seconds. Check the browser console for the initial snapshot preparation and serialization timings."
+          : "The collaboration WebSocket handshake did not complete within 15 seconds. Verify that VITE_COLLAB_WS_URL points to the running collaboration server, ends in /collaboration, and that the server's /health endpoint responds.";
+        failCollaborationCreation(message);
       }, 15000);
     } catch (error) {
       collaborationCreationAttemptRef.current = false;
