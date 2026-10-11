@@ -21,3 +21,32 @@ test("header displays the collaboration failure reason and keeps retry", async (
   assert.match(header, /onClick=\{createCollaboration\}>Try again/);
   assert.match(app, /collaborationCreationError=\{collaborationError\}/);
 });
+
+
+test("server rejection messages are handled even when the server omits roomId", async () => {
+  const client = await read("../src/collaboration.js");
+  const errorBranch = client.indexOf('if (message.type === "error")');
+  const roomGuard = client.indexOf('if (message.roomId !== this.roomId) return;', errorBranch);
+  assert.ok(errorBranch >= 0, "the client must inspect server errors before applying the room guard");
+  assert.ok(roomGuard > errorBranch, "room-scoped messages should be filtered after server rejection handling");
+  const branch = client.slice(errorBranch, roomGuard);
+  assert.match(branch, /this\.fail\(reason\)/);
+  assert.match(branch, /message\.code/);
+});
+
+test("collaboration service logs handshake, join, token rejection and close diagnostics without token values", async () => {
+  const server = await read("../server/collaboration-server.mjs");
+  const auth = await read("../server/hostAuthorization.mjs");
+  for (const event of [
+    "Collaboration WebSocket upgrade requested",
+    "Collaboration WebSocket connection accepted",
+    "Collaboration join request received",
+    "Collaboration host authorization rejected",
+    "Collaboration WebSocket handshake rejected",
+    "Collaboration WebSocket closed",
+    "Sketchizi collaboration server listening",
+  ]) assert.ok(server.includes(event), `missing structured log event: ${event}`);
+  assert.match(server, /hostAuthorizationSecretLengthValid/);
+  assert.match(auth, /credential-signature-invalid/);
+  assert.match(auth, /claim-room-mismatch/);
+});

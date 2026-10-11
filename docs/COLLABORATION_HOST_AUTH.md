@@ -35,3 +35,19 @@ This exact response is emitted by the Spring Boot endpoint `POST /api/auth/colla
 7. If the endpoint starts returning a token but room creation fails, inspect Node.js service logs and confirm the Node service has the same secret, the room ID is unchanged between token request and WebSocket create/join message, and the deployed Node process has restarted.
 
 The frontend/gateway path for this request is `/api/auth/collaboration-host-token`; the Pages Function maps other auth paths through to the configured `AUTH_SERVICE_ORIGIN`. Do not change the endpoint URL or bypass the same-origin gateway to work around this failure.
+
+
+## Troubleshooting with collaboration-service logs
+
+The Node collaboration service writes structured JSON logs to stdout. In Render, open the **collaboration service** logs (not only the Spring Boot auth service) and reproduce one failed create attempt. Match entries using `upgradeId`/`connectionId` and the hashed `roomRef`.
+
+Look for these milestones in order:
+
+1. `Collaboration WebSocket upgrade requested` — shows whether the browser reached this service and which path/origin host it requested.
+2. `Collaboration WebSocket connection accepted` — confirms the WebSocket handshake reached the Node service.
+3. `Collaboration join request received` — confirms the browser sent the initial `join` message and whether a host credential was present.
+4. `Collaboration host authorization rejected` — includes a safe `reason` code, such as `server-secret-missing-or-too-short`, `host-credential-missing`, `credential-signature-invalid`, `claim-room-mismatch`, or `credential-expired-or-expiry-invalid`. Secret or token contents are never logged.
+5. `Collaboration room created` / `Collaboration participant joined` — confirms successful room creation and join acknowledgement.
+6. `Collaboration WebSocket closed` — reports the close code, reason, connection lifetime, and whether the client had joined.
+
+The startup entry reports whether `COLLAB_HOST_TOKEN_SECRET` is configured and at least 32 bytes long, but never includes its value. The value must match exactly between the Spring Boot auth service and the Node collaboration service. If the browser shows a failure but there is no `Collaboration WebSocket upgrade requested` entry at the same time, inspect the Pages `VITE_COLLAB_WS_URL`, DNS, Render service health, and WebSocket route before investigating host authorization.

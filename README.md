@@ -311,3 +311,8 @@ The application shell uses containing `100%` dimensions with document-level over
 ## Google Sign-In foundation (Phase 1)
 
 The optional Google Sign-In foundation and Spring Boot authentication service are documented in [`docs/GOOGLE_AUTH_SETUP.md`](docs/GOOGLE_AUTH_SETUP.md). Authentication is optional; diagramming and collaboration remain available without signing in. The current implementation does not include AI Ask, Spring AI, Gemini, or AI usage limits. See [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) for the verification status and remaining manual integration checks.
+
+
+### Collaboration creation troubleshooting
+
+The Node collaboration service emits structured JSON logs for WebSocket upgrade requests, accepted connections, `join` messages, host authorization rejection reasons, room creation, join acknowledgement, and close codes/reasons. Search the Render collaboration-service logs for `Collaboration host authorization rejected` to distinguish missing configuration from a signature or room-claim mismatch. Never paste `COLLAB_HOST_TOKEN_SECRET` or any host token into logs or support messages. The same `COLLAB_HOST_TOKEN_SECRET` (at least 32 UTF-8 bytes) must be configured independently in both the Spring Boot auth service and Node collaboration service.

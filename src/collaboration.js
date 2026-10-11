@@ -403,7 +403,7 @@ export class SketchiziCollaboration {
     socket.onopen = async () => {
       const isReconnect = this.reconnectAttempt > 0;
       this.reconnectAttempt = 0;
-      logger.debug("Collaboration socket connected", { category: "collaboration", roomId: this.roomId });
+      logger.info("Collaboration WebSocket handshake completed", { category: "collaboration", roomId: this.roomId, clientId: this.clientId, reconnect: isReconnect });
       if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.open", {
         roomRef: syncDiagnosticRef(this.roomId),
         clientRef: syncDiagnosticRef(this.clientId),
@@ -421,7 +421,7 @@ export class SketchiziCollaboration {
         }
       }
       if (this.closed || this.socket !== socket || socket.readyState !== WebSocket.OPEN) return;
-      this.send({
+      const joinMessage = {
         type: "join",
         roomId: this.roomId,
         clientId: this.clientId,
@@ -429,7 +429,15 @@ export class SketchiziCollaboration {
         hostAuthorizationToken: this.hostAuthorizationToken,
         snapshot: this.snapshot(),
         presence: { displayName: this.displayName, color: this.color },
+      };
+      logger.info("Collaboration join message sending", {
+        category: "collaboration",
+        roomId: this.roomId,
+        clientId: this.clientId,
+        hostCredentialPresent: Boolean(this.hostAuthorizationToken),
+        sessionNamePresent: Boolean(this.sessionName.trim()),
       });
+      this.send(joinMessage);
     };
 
     socket.onmessage = (event) => {
@@ -496,7 +504,16 @@ export class SketchiziCollaboration {
         pendingElementCount: this.pendingElements.size,
         pendingFileCount: this.pendingFiles.size,
       });
-      logger.info("Collaboration socket closed", { category: "collaboration", roomId: this.roomId, intentional: this.closed });
+      logger.info("Collaboration WebSocket closed", {
+        category: "collaboration",
+        roomId: this.roomId,
+        clientId: this.clientId,
+        intentional: this.closed,
+        closeCode: event?.code ?? null,
+        closeReason: String(event?.reason || "").slice(0, 160),
+        wasJoined: this.joined,
+        wasClean: Boolean(event?.wasClean),
+      });
       this.joined = false;
       this.socket = null;
       if (!this.closed) {
@@ -982,7 +999,28 @@ export class SketchiziCollaboration {
   }
 
   handleMessage(message) {
-    if (!message || message.roomId !== this.roomId) return;
+    if (!message || typeof message !== "object") return;
+
+    // Join rejection messages are intentionally allowed to omit roomId (for
+    // example, when the server cannot validate the requested room). Process
+    // errors before the room-scoped-message guard so clients see the server's
+    // concrete rejection instead of falling through to the creation timeout.
+    if (message.type === "error") {
+      if (message.roomId && message.roomId !== this.roomId) return;
+      const reason = typeof message.message === "string" && message.message.trim()
+        ? message.message.trim().slice(0, 300)
+        : "The collaboration server rejected the request.";
+      logger.error("Collaboration server rejected request", reason, {
+        category: "collaboration",
+        roomId: this.roomId,
+        clientId: this.clientId,
+        errorCode: typeof message.code === "string" ? message.code : "SERVER_REJECTED",
+        phase: typeof message.phase === "string" ? message.phase : "unknown",
+      });
+      this.fail(reason);
+      return;
+    }
+    if (message.roomId !== this.roomId) return;
 
     switch (message.type) {
       case "joined": {
@@ -1003,7 +1041,7 @@ export class SketchiziCollaboration {
         this.role = message.role === "host" ? "host" : "joinee";
         this.permission = message.permission === "host" ? "host" : message.permission === "editor" ? "editor" : "viewer";
         this.requestState = ["none", "pending", "approved", "denied"].includes(message.requestState) ? message.requestState : "none";
-        logger.info("Collaboration joined", { category: "collaboration", roomId: this.roomId, clientId: this.clientId, role: this.role, permission: this.permission });
+        logger.info("Collaboration join acknowledged by server", { category: "collaboration", roomId: this.roomId, clientId: this.clientId, role: this.role, permission: this.permission });
         this.onRole?.(this.role);
         this.onPermission?.({ permission: this.permission, requestState: this.requestState });
         this.onSessionInfo?.({

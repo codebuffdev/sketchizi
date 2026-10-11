@@ -1,5 +1,6 @@
 import { serverLogger } from "./logger.mjs";
-import { verifyHostAuthorization } from "./hostAuthorization.mjs";
+import { inspectHostAuthorization } from "./hostAuthorization.mjs";
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { mergeSnapshot } from "./collaborationSyncCore.mjs";
@@ -179,13 +180,47 @@ function removeClient(room, client, { intentional = false } = {}) {
 }
 
 const httpServer = createServer((req, res) => {
-  if (req.url === "/health") {
+  const requestPath = (() => {
+    try { return new URL(req.url || "/", "http://localhost").pathname; } catch { return "unknown"; }
+  })();
+  if (requestPath === "/health") {
+    serverLogger.debug("Collaboration health check", { rooms: rooms.size });
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true, rooms: rooms.size }));
     return;
   }
+  serverLogger.debug("Collaboration HTTP route not found", { method: req.method, path: requestPath });
   res.writeHead(404);
   res.end("Not found");
+});
+
+// Attach this before WebSocketServer registers its own upgrade handler so each
+// request gets a correlation id even when the handshake is rejected.
+httpServer.on("upgrade", (request) => {
+  const upgradeId = randomUUID();
+  request.__sketchiziUpgradeId = upgradeId;
+  let requestPath = "unknown";
+  let originHost = "none";
+  try { requestPath = new URL(request.url || "/", "http://localhost").pathname; } catch {}
+  try { originHost = request.headers.origin ? new URL(request.headers.origin).host : "none"; } catch { originHost = "invalid-origin"; }
+  serverLogger.info("Collaboration WebSocket upgrade requested", {
+    upgradeId,
+    path: requestPath,
+    originHost,
+    hostHeaderPresent: Boolean(request.headers.host),
+    websocketKeyPresent: Boolean(request.headers["sec-websocket-key"]),
+  });
+});
+
+httpServer.on("clientError", (error, socket) => {
+  serverLogger.warn("Collaboration HTTP client error", {
+    errorCode: error?.code || "unknown",
+    errorMessage: String(error?.message || "HTTP client error").slice(0, 180),
+    socketWritable: Boolean(socket?.writable),
+  });
+});
+httpServer.on("error", (error) => {
+  serverLogger.error("Collaboration HTTP server error", error, { port: PORT });
 });
 
 const wss = new WebSocketServer({
@@ -194,19 +229,32 @@ const wss = new WebSocketServer({
   path: "/collaboration",
 });
 
-wss.on("connection", (socket) => {
+wss.on("connection", (socket, request) => {
   let room = null;
   let clientId = null;
-  if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.websocket.connected", { readyState: socket.readyState });
+  const connectionId = request?.__sketchiziUpgradeId || randomUUID();
+  const connectedAt = Date.now();
+  socket.__sketchiziConnectionId = connectionId;
+  let requestPath = "unknown";
+  let originHost = "none";
+  try { requestPath = new URL(request?.url || "/", "http://localhost").pathname; } catch {}
+  try { originHost = request?.headers?.origin ? new URL(request.headers.origin).host : "none"; } catch { originHost = "invalid-origin"; }
+  serverLogger.info("Collaboration WebSocket connection accepted", {
+    connectionId,
+    path: requestPath,
+    originHost,
+    readyState: socket.readyState,
+  });
+  if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.websocket.connected", { readyState: socket.readyState, connectionId });
 
-  socket.on("message", (raw) => {
+  socket.on("message", (raw, isBinary) => {
     const diagnosticsEnabled = syncDiagnosticsEnabled();
     const receivedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     if (diagnosticsEnabled) recordSyncDiagnostic("server.message.received", {
       roomRef: room?.id ? syncDiagnosticRef(room.id) : "unjoined",
       clientRef: clientId ? syncDiagnosticRef(clientId) : "unjoined",
       payloadBytes: raw.length,
-      isBinary: typeof raw === "string" ? false : undefined,
+      isBinary: Boolean(isBinary),
     });
     if (raw.length > MAX_MESSAGE_BYTES) {
       if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.message.rejected", {
@@ -231,12 +279,18 @@ wss.on("connection", (socket) => {
         payloadBytes: raw.length,
         parseDurationMs: Math.max(0, syncDiagnosticNow() - parseStartedAt),
       });
-      send(socket, { type: "error", message: "Malformed collaboration message." });
+      serverLogger.warn("Collaboration message rejected", { connectionId, phase: room ? "session" : "join", reason: "malformed-json", payloadBytes: raw.length });
+      send(socket, { type: "error", ...(room?.id ? { roomId: room.id } : {}), code: "MALFORMED_JSON", phase: room ? "session" : "join", message: "Malformed collaboration message." });
+      return;
+    }
+    if (!message || typeof message !== "object" || Array.isArray(message)) {
+      serverLogger.warn("Collaboration message rejected", { connectionId, phase: room ? "session" : "join", reason: "message-shape-invalid", payloadBytes: raw.length });
+      send(socket, { type: "error", ...(room?.id ? { roomId: room.id } : {}), code: "MESSAGE_SHAPE_INVALID", phase: room ? "session" : "join", message: "Malformed collaboration message." });
       return;
     }
     if (diagnosticsEnabled) recordSyncDiagnostic("server.message.parsed", {
-      roomRef: message?.roomId ? syncDiagnosticRef(message.roomId) : "unjoined",
-      clientRef: message?.clientId ? syncDiagnosticRef(message.clientId) : "unjoined",
+      roomRef: message.roomId ? syncDiagnosticRef(message.roomId) : "unjoined",
+      clientRef: message.clientId ? syncDiagnosticRef(message.clientId) : "unjoined",
       ...summarizeSyncMessage(message),
       payloadBytes: raw.length,
       parseDurationMs: Math.max(0, syncDiagnosticNow() - parseStartedAt),
@@ -244,6 +298,17 @@ wss.on("connection", (socket) => {
     });
 
     if (message.type === "join") {
+      serverLogger.info("Collaboration join request received", {
+        connectionId,
+        roomRef: typeof message.roomId === "string" ? syncDiagnosticRef(message.roomId) : "invalid",
+        clientRef: typeof message.clientId === "string" ? syncDiagnosticRef(message.clientId) : "invalid",
+        hostCredentialPresent: typeof message.hostAuthorizationToken === "string" && message.hostAuthorizationToken.length > 0,
+        hostCredentialLength: typeof message.hostAuthorizationToken === "string" ? message.hostAuthorizationToken.length : 0,
+        sessionNamePresent: typeof message.sessionName === "string" && Boolean(message.sessionName.trim()),
+        sessionNameLength: typeof message.sessionName === "string" ? message.sessionName.length : 0,
+        snapshotElementCount: Array.isArray(message.snapshot?.elements) ? message.snapshot.elements.length : 0,
+        snapshotFileCount: message.snapshot?.files && typeof message.snapshot.files === "object" ? Object.keys(message.snapshot.files).length : 0,
+      });
       if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.join.requested", {
         roomRef: typeof message.roomId === "string" ? syncDiagnosticRef(message.roomId) : "invalid",
         clientRef: typeof message.clientId === "string" ? syncDiagnosticRef(message.clientId) : "invalid",
@@ -256,7 +321,13 @@ wss.on("connection", (socket) => {
           clientRef: typeof message.clientId === "string" ? syncDiagnosticRef(message.clientId) : "invalid",
           reason: room ? "socket-already-joined" : typeof message.clientId !== "string" ? "invalid-client-id" : "invalid-room-id",
         });
-        send(socket, { type: "error", message: "Invalid collaboration join." });
+        serverLogger.warn("Collaboration join rejected", {
+          connectionId,
+          roomRef: typeof message.roomId === "string" ? syncDiagnosticRef(message.roomId) : "invalid",
+          clientRef: typeof message.clientId === "string" ? syncDiagnosticRef(message.clientId) : "invalid",
+          reason: room ? "socket-already-joined" : typeof message.clientId !== "string" ? "invalid-client-id" : "invalid-room-id",
+        });
+        send(socket, { type: "error", ...(typeof message.roomId === "string" ? { roomId: message.roomId } : {}), code: "INVALID_JOIN", phase: "join", message: "Invalid collaboration join." });
         return;
       }
 
@@ -267,17 +338,29 @@ wss.on("connection", (socket) => {
           clientRef: syncDiagnosticRef(clientId),
           reason: "room-already-terminated",
         });
+        serverLogger.warn("Collaboration join rejected", { connectionId, roomRef: syncDiagnosticRef(message.roomId), clientRef: syncDiagnosticRef(clientId), reason: "room-already-terminated" });
         send(socket, { type: "session-ended", roomId: message.roomId, message: "This collaboration session is no longer available." });
         socket.close(1000, "Collaboration session ended");
         return;
       }
 
       room = rooms.get(message.roomId);
-      const hostAuthorization = verifyHostAuthorization(message.hostAuthorizationToken, message.roomId);
+      const hostAuthorizationResult = inspectHostAuthorization(message.hostAuthorizationToken, message.roomId);
+      const hostAuthorization = hostAuthorizationResult.authorization;
       let isHost = false;
       if (!room) {
         if (!hostAuthorization) {
-          send(socket, { type: "error", message: "Sign in is required to create a collaboration. Join an existing room or sign in to host." });
+          serverLogger.warn("Collaboration host authorization rejected", {
+            connectionId,
+            roomRef: syncDiagnosticRef(message.roomId),
+            clientRef: syncDiagnosticRef(clientId),
+            reason: hostAuthorizationResult.reason,
+            hostCredentialPresent: typeof message.hostAuthorizationToken === "string" && message.hostAuthorizationToken.length > 0,
+            hostCredentialLength: typeof message.hostAuthorizationToken === "string" ? message.hostAuthorizationToken.length : 0,
+            serverSecretConfigured: typeof process.env.COLLAB_HOST_TOKEN_SECRET === "string" && process.env.COLLAB_HOST_TOKEN_SECRET.length > 0,
+            serverSecretLengthValid: Buffer.byteLength(process.env.COLLAB_HOST_TOKEN_SECRET || "", "utf8") >= 32,
+          });
+          send(socket, { type: "error", roomId: message.roomId, code: "HOST_AUTHORIZATION_REJECTED", phase: "join", message: "Collaboration hosting authorization was rejected. Check the auth service and collaboration server host-token secret configuration, then try again." });
           socket.close(1008, "Host authorization required");
           return;
         }
@@ -289,7 +372,8 @@ wss.on("connection", (socket) => {
             reason: !name ? "missing-session-name" : "session-name-too-long",
             sessionNameLength: name.length,
           });
-          send(socket, { type: "error", message: "A collaboration name is required to create a session." });
+          serverLogger.warn("Collaboration join rejected", { connectionId, roomRef: syncDiagnosticRef(message.roomId), clientRef: syncDiagnosticRef(clientId), reason: !name ? "missing-session-name" : "session-name-too-long", sessionNameLength: name.length });
+          send(socket, { type: "error", roomId: message.roomId, code: "SESSION_NAME_INVALID", phase: "join", message: "A collaboration name is required to create a session." });
           socket.close(1008, "Collaboration name required");
           return;
         }
@@ -297,7 +381,7 @@ wss.on("connection", (socket) => {
         rooms.set(room.id, room);
         isHost = true;
         if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.room.created", { roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId) });
-        serverLogger.info("Collaboration room created", { roomId: room.id });
+        serverLogger.info("Collaboration room created", { connectionId, roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId), hostAuthorizationVerified: true });
       }
 
       const previousSocket = Array.from(room.clients).find((candidate) => candidate.__sketchiziClientId === clientId);
@@ -326,7 +410,8 @@ wss.on("connection", (socket) => {
           clientRef: syncDiagnosticRef(clientId),
           reason: error?.message || "invalid-initial-state",
         });
-        send(socket, { type: "error", message: error.message });
+        serverLogger.warn("Collaboration initial snapshot rejected", { connectionId, roomRef: syncDiagnosticRef(message.roomId), clientRef: syncDiagnosticRef(clientId), errorName: error?.name || "Error", errorMessage: String(error?.message || "Invalid initial state").slice(0, 180) });
+        send(socket, { type: "error", roomId: message.roomId, code: "INITIAL_SNAPSHOT_REJECTED", phase: "join", message: error.message });
         socket.close(1008, "Invalid initial state");
         return;
       }
@@ -368,7 +453,7 @@ wss.on("connection", (socket) => {
         authorizedChatHistoryCount: chatHistory.length,
         durationMs: Math.max(0, syncDiagnosticNow() - receivedAt),
       });
-      serverLogger.info("Collaboration participant joined", { roomId: room.id, clientId, permission });
+      serverLogger.info("Collaboration participant joined", { connectionId, roomRef: syncDiagnosticRef(room.id), clientRef: syncDiagnosticRef(clientId), role: socket === room.host ? "host" : "joinee", permission, participantCount: room.clients.size, snapshotElementCount: snapshot.elements.length, snapshotFileCount: Object.keys(snapshot.files).length });
       broadcast(room, socket, { type: "presence", roomId: room.id, count: room.clients.size, participants: Array.from(room.presence.values()) });
       return;
     }
@@ -380,7 +465,8 @@ wss.on("connection", (socket) => {
         messageType: message?.type || "unknown",
         reason: "not-joined-to-room-or-identity-mismatch",
       });
-      send(socket, { type: "error", message: "Not joined to a valid room." });
+      serverLogger.warn("Collaboration message rejected", { connectionId, roomRef: room?.id ? syncDiagnosticRef(room.id) : "unjoined", clientRef: clientId ? syncDiagnosticRef(clientId) : "unjoined", messageType: message?.type || "unknown", reason: "not-joined-to-room-or-identity-mismatch" });
+      send(socket, { type: "error", ...(typeof message?.roomId === "string" ? { roomId: message.roomId } : {}), code: "NOT_JOINED", phase: "message", message: "Not joined to a valid room." });
       return;
     }
 
@@ -588,13 +674,25 @@ wss.on("connection", (socket) => {
   });
 
   socket.on("close", (code, reason) => {
+    const closeReason = Buffer.isBuffer(reason) ? reason.toString("utf8").slice(0, 160) : String(reason || "").slice(0, 160);
+    serverLogger.info("Collaboration WebSocket closed", {
+      connectionId,
+      roomRef: room?.id ? syncDiagnosticRef(room.id) : "unjoined",
+      clientRef: socket.__sketchiziClientId ? syncDiagnosticRef(socket.__sketchiziClientId) : "unjoined",
+      wasJoined: Boolean(room),
+      closeCode: code,
+      closeReason,
+      lifetimeMs: Math.max(0, Date.now() - connectedAt),
+      roomClientCount: room?.clients.size ?? 0,
+    });
     if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.websocket.closed", {
       roomRef: room?.id ? syncDiagnosticRef(room.id) : "unjoined",
       clientRef: socket.__sketchiziClientId ? syncDiagnosticRef(socket.__sketchiziClientId) : "unjoined",
       closeCode: code,
+      closeReason,
+      connectionId,
       roomClientCount: room?.clients.size ?? 0,
     });
-    serverLogger.debug("Collaboration socket closed", { roomId: room?.id, clientId: socket.__sketchiziClientId });
     if (room && !socket.__sketchiziReplaced) removeClient(room, socket);
   });
   socket.on("error", (error) => {
@@ -603,11 +701,39 @@ wss.on("connection", (socket) => {
       clientRef: socket.__sketchiziClientId ? syncDiagnosticRef(socket.__sketchiziClientId) : "unjoined",
       errorName: error?.name || "WebSocketError",
     });
-    serverLogger.warn("Collaboration socket error", { roomId: room?.id, clientId: socket.__sketchiziClientId, error: error?.message });
+    serverLogger.warn("Collaboration WebSocket socket error", { connectionId, roomRef: room?.id ? syncDiagnosticRef(room.id) : "unjoined", clientRef: socket.__sketchiziClientId ? syncDiagnosticRef(socket.__sketchiziClientId) : "unjoined", errorName: error?.name || "WebSocketError", errorCode: error?.code || "unknown", errorMessage: String(error?.message || "WebSocket error").slice(0, 180) });
     if (room && !socket.__sketchiziReplaced) removeClient(room, socket);
   });
 });
 
+wss.on("wsClientError", (error, socket, request) => {
+  let requestPath = "unknown";
+  let originHost = "none";
+  try { requestPath = new URL(request?.url || "/", "http://localhost").pathname; } catch {}
+  try { originHost = request?.headers?.origin ? new URL(request.headers.origin).host : "none"; } catch { originHost = "invalid-origin"; }
+  serverLogger.warn("Collaboration WebSocket handshake rejected", {
+    upgradeId: request?.__sketchiziUpgradeId || "unknown",
+    path: requestPath,
+    originHost,
+    errorName: error?.name || "Error",
+    errorCode: error?.code || "unknown",
+    errorMessage: String(error?.message || "WebSocket handshake rejected").slice(0, 180),
+  });
+  if (socket?.writable) socket.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+});
+
+wss.on("error", (error) => {
+  serverLogger.error("Collaboration WebSocket server error", error, { port: PORT });
+});
+
 httpServer.listen(PORT, () => {
-  serverLogger.info("Sketchizi collaboration server listening", { port: PORT });
+  const secret = process.env.COLLAB_HOST_TOKEN_SECRET || "";
+  serverLogger.info("Sketchizi collaboration server listening", {
+    port: PORT,
+    websocketPath: "/collaboration",
+    hostAuthorizationSecretConfigured: secret.length > 0,
+    hostAuthorizationSecretLengthValid: Buffer.byteLength(secret, "utf8") >= 32,
+    syncDiagnosticsEnabled: syncDiagnosticsEnabled(),
+    logLevel: String(process.env.SKETCHIZI_LOG_LEVEL || "info").toLowerCase(),
+  });
 });

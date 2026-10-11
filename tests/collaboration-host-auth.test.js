@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { verifyHostAuthorization } from "../server/hostAuthorization.mjs";
+import { inspectHostAuthorization, verifyHostAuthorization } from "../server/hostAuthorization.mjs";
 
 const secret = "test-only-shared-secret-with-at-least-32-bytes";
 const roomId = "room_123456789012345678901234";
@@ -27,7 +27,9 @@ test("rejects missing secret, tampering, wrong room, and expired tokens", () => 
 });
 test("creation boundary requires a verified host authorization before creating a room", async () => {
   const source = await readFile(new URL("../server/collaboration-server.mjs", import.meta.url), "utf8");
-  assert.match(source, /if \(!hostAuthorization\)[\s\S]{0,240}Host authorization required/);
+  assert.ok(source.includes("if (!hostAuthorization)"));
+  assert.ok(source.includes('socket.close(1008, "Host authorization required")'));
+  assert.ok(source.includes("inspectHostAuthorization(message.hostAuthorizationToken, message.roomId)"));
   assert.match(source, /hostSubject: hostAuthorization\.subject/);
   assert.match(source, /displayName: room\.hostName/);
 });
@@ -44,4 +46,24 @@ test("host authorization uses CSRF-protected same-origin API and does not persis
   assert.match(source, /credentials: "same-origin"/);
   assert.match(source, /\[headerName \|\| "X-XSRF-TOKEN"\]: token/);
   assert.doesNotMatch(source, /localStorage\.setItem\([^\n]*(?:token|auth)/i);
+});
+
+
+test("host authorization inspection returns safe rejection reasons without exposing token contents", () => {
+  const validToken = makeToken();
+  assert.deepEqual(inspectHostAuthorization(validToken, roomId, "short", 1700), {
+    authorization: null,
+    reason: "server-secret-missing-or-too-short",
+  });
+  assert.deepEqual(inspectHostAuthorization("", roomId, secret, 1700), {
+    authorization: null,
+    reason: "host-credential-missing",
+  });
+  assert.deepEqual(inspectHostAuthorization(`${validToken}x`, roomId, secret, 1700), {
+    authorization: null,
+    reason: "credential-signature-invalid",
+  });
+  assert.equal(inspectHostAuthorization(validToken, "different_room_123456789012345678", secret, 1700).reason, "claim-room-mismatch");
+  assert.equal(inspectHostAuthorization(makeToken({ exp: 1600 }), roomId, secret, 1700).reason, "credential-expired-or-expiry-invalid");
+  assert.deepEqual(inspectHostAuthorization(validToken, roomId, secret, 1700).reason, null);
 });

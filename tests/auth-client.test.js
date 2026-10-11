@@ -103,3 +103,12 @@ test("a successful authentication check clears a stale OAuth login error", async
   assert.match(source, /if \(authenticated\) setLoginError\(false\)/);
   assert.match(source, /setLoginError\(false\); startGoogleSignIn/);
 });
+
+
+test("stale OAuth errors are invalidated, cleared on confirmed auth, and hidden for authenticated users", async () => {
+  const source = await readFile(new URL("../src/features/auth/AuthenticationControl.jsx", import.meta.url), "utf8");
+  assert.match(source, /if \(returnedFromLoginFailure\) \{[\s\S]*?invalidateCurrentUserCache\(\);/);
+  assert.match(source, /useEffect\(\(\) => \{\s*if \(auth\.status === "authenticated"\) setLoginError\(false\);\s*\}, \[auth\.status\]\)/);
+  assert.match(source, /loginError && auth\.status !== "authenticated" && <span className="auth-inline-error"/);
+  assert.match(source, /loginError && auth\.status !== "authenticated" && <p className="auth-dialog-notice"/);
+});
