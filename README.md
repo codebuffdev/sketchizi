@@ -302,9 +302,9 @@ Image elements and their `BinaryFileData` are included in the collaboration snap
 
 ## Responsive layout (1.9.0)
 
-Sketchizi uses four responsive layout modes: desktop (`>=1200px`), tablet/compact desktop (`761–1199px`), mobile (`521–760px`), and narrow mobile (`<=520px`). The canvas remains full-viewport; Sketchizi-owned controls are placed into deliberate lanes while Excalidraw keeps ownership of its native toolbar/footer.
+Sketchizi's stylesheet retains responsive layout rules for desktop (`>=1200px`), tablet/compact desktop (`761–1199px`), and narrow viewports. Phone devices are blocked at the application entry point before the drawing workspace, sign-in controls, or collaboration UI are mounted. Tablets and desktop browsers remain supported; a desktop browser is not blocked merely because its window is narrow.
 
-On mobile, Excalidraw's native toolbar occupies the bottom interaction lane, so the collaboration status is moved to a dedicated top status lane rather than competing with the native footer. The minimap toggle/panel likewise reserves the native mobile bottom-toolbar lane. Collaboration actions remain available and stack at narrow widths.
+The phone gate uses phone-specific user-agent signals, mobile UA Client Hints, and physical screen dimensions rather than the current viewport width alone. This allows tablets (including iPadOS desktop-site mode) while blocking recognized smartphone browsers. The dedicated gate explains that Sketchizi requires a tablet or desktop computer.
 
 The application shell uses containing `100%` dimensions with document-level overflow disabled to avoid accidental browser horizontal/vertical scrolling. Panels are viewport-bounded and scroll internally.
 
