@@ -1,8 +1,10 @@
 const AUTH_ME_URL = "/api/auth/me";
 const AUTH_CSRF_URL = "/api/auth/csrf";
 const AUTH_LOGOUT_URL = "/api/auth/logout";
-const AUTH_CHECK_TIMEOUT_MS = 8000;
-const AUTHENTICATED_CACHE_MS = 20_000;
+// Render may need substantially longer than a typical request to wake a sleeping auth service.
+// Keep the app usable while it wakes instead of incorrectly declaring the user signed out.
+const AUTH_CHECK_TIMEOUT_MS = 120_000;
+const AUTHENTICATED_CACHE_MS = 60_000;
 const ANONYMOUS_CACHE_MS = 5000;
 
 let currentUserCache = null;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchCurrentUser, signOut, startGoogleSignIn } from "./authClient.js";
+import { fetchCurrentUser, invalidateCurrentUserCache, signOut, startGoogleSignIn } from "./authClient.js";
 
 export default function AuthenticationControl() {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
@@ -39,6 +39,17 @@ export default function AuthenticationControl() {
     return () => document.removeEventListener("keydown", close);
   }, [dialogOpen]);
 
+  const retryAuthStatus = async () => {
+    invalidateCurrentUserCache();
+    setAuth({ status: "loading", user: null, error: "" });
+    try {
+      const { authenticated, user } = await fetchCurrentUser();
+      setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
+    } catch (error) {
+      setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
+    }
+  };
+
   const handleSignOut = async () => {
     setBusy(true);
     try {
@@ -65,6 +76,7 @@ export default function AuthenticationControl() {
 
       {loginError && <span className="auth-inline-error" role="status">Google sign-in failed. Try again.</span>}
       {auth.error && <span className="auth-inline-error" role="status" title={auth.error}>Auth unavailable</span>}
+      {auth.status === "unavailable" && <button className="auth-header-button" type="button" onClick={retryAuthStatus} title="Retry checking your sign-in session">Retry</button>}
       {dialogOpen && (
         <div className="auth-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialogOpen(false); }}>
           <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title">
