@@ -70,3 +70,13 @@ test("Use theme default immediately applies the effective theme background to th
   assert.match(source, /const nextBackground = isDarkTheme \? "#121212" : "#ffffff"/);
   assert.match(source, /appState: \{ viewBackgroundColor: nextBackground \}/);
 });
+
+
+test("hamburger menu keeps file management at the top without duplicate header controls", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /customBlock\.append\(recentSection\)/);
+  assert.match(source, /menuParent\.insertBefore\(customBlock, menuParent\.firstChild\)/);
+  assert.doesNotMatch(source, /data-sketchizi-collaborate/);
+  assert.doesNotMatch(source, /data-sketchizi-architecture-validation/);
+  assert.doesNotMatch(source, /data-diagramly-theme-menu/);
+});

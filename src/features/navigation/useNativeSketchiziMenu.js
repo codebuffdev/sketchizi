@@ -8,10 +8,6 @@ export function useNativeSketchiziMenu({
   recentFolders,
   refreshCurrentFolderFiles,
   handleFileError,
-  themeMode,
-  setThemeMode,
-  togglePanel,
-  canEdit = true,
   useThemeDefaultBackground = () => {},
   markCanvasBackgroundCustom = () => {},
 }) {
@@ -34,8 +30,7 @@ export function useNativeSketchiziMenu({
       const text = target.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "";
       const inMenu = Boolean(target.closest?.(".dropdown-menu, [class*='dropdown-menu']"));
       let action = null;
-      if (target.matches?.("[data-sketchizi-collaborate]")) action = "startCollaboration";
-      else if (target.matches?.("[data-sketchizi-open-folder]")) action = "openFolderFromDisk";
+      if (target.matches?.("[data-sketchizi-open-folder]")) action = "openFolderFromDisk";
       else if (target.matches?.("[data-sketchizi-close-folder]")) action = "closeCurrentFolder";
       else if (target.matches?.("[data-sketchizi-new-file]")) action = "createNewFile";
       else if (testId === "load-button" || (inMenu && /^open(\s|$)/.test(text) && text.length < 24)) action = "openDrawingFromDisk";
@@ -129,33 +124,26 @@ export function useNativeSketchiziMenu({
         if ((node.tagName === "BUTTON" || node.getAttribute?.("role") === "button") && text === "Install") node.remove();
       });
 
-      if (!document.querySelector("[data-diagramly-theme-menu]")) {
-        const backgroundLabel = [...document.querySelectorAll("body *")].find(
-          (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
-        );
-        if (backgroundLabel) {
-          const host = backgroundLabel.parentElement || backgroundLabel;
-          const menuParent = host.closest?.(".dropdown-menu-container") || host.parentElement || host;
-          const firstNativeMenuChild = menuParent.firstChild;
-          if (!document.querySelector("[data-sketchizi-custom-menu-block]")) {
-            const customBlock = document.createElement("div");
-            customBlock.dataset.sketchiziCustomMenuBlock = "true";
-            const propertiesSection = document.createElement("div");
-            propertiesSection.dataset.sketchiziPropertiesMenu = "true";
-            propertiesSection.className = "sketchizi-native-settings-section sketchizi-properties-section";
-            propertiesSection.innerHTML = `<div class="sketchizi-native-settings-title" data-sketchizi-properties-title>Properties</div><div class="sketchizi-native-settings-actions"><button type="button" class="sketchizi-collab-menu-button" data-sketchizi-collaborate aria-label="Open collaboration"><span class="sketchizi-collab-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 12.5 12 9a3.5 3.5 0 0 1 5 0l.5.5a3.5 3.5 0 0 1 0 5L14 18"/><path d="M15.5 11.5 12 15a3.5 3.5 0 0 1-5 0l-.5-.5a3.5 3.5 0 0 1 0-5L10 6"/></svg></span><span>Collab</span></button><button type="button" class="sketchizi-property-setting" data-sketchizi-architecture-validation aria-label="Open Architecture Validation"><span>Architecture Validation</span></button></div>`;
-            const recentSection = document.createElement("div");
-            recentSection.dataset.sketchiziRecentFilesMenu = "true";
-            recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
-            recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><button type="button" class="sketchizi-folder-action" data-sketchizi-close-folder>Close folder</button><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh folder contents" aria-label="Refresh folder contents">↻</button></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder>Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file>New file</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent files</div><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent folders</div><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button>`;
-            const themeSection = document.createElement("div");
-            themeSection.dataset.diagramlyThemeMenu = "true";
-            themeSection.className = "diagramly-native-theme-section";
-            themeSection.innerHTML = `<div class="diagramly-native-theme-title">Theme</div><div class="diagramly-native-theme-options" role="group" aria-label="Theme selection"><button type="button" data-theme-mode="dark">☾ Dark</button><button type="button" data-theme-mode="light">☀ Light</button><button type="button" data-theme-mode="system">▣ System</button></div>`;
-            customBlock.append(propertiesSection, recentSection, themeSection);
-            menuParent.insertBefore(customBlock, firstNativeMenuChild);
-
-          }
+      // Keep only file/folder management in the hamburger. Collaboration,
+      // architecture validation, and theme selection already live in the app
+      // header, so duplicating them here wastes space and creates ambiguity.
+      if (!document.querySelector("[data-sketchizi-custom-menu-block]")) {
+        const menuAnchor = [...document.querySelectorAll(".dropdown-menu-container")]
+          .find((node) => [...node.querySelectorAll("*")].some(
+            (child) => child.children.length === 0 && child.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
+          ));
+        const menuParent = menuAnchor || [...document.querySelectorAll(".dropdown-menu-container")]
+          .find((node) => node.querySelector('[data-testid="load-button"], [data-testid="json-export-button"]'));
+        if (menuParent) {
+          const customBlock = document.createElement("div");
+          customBlock.dataset.sketchiziCustomMenuBlock = "true";
+          const recentSection = document.createElement("div");
+          recentSection.dataset.sketchiziRecentFilesMenu = "true";
+          recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
+          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><button type="button" class="sketchizi-folder-action" data-sketchizi-close-folder>Close folder</button><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh folder contents" aria-label="Refresh folder contents">↻</button></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder>Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file>New file</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent files</div><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent folders</div><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button>`;
+          customBlock.append(recentSection);
+          // Place the remaining file/folder actions first in the menu.
+          menuParent.insertBefore(customBlock, menuParent.firstChild);
         }
       }
 
@@ -190,9 +178,6 @@ export function useNativeSketchiziMenu({
         }
       }
 
-      const propertiesMenuSection = document.querySelector("[data-sketchizi-properties-menu]");
-      const propertiesTitle = propertiesMenuSection?.querySelector("[data-sketchizi-properties-title]");
-      if (propertiesTitle) propertiesTitle.textContent = canEdit ? "Properties" : "Collaboration";
       const recentMenu = document.querySelector("[data-sketchizi-recent-files-menu]");
       const bind = (node, key, handler) => {
         if (!node || node.dataset[key] === "true") return;
@@ -261,24 +246,6 @@ export function useNativeSketchiziMenu({
       }
       bind(recentMenu?.querySelector("[data-clear-recent-folders]"), "bound", () => fileActionsRef.current.clearRecentFolders?.());
 
-      const themeMenu = document.querySelector("[data-diagramly-theme-menu]");
-      themeMenu?.querySelectorAll("[data-theme-mode]").forEach((button) => {
-        if (button.dataset.bound !== "true") {
-          button.dataset.bound = "true";
-          button.addEventListener("click", () => setThemeMode(button.dataset.themeMode));
-        }
-        button.classList.toggle("selected", button.dataset.themeMode === themeMode);
-      });
-      const architectureValidationButton = document.querySelector("[data-sketchizi-architecture-validation]");
-      if (architectureValidationButton && architectureValidationButton.dataset.bound !== "true") {
-        architectureValidationButton.dataset.bound = "true";
-        architectureValidationButton.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          togglePanel?.("architecture-validation");
-        });
-      }
-      architectureValidationButton?.classList.toggle("enabled", false);
       constrainCanvasBackgroundMenu();
 
     };
@@ -294,5 +261,5 @@ export function useNativeSketchiziMenu({
       window.visualViewport?.removeEventListener("resize", scheduleCleanup);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [canEdit, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, recentFiles, recentFolders, refreshCurrentFolderFiles, setThemeMode, themeMode, togglePanel, useThemeDefaultBackground]);
+  }, [currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, recentFiles, recentFolders, refreshCurrentFolderFiles, useThemeDefaultBackground]);
 }
