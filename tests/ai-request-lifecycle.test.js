@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appendAssistantOnce, classifyChatFailure, classifyRequestStatus, classifyStatusLookupError, upsertUserMessage } from "../src/features/ai/aiRequestLifecycle.js";
+import { appendAssistantOnce, classifyChatFailure, classifyRequestStatus, classifyStatusLookupError, shouldShowRequestRecoveryNotice, upsertUserMessage } from "../src/features/ai/aiRequestLifecycle.js";
 
 test("a provider failure returned after durable failure marking is terminal, even with a 502", () => {
   assert.equal(classifyChatFailure({ status: 502, code: "provider_unavailable" }, true), "confirmed_failure");
@@ -55,4 +55,29 @@ test("status 404 is only classified as missing request for the explicit backend 
   assert.equal(classifyStatusLookupError({ status: 404, code: "request_not_found" }), "request_not_found");
   assert.equal(classifyStatusLookupError({ status: 404, code: "not_found" }), "lookup_unavailable");
   assert.equal(classifyStatusLookupError({ status: 503, code: "storage_unavailable" }), "lookup_unavailable");
+});
+
+test("the recovery warning is hidden while the current request is actively processing", () => {
+  assert.equal(shouldShowRequestRecoveryNotice({
+    panelError: "",
+    pendingRequest: { requestId: "active-request" },
+    busy: true,
+    retryAttempt: null,
+    newAnswerQuestion: null,
+  }), false);
+});
+
+test("the recovery warning appears after an unresolved request stops processing", () => {
+  assert.equal(shouldShowRequestRecoveryNotice({
+    panelError: "",
+    pendingRequest: { requestId: "unresolved-request" },
+    busy: false,
+    retryAttempt: null,
+    newAnswerQuestion: null,
+  }), true);
+});
+
+test("a concrete error or retry state remains visible even if busy is true", () => {
+  assert.equal(shouldShowRequestRecoveryNotice({ panelError: "Provider failed", pendingRequest: null, busy: true, retryAttempt: null, newAnswerQuestion: null }), true);
+  assert.equal(shouldShowRequestRecoveryNotice({ panelError: "", pendingRequest: null, busy: true, retryAttempt: { requestId: "retry" }, newAnswerQuestion: null }), true);
 });

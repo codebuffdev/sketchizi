@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchCurrentUser, startGoogleSignIn } from "../auth/authClient.js";
 import { aiApiRequest, aiApiRequestWithTimeout, createRequestId } from "./aiApiClient.js";
 import { buildDiagramContext } from "./diagramContextBuilder.js";
-import { appendAssistantOnce, classifyChatFailure, classifyRequestStatus, classifyStatusLookupError, upsertUserMessage } from "./aiRequestLifecycle.js";
+import { appendAssistantOnce, classifyChatFailure, classifyRequestStatus, classifyStatusLookupError, shouldShowRequestRecoveryNotice, upsertUserMessage } from "./aiRequestLifecycle.js";
 
 const TRANSCRIPT_KEY = "sketchizi.aiAsk.transcript.v1";
 const BYOK_KEY = "sketchizi.aiAsk.byokKey.v1";
@@ -913,7 +913,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             {busy && <div className="ai-ask-thinking" role="status"><span className="ai-ask-spinner" />Analyzing the current diagram…</div>}
           </div>
 
-          {(panelError || pendingRequest || chat.retryAttempt || newAnswerQuestion) && <div className="ai-ask-error" role="alert">
+          {shouldShowRequestRecoveryNotice({ panelError, pendingRequest, busy, retryAttempt: chat.retryAttempt, newAnswerQuestion }) && <div className="ai-ask-error" role="alert">
             <span>{panelError || (pendingRequest ? "An earlier request has not reached a confirmed final state." : chat.retryAttempt?.outcomeUnknown ? "The previous request's final provider outcome is uncertain." : newAnswerQuestion ? "The previous generation succeeded, but its answer is not retained." : "This question can be retried.")}</span>
             {pendingRequest && auth.status === "authenticated" && <button type="button" onClick={checkPendingRequest} disabled={busy}>Check status</button>}
             {pendingRequest?.sameIdRecoveryAvailable && auth.status === "authenticated" && <button type="button" onClick={() => sendQuestion(pendingRequest.question, { recoveryRequest: pendingRequest })} disabled={busy || (pendingRequest.provider === "byok" && !apiKey.trim())}>Retry with same request ID</button>}

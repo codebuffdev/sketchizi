@@ -93,3 +93,12 @@ export function classifyStatusLookupError(error) {
   if (Number(error?.status || 0) === 404 && error?.code === "request_not_found") return "request_not_found";
   return "lookup_unavailable";
 }
+
+/**
+ * A pending request is normal while its POST/poll lifecycle is active. Show the
+ * recovery notice only after the request stops being active, unless a concrete
+ * error message already explains the current failure.
+ */
+export function shouldShowRequestRecoveryNotice({ panelError, pendingRequest, busy, retryAttempt, newAnswerQuestion }) {
+  return Boolean(panelError || (pendingRequest && !busy) || retryAttempt || newAnswerQuestion);
+}
