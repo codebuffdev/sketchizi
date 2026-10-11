@@ -56,6 +56,19 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     const api = apiRef.current;
     if (!api || !apiReady || !sketchReady) return;
 
+    // Older releases could persist the Excalidraw default gray as "custom"
+    // merely because a scene already existed. Migrate that default canvas to
+    // theme-following mode, while preserving genuinely chosen custom colors.
+    if (canvasBackgroundMode === "custom") {
+      const current = String(api.getAppState().viewBackgroundColor || "").trim().toLowerCase();
+      const legacyDefaultBackgrounds = new Set(["#dedede", "#dcdcdc", "#e0e0e0"]);
+      if (legacyDefaultBackgrounds.has(current)) {
+        setCanvasBackgroundMode("theme");
+        try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
+        return;
+      }
+    }
+
     if (canvasBackgroundMode !== "theme") return;
 
     const current = String(api.getAppState().viewBackgroundColor || "").toLowerCase();

@@ -45,10 +45,11 @@ test("canvas background mode is explicit and preserves legacy saved-scene colors
   assert.equal(resolveCanvasBackgroundMode(null, false), "theme");
 });
 
-test("theme synchronization uses explicit mode rather than a recognized-color allowlist", async () => {
+test("canvas theme synchronization migrates legacy default-gray scenes but preserves chosen custom colors", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /canvasBackgroundMode !== "theme"/);
-  assert.doesNotMatch(source, /initialThemeBackgrounds|new Set\(\["#ffffff"/);
+  assert.match(source, /legacyDefaultBackgrounds = new Set\(\["#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
+  assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
   assert.match(source, /viewBackgroundColor: nextBackground/);
 });
 
