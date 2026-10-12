@@ -221,8 +221,11 @@ test("an oversized serialized update is rejected and remains pending for diagnos
 });
 
 test("the join snapshot seeds element and file signatures for reconciliation", () => {
-  const scene = [element({ id: "snapshot-element", version: 4 })];
-  const files = { ["snapshot-file"]: file({ id: "snapshot-file", version: 2 }) };
+  const scene = [element({ id: "snapshot-element", version: 4, type: "image", fileId: "snapshot-file" })];
+  const files = {
+    ["snapshot-file"]: file({ id: "snapshot-file", version: 2 }),
+    ["orphan-file"]: file({ id: "orphan-file", version: 1, dataURL: `data:image/png;base64,${"A".repeat(100)}` }),
+  };
   const harness = createClient();
   try {
     const { client } = harness;
@@ -230,9 +233,26 @@ test("the join snapshot seeds element and file signatures for reconciliation", (
     client.api.getFiles = () => files;
     const snapshot = client.snapshot();
     assert.equal(snapshot.elements.length, 1);
-    assert.equal(Object.keys(snapshot.files).length, 1);
+    assert.deepEqual(Object.keys(snapshot.files), ["snapshot-file"]);
     assert.equal(client.lastElements.get("snapshot-element"), "snapshot-element:4:1:0");
     assert.equal(client.lastFiles.get("snapshot-file"), `snapshot-file:2:${files["snapshot-file"].dataURL.length}`);
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("an empty-canvas join snapshot excludes unreferenced retained files", () => {
+  const harness = createClient();
+  try {
+    const { client } = harness;
+    client.api.getSceneElementsIncludingDeleted = () => [];
+    client.api.getFiles = () => ({
+      "stale-large-file": file({ id: "stale-large-file", dataURL: `data:image/png;base64,${"A".repeat(1000)}` }),
+    });
+    const snapshot = client.snapshot();
+    assert.deepEqual(snapshot.elements, []);
+    assert.deepEqual(Object.keys(snapshot.files), []);
+    assert.equal(client.lastFiles.size, 0);
   } finally {
     harness.cleanup();
   }
@@ -242,6 +262,7 @@ test("the join snapshot restores a missing file id from its file-registry key", 
   const harness = createClient();
   try {
     const { client } = harness;
+    client.api.getSceneElementsIncludingDeleted = () => [element({ type: "image", fileId: "legacy-file-key" })];
     client.api.getFiles = () => ({
       "legacy-file-key": { mimeType: "image/png", dataURL: "data:image/png;base64,AA==", version: 1 },
     });

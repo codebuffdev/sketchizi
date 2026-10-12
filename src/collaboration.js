@@ -604,6 +604,9 @@ export class SketchiziCollaboration {
         roomId: this.roomId,
         clientId: this.clientId,
         payloadCharacters: payload.length,
+        payloadBytes: syncUtf8ByteLength(payload),
+        elementCount: Array.isArray(message.snapshot?.elements) ? message.snapshot.elements.length : 0,
+        fileCount: message.snapshot?.files && typeof message.snapshot.files === "object" ? Object.keys(message.snapshot.files).length : 0,
         serializationDurationMs: Date.now() - wallClockSerializeStartedAt,
       });
     }
@@ -746,7 +749,23 @@ export class SketchiziCollaboration {
     const diagnosticsEnabled = syncDiagnosticsEnabled();
     const startedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
     const elements = this.api.getSceneElementsIncludingDeleted?.() || this.api.getSceneElements();
-    const files = normalizeCollaborationFiles(this.api.getFiles?.() || {});
+    const allFiles = normalizeCollaborationFiles(this.api.getFiles?.() || {});
+
+    // Excalidraw's file registry can retain image data that is no longer used
+    // by the current scene. Sending that entire registry makes even an empty
+    // canvas produce an unexpectedly large initial join payload. Only include
+    // files referenced by scene elements; retain deleted elements' file refs
+    // as well so the snapshot remains consistent with the scene tombstones.
+    const referencedFileIds = new Set(
+      (elements || [])
+        .map((element) => element?.fileId)
+        .filter((fileId) => typeof fileId === "string" && fileId.length > 0),
+    );
+    const files = Object.create(null);
+    for (const [registryKey, file] of Object.entries(allFiles)) {
+      const fileId = typeof file?.id === "string" && file.id.length > 0 ? file.id : registryKey;
+      if (referencedFileIds.has(fileId) || referencedFileIds.has(registryKey)) files[registryKey] = file;
+    }
     this.remember(elements, files);
     if (diagnosticsEnabled) recordSyncDiagnostic("client.snapshot.created", {
       roomRef: syncDiagnosticRef(this.roomId),
