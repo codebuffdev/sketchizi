@@ -174,37 +174,11 @@ export function useNativeSketchiziMenu({
           [...menuParent.querySelectorAll("a")].filter((link) => /^(github|connect with coder)$/i.test(link.textContent?.replace(/\s+/g, " ").trim() || "")).forEach((link) => link.remove());
           const communitySection = document.createElement("section");
           communitySection.className = "sketchizi-native-settings-section sketchizi-community-section";
-          communitySection.innerHTML = `<div class="sketchizi-native-settings-title">Help &amp; Community</div><a class="sketchizi-sidebar-community-link" href="/reviews" data-sketchizi-review-link><span aria-hidden="true">☆</span><span>Leave us a review</span></a><a class="sketchizi-sidebar-community-link" href="https://github.com/codebuffdev" target="_blank" rel="noreferrer noopener"><span aria-hidden="true">&lt;/&gt;</span><span>Connect with Coder</span></a>`;
+          communitySection.innerHTML = `<a class="sketchizi-sidebar-community-link" href="/reviews" data-sketchizi-review-link><span aria-hidden="true">♧</span><span>Drop a Review</span><span aria-hidden="true">›</span></a>`;
           customBlock.append(communitySection);
-          // Add a dedicated icon rail beside the expanded navigation surface.
-          const shell = menuParent.parentElement;
-          if (shell && !shell.querySelector(":scope > .sketchizi-sidebar-rail")) {
-            const rail = document.createElement("nav");
-            rail.className = "sketchizi-sidebar-rail";
-            rail.setAttribute("aria-label", "Primary navigation");
-            rail.innerHTML = `<button type="button" class="sketchizi-sidebar-collapse" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button><div class="sketchizi-sidebar-rail-items"><button type="button" title="Files" aria-label="Files" data-sidebar-section="files">▤</button><button type="button" title="Recent files" aria-label="Recent files" data-sidebar-section="recent">◷</button><button type="button" title="Canvas background" aria-label="Canvas background" data-sidebar-section="background">◐</button><a href="/reviews" title="Leave us a review" aria-label="Leave us a review">☆</a><a href="https://github.com/codebuffdev" target="_blank" rel="noreferrer noopener" title="Connect with Coder" aria-label="Connect with Coder">&lt;/&gt;</a></div>`;
-            shell.insertBefore(rail, menuParent);
-            rail.querySelector(".sketchizi-sidebar-collapse")?.addEventListener("click", () => {
-              shell.classList.toggle("sketchizi-sidebar-collapsed");
-              const collapsed = shell.classList.contains("sketchizi-sidebar-collapsed");
-              const toggle = rail.querySelector(".sketchizi-sidebar-collapse");
-              toggle.textContent = collapsed ? "›" : "‹";
-              toggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
-              toggle.title = collapsed ? "Expand sidebar" : "Collapse sidebar";
-            });
-            rail.querySelector('[data-sidebar-section="files"]')?.addEventListener("click", () => {
-              shell.classList.remove("sketchizi-sidebar-collapsed");
-              menuParent.querySelector("[data-sketchizi-open-folder]")?.focus();
-            });
-            rail.querySelector('[data-sidebar-section="recent"]')?.addEventListener("click", () => {
-              shell.classList.remove("sketchizi-sidebar-collapsed");
-              menuParent.querySelector("[data-recent-list]")?.scrollIntoView({ behavior: "smooth", block: "center" });
-            });
-            rail.querySelector('[data-sidebar-section="background"]')?.addEventListener("click", () => {
-              shell.classList.remove("sketchizi-sidebar-collapsed");
-              [...document.querySelectorAll("body *")].find((node) => node.children.length === 0 && node.textContent?.trim() === "Canvas background")?.scrollIntoView({ behavior: "smooth", block: "center" });
-            });
-          }
+          // The design uses a compact single navigation surface with a dedicated
+          // Canvas background row that opens its own adjacent settings panel.
+          // Do not inject a second icon rail into Excalidraw's dropdown.
           // Place the remaining file/folder actions first in the expanded panel.
           menuParent.insertBefore(customBlock, menuParent.firstChild);
         }

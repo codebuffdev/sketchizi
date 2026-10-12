@@ -403,3 +403,130 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has(.sketchizi-sidebar-rail) > 
   .dropdown-menu:has(.sketchizi-sidebar-rail) { top: 76px !important; left: 8px !important; bottom: 8px !important; max-width: calc(100vw - 16px) !important; }
   .dropdown-menu:has(.sketchizi-sidebar-rail) > .dropdown-menu-container { width: min(270px, calc(100vw - 74px)) !important; }
 }
+
+/* v1.10.64 — compact two-panel menu styling inspired by the approved mockup. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  right: auto !important;
+  width: 246px !important;
+  max-width: calc(100vw - 20px) !important;
+  max-height: calc(100vh - 20px) !important;
+  height: auto !important;
+  padding: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid #263143 !important;
+  border-radius: 12px !important;
+  background: #111722 !important;
+  color: #e9edf6 !important;
+  box-shadow: 0 18px 46px rgba(0,0,0,.34) !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) > .dropdown-menu-container {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: calc(100vh - 36px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) [data-sketchizi-custom-menu-block] {
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-native-settings-section {
+  margin: 0 !important;
+  padding: 8px 7px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #263143 !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-native-settings-title {
+  margin: 0 0 7px !important;
+  color: #8d9ab0 !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: .07em !important;
+  text-transform: uppercase !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-action,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-clear,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-item,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-file,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-folder-item,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link {
+  color: #e9edf6 !important;
+  border-color: #263143 !important;
+  border-radius: 7px !important;
+  background: rgba(255,255,255,.025) !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-action:hover,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save:hover,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-clear:hover,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-item:hover,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-file:hover,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link:hover {
+  background: #252b40 !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-height: 36px !important;
+  padding: 7px 8px !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link > span:last-child {
+  margin-left: auto;
+  color: #aeb9cc;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-current-folder,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-empty,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-files-title {
+  color: #98a4b8 !important;
+}
+/* Native Excalidraw menu rows share the same dark surface. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) button,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) a,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) [role="menuitem"] {
+  color: inherit;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) button:hover,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) a:hover,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) [role="menuitem"]:hover {
+  background-color: #252b40;
+}
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+  background: #fff !important;
+  color: #242b38 !important;
+  border-color: #e2e6ef !important;
+  box-shadow: 0 18px 46px rgba(22,30,48,.18) !important;
+}
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-native-settings-section {
+  border-bottom-color: #e6e9f0 !important;
+}
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-action,
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save,
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-clear,
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-item,
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-file,
+html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link {
+  color: #242b38 !important;
+  border-color: #e2e6ef !important;
+  background: #fafbfe !important;
+}
+@media (max-width: 620px) {
+  .dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+    top: 8px !important;
+    left: 8px !important;
+    max-height: calc(100vh - 16px) !important;
+    width: min(246px, calc(100vw - 16px)) !important;
+  }
+}
