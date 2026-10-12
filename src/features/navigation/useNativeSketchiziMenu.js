@@ -15,6 +15,17 @@ export function useNativeSketchiziMenu({
     const onClick = (event) => {
       const target = event.target?.closest?.('button, [role="button"], [role="menuitem"], a, [data-testid]');
       if (!target) return;
+      // Handle the injected theme-default control before color-swatch detection.
+      // The control lives inside Excalidraw's native menu, so delegate its click
+      // here to keep it reliable across menu remounts and avoid classifying it
+      // as a custom color selection.
+      if (target.matches?.("[data-sketchizi-theme-background-default]")) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        useThemeDefaultBackground();
+        return;
+      }
       const menu = target.closest?.(".dropdown-menu-container");
       const buttonStyle = target.tagName === "BUTTON" ? target.style : null;
       const classText = typeof target.className === "string" ? target.className : "";
@@ -58,7 +69,7 @@ export function useNativeSketchiziMenu({
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [fileActionsRef, markCanvasBackgroundCustom]);
+  }, [fileActionsRef, markCanvasBackgroundCustom, useThemeDefaultBackground]);
 
   useEffect(() => {
     const githubUrl = "https://github.com/codebuffdev";
@@ -202,11 +213,6 @@ export function useNativeSketchiziMenu({
           button.className = "sketchizi-theme-background-default";
           button.textContent = "Use theme default";
           button.title = "Automatically match the canvas background to the application theme";
-          button.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            useThemeDefaultBackground();
-          });
           const firstSwatch = swatches[0];
           const palette = firstSwatch.closest?.(".color-picker, [class*='color-picker'], [data-testid*='color-picker']")
             || firstSwatch.parentElement;
