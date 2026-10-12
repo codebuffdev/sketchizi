@@ -21,7 +21,8 @@
     "test:collaboration-host-auth": "node --test tests/collaboration-host-auth.test.js",
     "test:device": "node --test tests/device-support.test.js",
     "test:backend-warmup": "node --test tests/backend-warmup.test.js",
-    "test:recovery": "node --test tests/recovered-drafts.test.js"
+    "test:recovery": "node --test tests/recovered-drafts.test.js",
+    "test:community-gateway": "node --test tests/community-gateway.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
