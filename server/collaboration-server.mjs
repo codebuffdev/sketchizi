@@ -484,7 +484,7 @@ wss.on("connection", (socket, request) => {
       const requestState = room.pendingRequests.has(clientId) ? "pending" : (previousPresence?.permission === "editor" || permission === "editor" ? "approved" : "none");
       const snapshot = roomSnapshot(room);
       const chatHistory = filterAuthorizedChatHistory(room.chatMessages, clientId, socket === room.host);
-      send(socket, {
+      const joinedMessage = {
         type: "joined",
         roomId: room.id,
         clientId,
@@ -494,7 +494,21 @@ wss.on("connection", (socket, request) => {
         presence: room.clients.size,
         ...snapshot,
         chatHistory,
+      };
+      const joinedPayload = JSON.stringify(joinedMessage);
+      serverLogger.info("Collaboration join acknowledgement queued", {
+        connectionId,
+        roomRef: syncDiagnosticRef(room.id),
+        clientRef: syncDiagnosticRef(clientId),
+        messageType: "joined",
+        payloadCharacters: joinedPayload.length,
+        payloadBytes: syncUtf8ByteLength(joinedPayload),
+        snapshotElementCount: snapshot.elements.length,
+        snapshotFileCount: Object.keys(snapshot.files).length,
+        chatHistoryCount: chatHistory.length,
+        socketBufferedAmountBeforeSend: socket.bufferedAmount,
       });
+      send(socket, joinedMessage);
       if (syncDiagnosticsEnabled()) recordSyncDiagnostic("server.join.accepted", {
         roomRef: syncDiagnosticRef(room.id),
         clientRef: syncDiagnosticRef(clientId),

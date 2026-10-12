@@ -82,22 +82,6 @@ function App() {
     api.updateScene({ appState: { openMenu: null }, captureUpdate: CaptureUpdateAction.NEVER });
   }, []);
 
-  // Toggle Excalidraw's menu state directly instead of synthesizing a click on
-  // its native trigger. The native outside-click handler may close the menu
-  // before this header button's click fires; the header passes the state
-  // captured at pointer-down so that a single click still closes it.
-  const toggleNativeMenu = useCallback((wasOpen = nativeMenuOpenRef.current) => {
-    const api = apiRef.current;
-    if (!api?.updateScene) return;
-    const shouldOpen = !Boolean(wasOpen);
-    nativeMenuOpenRef.current = shouldOpen;
-    setNativeMenuOpen(shouldOpen);
-    api.updateScene({
-      appState: { openMenu: shouldOpen ? "canvas" : null },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-  }, []);
-
   const panelState = usePanelState({ apiRef, closeNativeMenu });
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
@@ -323,7 +307,6 @@ function App() {
         collaborationCreationState={collaboration.collaborationCreationState}
         collaborationCreationError={collaborationError}
         nativeMenuOpen={nativeMenuOpen}
-        toggleNativeMenu={toggleNativeMenu}
         createCollaboration={createCollaboration}
         dismissCollaborationCreationFailure={collaboration.dismissCollaborationCreationFailure}
         setThemeMode={setThemeMode}

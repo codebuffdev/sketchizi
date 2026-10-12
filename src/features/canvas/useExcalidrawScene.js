@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
-import {
-  DEFAULT_FONT_FAMILY_ID,
-  detectFontFamilyPreferenceChange,
-  getTextFontFamilyMap,
-  normalizeFontFamilyId,
-} from "./fontFamilyDefaults.js";
 import { syncAwsRelationshipMetadata } from "../aws-relationships/awsRelationshipService";
 import { syncKubernetesRelationshipMetadata } from "../kubernetes-relationships/kubernetesRelationshipService";
 import {
@@ -24,9 +18,6 @@ export function useExcalidrawScene({
 }) {
   const architectureFrameRef = useRef(null);
   const latestArchitectureElementsRef = useRef(null);
-  const previousFontAppStateRef = useRef(null);
-  const previousTextFontFamiliesRef = useRef(new Map());
-  const preferredFontFamilyRef = useRef(null);
 
   const scheduleArchitectureSceneChange = useCallback((elements) => {
     latestArchitectureElementsRef.current = elements;
@@ -109,9 +100,7 @@ export function useExcalidrawScene({
         setSelectedConnector(selected.length === 1 && selected[0]?.type === "arrow" ? selected[0] : null);
       }
       measureSyncDiagnostic("client.minimapUpdate", { elementCount: effectiveElements.length }, () => updateMinimap(effectiveElements, appState));
-      // Prefer Excalidraw's live app state over the possibly stale onChange
-      // snapshot when saving. This matters for currentItemFontFamily because it
-      // is the default for text elements created after the current one.
+      measureSyncDiagnostic("client.persistenceQueue", { elementCount: effectiveElements.length }, () => queueSketchSave(effectiveElements, appState));
       if (!collaborationRemoteUpdateRef.current) {
         collaborationRef.current?.setSelection(selectedIds);
         const files = apiRef.current?.getFiles?.() || {};
@@ -121,59 +110,8 @@ export function useExcalidrawScene({
         }, () => collaborationRef.current?.broadcastLocalChange(effectiveElements, files, appState));
       }
       if (gridEnabled && appState.gridModeEnabled !== true) {
-        // Update only the grid fields. Spreading a stale onChange appState here
-        // can roll back currentItemFontFamily immediately after font selection.
-        apiRef.current?.updateScene({
-          appState: { gridModeEnabled: true, gridSize, gridStep: gridSize },
-          captureUpdate: CaptureUpdateAction.NEVER,
-        });
+        apiRef.current?.updateScene({ appState: { ...appState, gridModeEnabled: true, gridSize, gridStep: gridSize }, captureUpdate: CaptureUpdateAction.NEVER });
       }
-
-      // currentItemFontFamily is Excalidraw's default for new text, separate
-      // from the fontFamily on the currently selected text element. Capture a
-      // pick while the popup is open and preserve it across subsequent changes.
-      const api = apiRef.current;
-      const liveAppState = api?.getAppState?.() || appState || {};
-      const detectedFontChoice = detectFontFamilyPreferenceChange({
-        previousAppState: previousFontAppStateRef.current,
-        appState: liveAppState,
-        previousTextFontFamilies: previousTextFontFamiliesRef.current,
-        elements: effectiveElements,
-        ignoreElementChanges: Boolean(remoteUpdate),
-      });
-      if (detectedFontChoice !== null) {
-        preferredFontFamilyRef.current = detectedFontChoice;
-      } else if (preferredFontFamilyRef.current === null) {
-        preferredFontFamilyRef.current = normalizeFontFamilyId(liveAppState.currentItemFontFamily)
-          ?? DEFAULT_FONT_FAMILY_ID;
-      }
-
-      const preferredFontFamily = preferredFontFamilyRef.current;
-      const actualFontFamily = normalizeFontFamilyId(api?.getAppState?.()?.currentItemFontFamily);
-      if (
-        api?.updateScene &&
-        preferredFontFamily !== null &&
-        preferredFontFamily !== undefined &&
-        liveAppState.openPopup !== "fontFamily" &&
-        actualFontFamily !== preferredFontFamily
-      ) {
-        api.updateScene({
-          appState: { currentItemFontFamily: preferredFontFamily },
-          captureUpdate: CaptureUpdateAction.NEVER,
-        });
-      }
-
-      const reconciledAppState = api?.getAppState?.() || liveAppState;
-      previousFontAppStateRef.current = {
-        openPopup: reconciledAppState.openPopup,
-        currentItemFontFamily: normalizeFontFamilyId(reconciledAppState.currentItemFontFamily),
-      };
-      previousTextFontFamiliesRef.current = getTextFontFamilyMap(effectiveElements);
-
-      // Queue persistence after font-default reconciliation so a stale callback
-      // snapshot cannot save the default family immediately after a font pick.
-      const persistenceAppState = api?.getAppState?.() || reconciledAppState;
-      measureSyncDiagnostic("client.persistenceQueue", { elementCount: effectiveElements.length }, () => queueSketchSave(effectiveElements, persistenceAppState));
     } finally {
       if (diagnosticsEnabled) {
         if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.sceneCallback.completed", {

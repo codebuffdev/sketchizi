@@ -1,5 +1,3 @@
-import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "./features/canvas/fontFamilyDefaults.js";
-
 // File/folder based Open & Save for Sketchizi drawings.
 //
 // Format: the standard Excalidraw JSON scene (`type: "excalidraw"`), saved
@@ -83,7 +81,6 @@ export function serializeDrawing({ elements, appState, files }) {
         scrollY: appState?.scrollY || 0,
         zoom: { value: appState?.zoom?.value || 1 },
         gridModeEnabled: !!appState?.gridModeEnabled,
-        currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
         gridSize: appState?.gridSize,
         gridStep: appState?.gridStep,
       },
@@ -122,12 +119,10 @@ export function parseDrawing(text) {
     scrollY: Number.isFinite(saved.scrollY) ? saved.scrollY : 0,
     zoom: { value: Number(saved.zoom?.value ?? saved.zoom) > 0 ? Number(saved.zoom?.value ?? saved.zoom) : 1 },
     gridModeEnabled: !!saved.gridModeEnabled,
-    currentItemFontFamily: normalizeFontFamilyId(saved.currentItemFontFamily) ?? undefined,
     gridSize: saved.gridSize,
     gridStep: saved.gridStep,
   };
   if (appState.viewBackgroundColor === undefined) delete appState.viewBackgroundColor;
-  if (appState.currentItemFontFamily === undefined) delete appState.currentItemFontFamily;
   if (appState.gridSize === undefined) delete appState.gridSize;
   if (appState.gridStep === undefined) delete appState.gridStep;
   return { elements, appState, files };

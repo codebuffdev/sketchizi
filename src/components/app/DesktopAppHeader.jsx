@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ThemeControl from "../../ThemeControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
 
@@ -67,7 +67,6 @@ export default function DesktopAppHeader({
   collaborationCreationState = "idle",
   collaborationCreationError = "",
   nativeMenuOpen = false,
-  toggleNativeMenu,
   createCollaboration,
   dismissCollaborationCreationFailure,
   libraryToggle,
@@ -76,24 +75,6 @@ export default function DesktopAppHeader({
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
-  const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
-  const menuWasOpenOnPointerDownRef = useRef(null);
-  nativeMenuOpenLatestRef.current = nativeMenuOpen;
-
-  useEffect(() => {
-    // Window capture runs before document-level outside-click handlers inside
-    // Excalidraw, preserving the menu's state from before the user's click.
-    const captureMenuState = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest(".desktop-app-menu-trigger")) {
-        menuWasOpenOnPointerDownRef.current = nativeMenuOpenLatestRef.current;
-      } else {
-        menuWasOpenOnPointerDownRef.current = null;
-      }
-    };
-    window.addEventListener("pointerdown", captureMenuState, true);
-    return () => window.removeEventListener("pointerdown", captureMenuState, true);
-  }, []);
 
   useEffect(() => {
     if (!openMenu) return undefined;
@@ -127,9 +108,10 @@ export default function DesktopAppHeader({
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
         onClick={() => {
-          const wasOpen = menuWasOpenOnPointerDownRef.current;
-          menuWasOpenOnPointerDownRef.current = null;
-          toggleNativeMenu?.(typeof wasOpen === "boolean" ? wasOpen : nativeMenuOpenLatestRef.current);
+          const nativeMenuButton = document.querySelector(
+            ".desktop-canvas-region .excalidraw .App-menu_top .dropdown-menu-button",
+          ) || document.querySelector(".desktop-canvas-region .excalidraw .App-menu_top button");
+          nativeMenuButton?.click();
         }}
         aria-label={nativeMenuOpen ? "Close application menu" : "Open application menu"}
         aria-expanded={nativeMenuOpen}

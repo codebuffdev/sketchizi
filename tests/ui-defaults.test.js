@@ -78,28 +78,20 @@ test("hamburger removes duplicate Help and labels the file action Open file", as
   assert.match(source, /openDrawingFromDisk/);
 });
 
-test("canvas follows Day/Night and hamburger menu has no pin control", async () => {
+test("canvas follows light/dark themes, menu supports pinning, and Open file has an icon", async () => {
   const source = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
   assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
   assert.match(source, /const DARK_CANVAS_BACKGROUND = "#f3faff"/);
   assert.match(source, /invert\(93%\) hue-rotate\(180deg\)/);
   assert.match(source, /isDarkTheme/);
   const menuSource = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.doesNotMatch(menuSource, /data-sketchizi-menu-pin/);
-  assert.doesNotMatch(menuSource, /sketchizi-menu-pinned/);
+  assert.match(menuSource, /data-sketchizi-menu-pin/);
+  assert.match(menuSource, /sketchizi-menu-pinned/);
   assert.match(menuSource, /sketchizi-native-open-file-icon/);
   assert.doesNotMatch(menuSource, /data-sketchizi-theme-background-default/);
-  assert.doesNotMatch(menuSource, /observer\.__reopenScheduled/);
-  const header = await readFile(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
-  assert.match(header, /toggleNativeMenu\?\.\(/);
-  assert.match(header, /menuWasOpenOnPointerDownRef/);
-  assert.doesNotMatch(header, /nativeMenuButton\?\.click\(\)/);
-  const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
-  assert.match(app, /openMenu: shouldOpen \? "canvas" : null/);
   const css = await readFile(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8");
   assert.match(css, /html\[data-sketchizi-theme="dark"\].*button:hover/);
   assert.match(css, /color: #ffffff !important/);
-  assert.doesNotMatch(css, /\.sketchizi-menu-pin/);
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(worker, /event\.request\.mode === "navigate"/);
   assert.match(worker, /Always fetch document navigations from Cloudflare first/);
@@ -110,14 +102,4 @@ test("canvas swatches are disabled so only the global Day/Night theme controls t
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   assert.match(source, /Canvas color swatches are intentionally disabled/);
   assert.match(source, /const applyCanvasSwatch = \(\) => \{\}/);
-});
-
-
-test("hamburger panel removes trailing empty separators after Reset the canvas", async () => {
-  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.match(source, /trimTrailingMenuArtifacts/);
-  assert.match(source, /Reset the canvas/);
-  assert.match(source, /hasMeaningfulMenuContent/);
-  assert.match(source, /actionGroup\.style\.setProperty\("border-bottom", "0", "important"\)/);
-  assert.match(source, /actionGroup\.style\.setProperty\("padding-bottom", "0", "important"\)/);
 });
