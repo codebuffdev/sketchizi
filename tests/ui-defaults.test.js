@@ -89,9 +89,9 @@ test("hamburger removes duplicate Help and labels the file action Open file", as
   assert.match(source, /openDrawingFromDisk/);
 });
 
-test("theme default canvas explicitly uses white in light mode and dark in dark mode", async () => {
+test("theme default canvas uses white in both application themes", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
-  assert.match(source, /const DARK_CANVAS_BACKGROUND = "#121212"/);
+  assert.match(source, /const DARK_CANVAS_BACKGROUND = "#ffffff"/);
   assert.match(source, /isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
 });

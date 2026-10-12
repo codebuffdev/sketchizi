@@ -167,14 +167,14 @@ export function useNativeSketchiziMenu({
           const recentSection = document.createElement("div");
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
-          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><button type="button" class="sketchizi-folder-action" data-sketchizi-close-folder>Close folder</button><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh folder contents" aria-label="Refresh folder contents">↻</button></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder>Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file>New file</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent files</div><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent folders</div><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button>`;
+          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh current folder" aria-label="Refresh current folder">↻</button></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder><span aria-hidden="true">▱</span> Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file><span aria-hidden="true">▤</span> New file</button><details class="sketchizi-recent-dropdown"><summary><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown"><summary><span>Recent folders</span><span class="sketchizi-recent-count" data-recent-folders-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button></details>`;
           customBlock.append(recentSection);
           // Community links live in the expanded navigation panel, not in a separate popup.
           // Remove the native GitHub row; the redesigned panel owns this destination.
           [...menuParent.querySelectorAll("a")].filter((link) => /^(github|connect with coder)$/i.test(link.textContent?.replace(/\s+/g, " ").trim() || "")).forEach((link) => link.remove());
           const communitySection = document.createElement("section");
           communitySection.className = "sketchizi-native-settings-section sketchizi-community-section";
-          communitySection.innerHTML = `<a class="sketchizi-sidebar-community-link" href="/reviews" data-sketchizi-review-link><span aria-hidden="true">♧</span><span>Drop a Review</span><span aria-hidden="true">›</span></a>`;
+          communitySection.innerHTML = `<a class="sketchizi-sidebar-community-link" href="/reviews" data-sketchizi-review-link><span aria-hidden="true">♧</span><span>Drop a Review</span><span aria-hidden="true">›</span></a><a class="sketchizi-sidebar-community-link" href="${githubUrl}" target="_blank" rel="noreferrer noopener" data-sketchizi-coder-link><span aria-hidden="true">▤</span><span>Connect with Coder</span><span aria-hidden="true">↗</span></a>`;
           customBlock.append(communitySection);
           // The design uses a compact single navigation surface with a dedicated
           // Canvas background row that opens its own adjacent settings panel.
@@ -247,6 +247,10 @@ export function useNativeSketchiziMenu({
         });
       }
 
+      const recentFilesCount = recentMenu?.querySelector("[data-recent-files-count]");
+      if (recentFilesCount) recentFilesCount.textContent = `${recentFiles.length} ${recentFiles.length === 1 ? "file" : "files"}`;
+      const recentFoldersCount = recentMenu?.querySelector("[data-recent-folders-count]");
+      if (recentFoldersCount) recentFoldersCount.textContent = `${recentFolders.length} ${recentFolders.length === 1 ? "folder" : "folders"}`;
       const recentList = recentMenu?.querySelector("[data-recent-list]");
       if (recentList) {
         const signature = JSON.stringify(recentFiles.map((item) => [item.id, item.name, item.savedAt, item.kind]));

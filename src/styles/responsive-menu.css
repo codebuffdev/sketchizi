@@ -530,3 +530,52 @@ html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-men
     width: min(246px, calc(100vw - 16px)) !important;
   }
 }
+
+/* v1.10.65 — compact file actions and expandable recent lists. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown {
+  border-top: 1px solid rgba(128,128,128,.18);
+  padding: 0;
+  margin: 5px 0 0;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary {
+  list-style: none;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 7px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  user-select: none;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary::-webkit-details-marker { display: none; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary:hover { background: rgba(128,128,128,.10); }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-count { margin-left: auto; opacity: .65; font-size: 10px; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown[open] > summary > span:last-child { transform: rotate(180deg); }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary > span:last-child { transition: transform .15s ease; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown .sketchizi-recent-list,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown .sketchizi-recent-folder-list { padding: 2px 5px 5px; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-action,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save { display: flex; align-items: center; gap: 9px; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-action > span:first-child,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save > span:first-child { width: 16px; flex: 0 0 16px; text-align: center; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-community-section { margin-top: 8px !important; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link > span:first-child { width: 18px; flex: 0 0 18px; }
+
+/* v1.10.65 — compact file actions and expandable recent lists. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown { border-top: 1px solid rgba(128,128,128,.18); padding: 0; margin: 5px 0 0; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary { list-style: none; min-height: 34px; display: flex; align-items: center; gap: 8px; padding: 6px 7px; border-radius: 7px; cursor: pointer; font-size: 12px; user-select: none; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary::-webkit-details-marker { display: none; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary:hover { background: rgba(128,128,128,.10); }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-count { margin-left: auto; opacity: .65; font-size: 10px; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown[open] > summary > span:last-child { transform: rotate(180deg); }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary > span:last-child { transition: transform .15s ease; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown .sketchizi-recent-list,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown .sketchizi-recent-folder-list { padding: 2px 5px 5px; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-action,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save { display: flex; align-items: center; gap: 9px; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-action > span:first-child,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save > span:first-child { width: 16px; flex: 0 0 16px; text-align: center; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-community-section { margin-top: 8px !important; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link > span:first-child { width: 18px; flex: 0 0 18px; }

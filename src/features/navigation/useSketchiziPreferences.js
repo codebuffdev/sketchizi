@@ -5,7 +5,7 @@ import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js"
 import { CANVAS_BACKGROUND_MODE_KEY, resolveCanvasBackgroundMode } from "./canvasBackgroundMode.js";
 
 const LIGHT_CANVAS_BACKGROUND = "#ffffff";
-const DARK_CANVAS_BACKGROUND = "#121212";
+const DARK_CANVAS_BACKGROUND = "#ffffff";
 
 export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
   const [themeMode, setThemeMode] = useState(() => getInitialThemeMode());
