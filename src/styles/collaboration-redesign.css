@@ -135,3 +135,14 @@ html[data-sketchizi-theme="dark"] .collaboration-ended-actions button.primary { 
 .collaboration-mobile-ended-controls > * { pointer-events:auto; }
 .collaboration-mobile-ended-controls > span { display:inline-flex; align-items:center; gap:6px; margin-right:auto; color:var(--ui-text-muted, #777); font-size:11px; }
 html[data-sketchizi-theme="dark"] .collaboration-recovery-banner.is-joinee-reconnecting { border-color:#1e40af; background:#172b4d; color:#bfdbfe; }
+
+/* Keep collaboration controls immediately after sign-in in the desktop header. */
+.desktop-app-header-account-zone > .collaboration-header-controls { flex: 0 1 auto; }
+.collaboration-lifecycle-header-button { color: #dc2626; }
+.collaboration-lifecycle-header-button:hover { background: #fff1f2; }
+html[data-sketchizi-theme="dark"] .collaboration-lifecycle-header-button:hover { background: rgb(220 38 38 / 12%); }
+@media (max-width: 1399px) {
+  .desktop-app-header-account-zone > .collaboration-header-controls { gap: 5px; }
+  .desktop-app-header-account-zone > .collaboration-header-controls .collaboration-header-session { max-width: 110px; }
+  .desktop-app-header-account-zone > .collaboration-header-controls .collaboration-header-button { padding-inline: 7px; }
+}

@@ -58,7 +58,7 @@ export default function CollaborationUI({
   const refreshRecovery = useCallback(() => setRecoverySessions(getRecoveredSessions()), []);
   useEffect(() => {
     const updateTarget = () => {
-      const target = document.querySelector(".desktop-app-header-panel-actions");
+      const target = document.querySelector(".desktop-app-header-account-zone");
       setHeaderTarget(window.innerWidth >= 1200 && target && window.getComputedStyle(target).display !== "none" ? target : null);
     };
     updateTarget();
@@ -218,11 +218,9 @@ export default function CollaborationUI({
           <button type="button" role="menuitem" onClick={() => { setDetailsOpen(false); onOpenDetails?.(); }}><span className="collaboration-menu-icon">ⓘ</span><span><strong>Session info</strong><small>{sessionName || "Collaboration"}</small></span></button>
           <button type="button" role="menuitem" onClick={() => { setDetailsOpen(false); onOpenDetails?.(); }}><span className="collaboration-menu-icon">♙</span><span><strong>Participants ({count})</strong><small>View roles and connection status</small></span></button>
           {recoverySessions.length > 0 && <button type="button" role="menuitem" onClick={openSessionRecovery}><span className="collaboration-menu-icon">▤</span><span><strong>Ended sessions</strong><small>{recoverySessions.length} sessions · {recoverySessions.reduce((sum, item) => sum + item.drafts.length, 0)} recovered drafts</small></span></button>}
-          <div className="collaboration-details-divider" />
-          <div className="collaboration-details-session"><strong>{role === "host" ? "Host controls" : "Participant controls"}</strong><span>{role === "host" ? "Ending closes the session for everyone." : "Leaving does not end the session for others."}</span></div>
-          <button type="button" className="is-danger" role="menuitem" onClick={() => { setDetailsOpen(false); setLifecycleConfirmation(true); }}>{role === "host" ? "End collaboration" : "Leave session"}</button>
         </div>}
       </div>
+      <button type="button" className="collaboration-header-button collaboration-lifecycle-header-button" onClick={() => setLifecycleConfirmation(true)}>{role === "host" ? "End collaboration" : "Leave"}</button>
       {role === "host" && <CollaborationShare link={link} sessionName={sessionName} showToast={showToast} compact />}
     </div>
   ) : (recoverySessions.length > 0 || endedSession) ? (
