@@ -37,20 +37,13 @@ test("the hamburger menu constrains and owns its vertical scroll region", async 
 });
 
 
-test("canvas background mode is explicit and preserves legacy saved-scene colors", async () => {
-  const { resolveCanvasBackgroundMode } = await import("../src/features/navigation/canvasBackgroundMode.js");
-  assert.equal(resolveCanvasBackgroundMode("theme", true), "theme");
-  assert.equal(resolveCanvasBackgroundMode("custom", false), "custom");
-  assert.equal(resolveCanvasBackgroundMode(null, true), "custom");
-  assert.equal(resolveCanvasBackgroundMode(null, false), "theme");
-});
-
-test("canvas always follows the global two-theme preference", async () => {
+test("canvas always follows the global two-theme preference and reconciles after Excalidraw updates", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /const isDarkTheme = themeMode === "dark"/);
-  assert.match(source, /Day\/Night is the single source of truth for the whole app and canvas/);
-  assert.match(source, /viewBackgroundColor: nextBackground/);
+  assert.match(source, /applyCanvasThemeBackground\(apiRef\.current, isDarkTheme\)/);
+  assert.match(source, /window\.requestAnimationFrame\(\(\) =>/);
   assert.doesNotMatch(source, /themeMode === "system"/);
+  assert.doesNotMatch(source, /canvasBackgroundMode/);
 });
 
 test("independent canvas palette is removed in the two-theme design", async () => {
@@ -59,14 +52,14 @@ test("independent canvas palette is removed in the two-theme design", async () =
   assert.match(source, /canvasBackgroundLabel\.closest/);
 });
 
-test("Use theme default immediately applies the effective theme background to the canvas", async () => {
-  const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
-  assert.match(source, /const useThemeDefaultBackground = useCallback\(\(\) =>/);
-  assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
-  assert.match(source, /const nextBackground = isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
-  assert.match(source, /appState: \{ viewBackgroundColor: nextBackground \}/);
+test("restored scene background cannot override Day/Night during initialData hydration", async () => {
+  const source = await readFile(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
+  assert.match(source, /viewBackgroundColor: isDarkTheme \? "#111722" : "#ffffff"/);
+  const helper = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
+  assert.match(helper, /api\.getAppState\(\)/);
+  assert.match(helper, /api\.updateScene\(/);
+  assert.match(helper, /CaptureUpdateAction\.NEVER/);
 });
-
 
 test("hamburger menu keeps file management at the top without duplicate header controls", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
@@ -86,10 +79,10 @@ test("hamburger removes duplicate Help and labels the file action Open file", as
 });
 
 test("canvas follows light/dark themes, menu supports pinning, and Open file has an icon", async () => {
-  const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
+  const source = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
   assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
   assert.match(source, /const DARK_CANVAS_BACKGROUND = "#111722"/);
-  assert.match(source, /isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
+  assert.match(source, /isDarkTheme/);
   const menuSource = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   assert.match(menuSource, /data-sketchizi-menu-pin/);
   assert.match(menuSource, /sketchizi-menu-pinned/);

@@ -2,10 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { clearEmergencyBackup, clearSketch } from "../../persistence";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js";
-import { CANVAS_BACKGROUND_MODE_KEY, resolveCanvasBackgroundMode } from "./canvasBackgroundMode.js";
-
-const LIGHT_CANVAS_BACKGROUND = "#ffffff";
-const DARK_CANVAS_BACKGROUND = "#111722";
+import { applyCanvasThemeBackground } from "./canvasTheme.js";
 
 export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
@@ -18,45 +15,13 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
       return resolved === "light" ? "light" : "dark";
     });
   }, []);
-  const canvasBackgroundModeKey = CANVAS_BACKGROUND_MODE_KEY;
-  const [canvasBackgroundMode, setCanvasBackgroundMode] = useState(() => {
-    try {
-      const mode = localStorage.getItem(canvasBackgroundModeKey);
-      return mode === "theme" || mode === "custom" ? mode : null;
-    } catch { return null; }
-  });
-
-  // Older Sketchizi versions did not persist whether a scene background was
-  // automatic or explicitly chosen. When restoring such a scene, preserve its
-  // background as custom rather than silently replacing it on startup.
-  useEffect(() => {
-    if (!sketchReady || canvasBackgroundMode !== null) return;
-    let storedMode = null;
-    try { storedMode = localStorage.getItem(canvasBackgroundModeKey); } catch {}
-    const initialMode = resolveCanvasBackgroundMode(storedMode, Boolean(savedSketch));
-    setCanvasBackgroundMode(initialMode);
-    try { localStorage.setItem(canvasBackgroundModeKey, initialMode); } catch {}
-  }, [canvasBackgroundMode, savedSketch, sketchReady]);
-
-  const markCanvasBackgroundCustom = useCallback(() => {
-    // Canvas backgrounds are governed by the global Day/Night theme.
-    setCanvasBackgroundMode("theme");
-    try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
-  }, [canvasBackgroundModeKey]);
-
+  // Canvas background is not independently configurable in the Day/Night-only design.
+  // Keep no-op callbacks for the native menu adapter, but never let legacy saved
+  // canvas-background preferences override the global application theme.
+  const markCanvasBackgroundCustom = useCallback(() => {}, []);
   const useThemeDefaultBackground = useCallback(() => {
-    // Persist theme-following mode before updating the canvas so the sync effect
-    // and future theme changes use the same source of truth.
-    setCanvasBackgroundMode("theme");
-    try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
-    const api = apiRef.current;
-    if (!api || !apiReady) return;
-    const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
-    api.updateScene({
-      appState: { viewBackgroundColor: nextBackground },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-  }, [apiRef, apiReady, isDarkTheme]);
+    applyCanvasThemeBackground(apiRef.current, isDarkTheme);
+  }, [apiRef, isDarkTheme]);
 
   useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);
   useEffect(() => {
@@ -64,30 +29,23 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     return () => { delete root.dataset.sketchiziTheme; };
   }, [isDarkTheme]);
   useEffect(() => {
-    const api = apiRef.current;
-    if (!api || !apiReady || !sketchReady) return;
+    if (!apiReady || !sketchReady) return undefined;
 
-    const current = String(api.getAppState().viewBackgroundColor || "").trim().toLowerCase();
-
-    // Older releases could persist Excalidraw's default gray as a custom color.
-    // Also re-check when a saved scene hydrates: Excalidraw may apply initialData
-    // after the API first becomes available.
-    // Treat the standard white canvas as a theme default too. Older versions
-    // commonly persisted #ffffff as "custom", which prevented dark mode from
-    // updating the actual Excalidraw canvas background.
-    // Day/Night is the single source of truth for the whole app and canvas.
-    // Legacy custom/background-mode preferences are intentionally ignored.
-    if (canvasBackgroundMode !== "theme") {
-      setCanvasBackgroundMode("theme");
-      try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
-    }
-    const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
-    if (current === nextBackground) return;
-
-    // Update Excalidraw's real scene state (not a CSS layer), without adding a
-    // user-visible undo entry or touching elements/viewport state.
-    api.updateScene({ appState: { viewBackgroundColor: nextBackground }, captureUpdate: CaptureUpdateAction.NEVER });
-  }, [apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady]);
+    // Excalidraw applies `theme` and restored scene state during its own update
+    // cycle. Reconcile after that cycle (two animation frames), not inline with
+    // React's render or a potentially stale onChange snapshot.
+    let firstFrame = 0;
+    let secondFrame = 0;
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        applyCanvasThemeBackground(apiRef.current, isDarkTheme);
+      });
+    });
+    return () => {
+      if (firstFrame) window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [apiRef, apiReady, isDarkTheme, savedSketch, sketchReady]);
 
   const fitDiagram = useCallback(() => {
     const api = apiRef.current; if (!api) return;
@@ -139,5 +97,5 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     return () => document.removeEventListener("click", handleResetCanvas, true);
   }, [apiRef, fileActionsRef, saveTimerRef, setStorageError]);
 
-  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, canvasBackgroundMode, markCanvasBackgroundCustom, useThemeDefaultBackground };
+  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground };
 }

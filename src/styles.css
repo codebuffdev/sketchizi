@@ -483,3 +483,16 @@
   border-color: #bba4ef !important; background: #f0eaff !important; color: #6d28d9 !important;
 }
 
+
+
+/* Day/Night is the single theme for both Sketchizi chrome and the canvas.
+   These are fallback surfaces beneath Excalidraw's scene renderer; the real
+   scene fill is synchronized through the Excalidraw API. */
+.app.theme-light .desktop-canvas-region,
+.app.theme-light .desktop-canvas-region > .canvas {
+  background-color: #ffffff !important;
+}
+.app.theme-dark .desktop-canvas-region,
+.app.theme-dark .desktop-canvas-region > .canvas {
+  background-color: #111722 !important;
+}
