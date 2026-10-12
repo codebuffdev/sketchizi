@@ -79,8 +79,9 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
       try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
     }
 
-    if (canvasBackgroundMode !== "theme" && !isLegacyDefault) return;
-
+    // The canvas now follows the application theme automatically. The old
+    // "Use theme default" control is intentionally removed, so there is no
+    // separate opt-in mode that can leave the canvas stuck in the prior theme.
     const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
     if (current === nextBackground) return;
 

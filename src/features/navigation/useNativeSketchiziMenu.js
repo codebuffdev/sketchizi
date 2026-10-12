@@ -15,17 +15,6 @@ export function useNativeSketchiziMenu({
     const onClick = (event) => {
       const target = event.target?.closest?.('button, [role="button"], [role="menuitem"], a, [data-testid]');
       if (!target) return;
-      // Handle the injected theme-default control before color-swatch detection.
-      // The control lives inside Excalidraw's native menu, so delegate its click
-      // here to keep it reliable across menu remounts and avoid classifying it
-      // as a custom color selection.
-      if (target.matches?.("[data-sketchizi-theme-background-default]")) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation?.();
-        useThemeDefaultBackground();
-        return;
-      }
       const menu = target.closest?.(".dropdown-menu-container");
       const buttonStyle = target.tagName === "BUTTON" ? target.style : null;
       const classText = typeof target.className === "string" ? target.className : "";
@@ -175,6 +164,10 @@ export function useNativeSketchiziMenu({
         if (menuParent) {
           const customBlock = document.createElement("div");
           customBlock.dataset.sketchiziCustomMenuBlock = "true";
+          const panelHeader = document.createElement("div");
+          panelHeader.className = "sketchizi-menu-panel-header";
+          panelHeader.innerHTML = `<span>File menu</span><button type="button" data-sketchizi-pin-panel aria-pressed="false" title="Pin panel open" aria-label="Pin panel open">♧</button>`;
+          customBlock.append(panelHeader);
           const recentSection = document.createElement("div");
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
@@ -195,31 +188,48 @@ export function useNativeSketchiziMenu({
         }
       }
 
+      const pinButton = document.querySelector("[data-sketchizi-pin-panel]");
+      const menuRoot = pinButton?.closest(".dropdown-menu");
+      if (pinButton && menuRoot && pinButton.dataset.bound !== "true") {
+        pinButton.dataset.bound = "true";
+        let pinned = false;
+        try { pinned = localStorage.getItem("sketchizi.menu.pinned") === "true"; } catch {}
+        const applyPinned = (next) => {
+          pinned = next;
+          pinButton.setAttribute("aria-pressed", String(pinned));
+          pinButton.title = pinned ? "Unpin panel" : "Pin panel open";
+          pinButton.setAttribute("aria-label", pinButton.title);
+          pinButton.textContent = pinned ? "📌" : "♧";
+          menuRoot.classList.toggle("sketchizi-menu-pinned", pinned);
+          try { localStorage.setItem("sketchizi.menu.pinned", String(pinned)); } catch {}
+        };
+        applyPinned(pinned);
+        pinButton.addEventListener("click", (event) => {
+          event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
+          applyPinned(!pinned);
+        });
+        document.addEventListener("pointerdown", (event) => {
+          if (pinned && !menuRoot.contains(event.target) && !event.target.closest?.(".dropdown-menu-button")) {
+            // Keep the pinned panel open while interacting elsewhere on the canvas.
+            menuRoot.style.setProperty("display", "flex", "important");
+          }
+        }, true);
+      }
+
+      // Ensure the native Open file action uses a file glyph rather than a folder glyph.
+      document.querySelectorAll('.dropdown-menu-container [data-testid="load-button"], .dropdown-menu-container button').forEach((button) => {
+        const label = button.textContent?.replace(/\s+/g, " ").trim();
+        if (label === "Open file" && !button.querySelector("[data-sketchizi-file-icon]")) {
+          const icon = document.createElement("span");
+          icon.dataset.sketchiziFileIcon = "true"; icon.setAttribute("aria-hidden", "true"); icon.textContent = "▤";
+          icon.style.marginRight = "8px"; button.prepend(icon);
+        }
+      });
+
       const backgroundLabel = [...document.querySelectorAll("body *")].find(
         (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
       );
       const backgroundMenu = backgroundLabel?.closest?.(".dropdown-menu-container");
-      if (backgroundMenu && !backgroundMenu.querySelector("[data-sketchizi-theme-background-default]")) {
-        const swatches = [...backgroundMenu.querySelectorAll("button")].filter((button) => {
-          const classes = typeof button.className === "string" ? button.className : "";
-          return /color-picker|color-swatch|background-swatch/i.test(classes)
-            || Boolean(button.style?.backgroundColor)
-            || /color/i.test(`${button.getAttribute("aria-label") || ""} ${button.getAttribute("data-testid") || ""}`);
-        });
-        if (swatches.length) {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.dataset.sketchiziThemeBackgroundDefault = "true";
-          button.className = "sketchizi-theme-background-default";
-          button.textContent = "Use theme default";
-          button.title = "Automatically match the canvas background to the application theme";
-          const firstSwatch = swatches[0];
-          const palette = firstSwatch.closest?.(".color-picker, [class*='color-picker'], [data-testid*='color-picker']")
-            || firstSwatch.parentElement;
-          if (palette && backgroundLabel.parentElement?.contains(palette)) palette.insertAdjacentElement("afterend", button);
-          else backgroundMenu.appendChild(button);
-        }
-      }
 
       const recentMenu = document.querySelector("[data-sketchizi-recent-files-menu]");
       const bind = (node, key, handler) => {
