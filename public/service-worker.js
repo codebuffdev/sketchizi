@@ -1,6 +1,6 @@
-const APP_CACHE = "sketchizi-v1.7.0";
+const APP_CACHE = "sketchizi-v1.10.68";
 const ERASER_CACHE = "sketchizi-eraser-icons-v4";
-const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/sketchizi-favicon.svg"];
+const APP_SHELL = ["/manifest.webmanifest", "/sketchizi-favicon.svg"];
 const LOCAL_ICON_PATH = "/api/eraser-icon";
 
 self.addEventListener("install", (event) => {
@@ -47,6 +47,16 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (url.origin !== self.location.origin) return;
+
+  // Always fetch document navigations from Cloudflare first. A cached index.html
+  // can reference stale or nonexistent bundles and leave the entire app blank.
+  if (event.request.mode === "navigate" || event.request.destination === "document") {
+    event.respondWith(fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      return cached || new Response("Sketchizi is offline. Reconnect and reload.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+    }));
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

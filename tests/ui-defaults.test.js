@@ -48,17 +48,17 @@ test("canvas background mode is explicit and preserves legacy saved-scene colors
 test("canvas theme synchronization migrates legacy default-gray scenes but preserves chosen custom colors", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /canvasBackgroundMode !== "theme"/);
-  assert.match(source, /legacyDefaultBackgrounds = new Set\(\[LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0"\]\)/);
+  assert.match(source, /legacyDefaultBackgrounds = new Set\(\[LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0", DARK_CANVAS_BACKGROUND, "#111", "#121212"\]\)/);
   assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
   assert.match(source, /viewBackgroundColor: nextBackground/);
   assert.match(source, /\[apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady\]/);
   assert.match(source, /if \(canvasBackgroundMode !== "theme" && !isLegacyDefault\) return/);
 });
 
-test("native Canvas background palette has an explicit automatic-mode action", async () => {
+test("canvas palette has no Use theme default control and follows theme automatically", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.match(source, /data-sketchizi-theme-background-default/);
-  assert.match(source, /Use theme default/);
+  assert.doesNotMatch(source, /button\.textContent = "Use theme default"/);
+  assert.match(source, /Theme-default canvas behavior is automatic/);
   assert.match(source, /markCanvasBackgroundCustom\(\)/);
 });
 
@@ -89,12 +89,20 @@ test("hamburger removes duplicate Help and labels the file action Open file", as
   assert.match(source, /openDrawingFromDisk/);
 });
 
-test("theme default canvas follows light and dark application themes and has a reliable menu action", async () => {
+test("canvas follows light/dark themes, menu supports pinning, and Open file has an icon", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
   assert.match(source, /const DARK_CANVAS_BACKGROUND = "#111722"/);
   assert.match(source, /isDarkTheme \? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND/);
   const menuSource = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.match(menuSource, /target\.matches\?\.\("\[data-sketchizi-theme-background-default\]"\)/);
-  assert.match(menuSource, /useThemeDefaultBackground\(\);/);
+  assert.match(menuSource, /data-sketchizi-menu-pin/);
+  assert.match(menuSource, /sketchizi-menu-pinned/);
+  assert.match(menuSource, /sketchizi-native-open-file-icon/);
+  assert.doesNotMatch(menuSource, /data-sketchizi-theme-background-default/);
+  const css = await readFile(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8");
+  assert.match(css, /html\[data-sketchizi-theme="dark"\].*button:hover/);
+  assert.match(css, /color: #ffffff !important/);
+  const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
+  assert.match(worker, /event\.request\.mode === "navigate"/);
+  assert.match(worker, /Always fetch document navigations from Cloudflare first/);
 });

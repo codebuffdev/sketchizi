@@ -72,16 +72,15 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     // Treat the standard white canvas as a theme default too. Older versions
     // commonly persisted #ffffff as "custom", which prevented dark mode from
     // updating the actual Excalidraw canvas background.
-    const legacyDefaultBackgrounds = new Set([LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0"]);
+    const legacyDefaultBackgrounds = new Set([LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0", DARK_CANVAS_BACKGROUND, "#111", "#121212"]);
     const isLegacyDefault = canvasBackgroundMode === "custom" && legacyDefaultBackgrounds.has(current);
     if (isLegacyDefault) {
       setCanvasBackgroundMode("theme");
       try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
     }
 
-    // The canvas now follows the application theme automatically. The old
-    // "Use theme default" control is intentionally removed, so there is no
-    // separate opt-in mode that can leave the canvas stuck in the prior theme.
+    if (canvasBackgroundMode !== "theme" && !isLegacyDefault) return;
+
     const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
     if (current === nextBackground) return;
 

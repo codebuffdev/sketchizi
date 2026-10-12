@@ -142,7 +142,17 @@ export function useNativeSketchiziMenu({
           const item = openLabel.closest(
             "li, [role='menuitem'], .dropdown-menu-item, .context-menu-item, .menu-item, button, a"
           ) || openLabel.parentElement;
-          if (item && item !== menu) replaceExactTextNode(item, "Open", "Open file");
+          if (item && item !== menu) {
+            replaceExactTextNode(item, "Open", "Open file");
+            item.classList.add("sketchizi-native-open-file-item");
+            if (!item.querySelector(".sketchizi-native-open-file-icon")) {
+              const icon = document.createElement("span");
+              icon.className = "sketchizi-native-open-file-icon";
+              icon.setAttribute("aria-hidden", "true");
+              icon.textContent = "▤";
+              item.prepend(icon);
+            }
+          }
         }
       });
       document.querySelectorAll("body *").forEach((node) => {
@@ -164,10 +174,6 @@ export function useNativeSketchiziMenu({
         if (menuParent) {
           const customBlock = document.createElement("div");
           customBlock.dataset.sketchiziCustomMenuBlock = "true";
-          const panelHeader = document.createElement("div");
-          panelHeader.className = "sketchizi-menu-panel-header";
-          panelHeader.innerHTML = `<span>File menu</span><button type="button" data-sketchizi-pin-panel aria-pressed="false" title="Pin panel open" aria-label="Pin panel open">♧</button>`;
-          customBlock.append(panelHeader);
           const recentSection = document.createElement("div");
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
@@ -188,48 +194,41 @@ export function useNativeSketchiziMenu({
         }
       }
 
-      const pinButton = document.querySelector("[data-sketchizi-pin-panel]");
-      const menuRoot = pinButton?.closest(".dropdown-menu");
-      if (pinButton && menuRoot && pinButton.dataset.bound !== "true") {
-        pinButton.dataset.bound = "true";
-        let pinned = false;
-        try { pinned = localStorage.getItem("sketchizi.menu.pinned") === "true"; } catch {}
-        const applyPinned = (next) => {
-          pinned = next;
-          pinButton.setAttribute("aria-pressed", String(pinned));
-          pinButton.title = pinned ? "Unpin panel" : "Pin panel open";
-          pinButton.setAttribute("aria-label", pinButton.title);
-          pinButton.textContent = pinned ? "📌" : "♧";
-          menuRoot.classList.toggle("sketchizi-menu-pinned", pinned);
-          try { localStorage.setItem("sketchizi.menu.pinned", String(pinned)); } catch {}
-        };
-        applyPinned(pinned);
-        pinButton.addEventListener("click", (event) => {
-          event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
-          applyPinned(!pinned);
-        });
-        document.addEventListener("pointerdown", (event) => {
-          if (pinned && !menuRoot.contains(event.target) && !event.target.closest?.(".dropdown-menu-button")) {
-            // Keep the pinned panel open while interacting elsewhere on the canvas.
-            menuRoot.style.setProperty("display", "flex", "important");
-          }
-        }, true);
+      // Theme-default canvas behavior is automatic. Do not inject a separate
+      // "Use theme default" control into Excalidraw's native menu.
+
+      // Add a persistent pin toggle to the menu. The preference is retained
+      // across reloads; the menu styling reflects the active state.
+      const menuShell = menuParentForPin();
+      function menuParentForPin() { return [...document.querySelectorAll(".dropdown-menu")].find((node) => node.querySelector("[data-sketchizi-custom-menu-block]")); }
+      if (menuShell && !menuShell.querySelector("[data-sketchizi-menu-pin]")) {
+        const pin = document.createElement("button");
+        pin.type = "button";
+        pin.dataset.sketchiziMenuPin = "true";
+        pin.className = "sketchizi-menu-pin";
+        pin.innerHTML = '<span aria-hidden="true">⌖</span><span>Pin panel</span>';
+        pin.setAttribute("aria-pressed", localStorage.getItem("sketchizi-menu-pinned") === "true" ? "true" : "false");
+        pin.title = "Keep the menu panel open";
+        menuShell.querySelector("[data-sketchizi-custom-menu-block]")?.prepend(pin);
       }
-
-      // Ensure the native Open file action uses a file glyph rather than a folder glyph.
-      document.querySelectorAll('.dropdown-menu-container [data-testid="load-button"], .dropdown-menu-container button').forEach((button) => {
-        const label = button.textContent?.replace(/\s+/g, " ").trim();
-        if (label === "Open file" && !button.querySelector("[data-sketchizi-file-icon]")) {
-          const icon = document.createElement("span");
-          icon.dataset.sketchiziFileIcon = "true"; icon.setAttribute("aria-hidden", "true"); icon.textContent = "▤";
-          icon.style.marginRight = "8px"; button.prepend(icon);
-        }
+      document.querySelectorAll("[data-sketchizi-menu-pin]").forEach((pin) => {
+        if (pin.dataset.bound === "true") return;
+        pin.dataset.bound = "true";
+        pin.addEventListener("click", (event) => {
+          event.preventDefault(); event.stopPropagation();
+          const next = pin.getAttribute("aria-pressed") !== "true";
+          pin.setAttribute("aria-pressed", String(next));
+          try { localStorage.setItem("sketchizi-menu-pinned", String(next)); } catch {}
+          pin.classList.toggle("is-pinned", next);
+          const shell = pin.closest(".dropdown-menu");
+          shell?.classList.toggle("sketchizi-menu-is-pinned", next);
+          pin.querySelector("span:last-child").textContent = next ? "Panel pinned" : "Pin panel";
+        });
+        const pinned = pin.getAttribute("aria-pressed") === "true";
+        pin.classList.toggle("is-pinned", pinned);
+        pin.querySelector("span:last-child").textContent = pinned ? "Panel pinned" : "Pin panel";
+        pin.closest(".dropdown-menu")?.classList.toggle("sketchizi-menu-is-pinned", pinned);
       });
-
-      const backgroundLabel = [...document.querySelectorAll("body *")].find(
-        (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
-      );
-      const backgroundMenu = backgroundLabel?.closest?.(".dropdown-menu-container");
 
       const recentMenu = document.querySelector("[data-sketchizi-recent-files-menu]");
       const bind = (node, key, handler) => {
@@ -308,7 +307,24 @@ export function useNativeSketchiziMenu({
     };
     const scheduleCleanup = () => { if (!frame) frame = requestAnimationFrame(cleanNativeMenu); };
     scheduleCleanup();
-    const observer = new MutationObserver(scheduleCleanup);
+    const observer = new MutationObserver(() => {
+      scheduleCleanup();
+      // If the user pinned the menu, restore it after Excalidraw closes the
+      // dropdown on an outside click. Clicking the canvas still works; the
+      // menu simply remains available until explicitly unpinned.
+      if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
+      const menuStillOpen = Boolean(document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])"));
+      if (menuStillOpen) return;
+      if (observer.__reopenScheduled) return;
+      observer.__reopenScheduled = true;
+      requestAnimationFrame(() => {
+        observer.__reopenScheduled = false;
+        if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
+        if (document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])")) return;
+        const trigger = document.querySelector('button[aria-label*="menu" i], button[title*="menu" i], [data-testid*="main-menu"]');
+        trigger?.click();
+      });
+    });
     observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", scheduleCleanup);
     window.visualViewport?.addEventListener("resize", scheduleCleanup);
