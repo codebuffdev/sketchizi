@@ -20,7 +20,7 @@ test("Excalidraw's font asset path is configured before the app module loads", a
 
 test("dev and production build copy fonts from the pinned Excalidraw package", async () => {
   const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
-  assert.equal(pkg.version, "1.10.77");
+  assert.equal(pkg.version, "1.10.78");
   assert.equal(pkg.scripts.predev, "node scripts/copy-excalidraw-fonts.mjs");
   assert.equal(pkg.scripts.prebuild, "node scripts/copy-excalidraw-fonts.mjs");
   const script = await readFile(path.join(root, "scripts/copy-excalidraw-fonts.mjs"), "utf8");
@@ -85,4 +85,17 @@ test("supported non-default fontFamily values and other text properties survive 
   const json = serializeDrawing({ elements, appState: {}, files: {} });
   const restored = parseDrawing(json);
   assert.deepEqual(restored.elements, elements);
+});
+
+
+test("the selected default font family survives drawing save/reload", () => {
+  const json = serializeDrawing({ elements: [], appState: { currentItemFontFamily: 8 }, files: {} });
+  const restored = parseDrawing(json);
+  assert.equal(restored.appState.currentItemFontFamily, 8);
+});
+
+test("an invalid saved default font falls back safely to Excalifont", () => {
+  const json = serializeDrawing({ elements: [], appState: { currentItemFontFamily: 42 }, files: {} });
+  const restored = parseDrawing(json);
+  assert.equal(restored.appState.currentItemFontFamily, 5);
 });

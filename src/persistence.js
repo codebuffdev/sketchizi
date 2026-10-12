@@ -1,3 +1,5 @@
+import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "./features/canvas/fontFamilyDefaults.js";
+
 const DB_NAME = "sketchizi-local-state";
 const DB_VERSION = 4;
 const STORE_NAME = "documents";
@@ -131,6 +133,7 @@ export async function saveSketch({ elements, appState, files }) {
           scrollY: appState?.scrollY || 0,
           zoom: appState?.zoom?.value || 1,
           gridModeEnabled: !!appState?.gridModeEnabled,
+          currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
           gridSize: appState?.gridSize,
           gridStep: appState?.gridStep,
         },
@@ -205,6 +208,7 @@ export async function saveRecentSketch({ id, name, elements, appState, files }) 
             scrollY: appState?.scrollY || 0,
             zoom: appState?.zoom?.value || 1,
             gridModeEnabled: !!appState?.gridModeEnabled,
+            currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             gridSize: appState?.gridSize,
             gridStep: appState?.gridStep,
           },
