@@ -13,52 +13,9 @@ export function useNativeSketchiziMenu({
   markCanvasBackgroundCustom = () => {},
 }) {
   useEffect(() => {
-    const canvasBackgroundMenuIsOpen = () => [...document.querySelectorAll("body *")].some((node) =>
-      node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
-    );
-    const colorToHex = (value) => {
-      const match = String(value || "").match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-      if (!match) return /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(value) ? value : null;
-      return `#${match.slice(1, 4).map((part) => Number(part).toString(16).padStart(2, "0")).join("")}`;
-    };
-    const applyCanvasSwatch = (event) => {
-      if (!canvasBackgroundMenuIsOpen()) return;
-      const raw = event.target;
-      if (!(raw instanceof Element)) return;
-      const first = raw.closest('button, [role="button"], [data-testid], [aria-label]');
-      if (!first) return;
-      const candidates = [first, ...first.querySelectorAll("*")];
-      let selectedColor = null;
-      for (const candidate of candidates) {
-        const style = window.getComputedStyle(candidate);
-        const rect = candidate.getBoundingClientRect();
-        const classText = typeof candidate.className === "string" ? candidate.className : "";
-        const labelText = `${candidate.getAttribute?.("aria-label") || ""} ${candidate.getAttribute?.("data-testid") || ""} ${classText}`;
-        const looksLikeSwatch = /color|swatch|background/i.test(labelText)
-          || (rect.width >= 16 && rect.width <= 42 && rect.height >= 16 && rect.height <= 42 && Math.abs(rect.width - rect.height) <= 8 && !candidate.textContent?.trim());
-        if (!looksLikeSwatch) continue;
-        const computedColor = colorToHex(style.backgroundColor);
-        if (computedColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
-          selectedColor = computedColor;
-          break;
-        }
-      }
-      if (!selectedColor) return;
-      // Record the chosen color and apply it after Excalidraw's own swatch
-      // click handler. Applying during capture-phase pointerdown/click can be
-      // overwritten by Excalidraw later in the same event dispatch, which is
-      // especially visible in dark mode when clicking back onto the canvas.
-      markCanvasBackgroundCustom();
-      const applySelectedColor = () => {
-        const api = apiRef?.current;
-        if (!api?.updateScene) return;
-        api.updateScene({ appState: { viewBackgroundColor: selectedColor } });
-      };
-      window.setTimeout(() => {
-        applySelectedColor();
-        window.requestAnimationFrame(applySelectedColor);
-      }, 0);
-    };
+    // Canvas color swatches are intentionally disabled: the global Day/Night
+    // switch controls both application chrome and Excalidraw's canvas.
+    const applyCanvasSwatch = () => {};
     const onClick = (event) => {
       applyCanvasSwatch(event);
       const target = event.target?.closest?.('button, [role="button"], [role="menuitem"], a, [data-testid]');
@@ -135,6 +92,15 @@ export function useNativeSketchiziMenu({
 
     const cleanNativeMenu = () => {
       frame = 0;
+      // The app now offers exactly two coordinated themes. Remove Excalidraw's
+      // independent canvas-background palette so the canvas cannot diverge.
+      const canvasBackgroundLabel = [...document.querySelectorAll("body *")].find(
+        (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
+      );
+      if (canvasBackgroundLabel) {
+        const item = canvasBackgroundLabel.closest("button, [role='button'], [role='menuitem'], li, .dropdown-menu-item, .context-menu-item, .menu-item") || canvasBackgroundLabel.parentElement;
+        if (item && item !== document.body) item.remove();
+      }
       const replaceExactTextNode = (root, from, to) => {
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         let current;

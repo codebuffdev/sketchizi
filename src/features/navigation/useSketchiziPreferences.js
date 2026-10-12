@@ -8,9 +8,16 @@ const LIGHT_CANVAS_BACKGROUND = "#ffffff";
 const DARK_CANVAS_BACKGROUND = "#111722";
 
 export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
-  const [themeMode, setThemeMode] = useState(() => getInitialThemeMode());
-  const [systemDark, setSystemDark] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
-  const isDarkTheme = themeMode === "dark" || (themeMode === "system" && systemDark);
+  const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
+  const themeMode = themeModeState === "light" ? "light" : "dark";
+  const isDarkTheme = themeMode === "dark";
+  const systemDark = isDarkTheme;
+  const setThemeMode = useCallback((nextMode) => {
+    setThemeModeState((current) => {
+      const resolved = typeof nextMode === "function" ? nextMode(current) : nextMode;
+      return resolved === "light" ? "light" : "dark";
+    });
+  }, []);
   const canvasBackgroundModeKey = CANVAS_BACKGROUND_MODE_KEY;
   const [canvasBackgroundMode, setCanvasBackgroundMode] = useState(() => {
     try {
@@ -32,9 +39,10 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
   }, [canvasBackgroundMode, savedSketch, sketchReady]);
 
   const markCanvasBackgroundCustom = useCallback(() => {
-    setCanvasBackgroundMode("custom");
-    try { localStorage.setItem(canvasBackgroundModeKey, "custom"); } catch {}
-  }, []);
+    // Canvas backgrounds are governed by the global Day/Night theme.
+    setCanvasBackgroundMode("theme");
+    try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
+  }, [canvasBackgroundModeKey]);
 
   const useThemeDefaultBackground = useCallback(() => {
     // Persist theme-following mode before updating the canvas so the sync effect
@@ -52,11 +60,6 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
 
   useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);
   useEffect(() => {
-    const media = window.matchMedia?.("(prefers-color-scheme: dark)"); if (!media) return undefined;
-    const handleChange = (event) => setSystemDark(event.matches);
-    media.addEventListener?.("change", handleChange); return () => media.removeEventListener?.("change", handleChange);
-  }, []);
-  useEffect(() => {
     const root = document.documentElement; root.dataset.sketchiziTheme = isDarkTheme ? "dark" : "light";
     return () => { delete root.dataset.sketchiziTheme; };
   }, [isDarkTheme]);
@@ -72,15 +75,12 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     // Treat the standard white canvas as a theme default too. Older versions
     // commonly persisted #ffffff as "custom", which prevented dark mode from
     // updating the actual Excalidraw canvas background.
-    const legacyDefaultBackgrounds = new Set([LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0", DARK_CANVAS_BACKGROUND, "#111", "#121212"]);
-    const isLegacyDefault = canvasBackgroundMode === "custom" && legacyDefaultBackgrounds.has(current);
-    if (isLegacyDefault) {
+    // Day/Night is the single source of truth for the whole app and canvas.
+    // Legacy custom/background-mode preferences are intentionally ignored.
+    if (canvasBackgroundMode !== "theme") {
       setCanvasBackgroundMode("theme");
       try { localStorage.setItem(canvasBackgroundModeKey, "theme"); } catch {}
     }
-
-    if (canvasBackgroundMode !== "theme" && !isLegacyDefault) return;
-
     const nextBackground = isDarkTheme ? DARK_CANVAS_BACKGROUND : LIGHT_CANVAS_BACKGROUND;
     if (current === nextBackground) return;
 

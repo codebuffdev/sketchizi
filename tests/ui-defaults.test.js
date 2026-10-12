@@ -13,10 +13,10 @@ test("missing, invalid, or unavailable theme preference defaults to dark", () =>
   assert.equal(getInitialThemeMode({ getItem() { throw new Error("blocked"); } }), "dark");
 });
 
-test("valid saved light, dark, and system preferences are preserved", () => {
+test("only saved light and dark preferences are accepted", () => {
   assert.equal(getInitialThemeMode(storageWith("light")), "light");
   assert.equal(getInitialThemeMode(storageWith("dark")), "dark");
-  assert.equal(getInitialThemeMode(storageWith("system")), "system");
+  assert.equal(getInitialThemeMode(storageWith("system")), "dark");
 });
 
 test("the hamburger menu constrains and owns its vertical scroll region", async () => {
@@ -45,23 +45,19 @@ test("canvas background mode is explicit and preserves legacy saved-scene colors
   assert.equal(resolveCanvasBackgroundMode(null, false), "theme");
 });
 
-test("canvas theme synchronization migrates legacy default-gray scenes but preserves chosen custom colors", async () => {
+test("canvas always follows the global two-theme preference", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
-  assert.match(source, /canvasBackgroundMode !== "theme"/);
-  assert.match(source, /legacyDefaultBackgrounds = new Set\(\[LIGHT_CANVAS_BACKGROUND, "#fff", "#dedede", "#dcdcdc", "#e0e0e0", DARK_CANVAS_BACKGROUND, "#111", "#121212"\]\)/);
-  assert.match(source, /setCanvasBackgroundMode\("theme"\)/);
+  assert.match(source, /const isDarkTheme = themeMode === "dark"/);
+  assert.match(source, /Day\/Night is the single source of truth for the whole app and canvas/);
   assert.match(source, /viewBackgroundColor: nextBackground/);
-  assert.match(source, /\[apiRef, apiReady, canvasBackgroundMode, isDarkTheme, savedSketch, sketchReady\]/);
-  assert.match(source, /if \(canvasBackgroundMode !== "theme" && !isLegacyDefault\) return/);
+  assert.doesNotMatch(source, /themeMode === "system"/);
 });
 
-test("canvas palette has no Use theme default control and follows theme automatically", async () => {
+test("independent canvas palette is removed in the two-theme design", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /button\.textContent = "Use theme default"/);
-  assert.match(source, /Theme-default canvas behavior is automatic/);
-  assert.match(source, /markCanvasBackgroundCustom\(\)/);
+  assert.match(source, /Remove Excalidraw's[\s\S]*independent canvas-background palette/);
+  assert.match(source, /canvasBackgroundLabel\.closest/);
 });
-
 
 test("Use theme default immediately applies the effective theme background to the canvas", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
@@ -108,9 +104,8 @@ test("canvas follows light/dark themes, menu supports pinning, and Open file has
 });
 
 
-test("canvas swatch selection applies the chosen color and exits automatic theme mode before native handling", async () => {
+test("canvas swatches are disabled so only the global Day/Night theme controls the canvas", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /document\.addEventListener\("pointerdown", applyCanvasSwatch, true\)/);
-  assert.match(source, /markCanvasBackgroundCustom\(\);[\s\S]*window\.setTimeout\(\(\) => \{[\s\S]*applySelectedColor\(\);[\s\S]*window\.requestAnimationFrame\(applySelectedColor\)/);
-  assert.match(source, /const canvasBackgroundMenuIsOpen = \(\) =>/);
+  assert.match(source, /Canvas color swatches are intentionally disabled/);
+  assert.match(source, /const applyCanvasSwatch = \(\) => \{\}/);
 });

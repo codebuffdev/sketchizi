@@ -1,6 +1,6 @@
 export const THEME_PREFERENCE_KEY = "diagram-app-theme";
 
-const VALID_THEME_MODES = new Set(["dark", "light", "system"]);
+const VALID_THEME_MODES = new Set(["dark", "light"]);
 
 /**
  * Resolve the initial application theme synchronously, before the first React
