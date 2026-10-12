@@ -94,10 +94,13 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const [collaborationCreationState, setCollaborationCreationState] = useState("idle");
   const [chatMessages, setChatMessages] = useState([]);
   const [chatError, setChatError] = useState("");
+  const [collaborationHostRecovery, setCollaborationHostRecovery] = useState(null);
+  const [collaborationEndedSession, setCollaborationEndedSession] = useState(null);
   const collaborationCreationAttemptRef = useRef(false);
   const collaborationSocketOpenedRef = useRef(false);
   const hostAuthCheckRef = useRef(false);
   const collaborationCreationTimeoutRef = useRef(null);
+  const collaborationSessionInfoRef = useRef({ id: null, name: "" });
 
   const clearCollaborationCreationTimeout = useCallback(() => {
     if (collaborationCreationTimeoutRef.current) {
@@ -113,6 +116,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     setCollaborationRoom(null);
     setChatMessages([]);
     setChatError("");
+    setCollaborationHostRecovery(null);
     setCollaborationLink(null);
     setCollaborationSessionName("");
     setCollaborationUsers(0);
@@ -236,9 +240,12 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationRef.current?.close();
     setChatMessages([]);
     setChatError("");
+    setCollaborationEndedSession(null);
+    setCollaborationHostRecovery(null);
     setCollaborationRoom(roomId);
     setCollaborationLink(getCollaborationLink(roomId));
     setCollaborationSessionName(sessionName.trim());
+    collaborationSessionInfoRef.current = { id: roomId, name: sessionName.trim() };
     setCollaborationError("");
     setCollaborationRole(null);
     const client = new SketchiziCollaboration({
@@ -270,6 +277,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       },
       onStatus: (nextStatus) => {
         setCollaborationStatus(nextStatus);
+        if (nextStatus === "connected") setCollaborationHostRecovery((current) => current?.state === "recovering" ? { state: "connected", deadline: null, graceMs: 60000 } : null);
         if (!collaborationCreationAttemptRef.current) return;
         if (nextStatus === "connected") {
           clearCollaborationCreationTimeout();
@@ -303,10 +311,19 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       onChatHistory: (messages) => { setChatMessages(Array.isArray(messages) ? messages.map((message) => ({ ...message, __history: true })) : []); setChatError(""); },
       onChatMessage: (message) => setChatMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]),
       onChatError: setChatError,
-      onSessionInfo: ({ name }) => setCollaborationSessionName(name || "Collaboration"),
+      onHostRecovery: (recovery) => setCollaborationHostRecovery(recovery?.state === "recovering" ? recovery : null),
+      onSessionInfo: ({ name, roomId: infoRoomId }) => {
+        const resolvedName = name || "Collaboration";
+        collaborationSessionInfoRef.current = { id: infoRoomId || roomId, name: resolvedName };
+        setCollaborationSessionName(resolvedName);
+      },
       onSessionEnded: (message) => {
+        const endedInfo = collaborationSessionInfoRef.current;
+        const endedRoomId = endedInfo.id || roomId;
+        setCollaborationEndedSession({ id: endedRoomId, name: endedInfo.name?.trim() || sessionName?.trim() || "Collaboration", link: getCollaborationLink(endedRoomId), message: message || "This collaboration session has ended.", endedAt: Date.now(), returned: false });
         setChatMessages([]);
         setChatError("");
+        setCollaborationHostRecovery(null);
         setCollaborationRoom(null);
         setCollaborationLink(null);
         setCollaborationSessionName("");
@@ -445,13 +462,20 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     }
   }, [collaborationDraftName, connectCollaboration, failCollaborationCreation, setCollaborationDisplayName]);
 
-  const leaveOrEndCollaboration = useCallback(() => {
+  const leaveOrEndCollaboration = useCallback((confirmed = false) => {
     const isHost = collaborationRole === "host";
-    if (!window.confirm(isHost ? "End collaboration session?" : "Leave collaboration?")) return false;
-    if (isHost) collaborationRef.current?.disconnect();
-    else collaborationRef.current?.leave();
+    const confirmation = isHost
+      ? "End collaboration for everyone? The session will close, and its chat history will no longer be available."
+      : "Are you sure you want to leave this collaboration session?\n\nYou will disconnect from the session. Other participants will remain connected, and the session will continue.";
+    if (!confirmed && !window.confirm(confirmation)) return false;
+    if (isHost) {
+      const endedRoomId = collaborationRef.current?.roomId || collaborationRoomId;
+      setCollaborationEndedSession({ id: endedRoomId || `ended-${Date.now()}`, name: collaborationSessionName?.trim() || "Collaboration", link: collaborationLink || "", message: "This collaboration session has ended.", endedAt: Date.now(), returned: false });
+      collaborationRef.current?.disconnect();
+    } else collaborationRef.current?.leave();
     setChatMessages([]);
     setChatError("");
+    setCollaborationHostRecovery(null);
     setCollaborationRoom(null);
     setCollaborationLink(null);
     setCollaborationSessionName("");
@@ -466,7 +490,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     setCollaborationOpen(false);
     if (window.location.pathname.startsWith("/collab/")) window.history.replaceState({}, "", "/");
     return true;
-  }, [collaborationRole]);
+  }, [collaborationRole, collaborationRoomId, collaborationSessionName, collaborationLink]);
 
   useEffect(() => {
     if (!sketchReady || !apiReady || !collaborationRoomId) return;
@@ -491,10 +515,11 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
 
   const sendChatMessage = useCallback((text, audience, recipientId) => {
     setChatError("");
+    if (collaborationHostRecovery?.state === "recovering") { setChatError("Chat sending is paused while the host reconnects."); return false; }
     const sent = collaborationRef.current?.sendChatMessage(text, audience, recipientId) || false;
     if (!sent) setChatError("Message could not be sent. Check the connection and message length.");
     return sent;
-  }, []);
+  }, [collaborationHostRecovery]);
 
   return {
     collaborationRef,
@@ -513,6 +538,9 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationRoom,
     collaborationLink,
     collaborationStatus,
+    collaborationHostRecovery,
+    collaborationEndedSession,
+    setCollaborationEndedSession,
     collaborationCreationState,
     collaborationUsers,
     collaborationParticipants,

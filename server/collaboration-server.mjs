@@ -21,6 +21,7 @@ const MAX_ROOM_NAME_LENGTH = 120;
 const MAX_DISPLAY_NAME_LENGTH = 48;
 const CHAT_RATE_WINDOW_MS = 10000;
 const CHAT_RATE_LIMIT = 8;
+const HOST_RECOVERY_GRACE_MS = 60_000;
 const PRESENCE_ACTIVITIES = new Set(["idle", "drawing", "editing/moving"]);
 
 // There is intentionally no MAX_CLIENTS/MAX_PARTICIPANTS setting.
@@ -67,7 +68,7 @@ function sanitizePresence(clientId, source = {}, previous = null, permission = n
   const selectedElementIds = Array.isArray(source.selectedElementIds)
     ? source.selectedElementIds.filter((id) => typeof id === "string").slice(0, 100)
     : previous?.selectedElementIds || [];
-  return { participantId: clientId, displayName, color, cursor, activity, selectedElementIds, status: "connected", permission: permission || previous?.permission || "viewer" };
+  return { participantId: clientId, displayName, color, cursor, activity, selectedElementIds, joinedAt: Number(previous?.joinedAt) || Date.now(), status: "connected", permission: permission || previous?.permission || "viewer" };
 }
 
 function broadcastPresence(room, sender, message) {
@@ -127,6 +128,8 @@ function terminateRoom(room, message = "The host ended the collaboration session
     chatHistoryCount: room.chatMessages?.length || 0,
   });
   room.terminated = true;
+  if (room.hostRecoveryTimer) clearTimeout(room.hostRecoveryTimer);
+  room.hostRecoveryTimer = null;
   terminatedRooms.add(room.id);
   room.chatMessages?.splice(0);
   room.chatRate?.clear();
@@ -154,7 +157,25 @@ function removeClient(room, client, { intentional = false } = {}) {
   const clientIdForPresence = client.__sketchiziClientId;
   room.clients.delete(client);
   if (wasHost) {
-    terminateRoom(room);
+    if (intentional) {
+      terminateRoom(room);
+      return;
+    }
+    room.host = null;
+    room.hostDisconnectedAt = Date.now();
+    room.hostRecoveryDeadline = room.hostDisconnectedAt + HOST_RECOVERY_GRACE_MS;
+    if (clientIdForPresence && room.presence.has(clientIdForPresence)) {
+      const current = room.presence.get(clientIdForPresence);
+      room.presence.set(clientIdForPresence, { ...current, status: "disconnected" });
+    }
+    broadcast(room, null, { type: "host-disconnected", roomId: room.id, deadline: room.hostRecoveryDeadline, graceMs: HOST_RECOVERY_GRACE_MS });
+    broadcast(room, null, { type: "presence", roomId: room.id, count: room.clients.size, participants: Array.from(room.presence.values()) });
+    room.hostRecoveryTimer = setTimeout(() => {
+      if (room.terminated || !room.hostDisconnectedAt || room.host) return;
+      serverLogger.info("Host recovery grace period expired", { roomRef: syncDiagnosticRef(room.id), graceMs: HOST_RECOVERY_GRACE_MS });
+      terminateRoom(room, "The collaboration session ended because the host could not reconnect in time.");
+    }, HOST_RECOVERY_GRACE_MS);
+    room.hostRecoveryTimer.unref?.();
     return;
   }
   if (intentional) {
@@ -378,7 +399,7 @@ wss.on("connection", (socket, request) => {
           socket.close(1008, "Collaboration name required");
           return;
         }
-        room = { id: message.roomId, name, clients: new Set(), elements: new Map(), files: new Map(), authorship: new Map(), permissions: new Map(), pendingRequests: new Map(), presence: new Map(), host: null, hostSubject: hostAuthorization.subject, hostName: hostAuthorization.name, terminated: false, chatMessages: [], chatRate: new Map() };
+        room = { id: message.roomId, name, clients: new Set(), elements: new Map(), files: new Map(), authorship: new Map(), permissions: new Map(), pendingRequests: new Map(), presence: new Map(), host: null, hostSubject: hostAuthorization.subject, hostName: hostAuthorization.name, terminated: false, hostRecoveryTimer: null, hostDisconnectedAt: null, hostRecoveryDeadline: null, chatMessages: [], chatRate: new Map() };
         isHost = true;
         isNewRoom = true;
       }
@@ -444,7 +465,15 @@ wss.on("connection", (socket, request) => {
       }
       room.clients.add(socket);
       socket.__sketchiziClientId = clientId;
-      if (isHost || reconnectingHost) room.host = socket;
+      if (isHost || reconnectingHost) {
+        room.host = socket;
+        if (room.hostRecoveryTimer) clearTimeout(room.hostRecoveryTimer);
+        room.hostRecoveryTimer = null;
+        const wasRecoveringHost = Boolean(room.hostDisconnectedAt);
+        room.hostDisconnectedAt = null;
+        room.hostRecoveryDeadline = null;
+        if (wasRecoveringHost) broadcast(room, socket, { type: "host-reconnected", roomId: room.id });
+      }
       const permission = socket === room.host ? "host" : (room.permissions.get(clientId) || "viewer");
       room.permissions.set(clientId, permission);
       const previousPresence = room.presence.get(clientId);

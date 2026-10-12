@@ -102,7 +102,7 @@ function App() {
   const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
 
   const collaboration = useCollaboration({ apiRef, showToast, closeNativeMenu, sketchReady, apiReady });
-  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, chatMessages, chatError, sendChatMessage, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
+  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationHostRecovery, collaborationEndedSession, setCollaborationEndedSession, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, chatMessages, chatError, sendChatMessage, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
 
   const fileManager = useFileManager({
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch,
@@ -131,7 +131,7 @@ function App() {
     setCollaborationOpen(true);
   }, [collaborationRole, collaborationRoom, collaborationStatus, setCollaborationMode, setCollaborationOpen]);
 
-  const collaborationCanEdit = !collaborationRoom || collaborationPermission === "host" || collaborationPermission === "editor";
+  const collaborationCanEdit = (!collaborationRoom && !collaborationEndedSession) || collaborationEndedSession?.returned === true || (Boolean(collaborationRoom) && collaborationStatus === "connected" && collaborationHostRecovery?.state !== "recovering" && (collaborationPermission === "host" || collaborationPermission === "editor"));
   const moreTools = useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit: collaborationCanEdit });
   const { anchor: moreToolsAnchor, position: positionMoreToolsButton, activate: activateMoreTool } = moreTools;
   const iconInsertion = useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit: collaborationCanEdit });
@@ -486,6 +486,10 @@ function App() {
         setOpen={setCollaborationOpen}
         mode={collaborationMode}
         status={collaborationStatus}
+        hostRecovery={collaborationHostRecovery}
+        endedSession={collaborationEndedSession}
+        onReturnToCanvas={() => setCollaborationEndedSession((current) => current ? { ...current, returned: true } : current)}
+        onDismissEndedSession={() => setCollaborationEndedSession(null)}
         draftName={collaborationDraftName}
         setDraftName={setCollaborationDraftName}
         displayName={collaborationDisplayName}

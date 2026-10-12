@@ -15,6 +15,7 @@
 @import "./styles/auth.css";
 @import "./styles/icon-library-redesign.css";
 @import "./styles/header-redesign.css";
+@import "./styles/collaboration-redesign.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
@@ -480,3 +481,4 @@
 .app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .mobile-panel-close:hover {
   border-color: #bba4ef !important; background: #f0eaff !important; color: #6d28d9 !important;
 }
+

@@ -28,9 +28,18 @@ export default function CollaborationPresence({ participants = [], selfId, activ
   const [popoverStyle, setPopoverStyle] = useState(null);
   const stackRef = useRef(null);
   const popoverRef = useRef(null);
-  const connected = participants.filter((participant) => participant.status === "connected");
-  const ordered = [...participants].sort((a, b) => (a.participantId === selfId ? -1 : b.participantId === selfId ? 1 : 0));
-  const visible = ordered.slice(0, 4);
+  const joinedAt = (participant) => Number(participant.joinedAt || participant.connectedAt || participant.createdAt || 0);
+  const ordered = [...participants].sort((a, b) => {
+    const aHost = a.permission === "host" ? 1 : 0;
+    const bHost = b.permission === "host" ? 1 : 0;
+    if (aHost !== bHost) return bHost - aHost;
+    const timeDifference = joinedAt(b) - joinedAt(a);
+    if (timeDifference) return timeDifference;
+    return a.participantId === selfId ? -1 : b.participantId === selfId ? 1 : String(a.displayName).localeCompare(String(b.displayName));
+  });
+  const connected = ordered.filter((participant) => participant.status === "connected");
+  const disconnected = ordered.filter((participant) => participant.status !== "connected");
+  const visible = connected.slice(0, 3);
 
   const positionPopover = useCallback(() => {
     const anchor = stackRef.current;
@@ -83,6 +92,12 @@ export default function CollaborationPresence({ participants = [], selfId, activ
   }, [expanded, positionPopover]);
 
   useEffect(() => {
+    const closeOther = () => setExpanded(false);
+    window.addEventListener("sketchizi:close-participant-popover", closeOther);
+    return () => window.removeEventListener("sketchizi:close-participant-popover", closeOther);
+  }, []);
+
+  useEffect(() => {
     if (!expanded) return undefined;
     const onPointerDown = (event) => {
       if (stackRef.current?.contains(event.target) || popoverRef.current?.contains(event.target)) return;
@@ -108,16 +123,22 @@ export default function CollaborationPresence({ participants = [], selfId, activ
           aria-label="Participants"
           style={popoverStyle ? { left: popoverStyle.left, top: popoverStyle.top, visibility: "visible" } : { visibility: "hidden", left: 0, top: 0 }}
         >
-          {ordered.map((participant) => (
+          {connected.length > 0 && <div className="collaboration-participant-section-label">CONNECTED</div>}
+          {connected.map((participant) => (
             <div className="collaboration-participant-row" role="listitem" key={participant.participantId}>
               <ParticipantAvatar participant={participant} />
               <div className="collaboration-participant-copy">
                 <strong>{participant.displayName}{participant.participantId === selfId ? " (you)" : ""}</strong>
-                <span>{participant.permission === "host" ? "Host" : participant.permission === "editor" ? "Editor" : "Viewer"}{participant.status === "connected" ? (participant.activity === "drawing" ? " · Drawing…" : participant.activity === "editing/moving" ? " · Editing / moving…" : participant.selectedElementIds?.length ? ` · Selected ${participant.selectedElementIds.length} object${participant.selectedElementIds.length === 1 ? "" : "s"}` : "") : participant.status === "disconnected" ? " · Disconnected" : " · Reconnecting…"}</span>
+                <span>{participant.permission === "host" ? "Host" : participant.permission === "editor" ? "Editor" : "Viewer"}{participant.activity === "drawing" ? " · Drawing…" : participant.activity === "editing/moving" ? " · Editing / moving…" : participant.selectedElementIds?.length ? ` · Selected ${participant.selectedElementIds.length} object${participant.selectedElementIds.length === 1 ? "" : "s"}` : ""}</span>
               </div>
-              {role === "host" && participant.participantId !== selfId && participant.permission === "editor" && participant.status === "connected" && (
-                <button type="button" className="collaboration-permission-action" onClick={() => onRevokeEditAccess?.(participant.participantId)}>Revoke</button>
-              )}
+              {role === "host" && participant.participantId !== selfId && participant.permission === "editor" && <button type="button" className="collaboration-permission-action" onClick={() => onRevokeEditAccess?.(participant.participantId)}>Revoke</button>}
+            </div>
+          ))}
+          {disconnected.length > 0 && <div className="collaboration-participant-section-label">DISCONNECTED</div>}
+          {disconnected.map((participant) => (
+            <div className="collaboration-participant-row is-disconnected" role="listitem" key={participant.participantId}>
+              <ParticipantAvatar participant={participant} />
+              <div className="collaboration-participant-copy"><strong>{participant.displayName}{participant.participantId === selfId ? " (you)" : ""}</strong><span>{participant.permission === "host" ? "Host" : participant.permission === "editor" ? "Editor" : "Viewer"} · {participant.status === "disconnected" ? "Disconnected" : "Reconnecting…"}</span></div>
             </div>
           ))}
         </div>,
@@ -136,7 +157,7 @@ export default function CollaborationPresence({ participants = [], selfId, activ
         aria-label={`${connected.length} connected ${connected.length === 1 ? "person" : "people"}`}
       >
         {visible.map((participant) => <ParticipantAvatar key={participant.participantId} participant={participant} compact />)}
-        <span className="collaboration-avatar-count">{connected.length}</span>
+        {connected.length > 3 ? <span className="collaboration-avatar-count">+{connected.length - 3}</span> : null}
       </button>
       {activityLabel && <span className="collaboration-activity" aria-live="polite">{activityLabel}</span>}
       {popover}

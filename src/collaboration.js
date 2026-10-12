@@ -75,6 +75,7 @@ function normalizePresence(presence, clientId) {
   return {
     participantId: clientId,
     displayName,
+    joinedAt: Number(source.joinedAt) || Date.now(),
     color: /^#[0-9a-fA-F]{6}$/.test(source.color || "") ? source.color : colorForParticipant(clientId),
     cursor: source.cursor && Number.isFinite(source.cursor.x) && Number.isFinite(source.cursor.y)
       ? { x: source.cursor.x, y: source.cursor.y }
@@ -144,6 +145,7 @@ export class SketchiziCollaboration {
     onChatMessage,
     onChatHistory,
     onChatError,
+    onHostRecovery,
   }) {
     if (!ROOM_PATTERN.test(roomId)) throw new Error("Invalid collaboration room.");
     this.roomId = roomId;
@@ -167,6 +169,7 @@ export class SketchiziCollaboration {
     this.onChatMessage = onChatMessage;
     this.onChatHistory = onChatHistory;
     this.onChatError = onChatError;
+    this.onHostRecovery = onHostRecovery;
     this.displayName = getCollaborationDisplayName() || "Guest";
     this.color = colorForParticipant(this.clientId);
     this.role = null;
@@ -1231,6 +1234,14 @@ export class SketchiziCollaboration {
 
       case "chat:error":
         this.onChatError?.(typeof message.message === "string" ? message.message : "Unable to send chat message.");
+        break;
+
+      case "host-disconnected":
+        this.onHostRecovery?.({ state: "recovering", deadline: Date.now() + (Number(message.graceMs) || 60000), graceMs: Number(message.graceMs) || 60000 });
+        break;
+
+      case "host-reconnected":
+        this.onHostRecovery?.({ state: "connected", deadline: null, graceMs: 60000 });
         break;
 
       case "session-ended":
