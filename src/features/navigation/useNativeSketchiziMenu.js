@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 export function useNativeSketchiziMenu({
+  apiRef,
   fileActionsRef,
   currentFolder,
   currentFolderFiles,
@@ -12,20 +13,47 @@ export function useNativeSketchiziMenu({
   markCanvasBackgroundCustom = () => {},
 }) {
   useEffect(() => {
+    const canvasBackgroundMenuIsOpen = () => [...document.querySelectorAll("body *")].some((node) =>
+      node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
+    );
+    const colorToHex = (value) => {
+      const match = String(value || "").match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+      if (!match) return /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(value) ? value : null;
+      return `#${match.slice(1, 4).map((part) => Number(part).toString(16).padStart(2, "0")).join("")}`;
+    };
+    const applyCanvasSwatch = (event) => {
+      if (!canvasBackgroundMenuIsOpen()) return;
+      const raw = event.target;
+      if (!(raw instanceof Element)) return;
+      const first = raw.closest('button, [role="button"], [data-testid], [aria-label]');
+      if (!first) return;
+      const candidates = [first, ...first.querySelectorAll("*")];
+      let selectedColor = null;
+      for (const candidate of candidates) {
+        const style = window.getComputedStyle(candidate);
+        const rect = candidate.getBoundingClientRect();
+        const classText = typeof candidate.className === "string" ? candidate.className : "";
+        const labelText = `${candidate.getAttribute?.("aria-label") || ""} ${candidate.getAttribute?.("data-testid") || ""} ${classText}`;
+        const looksLikeSwatch = /color|swatch|background/i.test(labelText)
+          || (rect.width >= 16 && rect.width <= 42 && rect.height >= 16 && rect.height <= 42 && Math.abs(rect.width - rect.height) <= 8 && !candidate.textContent?.trim());
+        if (!looksLikeSwatch) continue;
+        const computedColor = colorToHex(style.backgroundColor);
+        if (computedColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
+          selectedColor = computedColor;
+          break;
+        }
+      }
+      if (!selectedColor) return;
+      // Switch out of automatic theme mode before Excalidraw handles its click.
+      // Applying the chosen color directly also covers swatches rendered in a
+      // sibling popover, outside the original dropdown container.
+      markCanvasBackgroundCustom();
+      apiRef?.current?.updateScene?.({ appState: { viewBackgroundColor: selectedColor } });
+    };
     const onClick = (event) => {
+      applyCanvasSwatch(event);
       const target = event.target?.closest?.('button, [role="button"], [role="menuitem"], a, [data-testid]');
       if (!target) return;
-      const menu = target.closest?.(".dropdown-menu-container");
-      const buttonStyle = target.tagName === "BUTTON" ? target.style : null;
-      const classText = typeof target.className === "string" ? target.className : "";
-      const swatchLike = /color-picker|color-swatch|background-swatch/i.test(classText)
-        || Boolean(buttonStyle?.backgroundColor)
-        || /color/i.test(`${target.getAttribute?.("aria-label") || ""} ${target.getAttribute?.("data-testid") || ""}`);
-      if (menu && swatchLike && [...menu.querySelectorAll("*")].some((node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background")) {
-        // Mark custom on the click itself, even when the chosen swatch matches
-        // the current color and Excalidraw therefore emits no state change.
-        markCanvasBackgroundCustom();
-      }
       const testId = target.getAttribute?.("data-testid");
       const text = target.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "";
       const inMenu = Boolean(target.closest?.(".dropdown-menu, [class*='dropdown-menu']"));
@@ -52,13 +80,15 @@ export function useNativeSketchiziMenu({
         else fileActionsRef.current.saveCurrentDrawing?.();
       }
     };
+    document.addEventListener("pointerdown", applyCanvasSwatch, true);
     document.addEventListener("click", onClick, true);
     document.addEventListener("keydown", onKeyDown, true);
     return () => {
+      document.removeEventListener("pointerdown", applyCanvasSwatch, true);
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [fileActionsRef, markCanvasBackgroundCustom, useThemeDefaultBackground]);
+  }, [apiRef, fileActionsRef, markCanvasBackgroundCustom, useThemeDefaultBackground]);
 
   useEffect(() => {
     const githubUrl = "https://github.com/codebuffdev";
