@@ -44,11 +44,20 @@ export function useNativeSketchiziMenu({
         }
       }
       if (!selectedColor) return;
-      // Switch out of automatic theme mode before Excalidraw handles its click.
-      // Applying the chosen color directly also covers swatches rendered in a
-      // sibling popover, outside the original dropdown container.
+      // Record the chosen color and apply it after Excalidraw's own swatch
+      // click handler. Applying during capture-phase pointerdown/click can be
+      // overwritten by Excalidraw later in the same event dispatch, which is
+      // especially visible in dark mode when clicking back onto the canvas.
       markCanvasBackgroundCustom();
-      apiRef?.current?.updateScene?.({ appState: { viewBackgroundColor: selectedColor } });
+      const applySelectedColor = () => {
+        const api = apiRef?.current;
+        if (!api?.updateScene) return;
+        api.updateScene({ appState: { viewBackgroundColor: selectedColor } });
+      };
+      window.setTimeout(() => {
+        applySelectedColor();
+        window.requestAnimationFrame(applySelectedColor);
+      }, 0);
     };
     const onClick = (event) => {
       applyCanvasSwatch(event);
@@ -80,11 +89,9 @@ export function useNativeSketchiziMenu({
         else fileActionsRef.current.saveCurrentDrawing?.();
       }
     };
-    document.addEventListener("pointerdown", applyCanvasSwatch, true);
     document.addEventListener("click", onClick, true);
     document.addEventListener("keydown", onKeyDown, true);
     return () => {
-      document.removeEventListener("pointerdown", applyCanvasSwatch, true);
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
     };

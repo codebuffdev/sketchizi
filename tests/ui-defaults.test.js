@@ -110,7 +110,7 @@ test("canvas follows light/dark themes, menu supports pinning, and Open file has
 
 test("canvas swatch selection applies the chosen color and exits automatic theme mode before native handling", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
-  assert.match(source, /document\.addEventListener\("pointerdown", applyCanvasSwatch, true\)/);
-  assert.match(source, /markCanvasBackgroundCustom\(\);[\s\S]*apiRef\?\.current\?\.updateScene\?\.\(\{ appState: \{ viewBackgroundColor: selectedColor \} \}\)/);
+  assert.doesNotMatch(source, /document\.addEventListener\("pointerdown", applyCanvasSwatch, true\)/);
+  assert.match(source, /markCanvasBackgroundCustom\(\);[\s\S]*window\.setTimeout\(\(\) => \{[\s\S]*applySelectedColor\(\);[\s\S]*window\.requestAnimationFrame\(applySelectedColor\)/);
   assert.match(source, /const canvasBackgroundMenuIsOpen = \(\) =>/);
 });
