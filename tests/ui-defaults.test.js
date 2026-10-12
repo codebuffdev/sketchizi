@@ -103,3 +103,16 @@ test("canvas swatches are disabled so only the global Day/Night theme controls t
   assert.match(source, /Canvas color swatches are intentionally disabled/);
   assert.match(source, /const applyCanvasSwatch = \(\) => \{\}/);
 });
+
+
+test("menu pin control is icon-only and keeps an accessible pressed state", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /pin\.innerHTML = '<svg class="sketchizi-menu-pin-icon"/);
+  assert.match(source, /pin\.setAttribute\("aria-label", initiallyPinned \? "Unpin menu panel" : "Pin menu panel"\)/);
+  assert.doesNotMatch(source, /pin\.querySelector\("span:last-child"\)\.textContent/);
+  assert.match(source, /sketchizi:menu-explicit-close/);
+  assert.match(source, /if \(localStorage\.getItem\("sketchizi-menu-pinned"\) !== "true"\) return;/);
+  const css = await readFile(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8");
+  assert.match(css, /\.sketchizi-menu-pin-icon/);
+  assert.match(css, /width: 30px/);
+});

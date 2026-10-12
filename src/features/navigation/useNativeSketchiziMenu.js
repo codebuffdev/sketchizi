@@ -57,6 +57,16 @@ export function useNativeSketchiziMenu({
   useEffect(() => {
     const githubUrl = "https://github.com/codebuffdev";
     let frame = 0;
+    let suppressPinnedReopenOnce = false;
+    let explicitCloseGeneration = 0;
+    const onExplicitMenuClose = () => {
+      // Only pinned panels need suppression. Otherwise the flag could survive
+      // an ordinary close and accidentally suppress a later, intentional pin.
+      if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
+      explicitCloseGeneration += 1;
+      suppressPinnedReopenOnce = true;
+    };
+    window.addEventListener("sketchizi:menu-explicit-close", onExplicitMenuClose);
     const escapeHtml = (value) => String(value).replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
     const constrainCanvasBackgroundMenu = () => {
       // The dropdown is anchored to the toolbar, so a viewport-wide max-height
@@ -209,9 +219,11 @@ export function useNativeSketchiziMenu({
         pin.type = "button";
         pin.dataset.sketchiziMenuPin = "true";
         pin.className = "sketchizi-menu-pin";
-        pin.innerHTML = '<span aria-hidden="true">⌖</span><span>Pin panel</span>';
-        pin.setAttribute("aria-pressed", localStorage.getItem("sketchizi-menu-pinned") === "true" ? "true" : "false");
-        pin.title = "Keep the menu panel open";
+        pin.innerHTML = '<svg class="sketchizi-menu-pin-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-4 1-4 4v4l-2 2-2-6-6-1 5-5 1-4Z"/><path d="m2 22 9-9"/></svg>';
+        const initiallyPinned = localStorage.getItem("sketchizi-menu-pinned") === "true";
+        pin.setAttribute("aria-pressed", String(initiallyPinned));
+        pin.setAttribute("aria-label", initiallyPinned ? "Unpin menu panel" : "Pin menu panel");
+        pin.title = initiallyPinned ? "Unpin menu panel" : "Pin menu panel";
         menuShell.querySelector("[data-sketchizi-custom-menu-block]")?.prepend(pin);
       }
       document.querySelectorAll("[data-sketchizi-menu-pin]").forEach((pin) => {
@@ -223,13 +235,15 @@ export function useNativeSketchiziMenu({
           pin.setAttribute("aria-pressed", String(next));
           try { localStorage.setItem("sketchizi-menu-pinned", String(next)); } catch {}
           pin.classList.toggle("is-pinned", next);
+          pin.setAttribute("aria-label", next ? "Unpin menu panel" : "Pin menu panel");
+          pin.title = next ? "Unpin menu panel" : "Pin menu panel";
           const shell = pin.closest(".dropdown-menu");
           shell?.classList.toggle("sketchizi-menu-is-pinned", next);
-          pin.querySelector("span:last-child").textContent = next ? "Panel pinned" : "Pin panel";
         });
         const pinned = pin.getAttribute("aria-pressed") === "true";
         pin.classList.toggle("is-pinned", pinned);
-        pin.querySelector("span:last-child").textContent = pinned ? "Panel pinned" : "Pin panel";
+        pin.setAttribute("aria-label", pinned ? "Unpin menu panel" : "Pin menu panel");
+        pin.title = pinned ? "Unpin menu panel" : "Pin menu panel";
         pin.closest(".dropdown-menu")?.classList.toggle("sketchizi-menu-is-pinned", pinned);
       });
 
@@ -315,13 +329,25 @@ export function useNativeSketchiziMenu({
       // If the user pinned the menu, restore it after Excalidraw closes the
       // dropdown on an outside click. Clicking the canvas still works; the
       // menu simply remains available until explicitly unpinned.
-      if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
       const menuStillOpen = Boolean(document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])"));
       if (menuStillOpen) return;
+      if (suppressPinnedReopenOnce) {
+        suppressPinnedReopenOnce = false;
+        return;
+      }
+      if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
       if (observer.__reopenScheduled) return;
       observer.__reopenScheduled = true;
-      requestAnimationFrame(() => {
+      const scheduledGeneration = explicitCloseGeneration;
+      observer.__reopenFrame = requestAnimationFrame(() => {
         observer.__reopenScheduled = false;
+        observer.__reopenFrame = 0;
+        // If the user explicitly clicked the hamburger after this reopen was
+        // queued, the explicit close wins over the pin's outside-click policy.
+        if (scheduledGeneration !== explicitCloseGeneration) {
+          suppressPinnedReopenOnce = false;
+          return;
+        }
         if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
         if (document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])")) return;
         const trigger = document.querySelector('button[aria-label*="menu" i], button[title*="menu" i], [data-testid*="main-menu"]');
@@ -333,6 +359,7 @@ export function useNativeSketchiziMenu({
     window.visualViewport?.addEventListener("resize", scheduleCleanup);
     return () => {
       observer.disconnect();
+      window.removeEventListener("sketchizi:menu-explicit-close", onExplicitMenuClose);
       window.removeEventListener("resize", scheduleCleanup);
       window.visualViewport?.removeEventListener("resize", scheduleCleanup);
       if (frame) cancelAnimationFrame(frame);

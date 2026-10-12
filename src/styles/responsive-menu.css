@@ -607,22 +607,22 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has([data-sketchizi-custom-menu
 }
 .sketchizi-menu-pin {
   appearance: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  width: calc(100% - 16px);
-  min-height: 32px;
+  justify-content: center;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
   margin: 7px 8px;
-  padding: 6px 9px;
-  border: 1px solid rgba(128,128,128,.25);
+  padding: 6px;
+  border: 1px solid transparent;
   border-radius: 7px;
   background: transparent;
   color: inherit;
-  font: inherit;
-  font-size: 12px;
-  text-align: left;
   cursor: pointer;
 }
-.sketchizi-menu-pin.is-pinned { background: rgba(109,92,231,.15); border-color: #7867ee; }
-.sketchizi-menu-pin > span:first-child { font-size: 15px; }
+.sketchizi-menu-pin:hover { background: rgba(128,128,128,.12); }
+.sketchizi-menu-pin.is-pinned { background: rgba(109,92,231,.18); border-color: #7867ee; color: #a99dff; }
+.sketchizi-menu-pin-icon { display: block; width: 16px; height: 16px; flex: 0 0 16px; }
 .dropdown-menu.sketchizi-menu-is-pinned { outline: 1px solid rgba(109,92,231,.35); }

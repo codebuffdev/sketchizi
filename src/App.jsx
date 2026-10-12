@@ -76,10 +76,13 @@ function App() {
 
   const closeNativeMenu = useCallback(() => {
     const api = apiRef.current;
-    if (!api || !nativeMenuOpenRef.current) return;
+    if (!api) return;
+    const nativeMenuIsOpen = nativeMenuOpenRef.current || api.getAppState?.().openMenu === "canvas";
     nativeMenuOpenRef.current = false;
     setNativeMenuOpen(false);
-    api.updateScene({ appState: { openMenu: null }, captureUpdate: CaptureUpdateAction.NEVER });
+    if (nativeMenuIsOpen) {
+      api.updateScene({ appState: { openMenu: null }, captureUpdate: CaptureUpdateAction.NEVER });
+    }
   }, []);
 
   const panelState = usePanelState({ apiRef, closeNativeMenu });
@@ -307,6 +310,7 @@ function App() {
         collaborationCreationState={collaboration.collaborationCreationState}
         collaborationCreationError={collaborationError}
         nativeMenuOpen={nativeMenuOpen}
+        closeNativeMenu={closeNativeMenu}
         createCollaboration={createCollaboration}
         dismissCollaborationCreationFailure={collaboration.dismissCollaborationCreationFailure}
         setThemeMode={setThemeMode}

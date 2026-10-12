@@ -62,3 +62,14 @@ test("desktop hamburger reuses native menu and suppresses duplicate trigger only
   const app = await read("../src/App.jsx");
   assert.match(app, /nativeMenuOpen=\{nativeMenuOpen\}/);
 });
+
+
+test("hamburger closes an already-open native menu instead of toggling it back open", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  assert.match(header, /hamburgerWasOpenAtPointerDownRef/);
+  assert.match(header, /if \(wasOpen\)[\s\S]*?closeNativeMenu\?\.\(\);[\s\S]*?return;/);
+  assert.match(header, /sketchizi:menu-explicit-close/);
+  const app = await read("../src/App.jsx");
+  assert.match(app, /closeNativeMenu=\{closeNativeMenu\}/);
+  assert.match(app, /api\.getAppState\?\.\(\)\.openMenu === "canvas"/);
+});
