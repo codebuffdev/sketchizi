@@ -97,6 +97,24 @@ test("AI gateway avoids caching API results and rejects missing configuration", 
 });
 
 
+test("warmup endpoint wakes the unified backend without requiring a user session", async () => {
+  let target = "";
+  globalThis.fetch = async (url, options = {}) => {
+    target = String(url);
+    assert.equal(options.method, "GET");
+    assert.equal(options.headers.has("x-sketchizi-identity"), false);
+    return Response.json({ ready: true }, { headers: { "cache-control": "no-store" } });
+  };
+  const response = await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/ai/warmup"),
+    env,
+  });
+  assert.equal(target, "https://ai.example.test/api/warmup");
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ready: true });
+  assert.match(response.headers.get("cache-control"), /no-store/);
+});
+
 test("gateway forwards a correlation ID and preserves a backend identity-store error status/code", async () => {
   let gatewayRequestId = "";
   globalThis.fetch = async (url, options = {}) => {

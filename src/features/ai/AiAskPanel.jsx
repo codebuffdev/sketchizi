@@ -158,6 +158,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const [conversationStatus, setConversationStatus] = useState("idle");
   const [conversationError, setConversationError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [signInBusy, setSignInBusy] = useState(false);
   const [panelError, setPanelError] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -783,29 +784,37 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   }, [pendingRequest, auth.user, busy, updateChat, refreshUsage]);
 
   const beginSignIn = useCallback(async () => {
+    if (signInBusy) return;
+    setSignInBusy(true);
     setPanelError("");
-    const api = apiRef.current;
-    if (!api?.getSceneElements || typeof persistSketchNow !== "function") {
-      setPanelError("The canvas is still loading. Wait until it is ready, then sign in again so the current diagram can be saved first.");
-      return;
+    try {
+      const api = apiRef.current;
+      if (!api?.getSceneElements || typeof persistSketchNow !== "function") {
+        setPanelError("The canvas is still loading. Wait until it is ready, then sign in again so the current diagram can be saved first.");
+        return;
+      }
+      if (saveTimerRef?.current) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      const saved = await persistSketchNow({
+        elements: api.getSceneElements(),
+        appState: api.getAppState?.() || {},
+        files: api.getFiles?.() || {},
+      });
+      if (!saved) {
+        setPanelError("Sketchizi could not save the latest canvas locally, so sign-in was not started. Resolve the storage issue and try again.");
+        return;
+      }
+      const destination = new URL(window.location.href);
+      destination.searchParams.set("aiAsk", "1");
+      await startGoogleSignIn(`${destination.pathname}${destination.search}${destination.hash}`);
+    } catch (error) {
+      setPanelError(error.message || "Sketchizi services are starting. Please try again.");
+    } finally {
+      setSignInBusy(false);
     }
-    if (saveTimerRef?.current) {
-      window.clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
-    const saved = await persistSketchNow({
-      elements: api.getSceneElements(),
-      appState: api.getAppState?.() || {},
-      files: api.getFiles?.() || {},
-    });
-    if (!saved) {
-      setPanelError("Sketchizi could not save the latest canvas locally, so sign-in was not started. Resolve the storage issue and try again.");
-      return;
-    }
-    const destination = new URL(window.location.href);
-    destination.searchParams.set("aiAsk", "1");
-    startGoogleSignIn(`${destination.pathname}${destination.search}${destination.hash}`);
-  }, [apiRef, persistSketchNow, saveTimerRef]);
+  }, [apiRef, persistSketchNow, saveTimerRef, signInBusy]);
 
   const chooseProvider = (provider) => {
     updateChat((current) => ({ ...current, provider }));
@@ -844,14 +853,14 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         </div>
       </header>
 
-      {auth.status === "loading" && <div className="ai-ask-auth-state" role="status">Checking your sign-in session…</div>}
+      {auth.status === "loading" && <div className="ai-ask-auth-state" role="status">Connecting to Sketchizi services and checking your sign-in session…</div>}
       {auth.status === "unavailable" && <div className="ai-ask-auth-state"><p>{auth.error}</p><button type="button" onClick={() => setAuthAttempt((value) => value + 1)}>Retry</button></div>}
       {auth.status === "anonymous" && (
         <div className="ai-ask-signin-state">
           <div className="ai-ask-signin-icon" aria-hidden="true">✦</div>
           <h3>Sign in to use AI Ask</h3>
           <p>AI Ask requires your existing Google sign-in for both Built-in Gemini and BYOK. Drawing and collaboration remain available without signing in.</p>
-          <button className="ai-ask-primary" type="button" onClick={beginSignIn}>Continue with Google</button>
+          <button className="ai-ask-primary" type="button" onClick={beginSignIn} disabled={signInBusy}>{signInBusy ? "Starting Sketchizi services…" : "Continue with Google"}</button>
           <p className="ai-ask-muted">Your current canvas is saved before sign-in and restored when you return.</p>
         </div>
       )}

@@ -11,6 +11,7 @@ test("chat transport retry reuses the same logical request ID and only retries t
   const chatBodies = [];
   let chatAttempts = 0;
   globalThis.fetch = async (url, options = {}) => {
+    if (String(url) === "/api/ai/warmup") return jsonResponse({ status: "UP" });
     if (String(url) === "/api/auth/csrf") return jsonResponse({ token: "csrf-token", headerName: "X-XSRF-TOKEN" });
     assert.equal(String(url), "/api/ai/chat");
     chatBodies.push(JSON.parse(options.body));
@@ -34,6 +35,7 @@ test("chat HTTP errors are not automatically regenerated", async () => {
   const originalFetch = globalThis.fetch;
   let chatAttempts = 0;
   globalThis.fetch = async (url) => {
+    if (String(url) === "/api/ai/warmup") return jsonResponse({ status: "UP" });
     if (String(url) === "/api/auth/csrf") return jsonResponse({ token: "csrf-token", headerName: "X-XSRF-TOKEN" });
     chatAttempts += 1;
     return jsonResponse({ error: "quota exhausted", code: "account_quota_exceeded" }, 429);
@@ -56,9 +58,12 @@ test("request IDs are RFC 4122 UUIDs", () => {
 
 test("usage requests have a finite timeout and report a recoverable timeout code", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (_url, options = {}) => new Promise((_resolve, reject) => {
+  globalThis.fetch = async (_url, options = {}) => {
+    if (String(_url) === "/api/ai/warmup") return jsonResponse({ status: "UP" });
+    return new Promise((_resolve, reject) => {
     options.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
-  });
+    });
+  };
   try {
     await assert.rejects(aiApiRequestWithTimeout("/usage?conversationId=conv", {}, 10), (error) => error.code === "request_timeout");
   } finally {
@@ -70,6 +75,7 @@ test("usage requests have a finite timeout and report a recoverable timeout code
 test("HTTP errors retain safe status, code, and server correlation ID", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (_url, options = {}) => {
+    if (String(_url) === "/api/ai/warmup") return jsonResponse({ status: "UP" });
     if (String(_url) === "/api/auth/csrf") return jsonResponse({ token: "csrf-token", headerName: "X-XSRF-TOKEN" });
     return new Response(JSON.stringify({ error: "AI identity verification is temporarily unavailable.", code: "identity_store_unavailable" }), {
       status: 503,
@@ -91,6 +97,7 @@ test("conversation creation timeout also aborts the preliminary CSRF request", a
   const originalFetch = globalThis.fetch;
   let observedAbort = false;
   globalThis.fetch = async (url, options = {}) => {
+    if (String(url) === "/api/ai/warmup") return jsonResponse({ status: "UP" });
     assert.equal(String(url), "/api/auth/csrf");
     return new Promise((_resolve, reject) => {
       options.signal?.addEventListener("abort", () => {

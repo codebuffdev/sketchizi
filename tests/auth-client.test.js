@@ -28,6 +28,7 @@ test("concurrent auth checks share one request and one caller can cancel indepen
   let requests = 0;
   let resolveResponse;
   globalThis.fetch = async (url, options = {}) => {
+    if (String(url) === "/api/ai/warmup") return jsonResponse({ status: "UP" });
     assert.equal(String(url), "/api/auth/me");
     assert.equal(options.credentials, "same-origin");
     requests += 1;
@@ -40,6 +41,10 @@ test("concurrent auth checks share one request and one caller can cancel indepen
     const second = fetchCurrentUser();
     cancelledCaller.abort();
     await assert.rejects(first, (error) => error.name === "AbortError");
+    // The shared health probe completes before the shared auth lookup starts.
+    for (let attempt = 0; attempt < 10 && !resolveResponse; attempt += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
     assert.equal(requests, 1);
 
     resolveResponse(jsonResponse({ authenticated: true, user: { id: "account-1", name: "Test" } }));
@@ -55,7 +60,8 @@ test("concurrent auth checks share one request and one caller can cancel indepen
 test("auth status cache can be invalidated after an authentication change", async () => {
   const originalFetch = globalThis.fetch;
   let requests = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
+    if (String(url) === "/api/ai/warmup") return jsonResponse({ status: "UP" });
     requests += 1;
     return jsonResponse({ authenticated: false, user: null }, 401);
   };
@@ -101,7 +107,7 @@ test("header exposes a status retry when authentication lookup is unavailable", 
 test("a successful authentication check clears a stale OAuth login error", async () => {
   const source = await readFile(new URL("../src/features/auth/AuthenticationControl.jsx", import.meta.url), "utf8");
   assert.match(source, /if \(authenticated\) setLoginError\(false\)/);
-  assert.match(source, /setLoginError\(false\); startGoogleSignIn/);
+  assert.match(source, /const handleGoogleSignIn = async \(\) => \{[\s\S]*?setLoginError\(false\);[\s\S]*?await startGoogleSignIn/);
 });
 
 

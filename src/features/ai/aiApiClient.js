@@ -1,3 +1,5 @@
+import { ensureBackendReady } from "../backend/backendWarmup.js";
+
 const API_BASE = "/api/ai";
 
 async function csrfHeaders(signal) {
@@ -14,6 +16,7 @@ async function csrfHeaders(signal) {
 }
 
 export async function aiApiRequest(path, { method = "GET", body, signal } = {}) {
+  await ensureBackendReady();
   const normalizedMethod = method.toUpperCase();
   const retryableLogicalChat = normalizedMethod === "POST" && path === "/chat" && body && typeof body.requestId === "string";
   const maxAttempts = retryableLogicalChat ? 2 : 1;
@@ -63,6 +66,9 @@ export async function aiApiRequest(path, { method = "GET", body, signal } = {}) 
 
 /** Runs a read request with a finite deadline so UI loading states cannot hang forever. */
 export async function aiApiRequestWithTimeout(path, options = {}, timeoutMs = 15000) {
+  // Cold-start waiting is separate from the request's normal timeout. Otherwise
+  // a 12–15 second operation timeout could expire before Render finishes waking.
+  await ensureBackendReady();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), Math.max(1, timeoutMs));
   try {

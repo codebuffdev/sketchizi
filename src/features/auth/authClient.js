@@ -1,3 +1,5 @@
+import { ensureBackendReady } from "../backend/backendWarmup.js";
+
 const AUTH_ME_URL = "/api/auth/me";
 const AUTH_CSRF_URL = "/api/auth/csrf";
 const AUTH_LOGOUT_URL = "/api/auth/logout";
@@ -65,6 +67,7 @@ function waitForCaller(promise, signal) {
 }
 
 async function requestCurrentUser() {
+  await ensureBackendReady();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), AUTH_CHECK_TIMEOUT_MS);
   try {
@@ -129,12 +132,14 @@ export function fetchCurrentUser(signal) {
   return waitForCaller(currentUserPromise, signal);
 }
 
-export function startGoogleSignIn(returnTo = window.location.pathname + window.location.search + window.location.hash) {
+export async function startGoogleSignIn(returnTo = window.location.pathname + window.location.search + window.location.hash) {
+  await ensureBackendReady();
   const safeReturnTo = typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\") ? returnTo : "/";
   window.location.assign(`/api/auth/login/google?returnTo=${encodeURIComponent(safeReturnTo)}`);
 }
 
 export async function signOut() {
+  await ensureBackendReady();
   const csrfResponse = await fetch(AUTH_CSRF_URL, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
   if (!csrfResponse.ok) throw new Error("Could not prepare a secure sign-out request.");
   const { token, headerName } = await csrfResponse.json();
@@ -147,6 +152,7 @@ export async function signOut() {
 }
 
 export async function fetchHostAuthorization(roomId) {
+  await ensureBackendReady();
   if (typeof roomId !== "string" || !/^[A-Za-z0-9_-]{20,64}$/.test(roomId)) {
     throw new Error("Could not prepare secure collaboration hosting.");
   }

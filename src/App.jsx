@@ -39,6 +39,7 @@ import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKuberne
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
+import { wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 
 function App() {
@@ -84,6 +85,10 @@ function App() {
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
+
+  useEffect(() => {
+    wakeBackendOnPageLoad();
+  }, []);
 
   useEffect(() => {
     const currentUrl = new URL(window.location.href);

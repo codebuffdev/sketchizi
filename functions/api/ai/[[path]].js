@@ -104,6 +104,7 @@ function csrfIsValid(request) {
 }
 
 function upstreamPath(pathname) {
+  if (pathname === `${FRONTEND_PREFIX}/warmup`) return "/api/warmup";
   if (pathname === `${FRONTEND_PREFIX}/health`) return "/actuator/health";
   if (pathname === FRONTEND_PREFIX || pathname === `${FRONTEND_PREFIX}/`) return "/api/v1/ai";
   const suffix = pathname.slice(`${FRONTEND_PREFIX}/`.length);
@@ -121,6 +122,7 @@ export async function onRequest({ request, env }) {
 
   const aiOrigin = validServiceOrigin(env.AI_SERVICE_ORIGIN);
   if (!aiOrigin) return fail(503, "The AI service is not configured.", "ai_service_not_configured");
+  const isPublicWarmup = incoming.pathname === `${FRONTEND_PREFIX}/warmup`;
   const isHealthCheck = incoming.pathname === `${FRONTEND_PREFIX}/health`;
   const upstream = new URL(mappedPath, aiOrigin);
   upstream.search = incoming.search;
@@ -139,7 +141,7 @@ export async function onRequest({ request, env }) {
   }
 
   let assertion = "";
-  if (!isHealthCheck) {
+  if (!isHealthCheck && !isPublicWarmup) {
     const authOrigin = validServiceOrigin(env.AUTH_SERVICE_ORIGIN);
     const secret = env.AI_IDENTITY_HMAC_SECRET;
     if (!authOrigin || typeof secret !== "string" || new TextEncoder().encode(secret).length < 32) {

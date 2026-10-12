@@ -1,7 +1,7 @@
 {
   "name": "sketchizi",
   "private": true,
-  "version": "1.10.57",
+  "version": "1.10.58",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,7 +19,8 @@
     "test:auth": "node --test tests/auth-gateway.test.js tests/auth-client.test.js",
     "test:ai": "node --test tests/ai-api-client.test.js tests/ai-diagram-context.test.js tests/ai-gateway.test.js tests/ai-request-lifecycle.test.js",
     "test:collaboration-host-auth": "node --test tests/collaboration-host-auth.test.js",
-    "test:device": "node --test tests/device-support.test.js"
+    "test:device": "node --test tests/device-support.test.js",
+    "test:backend-warmup": "node --test tests/backend-warmup.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
