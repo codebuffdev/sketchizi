@@ -1,4 +1,4 @@
-const APP_CACHE = "sketchizi-v1.10.68";
+const APP_CACHE = "sketchizi-v1.10.77";
 const ERASER_CACHE = "sketchizi-eraser-icons-v4";
 const APP_SHELL = ["/manifest.webmanifest", "/sketchizi-favicon.svg"];
 const LOCAL_ICON_PATH = "/api/eraser-icon";
