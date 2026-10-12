@@ -2,6 +2,7 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
+import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -33,7 +34,7 @@ export default function SketchiziCanvas({
           appState: {
             ...(savedSketch?.appState || {}),
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
-            viewBackgroundColor: isDarkTheme ? "#111722" : "#ffffff",
+            viewBackgroundColor: getCanvasBackground(isDarkTheme),
           },
           files: savedSketch?.files || {},
         }}

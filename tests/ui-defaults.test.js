@@ -54,7 +54,7 @@ test("independent canvas palette is removed in the two-theme design", async () =
 
 test("restored scene background cannot override Day/Night during initialData hydration", async () => {
   const source = await readFile(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
-  assert.match(source, /viewBackgroundColor: isDarkTheme \? "#111722" : "#ffffff"/);
+  assert.match(source, /viewBackgroundColor: getCanvasBackground\(isDarkTheme\)/);
   const helper = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
   assert.match(helper, /api\.getAppState\(\)/);
   assert.match(helper, /api\.updateScene\(/);
@@ -81,7 +81,8 @@ test("hamburger removes duplicate Help and labels the file action Open file", as
 test("canvas follows light/dark themes, menu supports pinning, and Open file has an icon", async () => {
   const source = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
   assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
-  assert.match(source, /const DARK_CANVAS_BACKGROUND = "#111722"/);
+  assert.match(source, /const DARK_CANVAS_BACKGROUND = "#f3faff"/);
+  assert.match(source, /invert\(93%\) hue-rotate\(180deg\)/);
   assert.match(source, /isDarkTheme/);
   const menuSource = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   assert.match(menuSource, /data-sketchizi-menu-pin/);
