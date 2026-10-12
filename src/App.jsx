@@ -346,6 +346,17 @@ function App() {
 
         <button
           type="button"
+          className="community-reviews-toggle"
+          onClick={() => { window.location.href = "/reviews"; }}
+          title="Read Sketchizi reviews and share feedback"
+          aria-label="Reviews and Feedback"
+        >
+          <span aria-hidden="true">★</span>
+          <span>Reviews</span>
+        </button>
+
+        <button
+          type="button"
           className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
           onClick={() => setAiAskOpen((value) => !value)}
           title="Ask AI about this diagram"
