@@ -200,6 +200,55 @@ export function useNativeSketchiziMenu({
       // Theme-default canvas behavior is automatic. Do not inject a separate
       // "Use theme default" control into Excalidraw's native menu.
 
+      // Excalidraw leaves trailing separators/spacer wrappers behind when its
+      // Canvas background item is removed. Trim only empty/decorative siblings
+      // after the final visible action, "Reset the canvas", so the panel ends
+      // immediately after its last action without the extra blank ruled rows.
+      const trimTrailingMenuArtifacts = () => {
+        const menuRoot = [...document.querySelectorAll(".dropdown-menu-container")].find(
+          (node) => node.querySelector("[data-sketchizi-custom-menu-block]")
+        );
+        if (!menuRoot) return;
+
+        const resetLabel = [...menuRoot.querySelectorAll("*")].find(
+          (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() === "reset the canvas"
+        );
+        if (!resetLabel) return;
+
+        const resetAction = resetLabel.closest(
+          "button, a[href], [role='menuitem'], li, .dropdown-menu-item, .context-menu-item, .menu-item"
+        ) || resetLabel.parentElement;
+        if (!resetAction) return;
+
+        const hasMeaningfulMenuContent = (node) => {
+          if (!(node instanceof HTMLElement)) return true;
+          if (node.matches("button, a[href], [role='menuitem'], input, select, textarea")) return true;
+          if (node.querySelector("button, a[href], [role='menuitem'], input, select, textarea")) return true;
+          return Boolean(node.textContent?.replace(/\s+/g, " ").trim());
+        };
+
+        let cursor = resetAction;
+        while (cursor && cursor !== menuRoot) {
+          let sibling = cursor.nextElementSibling;
+          while (sibling && !hasMeaningfulMenuContent(sibling)) {
+            const nextSibling = sibling.nextElementSibling;
+            sibling.remove();
+            sibling = nextSibling;
+          }
+          cursor = cursor.parentElement;
+        }
+
+        // The wrapper containing the final native action should not contribute
+        // its own trailing separator or excess spacing to the panel height.
+        const actionGroup = resetAction.parentElement;
+        if (actionGroup && actionGroup !== menuRoot) {
+          actionGroup.style.setProperty("border-bottom", "0", "important");
+          actionGroup.style.setProperty("padding-bottom", "0", "important");
+          actionGroup.style.setProperty("margin-bottom", "0", "important");
+        }
+      };
+      trimTrailingMenuArtifacts();
+
       // The menu is intentionally not pinnable: the hamburger is a true
       // toggle, so clicking it always closes an open menu.
 

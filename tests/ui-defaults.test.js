@@ -111,3 +111,13 @@ test("canvas swatches are disabled so only the global Day/Night theme controls t
   assert.match(source, /Canvas color swatches are intentionally disabled/);
   assert.match(source, /const applyCanvasSwatch = \(\) => \{\}/);
 });
+
+
+test("hamburger panel removes trailing empty separators after Reset the canvas", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /trimTrailingMenuArtifacts/);
+  assert.match(source, /Reset the canvas/);
+  assert.match(source, /hasMeaningfulMenuContent/);
+  assert.match(source, /actionGroup\.style\.setProperty\("border-bottom", "0", "important"\)/);
+  assert.match(source, /actionGroup\.style\.setProperty\("padding-bottom", "0", "important"\)/);
+});
