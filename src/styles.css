@@ -16,6 +16,7 @@
 @import "./styles/icon-library-redesign.css";
 @import "./styles/header-redesign.css";
 @import "./styles/collaboration-redesign.css";
+@import "./styles/responsive-menu.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }

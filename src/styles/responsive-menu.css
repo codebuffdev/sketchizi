@@ -190,3 +190,106 @@
   .storage-warning-actions { width: 100%; padding-left: 40px; }
 }
 
+
+/* Sketchizi 1.10.60 — compact hamburger panel matching the approved menu concept.
+   Scope is limited to Excalidraw's hamburger dropdown and Sketchizi-injected rows. */
+.dropdown-menu {
+  border-radius: 12px !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .24) !important;
+}
+.dropdown-menu-container {
+  width: min(292px, calc(100vw - 24px)) !important;
+  padding: 8px !important;
+  border-radius: 12px !important;
+  font-size: 12px !important;
+}
+.dropdown-menu-container > * {
+  max-width: 100%;
+}
+.dropdown-menu-container button,
+.dropdown-menu-container a,
+.dropdown-menu-container [role="menuitem"] {
+  border-radius: 7px;
+}
+.dropdown-menu-container .sketchizi-native-settings-section {
+  min-width: 0;
+  margin: 2px 0 6px;
+  padding: 7px 7px 9px;
+  border-top: 1px solid var(--default-border-color, rgba(128,128,128,.2));
+}
+.dropdown-menu-container .sketchizi-native-settings-title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .01em;
+  opacity: .78;
+}
+.dropdown-menu-container .sketchizi-current-folder {
+  min-height: 30px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+.dropdown-menu-container .sketchizi-folder-action,
+.dropdown-menu-container .sketchizi-recent-clear {
+  min-height: 30px;
+  margin-top: 4px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+.dropdown-menu-container .sketchizi-recent-subtitle {
+  margin-top: 9px;
+  padding-top: 8px;
+}
+.dropdown-menu-container .sketchizi-recent-item {
+  min-height: 30px;
+  padding: 5px 7px;
+  font-size: 11px;
+}
+.dropdown-menu-container .sketchizi-recent-remove {
+  opacity: .65;
+}
+.dropdown-menu-container .sketchizi-recent-empty {
+  padding: 6px 7px;
+  font-size: 11px;
+}
+.dropdown-menu-container .sketchizi-recent-save {
+  min-height: 30px;
+  padding: 6px 9px;
+  font-size: 11px;
+}
+.dropdown-menu-container .sketchizi-theme-background-default {
+  width: calc(100% - 8px);
+  margin: 5px 4px;
+  min-height: 30px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+html[data-sketchizi-theme="dark"] .dropdown-menu,
+html[data-sketchizi-theme="dark"] .dropdown-menu-container {
+  color: #e7eaf1 !important;
+  background: #111722 !important;
+  border-color: #293244 !important;
+}
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-current-folder,
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-folder-action,
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-recent-clear,
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-theme-background-default {
+  background: rgba(255,255,255,.035);
+  border-color: #2a3445;
+  color: #e7eaf1;
+}
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-folder-action:hover,
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-recent-clear:hover,
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-recent-item:hover,
+html[data-sketchizi-theme="dark"] .dropdown-menu-container .sketchizi-recent-save:hover {
+  background: rgba(124, 92, 255, .14);
+}
+@media (max-width: 520px) {
+  .dropdown-menu-container {
+    width: min(292px, calc(100vw - 20px)) !important;
+    padding: 6px !important;
+  }
+}
