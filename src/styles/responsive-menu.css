@@ -581,7 +581,7 @@ html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-men
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link > span:first-child { width: 18px; flex: 0 0 18px; }
 
 
-/* 1.10.68: readable hover states and menu pin control. */
+/* 1.10.68: readable hover states and native menu refinements. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) button:hover,
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) a:hover,
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) [role="menuitem"]:hover {
@@ -605,24 +605,3 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has([data-sketchizi-custom-menu
   line-height: 1;
   color: currentColor;
 }
-.sketchizi-menu-pin {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  min-width: 30px;
-  height: 30px;
-  min-height: 30px;
-  margin: 7px 8px;
-  padding: 6px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-.sketchizi-menu-pin:hover { background: rgba(128,128,128,.12); }
-.sketchizi-menu-pin.is-pinned { background: rgba(109,92,231,.18); border-color: #7867ee; color: #a99dff; }
-.sketchizi-menu-pin-icon { display: block; width: 16px; height: 16px; flex: 0 0 16px; }
-.dropdown-menu.sketchizi-menu-is-pinned { outline: 1px solid rgba(109,92,231,.35); }

@@ -57,16 +57,6 @@ export function useNativeSketchiziMenu({
   useEffect(() => {
     const githubUrl = "https://github.com/codebuffdev";
     let frame = 0;
-    let suppressPinnedReopenOnce = false;
-    let explicitCloseGeneration = 0;
-    const onExplicitMenuClose = () => {
-      // Only pinned panels need suppression. Otherwise the flag could survive
-      // an ordinary close and accidentally suppress a later, intentional pin.
-      if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
-      explicitCloseGeneration += 1;
-      suppressPinnedReopenOnce = true;
-    };
-    window.addEventListener("sketchizi:menu-explicit-close", onExplicitMenuClose);
     const escapeHtml = (value) => String(value).replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
     const constrainCanvasBackgroundMenu = () => {
       // The dropdown is anchored to the toolbar, so a viewport-wide max-height
@@ -210,42 +200,8 @@ export function useNativeSketchiziMenu({
       // Theme-default canvas behavior is automatic. Do not inject a separate
       // "Use theme default" control into Excalidraw's native menu.
 
-      // Add a persistent pin toggle to the menu. The preference is retained
-      // across reloads; the menu styling reflects the active state.
-      const menuShell = menuParentForPin();
-      function menuParentForPin() { return [...document.querySelectorAll(".dropdown-menu")].find((node) => node.querySelector("[data-sketchizi-custom-menu-block]")); }
-      if (menuShell && !menuShell.querySelector("[data-sketchizi-menu-pin]")) {
-        const pin = document.createElement("button");
-        pin.type = "button";
-        pin.dataset.sketchiziMenuPin = "true";
-        pin.className = "sketchizi-menu-pin";
-        pin.innerHTML = '<svg class="sketchizi-menu-pin-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-4 1-4 4v4l-2 2-2-6-6-1 5-5 1-4Z"/><path d="m2 22 9-9"/></svg>';
-        const initiallyPinned = localStorage.getItem("sketchizi-menu-pinned") === "true";
-        pin.setAttribute("aria-pressed", String(initiallyPinned));
-        pin.setAttribute("aria-label", initiallyPinned ? "Unpin menu panel" : "Pin menu panel");
-        pin.title = initiallyPinned ? "Unpin menu panel" : "Pin menu panel";
-        menuShell.querySelector("[data-sketchizi-custom-menu-block]")?.prepend(pin);
-      }
-      document.querySelectorAll("[data-sketchizi-menu-pin]").forEach((pin) => {
-        if (pin.dataset.bound === "true") return;
-        pin.dataset.bound = "true";
-        pin.addEventListener("click", (event) => {
-          event.preventDefault(); event.stopPropagation();
-          const next = pin.getAttribute("aria-pressed") !== "true";
-          pin.setAttribute("aria-pressed", String(next));
-          try { localStorage.setItem("sketchizi-menu-pinned", String(next)); } catch {}
-          pin.classList.toggle("is-pinned", next);
-          pin.setAttribute("aria-label", next ? "Unpin menu panel" : "Pin menu panel");
-          pin.title = next ? "Unpin menu panel" : "Pin menu panel";
-          const shell = pin.closest(".dropdown-menu");
-          shell?.classList.toggle("sketchizi-menu-is-pinned", next);
-        });
-        const pinned = pin.getAttribute("aria-pressed") === "true";
-        pin.classList.toggle("is-pinned", pinned);
-        pin.setAttribute("aria-label", pinned ? "Unpin menu panel" : "Pin menu panel");
-        pin.title = pinned ? "Unpin menu panel" : "Pin menu panel";
-        pin.closest(".dropdown-menu")?.classList.toggle("sketchizi-menu-is-pinned", pinned);
-      });
+      // The menu is intentionally not pinnable: the hamburger is a true
+      // toggle, so clicking it always closes an open menu.
 
       const recentMenu = document.querySelector("[data-sketchizi-recent-files-menu]");
       const bind = (node, key, handler) => {
@@ -326,40 +282,12 @@ export function useNativeSketchiziMenu({
     scheduleCleanup();
     const observer = new MutationObserver(() => {
       scheduleCleanup();
-      // If the user pinned the menu, restore it after Excalidraw closes the
-      // dropdown on an outside click. Clicking the canvas still works; the
-      // menu simply remains available until explicitly unpinned.
-      const menuStillOpen = Boolean(document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])"));
-      if (menuStillOpen) return;
-      if (suppressPinnedReopenOnce) {
-        suppressPinnedReopenOnce = false;
-        return;
-      }
-      if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
-      if (observer.__reopenScheduled) return;
-      observer.__reopenScheduled = true;
-      const scheduledGeneration = explicitCloseGeneration;
-      observer.__reopenFrame = requestAnimationFrame(() => {
-        observer.__reopenScheduled = false;
-        observer.__reopenFrame = 0;
-        // If the user explicitly clicked the hamburger after this reopen was
-        // queued, the explicit close wins over the pin's outside-click policy.
-        if (scheduledGeneration !== explicitCloseGeneration) {
-          suppressPinnedReopenOnce = false;
-          return;
-        }
-        if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
-        if (document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])")) return;
-        const trigger = document.querySelector('button[aria-label*="menu" i], button[title*="menu" i], [data-testid*="main-menu"]');
-        trigger?.click();
-      });
     });
     observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", scheduleCleanup);
     window.visualViewport?.addEventListener("resize", scheduleCleanup);
     return () => {
       observer.disconnect();
-      window.removeEventListener("sketchizi:menu-explicit-close", onExplicitMenuClose);
       window.removeEventListener("resize", scheduleCleanup);
       window.visualViewport?.removeEventListener("resize", scheduleCleanup);
       if (frame) cancelAnimationFrame(frame);

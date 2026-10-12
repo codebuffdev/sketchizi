@@ -67,7 +67,7 @@ export default function DesktopAppHeader({
   collaborationCreationState = "idle",
   collaborationCreationError = "",
   nativeMenuOpen = false,
-  closeNativeMenu,
+  toggleNativeMenu,
   createCollaboration,
   dismissCollaborationCreationFailure,
   libraryToggle,
@@ -76,24 +76,23 @@ export default function DesktopAppHeader({
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
-  const nativeMenuOpenRef = useRef(nativeMenuOpen);
-  const hamburgerWasOpenAtPointerDownRef = useRef(false);
+  const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
+  const menuWasOpenOnPointerDownRef = useRef(null);
+  nativeMenuOpenLatestRef.current = nativeMenuOpen;
 
   useEffect(() => {
-    nativeMenuOpenRef.current = nativeMenuOpen;
-  }, [nativeMenuOpen]);
-
-  // Remember whether the native Excalidraw menu was open before its outside-
-  // pointer handler gets a chance to dismiss it. Without this, pointerdown can
-  // close the menu and the subsequent click on our header button immediately
-  // reopens it, making the hamburger appear not to toggle.
-  useEffect(() => {
-    const rememberMenuState = (event) => {
-      if (!(event.target instanceof Element) || !event.target.closest(".desktop-app-menu-trigger")) return;
-      hamburgerWasOpenAtPointerDownRef.current = nativeMenuOpenRef.current;
+    // Window capture runs before document-level outside-click handlers inside
+    // Excalidraw, preserving the menu's state from before the user's click.
+    const captureMenuState = (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(".desktop-app-menu-trigger")) {
+        menuWasOpenOnPointerDownRef.current = nativeMenuOpenLatestRef.current;
+      } else {
+        menuWasOpenOnPointerDownRef.current = null;
+      }
     };
-    window.addEventListener("pointerdown", rememberMenuState, true);
-    return () => window.removeEventListener("pointerdown", rememberMenuState, true);
+    window.addEventListener("pointerdown", captureMenuState, true);
+    return () => window.removeEventListener("pointerdown", captureMenuState, true);
   }, []);
 
   useEffect(() => {
@@ -128,22 +127,9 @@ export default function DesktopAppHeader({
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
         onClick={() => {
-          const wasOpen = hamburgerWasOpenAtPointerDownRef.current || nativeMenuOpenRef.current;
-          hamburgerWasOpenAtPointerDownRef.current = false;
-
-          if (wasOpen) {
-            // Suppress the pin observer's outside-click reopen for an explicit
-            // hamburger close. A pinned panel stays open on canvas clicks, but
-            // the hamburger itself remains a reliable open/close toggle.
-            window.dispatchEvent(new CustomEvent("sketchizi:menu-explicit-close"));
-            closeNativeMenu?.();
-            return;
-          }
-
-          const nativeMenuButton = document.querySelector(
-            ".desktop-canvas-region .excalidraw .App-menu_top .dropdown-menu-button",
-          ) || document.querySelector(".desktop-canvas-region .excalidraw .App-menu_top button");
-          nativeMenuButton?.click();
+          const wasOpen = menuWasOpenOnPointerDownRef.current;
+          menuWasOpenOnPointerDownRef.current = null;
+          toggleNativeMenu?.(typeof wasOpen === "boolean" ? wasOpen : nativeMenuOpenLatestRef.current);
         }}
         aria-label={nativeMenuOpen ? "Close application menu" : "Open application menu"}
         aria-expanded={nativeMenuOpen}
