@@ -269,6 +269,24 @@ function App() {
     collaborationRemoteUpdateRef, collaborationRef, gridEnabled, gridSize, canEdit: collaborationCanEdit,
     onArchitectureSceneChange: updateArchitectureValidation,
   });
+  // Keep Excalidraw's actual scene background synchronized with the global Day/Night
+  // theme, including when saved scene data hydrates or another scene update restores
+  // an older viewBackgroundColor. The update is idempotent and does not create undo
+  // history, so ordinary canvas clicks cannot leave the background out of sync.
+  const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
+    handleExcalidrawChange(elements, appState);
+    const desiredBackground = isDarkTheme ? "#111722" : "#ffffff";
+    const actualBackground = String(appState?.viewBackgroundColor || "").trim().toLowerCase();
+    if (actualBackground !== desiredBackground) {
+      const api = apiRef.current;
+      if (api) {
+        api.updateScene({
+          appState: { viewBackgroundColor: desiredBackground },
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+      }
+    }
+  }, [apiRef, handleExcalidrawChange, isDarkTheme]);
 
   if (!sketchReady) {
     return (
@@ -420,7 +438,7 @@ function App() {
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
             handleExcalidrawAPI={handleExcalidrawAPI}
-            handleChange={handleExcalidrawChange}
+            handleChange={handleThemeAwareExcalidrawChange}
             handleDrop={handleDrop}
             minimapOpen={minimapOpen}
             minimapScene={minimapScene}
