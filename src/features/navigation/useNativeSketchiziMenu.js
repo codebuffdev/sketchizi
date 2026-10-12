@@ -169,7 +169,43 @@ export function useNativeSketchiziMenu({
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
           recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><button type="button" class="sketchizi-folder-action" data-sketchizi-close-folder>Close folder</button><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh folder contents" aria-label="Refresh folder contents">↻</button></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder>Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file>New file</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent files</div><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button><div class="sketchizi-native-settings-title sketchizi-recent-subtitle">Recent folders</div><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button>`;
           customBlock.append(recentSection);
-          // Place the remaining file/folder actions first in the menu.
+          // Community links live in the expanded navigation panel, not in a separate popup.
+          // Remove the native GitHub row; the redesigned panel owns this destination.
+          [...menuParent.querySelectorAll("a")].filter((link) => /^(github|connect with coder)$/i.test(link.textContent?.replace(/\s+/g, " ").trim() || "")).forEach((link) => link.remove());
+          const communitySection = document.createElement("section");
+          communitySection.className = "sketchizi-native-settings-section sketchizi-community-section";
+          communitySection.innerHTML = `<div class="sketchizi-native-settings-title">Help &amp; Community</div><a class="sketchizi-sidebar-community-link" href="/reviews" data-sketchizi-review-link><span aria-hidden="true">☆</span><span>Leave us a review</span></a><a class="sketchizi-sidebar-community-link" href="https://github.com/codebuffdev" target="_blank" rel="noreferrer noopener"><span aria-hidden="true">&lt;/&gt;</span><span>Connect with Coder</span></a>`;
+          customBlock.append(communitySection);
+          // Add a dedicated icon rail beside the expanded navigation surface.
+          const shell = menuParent.parentElement;
+          if (shell && !shell.querySelector(":scope > .sketchizi-sidebar-rail")) {
+            const rail = document.createElement("nav");
+            rail.className = "sketchizi-sidebar-rail";
+            rail.setAttribute("aria-label", "Primary navigation");
+            rail.innerHTML = `<button type="button" class="sketchizi-sidebar-collapse" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button><div class="sketchizi-sidebar-rail-items"><button type="button" title="Files" aria-label="Files" data-sidebar-section="files">▤</button><button type="button" title="Recent files" aria-label="Recent files" data-sidebar-section="recent">◷</button><button type="button" title="Canvas background" aria-label="Canvas background" data-sidebar-section="background">◐</button><a href="/reviews" title="Leave us a review" aria-label="Leave us a review">☆</a><a href="https://github.com/codebuffdev" target="_blank" rel="noreferrer noopener" title="Connect with Coder" aria-label="Connect with Coder">&lt;/&gt;</a></div>`;
+            shell.insertBefore(rail, menuParent);
+            rail.querySelector(".sketchizi-sidebar-collapse")?.addEventListener("click", () => {
+              shell.classList.toggle("sketchizi-sidebar-collapsed");
+              const collapsed = shell.classList.contains("sketchizi-sidebar-collapsed");
+              const toggle = rail.querySelector(".sketchizi-sidebar-collapse");
+              toggle.textContent = collapsed ? "›" : "‹";
+              toggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+              toggle.title = collapsed ? "Expand sidebar" : "Collapse sidebar";
+            });
+            rail.querySelector('[data-sidebar-section="files"]')?.addEventListener("click", () => {
+              shell.classList.remove("sketchizi-sidebar-collapsed");
+              menuParent.querySelector("[data-sketchizi-open-folder]")?.focus();
+            });
+            rail.querySelector('[data-sidebar-section="recent"]')?.addEventListener("click", () => {
+              shell.classList.remove("sketchizi-sidebar-collapsed");
+              menuParent.querySelector("[data-recent-list]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            });
+            rail.querySelector('[data-sidebar-section="background"]')?.addEventListener("click", () => {
+              shell.classList.remove("sketchizi-sidebar-collapsed");
+              [...document.querySelectorAll("body *")].find((node) => node.children.length === 0 && node.textContent?.trim() === "Canvas background")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            });
+          }
+          // Place the remaining file/folder actions first in the expanded panel.
           menuParent.insertBefore(customBlock, menuParent.firstChild);
         }
       }
@@ -203,18 +239,6 @@ export function useNativeSketchiziMenu({
           if (palette && backgroundLabel.parentElement?.contains(palette)) palette.insertAdjacentElement("afterend", button);
           else backgroundMenu.appendChild(button);
         }
-      }
-
-      // Add the approved community links to the hamburger without duplicating
-      // the application-header controls. Keep this block idempotent because the
-      // native menu is observed for DOM changes.
-      const communityMenu = document.querySelector(".dropdown-menu-container");
-      if (communityMenu && !communityMenu.querySelector("[data-sketchizi-community-menu]")) {
-        const section = document.createElement("section");
-        section.dataset.sketchiziCommunityMenu = "true";
-        section.className = "sketchizi-native-settings-section sketchizi-community-menu";
-        section.innerHTML = `<div class="sketchizi-native-settings-title">Help &amp; Community</div><a class="sketchizi-community-menu-item" href="/reviews"><span aria-hidden="true">☆</span><span>Leave us a review</span></a><a class="sketchizi-community-menu-item" href="https://github.com/codebuffdev" target="_blank" rel="noreferrer noopener"><span aria-hidden="true">&lt;/&gt;</span><span>Connect with Coder</span></a>`;
-        communityMenu.appendChild(section);
       }
 
       const recentMenu = document.querySelector("[data-sketchizi-recent-files-menu]");
