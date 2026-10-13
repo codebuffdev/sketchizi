@@ -50,6 +50,10 @@
 .ai-ask-usage { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 13px; padding: 8px 13px; background: var(--ui-surface-soft, #fafafa); color: var(--ui-text-muted, #777); font-size: 11px; }
 .ai-ask-usage strong { color: var(--ui-text-strong, #202020); }
 .ai-ask-usage small { flex-basis: 100%; }
+.ai-ask-quota-exhausted { display: flex; flex: 1 0 100%; flex-direction: column; gap: 4px; margin-top: 3px; padding: 9px 10px; border: 1px solid var(--ui-warning-border, #a95b5b); border-radius: 8px; background: var(--ui-danger-soft, rgba(180, 55, 55, .10)); color: var(--ui-text, #333); line-height: 1.45; }
+.ai-ask-quota-exhausted strong { color: var(--ui-text-strong, #202020); font-size: 12px; }
+.ai-ask-quota-exhausted span, .ai-ask-quota-exhausted small { font-size: 11px; }
+
 .ai-ask-byok-settings { padding: 9px 13px; border-bottom: 1px solid var(--ui-border-soft, #eee); }
 .ai-ask-byok-settings > label { display: block; margin-bottom: 6px; }
 .ai-ask-key-row { display: flex; gap: 5px; }
