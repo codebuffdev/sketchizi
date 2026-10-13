@@ -722,7 +722,17 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             outcomeUnknown: false,
           },
         }));
-        setPanelError(withRequestDiagnostics(error.message || "The generation failed. You can retry this question without adding another message bubble.", error));
+        const failureCode = error.providerFailureCode || error.code;
+        const actionableMessage = failureCode === "provider_rate_limited"
+          ? "The AI provider has temporarily reached its token-per-minute limit. Wait a short while before retrying. No successful-question allowance was consumed."
+          : failureCode === "context_too_large"
+            ? "This diagram and conversation are too large for one AI request. Try asking about a smaller part of the diagram. No successful-question allowance was consumed."
+            : failureCode === "provider_configuration_error" || failureCode === "provider_auth_failed"
+              ? "The AI provider rejected its credentials. The service administrator needs to check the provider configuration. No successful-question allowance was consumed."
+              : failureCode === "provider_timeout"
+                ? "The AI provider took too long to respond. Try again shortly. No successful-question allowance was consumed."
+                : error.message || "The AI provider could not complete this request. You can retry this question without adding another message bubble.";
+        setPanelError(withRequestDiagnostics(actionableMessage, error));
         if (chat.provider === "builtin" && currentConversationId) await refreshUsage(currentConversationId, auth.user.id);
       } else if (failureKind === "unknown" || failureKind === "reservation_expired") {
         if (failureKind === "reservation_expired") {
@@ -1003,7 +1013,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           <div className={`ai-ask-provider-disclosure ${providerSettingsOpen ? "is-open" : ""}`}>
             <button type="button" className="ai-ask-provider-summary" aria-expanded={providerSettingsOpen} aria-controls="ai-ask-provider-settings" onClick={() => setProviderSettingsOpen((value) => !value)}>
               <span className={`ai-ask-provider-status ${chat.provider === "byok" && !keyApplied ? "is-warning" : "is-ready"}`} aria-hidden="true">{chat.provider === "byok" && !keyApplied ? "!" : "✓"}</span>
-              <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Built-in Gemini"}</strong><small>{chat.provider === "byok" ? (keyApplied ? "Gemini · Key ready" : "Gemini · API key required") : "Gemini · Built-in provider"}</small></span>
+              <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Built-in GPT-OSS 120B"}</strong><small>{chat.provider === "byok" ? (keyApplied ? "Gemini · Key ready" : "Gemini · API key required") : "GPT-OSS 120B · Groq"}</small></span>
               <span className="ai-ask-provider-manage">{providerSettingsOpen ? "Done" : "Manage"}</span>
               <span className="ai-ask-provider-chevron" aria-hidden="true">⌄</span>
             </button>
@@ -1011,7 +1021,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               <div className="ai-ask-provider-row">
                 <label htmlFor="ai-ask-provider">Provider</label>
                 <select id="ai-ask-provider" value={chat.provider} onChange={(event) => chooseProvider(event.target.value)} disabled={busy || Boolean(pendingRequest)}>
-                  <option value="builtin">Built-in Gemini</option>
+                  <option value="builtin">Built-in GPT-OSS 120B</option>
                   <option value="byok">Bring Your Own Key (BYOK)</option>
                 </select>
               </div>
