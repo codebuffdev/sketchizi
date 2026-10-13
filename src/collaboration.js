@@ -21,6 +21,7 @@ const MAX_MESSAGE_BYTES = 8 * 1024 * 1024;
 const COLLAB_BACKPRESSURE_HIGH_WATER_MARK = 256 * 1024;
 const COLLAB_BACKPRESSURE_RETRY_MS = 16;
 const HOST_AUTH_REFRESH_TIMEOUT_MS = 10_000;
+const JOIN_ACK_TIMEOUT_MS = 15_000;
 
 function randomId(length = 24) {
   const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
@@ -190,6 +191,8 @@ export class SketchiziCollaboration {
     this.closed = false;
     this.joined = false;
     this.reconnectTimer = null;
+    this.joinAckTimeout = null;
+    this.joinSentAt = null;
     this.reconnectAttempt = 0;
     this.lastElements = new Map();
     this.lastFiles = new Map();
@@ -222,6 +225,7 @@ export class SketchiziCollaboration {
       pendingElementCount: this.pendingElements.size,
       pendingFileCount: this.pendingFiles.size,
     });
+    this.clearJoinAckTimeout();
     this.cancelPendingFlush();
     this.cancelBackpressureRetry();
     this.cancelPresenceCursor();
@@ -377,6 +381,43 @@ export class SketchiziCollaboration {
     this.pendingCursor = null;
   }
 
+  clearJoinAckTimeout() {
+    if (this.joinAckTimeout) {
+      clearTimeout(this.joinAckTimeout);
+      this.joinAckTimeout = null;
+    }
+  }
+
+  startJoinAckTimeout(socket) {
+    this.clearJoinAckTimeout();
+    this.joinSentAt = Date.now();
+    this.joinAckTimeout = setTimeout(() => {
+      this.joinAckTimeout = null;
+      if (this.closed || this.socket !== socket || this.joined || socket.readyState !== WebSocket.OPEN) return;
+      const elapsedMs = Date.now() - this.joinSentAt;
+      const message = `The collaboration server did not acknowledge the join request within ${Math.round(JOIN_ACK_TIMEOUT_MS / 1000)} seconds. Sketchizi will retry; if this continues, check the connection and server status.`;
+      logger.warn("Collaboration join acknowledgement timed out", {
+        category: "collaboration",
+        roomId: this.roomId,
+        clientId: this.clientId,
+        elapsedMs,
+        reconnectAttempt: this.reconnectAttempt,
+      });
+      if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.join.acknowledgementTimeout", {
+        roomRef: syncDiagnosticRef(this.roomId),
+        clientRef: syncDiagnosticRef(this.clientId),
+        elapsedMs,
+        reconnectAttempt: this.reconnectAttempt,
+      });
+      this.onError?.(message);
+      // Close only this unjoined socket. The normal close handler schedules the
+      // existing bounded-backoff retry without changing the room identity.
+      if (this.socket === socket && socket.readyState === WebSocket.OPEN) {
+        socket.close(1011, "Join acknowledgement timeout");
+      }
+    }, JOIN_ACK_TIMEOUT_MS);
+  }
+
   openSocket() {
     if (this.closed) return;
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
@@ -505,7 +546,10 @@ export class SketchiziCollaboration {
         elementCount: snapshot.elements.length,
         fileCount: Object.keys(snapshot.files).length,
       });
-      if (joinSent) this.onJoinSent?.({ sentAt: Date.now(), elapsedSinceSocketOpenMs: socketOpenedAt === null ? null : Date.now() - socketOpenedAt });
+      if (joinSent) {
+        this.startJoinAckTimeout(socket);
+        this.onJoinSent?.({ sentAt: Date.now(), elapsedSinceSocketOpenMs: socketOpenedAt === null ? null : Date.now() - socketOpenedAt });
+      }
     };
 
     socket.onmessage = (event) => {
@@ -582,6 +626,7 @@ export class SketchiziCollaboration {
         wasJoined: this.joined,
         wasClean: Boolean(event?.wasClean),
       });
+      this.clearJoinAckTimeout();
       this.joined = false;
       this.socket = null;
       if (!this.closed) {
@@ -1112,6 +1157,7 @@ export class SketchiziCollaboration {
     // concrete rejection instead of falling through to the creation timeout.
     if (message.type === "error") {
       if (message.roomId && message.roomId !== this.roomId) return;
+      this.clearJoinAckTimeout();
       const reason = typeof message.message === "string" && message.message.trim()
         ? message.message.trim().slice(0, 300)
         : "The collaboration server rejected the request.";
@@ -1129,6 +1175,9 @@ export class SketchiziCollaboration {
 
     switch (message.type) {
       case "joined": {
+        this.clearJoinAckTimeout();
+        const joinAcknowledgedAt = Date.now();
+        const joinAckDurationMs = this.joinSentAt === null ? null : Math.max(0, joinAcknowledgedAt - this.joinSentAt);
         const diagnosticsEnabled = syncDiagnosticsEnabled();
         const snapshotKind = this.hasInitialized ? "reconnect" : "initial";
         if (diagnosticsEnabled) recordSyncDiagnostic("client.joined.snapshotReceived", {
@@ -1148,7 +1197,13 @@ export class SketchiziCollaboration {
         this.role = message.role === "host" ? "host" : "joinee";
         this.permission = message.permission === "host" ? "host" : message.permission === "editor" ? "editor" : "viewer";
         this.requestState = ["none", "pending", "approved", "denied"].includes(message.requestState) ? message.requestState : "none";
-        logger.info("Collaboration join acknowledged by server", { category: "collaboration", roomId: this.roomId, clientId: this.clientId, role: this.role, permission: this.permission });
+        logger.info("Collaboration join acknowledged by server", { category: "collaboration", roomId: this.roomId, clientId: this.clientId, role: this.role, permission: this.permission, joinAckDurationMs });
+        if (diagnosticsEnabled) recordSyncDiagnostic("client.join.acknowledged", {
+          roomRef: syncDiagnosticRef(this.roomId),
+          clientRef: syncDiagnosticRef(this.clientId),
+          joinAckDurationMs,
+          reconnect: snapshotKind === "reconnect",
+        });
         this.onRole?.(this.role);
         this.onPermission?.({ permission: this.permission, requestState: this.requestState });
         this.onSessionInfo?.({

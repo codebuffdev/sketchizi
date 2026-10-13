@@ -277,7 +277,10 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       },
       onStatus: (nextStatus) => {
         setCollaborationStatus(nextStatus);
-        if (nextStatus === "connected") setCollaborationHostRecovery((current) => current?.state === "recovering" ? { state: "connected", deadline: null, graceMs: 60000 } : null);
+        if (nextStatus === "connected") {
+          setCollaborationError("");
+          setCollaborationHostRecovery((current) => current?.state === "recovering" ? { state: "connected", deadline: null, graceMs: 60000 } : null);
+        }
         if (!collaborationCreationAttemptRef.current) return;
         if (nextStatus === "connected") {
           clearCollaborationCreationTimeout();
