@@ -9,7 +9,7 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /className=\{nativeMenuOpen \?/);
   assert.match(header, /desktop-app-menu-trigger active/);
   assert.match(header, /Open application menu/);
-  assert.match(header, /\.App-menu_top \.dropdown-menu-button/);
+  assert.match(header, /toggleNativeMenu\?\.\(/);
   assert.match(header, /aria-expanded=\{nativeMenuOpen\}/);
   assert.doesNotMatch(header, /desktop-app-brand-mark/);
   assert.doesNotMatch(header, /src="\/sketchizi-logo\.svg"/);
@@ -61,4 +61,15 @@ test("desktop hamburger reuses native menu and suppresses duplicate trigger only
   assert.match(css, /pointer-events: none !important/);
   const app = await read("../src/App.jsx");
   assert.match(app, /nativeMenuOpen=\{nativeMenuOpen\}/);
+});
+
+test("hamburger trigger toggles Excalidraw menu state directly and can close an open menu", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  assert.match(header, /toggleNativeMenu\?\.\(/);
+  assert.match(header, /menuWasOpenOnPointerDownRef\.current/);
+  assert.match(header, /window\.addEventListener\("pointerdown", captureMenuState, true\)/);
+  assert.doesNotMatch(header, /nativeMenuButton\?\.click\(\)/);
+  const app = await read("../src/App.jsx");
+  assert.match(app, /const toggleNativeMenu = useCallback/);
+  assert.match(app, /openMenu: shouldOpen \? "canvas" : null/);
 });

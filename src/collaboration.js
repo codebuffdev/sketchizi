@@ -480,24 +480,6 @@ export class SketchiziCollaboration {
     socket.onmessage = (event) => {
       const diagnosticsEnabled = syncDiagnosticsEnabled();
       const receivedAt = diagnosticsEnabled ? syncDiagnosticNow() : 0;
-      if (typeof event.data === "string") {
-        let incomingType = "unparsed";
-        let incomingRoomId = null;
-        try {
-          const header = JSON.parse(event.data);
-          incomingType = typeof header?.type === "string" ? header.type : "unknown";
-          incomingRoomId = typeof header?.roomId === "string" ? header.roomId : null;
-        } catch {}
-        logger.info("Collaboration WebSocket message received", {
-          category: "collaboration",
-          roomId: incomingRoomId || this.roomId,
-          clientId: this.clientId,
-          messageType: incomingType,
-          payloadCharacters: event.data.length,
-          payloadBytes: syncUtf8ByteLength(event.data),
-          elapsedSinceSocketOpenMs: socketOpenedAt === null ? null : Date.now() - socketOpenedAt,
-        });
-      }
       if (typeof event.data !== "string" || event.data.length > MAX_MESSAGE_BYTES) {
         if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.messageRejected", {
           roomRef: syncDiagnosticRef(this.roomId),

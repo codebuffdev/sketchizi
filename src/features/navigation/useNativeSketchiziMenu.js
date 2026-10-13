@@ -200,38 +200,57 @@ export function useNativeSketchiziMenu({
       // Theme-default canvas behavior is automatic. Do not inject a separate
       // "Use theme default" control into Excalidraw's native menu.
 
-      // Add a persistent pin toggle to the menu. The preference is retained
-      // across reloads; the menu styling reflects the active state.
-      const menuShell = menuParentForPin();
-      function menuParentForPin() { return [...document.querySelectorAll(".dropdown-menu")].find((node) => node.querySelector("[data-sketchizi-custom-menu-block]")); }
-      if (menuShell && !menuShell.querySelector("[data-sketchizi-menu-pin]")) {
-        const pin = document.createElement("button");
-        pin.type = "button";
-        pin.dataset.sketchiziMenuPin = "true";
-        pin.className = "sketchizi-menu-pin";
-        pin.innerHTML = '<span aria-hidden="true">⌖</span><span>Pin panel</span>';
-        pin.setAttribute("aria-pressed", localStorage.getItem("sketchizi-menu-pinned") === "true" ? "true" : "false");
-        pin.title = "Keep the menu panel open";
-        menuShell.querySelector("[data-sketchizi-custom-menu-block]")?.prepend(pin);
-      }
-      document.querySelectorAll("[data-sketchizi-menu-pin]").forEach((pin) => {
-        if (pin.dataset.bound === "true") return;
-        pin.dataset.bound = "true";
-        pin.addEventListener("click", (event) => {
-          event.preventDefault(); event.stopPropagation();
-          const next = pin.getAttribute("aria-pressed") !== "true";
-          pin.setAttribute("aria-pressed", String(next));
-          try { localStorage.setItem("sketchizi-menu-pinned", String(next)); } catch {}
-          pin.classList.toggle("is-pinned", next);
-          const shell = pin.closest(".dropdown-menu");
-          shell?.classList.toggle("sketchizi-menu-is-pinned", next);
-          pin.querySelector("span:last-child").textContent = next ? "Panel pinned" : "Pin panel";
-        });
-        const pinned = pin.getAttribute("aria-pressed") === "true";
-        pin.classList.toggle("is-pinned", pinned);
-        pin.querySelector("span:last-child").textContent = pinned ? "Panel pinned" : "Pin panel";
-        pin.closest(".dropdown-menu")?.classList.toggle("sketchizi-menu-is-pinned", pinned);
-      });
+      // Excalidraw leaves trailing separators/spacer wrappers behind when its
+      // Canvas background item is removed. Trim only empty/decorative siblings
+      // after the final visible action, "Reset the canvas", so the panel ends
+      // immediately after its last action without the extra blank ruled rows.
+      const trimTrailingMenuArtifacts = () => {
+        const menuRoot = [...document.querySelectorAll(".dropdown-menu-container")].find(
+          (node) => node.querySelector("[data-sketchizi-custom-menu-block]")
+        );
+        if (!menuRoot) return;
+
+        const resetLabel = [...menuRoot.querySelectorAll("*")].find(
+          (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() === "reset the canvas"
+        );
+        if (!resetLabel) return;
+
+        const resetAction = resetLabel.closest(
+          "button, a[href], [role='menuitem'], li, .dropdown-menu-item, .context-menu-item, .menu-item"
+        ) || resetLabel.parentElement;
+        if (!resetAction) return;
+
+        const hasMeaningfulMenuContent = (node) => {
+          if (!(node instanceof HTMLElement)) return true;
+          if (node.matches("button, a[href], [role='menuitem'], input, select, textarea")) return true;
+          if (node.querySelector("button, a[href], [role='menuitem'], input, select, textarea")) return true;
+          return Boolean(node.textContent?.replace(/\s+/g, " ").trim());
+        };
+
+        let cursor = resetAction;
+        while (cursor && cursor !== menuRoot) {
+          let sibling = cursor.nextElementSibling;
+          while (sibling && !hasMeaningfulMenuContent(sibling)) {
+            const nextSibling = sibling.nextElementSibling;
+            sibling.remove();
+            sibling = nextSibling;
+          }
+          cursor = cursor.parentElement;
+        }
+
+        // The wrapper containing the final native action should not contribute
+        // its own trailing separator or excess spacing to the panel height.
+        const actionGroup = resetAction.parentElement;
+        if (actionGroup && actionGroup !== menuRoot) {
+          actionGroup.style.setProperty("border-bottom", "0", "important");
+          actionGroup.style.setProperty("padding-bottom", "0", "important");
+          actionGroup.style.setProperty("margin-bottom", "0", "important");
+        }
+      };
+      trimTrailingMenuArtifacts();
+
+      // The menu is intentionally not pinnable: the hamburger is a true
+      // toggle, so clicking it always closes an open menu.
 
       const recentMenu = document.querySelector("[data-sketchizi-recent-files-menu]");
       const bind = (node, key, handler) => {
@@ -312,21 +331,6 @@ export function useNativeSketchiziMenu({
     scheduleCleanup();
     const observer = new MutationObserver(() => {
       scheduleCleanup();
-      // If the user pinned the menu, restore it after Excalidraw closes the
-      // dropdown on an outside click. Clicking the canvas still works; the
-      // menu simply remains available until explicitly unpinned.
-      if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
-      const menuStillOpen = Boolean(document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])"));
-      if (menuStillOpen) return;
-      if (observer.__reopenScheduled) return;
-      observer.__reopenScheduled = true;
-      requestAnimationFrame(() => {
-        observer.__reopenScheduled = false;
-        if (localStorage.getItem("sketchizi-menu-pinned") !== "true") return;
-        if (document.querySelector(".dropdown-menu:has([data-sketchizi-custom-menu-block])")) return;
-        const trigger = document.querySelector('button[aria-label*="menu" i], button[title*="menu" i], [data-testid*="main-menu"]');
-        trigger?.click();
-      });
     });
     observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", scheduleCleanup);

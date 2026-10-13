@@ -3,6 +3,7 @@ import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
+import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -34,6 +35,7 @@ export default function SketchiziCanvas({
           appState: {
             ...(savedSketch?.appState || {}),
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
+            currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: getCanvasBackground(isDarkTheme),
           },
           files: savedSketch?.files || {},
