@@ -161,6 +161,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const [signInBusy, setSignInBusy] = useState(false);
   const [panelError, setPanelError] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [keyApplied, setKeyApplied] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [authAttempt, setAuthAttempt] = useState(0);
@@ -270,6 +271,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         setNewAnswerQuestion("");
         hydratedAccountRef.current = null;
         setApiKey("");
+        setKeyApplied(false);
         setChat({ ...EMPTY_STATE });
         setUsage(null);
         setUsageStatus("idle");
@@ -291,6 +293,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         conversationId = initial.conversationId;
         const restoredKey = readApiKeyForAccount(user.id);
         setApiKey(restoredKey);
+        setKeyApplied(Boolean(restoredKey));
         setChat(initial);
         setPendingRequest(initial.pendingRequest || null);
         setNewAnswerQuestion(initial.newAnswerQuestion || "");
@@ -351,6 +354,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         setPendingRequest(null);
         hydratedAccountRef.current = null;
         setApiKey("");
+        setKeyApplied(false);
         setUsage(null);
         setUsageStatus("idle");
         setUsageError("");
@@ -435,7 +439,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       setPanelError("Sign in with Google before using AI Ask.");
       return;
     }
-    if (chat.provider === "byok" && !apiKey.trim()) {
+    if (chat.provider === "byok" && (!keyApplied || !apiKey.trim())) {
       setPanelError("Enter your Gemini API key to use BYOK.");
       return;
     }
@@ -604,6 +608,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         activeAccountRef.current = null;
         setPendingRequest(null);
         setApiKey("");
+        setKeyApplied(false);
         setUsage(null);
         setUsageStatus("idle");
         setUsageError("");
@@ -688,7 +693,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       requestInFlightRef.current = false;
       setBusy(false);
     }
-  }, [apiKey, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage, ensureConversation]);
+  }, [apiKey, keyApplied, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage, ensureConversation]);
 
   const checkPendingRequest = useCallback(async () => {
     if (!pendingRequest || !auth.user?.id || busy || requestInFlightRef.current) return;
@@ -831,10 +836,42 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
 
   const updateApiKey = (value) => {
     setApiKey(value);
+    setKeyApplied(false);
+    // Editing the field revokes the previously applied key immediately.
+    try { sessionStorage.removeItem(BYOK_KEY); } catch {}
+    setPanelError("");
+  };
+
+  const applyApiKey = () => {
+    const value = apiKey.trim();
+    if (!value) {
+      setPanelError("Paste your Gemini API key, then select Use key.");
+      setKeyApplied(false);
+      return;
+    }
+    if (!auth.user?.id) {
+      setPanelError("Sign in before using a Gemini API key.");
+      return;
+    }
     try {
-      if (value && auth.user?.id) sessionStorage.setItem(BYOK_KEY, JSON.stringify({ schemaVersion: 1, accountId: auth.user.id, key: value }));
-      else sessionStorage.removeItem(BYOK_KEY);
-    } catch { setPanelError("Browser session storage is unavailable. BYOK key changes will not survive a refresh."); }
+      sessionStorage.setItem(BYOK_KEY, JSON.stringify({ schemaVersion: 1, accountId: auth.user.id, key: value }));
+      setApiKey(value);
+      setKeyApplied(true);
+      setPanelError("");
+      setAnnouncement("Gemini API key is ready for BYOK requests.");
+    } catch {
+      setKeyApplied(false);
+      setPanelError("Browser session storage is unavailable. The key was not activated; allow session storage and try again.");
+    }
+  };
+
+  const removeApiKey = () => {
+    try { sessionStorage.removeItem(BYOK_KEY); } catch {}
+    setApiKey("");
+    setKeyApplied(false);
+    setShowKey(false);
+    setPanelError("");
+    setAnnouncement("Gemini API key removed from this tab's session.");
   };
 
   if (!open) return null;
@@ -899,9 +936,12 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               <div className="ai-ask-key-row">
                 <input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} />
                 <button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button>
-                <button type="button" onClick={() => updateApiKey("")} disabled={!apiKey || busy}>Clear</button>
               </div>
-              <p>Your key is stored in this tab's session storage and sent to Sketchizi's AI backend only to process BYOK requests. It is not intentionally persisted or logged. Session storage is not a secure vault.</p>
+              <div className="ai-ask-key-actions">
+                <button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button>
+                <button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button>
+              </div>
+              <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
             </div>
           )}
 
@@ -926,8 +966,8 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             <span>{panelError || (pendingRequest ? "An earlier request has not reached a confirmed final state." : chat.retryAttempt?.outcomeUnknown ? "The previous request's final provider outcome is uncertain." : newAnswerQuestion ? "The previous generation succeeded, but its answer is not retained." : "This question can be retried.")}</span>
             {pendingRequest && auth.status === "authenticated" && <button type="button" onClick={checkPendingRequest} disabled={busy}>Check status</button>}
             {pendingRequest?.sameIdRecoveryAvailable && auth.status === "authenticated" && <button type="button" onClick={() => sendQuestion(pendingRequest.question, { recoveryRequest: pendingRequest })} disabled={busy || (pendingRequest.provider === "byok" && !apiKey.trim())}>Retry with same request ID</button>}
-            {chat.retryAttempt && auth.status === "authenticated" && <button type="button" onClick={() => sendQuestion(chat.retryAttempt.question, { retryAttempt: chat.retryAttempt })} disabled={busy || !chat.conversationId || (chat.provider === "byok" && !apiKey.trim())}>{chat.retryAttempt.outcomeUnknown ? "Generate new attempt" : chat.retryAttempt.reuseRequestId ? "Retry request" : "Retry question"}</button>}
-            {newAnswerQuestion && auth.status === "authenticated" && <button type="button" onClick={() => sendQuestion(newAnswerQuestion)} disabled={busy || Boolean(pendingRequest) || (chat.provider === "byok" && !apiKey.trim())}>Generate a new answer</button>}
+            {chat.retryAttempt && auth.status === "authenticated" && <button type="button" onClick={() => sendQuestion(chat.retryAttempt.question, { retryAttempt: chat.retryAttempt })} disabled={busy || !chat.conversationId || (chat.provider === "byok" && (!keyApplied || !apiKey.trim()))}>{chat.retryAttempt.outcomeUnknown ? "Generate new attempt" : chat.retryAttempt.reuseRequestId ? "Retry request" : "Retry question"}</button>}
+            {newAnswerQuestion && auth.status === "authenticated" && <button type="button" onClick={() => sendQuestion(newAnswerQuestion)} disabled={busy || Boolean(pendingRequest) || (chat.provider === "byok" && (!keyApplied || !apiKey.trim()))}>Generate a new answer</button>}
             <button type="button" onClick={() => setPanelError("")} aria-label="Dismiss error">×</button>
           </div>}
           <form className="ai-ask-composer" onSubmit={(event) => { event.preventDefault(); sendQuestion(); }}>
