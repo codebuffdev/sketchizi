@@ -146,3 +146,7 @@ html[data-sketchizi-theme="dark"] .collaboration-lifecycle-header-button:hover {
   .desktop-app-header-account-zone > .collaboration-header-controls .collaboration-header-session { max-width: 110px; }
   .desktop-app-header-account-zone > .collaboration-header-controls .collaboration-header-button { padding-inline: 7px; }
 }
+
+.collaboration-join-progress { display:flex; align-items:center; gap:9px; padding:10px 12px; border:1px solid var(--ui-border, #d9d9df); border-radius:9px; color:var(--ui-text, #202024); font-size:12px; line-height:1.4; }
+.collaboration-join-progress .collaboration-header-spinner { display:inline-block; width:15px; height:15px; flex:0 0 15px; border:2px solid var(--ui-border, #d9d9df); border-top-color:var(--ui-accent, #2563eb); border-radius:50%; animation:collaboration-join-spin .75s linear infinite; }
+@keyframes collaboration-join-spin { to { transform:rotate(360deg); } }

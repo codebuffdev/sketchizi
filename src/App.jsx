@@ -120,7 +120,7 @@ function App() {
   const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
 
   const collaboration = useCollaboration({ apiRef, showToast, closeNativeMenu, sketchReady, apiReady });
-  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationHostRecovery, collaborationEndedSession, setCollaborationEndedSession, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, chatMessages, chatError, sendChatMessage, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
+  const { collaborationRef, collaborationRemoteUpdateRef, collaborationRoomId, collaborationClientId, collaborationOpen, setCollaborationOpen, collaborationMode, setCollaborationMode, collaborationDraftName, setCollaborationDraftName, collaborationDisplayName, setCollaborationDisplayName, collaborationSessionName, collaborationRoom, collaborationLink, collaborationStatus, collaborationJoinState, collaborationHostRecovery, collaborationEndedSession, setCollaborationEndedSession, collaborationUsers, collaborationParticipants, collaborationError, collaborationRole, collaborationPermission, collaborationRequestState, collaborationRequests, collaborationAuthorship, chatMessages, chatError, sendChatMessage, connectCollaboration, startCollaboration, createCollaboration, leaveOrEndCollaboration, requestEditAccess, decideEditRequest, revokeEditAccess, updateCollaborationCursor, markLocalViewportNavigation } = collaboration;
 
   const fileManager = useFileManager({
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch,
@@ -543,6 +543,7 @@ function App() {
         selfId={collaborationClientId}
         error={collaborationError}
         collaborationCreationState={collaboration.collaborationCreationState}
+        collaborationJoinState={collaborationJoinState}
         createCollaboration={createCollaboration}
         connectCollaboration={connectCollaboration}
         roomId={collaborationRoomId}

@@ -92,6 +92,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const [collaborationRequests, setCollaborationRequests] = useState([]);
   const [collaborationAuthorship, setCollaborationAuthorship] = useState({});
   const [collaborationCreationState, setCollaborationCreationState] = useState("idle");
+  const [collaborationJoinState, setCollaborationJoinState] = useState("idle");
   const [chatMessages, setChatMessages] = useState([]);
   const [chatError, setChatError] = useState("");
   const [collaborationHostRecovery, setCollaborationHostRecovery] = useState(null);
@@ -100,12 +101,21 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
   const collaborationSocketOpenedRef = useRef(false);
   const hostAuthCheckRef = useRef(false);
   const collaborationCreationTimeoutRef = useRef(null);
+  const collaborationJoinTimeoutRef = useRef(null);
+  const collaborationJoinAttemptRef = useRef(false);
   const collaborationSessionInfoRef = useRef({ id: null, name: "" });
 
   const clearCollaborationCreationTimeout = useCallback(() => {
     if (collaborationCreationTimeoutRef.current) {
       clearTimeout(collaborationCreationTimeoutRef.current);
       collaborationCreationTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearCollaborationJoinTimeout = useCallback(() => {
+    if (collaborationJoinTimeoutRef.current) {
+      clearTimeout(collaborationJoinTimeoutRef.current);
+      collaborationJoinTimeoutRef.current = null;
     }
   }, []);
 
@@ -236,6 +246,22 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     if (!api || !roomId) return;
     const normalizedParticipantName = saveCollaborationDisplayName(participantName || collaborationDisplayName);
     if (!normalizedParticipantName) return;
+    const isJoineeAttempt = !hostAuthorizationToken && !sessionName;
+    if (isJoineeAttempt) {
+      clearCollaborationJoinTimeout();
+      collaborationJoinAttemptRef.current = true;
+      setCollaborationJoinState("joining");
+      setCollaborationError("");
+      collaborationJoinTimeoutRef.current = setTimeout(() => {
+        if (!collaborationJoinAttemptRef.current) return;
+        collaborationJoinAttemptRef.current = false;
+        collaborationJoinTimeoutRef.current = null;
+        collaborationRef.current?.close();
+        setCollaborationStatus("disconnected");
+        setCollaborationJoinState("failed");
+        setCollaborationError("Joining is taking too long. Check your connection and try again.");
+      }, 30000);
+    }
     setCollaborationDisplayName(normalizedParticipantName);
     collaborationRef.current?.close();
     setChatMessages([]);
@@ -280,6 +306,12 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
         if (nextStatus === "connected") {
           setCollaborationError("");
           setCollaborationHostRecovery((current) => current?.state === "recovering" ? { state: "connected", deadline: null, graceMs: 60000 } : null);
+          if (collaborationJoinAttemptRef.current) {
+            collaborationJoinAttemptRef.current = false;
+            clearCollaborationJoinTimeout();
+            setCollaborationJoinState("success");
+            setCollaborationOpen(false);
+          }
         }
         if (!collaborationCreationAttemptRef.current) return;
         if (nextStatus === "connected") {
@@ -296,6 +328,15 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
         }
       },
       onError: (message) => {
+        if (collaborationJoinAttemptRef.current) {
+          collaborationJoinAttemptRef.current = false;
+          clearCollaborationJoinTimeout();
+          collaborationRef.current?.close();
+          setCollaborationStatus("disconnected");
+          setCollaborationJoinState("failed");
+          setCollaborationError(message || "Couldn't join this collaboration. Check the link and your connection, then try again.");
+          return;
+        }
         if (collaborationCreationAttemptRef.current) {
           failCollaborationCreation(message || "The collaboration connection failed. Check the server and WebSocket endpoint.");
           return;
@@ -344,8 +385,9 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
       },
     });
     collaborationRef.current = client;
+    if (isJoineeAttempt) setCollaborationMode("join");
     client.connect();
-  }, [apiRef, applyCollaborationState, collaborationDisplayName, clearCollaborationCreationTimeout, failCollaborationCreation, showToast]);
+  }, [apiRef, applyCollaborationState, collaborationDisplayName, clearCollaborationCreationTimeout, clearCollaborationJoinTimeout, failCollaborationCreation, showToast]);
 
   useEffect(() => {
     const api = apiRef.current;
@@ -545,6 +587,7 @@ export function useCollaboration({ apiRef, showToast, closeNativeMenu, sketchRea
     collaborationEndedSession,
     setCollaborationEndedSession,
     collaborationCreationState,
+    collaborationJoinState,
     collaborationUsers,
     collaborationParticipants,
     collaborationError,
