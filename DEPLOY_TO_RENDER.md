@@ -1,6 +1,6 @@
 # Deploy Sketchizi Auth to Render with Docker
 
-This repository includes a Render Blueprint (`render.yaml`) and a multi-stage Dockerfile at `auth-service/Dockerfile`. Render builds the Docker image from the repository when you deploy; you do not need to build or push an image to Docker Hub manually.
+## This repository includes a Render Blueprint (`render.yaml`) and a multi-stage Dockerfile at `auth-service/Dockerfile`. Render builds the Docker image from the repository when you deploy; you do not need to build or push an image to Docker Hub manually.
 
 ## Important safety checks before deployment
 
