@@ -92,3 +92,49 @@ export function wakeBackendOnPageLoad() {
     // Login and AI actions call ensureBackendReady again and surface actionable errors.
   });
 }
+
+
+const PERIODIC_WARMUP_INTERVAL_MS = 14 * 60 * 1000;
+const PERIODIC_WARMUP_TIMEOUT_MS = 10_000;
+
+/**
+ * Sends a lightweight same-origin warm-up request periodically while the app is
+ * mounted. This is best-effort only: browsers can suspend background timers and
+ * the request cannot guarantee that a Render Free service remains awake.
+ */
+export function startPeriodicBackendWarmup({ intervalMs = PERIODIC_WARMUP_INTERVAL_MS } = {}) {
+  let stopped = false;
+  let requestInFlight = false;
+
+  const trigger = async () => {
+    if (stopped || requestInFlight) return;
+    requestInFlight = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), PERIODIC_WARMUP_TIMEOUT_MS);
+    try {
+      const response = await fetch(HEALTH_URL, {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { accept: "application/json" },
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        console.warn("Sketchizi backend warm-up returned HTTP", response.status);
+      }
+    } catch (error) {
+      // Best effort: never let a warm-up failure affect the editor or collaboration.
+      if (!stopped) console.warn("Sketchizi backend warm-up request failed.", error);
+    } finally {
+      clearTimeout(timeout);
+      requestInFlight = false;
+    }
+  };
+
+  void trigger();
+  const intervalId = setInterval(() => { void trigger(); }, intervalMs);
+  return () => {
+    stopped = true;
+    clearInterval(intervalId);
+  };
+}

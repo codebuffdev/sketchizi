@@ -40,7 +40,7 @@ import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKuberne
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
-import { wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
+import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 
 function App() {
@@ -105,6 +105,7 @@ function App() {
 
   useEffect(() => {
     wakeBackendOnPageLoad();
+    return startPeriodicBackendWarmup();
   }, []);
 
   useEffect(() => {

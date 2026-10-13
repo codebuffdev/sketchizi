@@ -51,3 +51,50 @@ test("page-load warm-up is best effort and does not throw synchronously", () => 
   globalThis.fetch = async () => response(200);
   assert.doesNotThrow(() => wakeBackendOnPageLoad());
 });
+
+test("periodic backend warm-up sends a same-origin request and cleanup stops future ticks", async () => {
+  const { startPeriodicBackendWarmup } = await import("../src/features/backend/backendWarmup.js");
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearInterval = globalThis.clearInterval;
+  let tick;
+  let cleared = false;
+  let calls = 0;
+  globalThis.setInterval = (callback, intervalMs) => {
+    assert.equal(intervalMs, 14 * 60 * 1000);
+    tick = callback;
+    return 123;
+  };
+  globalThis.clearInterval = (id) => {
+    assert.equal(id, 123);
+    cleared = true;
+  };
+  globalThis.fetch = async (url, options) => {
+    calls += 1;
+    assert.equal(String(url), "/api/ai/warmup");
+    assert.equal(options.credentials, "same-origin");
+    assert.equal(options.cache, "no-store");
+    return response(200);
+  };
+
+  try {
+    const stop = startPeriodicBackendWarmup();
+    for (let attempt = 0; attempt < 10 && calls === 0; attempt += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    assert.equal(calls, 1);
+    await new Promise((resolve) => setImmediate(resolve));
+    tick();
+    for (let attempt = 0; attempt < 10 && calls < 2; attempt += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    assert.equal(calls, 2);
+    stop();
+    assert.equal(cleared, true);
+    tick();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.setInterval = originalSetInterval;
+    globalThis.clearInterval = originalClearInterval;
+  }
+});
