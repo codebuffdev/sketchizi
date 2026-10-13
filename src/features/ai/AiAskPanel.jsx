@@ -516,6 +516,16 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     const recoveryRequest = options.recoveryRequest || null;
     const retryAttempt = options.retryAttempt || null;
     if (!question || busy || requestInFlightRef.current) return;
+    // Enforce the known built-in quota at the action boundary as well as in the UI.
+    // This prevents starter prompts, keyboard submission, or future controls from
+    // submitting a request when the account allowance is exhausted.
+    if (chat.provider === "builtin" && usageStatus === "loaded" &&
+        (usage?.accountRemaining <= 0 || usage?.conversationRemaining <= 0)) {
+      setPanelError(usage?.accountRemaining <= 0
+        ? "The built-in AI rolling 12-hour account allowance is exhausted. You can use built-in AI again when a slot becomes available."
+        : "This conversation has used its question allowance. Start a new conversation when your account allowance permits.");
+      return;
+    }
     if (pendingRequest && !recoveryRequest) {
       setPanelError("Check the previous request's status before submitting another generation.");
       return;
@@ -790,7 +800,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       requestInFlightRef.current = false;
       setBusy(false);
     }
-  }, [apiKey, keyApplied, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage, ensureConversation]);
+  }, [apiKey, keyApplied, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage, ensureConversation, usage, usageStatus]);
 
   const checkPendingRequest = useCallback(async () => {
     if (!pendingRequest || !auth.user?.id || busy || requestInFlightRef.current) return;
