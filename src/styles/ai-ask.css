@@ -108,3 +108,94 @@
   .ai-ask-panel { top: 0; right: 0; bottom: 0; width: 100vw; border-radius: 0; }
   .ai-ask-header { padding-top: max(12px, env(safe-area-inset-top)); }
 }
+
+/* AI Ask compact conversation redesign */
+.ai-ask-panel {
+  width: min(540px, calc(100vw - 28px));
+  border-radius: 16px;
+  font-size: 13px;
+}
+.ai-ask-header { padding: 12px 14px; }
+.ai-ask-heading { gap: 10px; }
+.ai-ask-mark { width: 38px; height: 38px; border-radius: 12px; }
+.ai-ask-heading h2 { font-size: 16px; letter-spacing: -.02em; }
+.ai-ask-heading p { font-size: 11px; }
+.ai-ask-header-actions { gap: 5px; }
+.ai-ask-header-actions button { min-height: 32px; padding: 0 10px; font-size: 12px; }
+.ai-ask-header-actions .ai-ask-close { width: 32px; min-height: 32px; font-size: 20px; }
+.ai-ask-provider-disclosure { flex: 0 0 auto; border-bottom: 1px solid var(--ui-border-soft, #eee); }
+.ai-ask-provider-summary { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; padding: 9px 14px; border: 0; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #333); text-align: left; cursor: pointer; font: inherit; }
+.ai-ask-provider-summary:hover { background: var(--ui-surface-soft, #fafafa); }
+.ai-ask-provider-status { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; background: color-mix(in srgb, #279768 13%, var(--ui-surface-solid, #fff)); color: #23865e; font-size: 13px; font-weight: 800; }
+.ai-ask-provider-status.is-warning { background: color-mix(in srgb, #bd8420 14%, var(--ui-surface-solid, #fff)); color: #b27a17; }
+.ai-ask-provider-summary-text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0; }
+.ai-ask-provider-summary-text strong { overflow: hidden; color: var(--ui-text-strong, #202020); font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.ai-ask-provider-summary-text small { color: var(--ui-text-muted, #777); font-size: 10px; }
+.ai-ask-provider-manage { color: var(--ui-accent, #5b55c7); font-size: 11px; font-weight: 700; }
+.ai-ask-provider-chevron { color: var(--ui-text-muted, #777); font-size: 16px; transition: transform .16s ease; }
+.ai-ask-provider-disclosure.is-open .ai-ask-provider-chevron { transform: rotate(180deg); }
+.ai-ask-provider-settings { border-top: 1px solid var(--ui-border-soft, #eee); }
+.ai-ask-provider-settings .ai-ask-provider-row { padding: 9px 14px; }
+.ai-ask-provider-settings .ai-ask-byok-settings { padding: 9px 14px 12px; }
+.ai-ask-provider-settings .ai-ask-usage { padding: 8px 14px 10px; }
+.ai-ask-messages { padding: 14px 15px 10px; scroll-behavior: smooth; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.ai-ask-message { margin-bottom: 13px; padding: 11px 12px; border-radius: 12px; }
+.ai-ask-message.user { margin-left: 34px; border-color: transparent; border-bottom-right-radius: 5px; }
+.ai-ask-message.assistant { margin-right: 0; padding: 3px 2px 8px; border: 0; border-radius: 0; background: transparent; }
+.ai-ask-message-role { margin-bottom: 8px; font-size: 10px; }
+.ai-ask-message-author { display: inline-flex; align-items: center; gap: 6px; }
+.ai-ask-assistant-mark { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 7px; background: var(--ui-active, #f0eff9); color: var(--ui-accent, #5b55c7); font-size: 13px; }
+.ai-ask-user-text { color: var(--ui-text-strong, #202020); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-ask-markdown { color: var(--ui-text, #333); font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.ai-ask-markdown > :first-child { margin-top: 0; }
+.ai-ask-markdown > :last-child { margin-bottom: 0; }
+.ai-ask-markdown h1, .ai-ask-markdown h2, .ai-ask-markdown h3, .ai-ask-markdown h4, .ai-ask-markdown h5, .ai-ask-markdown h6 { margin: 17px 0 7px; color: var(--ui-text-strong, #202020); font-weight: 700; line-height: 1.3; letter-spacing: -.015em; }
+.ai-ask-markdown h1 { font-size: 19px; }
+.ai-ask-markdown h2 { font-size: 17px; }
+.ai-ask-markdown h3 { font-size: 15px; }
+.ai-ask-markdown h4, .ai-ask-markdown h5, .ai-ask-markdown h6 { font-size: 13px; }
+.ai-ask-markdown p { margin: 0 0 10px; color: inherit; white-space: normal; line-height: inherit; }
+.ai-ask-markdown ul, .ai-ask-markdown ol { margin: 6px 0 12px; padding-left: 22px; }
+.ai-ask-markdown li { margin: 3px 0; padding-left: 2px; }
+.ai-ask-markdown li > ul, .ai-ask-markdown li > ol { margin: 3px 0 5px; }
+.ai-ask-markdown hr { height: 1px; margin: 15px 0; border: 0; background: var(--ui-border-soft, #eee); }
+.ai-ask-markdown blockquote { margin: 9px 0; padding: 3px 0 3px 11px; border-left: 3px solid var(--ui-accent, #5b55c7); color: var(--ui-text-muted, #777); }
+.ai-ask-markdown code { padding: 2px 5px; border: 1px solid var(--ui-border-soft, #eee); border-radius: 5px; background: var(--ui-surface-soft, #fafafa); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; overflow-wrap: anywhere; }
+.ai-ask-markdown pre { max-width: 100%; margin: 9px 0 12px; padding: 11px 12px; overflow: auto; border: 1px solid var(--ui-border, #dedede); border-radius: 9px; background: var(--ui-surface-soft, #fafafa); line-height: 1.5; }
+.ai-ask-markdown pre code { padding: 0; border: 0; background: transparent; white-space: pre; overflow-wrap: normal; }
+.ai-ask-markdown a { color: var(--ui-accent, #5b55c7); text-decoration: underline; text-underline-offset: 2px; }
+.ai-ask-table-wrap { max-width: 100%; margin: 10px 0 13px; overflow-x: auto; border: 1px solid var(--ui-border, #dedede); border-radius: 8px; }
+.ai-ask-markdown table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ai-ask-markdown th, .ai-ask-markdown td { min-width: 70px; padding: 8px 9px; border-bottom: 1px solid var(--ui-border-soft, #eee); text-align: left; vertical-align: top; }
+.ai-ask-markdown th { background: var(--ui-surface-soft, #fafafa); color: var(--ui-text-strong, #202020); font-weight: 700; }
+.ai-ask-markdown tr:last-child td { border-bottom: 0; }
+.ai-ask-message-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; opacity: .78; }
+.ai-ask-message-actions button { min-height: 27px; padding: 0 8px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ui-text-muted, #777); cursor: pointer; font: inherit; font-size: 10px; }
+.ai-ask-message-actions button:hover { border-color: var(--ui-border, #dedede); background: var(--ui-surface-soft, #fafafa); color: var(--ui-text-strong, #202020); }
+.ai-ask-message-actions button:disabled { opacity: .45; cursor: not-allowed; }
+.ai-ask-composer { padding: 10px 13px 8px; }
+.ai-ask-composer textarea { min-height: 58px; max-height: 125px; resize: vertical; border-radius: 11px; }
+.ai-ask-composer-footer { margin-top: 7px; }
+.ai-ask-privacy-note { padding: 0 13px 9px; }
+.app.theme-dark .ai-ask-provider-summary { background: var(--ui-surface-solid, #1e1e1e); color: var(--ui-text); }
+.app.theme-dark .ai-ask-provider-summary:hover { background: var(--ui-surface-soft, #252529); }
+.app.theme-dark .ai-ask-message.assistant { background: transparent; }
+.app.theme-dark .ai-ask-markdown code, .app.theme-dark .ai-ask-markdown pre { border-color: var(--ui-border); background: #252529; }
+.app.theme-dark .ai-ask-markdown th { background: #252529; }
+.app.theme-dark .ai-ask-markdown th, .app.theme-dark .ai-ask-markdown td { border-color: var(--ui-border); }
+@media (max-width: 460px) {
+  .ai-ask-panel { width: 100vw; }
+  .ai-ask-header { gap: 6px; padding-right: 10px; padding-left: 10px; }
+  .ai-ask-heading { gap: 8px; }
+  .ai-ask-heading p { max-width: 180px; }
+  .ai-ask-header-actions { gap: 3px; }
+  .ai-ask-header-actions button { min-height: 30px; padding: 0 7px; }
+  .ai-ask-header-actions .ai-ask-close { width: 30px; }
+  .ai-ask-provider-summary { padding-right: 11px; padding-left: 11px; }
+  .ai-ask-messages { padding-right: 12px; padding-left: 12px; }
+  .ai-ask-message.user { margin-left: 22px; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .ai-ask-message-actions { opacity: .45; transition: opacity .15s ease; }
+  .ai-ask-message.assistant:hover .ai-ask-message-actions, .ai-ask-message.assistant:focus-within .ai-ask-message-actions { opacity: 1; }
+}

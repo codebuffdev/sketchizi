@@ -140,6 +140,86 @@ function timeLabel(value) {
   catch { return ""; }
 }
 
+
+function renderInlineMarkdown(text, keyPrefix = "inline") {
+  const pattern = /(`[^`]+`|\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\*[^*\n]+\*|_[^_\n]+_|\[[^\]]+\]\(https?:\/\/[^\s)]+\))/g;
+  const parts = String(text).split(pattern);
+  return parts.map((part, index) => {
+    const key = `${keyPrefix}-${index}`;
+    if (!part) return null;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={key}>{part.slice(1, -1)}</code>;
+    if ((part.startsWith("**") && part.endsWith("**")) || (part.startsWith("__") && part.endsWith("__"))) return <strong key={key}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("~~") && part.endsWith("~~")) return <del key={key}>{part.slice(2, -2)}</del>;
+    if ((part.startsWith("*") && part.endsWith("*")) || (part.startsWith("_") && part.endsWith("_"))) return <em key={key}>{part.slice(1, -1)}</em>;
+    const link = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (link) return <a key={key} href={link[2]} target="_blank" rel="noopener noreferrer">{link[1]}</a>;
+    return part;
+  });
+}
+
+function MarkdownResponse({ content }) {
+  const lines = String(content || "").replace(/\r\n?/g, "\n").split("\n");
+  const blocks = [];
+  let paragraph = [];
+  let listItems = [];
+  let listType = null;
+  let codeLines = null;
+  let tableRows = null;
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    blocks.push(<p key={`p-${blocks.length}`}>{paragraph.map((line, i) => <span key={i}>{i > 0 && <br />}{renderInlineMarkdown(line, `p-${blocks.length}-${i}`)}</span>)}</p>);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!listItems.length) return;
+    const Tag = listType === "ol" ? "ol" : "ul";
+    blocks.push(<Tag key={`list-${blocks.length}`}>{listItems.map((item, i) => <li key={i}>{renderInlineMarkdown(item, `list-${blocks.length}-${i}`)}</li>)}</Tag>);
+    listItems = [];
+    listType = null;
+  };
+  const flushTable = () => {
+    if (!tableRows?.length) return;
+    const rows = tableRows.filter((row) => !/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(row));
+    const cells = rows.map((row) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim()));
+    if (cells.length) blocks.push(<div className="ai-ask-table-wrap" key={`table-${blocks.length}`}><table><thead><tr>{cells[0].map((cell, i) => <th key={i}>{renderInlineMarkdown(cell, `th-${i}`)}</th>)}</tr></thead><tbody>{cells.slice(1).map((row, ri) => <tr key={ri}>{cells[0].map((_, ci) => <td key={ci}>{renderInlineMarkdown(row[ci] || "", `td-${ri}-${ci}`)}</td>)}</tr>)}</tbody></table></div>);
+    tableRows = null;
+  };
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (codeLines) {
+      if (/^\s*```/.test(line)) {
+        blocks.push(<pre key={`code-${blocks.length}`}><code>{codeLines.join("\n")}</code></pre>);
+        codeLines = null;
+      } else codeLines.push(line);
+      continue;
+    }
+    if (/^\s*```/.test(line)) { flushParagraph(); flushList(); flushTable(); codeLines = []; continue; }
+    if (tableRows && line.includes("|")) { flushParagraph(); flushList(); tableRows.push(line); continue; }
+    if (tableRows) flushTable();
+    if (!line.trim()) { flushParagraph(); flushList(); continue; }
+    if (/^\s*\|?.+\|.+\|?\s*$/.test(line) && i + 1 < lines.length && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[i + 1])) {
+      flushParagraph(); flushList(); tableRows = [line, lines[i + 1]]; i += 1; continue;
+    }
+    if (/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)) { flushParagraph(); flushList(); blocks.push(<hr key={`hr-${blocks.length}`} />); continue; }
+    const heading = line.match(/^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if (heading) { flushParagraph(); flushList(); const Tag = `h${heading[1].length}`; blocks.push(<Tag key={`h-${blocks.length}`}>{renderInlineMarkdown(heading[2], `h-${blocks.length}`)}</Tag>); continue; }
+    const item = line.match(/^\s*(?:[-+*])\s+(.+)$/) || line.match(/^\s*\d+[.)]\s+(.+)$/);
+    if (item) {
+      flushParagraph();
+      const nextType = /^\s*\d+[.)]\s+/.test(line) ? "ol" : "ul";
+      if (listType && listType !== nextType) flushList();
+      listType = nextType; listItems.push(item[1]); continue;
+    }
+    flushList();
+    const quote = line.match(/^\s*>\s?(.*)$/);
+    if (quote) { flushParagraph(); blocks.push(<blockquote key={`quote-${blocks.length}`}>{renderInlineMarkdown(quote[1], `quote-${blocks.length}`)}</blockquote>); continue; }
+    paragraph.push(line);
+  }
+  flushParagraph(); flushList(); flushTable();
+  if (codeLines) blocks.push(<pre key={`code-${blocks.length}`}><code>{codeLines.join("\n")}</code></pre>);
+  return <div className="ai-ask-markdown">{blocks}</div>;
+}
+
 function withRequestDiagnostics(message, error) {
   const details = [];
   if (Number.isInteger(error?.status)) details.push(`HTTP ${error.status}`);
@@ -163,6 +243,8 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const [apiKey, setApiKey] = useState("");
   const [keyApplied, setKeyApplied] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [providerSettingsOpen, setProviderSettingsOpen] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [authAttempt, setAuthAttempt] = useState(0);
   const [newAnswerQuestion, setNewAnswerQuestion] = useState(() => chat.newAnswerQuestion || "");
@@ -172,6 +254,10 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const requestInFlightRef = useRef(false);
   const usageRequestSequenceRef = useRef(0);
   const conversationCreationRef = useRef(null);
+
+  useEffect(() => {
+    if (open) setProviderSettingsOpen(false);
+  }, [open]);
 
   const refreshUsage = useCallback(async (conversationId, accountId = activeAccountRef.current) => {
     if (!conversationId) {
@@ -874,6 +960,16 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     setAnnouncement("Gemini API key removed from this tab's session.");
   };
 
+  const copyAssistantResponse = async (message) => {
+    try {
+      await navigator.clipboard.writeText(message.text);
+      setCopiedMessageId(message.messageId || message.requestId || String(message.timestamp || "response"));
+      window.setTimeout(() => setCopiedMessageId(""), 1800);
+    } catch {
+      setPanelError("Could not copy the response. Check clipboard permissions and try again.");
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -904,46 +1000,40 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
 
       {auth.status === "authenticated" && (
         <>
-          <div className="ai-ask-provider-row">
-            <label htmlFor="ai-ask-provider">Provider</label>
-            <select id="ai-ask-provider" value={chat.provider} onChange={(event) => chooseProvider(event.target.value)} disabled={busy || Boolean(pendingRequest)}>
-              <option value="builtin">Built-in Gemini</option>
-              <option value="byok">Bring Your Own Key (BYOK)</option>
-            </select>
+          <div className={`ai-ask-provider-disclosure ${providerSettingsOpen ? "is-open" : ""}`}>
+            <button type="button" className="ai-ask-provider-summary" aria-expanded={providerSettingsOpen} aria-controls="ai-ask-provider-settings" onClick={() => setProviderSettingsOpen((value) => !value)}>
+              <span className={`ai-ask-provider-status ${chat.provider === "byok" && !keyApplied ? "is-warning" : "is-ready"}`} aria-hidden="true">{chat.provider === "byok" && !keyApplied ? "!" : "✓"}</span>
+              <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Built-in Gemini"}</strong><small>{chat.provider === "byok" ? (keyApplied ? "Gemini · Key ready" : "Gemini · API key required") : "Gemini · Built-in provider"}</small></span>
+              <span className="ai-ask-provider-manage">{providerSettingsOpen ? "Done" : "Manage"}</span>
+              <span className="ai-ask-provider-chevron" aria-hidden="true">⌄</span>
+            </button>
+            {providerSettingsOpen && <div className="ai-ask-provider-settings" id="ai-ask-provider-settings">
+              <div className="ai-ask-provider-row">
+                <label htmlFor="ai-ask-provider">Provider</label>
+                <select id="ai-ask-provider" value={chat.provider} onChange={(event) => chooseProvider(event.target.value)} disabled={busy || Boolean(pendingRequest)}>
+                  <option value="builtin">Built-in Gemini</option>
+                  <option value="byok">Bring Your Own Key (BYOK)</option>
+                </select>
+              </div>
+              {chat.provider === "builtin" ? (
+                <div className="ai-ask-usage" aria-live="polite">
+                  {!chat.conversationId && conversationStatus === "creating" && <span>Preparing your AI conversation…</span>}
+                  {!chat.conversationId && conversationStatus === "error" && <><span>Could not prepare your AI conversation: {conversationError || "Please try again."}</span><button type="button" onClick={() => ensureConversation(auth.user.id).catch(() => {})} disabled={busy}>Retry conversation</button></>}
+                  {chat.conversationId && usageStatus === "loading" && <span>Loading usage allowance…</span>}
+                  {chat.conversationId && usageStatus === "error" && <><span>Usage allowance unavailable: {usageError || "Could not load usage."}</span><button type="button" onClick={() => refreshUsage(chat.conversationId, auth.user.id)} disabled={busy || !chat.conversationId}>Retry usage</button></>}
+                  {chat.conversationId && usageStatus === "idle" && <span>Usage allowance will load when ready.</span>}
+                  {chat.conversationId && usageStatus === "loaded" && usage && <><span>Conversation: <strong>{usage.conversationRemaining ?? "—"}</strong> questions left</span><span>Rolling 12 hours: <strong>{usage.accountRemaining ?? "—"}</strong> left</span>{usage.nextAvailableAt && usage.accountRemaining <= 0 && <small>Allowance expected to refresh {new Date(usage.nextAvailableAt).toLocaleString()}.</small>}</>}
+                </div>
+              ) : (
+                <div className="ai-ask-byok-settings">
+                  <label htmlFor="ai-ask-api-key">Gemini API key</label>
+                  <div className="ai-ask-key-row"><input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} /><button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button></div>
+                  <div className="ai-ask-key-actions"><button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button><button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button></div>
+                  <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
+                </div>
+              )}
+            </div>}
           </div>
-          {chat.provider === "builtin" ? (
-            <div className="ai-ask-usage" aria-live="polite">
-              {!chat.conversationId && conversationStatus === "creating" && <span>Preparing your AI conversation…</span>}
-              {!chat.conversationId && conversationStatus === "error" && <>
-                <span>Could not prepare your AI conversation: {conversationError || "Please try again."}</span>
-                <button type="button" onClick={() => ensureConversation(auth.user.id).catch(() => {})} disabled={busy}>Retry conversation</button>
-              </>}
-              {chat.conversationId && usageStatus === "loading" && <span>Loading usage allowance…</span>}
-              {chat.conversationId && usageStatus === "error" && <>
-                <span>Usage allowance unavailable: {usageError || "Could not load usage."}</span>
-                <button type="button" onClick={() => refreshUsage(chat.conversationId, auth.user.id)} disabled={busy || !chat.conversationId}>Retry usage</button>
-              </>}
-              {chat.conversationId && usageStatus === "idle" && <span>Usage allowance will load when ready.</span>}
-              {chat.conversationId && usageStatus === "loaded" && usage && <>
-                <span>Conversation: <strong>{usage.conversationRemaining ?? "—"}</strong> questions left</span>
-                <span>Rolling 12 hours: <strong>{usage.accountRemaining ?? "—"}</strong> left</span>
-                {usage.nextAvailableAt && usage.accountRemaining <= 0 && <small>Allowance expected to refresh {new Date(usage.nextAvailableAt).toLocaleString()}.</small>}
-              </>}
-            </div>
-          ) : (
-            <div className="ai-ask-byok-settings">
-              <label htmlFor="ai-ask-api-key">Gemini API key</label>
-              <div className="ai-ask-key-row">
-                <input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} />
-                <button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button>
-              </div>
-              <div className="ai-ask-key-actions">
-                <button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button>
-                <button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button>
-              </div>
-              <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
-            </div>
-          )}
 
           <div className="ai-ask-messages" ref={transcriptRef} aria-label="AI Ask conversation" aria-live="polite">
             {!chat.messages.length ? (
@@ -954,9 +1044,9 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               </div>
             ) : chat.messages.map((message, index) => (
               <article key={`${message.requestId || message.timestamp || index}-${message.role}-${index}`} className={`ai-ask-message ${message.role}`}>
-                <div className="ai-ask-message-role">{message.role === "user" ? "You" : "Gemini"}<time>{timeLabel(message.timestamp)}</time></div>
-                <p>{message.text}</p>
-                {message.role === "assistant" && message.question && <button type="button" className="ai-ask-retry" onClick={() => sendQuestion(message.question)} disabled={busy || Boolean(pendingRequest)}>Regenerate answer</button>}
+                <div className="ai-ask-message-role"><span className="ai-ask-message-author">{message.role === "user" ? "You" : <><span className="ai-ask-assistant-mark" aria-hidden="true">✳</span>Gemini</>}</span><time>{timeLabel(message.timestamp)}</time></div>
+                {message.role === "assistant" ? <MarkdownResponse content={message.text} /> : <div className="ai-ask-user-text">{message.text}</div>}
+                {message.role === "assistant" && <div className="ai-ask-message-actions"><button type="button" onClick={() => copyAssistantResponse(message)} title="Copy response">{copiedMessageId === (message.messageId || message.requestId || String(message.timestamp || "response")) ? "Copied" : "Copy"}</button>{message.question && <button type="button" onClick={() => sendQuestion(message.question)} disabled={busy || Boolean(pendingRequest)} title="Generate another answer to this question">Regenerate</button>}</div>}
               </article>
             ))}
             {busy && <div className="ai-ask-thinking" role="status"><span className="ai-ask-spinner" />Analyzing the current diagram…</div>}
