@@ -20,6 +20,7 @@ const PRESENCE_NAME_MAX = 48;
 const MAX_MESSAGE_BYTES = 8 * 1024 * 1024;
 const COLLAB_BACKPRESSURE_HIGH_WATER_MARK = 256 * 1024;
 const COLLAB_BACKPRESSURE_RETRY_MS = 16;
+const HOST_AUTH_REFRESH_TIMEOUT_MS = 10_000;
 
 function randomId(length = 24) {
   const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
@@ -411,8 +412,11 @@ export class SketchiziCollaboration {
 
     socket.onopen = async () => {
       socketOpenedAt = Date.now();
+      // A successful TCP/WebSocket handshake is not a successful collaboration
+      // reconnect. Keep the retry count until the server acknowledges `joined`,
+      // otherwise a socket that repeatedly opens but never joins retries forever
+      // at the shortest delay.
       const isReconnect = this.reconnectAttempt > 0;
-      this.reconnectAttempt = 0;
       logger.info("Collaboration WebSocket handshake completed", { category: "collaboration", roomId: this.roomId, clientId: this.clientId, reconnect: isReconnect });
       this.onSocketOpen?.({ reconnect: isReconnect, openedAt: socketOpenedAt });
       if (syncDiagnosticsEnabled()) recordSyncDiagnostic("client.websocket.open", {
@@ -421,14 +425,41 @@ export class SketchiziCollaboration {
         hasInitialized: this.hasInitialized,
       });
       if (isReconnect && this.hostAuthorizationTokenProvider) {
+        let refreshTimeoutId;
         try {
-          const refreshed = await this.hostAuthorizationTokenProvider();
+          const refreshed = await Promise.race([
+            Promise.resolve().then(() => this.hostAuthorizationTokenProvider()),
+            new Promise((_, reject) => {
+              refreshTimeoutId = setTimeout(
+                () => reject(new Error("Host authorization refresh timed out")),
+                HOST_AUTH_REFRESH_TIMEOUT_MS,
+              );
+            }),
+          ]);
           if (this.closed || this.socket !== socket || socket.readyState !== WebSocket.OPEN) return;
+          if (!refreshed || typeof refreshed.token !== "string" || !refreshed.token) {
+            throw new Error("Host authorization refresh returned no token");
+          }
           this.hostAuthorizationToken = refreshed.token;
-          this.displayName = refreshed.name;
-        } catch {
-          this.fail("Your sign-in session could not be verified to reconnect as host. Sign in again and restart hosting if needed.");
+          if (typeof refreshed.name === "string" && refreshed.name.trim()) this.displayName = refreshed.name;
+        } catch (error) {
+          logger.warn("Collaboration host authorization refresh failed", {
+            category: "collaboration",
+            roomId: this.roomId,
+            clientId: this.clientId,
+            reason: error?.message === "Host authorization refresh timed out" ? "timeout" : "request-failed",
+          });
+          this.fail(error?.message === "Host authorization refresh timed out"
+            ? "Reconnecting as host took too long to verify your sign-in. Sketchizi will retry automatically."
+            : "Your sign-in session could not be verified to reconnect as host. Sketchizi will retry; if this continues, sign in again.");
+          // Force this unjoined socket through the existing bounded-backoff
+          // reconnect path instead of leaving it open without a join message.
+          if (this.socket === socket && socket.readyState === WebSocket.OPEN) {
+            socket.close(1011, "Host authorization refresh failed");
+          }
           return;
+        } finally {
+          if (refreshTimeoutId) clearTimeout(refreshTimeoutId);
         }
       }
       if (this.closed || this.socket !== socket || socket.readyState !== WebSocket.OPEN) return;
@@ -1112,6 +1143,8 @@ export class SketchiziCollaboration {
           deletedElementCount: Array.isArray(message.elements) ? summarizeSyncRecords(message.elements).deletedCount : 0,
         });
         this.joined = true;
+        // Reset backoff only after the collaboration protocol completes the join.
+        this.reconnectAttempt = 0;
         this.role = message.role === "host" ? "host" : "joinee";
         this.permission = message.permission === "host" ? "host" : message.permission === "editor" ? "editor" : "viewer";
         this.requestState = ["none", "pending", "approved", "denied"].includes(message.requestState) ? message.requestState : "none";
