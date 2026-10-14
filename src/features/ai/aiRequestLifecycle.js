@@ -3,6 +3,7 @@ const CONFIRMED_FAILURE_CODES = new Set([
   "provider_timeout",
   "provider_rate_limited",
   "provider_auth_failed",
+  "provider_configuration_error",
   "context_too_large",
   "generation_failed",
   "request_already_failed",

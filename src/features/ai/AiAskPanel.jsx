@@ -738,8 +738,10 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           ? "The AI provider has temporarily reached its token-per-minute limit. Wait a short while before retrying. No successful-question allowance was consumed."
           : failureCode === "context_too_large"
             ? "This diagram and conversation are too large for one AI request. Try asking about a smaller part of the diagram. No successful-question allowance was consumed."
-            : failureCode === "provider_configuration_error" || failureCode === "provider_auth_failed"
-              ? "The AI provider rejected its credentials. The service administrator needs to check the provider configuration. No successful-question allowance was consumed."
+            : failureCode === "provider_auth_failed" && chat.provider === "byok"
+              ? "Gemini rejected your API key. Check that it is valid, active, and permitted to use the Gemini API, then replace it in BYOK settings. No successful-question allowance was consumed."
+              : failureCode === "provider_configuration_error" || failureCode === "provider_auth_failed"
+                ? "The built-in AI provider rejected its configured credentials. The service administrator needs to check the provider configuration. No successful-question allowance was consumed."
               : failureCode === "provider_timeout"
                 ? "The AI provider took too long to respond. Try again shortly. No successful-question allowance was consumed."
                 : error.message || "The AI provider could not complete this request. You can retry this question without adding another message bubble.";
