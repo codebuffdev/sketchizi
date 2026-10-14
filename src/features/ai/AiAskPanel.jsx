@@ -699,6 +699,23 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       setAnnouncement("Answer received.");
     } catch (error) {
       if (activeAccountRef.current !== auth.user.id) return;
+
+      // A gateway can return a generic 502 even after the backend durably recorded
+      // a definite provider failure. Resolve the logical request's stored status
+      // before telling the user that its outcome is unknown.
+      if (submittedToChat && [502, 503, 504].includes(Number(error?.status)) &&
+          (!error?.code || error.code === "ai_request_failed" || error.code === "internal_error")) {
+        try {
+          const storedStatus = await aiApiRequest(`/requests/${encodeURIComponent(requestId)}`);
+          if (storedStatus?.status === "failed" && storedStatus.code && storedStatus.code !== "reservation_expired") {
+            error.providerFailureCode = storedStatus.code;
+            error.code = storedStatus.code;
+          }
+        } catch {
+          // If status cannot be confirmed, preserve the original unknown-outcome path.
+        }
+      }
+
       const failureKind = classifyChatFailure(error, submittedToChat);
       if (failureKind === "authentication") {
         clearAiSession();
@@ -787,9 +804,9 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           };
           setPendingRequest(pending);
           updateChat((current) => ({ ...current, retryAttempt: null }));
-          setPanelError(withRequestDiagnostics(pending.sameIdRecoveryAvailable
-            ? "The status endpoint cannot currently find this request record. That does not prove the original POST never reached the service. Retrying with the same ID reuses a durable reservation if it still exists, but cannot rule out a duplicate if that record was lost. Continue only if you accept that uncertainty."
-            : "The request outcome is not confirmed. Check status before submitting another generation.", error));
+          setPanelError(pending.sameIdRecoveryAvailable
+            ? "We couldn't find a saved status for this request. That doesn't confirm whether it reached the AI service. Check its status again before deciding whether to retry."
+            : "We couldn't confirm whether your request completed. Check its status before trying again.");
         }
       } else {
         setPendingRequest(null);
