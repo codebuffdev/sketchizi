@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchCurrentUser, invalidateCurrentUserCache, signOut, startGoogleSignIn } from "./authClient.js";
+import { fetchAuthProviders, fetchCurrentUser, invalidateCurrentUserCache, signOut, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
 
 export default function AuthenticationControl() {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [loginError, setLoginError] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [providers, setProviders] = useState({ google: true, github: false });
   const [busy, setBusy] = useState(false);
   const [signInContext, setSignInContext] = useState({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" });
 
@@ -19,23 +20,25 @@ export default function AuthenticationControl() {
     };
     window.addEventListener("sketchizi:auth-required", openForHost);
     const currentUrl = new URL(window.location.href);
-    const returnedFromLoginFailure = currentUrl.searchParams.get("authError") === "login_failed";
+    const returnedAuthError = currentUrl.searchParams.get("authError");
+    const returnedFromLoginFailure = returnedAuthError === "login_failed" || returnedAuthError === "github_not_configured";
     if (returnedFromLoginFailure) {
       // OAuth redirects may resume a page from the browser back/forward cache.
       // Do not let an anonymous status cached before the redirect mask a valid
       // server-managed session established during the sign-in round trip.
       invalidateCurrentUserCache();
-      setLoginError(true);
+      setLoginError(returnedAuthError === "github_not_configured" ? "GitHub sign-in is not configured yet. Please use Google or contact the Sketchizi administrator." : "Sign-in failed. Please try again.");
       currentUrl.searchParams.delete("authError");
       window.history.replaceState(window.history.state, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
     }
     const controller = new AbortController();
+    fetchAuthProviders().then(setProviders).catch(() => { /* Keep Google sign-in available if provider discovery is unavailable. */ });
     fetchCurrentUser(controller.signal)
       .then(({ authenticated, user }) => {
         setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
         // An old OAuth failure flag can remain in component state after a later
         // successful sign-in. A confirmed authenticated session wins over it.
-        if (authenticated) setLoginError(false);
+        if (authenticated) setLoginError("");
       })
       .catch((error) => {
         if (error.name !== "AbortError") setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
@@ -46,7 +49,7 @@ export default function AuthenticationControl() {
   // Keep the invariant declarative as well as in the request callbacks: an
   // authenticated account must never display a stale OAuth failure banner.
   useEffect(() => {
-    if (auth.status === "authenticated") setLoginError(false);
+    if (auth.status === "authenticated") setLoginError("");
   }, [auth.status]);
 
   useEffect(() => {
@@ -80,7 +83,7 @@ export default function AuthenticationControl() {
     try {
       const { authenticated, user } = await fetchCurrentUser();
       setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
-      if (authenticated) setLoginError(false);
+      if (authenticated) setLoginError("");
     } catch (error) {
       setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
     }
@@ -89,7 +92,7 @@ export default function AuthenticationControl() {
   const handleGoogleSignIn = async () => {
     if (busy) return;
     setBusy(true);
-    setLoginError(false);
+    setLoginError("");
     setAuth((current) => ({ ...current, error: "" }));
     try {
       await startGoogleSignIn(signInContext.returnTo || undefined);
@@ -98,6 +101,20 @@ export default function AuthenticationControl() {
         ...current,
         error: error.message || "Sketchizi services are starting. Please try again.",
       }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleGitHubSignIn = async () => {
+    if (busy) return;
+    setBusy(true);
+    setLoginError("");
+    setAuth((current) => ({ ...current, error: "" }));
+    try {
+      await startGitHubSignIn(signInContext.returnTo || undefined);
+    } catch (error) {
+      setAuth((current) => ({ ...current, error: error.message || "Sketchizi services are starting. Please try again." }));
     } finally {
       setBusy(false);
     }
@@ -149,7 +166,7 @@ export default function AuthenticationControl() {
         <button className="auth-header-button" type="button" onClick={() => { setSignInContext({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" }); setDialogOpen(true); }}>Sign in</button>
       )}
 
-      {loginError && auth.status !== "authenticated" && <span className="auth-inline-error" role="status">Google sign-in failed. Try again.</span>}
+      {loginError && auth.status !== "authenticated" && <span className="auth-inline-error" role="status">{loginError}</span>}
       {auth.error && <span className="auth-inline-error" role="status" title={auth.error}>Auth unavailable</span>}
       {auth.status === "unavailable" && <button className="auth-header-button" type="button" onClick={retryAuthStatus} title="Retry checking your sign-in session">Retry</button>}
       {dialogOpen && (
@@ -159,13 +176,19 @@ export default function AuthenticationControl() {
             <div className="auth-dialog-mark" aria-hidden="true">S</div>
             <h2 id="auth-dialog-title">Sign in to Sketchizi</h2>
             <p>{signInContext.message}</p>
-            {loginError && auth.status !== "authenticated" && <p className="auth-dialog-notice" role="status">Google sign-in did not complete. Please try again.</p>}
+            {loginError && auth.status !== "authenticated" && <p className="auth-dialog-notice" role="status">{loginError}</p>}
             {auth.error && <p className="auth-dialog-notice" role="status">{auth.error}</p>}
             <button className="auth-google-button" type="button" onClick={handleGoogleSignIn} disabled={busy}>
               <svg aria-hidden="true" viewBox="0 0 48 48" width="19" height="19"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 3.01 13.22l7.98 6.19C12.88 13.72 18.01 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.73 7.18l7.64 5.93c4.46-4.12 7.13-10.19 7.13-17.58Z"/><path fill="#FBBC05" d="M10.99 28.59A14.4 14.4 0 0 1 10.22 24c0-1.59.27-3.13.76-4.59L3.01 13.22A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 3.01 10.78l7.98-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.87l-7.64-5.93c-2.12 1.42-4.83 2.27-8.26 2.27-5.99 0-11.12-4.22-13.01-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>
               {busy ? "Starting Sketchizi services…" : "Continue with Google"}
             </button>
-            <p className="auth-dialog-footnote">No password is needed. Sketchizi uses Google sign-in.</p>
+            {providers.github && (
+              <button className="auth-google-button auth-github-button" type="button" onClick={handleGitHubSignIn} disabled={busy}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.53v-2.08c-3.1.67-3.76-1.31-3.76-1.31-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.7 1.15 1.7 1.15.99 1.69 2.6 1.2 3.23.92.1-.72.39-1.2.7-1.48-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.14a10.6 10.6 0 0 1 5.55 0c2.11-1.44 3.05-1.14 3.05-1.14.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.24-5.1 5.52.4.35.75 1.03.75 2.08V22c0 .29.2.63.76.52A11.1 11.1 0 0 0 12 .9Z" /></svg>
+                {busy ? "Redirecting to GitHub…" : "Continue with GitHub"}
+              </button>
+            )}
+            <p className="auth-dialog-footnote">Sign in securely with Google or GitHub. Repository access is a separate permission.</p>
           </section>
         </div>
       )}

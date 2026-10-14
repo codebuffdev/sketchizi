@@ -3,6 +3,7 @@ import { ensureBackendReady } from "../backend/backendWarmup.js";
 const AUTH_ME_URL = "/api/auth/me";
 const AUTH_CSRF_URL = "/api/auth/csrf";
 const AUTH_LOGOUT_URL = "/api/auth/logout";
+const AUTH_PROVIDERS_URL = "/api/auth/providers";
 // Render may need substantially longer than a typical request to wake a sleeping auth service.
 // Keep the app usable while it wakes instead of incorrectly declaring the user signed out.
 const AUTH_CHECK_TIMEOUT_MS = 120_000;
@@ -132,10 +133,26 @@ export function fetchCurrentUser(signal) {
   return waitForCaller(currentUserPromise, signal);
 }
 
+function safeReturnTo(returnTo) {
+  return typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\") ? returnTo : "/";
+}
+
+export async function fetchAuthProviders() {
+  await ensureBackendReady();
+  const response = await fetch(AUTH_PROVIDERS_URL, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+  if (!response.ok) throw new Error("Could not load sign-in options.");
+  const payload = await response.json();
+  return { google: payload.google === true, github: payload.github === true };
+}
+
 export async function startGoogleSignIn(returnTo = window.location.pathname + window.location.search + window.location.hash) {
   await ensureBackendReady();
-  const safeReturnTo = typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\") ? returnTo : "/";
-  window.location.assign(`/api/auth/login/google?returnTo=${encodeURIComponent(safeReturnTo)}`);
+  window.location.assign(`/api/auth/login/google?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`);
+}
+
+export async function startGitHubSignIn(returnTo = window.location.pathname + window.location.search + window.location.hash) {
+  await ensureBackendReady();
+  window.location.assign(`/api/auth/login/github?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`);
 }
 
 export async function signOut() {

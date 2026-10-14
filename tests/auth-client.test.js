@@ -18,6 +18,8 @@ test("auth client uses same-origin endpoints and does not persist credentials", 
   const source = await readFile(new URL("../src/features/auth/authClient.js", import.meta.url), "utf8");
   assert.match(source, /"\/api\/auth\/me"/);
   assert.match(source, /"\/api\/auth\/logout"/);
+  assert.match(source, /"\/api\/auth\/providers"/);
+  assert.match(source, /startGitHubSignIn/);
   assert.match(source, /credentials: "same-origin"/);
   assert.doesNotMatch(source, /localStorage|sessionStorage/);
 });
@@ -106,15 +108,23 @@ test("header exposes a status retry when authentication lookup is unavailable", 
 
 test("a successful authentication check clears a stale OAuth login error", async () => {
   const source = await readFile(new URL("../src/features/auth/AuthenticationControl.jsx", import.meta.url), "utf8");
-  assert.match(source, /if \(authenticated\) setLoginError\(false\)/);
-  assert.match(source, /const handleGoogleSignIn = async \(\) => \{[\s\S]*?setLoginError\(false\);[\s\S]*?await startGoogleSignIn/);
+  assert.match(source, /if \(authenticated\) setLoginError\(\"\"\)/);
+  assert.match(source, /const handleGoogleSignIn = async \(\) => \{[\s\S]*?setLoginError\(\"\"\);[\s\S]*?await startGoogleSignIn/);
 });
 
 
 test("stale OAuth errors are invalidated, cleared on confirmed auth, and hidden for authenticated users", async () => {
   const source = await readFile(new URL("../src/features/auth/AuthenticationControl.jsx", import.meta.url), "utf8");
   assert.match(source, /if \(returnedFromLoginFailure\) \{[\s\S]*?invalidateCurrentUserCache\(\);/);
-  assert.match(source, /useEffect\(\(\) => \{\s*if \(auth\.status === "authenticated"\) setLoginError\(false\);\s*\}, \[auth\.status\]\)/);
+  assert.match(source, /useEffect\(\(\) => \{\s*if \(auth\.status === "authenticated"\) setLoginError\(\"\"\);\s*\}, \[auth\.status\]\)/);
   assert.match(source, /loginError && auth\.status !== "authenticated" && <span className="auth-inline-error"/);
   assert.match(source, /loginError && auth\.status !== "authenticated" && <p className="auth-dialog-notice"/);
+});
+
+
+test("GitHub sign-in is available as a separate same-origin OAuth entry point", async () => {
+  const source = await readFile(new URL("../src/features/auth/authClient.js", import.meta.url), "utf8");
+  assert.match(source, /export async function startGitHubSignIn/);
+  assert.match(source, /window\.location\.assign\(`\/api\/auth\/login\/github\?returnTo=/);
+  assert.match(source, /export async function fetchAuthProviders/);
 });

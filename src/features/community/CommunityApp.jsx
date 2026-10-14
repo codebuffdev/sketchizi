@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchCurrentUser, startGoogleSignIn } from "../auth/authClient.js";
+import { fetchAuthProviders, fetchCurrentUser, startGoogleSignIn } from "../auth/authClient.js";
 import { getInitialThemeMode } from "../navigation/themePreference.js";
 import "./community.css";
 
@@ -19,7 +19,7 @@ async function api(path, options = {}) {
 }
 const path = () => window.location.pathname;
 const link = (href, text, cls="") => <a className={cls} href={href}>{text}</a>;
-function Header({ user }) { return <header className="community-header"><a className="community-brand" href="/">Sketchizi</a><nav>{link("/reviews","Reviews")}{link("/feedback","My Feedback")}{link("/join-team","Join the Team")}{user ? <span className="community-user">{user.name || user.email}</span> : link("/api/auth/login/google?returnTo="+encodeURIComponent(path()),"Sign in with Google","community-signin")}</nav></header>; }
+function Header({ user }) { const [githubEnabled, setGithubEnabled] = useState(false); useEffect(() => { fetchAuthProviders().then((providers) => setGithubEnabled(providers.github)).catch(() => {}); }, []); return <header className="community-header"><a className="community-brand" href="/">Sketchizi</a><nav>{link("/reviews","Reviews")}{link("/feedback","My Feedback")}{link("/join-team","Join the Team")}{user ? <span className="community-user">{user.name || user.email}</span> : <>{link("/api/auth/login/google?returnTo="+encodeURIComponent(path()),"Sign in with Google","community-signin")}{githubEnabled && link("/api/auth/login/github?returnTo="+encodeURIComponent(path()),"Sign in with GitHub","community-signin")}</>}</nav></header>; }
 function Shell({ user, title, eyebrow, children }) { return <div className="community-shell"><Header user={user}/><main className="community-main"><div className="community-eyebrow">{eyebrow || "SKETCHIZI COMMUNITY"}</div><h1>{title}</h1>{children}</main><footer className="community-footer">{link("/","Back to Sketchizi canvas")}<span>Reviews are public only after moderation. Feedback remains private.</span></footer></div>; }
 function Notice({ error, success }) { return <>{error && <div className="community-notice error" role="alert">{error}</div>}{success && <div className="community-notice success" role="status">{success}</div>}</>; }
 function ReviewCard({ item, onReport }) { return <article className="review-card"><div className="review-card-top"><div className="review-avatar">{(item.displayName || "S").slice(0,1).toUpperCase()}</div><div className="review-author"><strong>{item.displayName}</strong><span>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : "Published review"}</span></div><div className="review-stars" aria-label={`${item.rating} out of 5 stars`}>{"★".repeat(item.rating)}<span>{"★".repeat(5-item.rating)}</span></div></div>{item.title && <h3>{item.title}</h3>}{item.body && <p>{item.body}</p>}<button className="community-text-button" onClick={() => onReport(item.id)}>Report review</button></article>; }
