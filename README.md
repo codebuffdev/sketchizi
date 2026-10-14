@@ -13,7 +13,7 @@ Create diagrams, flowcharts, system designs, architecture diagrams, and visual n
 * 📦 Make Eraser icons available offline
 * 💾 Local persistent canvas storage
 * 📁 Recent Files for quickly reopening saved drawings
-* 📄 Native `.excalidraw` file support
+* 📄 Native `.sketchizi` files plus `.excalidraw` compatibility
 * 🌓 Light / Dark / System theme
 * 🗺️ Minimap
 * ⌨️ Keyboard shortcuts

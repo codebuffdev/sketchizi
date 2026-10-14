@@ -11,7 +11,7 @@ import {
   chooseFallbackSaveName, downloadDrawing, ensureExtension, getFileSystemSupport,
   listDrawingFiles, normalizeFsError, parseDrawing, pickDirectoryToOpen, pickDirectoryViaInput,
   pickDrawingToOpen, pickDrawingToSave, pickDrawingViaInput, readDrawingFromHandle,
-  serializeDrawing, writeDrawingToHandle, ensureHandlePermission,
+  serializeDrawing, writeDrawingToHandle, ensureHandlePermission, getDrawingFormat,
 } from "../../fileSystem";
 
 export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, lastSelectionSignature, startCollaboration }) {
@@ -42,6 +42,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // one (Firefox/Safari fallback) saves download a copy instead.
   const [currentFile, setCurrentFileState] = useState(null);
   const currentFileRef = useRef(null);
+  const documentMetadataRef = useRef({ metadata: {}, extensions: {} });
   const recentState = useRecentFiles({ currentFileRef, currentFolderRef });
   const { recentFiles, setRecentFiles, recentFolders, setRecentFolders, rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, forgetRecentFolder, clearRecentFolders } = recentState;
   const setCurrentFile = (file) => {
@@ -78,10 +79,13 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     return file;
   };
 
-  const currentSceneText = () => {
+  const currentSceneText = (nameOrFormat = currentFileRef.current?.name || "excalidraw") => {
     const api = apiRef.current;
     if (!api) return null;
     return serializeDrawing({
+      format: getDrawingFormat(nameOrFormat),
+      metadata: documentMetadataRef.current.metadata,
+      extensions: documentMetadataRef.current.extensions,
       elements: api.getSceneElementsIncludingDeleted?.() || api.getSceneElements(),
       appState: api.getAppState(),
       files: api.getFiles?.() || {},
@@ -92,6 +96,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     const api = apiRef.current;
     if (!api) throw new Error("Editor is not ready");
     const drawing = parseDrawing(text); // validates
+    documentMetadataRef.current = { metadata: drawing.metadata || {}, extensions: drawing.extensions || {} };
     const elements = restoreElements(drawing.elements, null, { repairBindings: true });
     api.updateScene({
       elements,
@@ -112,7 +117,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   const handleFileError = (error, fallback) => {
     const err = normalizeFsError(error, fallback);
     if (err.kind === "cancelled") return;
-    if (err.kind === "not-found" || err.kind === "permission" || err.kind === "invalid") showToast(err.message, "error");
+    if (err.kind === "not-found" || err.kind === "permission" || err.kind === "invalid" || err.kind === "unsupported") showToast(err.message, "error");
     else showToast(fallback, "error");
     const logContext = { category: "file", errorKind: err.kind };
     if (err.kind === "unknown") logger.error(fallback, error, logContext);
@@ -144,7 +149,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       const drawingFiles = fallback.files
         .filter((file) => {
           const relative = file.webkitRelativePath || file.name;
-          return relative.split("/").length === 2 && /\.excalidraw$/i.test(file.name);
+          return relative.split("/").length === 2 && /\.(excalidraw|sketchizi)$/i.test(file.name);
         })
         .map((file) => ({ name: file.name, file, handle: null }));
       const folder = { id: `fallback-folder-${Date.now()}`, name: fallback.name, handle: null, fallback: true };
@@ -208,6 +213,9 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         const record = await saveRecentSketch({
           id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name,
+          format: getDrawingFormat(name),
+          metadata: documentMetadataRef.current.metadata,
+          extensions: documentMetadataRef.current.extensions,
           elements: apiRef.current.getSceneElements(),
           appState: apiRef.current.getAppState(),
           files: apiRef.current.getFiles?.() || {},
@@ -229,6 +237,9 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         const record = await saveRecentSketch({
           id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name: fileEntry.file.name,
+          format: getDrawingFormat(fileEntry.file.name),
+          metadata: documentMetadataRef.current.metadata,
+          extensions: documentMetadataRef.current.extensions,
           elements: apiRef.current?.getSceneElements?.() || [],
           appState: apiRef.current?.getAppState?.() || {},
           files: apiRef.current?.getFiles?.() || {},
@@ -275,6 +286,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     });
     api.history?.clear?.();
     setSavedSketch(null);
+    documentMetadataRef.current = { metadata: {}, extensions: {} };
     setCurrentFile(null);
     clearEmergencyBackup();
     clearSketch().catch(() => {});
@@ -287,8 +299,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     closeNativeMenu();
     if (!apiRef.current) return;
     try {
-      const text = currentSceneText();
-      const suggested = currentFileRef.current?.name || `drawing-${new Date().toISOString().slice(0, 10)}.excalidraw`;
+      const suggested = currentFileRef.current?.name || `drawing-${new Date().toISOString().slice(0, 10)}.sketchizi`;
       if (!currentFileRef.current?.handle && currentFolderRef.current?.handle) {
         if (!(await ensureHandlePermission(currentFolderRef.current.handle, "readwrite"))) {
           showToast("Folder permission was denied", "error");
@@ -296,7 +307,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         }
         if (getFileSystemSupport().save) {
           const handle = await pickDrawingToSave(suggested, currentFolderRef.current.handle);
-          await writeDrawingToHandle(handle, text);
+          await writeDrawingToHandle(handle, currentSceneText(handle.name));
           await registerFile(handle, handle.name);
           await refreshCurrentFolderFiles().catch(() => {});
           logger.info("Document saved", { category: "file", fileName: handle.name, operation: "saveAs" });
@@ -311,7 +322,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         let startIn = currentFolderRef.current?.handle || null;
         if (startIn && !(await ensureHandlePermission(startIn, "readwrite"))) startIn = null;
         const handle = await pickDrawingToSave(suggested, startIn);
-        await writeDrawingToHandle(handle, text);
+        await writeDrawingToHandle(handle, currentSceneText(handle.name));
         await registerFile(handle, handle.name);
         if (currentFolderRef.current?.handle) refreshCurrentFolderFiles().catch(() => {});
         logger.info("Document saved", { category: "file", fileName: handle.name, operation: "saveAs" });
@@ -321,11 +332,14 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         // browser's download UI. Ask the user for the filename in Sketchizi so
         // that the name persisted for currentFile/Recent files is authoritative.
         const name = chooseFallbackSaveName(suggested);
-        downloadDrawing(name, text);
+        downloadDrawing(name, currentSceneText(name));
         const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const record = await saveRecentSketch({
           id: snapshotId,
           name,
+          format: getDrawingFormat(name),
+          metadata: documentMetadataRef.current.metadata,
+          extensions: documentMetadataRef.current.extensions,
           elements: apiRef.current.getSceneElements(),
           appState: apiRef.current.getAppState(),
           files: apiRef.current.getFiles?.() || {},
@@ -358,7 +372,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         showToast("File permission was denied", "error");
         return;
       }
-      await writeDrawingToHandle(file.handle, currentSceneText());
+      await writeDrawingToHandle(file.handle, currentSceneText(file.name));
       const actualName = file.handle?.name || file.name || "Untitled drawing";
       if (file.name !== actualName) setCurrentFile({ ...file, name: actualName });
       rememberRecentFile({ id: file.id, name: actualName, handle: file.handle, savedAt: Date.now(), kind: "file" });
@@ -412,7 +426,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         showToast("This drawing is no longer available", "error");
         return;
       }
-      loadDrawingIntoCanvas(serializeDrawing({ elements: record.elements || [], appState: record.appState, files: record.files }));
+      loadDrawingIntoCanvas(serializeDrawing({ elements: record.elements || [], appState: record.appState, files: record.files, format: record.format || getDrawingFormat(record.name), metadata: record.metadata, extensions: record.extensions }));
       setCurrentFile({ id: null, name: record.name, handle: null });
       rememberRecentFile({ ...record, kind: "snapshot" });
       logger.info("Recent snapshot opened", { category: "file", fileName: record.name, source: "recent-snapshot" });

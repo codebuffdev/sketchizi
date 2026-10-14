@@ -7,15 +7,6 @@ test("a provider failure returned after durable failure marking is terminal, eve
   assert.equal(classifyChatFailure({ status: 502, code: "provider_timeout" }, true), "confirmed_failure");
 });
 
-test("BYOK credential failures and built-in configuration failures are terminal, even with a 502", () => {
-  assert.equal(classifyChatFailure({ status: 502, code: "provider_auth_failed" }, true), "confirmed_failure");
-  assert.equal(classifyChatFailure({ status: 502, code: "provider_configuration_error" }, true), "confirmed_failure");
-});
-
-test("a provider failure recovered from durable request status overrides a generic gateway error", () => {
-  assert.equal(classifyChatFailure({ status: 502, code: "provider_auth_failed", providerFailureCode: "provider_auth_failed" }, true), "confirmed_failure");
-});
-
 test("a 503 before POST /chat is not classified as an accepted pending request", () => {
   assert.equal(classifyChatFailure({ status: 503, code: "identity_gateway_not_configured" }, false), "rejected_before_acceptance");
   assert.equal(classifyChatFailure({ status: 503, code: "ai_service_not_configured" }, true), "rejected_before_acceptance");

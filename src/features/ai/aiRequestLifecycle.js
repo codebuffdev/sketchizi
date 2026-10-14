@@ -3,7 +3,6 @@ const CONFIRMED_FAILURE_CODES = new Set([
   "provider_timeout",
   "provider_rate_limited",
   "provider_auth_failed",
-  "provider_configuration_error",
   "context_too_large",
   "generation_failed",
   "request_already_failed",
@@ -30,7 +29,7 @@ const PRE_ACCEPTANCE_CODES = new Set([
 /** Classifies a POST failure by its contract/code, not HTTP status alone. */
 export function classifyChatFailure(error, chatPostWasAttempted) {
   const status = Number(error?.status || 0);
-  const code = String(error?.providerFailureCode || error?.code || "");
+  const code = String(error?.code || "");
 
   if (status === 401 || code === "authentication_required") return "authentication";
   if (code === "completed_result_not_retained") return "succeeded_without_answer";

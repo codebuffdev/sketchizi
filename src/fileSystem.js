@@ -18,7 +18,10 @@ import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "./features/canvas
 // Fallback (Firefox/Safari): <input type="file"> for Open, download for Save.
 
 export const DRAWING_EXTENSION = ".excalidraw";
+export const SKETCHIZI_EXTENSION = ".sketchizi";
 const DRAWING_MIME = "application/vnd.excalidraw+json";
+const SKETCHIZI_MIME = "application/vnd.sketchizi+json";
+const SUPPORTED_DRAWING_EXTENSION = /\.(excalidraw|sketchizi|json)$/i;
 const SOURCE = "https://sketchizi.pages.dev";
 
 export class DrawingFileError extends Error {
@@ -42,25 +45,34 @@ export function getFileSystemSupport() {
 const PICKER_TYPES = [
   {
     description: "Sketchizi drawing",
-    accept: { [DRAWING_MIME]: [DRAWING_EXTENSION], "application/json": [".json"] },
+    accept: { [DRAWING_MIME]: [DRAWING_EXTENSION], [SKETCHIZI_MIME]: [SKETCHIZI_EXTENSION], "application/json": [".json"] },
   },
 ];
 const SAVE_PICKER_TYPES = [
-  { description: "Sketchizi drawing", accept: { [DRAWING_MIME]: [DRAWING_EXTENSION] } },
+  { description: "Sketchizi drawing", accept: { [DRAWING_MIME]: [DRAWING_EXTENSION], [SKETCHIZI_MIME]: [SKETCHIZI_EXTENSION] } },
 ];
 
 export function ensureExtension(name) {
   const base = String(name || "").trim() || "Untitled drawing";
-  return /\.(excalidraw|json)$/i.test(base) ? base : `${base}${DRAWING_EXTENSION}`;
+  return SUPPORTED_DRAWING_EXTENSION.test(base) ? base : `${base}${SKETCHIZI_EXTENSION}`;
 }
 
 export function displayName(name) {
-  return String(name || "Untitled drawing").replace(/\.(excalidraw|json)$/i, "");
+  return String(name || "Untitled drawing").replace(/\.(excalidraw|sketchizi|json)$/i, "");
 }
 
 // ---- serialization --------------------------------------------------------
 
-export function serializeDrawing({ elements, appState, files }) {
+export function getDrawingFormat(nameOrFormat = "excalidraw") {
+  const value = String(nameOrFormat || "").toLowerCase();
+  return value === "sketchizi" || value.endsWith(SKETCHIZI_EXTENSION) ? "sketchizi" : "excalidraw";
+}
+
+export function isSupportedDrawingName(name) {
+  return /\.(excalidraw|sketchizi)$/i.test(String(name || ""));
+}
+
+export function serializeDrawing({ elements, appState, files, format = "excalidraw", metadata = {}, extensions = {} }) {
   const liveElements = (elements || []).filter((element) => !element.isDeleted);
   // Persist only binary files still referenced by live image elements.
   const usedFileIds = new Set(
@@ -71,38 +83,61 @@ export function serializeDrawing({ elements, appState, files }) {
     if (usedFileIds.has(id) || usedFileIds.has(file?.id)) savedFiles[id] = file;
   });
 
-  return JSON.stringify(
-    {
-      type: "excalidraw",
-      version: 2,
-      source: SOURCE,
-      elements: liveElements,
-      appState: {
-        viewBackgroundColor: appState?.viewBackgroundColor,
-        scrollX: appState?.scrollX || 0,
-        scrollY: appState?.scrollY || 0,
-        zoom: { value: appState?.zoom?.value || 1 },
-        gridModeEnabled: !!appState?.gridModeEnabled,
-        currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
-        gridSize: appState?.gridSize,
-        gridStep: appState?.gridStep,
-      },
-      files: savedFiles,
+  const scene = {
+    type: "excalidraw",
+    version: 2,
+    source: SOURCE,
+    elements: liveElements,
+    appState: {
+      viewBackgroundColor: appState?.viewBackgroundColor,
+      scrollX: appState?.scrollX || 0,
+      scrollY: appState?.scrollY || 0,
+      zoom: { value: appState?.zoom?.value || 1 },
+      gridModeEnabled: !!appState?.gridModeEnabled,
+      currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
+      gridSize: appState?.gridSize,
+      gridStep: appState?.gridStep,
     },
-    null,
-    2
-  );
+    files: savedFiles,
+  };
+
+  const document = getDrawingFormat(format) === "sketchizi"
+    ? {
+        type: "sketchizi",
+        formatVersion: 1,
+        generator: { name: "Sketchizi" },
+        diagram: scene,
+        metadata: metadata && typeof metadata === "object" ? metadata : {},
+        extensions: extensions && typeof extensions === "object" ? extensions : {},
+      }
+    : scene;
+  return JSON.stringify(document, null, 2);
 }
 
 export function parseDrawing(text) {
-  let data;
+  let document;
   try {
-    data = JSON.parse(text);
+    document = JSON.parse(text);
   } catch (error) {
     throw new DrawingFileError("This file is not a valid drawing (not JSON).", "invalid", error);
   }
+
+  let data = document;
+  let format = "excalidraw";
+  let metadata = {};
+  let extensions = {};
+  if (document && typeof document === "object" && document.type === "sketchizi") {
+    format = "sketchizi";
+    if (document.formatVersion !== 1) {
+      throw new DrawingFileError(`Unsupported Sketchizi file format version: ${String(document.formatVersion ?? "missing")}.`, "unsupported");
+    }
+    data = document.diagram;
+    metadata = document.metadata && typeof document.metadata === "object" && !Array.isArray(document.metadata) ? document.metadata : {};
+    extensions = document.extensions && typeof document.extensions === "object" && !Array.isArray(document.extensions) ? document.extensions : {};
+  }
+
   if (!data || typeof data !== "object" || data.type !== "excalidraw" || !Array.isArray(data.elements)) {
-    throw new DrawingFileError("This file is not a Sketchizi/Excalidraw drawing.", "invalid");
+    throw new DrawingFileError("This file is not a supported Sketchizi/Excalidraw drawing.", "invalid");
   }
   const elements = data.elements.filter(
     (element) => element && typeof element === "object" && typeof element.id === "string" && typeof element.type === "string"
@@ -130,7 +165,7 @@ export function parseDrawing(text) {
   if (appState.currentItemFontFamily === undefined) delete appState.currentItemFontFamily;
   if (appState.gridSize === undefined) delete appState.gridSize;
   if (appState.gridStep === undefined) delete appState.gridStep;
-  return { elements, appState, files };
+  return { format, metadata, extensions, elements, appState, files };
 }
 
 // ---- errors ---------------------------------------------------------------
@@ -279,7 +314,7 @@ export async function listDrawingFiles(directoryHandle) {
   try {
     const files = [];
     for await (const [name, handle] of directoryHandle.entries()) {
-      if (handle?.kind !== "file" || !/\.excalidraw$/i.test(name)) continue;
+      if (handle?.kind !== "file" || !isSupportedDrawingName(name)) continue;
       files.push({ name, handle });
     }
     return files.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
@@ -307,7 +342,7 @@ export function pickDrawingViaInput() {
   return new Promise((resolve, reject) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = `${DRAWING_EXTENSION},.json,${DRAWING_MIME},application/json`;
+    input.accept = `${DRAWING_EXTENSION},${SKETCHIZI_EXTENSION},.json,${DRAWING_MIME},${SKETCHIZI_MIME},application/json`;
     input.style.display = "none";
     const cleanup = () => input.remove();
     input.addEventListener("change", async () => {
@@ -337,7 +372,7 @@ export function chooseFallbackSaveName(suggestedName) {
 }
 
 export function downloadDrawing(name, text) {
-  const blob = new Blob([text], { type: DRAWING_MIME });
+  const blob = new Blob([text], { type: getDrawingFormat(name) === "sketchizi" ? SKETCHIZI_MIME : DRAWING_MIME });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;

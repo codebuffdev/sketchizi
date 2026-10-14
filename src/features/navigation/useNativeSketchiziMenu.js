@@ -274,7 +274,7 @@ export function useNativeSketchiziMenu({
           folderFilesList.dataset.signature = signature;
           folderFilesList.innerHTML = currentFolderFiles.length
             ? currentFolderFiles.map((item) => `<button type="button" class="sketchizi-folder-file" data-current-folder-file="${escapeHtml(item.name)}" title="Open ${escapeHtml(item.name)}">${escapeHtml(item.name)}</button>`).join("")
-            : `<div class="sketchizi-recent-empty">${currentFolder ? "No .excalidraw drawings" : "No folder selected"}</div>`;
+            : `<div class="sketchizi-recent-empty">${currentFolder ? "No .sketchizi or .excalidraw drawings" : "No folder selected"}</div>`;
         }
         bind(folderFilesList, "bound", (event) => {
           const button = event.target.closest?.("[data-current-folder-file]");
