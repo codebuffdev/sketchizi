@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchAuthProviders, fetchCurrentUser, invalidateCurrentUserCache, signOut, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
+import { fetchAuthProviders, fetchCurrentUser, fetchGitHubRepositoryConnection, invalidateCurrentUserCache, disconnectGitHubRepositoryConnection, signOut, startGitHubRepositoryConnection, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
 
 export default function AuthenticationControl() {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
@@ -8,6 +8,9 @@ export default function AuthenticationControl() {
   const [loginError, setLoginError] = useState("");
   const [providers, setProviders] = useState({ google: true, github: false });
   const [busy, setBusy] = useState(false);
+  const [githubConnection, setGithubConnection] = useState({ loading: false, connected: false, authorizationAvailable: false, githubLogin: "" });
+  const [githubConnectionBusy, setGithubConnectionBusy] = useState(false);
+  const [githubConnectionMessage, setGithubConnectionMessage] = useState("");
   const [signInContext, setSignInContext] = useState({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" });
 
   useEffect(() => {
@@ -20,6 +23,26 @@ export default function AuthenticationControl() {
     };
     window.addEventListener("sketchizi:auth-required", openForHost);
     const currentUrl = new URL(window.location.href);
+    const repoConnected = currentUrl.searchParams.get("githubRepoConnected");
+    const repoError = currentUrl.searchParams.get("githubRepoError");
+    if (repoConnected === "true") setGithubConnectionMessage("GitHub repository access connected successfully.");
+    if (repoError) {
+      const messages = {
+        not_configured: "GitHub repository access is not configured yet.",
+        authorization_denied: "GitHub repository authorization was cancelled.",
+        invalid_state: "GitHub authorization could not be verified. Please try again.",
+        session_expired: "Your Sketchizi session expired during GitHub authorization. Sign in again and retry.",
+        github_profile_unavailable: "Could not verify the GitHub account returned by GitHub.",
+        connection_failed: "Could not connect GitHub repository access. Please try again.",
+        sign_in_required: "Sign in to Sketchizi before connecting GitHub repositories.",
+      };
+      setGithubConnectionMessage(messages[repoError] || "GitHub repository connection failed.");
+    }
+    if (repoConnected || repoError) {
+      currentUrl.searchParams.delete("githubRepoConnected");
+      currentUrl.searchParams.delete("githubRepoError");
+      window.history.replaceState(window.history.state, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
+    }
     const returnedAuthError = currentUrl.searchParams.get("authError");
     const returnedFromLoginFailure = returnedAuthError === "login_failed" || returnedAuthError === "github_not_configured";
     if (returnedFromLoginFailure) {
@@ -45,6 +68,39 @@ export default function AuthenticationControl() {
       });
     return () => { controller.abort(); window.removeEventListener("sketchizi:auth-required", openForHost); };
   }, []);
+
+  useEffect(() => {
+    if (auth.status !== "authenticated") {
+      setGithubConnection({ loading: false, connected: false, authorizationAvailable: false, githubLogin: "" });
+      return undefined;
+    }
+    let active = true;
+    setGithubConnection((current) => ({ ...current, loading: true }));
+    fetchGitHubRepositoryConnection()
+      .then((connection) => { if (active) setGithubConnection({ loading: false, connected: connection.connected === true, authorizationAvailable: connection.authorizationAvailable === true, githubLogin: connection.githubLogin || "" }); })
+      .catch(() => { if (active) setGithubConnection({ loading: false, connected: false, authorizationAvailable: false, githubLogin: "" }); });
+    return () => { active = false; };
+  }, [auth.status]);
+
+  const handleConnectGitHubRepositories = async () => {
+    if (githubConnectionBusy) return;
+    setGithubConnectionBusy(true);
+    setGithubConnectionMessage("");
+    try { await startGitHubRepositoryConnection(window.location.pathname + window.location.search + window.location.hash); }
+    catch (error) { setGithubConnectionMessage(error.message || "Could not start GitHub authorization."); setGithubConnectionBusy(false); }
+  };
+
+  const handleDisconnectGitHubRepositories = async () => {
+    if (githubConnectionBusy) return;
+    setGithubConnectionBusy(true);
+    setGithubConnectionMessage("");
+    try {
+      await disconnectGitHubRepositoryConnection();
+      setGithubConnection({ ...githubConnection, connected: false, githubLogin: "" });
+      setGithubConnectionMessage("GitHub repository access disconnected.");
+    } catch (error) { setGithubConnectionMessage(error.message || "Could not disconnect GitHub."); }
+    finally { setGithubConnectionBusy(false); }
+  };
 
   // Keep the invariant declarative as well as in the request callbacks: an
   // authenticated account must never display a stale OAuth failure banner.
@@ -154,6 +210,13 @@ export default function AuthenticationControl() {
               <div className="auth-account-menu-heading">
                 <strong>{auth.user?.name || "Signed in"}</strong>
                 {auth.user?.email && <span>{auth.user.email}</span>}
+              </div>
+              <div className="auth-github-repository-section">
+                <strong>GitHub repositories</strong>
+                {githubConnection.loading ? <span className="auth-github-repository-status">Checking connection…</span> : githubConnection.connected ? <span className="auth-github-repository-status">Connected as @{githubConnection.githubLogin}</span> : <span className="auth-github-repository-status">{githubConnection.authorizationAvailable ? "Not connected" : "Not configured"}</span>}
+                {githubConnection.authorizationAvailable && !githubConnection.connected && <><span className="auth-github-repository-status">GitHub will ask you to authorize repository access, which may include private repositories. Sketchizi stores the token encrypted on its server; it is never sent to the browser.</span><button className="auth-account-menu-item" type="button" role="menuitem" onClick={handleConnectGitHubRepositories} disabled={githubConnectionBusy}>{githubConnectionBusy ? "Connecting…" : "Connect GitHub repositories"}</button></>}
+                {githubConnection.connected && <button className="auth-account-menu-item" type="button" role="menuitem" onClick={handleDisconnectGitHubRepositories} disabled={githubConnectionBusy}>{githubConnectionBusy ? "Disconnecting…" : "Disconnect GitHub"}</button>}
+                {githubConnectionMessage && <span className="auth-github-repository-status" role="status">{githubConnectionMessage}</span>}
               </div>
               <button className="auth-account-menu-item" type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); handleSignOut(); }} disabled={busy}>
                 <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H4.8A1.8 1.8 0 0 0 3 4.8v10.4A1.8 1.8 0 0 0 4.8 17H8" /><path d="M11 6l4 4-4 4M15 10H7" /></svg>

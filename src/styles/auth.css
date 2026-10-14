@@ -33,3 +33,7 @@
 @media (max-width: 760px) {
   .auth-control-root { position: fixed; top: calc(10px + var(--safe-top, 0px)); right: calc(10px + var(--safe-right, 0px)); z-index: 95; display: flex; align-items: center; }
 }
+
+.auth-github-repository-section { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-top: 1px solid var(--ui-border, #dedee5); border-bottom: 1px solid var(--ui-border, #dedee5); color: var(--ui-text-strong, #222); font-size: 12px; }
+.auth-github-repository-section > strong { font-size: 12px; font-weight: 700; }
+.auth-github-repository-status { color: var(--ui-text-muted, #777); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }

@@ -155,6 +155,34 @@ export async function startGitHubSignIn(returnTo = window.location.pathname + wi
   window.location.assign(`/api/auth/login/github?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`);
 }
 
+
+export async function fetchGitHubRepositoryConnection() {
+  await ensureBackendReady();
+  const response = await fetch("/api/github/connection", { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+  if (response.status === 401) throw new Error("Sign in to Sketchizi first.");
+  if (!response.ok) throw new Error("Could not check GitHub repository connection.");
+  return response.json();
+}
+
+export async function startGitHubRepositoryConnection(returnTo = window.location.pathname + window.location.search + window.location.hash) {
+  await ensureBackendReady();
+  window.location.assign(`/api/github/connect?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`);
+}
+
+export async function disconnectGitHubRepositoryConnection() {
+  await ensureBackendReady();
+  const csrfResponse = await fetch(AUTH_CSRF_URL, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+  if (!csrfResponse.ok) throw new Error("Could not prepare a secure GitHub disconnect request.");
+  const { token, headerName } = await csrfResponse.json();
+  const response = await fetch("/api/github/disconnect", {
+    method: "POST", credentials: "same-origin", cache: "no-store",
+    headers: { accept: "application/json", [headerName || "X-XSRF-TOKEN"]: token },
+  });
+  if (response.status === 401) throw new Error("Your sign-in session has expired. Please sign in again.");
+  if (!response.ok && response.status !== 204) throw new Error("Could not disconnect GitHub. Please try again.");
+  return true;
+}
+
 export async function signOut() {
   await ensureBackendReady();
   const csrfResponse = await fetch(AUTH_CSRF_URL, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
