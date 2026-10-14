@@ -734,8 +734,16 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           },
         }));
         const failureCode = error.providerFailureCode || error.code;
-        const actionableMessage = failureCode === "provider_rate_limited"
-          ? "The AI provider has temporarily reached its token-per-minute limit. Wait a short while before retrying. No successful-question allowance was consumed."
+        const actionableMessage = failureCode === "provider_quota_exhausted"
+          ? (chat.provider === "byok"
+              ? "You've reached the Gemini usage limit for this API key. Check your Google AI Studio usage and quota details, or try again when your allowance resets. No successful-question allowance was consumed."
+              : "The AI service has reached its usage limit. Please try again later. No successful-question allowance was consumed.")
+          : failureCode === "provider_billing_required"
+            ? (chat.provider === "byok"
+                ? "Gemini needs billing enabled for this request. Check the billing settings for your Google project. No successful-question allowance was consumed."
+                : "The AI service needs a billing configuration update. Please contact support.")
+          : failureCode === "provider_rate_limited"
+            ? "Gemini is receiving too many requests right now. Please wait a little and try again. No successful-question allowance was consumed."
           : failureCode === "context_too_large"
             ? "This diagram and conversation are too large for one AI request. Try asking about a smaller part of the diagram. No successful-question allowance was consumed."
             : failureCode === "provider_auth_failed" && chat.provider === "byok"
@@ -745,7 +753,10 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               : failureCode === "provider_timeout"
                 ? "The AI provider took too long to respond. Try again shortly. No successful-question allowance was consumed."
                 : error.message || "The AI provider could not complete this request. You can retry this question without adding another message bubble.";
-        setPanelError(withRequestDiagnostics(actionableMessage, error));
+        // Provider failures have already been classified into user-facing guidance.
+        // Keep HTTP status codes, internal error codes, and request IDs out of the
+        // message shown to non-technical users; diagnostic details remain in server logs.
+        setPanelError(actionableMessage);
         if (chat.provider === "builtin" && currentConversationId) await refreshUsage(currentConversationId, auth.user.id);
       } else if (failureKind === "unknown" || failureKind === "reservation_expired") {
         if (failureKind === "reservation_expired") {
