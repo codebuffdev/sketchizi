@@ -354,36 +354,55 @@ export function useNativeSketchiziMenu({
         const overlay = document.createElement("div");
         overlay.dataset.sketchiziRepositoryPicker = "true";
         overlay.className = "sketchizi-repository-picker-backdrop";
-        overlay.innerHTML = `<section class="sketchizi-repository-picker" role="dialog" aria-modal="true" aria-labelledby="sketchizi-repository-picker-title"><header><strong id="sketchizi-repository-picker-title">${mode === "clone" ? "Clone repository" : "Open repository"}</strong><button type="button" data-repository-picker-close aria-label="Close">×</button></header><p class="sketchizi-repository-picker-hint">Choose a GitHub repository to continue.</p><div class="sketchizi-repository-picker-list" data-repository-picker-list role="list"><span>Loading repositories…</span></div><p class="sketchizi-repository-picker-message" data-repository-picker-message role="status"></p></section>`;
+        overlay.innerHTML = `<section class="sketchizi-repository-picker" role="dialog" aria-modal="true" aria-labelledby="sketchizi-repository-picker-title"><header><strong id="sketchizi-repository-picker-title">${mode === "clone" ? "Clone repository" : "Open repository"}</strong><button type="button" data-repository-picker-close aria-label="Close">×</button></header><p class="sketchizi-repository-picker-hint">Choose a GitHub repository to continue.</p><label class="sketchizi-repository-picker-search"><span class="sketchizi-repository-picker-search-icon" aria-hidden="true">⌕</span><input type="search" data-repository-picker-search aria-label="Search repositories" placeholder="Search repositories by name…" autocomplete="off" spellcheck="false" /></label><div class="sketchizi-repository-picker-list" data-repository-picker-list role="list"><span>Loading repositories…</span></div><p class="sketchizi-repository-picker-message" data-repository-picker-message role="status"></p></section>`;
         document.body.append(overlay);
         const close = () => overlay.remove();
         overlay.addEventListener("click", (event) => { if (event.target === overlay || event.target.closest("[data-repository-picker-close]")) close(); });
         const list = overlay.querySelector("[data-repository-picker-list]");
         const message = overlay.querySelector("[data-repository-picker-message]");
+        const search = overlay.querySelector("[data-repository-picker-search]");
         try {
           const response = await fetch("/api/github/repositories", { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
           const payload = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(payload.error || "Could not load repositories.");
           const repositories = Array.isArray(payload.repositories) ? payload.repositories : [];
-          if (!repositories.length) { list.textContent = "No repositories found for this GitHub account."; return; }
-          list.replaceChildren();
-          repositories.forEach((repo) => {
+          if (!repositories.length) { list.textContent = "No repositories found for this GitHub account."; search.disabled = true; return; }
+          const repositoryItems = repositories.map((repo) => {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "sketchizi-repository-picker-item";
+            button.setAttribute("role", "listitem");
             button.innerHTML = `<span class="sketchizi-repository-picker-name"></span><span class="sketchizi-repository-picker-meta"></span>`;
-            button.querySelector(".sketchizi-repository-picker-name").textContent = repo.fullName || repo.name || "Repository";
+            const fullName = repo.fullName || repo.name || "Repository";
+            const searchableText = `${fullName} ${repo.name || ""} ${repo.owner || ""} ${repo.private ? "private" : "public"} ${repo.defaultBranch || ""}`.toLocaleLowerCase();
+            button.querySelector(".sketchizi-repository-picker-name").textContent = fullName;
             button.querySelector(".sketchizi-repository-picker-meta").textContent = `${repo.private ? "Private" : "Public"} · default branch: ${repo.defaultBranch || "unknown"}`;
             button.addEventListener("click", () => {
-              message.textContent = `${repo.fullName} selected. Repository file browsing and workspace creation are the next implementation step.`;
+              message.textContent = `${fullName} selected. Repository file browsing and workspace creation are the next implementation step.`;
               list.querySelectorAll("button").forEach((item) => { item.disabled = true; });
               button.disabled = false;
               button.classList.add("is-selected");
             });
-            list.append(button);
+            return { button, searchableText };
           });
+          const renderFilteredRepositories = () => {
+            const query = search.value.trim().toLocaleLowerCase();
+            const matches = repositoryItems.filter(({ searchableText }) => searchableText.includes(query));
+            list.replaceChildren();
+            if (!matches.length) {
+              const empty = document.createElement("span");
+              empty.className = "sketchizi-repository-picker-empty";
+              empty.textContent = "No repositories match your search.";
+              list.append(empty);
+              return;
+            }
+            matches.forEach(({ button }) => list.append(button));
+          };
+          search.addEventListener("input", renderFilteredRepositories);
+          renderFilteredRepositories();
         } catch (error) {
           list.textContent = error.message || "Could not load GitHub repositories.";
+          search.disabled = true;
         }
       };
       repoButtons.forEach((button) => bind(button, "bound", () => showRepositoryPicker(button.dataset.sketchiziRepoAction)));
