@@ -55,7 +55,9 @@
 .ai-ask-quota-exhausted span, .ai-ask-quota-exhausted small { font-size: 11px; }
 
 .ai-ask-byok-settings { padding: 9px 13px; border-bottom: 1px solid var(--ui-border-soft, #eee); }
-.ai-ask-byok-settings > label { display: block; margin-bottom: 6px; }
+.ai-ask-byok-settings > label { display: block; margin: 0 0 6px; }
+.ai-ask-model-select { display: block; width: 100%; min-width: 0; min-height: 33px; margin-bottom: 6px; padding: 5px 8px; border: 1px solid var(--ui-border, #dedede); border-radius: 7px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #333); font: inherit; font-size: 12px; }
+.ai-ask-model-help { margin: 0 0 9px !important; }
 .ai-ask-key-row { display: flex; gap: 5px; }
 .ai-ask-key-row input { flex: 1; width: 0; min-width: 0; min-height: 31px; padding: 6px 8px; border: 1px solid var(--ui-border, #dedede); border-radius: 7px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #333); font: inherit; }
 .ai-ask-key-actions { display: flex; gap: 6px; margin-top: 7px; }

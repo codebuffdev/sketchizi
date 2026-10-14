@@ -6,6 +6,15 @@ import { appendAssistantOnce, classifyChatFailure, classifyRequestStatus, classi
 
 const TRANSCRIPT_KEY = "sketchizi.aiAsk.transcript.v1";
 const BYOK_KEY = "sketchizi.aiAsk.byokKey.v1";
+const DEFAULT_BYOK_MODEL = "gemini-3.5-flash-lite";
+const BYOK_MODELS = [
+  { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash — strongest general-purpose choice" },
+  { id: "gemini-3.7-flash", label: "Gemini 3.7 Flash — coding and multi-step tasks" },
+  { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash — balanced speed and capability" },
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash — general-purpose" },
+  { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite — fast and cost-efficient" },
+  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview — advanced reasoning (preview)" },
+];
 const STARTER_PROMPTS = [
   "Summarize this diagram.",
   "Explain the main data flow.",
@@ -47,6 +56,7 @@ function readTranscript() {
           conversationId: rawPending.conversationId,
           question: rawPending.question,
           provider: rawPending.provider,
+          ...(rawPending.provider === "byok" ? { model: BYOK_MODELS.some((item) => item.id === rawPending.model) ? rawPending.model : DEFAULT_BYOK_MODEL } : {}),
           sameIdRecoveryAvailable: rawPending.sameIdRecoveryAvailable === true,
         }
       : null;
@@ -62,6 +72,7 @@ function readTranscript() {
           conversationId: rawRetry.conversationId || null,
           question: rawRetry.question,
           provider: rawRetry.provider,
+          ...(rawRetry.provider === "byok" ? { model: BYOK_MODELS.some((item) => item.id === rawRetry.model) ? rawRetry.model : DEFAULT_BYOK_MODEL } : {}),
           reuseRequestId: rawRetry.reuseRequestId,
           outcomeUnknown: rawRetry.outcomeUnknown === true,
         }
@@ -98,6 +109,7 @@ function writeTranscript(value, pendingRequest = value.pendingRequest || null) {
         conversationId: value.retryAttempt.conversationId,
         question: value.retryAttempt.question.slice(0, 4000),
         provider: value.retryAttempt.provider,
+        ...(value.retryAttempt.provider === "byok" ? { model: value.retryAttempt.model || DEFAULT_BYOK_MODEL } : {}),
         reuseRequestId: value.retryAttempt.reuseRequestId === true,
         outcomeUnknown: value.retryAttempt.outcomeUnknown === true,
       } : null,
@@ -108,6 +120,7 @@ function writeTranscript(value, pendingRequest = value.pendingRequest || null) {
         conversationId: pendingRequest.conversationId,
         question: pendingRequest.question.slice(0, 4000),
         provider: pendingRequest.provider,
+        ...(pendingRequest.provider === "byok" ? { model: pendingRequest.model || DEFAULT_BYOK_MODEL } : {}),
         sameIdRecoveryAvailable: pendingRequest.sameIdRecoveryAvailable === true,
       } : null,
     }));
@@ -122,17 +135,20 @@ function clearAiSession() {
   try { sessionStorage.removeItem(BYOK_KEY); } catch {}
 }
 
-function readApiKeyForAccount(accountId) {
+function readByokSettingsForAccount(accountId) {
   try {
     const raw = sessionStorage.getItem(BYOK_KEY);
-    if (!raw) return "";
+    if (!raw) return { key: "", model: DEFAULT_BYOK_MODEL };
     const parsed = JSON.parse(raw);
-    if (parsed?.schemaVersion === 1 && parsed.accountId === accountId && typeof parsed.key === "string") return parsed.key;
+    if (parsed?.schemaVersion === 1 && parsed.accountId === accountId && typeof parsed.key === "string") {
+      const model = BYOK_MODELS.some((item) => item.id === parsed.model) ? parsed.model : DEFAULT_BYOK_MODEL;
+      return { key: parsed.key, model };
+    }
     sessionStorage.removeItem(BYOK_KEY);
   } catch {
     try { sessionStorage.removeItem(BYOK_KEY); } catch {}
   }
-  return "";
+  return { key: "", model: DEFAULT_BYOK_MODEL };
 }
 
 function timeLabel(value) {
@@ -241,6 +257,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const [signInBusy, setSignInBusy] = useState(false);
   const [panelError, setPanelError] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [byokModel, setByokModel] = useState(DEFAULT_BYOK_MODEL);
   const [keyApplied, setKeyApplied] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [providerSettingsOpen, setProviderSettingsOpen] = useState(false);
@@ -357,6 +374,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         setNewAnswerQuestion("");
         hydratedAccountRef.current = null;
         setApiKey("");
+        setByokModel(DEFAULT_BYOK_MODEL);
         setKeyApplied(false);
         setChat({ ...EMPTY_STATE });
         setUsage(null);
@@ -377,9 +395,10 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         const matchesAccount = next.accountId === user.id;
         const initial = matchesAccount ? { ...next, accountId: user.id } : { ...EMPTY_STATE, accountId: user.id };
         conversationId = initial.conversationId;
-        const restoredKey = readApiKeyForAccount(user.id);
-        setApiKey(restoredKey);
-        setKeyApplied(Boolean(restoredKey));
+        const restoredSettings = readByokSettingsForAccount(user.id);
+        setApiKey(restoredSettings.key);
+        setByokModel(restoredSettings.model);
+        setKeyApplied(Boolean(restoredSettings.key));
         setChat(initial);
         setPendingRequest(initial.pendingRequest || null);
         setNewAnswerQuestion(initial.newAnswerQuestion || "");
@@ -584,7 +603,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         requestId,
         provider: chat.provider,
         question,
-        ...(chat.provider === "byok" ? { apiKey: apiKey.trim() } : {}),
+        ...(chat.provider === "byok" ? { apiKey: apiKey.trim(), model: recoveryRequest?.model || retryAttempt?.model || byokModel } : {}),
         diagramContext,
         history,
       };
@@ -594,6 +613,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         question,
         conversationId,
         provider: chat.provider,
+        ...(chat.provider === "byok" ? { model: recoveryRequest?.model || retryAttempt?.model || byokModel } : {}),
         sameIdRecoveryAvailable: false,
       };
       setPendingRequest(requestMetadata);
@@ -763,7 +783,9 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             ? "Gemini is receiving too many requests right now. Please wait a little and try again. No successful-question allowance was consumed."
           : failureCode === "context_too_large"
             ? "This diagram and conversation are too large for one AI request. Try asking about a smaller part of the diagram. No successful-question allowance was consumed."
-            : failureCode === "provider_auth_failed" && chat.provider === "byok"
+            : failureCode === "provider_model_unavailable" && chat.provider === "byok"
+            ? "The selected Gemini model isn't available for this API key. Choose another model in BYOK settings or check which models your Google AI Studio key can access. No successful-question allowance was consumed."
+          : failureCode === "provider_auth_failed" && chat.provider === "byok"
               ? "Gemini rejected your API key. Check that it is valid, active, and permitted to use the Gemini API, then replace it in BYOK settings. No successful-question allowance was consumed."
               : failureCode === "provider_configuration_error" || failureCode === "provider_auth_failed"
                 ? "The built-in AI provider rejected its configured credentials. The service administrator needs to check the provider configuration. No successful-question allowance was consumed."
@@ -980,6 +1002,13 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     setPanelError("");
   };
 
+  const updateByokModel = (model) => {
+    setByokModel(model);
+    setKeyApplied(false);
+    try { sessionStorage.removeItem(BYOK_KEY); } catch {}
+    setPanelError("");
+  };
+
   const applyApiKey = () => {
     const value = apiKey.trim();
     if (!value) {
@@ -992,11 +1021,11 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       return;
     }
     try {
-      sessionStorage.setItem(BYOK_KEY, JSON.stringify({ schemaVersion: 1, accountId: auth.user.id, key: value }));
+      sessionStorage.setItem(BYOK_KEY, JSON.stringify({ schemaVersion: 1, accountId: auth.user.id, key: value, model: byokModel }));
       setApiKey(value);
       setKeyApplied(true);
       setPanelError("");
-      setAnnouncement("Gemini API key is ready for BYOK requests.");
+      setAnnouncement(`Gemini API key and ${byokModel} model are ready for BYOK requests.`);
     } catch {
       setKeyApplied(false);
       setPanelError("Browser session storage is unavailable. The key was not activated; allow session storage and try again.");
@@ -1055,7 +1084,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           <div className={`ai-ask-provider-disclosure ${providerSettingsOpen ? "is-open" : ""}`}>
             <button type="button" className="ai-ask-provider-summary" aria-expanded={providerSettingsOpen} aria-controls="ai-ask-provider-settings" onClick={() => setProviderSettingsOpen((value) => !value)}>
               <span className={`ai-ask-provider-status ${chat.provider === "byok" && !keyApplied ? "is-warning" : "is-ready"}`} aria-hidden="true">{chat.provider === "byok" && !keyApplied ? "!" : "✓"}</span>
-              <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Built-in GPT-OSS 120B"}</strong><small>{chat.provider === "byok" ? (keyApplied ? "Gemini · Key ready" : "Gemini · API key required") : "GPT-OSS 120B · Groq"}</small></span>
+              <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Built-in GPT-OSS 120B"}</strong><small>{chat.provider === "byok" ? (keyApplied ? `Gemini · ${byokModel} · Ready` : "Gemini · Key and model required") : "GPT-OSS 120B · Groq"}</small></span>
               <span className="ai-ask-provider-manage">{providerSettingsOpen ? "Done" : "Manage"}</span>
               <span className="ai-ask-provider-chevron" aria-hidden="true">⌄</span>
             </button>
@@ -1086,10 +1115,15 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
                 </div>
               ) : (
                 <div className="ai-ask-byok-settings">
+                  <label htmlFor="ai-ask-model">Gemini model</label>
+                  <select id="ai-ask-model" className="ai-ask-model-select" value={byokModel} onChange={(event) => updateByokModel(event.target.value)} disabled={busy}>
+                    {BYOK_MODELS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
+                  <p className="ai-ask-model-help">Choose the Gemini model for your BYOK conversation. Model availability depends on your API key and Google AI Studio access.</p>
                   <label htmlFor="ai-ask-api-key">Gemini API key</label>
                   <div className="ai-ask-key-row"><input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} /><button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button></div>
-                  <div className="ai-ask-key-actions"><button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button><button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button></div>
-                  <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
+                  <div className="ai-ask-key-actions"><button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Settings ready" : "Use key & model"}</button><button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button></div>
+                  <p>{keyApplied ? `Key and ${byokModel} model are ready for BYOK requests. Settings are stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests.` : "Choose a Gemini model, paste your API key, and select Use key & model before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
                 </div>
               )}
             </div>}

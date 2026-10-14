@@ -1,7 +1,7 @@
 {
   "name": "sketchizi",
   "private": true,
-  "version": "1.10.84",
+  "version": "1.10.85",
   "type": "module",
   "scripts": {
     "dev": "vite",
