@@ -1,0 +1,26 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+const styles = await readFile(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8");
+
+test("hamburger exposes Open repository and Clone repository actions", () => {
+  assert.match(source, /data-sketchizi-repo-action="open"/);
+  assert.match(source, /data-sketchizi-repo-action="clone"/);
+});
+
+test("repository picker loads repository metadata through same-origin backend gateway", () => {
+  assert.match(source, /fetch\("\/api\/github\/repositories"/);
+  assert.match(source, /credentials: "same-origin"/);
+  assert.match(source, /defaultBranch/);
+});
+
+test("repository picker reports that opening/cloning is not falsely marked complete", () => {
+  assert.match(source, /Repository file browsing and workspace creation are the next implementation step/);
+});
+
+test("repository picker styles are scoped", () => {
+  assert.match(styles, /\.sketchizi-repository-picker-backdrop/);
+  assert.match(styles, /\.sketchizi-repository-picker-item/);
+});

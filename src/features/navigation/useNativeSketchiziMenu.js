@@ -182,6 +182,10 @@ export function useNativeSketchiziMenu({
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
           recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh current folder" aria-label="Refresh current folder">↻</button></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder><span aria-hidden="true">▱</span> Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file><span aria-hidden="true">▤</span> New file</button><details class="sketchizi-recent-dropdown"><summary><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown"><summary><span>Recent folders</span><span class="sketchizi-recent-count" data-recent-folders-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button></details>`;
           customBlock.append(recentSection);
+          const gitSection = document.createElement("section");
+          gitSection.className = "sketchizi-native-settings-section sketchizi-git-repository-section";
+          gitSection.innerHTML = `<div class="sketchizi-native-settings-title">GitHub repositories</div><div class="sketchizi-repository-status" data-sketchizi-repo-status>Checking GitHub connection…</div><button type="button" class="sketchizi-folder-action" data-sketchizi-repo-action="open" disabled>Open repository</button><button type="button" class="sketchizi-recent-save" data-sketchizi-repo-action="clone" disabled>Clone repository</button>`;
+          customBlock.append(gitSection);
           // Community links live in the expanded navigation panel, not in a separate popup.
           // Remove the native GitHub row; the redesigned panel owns this destination.
           [...menuParent.querySelectorAll("a")].filter((link) => /^(github|connect with coder)$/i.test(link.textContent?.replace(/\s+/g, " ").trim() || "")).forEach((link) => link.remove());
@@ -323,6 +327,66 @@ export function useNativeSketchiziMenu({
         });
       }
       bind(recentMenu?.querySelector("[data-clear-recent-folders]"), "bound", () => fileActionsRef.current.clearRecentFolders?.());
+
+      const repoSection = document.querySelector("[data-sketchizi-custom-menu-block] .sketchizi-git-repository-section");
+      const repoStatus = repoSection?.querySelector("[data-sketchizi-repo-status]");
+      const repoButtons = [...(repoSection?.querySelectorAll("[data-sketchizi-repo-action]") || [])];
+      const updateRepositoryStatus = async () => {
+        if (!repoStatus || repoStatus.dataset.checked === "true") return;
+        repoStatus.dataset.checked = "true";
+        try {
+          const response = await fetch("/api/github/connection", { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+          const connection = response.ok ? await response.json() : null;
+          if (connection?.connected) {
+            repoStatus.textContent = `Connected as @${connection.githubLogin || "GitHub user"}`;
+            repoButtons.forEach((button) => { button.disabled = false; });
+          } else {
+            repoStatus.textContent = connection?.authorizationAvailable ? "Connect GitHub in your account menu first." : "GitHub repository access is not configured.";
+          }
+        } catch {
+          repoStatus.textContent = "Could not check GitHub connection. Refresh to retry.";
+          repoStatus.dataset.checked = "false";
+        }
+      };
+      updateRepositoryStatus();
+      const showRepositoryPicker = async (mode) => {
+        if (document.querySelector("[data-sketchizi-repository-picker]")) return;
+        const overlay = document.createElement("div");
+        overlay.dataset.sketchiziRepositoryPicker = "true";
+        overlay.className = "sketchizi-repository-picker-backdrop";
+        overlay.innerHTML = `<section class="sketchizi-repository-picker" role="dialog" aria-modal="true" aria-labelledby="sketchizi-repository-picker-title"><header><strong id="sketchizi-repository-picker-title">${mode === "clone" ? "Clone repository" : "Open repository"}</strong><button type="button" data-repository-picker-close aria-label="Close">×</button></header><p class="sketchizi-repository-picker-hint">Choose a GitHub repository to continue.</p><div class="sketchizi-repository-picker-list" data-repository-picker-list role="list"><span>Loading repositories…</span></div><p class="sketchizi-repository-picker-message" data-repository-picker-message role="status"></p></section>`;
+        document.body.append(overlay);
+        const close = () => overlay.remove();
+        overlay.addEventListener("click", (event) => { if (event.target === overlay || event.target.closest("[data-repository-picker-close]")) close(); });
+        const list = overlay.querySelector("[data-repository-picker-list]");
+        const message = overlay.querySelector("[data-repository-picker-message]");
+        try {
+          const response = await fetch("/api/github/repositories", { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.error || "Could not load repositories.");
+          const repositories = Array.isArray(payload.repositories) ? payload.repositories : [];
+          if (!repositories.length) { list.textContent = "No repositories found for this GitHub account."; return; }
+          list.replaceChildren();
+          repositories.forEach((repo) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "sketchizi-repository-picker-item";
+            button.innerHTML = `<span class="sketchizi-repository-picker-name"></span><span class="sketchizi-repository-picker-meta"></span>`;
+            button.querySelector(".sketchizi-repository-picker-name").textContent = repo.fullName || repo.name || "Repository";
+            button.querySelector(".sketchizi-repository-picker-meta").textContent = `${repo.private ? "Private" : "Public"} · default branch: ${repo.defaultBranch || "unknown"}`;
+            button.addEventListener("click", () => {
+              message.textContent = `${repo.fullName} selected. Repository file browsing and workspace creation are the next implementation step.`;
+              list.querySelectorAll("button").forEach((item) => { item.disabled = true; });
+              button.disabled = false;
+              button.classList.add("is-selected");
+            });
+            list.append(button);
+          });
+        } catch (error) {
+          list.textContent = error.message || "Could not load GitHub repositories.";
+        }
+      };
+      repoButtons.forEach((button) => bind(button, "bound", () => showRepositoryPicker(button.dataset.sketchiziRepoAction)));
 
       constrainCanvasBackgroundMenu();
 
