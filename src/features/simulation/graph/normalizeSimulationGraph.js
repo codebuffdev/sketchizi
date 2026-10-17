@@ -4,6 +4,25 @@ function resolveBindingId(binding) {
   return binding?.elementId || binding?.id || null;
 }
 
+function getElementLabel(element, elements = []) {
+  if (typeof element?.text === "string" && element.text.trim()) return element.text.trim();
+  const attachedText = elements.find((candidate) => candidate.type === "text" && candidate.containerId === element?.id && typeof candidate.text === "string" && candidate.text.trim());
+  return attachedText?.text?.trim() || "";
+}
+
+export function inferSimulationNodeType(element, elements = []) {
+  const configured = element?.customData?.simulation?.nodeType;
+  if (configured) return configured;
+  if (element?.type === "diamond") return "decision";
+
+  const label = getElementLabel(element, elements).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (["start", "begin", "entry", "start event"].includes(label)) return "start";
+  if (["end", "finish", "stop", "end event", "terminate", "termination"].includes(label)) return "end";
+  if (["decision", "condition", "branch", "gateway"].includes(label)) return "decision";
+  if (element?.type === "ellipse") return "start";
+  return "task";
+}
+
 export function normalizeSimulationGraph(elements = [], options = {}) {
   const { domain = "process" } = options;
   const live = elements.filter((element) => !element.isDeleted);
@@ -12,12 +31,12 @@ export function normalizeSimulationGraph(elements = [], options = {}) {
     .filter((element) => SHAPE_TYPES.has(element.type) && element.type !== "text")
     .map((element) => {
       const metadata = element.customData?.simulation || {};
-      const inferredType = metadata.nodeType || (element.type === "diamond" ? "decision" : element.type === "ellipse" ? "start" : "task");
+      const inferredType = inferSimulationNodeType(element, live);
       return {
         id: element.id,
         type: inferredType,
         config: { ...(metadata.config || {}) },
-        label: typeof element.text === "string" && element.text.trim() ? element.text.trim() : inferredType,
+        label: getElementLabel(element, live) || inferredType,
         sourceType: element.type,
       };
     });
@@ -30,8 +49,12 @@ export function normalizeSimulationGraph(elements = [], options = {}) {
     return [{ id: element.id, sourceId, targetId, condition: metadata.condition || "always", latencyMs: metadata.latencyMs ?? 0, config: { ...(metadata.config || {}) } }];
   });
   const incoming = new Set(edges.map((edge) => edge.targetId));
-  const entryNodeIds = nodes.filter((node) => node.type === "start" || !incoming.has(node.id)).map((node) => node.id);
-  return { schemaVersion: 1, domain, nodes, edges, entryNodeIds, diagnostics: {
+  const configuredStarts = nodes.filter((node) => node.type === "start");
+  // Prefer explicitly or label-inferred Start nodes. Only fall back to graph roots
+  // when the diagram has no Start node at all; otherwise an isolated End/task must
+  // not accidentally create another execution token.
+  const entryNodes = configuredStarts.length ? configuredStarts : nodes.filter((node) => !incoming.has(node.id));
+  return { schemaVersion: 1, domain, nodes, edges, entryNodeIds: entryNodes.map((node) => node.id), diagnostics: {
     unboundConnectors: live.filter((element) => (element.type === "arrow" || element.type === "line") && (!resolveBindingId(element.startBinding) || !resolveBindingId(element.endBinding))).map((element) => element.id),
     unsupportedConnectorTargets: live.filter((element) => (element.type === "arrow" || element.type === "line") && resolveBindingId(element.startBinding) && resolveBindingId(element.endBinding) && (!byId.has(resolveBindingId(element.startBinding)) || !byId.has(resolveBindingId(element.endBinding)))).map((element) => element.id),
   } };

@@ -77,3 +77,26 @@ test("decision node routes using its seeded true/false outcome", () => {
   assert.ok(result.eventLog.some((event) => event.nodeId === "yes"));
   assert.ok(!result.eventLog.some((event) => event.nodeId === "no"));
 });
+
+test("infers start and end from labels and creates only one entry token", () => {
+  const elements = [
+    { id: "s", type: "ellipse" },
+    { id: "s-label", type: "text", text: "start", containerId: "s" },
+    { id: "p", type: "rectangle" },
+    { id: "p-label", type: "text", text: "process", containerId: "p" },
+    { id: "e", type: "ellipse" },
+    { id: "e-label", type: "text", text: "end", containerId: "e" },
+    { id: "sp", type: "arrow", startBinding: { elementId: "s" }, endBinding: { elementId: "p" } },
+    { id: "pe", type: "arrow", startBinding: { elementId: "p" }, endBinding: { elementId: "e" } },
+  ];
+  const normalized = normalizeSimulationGraph(elements);
+  assert.equal(normalized.nodes.find((node) => node.id === "s").type, "start");
+  assert.equal(normalized.nodes.find((node) => node.id === "p").type, "task");
+  assert.equal(normalized.nodes.find((node) => node.id === "e").type, "end");
+  assert.deepEqual(normalized.entryNodeIds, ["s"]);
+  const result = createSimulation(normalized, { seed: 2 }).runToCompletion();
+  assert.equal(result.metrics.started, 1);
+  assert.equal(result.metrics.completed, 1);
+  assert.equal(result.virtualTimeMs, 100);
+  assert.ok(result.eventLog.some((event) => event.message === "Flow completed."));
+});

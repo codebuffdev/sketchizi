@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
-import { normalizeSimulationGraph, validateSimulationGraph } from "../graph/normalizeSimulationGraph.js";
+import { inferSimulationNodeType, normalizeSimulationGraph, validateSimulationGraph } from "../graph/normalizeSimulationGraph.js";
 import { createSimulation } from "../engine/simulationEngine.js";
 import "./simulation.css";
 
@@ -24,6 +24,8 @@ export default function SimulationPanel({ apiRef, selectedElements = [], canEdit
   const intervalRef = useRef(null);
   const selected = selectedElements.length === 1 ? selectedElements[0] : null;
   const selectedConfig = selected?.customData?.simulation || {};
+  const sceneElements = readElements(apiRef);
+  const inferredSelectedType = selected ? inferSimulationNodeType(selected, sceneElements) : "task";
   const config = selectedConfig.config || {};
   const isConnector = selected?.type === "arrow" || selected?.type === "line";
 
@@ -57,7 +59,7 @@ export default function SimulationPanel({ apiRef, selectedElements = [], canEdit
           simulation: {
             schemaVersion: 1,
             domain,
-            nodeType: current.nodeType || (element.type === "diamond" ? "decision" : element.type === "ellipse" ? "start" : "task"),
+            nodeType: current.nodeType || inferSimulationNodeType(element, elements),
             ...current,
             config: { ...(current.config || {}), ...patch },
           },
@@ -193,7 +195,7 @@ export default function SimulationPanel({ apiRef, selectedElements = [], canEdit
               <label>Route condition<select value={selectedConfig.condition || "always"} disabled={!canEdit} onChange={(event) => updateSelectedEdge({ condition: event.target.value })}><option value="always">Always</option><option value="success">Success</option><option value="failure">Failure</option><option value="true">Decision: true</option><option value="false">Decision: false</option></select></label>
               <label>Connector latency (ms)<input type="number" min="0" max="3600000" value={selectedConfig.latencyMs ?? 0} disabled={!canEdit} onChange={(event) => updateSelectedEdge({ latencyMs: Math.max(0, Number(event.target.value) || 0) })}/></label>
             </> : <>
-              <label>Behavior<select value={selectedConfig.nodeType || (selected.type === "diamond" ? "decision" : selected.type === "ellipse" ? "start" : "task")} onChange={(event) => updateSelectedType(event.target.value)} disabled={!canEdit}>{NODE_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label>Behavior<select value={selectedConfig.nodeType || inferredSelectedType} onChange={(event) => updateSelectedType(event.target.value)} disabled={!canEdit}>{NODE_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               <div className="simulation-field-grid">
                 {selectedConfig.nodeType === "decision" && <label>True probability<input type="number" min="0" max="1" step="0.01" value={config.trueProbability ?? 0.5} disabled={!canEdit} onChange={(event) => updateSelectedConfig({ trueProbability: Math.max(0, Math.min(1, Number(event.target.value) || 0)) })}/></label>}
                 <label>Duration (ms)<input type="number" min="0" max="3600000" value={config.durationMs ?? 100} disabled={!canEdit} onChange={(event) => updateSelectedConfig({ durationMs: Math.max(0, Number(event.target.value) || 0) })}/></label>
