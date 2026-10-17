@@ -303,21 +303,39 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     closeNativeMenu();
     const api = apiRef.current;
     if (!api) return false;
+
+    // Create the new document in one scene update. Calling createNewFile() here
+    // first clears the scene and starts asynchronous persistence cleanup; that
+    // intermediate empty-scene update can race with the starter template update
+    // and leave users with an empty or partially initialized design.
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
     const profile = createDesignProfile(profileInput || {});
-    createNewFile();
+    const templateElements = templateId ? createTemplateElements(templateId) : [];
+    const elements = restoreElements(templateElements, null, { repairBindings: true });
+
     documentMetadataRef.current = {
       metadata: {},
       extensions: withDesignProfile({}, profile),
     };
     onDesignProfileChange?.(profile);
-    const elements = templateId ? restoreElements(createTemplateElements(templateId), null, { repairBindings: true }) : [];
+    setSavedSketch(null);
+    setCurrentFile(null);
+    clearEmergencyBackup();
+    clearSketch().catch(() => {});
     api.updateScene({
       elements,
-      appState: { ...api.getAppState(), selectedElementIds: {}, selectedGroupForOperation: null },
+      appState: {
+        ...api.getAppState(),
+        selectedElementIds: {},
+        selectedGroupForOperation: null,
+      },
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
     api.history?.clear?.();
-    logger.info("Design created", { category: "design", templateId: templateId || "general.blank", domain: profile.domain, ruleMode: profile.ruleMode });
+    logger.info("Design created", { category: "design", templateId: templateId || "general.blank", domain: profile.domain, ruleMode: profile.ruleMode, elementCount: elements.length });
     showToast(profile.templateId ? `Created ${profile.name}` : "Created blank design");
     return true;
   };
