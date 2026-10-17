@@ -496,3 +496,5 @@
 .app.theme-dark .desktop-canvas-region > .canvas {
   background-color: #111722 !important;
 }
+
+@import "./features/design/design.css";

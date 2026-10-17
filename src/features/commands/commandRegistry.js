@@ -30,6 +30,8 @@ export function createSketchiziCommandRegistry(context) {
     collaborationPermission,
     currentFolder,
     fileActionsRef,
+    openCreateDesign,
+    openDesignValidation,
   } = context;
 
   const updateZoom = (operation) => {
@@ -239,6 +241,28 @@ export function createSketchiziCommandRegistry(context) {
       icon: "×",
       available: () => Boolean(collaborationRoom),
       execute: leaveOrEndCollaboration,
+    },
+    {
+      id: "design.create",
+      label: "Create Design…",
+      description: "Create a blank design or start from a template with design rules",
+      keywords: ["design", "template", "pattern", "blank", "architecture", "flowchart"],
+      category: "Files",
+      shortcut: "",
+      icon: "▦",
+      available: () => canEdit,
+      execute: () => openCreateDesign?.(),
+    },
+    {
+      id: "design.validate",
+      label: "Validate Design…",
+      description: "Check the current drawing against its selected template rules",
+      keywords: ["design", "validate", "rules", "template", "diagnostics"],
+      category: "Files",
+      shortcut: "",
+      icon: "✓",
+      available: () => canEdit,
+      execute: () => openDesignValidation?.(),
     },
     {
       id: "files.new",

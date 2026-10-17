@@ -6,6 +6,8 @@ import {
   loadRecentSketch, saveDirectoryHandle, saveFileHandle, saveRecentSketch,
 } from "../../persistence";
 import { useRecentFiles } from "./useRecentFiles";
+import { createDesignProfile, withDesignProfile, readDesignProfile } from "../design/model/designDocument.js";
+import { createTemplateElements } from "../design/templates/templateRegistry.js";
 import { logger } from "../../logging/logger";
 import {
   chooseFallbackSaveName, downloadDrawing, ensureExtension, getFileSystemSupport,
@@ -14,7 +16,7 @@ import {
   serializeDrawing, writeDrawingToHandle, ensureHandlePermission, getDrawingFormat,
 } from "../../fileSystem";
 
-export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, lastSelectionSignature, startCollaboration }) {
+export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, lastSelectionSignature, startCollaboration, onDesignProfileChange, sharedDocumentMetadataRef }) {
   const [currentFolder, setCurrentFolderState] = useState(null);
   const [currentFolderFiles, setCurrentFolderFiles] = useState([]);
   const currentFolderRef = useRef(null);
@@ -42,7 +44,8 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // one (Firefox/Safari fallback) saves download a copy instead.
   const [currentFile, setCurrentFileState] = useState(null);
   const currentFileRef = useRef(null);
-  const documentMetadataRef = useRef({ metadata: {}, extensions: {} });
+  const internalDocumentMetadataRef = useRef({ metadata: {}, extensions: {} });
+  const documentMetadataRef = sharedDocumentMetadataRef || internalDocumentMetadataRef;
   const recentState = useRecentFiles({ currentFileRef, currentFolderRef });
   const { recentFiles, setRecentFiles, recentFolders, setRecentFolders, rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, forgetRecentFolder, clearRecentFolders } = recentState;
   const setCurrentFile = (file) => {
@@ -97,6 +100,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     if (!api) throw new Error("Editor is not ready");
     const drawing = parseDrawing(text); // validates
     documentMetadataRef.current = { metadata: drawing.metadata || {}, extensions: drawing.extensions || {} };
+    onDesignProfileChange?.(readDesignProfile(documentMetadataRef.current.extensions));
     const elements = restoreElements(drawing.elements, null, { repairBindings: true });
     api.updateScene({
       elements,
@@ -109,7 +113,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     const files = Object.values(drawing.files);
     if (files.length) api.addFiles?.(files);
     lastSelectionSignature.current = "";
-    const record = { elements, files: drawing.files, appState: drawing.appState };
+    const record = { elements, files: drawing.files, appState: drawing.appState, metadata: drawing.metadata || {}, extensions: drawing.extensions || {} };
     setSavedSketch(record);
     queueSketchSave(elements, { ...api.getAppState(), ...drawing.appState });
   };
@@ -287,12 +291,38 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     api.history?.clear?.();
     setSavedSketch(null);
     documentMetadataRef.current = { metadata: {}, extensions: {} };
+    onDesignProfileChange?.(null);
     setCurrentFile(null);
     clearEmergencyBackup();
     clearSketch().catch(() => {});
     logger.info("New document created", { category: "file" });
     showToast("New drawing");
   };
+
+  const createDesign = ({ profile: profileInput, templateId = null } = {}) => {
+    closeNativeMenu();
+    const api = apiRef.current;
+    if (!api) return false;
+    const profile = createDesignProfile(profileInput || {});
+    createNewFile();
+    documentMetadataRef.current = {
+      metadata: {},
+      extensions: withDesignProfile({}, profile),
+    };
+    onDesignProfileChange?.(profile);
+    const elements = templateId ? restoreElements(createTemplateElements(templateId), null, { repairBindings: true }) : [];
+    api.updateScene({
+      elements,
+      appState: { ...api.getAppState(), selectedElementIds: {}, selectedGroupForOperation: null },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+    api.history?.clear?.();
+    logger.info("Design created", { category: "design", templateId: templateId || "general.blank", domain: profile.domain, ruleMode: profile.ruleMode });
+    showToast(profile.templateId ? `Created ${profile.name}` : "Created blank design");
+    return true;
+  };
+
+  const getDesignProfile = () => readDesignProfile(documentMetadataRef.current.extensions);
 
   // SAVE TO...: always asks for folder + filename, then re-associates.
   const saveDrawingAs = async () => {
@@ -500,13 +530,13 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // they use the file-handle based implementation above.
 
   // Keep stable entry points for the DOM-injected menu and global listeners.
-  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
+  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, saveDrawingAs, saveCurrentDrawing, createNewFile, createDesign, getDesignProfile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
   return {
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,
     currentFile, currentFileRef, setCurrentFile, fileActionsRef,
     rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, forgetRecentFolder, clearRecentFolders,
     handleFileError, currentSceneText, loadDrawingIntoCanvas, openFolderFromDisk, openRecentFolder, openDrawingFromDisk,
-    openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, saveDrawingAs, saveCurrentDrawing, openRecentFile,
+    openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, createDesign, getDesignProfile, saveDrawingAs, saveCurrentDrawing, openRecentFile,
   };
 }

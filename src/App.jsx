@@ -40,6 +40,9 @@ import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKuberne
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
+import CreateDesignDialog from "./features/design/ui/CreateDesignDialog.jsx";
+import DesignValidationDialog from "./features/design/ui/DesignValidationDialog.jsx";
+import { createDesignProfile, readDesignProfile } from "./features/design/model/designDocument.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 
@@ -48,6 +51,10 @@ function App() {
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
+  const [createDesignOpen, setCreateDesignOpen] = useState(false);
+  const [designValidationOpen, setDesignValidationOpen] = useState(false);
+  const [designProfile, setDesignProfile] = useState(null);
+  const documentMetadataRef = useRef({ metadata: {}, extensions: {} });
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
@@ -116,7 +123,7 @@ function App() {
     window.history.replaceState(window.history.state, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
   }, []);
 
-  const persistence = useSketchPersistence({ apiRef });
+  const persistence = useSketchPersistence({ apiRef, documentMetadataRef });
   const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
 
   const collaboration = useCollaboration({ apiRef, showToast, closeNativeMenu, sketchReady, apiReady });
@@ -124,9 +131,18 @@ function App() {
 
   const fileManager = useFileManager({
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch,
-    lastSelectionSignature, startCollaboration,
+    lastSelectionSignature, startCollaboration, onDesignProfileChange: setDesignProfile, sharedDocumentMetadataRef: documentMetadataRef,
   });
   const { recentFiles, recentFolders, currentFolder, currentFolderFiles, fileActionsRef, refreshCurrentFolderFiles, handleFileError } = fileManager;
+
+  useEffect(() => {
+    if (!sketchReady || !savedSketch || (!savedSketch.metadata && !savedSketch.extensions)) return;
+    documentMetadataRef.current = {
+      metadata: savedSketch.metadata || {},
+      extensions: savedSketch.extensions || {},
+    };
+    setDesignProfile(readDesignProfile(documentMetadataRef.current.extensions));
+  }, [sketchReady, savedSketch]);
 
   const closeExportDialog = useCallback(() => {
     const api = apiRef.current;
@@ -279,6 +295,8 @@ function App() {
     collaborationPermission,
     currentFolder,
     fileActionsRef,
+    openCreateDesign: () => setCreateDesignOpen(true),
+    openDesignValidation: () => setDesignValidationOpen(true),
   });
   useNativeSketchiziMenu({ apiRef, fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
@@ -562,6 +580,28 @@ function App() {
         sendChatMessage={sendChatMessage}
       />
 
+      <CreateDesignDialog
+        open={createDesignOpen}
+        onClose={() => setCreateDesignOpen(false)}
+        onCreate={({ mode, templateId, domain, ruleMode, name }) => {
+          const profile = createDesignProfile({
+            name,
+            domain,
+            creationMode: mode,
+            templateId: mode === "blank" ? null : templateId,
+            templateVersion: mode === "blank" ? null : 1,
+            ruleMode: mode === "blank" ? "guided" : ruleMode,
+          });
+          const created = fileManager.createDesign({ profile, templateId: mode === "blank" ? null : templateId });
+          if (created) setCreateDesignOpen(false);
+        }}
+      />
+      <DesignValidationDialog
+        open={designValidationOpen}
+        onClose={() => setDesignValidationOpen(false)}
+        apiRef={apiRef}
+        profile={designProfile}
+      />
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} />
 
       {toast && (

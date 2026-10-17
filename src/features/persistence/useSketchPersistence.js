@@ -7,8 +7,9 @@ import {
   saveSketch,
 } from "../../persistence";
 import { logger } from "../../logging/logger";
+import { serializeDrawing } from "../../fileSystem.js";
 
-export function useSketchPersistence({ apiRef }) {
+export function useSketchPersistence({ apiRef, documentMetadataRef }) {
   const [savedSketch, setSavedSketch] = useState(null);
   const [sketchReady, setSketchReady] = useState(false);
   const [storageError, setStorageError] = useState(null);
@@ -66,7 +67,7 @@ export function useSketchPersistence({ apiRef }) {
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
       const files = apiRef.current?.getFiles?.() || {};
-      persistSketchNow({ elements, appState, files });
+      persistSketchNow({ elements, appState, files, metadata: documentMetadataRef?.current?.metadata || {}, extensions: documentMetadataRef?.current?.extensions || {} });
     }, 350);
   };
 
@@ -77,24 +78,31 @@ export function useSketchPersistence({ apiRef }) {
       elements: api.getSceneElements(),
       appState: api.getAppState(),
       files: api.getFiles?.() || {},
+      metadata: documentMetadataRef?.current?.metadata || {},
+      extensions: documentMetadataRef?.current?.extensions || {},
     });
   };
 
   const downloadRecoveryBackup = () => {
     const api = apiRef.current;
     if (!api) return;
-    const blob = new Blob([JSON.stringify({
-      type: "excalidraw",
-      version: 2,
-      source: "https://sketchizi.pages.dev",
+    const extensions = documentMetadataRef?.current?.extensions || {};
+    const metadata = documentMetadataRef?.current?.metadata || {};
+    const hasDesignProfile = Boolean(extensions.design);
+    const format = hasDesignProfile ? "sketchizi" : "excalidraw";
+    const recoveryText = serializeDrawing({
+      format,
+      metadata,
+      extensions,
       elements: api.getSceneElements(),
       appState: api.getAppState(),
       files: api.getFiles?.() || {},
-    })], { type: "application/json" });
+    });
+    const blob = new Blob([recoveryText], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `sketchizi-recovery-${new Date().toISOString().replace(/[:.]/g, "-")}.excalidraw`;
+    anchor.download = `sketchizi-recovery-${new Date().toISOString().replace(/[:.]/g, "-")}.${hasDesignProfile ? "sketchizi" : "excalidraw"}`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
