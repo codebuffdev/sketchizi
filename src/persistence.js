@@ -109,7 +109,51 @@ export async function loadSketch() {
   }
 }
 
-export async function saveSketch({ elements, appState, files }) {
+/** Attach current document-level fields to any scene save/recovery payload. */
+export function withDocumentMetadata(payload, documentMetadata = {}) {
+  if (!payload || typeof payload !== "object") return payload;
+  return {
+    ...payload,
+    metadata: payload.metadata ?? documentMetadata?.metadata ?? {},
+    extensions: payload.extensions ?? documentMetadata?.extensions ?? {},
+    format: payload.format ?? documentMetadata?.format ?? "excalidraw",
+  };
+}
+
+/** Build the record stored for the active autosaved document. Keep extension data
+ * verbatim so Workbench state and unrelated vendor extensions survive reloads. */
+export function buildSketchPersistenceRecord({ elements, appState, files, metadata = {}, extensions = {}, format = "excalidraw" } = {}) {
+  return {
+    id: DOCUMENT_ID,
+    savedAt: Date.now(),
+    format,
+    metadata: metadata && typeof metadata === "object" && !Array.isArray(metadata) ? structuredClone(metadata) : {},
+    extensions: extensions && typeof extensions === "object" && !Array.isArray(extensions) ? structuredClone(extensions) : {},
+    elements: Array.isArray(elements) ? elements : [],
+    files: files && typeof files === "object" ? files : {},
+    appState: {
+      viewBackgroundColor: appState?.viewBackgroundColor,
+      scrollX: appState?.scrollX || 0,
+      scrollY: appState?.scrollY || 0,
+      zoom: appState?.zoom?.value || 1,
+      gridModeEnabled: !!appState?.gridModeEnabled,
+      currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
+      gridSize: appState?.gridSize,
+      gridStep: appState?.gridStep,
+    },
+  };
+}
+
+export function buildRecentSketchPersistenceRecord({ id, name, elements, appState, files, metadata = {}, extensions = {}, format } = {}) {
+  if (!id) throw new PersistenceError("A recent file id is required.", "write");
+  return {
+    ...buildSketchPersistenceRecord({ elements, appState, files, metadata, extensions, format }),
+    id,
+    name: String(name || "Untitled drawing").trim() || "Untitled drawing",
+  };
+}
+
+export async function saveSketch({ elements, appState, files, metadata = {}, extensions = {}, format = "excalidraw" }) {
   let db;
   try {
     db = await openDatabase();
@@ -122,22 +166,7 @@ export async function saveSketch({ elements, appState, files }) {
         fn(value);
       };
 
-      const record = {
-        id: DOCUMENT_ID,
-        savedAt: Date.now(),
-        elements,
-        files: files || {},
-        appState: {
-          viewBackgroundColor: appState?.viewBackgroundColor,
-          scrollX: appState?.scrollX || 0,
-          scrollY: appState?.scrollY || 0,
-          zoom: appState?.zoom?.value || 1,
-          gridModeEnabled: !!appState?.gridModeEnabled,
-          currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
-          gridSize: appState?.gridSize,
-          gridStep: appState?.gridStep,
-        },
-      };
+      const record = buildSketchPersistenceRecord({ elements, appState, files, metadata, extensions, format });
 
       let transaction;
       try {
@@ -181,7 +210,7 @@ export function clearEmergencyBackup() {
   try { localStorage.removeItem(EMERGENCY_KEY); } catch {}
 }
 
-export async function saveRecentSketch({ id, name, elements, appState, files }) {
+export async function saveRecentSketch({ id, name, elements, appState, files, metadata = {}, extensions = {}, format } = {}) {
   if (!id) throw new PersistenceError("A recent file id is required.", "write");
   let db;
   try {
@@ -196,23 +225,7 @@ export async function saveRecentSketch({ id, name, elements, appState, files }) 
       };
       try {
         const transaction = db.transaction(RECENT_STORE_NAME, "readwrite");
-        const record = {
-          id,
-          name: String(name || "Untitled drawing").trim() || "Untitled drawing",
-          savedAt: Date.now(),
-          elements: elements || [],
-          files: files || {},
-          appState: {
-            viewBackgroundColor: appState?.viewBackgroundColor,
-            scrollX: appState?.scrollX || 0,
-            scrollY: appState?.scrollY || 0,
-            zoom: appState?.zoom?.value || 1,
-            gridModeEnabled: !!appState?.gridModeEnabled,
-            currentItemFontFamily: normalizeFontFamilyId(appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
-            gridSize: appState?.gridSize,
-            gridStep: appState?.gridStep,
-          },
-        };
+        const record = buildRecentSketchPersistenceRecord({ id, name, elements, appState, files, metadata, extensions, format });
         const request = transaction.objectStore(RECENT_STORE_NAME).put(record, id);
         request.onerror = () => finish(reject, toPersistenceError(request.error, "Unable to save this recent file.", "write"));
         transaction.onerror = () => finish(reject, toPersistenceError(transaction.error, "Unable to save this recent file.", "write"));

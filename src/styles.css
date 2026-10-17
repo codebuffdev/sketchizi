@@ -1,5 +1,4 @@
 @import "./styles/base.css";
-@import "./features/design/design.css";
 @import "./styles/library.css";
 @import "./styles/properties.css";
 @import "./styles/architecture-validation.css";
@@ -497,4 +496,3 @@
 .app.theme-dark .desktop-canvas-region > .canvas {
   background-color: #111722 !important;
 }
-

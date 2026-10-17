@@ -8,7 +8,6 @@ import {
 } from "./fontFamilyDefaults.js";
 import { syncAwsRelationshipMetadata } from "../aws-relationships/awsRelationshipService";
 import { syncKubernetesRelationshipMetadata } from "../kubernetes-relationships/kubernetesRelationshipService";
-import { enforceStrictTemplateRelationships } from "../design/validation/strictTemplateEnforcement.js";
 import {
   measureSyncDiagnostic,
   recordSyncDiagnostic,
@@ -21,15 +20,13 @@ export function useExcalidrawScene({
   apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel,
   lastSelectionSignature, setSelectedCount, setSelectedElements, setSelectedConnector,
   updateMinimap, queueSketchSave, collaborationRemoteUpdateRef,
-  collaborationRef, gridEnabled, gridSize, canEdit = true, designProfile = null, onArchitectureSceneChange = () => {}, onDesignSceneChange = () => {}, onStrictConnectionRejected = () => {},
+  collaborationRef, gridEnabled, gridSize, canEdit = true, onArchitectureSceneChange = () => {},
 }) {
   const architectureFrameRef = useRef(null);
   const latestArchitectureElementsRef = useRef(null);
   const previousFontAppStateRef = useRef(null);
   const previousTextFontFamiliesRef = useRef(new Map());
   const preferredFontFamilyRef = useRef(null);
-  const previousDesignSceneRef = useRef(null);
-  const strictEnforcementUpdateRef = useRef(false);
 
   const scheduleArchitectureSceneChange = useCallback((elements) => {
     latestArchitectureElementsRef.current = elements;
@@ -76,40 +73,17 @@ export function useExcalidrawScene({
     }
 
     try {
-      let sceneElements = elements;
-      // Strict enforcement only evaluates connectors added or newly bound since
-      // the previous scene. Existing/imported diagrams establish a safe baseline.
-      const previousDesignScene = previousDesignSceneRef.current;
-      if (!strictEnforcementUpdateRef.current && canEdit && !remoteUpdate && !intermediateFreeDraw
-        && designProfile?.templateId && designProfile?.ruleMode === "strict" && previousDesignScene) {
-        const enforcement = enforceStrictTemplateRelationships(sceneElements, previousDesignScene, designProfile);
-        if (enforcement.rejectedConnectorIds.length) {
-          const rejectedIds = new Set(enforcement.rejectedConnectorIds);
-          sceneElements = sceneElements.filter((item) => !rejectedIds.has(item.id));
-          onStrictConnectionRejected(enforcement.rejectedConnectorIds.length);
-          strictEnforcementUpdateRef.current = true;
-          try {
-            apiRef.current?.updateScene({ elements: sceneElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-          } finally {
-            strictEnforcementUpdateRef.current = false;
-          }
-        }
-      }
-      previousDesignSceneRef.current = sceneElements;
       const skipRelationshipSync = remoteUpdate || intermediateFreeDraw;
 
       const awsRelationshipSync = canEdit && !skipRelationshipSync
-        ? measureSyncDiagnostic("client.awsRelationshipSync", { elementCount: sceneElements?.length || 0 }, () => syncAwsRelationshipMetadata(sceneElements))
-        : { elements: sceneElements, changed: false };
+        ? measureSyncDiagnostic("client.awsRelationshipSync", { elementCount: elements?.length || 0 }, () => syncAwsRelationshipMetadata(elements))
+        : { elements, changed: false };
       const kubernetesRelationshipSync = canEdit && !skipRelationshipSync
         ? measureSyncDiagnostic("client.kubernetesRelationshipSync", { elementCount: awsRelationshipSync.elements?.length || 0 }, () => syncKubernetesRelationshipMetadata(awsRelationshipSync.elements))
         : { elements: awsRelationshipSync.elements, changed: false };
       const effectiveElements = kubernetesRelationshipSync.elements;
       const relationshipSyncChanged = awsRelationshipSync.changed || kubernetesRelationshipSync.changed;
       scheduleArchitectureSceneChange(effectiveElements);
-      // Template diagnostics are intentionally observational: they never mutate the
-      // scene or interfere with AWS/Kubernetes metadata synchronization.
-      onDesignSceneChange(effectiveElements);
       if (relationshipSyncChanged) {
         apiRef.current?.updateScene({ elements: effectiveElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
       }
@@ -210,5 +184,5 @@ export function useExcalidrawScene({
         });
       }
     }
-  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, designProfile, gridEnabled, gridSize, lastSelectionSignature, nativeMenuOpenRef, onArchitectureSceneChange, onDesignSceneChange, onStrictConnectionRejected, queueSketchSave, scheduleArchitectureSceneChange, setActivePanel, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap]);
+  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, gridEnabled, gridSize, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, setActivePanel, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap]);
 }

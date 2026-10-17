@@ -6,8 +6,6 @@ import {
   loadRecentSketch, saveDirectoryHandle, saveFileHandle, saveRecentSketch,
 } from "../../persistence";
 import { useRecentFiles } from "./useRecentFiles";
-import { createDesignProfile, withDesignProfile, readDesignProfile } from "../design/model/designDocument.js";
-import { createTemplateElements } from "../design/templates/templateRegistry.js";
 import { logger } from "../../logging/logger";
 import {
   chooseFallbackSaveName, downloadDrawing, ensureExtension, getFileSystemSupport,
@@ -16,7 +14,7 @@ import {
   serializeDrawing, writeDrawingToHandle, ensureHandlePermission, getDrawingFormat,
 } from "../../fileSystem";
 
-export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, lastSelectionSignature, startCollaboration, onDesignProfileChange, sharedDocumentMetadataRef }) {
+export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, documentMetadataRef, lastSelectionSignature, startCollaboration }) {
   const [currentFolder, setCurrentFolderState] = useState(null);
   const [currentFolderFiles, setCurrentFolderFiles] = useState([]);
   const currentFolderRef = useRef(null);
@@ -44,8 +42,6 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // one (Firefox/Safari fallback) saves download a copy instead.
   const [currentFile, setCurrentFileState] = useState(null);
   const currentFileRef = useRef(null);
-  const internalDocumentMetadataRef = useRef({ metadata: {}, extensions: {} });
-  const documentMetadataRef = sharedDocumentMetadataRef || internalDocumentMetadataRef;
   const recentState = useRecentFiles({ currentFileRef, currentFolderRef });
   const { recentFiles, setRecentFiles, recentFolders, setRecentFolders, rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, forgetRecentFolder, clearRecentFolders } = recentState;
   const setCurrentFile = (file) => {
@@ -82,11 +78,14 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     return file;
   };
 
+  const hasWorkbenchDocument = () => Boolean(documentMetadataRef.current?.extensions?.["com.sketchizi.workbench"]);
+  const workbenchSafeName = (name) => `${String(name || "Untitled drawing").replace(/\.(?:excalidraw|sketchizi)$/i, "") || "Untitled drawing"}.sketchizi`;
+
   const currentSceneText = (nameOrFormat = currentFileRef.current?.name || "excalidraw") => {
     const api = apiRef.current;
     if (!api) return null;
     return serializeDrawing({
-      format: getDrawingFormat(nameOrFormat),
+      format: hasWorkbenchDocument() ? "sketchizi" : getDrawingFormat(nameOrFormat),
       metadata: documentMetadataRef.current.metadata,
       extensions: documentMetadataRef.current.extensions,
       elements: api.getSceneElementsIncludingDeleted?.() || api.getSceneElements(),
@@ -99,8 +98,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     const api = apiRef.current;
     if (!api) throw new Error("Editor is not ready");
     const drawing = parseDrawing(text); // validates
-    documentMetadataRef.current = { metadata: drawing.metadata || {}, extensions: drawing.extensions || {} };
-    onDesignProfileChange?.(readDesignProfile(documentMetadataRef.current.extensions));
+    documentMetadataRef.current = { metadata: drawing.metadata || {}, extensions: drawing.extensions || {}, format: drawing.format || getDrawingFormat("excalidraw") };
     const elements = restoreElements(drawing.elements, null, { repairBindings: true });
     api.updateScene({
       elements,
@@ -113,7 +111,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     const files = Object.values(drawing.files);
     if (files.length) api.addFiles?.(files);
     lastSelectionSignature.current = "";
-    const record = { elements, files: drawing.files, appState: drawing.appState, metadata: drawing.metadata || {}, extensions: drawing.extensions || {} };
+    const record = { elements, files: drawing.files, appState: drawing.appState };
     setSavedSketch(record);
     queueSketchSave(elements, { ...api.getAppState(), ...drawing.appState });
   };
@@ -290,8 +288,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     });
     api.history?.clear?.();
     setSavedSketch(null);
-    documentMetadataRef.current = { metadata: {}, extensions: {} };
-    onDesignProfileChange?.(null);
+    documentMetadataRef.current = { metadata: {}, extensions: {}, format: "excalidraw" };
     setCurrentFile(null);
     clearEmergencyBackup();
     clearSketch().catch(() => {});
@@ -299,55 +296,13 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     showToast("New drawing");
   };
 
-  const createDesign = ({ profile: profileInput, templateId = null } = {}) => {
-    closeNativeMenu();
-    const api = apiRef.current;
-    if (!api) return false;
-
-    // Create the new document in one scene update. Calling createNewFile() here
-    // first clears the scene and starts asynchronous persistence cleanup; that
-    // intermediate empty-scene update can race with the starter template update
-    // and leave users with an empty or partially initialized design.
-    if (saveTimerRef.current) {
-      window.clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
-    const profile = createDesignProfile(profileInput || {});
-    const templateElements = templateId ? createTemplateElements(templateId) : [];
-    const elements = restoreElements(templateElements, null, { repairBindings: true });
-
-    documentMetadataRef.current = {
-      metadata: {},
-      extensions: withDesignProfile({}, profile),
-    };
-    onDesignProfileChange?.(profile);
-    setSavedSketch(null);
-    setCurrentFile(null);
-    clearEmergencyBackup();
-    clearSketch().catch(() => {});
-    api.updateScene({
-      elements,
-      appState: {
-        ...api.getAppState(),
-        selectedElementIds: {},
-        selectedGroupForOperation: null,
-      },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-    });
-    api.history?.clear?.();
-    logger.info("Design created", { category: "design", templateId: templateId || "general.blank", domain: profile.domain, ruleMode: profile.ruleMode, elementCount: elements.length });
-    showToast(profile.templateId ? `Created ${profile.name}` : "Created blank design");
-    return true;
-  };
-
-  const getDesignProfile = () => readDesignProfile(documentMetadataRef.current.extensions);
-
   // SAVE TO...: always asks for folder + filename, then re-associates.
   const saveDrawingAs = async () => {
     closeNativeMenu();
     if (!apiRef.current) return;
     try {
-      const suggested = currentFileRef.current?.name || `drawing-${new Date().toISOString().slice(0, 10)}.sketchizi`;
+      const defaultSuggested = currentFileRef.current?.name || `drawing-${new Date().toISOString().slice(0, 10)}.sketchizi`;
+      const suggested = hasWorkbenchDocument() ? workbenchSafeName(defaultSuggested) : defaultSuggested;
       if (!currentFileRef.current?.handle && currentFolderRef.current?.handle) {
         if (!(await ensureHandlePermission(currentFolderRef.current.handle, "readwrite"))) {
           showToast("Folder permission was denied", "error");
@@ -355,6 +310,10 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         }
         if (getFileSystemSupport().save) {
           const handle = await pickDrawingToSave(suggested, currentFolderRef.current.handle);
+          if (hasWorkbenchDocument() && /\.excalidraw$/i.test(handle.name || "")) {
+            showToast("Choose a .sketchizi filename to preserve Workbench data.", "error");
+            return;
+          }
           await writeDrawingToHandle(handle, currentSceneText(handle.name));
           await registerFile(handle, handle.name);
           await refreshCurrentFolderFiles().catch(() => {});
@@ -370,6 +329,10 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         let startIn = currentFolderRef.current?.handle || null;
         if (startIn && !(await ensureHandlePermission(startIn, "readwrite"))) startIn = null;
         const handle = await pickDrawingToSave(suggested, startIn);
+        if (hasWorkbenchDocument() && /\.excalidraw$/i.test(handle.name || "")) {
+          showToast("Choose a .sketchizi filename to preserve Workbench data.", "error");
+          return;
+        }
         await writeDrawingToHandle(handle, currentSceneText(handle.name));
         await registerFile(handle, handle.name);
         if (currentFolderRef.current?.handle) refreshCurrentFolderFiles().catch(() => {});
@@ -379,7 +342,11 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         // Download fallbacks do not return the final filename chosen in the
         // browser's download UI. Ask the user for the filename in Sketchizi so
         // that the name persisted for currentFile/Recent files is authoritative.
-        const name = chooseFallbackSaveName(suggested);
+        let name = chooseFallbackSaveName(suggested);
+        if (hasWorkbenchDocument() && /\.excalidraw$/i.test(name)) {
+          name = workbenchSafeName(name);
+          showToast("Saved as .sketchizi to preserve Workbench data.");
+        }
         downloadDrawing(name, currentSceneText(name));
         const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const record = await saveRecentSketch({
@@ -409,6 +376,12 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // SAVE CURRENT DRAWING: overwrite the associated file, or behave like Save to...
   const saveCurrentDrawing = async () => {
     const file = currentFileRef.current;
+    // A Workbench envelope must not be silently written into a .excalidraw file.
+    // Require Save As so the selected filename communicates the actual format.
+    if (hasWorkbenchDocument() && /\.excalidraw$/i.test(file?.name || file?.handle?.name || "")) {
+      showToast("Workbench data requires the .sketchizi format. Choose a .sketchizi filename.");
+      return saveDrawingAs();
+    }
     if (!file?.handle) {
       // Never saved (or no handle in this browser): Save to... flow.
       return saveDrawingAs();
@@ -548,13 +521,13 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // they use the file-handle based implementation above.
 
   // Keep stable entry points for the DOM-injected menu and global listeners.
-  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, saveDrawingAs, saveCurrentDrawing, createNewFile, createDesign, getDesignProfile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
+  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
   return {
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,
     currentFile, currentFileRef, setCurrentFile, fileActionsRef,
     rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, forgetRecentFolder, clearRecentFolders,
     handleFileError, currentSceneText, loadDrawingIntoCanvas, openFolderFromDisk, openRecentFolder, openDrawingFromDisk,
-    openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, createDesign, getDesignProfile, saveDrawingAs, saveCurrentDrawing, openRecentFile,
+    openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, saveDrawingAs, saveCurrentDrawing, openRecentFile,
   };
 }

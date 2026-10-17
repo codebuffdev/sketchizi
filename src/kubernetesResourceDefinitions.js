@@ -21,7 +21,7 @@ export const kubernetesResourceDefinitions = [
     displayName: "Kubernetes Cluster",
     iconId: KUBERNETES_ICON_IDS.cluster,
     properties: [
-      { key: "name", label: "Name", type: "text", defaultValue: "kubernetes-cluster" },
+      { key: "name", label: "Name", type: "text", defaultValue: "Kubernetes Cluster" },
       { key: "version", label: "Version", type: "text", defaultValue: "1.34" },
       { key: "environment", label: "Environment", type: "select", defaultValue: "development", options: ["development", "staging", "production"] },
     ],
@@ -46,7 +46,7 @@ export const kubernetesResourceDefinitions = [
     displayName: "Node",
     iconId: KUBERNETES_ICON_IDS.node,
     properties: [
-      { key: "name", label: "Name", type: "text", defaultValue: "node" },
+      { key: "name", label: "Name", type: "text", defaultValue: "Node" },
       { key: "nodeType", label: "Node Type", type: "select", defaultValue: "Worker", options: ["Worker", "Control Plane"] },
       { key: "environment", label: "Environment", type: "select", defaultValue: "development", options: ["development", "staging", "production"] },
     ],
@@ -59,7 +59,7 @@ export const kubernetesResourceDefinitions = [
     displayName: "Pod",
     iconId: KUBERNETES_ICON_IDS.pod,
     properties: [
-      { key: "name", label: "Name", type: "text", defaultValue: "pod" },
+      { key: "name", label: "Name", type: "text", defaultValue: "Pod" },
       { key: "namespace", label: "Namespace", type: "text", defaultValue: "default" },
       { key: "environment", label: "Environment", type: "select", defaultValue: "development", options: ["development", "staging", "production"] },
     ],
@@ -72,7 +72,7 @@ export const kubernetesResourceDefinitions = [
     displayName: "Deployment",
     iconId: KUBERNETES_ICON_IDS.deployment,
     properties: [
-      { key: "name", label: "Name", type: "text", defaultValue: "deployment" },
+      { key: "name", label: "Name", type: "text", defaultValue: "Deployment" },
       { key: "namespace", label: "Namespace", type: "text", defaultValue: "default" },
       { key: "replicas", label: "Replicas", type: "number", defaultValue: 1 },
       { key: "environment", label: "Environment", type: "select", defaultValue: "development", options: ["development", "staging", "production"] },
@@ -86,7 +86,7 @@ export const kubernetesResourceDefinitions = [
     displayName: "StatefulSet",
     iconId: KUBERNETES_ICON_IDS.statefulset,
     properties: [
-      { key: "name", label: "Name", type: "text", defaultValue: "statefulset" },
+      { key: "name", label: "Name", type: "text", defaultValue: "StatefulSet" },
       { key: "namespace", label: "Namespace", type: "text", defaultValue: "default" },
       { key: "replicas", label: "Replicas", type: "number", defaultValue: 1 },
       { key: "environment", label: "Environment", type: "select", defaultValue: "development", options: ["development", "staging", "production"] },
@@ -100,7 +100,7 @@ export const kubernetesResourceDefinitions = [
     displayName: "DaemonSet",
     iconId: KUBERNETES_ICON_IDS.daemonset,
     properties: [
-      { key: "name", label: "Name", type: "text", defaultValue: "daemonset" },
+      { key: "name", label: "Name", type: "text", defaultValue: "DaemonSet" },
       { key: "namespace", label: "Namespace", type: "text", defaultValue: "default" },
       { key: "environment", label: "Environment", type: "select", defaultValue: "development", options: ["development", "staging", "production"] },
     ],
@@ -113,7 +113,7 @@ export const kubernetesResourceDefinitions = [
     displayName: "Service",
     iconId: KUBERNETES_ICON_IDS.service,
     properties: [
-      { key: "name", label: "Name", type: "text", defaultValue: "service" },
+      { key: "name", label: "Name", type: "text", defaultValue: "Service" },
       { key: "namespace", label: "Namespace", type: "text", defaultValue: "default" },
       { key: "serviceType", label: "Service Type", type: "select", defaultValue: "ClusterIP", options: ["ClusterIP", "NodePort", "LoadBalancer"] },
       { key: "environment", label: "Environment", type: "select", defaultValue: "development", options: ["development", "staging", "production"] },

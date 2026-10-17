@@ -5,7 +5,7 @@ import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx
 const MENU_DEFINITIONS = [
   {
     label: "File",
-    ids: ["design.create", "design.validate", "files.new", "files.open", "files.save", "files.save-as", "files.open-folder", "files.close-folder"],
+    ids: ["files.new", "files.open", "files.save", "files.save-as", "files.open-folder", "files.close-folder"],
   },
   {
     label: "Edit",

@@ -1,0 +1,9 @@
+Engineering Workbench UI prototype 0.5 is available in docs/ENGINEERING_WORKBENCH_UI_PROTOTYPE_0.5.md.
+
+Next validation gate:
+1. npm ci in a network-enabled development environment.
+2. npm run test:workbench-format and npm run test:sync.
+3. npm run build.
+4. Manually test Workbench enablement, semantic insertion, System/APIs/Data/Deployment switching, .sketchizi save/reopen, and ordinary .excalidraw compatibility.
+
+Do not merge into the mainline or use on the only copy of an important drawing before the validation gate passes. Relation creation, inspector editing, validation, and artifact generation are later slices.
