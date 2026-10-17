@@ -1,5 +1,6 @@
 import { createDesignProfile } from "../model/designDocument.js";
 import { createStarterElements } from "./templateScene.js";
+import { listPersonalTemplates, cloneTemplateElements } from "./personalTemplateStore.js";
 
 export const BUILT_IN_TEMPLATES = Object.freeze([
   {
@@ -77,11 +78,14 @@ export const BUILT_IN_TEMPLATES = Object.freeze([
 ]);
 
 export function listDesignTemplates() {
-  return BUILT_IN_TEMPLATES.map(({ initialElements, ...template }) => ({ ...template }));
+  const builtIns = BUILT_IN_TEMPLATES.map(({ initialElements, ...template }) => ({ ...template }));
+  return [...builtIns, ...listPersonalTemplates().map(({ elements, ...template }) => ({ ...template }))];
 }
 
 export function getDesignTemplate(templateId) {
-  return BUILT_IN_TEMPLATES.find((template) => template.id === templateId) || null;
+  return BUILT_IN_TEMPLATES.find((template) => template.id === templateId)
+    || listPersonalTemplates().find((template) => template.id === templateId)
+    || null;
 }
 
 export function createProfileForTemplate(templateId, { name, ruleMode = "guided" } = {}) {
@@ -98,6 +102,8 @@ export function createProfileForTemplate(templateId, { name, ruleMode = "guided"
 }
 
 export function createTemplateElements(templateId) {
+  const personal = listPersonalTemplates().find((template) => template.id === templateId);
+  if (personal) return cloneTemplateElements(personal);
   const template = getDesignTemplate(templateId);
   if (!template || !template.initialElements || Array.isArray(template.initialElements)) return [];
   return createStarterElements(template.initialElements);

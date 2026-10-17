@@ -43,6 +43,7 @@ import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import CreateDesignDialog from "./features/design/ui/CreateDesignDialog.jsx";
 import DesignValidationDialog from "./features/design/ui/DesignValidationDialog.jsx";
 import { createDesignProfile, readDesignProfile } from "./features/design/model/designDocument.js";
+import { savePersonalTemplate, listPersonalTemplates, downloadPersonalTemplate, importPersonalTemplate } from "./features/design/templates/personalTemplateStore.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 
@@ -276,6 +277,49 @@ function App() {
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
+  const saveDesignAsPersonalTemplate = useCallback(() => {
+    if (!collaborationCanEdit) { showToast("You do not have edit access to save a template", "error"); return; }
+    const api = apiRef.current;
+    if (!api) { showToast("Editor is not ready", "error"); return; }
+    const elements = (api.getSceneElementsIncludingDeleted?.() || api.getSceneElements() || []).filter((element) => !element.isDeleted);
+    if (!elements.length) { showToast("Add some elements before saving a template", "error"); return; }
+    const defaultName = designProfile?.name || "My template";
+    const name = window.prompt("Name this personal template", defaultName);
+    if (name === null) return;
+    const description = window.prompt("Describe when to use this template (optional)", "Reusable design created in Sketchizi") || "";
+    try {
+      const template = savePersonalTemplate({ name, description, domain: designProfile?.domain || "general", ruleMode: designProfile?.ruleMode || "guided", elements });
+      showToast(`Saved personal template: ${template.name}`);
+    } catch (error) { showToast(error?.message || "Unable to save personal template", "error"); }
+  }, [collaborationCanEdit, designProfile, showToast]);
+
+  const exportPersonalTemplateAction = useCallback(() => {
+    const templates = listPersonalTemplates();
+    if (!templates.length) { showToast("You have no personal templates to export", "error"); return; }
+    const choices = templates.map((item, index) => `${index + 1}. ${item.name}`).join("\n");
+    const answer = window.prompt(`Choose a template number to export:\n${choices}`, "1");
+    if (answer === null) return;
+    const index = Number.parseInt(answer, 10) - 1;
+    if (!Number.isInteger(index) || index < 0 || index >= templates.length) { showToast("Invalid template selection", "error"); return; }
+    try { downloadPersonalTemplate(templates[index].id); showToast(`Exported ${templates[index].name}`); }
+    catch (error) { showToast(error?.message || "Unable to export template", "error"); }
+  }, [showToast]);
+
+  const importPersonalTemplateAction = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,.sketchizi-template.json,application/json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const imported = importPersonalTemplate(await file.text());
+        showToast(`Imported personal template: ${imported.name}`);
+      } catch (error) { showToast(error?.message || "Unable to import template", "error"); }
+    };
+    input.click();
+  }, [showToast]);
+
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -297,6 +341,9 @@ function App() {
     fileActionsRef,
     openCreateDesign: () => setCreateDesignOpen(true),
     openDesignValidation: () => setDesignValidationOpen(true),
+    saveDesignAsTemplate: saveDesignAsPersonalTemplate,
+    exportPersonalTemplateAction,
+    importPersonalTemplateAction,
   });
   useNativeSketchiziMenu({ apiRef, fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
