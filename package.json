@@ -1,7 +1,7 @@
 {
   "name": "sketchizi",
   "private": true,
-  "version": "1.10.86",
+  "version": "1.10.87",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -27,7 +27,8 @@
     "test:community-gateway": "node --test tests/community-gateway.test.js",
     "test:font-assets": "node --test tests/font-assets.test.js",
     "test:font-family-defaults": "node --test tests/font-family-defaults.test.js",
-    "test:file-format": "node --test tests/sketchizi-format.test.js"
+    "test:file-format": "node --test tests/sketchizi-format.test.js",
+    "test:simulation": "node --test tests/simulation-engine.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
