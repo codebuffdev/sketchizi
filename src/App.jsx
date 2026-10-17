@@ -40,7 +40,6 @@ import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKuberne
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
-import SimulationPanel from "./features/simulation/ui/SimulationPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 
@@ -468,7 +467,6 @@ function App() {
             onViewportChange={markLocalViewportNavigation}
             viewModeEnabled={collaborationPermission === "viewer"}
           />
-          <SimulationPanel apiRef={apiRef} selectedElements={selectedElements} canEdit={collaborationCanEdit} isDarkTheme={isDarkTheme} />
 
           {draggingIcon && (
             <div
