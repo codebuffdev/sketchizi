@@ -40,6 +40,24 @@ export function savePersonalTemplate({ name, description = "", domain = "general
   return template;
 }
 
+export function updatePersonalTemplateRules(templateId, { requiredRoles = [], allowedRelationships = [], ruleMode = "guided" } = {}) {
+  const existing = listPersonalTemplates();
+  const index = existing.findIndex((item) => item.id === templateId);
+  if (index < 0) throw new Error("Personal template not found");
+  const normalizeRole = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "-").slice(0, 64);
+  const roles = [...new Set((Array.isArray(requiredRoles) ? requiredRoles : []).map(normalizeRole).filter(Boolean))].slice(0, 100);
+  const relationships = (Array.isArray(allowedRelationships) ? allowedRelationships : []).map((pair) => {
+    if (!Array.isArray(pair) || pair.length !== 2) return null;
+    const from = normalizeRole(pair[0]); const to = normalizeRole(pair[1]);
+    return from && to ? [from, to] : null;
+  }).filter(Boolean).slice(0, 200);
+  const updated = { ...existing[index], requiredRoles: roles, allowedRelationships: relationships, ruleMode: ruleMode === "strict" ? "strict" : "guided", version: (existing[index].version || 1) + 1, updatedAt: new Date().toISOString() };
+  existing[index] = updated;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(existing)); }
+  catch { throw new Error("Unable to update template rules. Browser storage may be full or unavailable."); }
+  return updated;
+}
+
 export function deletePersonalTemplate(templateId) {
   try {
     const next = listPersonalTemplates().filter((item) => item.id !== templateId);

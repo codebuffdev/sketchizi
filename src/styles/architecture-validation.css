@@ -239,6 +239,20 @@
   line-height: 1.4;
 }
 
+.architecture-validation-diagnostic-remediation,
+.architecture-validation-diagnostic-suggestions {
+  margin-top: 6px;
+  color: #56515f;
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.architecture-validation-diagnostic-remediation strong,
+.architecture-validation-diagnostic-suggestions strong {
+  color: #37323f;
+}
+
 .architecture-validation-diagnostic-meta {
   display: flex;
   align-items: center;
@@ -270,7 +284,1221 @@
   color: #bbb;
 }
 
+.app.theme-dark .architecture-validation-diagnostic-remediation,
+.app.theme-dark .architecture-validation-diagnostic-suggestions {
+  color: #c7c1d0;
+}
+
+.app.theme-dark .architecture-validation-diagnostic-remediation strong,
+.app.theme-dark .architecture-validation-diagnostic-suggestions strong {
+  color: #f0ecf7;
+}
+
 .app.theme-dark .architecture-validation-provider {
   background: #343438;
   color: #aaa;
+}
+
+.architecture-validation-diagnostic-action {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.architecture-validation-diagnostic-fix {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid #e7e5eb;
+}
+
+.architecture-validation-diagnostic-fix-title {
+  color: #4c4654;
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.architecture-validation-diagnostic-fix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.architecture-validation-fix-button {
+  border: 1px solid #d7d2e2;
+  border-radius: 6px;
+  background: #fff;
+  color: #4d4561;
+  padding: 5px 7px;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.architecture-validation-fix-button:hover,
+.architecture-validation-fix-button:focus-visible {
+  background: #f1eef9;
+  border-color: #9b8bc1;
+}
+
+.architecture-validation-diagnostic-fix-note {
+  margin-top: 5px;
+  color: #77717f;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.app.theme-dark .architecture-validation-diagnostic-fix {
+  border-color: #414146;
+}
+
+.app.theme-dark .architecture-validation-diagnostic-fix-title {
+  color: #eee8f7;
+}
+
+.app.theme-dark .architecture-validation-fix-button {
+  border-color: #595361;
+  background: #343238;
+  color: #e4ddec;
+}
+
+.app.theme-dark .architecture-validation-fix-button:hover,
+.app.theme-dark .architecture-validation-fix-button:focus-visible {
+  background: #45404f;
+  border-color: #8a7aa9;
+}
+
+.app.theme-dark .architecture-validation-diagnostic-fix-note {
+  color: #aaa3b4;
+}
+
+
+/* Kubernetes diagram-level readiness summary */
+.architecture-readiness-summary {
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0 0 12px;
+}
+.architecture-readiness-summary-title {
+  font-weight: 650;
+  margin-bottom: 4px;
+}
+.architecture-readiness-summary-status {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.architecture-readiness-summary-note {
+  color: var(--color-text-secondary, #656d76);
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 6px;
+}
+.architecture-readiness-summary.status-action-required {
+  border-left: 3px solid var(--color-danger, #cf222e);
+}
+.architecture-readiness-summary.status-review-recommended {
+  border-left: 3px solid var(--color-warning, #9a6700);
+}
+.architecture-readiness-summary.status-optional-improvements {
+  border-left: 3px solid var(--color-border, #d0d7de);
+}
+
+
+/* Deployment review controls and per-finding review state */
+.architecture-review-controls {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.architecture-review-controls-heading,
+.architecture-review-filter-row,
+.architecture-review-finding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.architecture-review-controls-heading {
+  font-size: 11px;
+  color: #444;
+}
+.architecture-review-controls-heading span {
+  color: #777;
+  font-size: 10px;
+}
+.architecture-review-filter-row {
+  margin-top: 8px;
+}
+.architecture-review-filter-row label {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  color: #666;
+  font-size: 10px;
+}
+.architecture-review-filter-row select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px;
+  background: #fff;
+  color: #333;
+  font: inherit;
+}
+.architecture-review-finding-actions {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #eee;
+}
+.architecture-review-reviewed-state,
+.architecture-review-unreviewed-state {
+  font-size: 9px;
+  font-weight: 700;
+}
+.architecture-review-reviewed-state { color: #18794e; }
+.architecture-review-unreviewed-state { color: #777; }
+.architecture-review-toggle {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 5px 7px;
+  background: #fff;
+  color: #444;
+  font-size: 10px;
+  cursor: pointer;
+}
+.architecture-review-toggle:hover,
+.architecture-review-toggle:focus-visible {
+  border-color: #9b8bc1;
+  background: #f5f3fb;
+}
+.app.theme-dark .architecture-review-controls {
+  border-color: #414146;
+}
+.app.theme-dark .architecture-review-controls-heading {
+  color: #eee;
+}
+.app.theme-dark .architecture-review-controls-heading span,
+.app.theme-dark .architecture-review-filter-row label,
+.app.theme-dark .architecture-review-unreviewed-state {
+  color: #aaa;
+}
+.app.theme-dark .architecture-review-filter-row select,
+.app.theme-dark .architecture-review-toggle {
+  border-color: #595361;
+  background: #343238;
+  color: #e4ddec;
+}
+.app.theme-dark .architecture-review-finding-actions {
+  border-color: #414146;
+}
+.app.theme-dark .architecture-review-reviewed-state { color: #7ed9a8; }
+@media (max-width: 420px) {
+  .architecture-review-filter-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+
+.architecture-review-export {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 14px;
+  padding: 12px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 8px;
+}
+.architecture-review-export-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.architecture-review-export-copy span {
+  font-size: 12px;
+  opacity: 0.78;
+}
+.architecture-review-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.architecture-review-export-button {
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: inherit;
+  background: var(--color-surface, transparent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.architecture-review-export-button:hover {
+  background: var(--color-surface-secondary, rgba(127, 127, 127, 0.12));
+}
+.app.theme-dark .architecture-review-export {
+  border-color: var(--color-border, #454545);
+}
+.app.theme-dark .architecture-review-export-button {
+  border-color: var(--color-border, #454545);
+  background: var(--color-surface, #242424);
+}
+@media (max-width: 420px) {
+  .architecture-review-export {
+    align-items: stretch;
+  }
+  .architecture-review-export-actions {
+    width: 100%;
+  }
+  .architecture-review-export-button {
+    flex: 1 1 auto;
+  }
+}
+
+
+.architecture-review-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 14px;
+  padding: 12px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 8px;
+}
+.architecture-review-comparison > .architecture-review-export-copy {
+  margin-bottom: 2px;
+}
+.architecture-review-comparison-result {
+  border-top: 1px solid var(--color-border, #d0d7de);
+  padding-top: 10px;
+  font-size: 12px;
+}
+.architecture-review-comparison-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.architecture-review-comparison-counts span {
+  display: inline-flex;
+  gap: 4px;
+}
+.architecture-review-comparison-result p {
+  margin: 8px 0;
+  opacity: 0.8;
+}
+.architecture-review-comparison-warning {
+  font-weight: 600;
+}
+.architecture-review-comparison-group {
+  margin-top: 10px;
+}
+.architecture-review-comparison-group ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.architecture-review-comparison-group li {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+.architecture-review-export-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.app.theme-dark .architecture-review-comparison {
+  border-color: var(--color-border, #454545);
+}
+.app.theme-dark .architecture-review-comparison-result {
+  border-color: var(--color-border, #454545);
+}
+
+
+.architecture-review-history-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.architecture-review-history-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+}
+.architecture-review-history-controls select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 6px;
+  padding: 8px;
+  color: inherit;
+  background: var(--color-surface, transparent);
+  font: inherit;
+}
+.architecture-review-history-message,
+.architecture-review-history-note {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.architecture-review-history-note {
+  opacity: 0.75;
+}
+.app.theme-dark .architecture-review-history-controls select {
+  border-color: var(--color-border, #454545);
+  background: var(--color-surface, #242424);
+}
+
+
+.architecture-review-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.architecture-review-history-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.architecture-review-history-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.architecture-review-history-card.is-selected {
+  border-color: var(--color-primary, #64748b);
+  box-shadow: inset 3px 0 0 var(--color-primary, #64748b);
+}
+.architecture-review-history-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.architecture-review-history-select {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+.architecture-review-history-select span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.architecture-review-history-select small,
+.architecture-review-history-reviewed {
+  font-size: 11px;
+  opacity: 0.78;
+}
+.architecture-review-history-severity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 11px;
+}
+.architecture-review-history-severity span {
+  display: inline-flex;
+  gap: 4px;
+}
+.architecture-review-history-severity .severity-error {
+  color: var(--color-danger, #b42318);
+}
+.architecture-review-history-severity .severity-warning {
+  color: var(--color-warning, #9a6700);
+}
+.architecture-review-history-severity .severity-info {
+  opacity: 0.8;
+}
+.architecture-review-history-unreviewed {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+.architecture-review-history-empty {
+  margin: 0;
+  padding: 12px 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.architecture-review-history-selected-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+.app.theme-dark .architecture-review-history-card {
+  border-color: var(--color-border, #454545);
+}
+.app.theme-dark .architecture-review-history-card.is-selected {
+  border-color: var(--color-primary, #9ca3af);
+}
+@media (max-width: 420px) {
+  .architecture-review-history-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .architecture-review-history-card-top {
+    flex-direction: column;
+  }
+}
+
+
+/* Kubernetes review comparison: summary, severity signals, and canvas navigation */
+.architecture-review-comparison-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.architecture-review-comparison-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 7px;
+}
+.architecture-review-comparison-stat strong {
+  font-size: 18px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.architecture-review-comparison-stat span {
+  font-size: 11px;
+  opacity: 0.85;
+}
+.architecture-review-comparison-stat.stat-added { border-inline-start: 3px solid #b7791f; }
+.architecture-review-comparison-stat.stat-changed { border-inline-start: 3px solid #6478c8; }
+.architecture-review-comparison-stat.stat-resolved { border-inline-start: 3px solid #238636; }
+.architecture-review-comparison-stat.stat-unchanged { border-inline-start: 3px solid var(--color-border, #d0d7de); }
+.architecture-review-comparison-headline {
+  font-weight: 600;
+  opacity: 1 !important;
+}
+.architecture-review-severity-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.severity-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.severity-up {
+  color: var(--color-danger-text, #9b1c1c);
+  background: var(--color-danger-subtle, rgba(207, 34, 46, 0.09));
+}
+.severity-down {
+  color: var(--color-success-text, #176b2c);
+  background: var(--color-success-subtle, rgba(35, 134, 54, 0.09));
+}
+.architecture-review-comparison-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border, #d0d7de);
+}
+.architecture-review-comparison-item:last-child { border-bottom: 0; }
+.architecture-review-comparison-item-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.architecture-review-comparison-item-copy small {
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+.architecture-review-severity-badge {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, #d0d7de);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.architecture-review-severity-badge.severity-error {
+  color: var(--color-danger-text, #9b1c1c);
+  background: var(--color-danger-subtle, rgba(207, 34, 46, 0.09));
+}
+.architecture-review-severity-badge.severity-warning {
+  color: var(--color-warning-text, #825000);
+  background: var(--color-warning-subtle, rgba(191, 135, 0, 0.12));
+}
+.architecture-review-severity-badge.severity-info {
+  color: var(--color-info-text, #175cd3);
+  background: var(--color-info-subtle, rgba(23, 92, 211, 0.09));
+}
+.architecture-review-jump-button {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.architecture-review-jump-button:hover {
+  background: var(--color-surface-hover, rgba(127, 127, 127, 0.12));
+}
+@media (max-width: 520px) {
+  .architecture-review-comparison-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .architecture-review-comparison-item { flex-wrap: wrap; }
+  .architecture-review-comparison-item-copy { flex-basis: calc(100% - 95px); }
+  .architecture-review-jump-button { margin-inline-start: auto; }
+}
+
+
+/* Comparison filters and sorting */
+.architecture-review-comparison-filters {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1.4fr) minmax(120px, 0.7fr);
+  gap: 8px;
+  margin: 12px 0 8px;
+}
+.architecture-review-comparison-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+.architecture-review-comparison-filters select,
+.architecture-review-comparison-filters input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 6px;
+  color: inherit;
+  background: var(--color-surface, transparent);
+  font: inherit;
+  font-weight: 400;
+}
+.architecture-review-comparison-empty {
+  padding: 12px;
+  border: 1px dashed var(--color-border, #d0d7de);
+  border-radius: 6px;
+  text-align: center;
+}
+@media (max-width: 620px) {
+  .architecture-review-comparison-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .architecture-review-comparison-resource-filter {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+@media (max-width: 360px) {
+  .architecture-review-comparison-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .architecture-review-comparison-resource-filter {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+
+/* Kubernetes remediation checklist */
+.architecture-remediation-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 8px;
+}
+.architecture-remediation-checklist-filters {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.7fr) minmax(180px, 1.3fr);
+  gap: 8px;
+}
+.architecture-remediation-checklist-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+.architecture-remediation-checklist-filters select,
+.architecture-remediation-checklist-filters input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 6px;
+  color: inherit;
+  background: var(--color-surface, transparent);
+  font: inherit;
+  font-weight: 400;
+}
+.architecture-remediation-checklist-message {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.architecture-remediation-checklist-empty {
+  padding: 14px 10px;
+  border: 1px dashed var(--color-border, #d0d7de);
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+}
+.architecture-remediation-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.architecture-remediation-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border, #d0d7de);
+}
+.architecture-remediation-task:last-child { border-bottom: 0; }
+.architecture-remediation-task-check {
+  display: flex;
+  flex: 0 0 92px;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.architecture-remediation-task-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-primary, #2563eb);
+}
+.architecture-remediation-task-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.architecture-remediation-task-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.architecture-remediation-task-copy small {
+  opacity: 0.78;
+}
+.architecture-remediation-task.is-completed .architecture-remediation-task-copy > span {
+  opacity: 0.72;
+}
+.architecture-remediation-task.is-completed .architecture-remediation-task-title strong {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+@media (max-width: 520px) {
+  .architecture-remediation-checklist-filters { grid-template-columns: minmax(0, 1fr); }
+  .architecture-remediation-task { gap: 8px; }
+  .architecture-remediation-task-check { flex-basis: 80px; }
+}
+
+
+/* Remediation lifecycle and completion progress */
+.architecture-remediation-checklist .architecture-review-export-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.architecture-remediation-checklist .architecture-review-export-copy > span {
+  font-size: 11px;
+}
+.architecture-remediation-finding-state {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.architecture-remediation-finding-state.is-active {
+  color: var(--color-warning-text, #825000);
+  background: var(--color-warning-subtle, rgba(191, 135, 0, 0.12));
+}
+.architecture-remediation-finding-state.is-resolved {
+  color: var(--color-success-text, #16794b);
+  background: var(--color-success-subtle, rgba(22, 121, 75, 0.12));
+}
+.architecture-remediation-task.is-finding-resolved {
+  background: var(--color-surface-subtle, rgba(127, 127, 127, 0.035));
+}
+.architecture-remediation-task.is-finding-resolved .architecture-remediation-task-copy > span {
+  opacity: 0.8;
+}
+
+
+/* Unified Kubernetes deployment review dashboard */
+.architecture-review-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 9px;
+  background: var(--color-surface, transparent);
+}
+.architecture-review-dashboard-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.architecture-review-dashboard-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.architecture-review-dashboard-heading strong { font-size: 14px; }
+.architecture-review-dashboard-heading span { font-size: 11px; opacity: 0.8; }
+.architecture-review-dashboard-status {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 999px;
+  font-size: 10px !important;
+  font-weight: 700;
+}
+.architecture-review-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.architecture-review-dashboard-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 7px;
+  background: var(--color-surface-subtle, rgba(127, 127, 127, 0.035));
+}
+.architecture-review-dashboard-label {
+  font-size: 10px;
+  font-weight: 650;
+  opacity: 0.8;
+}
+.architecture-review-dashboard-card > strong {
+  font-size: 22px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.architecture-review-dashboard-card small {
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.architecture-review-dashboard-progress {
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-border, #d0d7de);
+}
+.architecture-review-dashboard-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary, #2563eb);
+  transition: width 160ms ease;
+}
+.architecture-review-dashboard-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary, #2563eb);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.architecture-review-dashboard-comparison {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border, #d0d7de);
+  font-size: 11px;
+}
+.architecture-review-dashboard-comparison span { flex: 1; min-width: 160px; }
+.architecture-review-dashboard-note {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.45;
+  opacity: 0.75;
+}
+@media (max-width: 760px) {
+  .architecture-review-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .architecture-review-dashboard { padding: 10px; }
+  .architecture-review-dashboard-heading { flex-direction: column; }
+  .architecture-review-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+  .architecture-review-dashboard-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .architecture-review-dashboard-card > strong { grid-column: 2; grid-row: 1 / span 2; }
+  .architecture-review-dashboard-card small,
+  .architecture-review-dashboard-progress,
+  .architecture-review-dashboard-link { grid-column: 1 / -1; }
+}
+
+
+/* v1.13.8: Make historical comparison entries explicit when no live canvas target exists. */
+.architecture-review-comparison-navigation-note {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.architecture-review-comparison-item.is-resolved-comparison-item {
+  border-left: 3px solid var(--color-border, #9ca3af);
+  padding-left: 0.6rem;
+}
+
+.architecture-remediation-finding-state.is-resolved {
+  font-weight: 600;
+}
+
+
+/* v1.13.9: Consistent keyboard focus and restrained live status announcements. */
+.architecture-review-comparison-filters :is(select, input):focus-visible,
+.architecture-review-export-actions button:focus-visible,
+.architecture-review-jump-button:focus-visible,
+.architecture-review-controls :is(button, select, input):focus-visible,
+.architecture-remediation-task-check input:focus-visible,
+.architecture-remediation-checklist :is(button, select, input):focus-visible,
+.architecture-review-history :is(button, select, input):focus-visible,
+.architecture-review-dashboard :is(button, a, input, select):focus-visible {
+  outline: 3px solid #6d5bd0;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 1px var(--panel-background, #fff);
+}
+
+.app.theme-dark .architecture-review-comparison-filters :is(select, input):focus-visible,
+.app.theme-dark .architecture-review-export-actions button:focus-visible,
+.app.theme-dark .architecture-review-jump-button:focus-visible,
+.app.theme-dark .architecture-review-controls :is(button, select, input):focus-visible,
+.app.theme-dark .architecture-remediation-task-check input:focus-visible,
+.app.theme-dark .architecture-remediation-checklist :is(button, select, input):focus-visible,
+.app.theme-dark .architecture-review-history :is(button, select, input):focus-visible,
+.app.theme-dark .architecture-review-dashboard :is(button, a, input, select):focus-visible {
+  outline-color: #b8aaff;
+  box-shadow: 0 0 0 1px var(--panel-background, #202024);
+}
+
+.architecture-review-filter-status {
+  margin: 0.45rem 0;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+
+/* v1.13.10: Actionable filter empty states and narrow review layouts. */
+.architecture-review-comparison-empty,
+.architecture-remediation-checklist-empty {
+  overflow-wrap: anywhere;
+}
+
+.architecture-review-comparison-empty p,
+.architecture-remediation-checklist-empty p {
+  margin: 0 0 0.45rem;
+}
+
+.architecture-review-comparison-empty p:last-of-type,
+.architecture-remediation-checklist-empty p:last-of-type {
+  margin-bottom: 0.65rem;
+}
+
+.architecture-review-reset-filters {
+  min-height: 34px;
+  max-width: 100%;
+  padding: 7px 11px;
+  border: 1px solid var(--color-border, #c8c8d0);
+  border-radius: 6px;
+  background: var(--color-surface, transparent);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.architecture-review-reset-filters:hover {
+  border-color: #8c7bc7;
+  background: #f5f3fb;
+}
+
+.app.theme-dark .architecture-review-reset-filters:hover {
+  background: #35313f;
+}
+
+.architecture-review-reset-filters:focus-visible {
+  outline: 3px solid #6d5bd0;
+  outline-offset: 3px;
+}
+
+.app.theme-dark .architecture-review-reset-filters:focus-visible {
+  outline-color: #b8aaff;
+}
+
+@media (max-width: 520px) {
+  .architecture-review-comparison-empty,
+  .architecture-remediation-checklist-empty {
+    text-align: left;
+    padding: 12px;
+  }
+
+  .architecture-review-reset-filters {
+    width: 100%;
+  }
+
+  .architecture-remediation-task {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .architecture-remediation-task-check {
+    flex-basis: 100%;
+  }
+
+  .architecture-remediation-task-copy {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+
+/* v1.13.11: Improve summary hierarchy and fit the dashboard to half-screen panels. */
+.architecture-review-dashboard-detail {
+  display: block;
+  max-width: 100%;
+  line-height: 1.5 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.architecture-review-dashboard-status {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.architecture-review-dashboard-link,
+.architecture-review-export-button,
+.architecture-review-jump-button,
+.architecture-review-reset-filters {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.architecture-review-export-actions {
+  align-items: stretch;
+}
+
+@media (max-width: 980px) {
+  .architecture-review-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .architecture-review-dashboard-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .architecture-review-dashboard-status {
+    align-self: flex-start;
+  }
+
+  .architecture-review-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .architecture-review-dashboard-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 5px 10px;
+  }
+
+  .architecture-review-dashboard-card > .architecture-review-dashboard-label,
+  .architecture-review-dashboard-card > small,
+  .architecture-review-dashboard-card > .architecture-review-dashboard-progress,
+  .architecture-review-dashboard-card > .architecture-review-dashboard-link {
+    grid-column: 1 / -1;
+  }
+
+  .architecture-review-dashboard-card > strong {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* v1.13.12: Active review filters and dashboard-to-section navigation. */
+#architecture-review-findings-panel,
+#architecture-review-comparison-panel,
+#architecture-review-history-panel,
+#architecture-remediation-checklist-panel {
+  scroll-margin-top: 18px;
+}
+
+.architecture-review-active-filters {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  min-width: 0;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-left: 3px solid var(--color-primary, #6d5bd0);
+  border-radius: 6px;
+  background: var(--color-surface-subtle, rgba(127, 127, 127, 0.045));
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.architecture-review-active-filters > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.architecture-review-active-filters .architecture-review-reset-filters {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+@media (max-width: 520px) {
+  .architecture-review-active-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .architecture-review-active-filters .architecture-review-reset-filters {
+    width: 100%;
+  }
+}
+
+
+/* v1.13.13: Unified review-view reset and selected dashboard shortcuts. */
+.architecture-review-dashboard-heading {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.architecture-review-reset-view {
+  flex: 0 0 auto;
+  align-self: flex-start;
+}
+
+.architecture-review-dashboard-link.is-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 7px;
+  border: 1px solid var(--color-primary, #6d5bd0);
+  border-radius: 5px;
+  background: var(--color-surface-subtle, rgba(109, 91, 208, 0.1));
+  font-weight: 750;
+  text-align: left;
+}
+
+.app.theme-dark .architecture-review-dashboard-link.is-active {
+  background: rgba(184, 170, 255, 0.12);
+}
+
+.architecture-review-dashboard-link.is-active::before {
+  content: "✓";
+  flex: 0 0 auto;
+  font-size: 10px;
+}
+
+@media (max-width: 520px) {
+  .architecture-review-dashboard-heading {
+    align-items: stretch;
+  }
+
+  .architecture-review-reset-view {
+    align-self: stretch;
+    width: 100%;
+  }
+
+  .architecture-review-dashboard-link.is-active {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #architecture-review-findings-panel,
+  #architecture-review-comparison-panel,
+  #architecture-review-history-panel,
+  #architecture-remediation-checklist-panel,
+  #architecture-review-dashboard-panel {
+    scroll-behavior: auto;
+  }
 }

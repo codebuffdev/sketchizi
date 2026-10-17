@@ -32,16 +32,19 @@ import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinit
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
+import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
 import { getSelectedKubernetesResource, updateKubernetesResource } from "./features/kubernetes-resources/kubernetesResourceService";
 import { getSelectedNetworkingResource, updateNetworkingResource } from "./features/networking/networkingResourceService.js";
 import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } from "./features/aws-relationships/awsRelationshipService";
-import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
+import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetesRelationshipGuidance, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import CreateDesignDialog from "./features/design/ui/CreateDesignDialog.jsx";
 import DesignValidationDialog from "./features/design/ui/DesignValidationDialog.jsx";
+import { validateDesignTemplate } from "./features/design/validation/templateValidator.js";
+import TemplateRulesEditorDialog from "./features/design/ui/TemplateRulesEditorDialog.jsx";
 import { createDesignProfile, readDesignProfile } from "./features/design/model/designDocument.js";
 import { savePersonalTemplate, listPersonalTemplates, downloadPersonalTemplate, importPersonalTemplate } from "./features/design/templates/personalTemplateStore.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
@@ -54,6 +57,8 @@ function App() {
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [createDesignOpen, setCreateDesignOpen] = useState(false);
   const [designValidationOpen, setDesignValidationOpen] = useState(false);
+  const [liveDesignDiagnostics, setLiveDesignDiagnostics] = useState([]);
+  const [templateRulesEditorOpen, setTemplateRulesEditorOpen] = useState(false);
   const [designProfile, setDesignProfile] = useState(null);
   const documentMetadataRef = useRef({ metadata: {}, extensions: {} });
   const [selectedConnector, setSelectedConnector] = useState(null);
@@ -182,6 +187,9 @@ function App() {
   const selectedNetworkingResourceDefinition = getNetworkingResourceDefinitionById(selectedNetworkingResource?.definitionId);
   const selectedAwsRelationship = selectedElements.length === 1 ? getAwsRelationship(selectedElements[0]) : null;
   const selectedKubernetesRelationship = selectedElements.length === 1 ? getKubernetesRelationship(selectedElements[0]) : null;
+  const selectedKubernetesRelationshipGuidance = selectedKubernetesRelationship
+    ? getKubernetesRelationshipGuidance(selectedElements[0], apiRef.current?.getSceneElements?.() || [])
+    : null;
   const selectedArchitectureRelationship = (() => {
     const connector = selectedElements.length === 1 && ["arrow", "line"].includes(selectedElements[0]?.type) ? selectedElements[0] : null;
     if (!connector) return null;
@@ -200,6 +208,32 @@ function App() {
     architectureValidationSignatureRef.current = signature;
     setArchitectureValidation(result);
   }, []);
+  const applyKubernetesValidationSuggestion = useCallback((diagnostic, relationshipType) => {
+    if (!collaborationCanEdit) {
+      showToast("You do not have edit access to correct this relationship", "error");
+      return;
+    }
+    const api = apiRef.current;
+    if (!api?.getSceneElements || !api?.updateScene) {
+      showToast("Editor is not ready", "error");
+      return;
+    }
+    const accepted = window.confirm(
+      `Replace Kubernetes relationship type "${diagnostic?.relationshipType || "unknown"}" with "${relationshipType}"?
+
+Only the relationship type will change. The relationship ID and both endpoints will be preserved.`,
+    );
+    if (!accepted) return;
+
+    const result = applyKubernetesRelationshipSuggestion(api.getSceneElements(), diagnostic, relationshipType);
+    if (!result.changed) {
+      showToast(result.error || "The relationship could not be corrected", "error");
+      return;
+    }
+    api.updateScene({ elements: result.elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    showToast(`Kubernetes relationship updated to "${relationshipType}"`);
+  }, [collaborationCanEdit, showToast]);
+
   const selectArchitectureDiagnostic = useCallback((diagnostic) => {
     const api = apiRef.current;
     if (!api || (!diagnostic?.relationshipId && !diagnostic?.resourceId)) return;
@@ -207,11 +241,19 @@ function App() {
     const elements = api.getSceneElements();
     const target = elements.find((element) => {
       const metadata = diagnostic.relationshipId
-        ? [element.customData?.awsRelationship, element.customData?.kubernetesRelationship, element.customData?.architectureRelationship]
-        : [element.customData?.awsResource, element.customData?.kubernetesResource, element.customData?.networkingResource];
-      return metadata.some((entry) => {
+        ? [
+          { provider: "aws", entry: element.customData?.awsRelationship },
+          { provider: "kubernetes", entry: element.customData?.kubernetesRelationship },
+          { provider: element.customData?.architectureRelationship?.provider || null, entry: element.customData?.architectureRelationship },
+        ]
+        : [
+          { provider: "aws", entry: element.customData?.awsResource },
+          { provider: "kubernetes", entry: element.customData?.kubernetesResource },
+          { provider: "networking", entry: element.customData?.networkingResource },
+        ];
+      return metadata.some(({ provider, entry }) => {
         if (!entry) return false;
-        if (diagnostic.provider && entry.provider !== diagnostic.provider) return false;
+        if (diagnostic.provider && provider && provider !== diagnostic.provider) return false;
         return diagnostic.relationshipId
           ? entry.relationshipId === diagnostic.relationshipId
           : entry.awsResourceId === diagnostic.resourceId || entry.kubernetesResourceId === diagnostic.resourceId || entry.networkingResourceId === diagnostic.resourceId;
@@ -341,16 +383,44 @@ function App() {
     fileActionsRef,
     openCreateDesign: () => setCreateDesignOpen(true),
     openDesignValidation: () => setDesignValidationOpen(true),
+    openTemplateRulesEditor: () => setTemplateRulesEditorOpen(true),
     saveDesignAsTemplate: saveDesignAsPersonalTemplate,
     exportPersonalTemplateAction,
     importPersonalTemplateAction,
   });
   useNativeSketchiziMenu({ apiRef, fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
+  const selectDesignFinding = useCallback((finding) => {
+    const api = apiRef.current;
+    if (!api || !finding?.elementId) return;
+    const elements = api.getSceneElements?.() || [];
+    const target = elements.find((element) => element.id === finding.elementId && !element.isDeleted);
+    if (!target) {
+      showToast("The referenced element is no longer on the canvas", "error");
+      return;
+    }
+    api.updateScene({
+      appState: { selectedElementIds: { [target.id]: true }, openSidebar: null },
+    });
+    setSelectedCount(1);
+    setSelectedElements([target]);
+    if (target.type === "arrow" || target.type === "line") setSelectedConnector(target);
+    setDesignValidationOpen(false);
+  }, [showToast]);
+
+  const updateLiveDesignDiagnostics = useCallback((elements) => {
+    setLiveDesignDiagnostics(validateDesignTemplate(elements, designProfile));
+  }, [designProfile]);
+
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
     collaborationRemoteUpdateRef, collaborationRef, gridEnabled, gridSize, canEdit: collaborationCanEdit,
     onArchitectureSceneChange: updateArchitectureValidation,
+    onDesignSceneChange: updateLiveDesignDiagnostics,
+    onStrictConnectionRejected: (count) => showToast(
+      `${count} prohibited connection${count === 1 ? "" : "s"} blocked by strict template rules`,
+      "error",
+    ),
   });
   // Reconcile against the live Excalidraw API after its onChange/theme cycle.
   // Never apply a color from the callback's appState argument: that snapshot can
@@ -563,7 +633,7 @@ function App() {
                 networkingResource={selectedNetworkingResource} networkingResourceDefinition={selectedNetworkingResourceDefinition} updateNetworkingResource={updateSelectedNetworkingResource}
                 architectureRelationship={selectedArchitectureRelationship} architectureRelationshipTypes={["traffic-flow", "contains", "routes-to", "depends-on", "connects-to"]} updateArchitectureRelationshipType={updateSelectedArchitectureRelationshipType}
                 awsRelationship={selectedAwsRelationship} relationshipTypes={AWS_RELATIONSHIP_TYPES} updateAwsRelationshipType={updateSelectedAwsRelationshipType}
-                kubernetesRelationship={selectedKubernetesRelationship} kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES} updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
+                kubernetesRelationship={selectedKubernetesRelationship} kubernetesRelationshipGuidance={selectedKubernetesRelationshipGuidance} kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES} updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
                 readOnly={!collaborationCanEdit} authorship={collaborationAuthorship} selfId={collaborationClientId} participants={collaborationParticipants}
               />
             </div>
@@ -575,6 +645,8 @@ function App() {
                 validation={architectureValidation}
                 onClose={() => closePanel("architecture-validation")}
                 onSelectDiagnostic={selectArchitectureDiagnostic}
+                onApplyKubernetesSuggestion={applyKubernetesValidationSuggestion}
+                canApplyCorrections={collaborationCanEdit}
               />
             </div>
           )}
@@ -643,11 +715,14 @@ function App() {
           if (created) setCreateDesignOpen(false);
         }}
       />
+      <TemplateRulesEditorDialog open={templateRulesEditorOpen} onClose={() => setTemplateRulesEditorOpen(false)} onSaved={(template) => showToast(`Rules saved for ${template.name}`)} />
       <DesignValidationDialog
         open={designValidationOpen}
         onClose={() => setDesignValidationOpen(false)}
         apiRef={apiRef}
         profile={designProfile}
+        diagnostics={liveDesignDiagnostics}
+        onSelectFinding={selectDesignFinding}
       />
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} />
 

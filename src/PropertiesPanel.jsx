@@ -6,7 +6,7 @@ export default function PropertiesPanel({
   networkingResource = null, networkingResourceDefinition = null, updateNetworkingResource = () => {},
   architectureRelationship = null, architectureRelationshipTypes = [], updateArchitectureRelationshipType = () => {},
   awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
-  kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {},
+  kubernetesRelationship = null, kubernetesRelationshipGuidance = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {},
   readOnly = false, authorship = {}, participants = [],
 }) {
   return (
@@ -67,9 +67,25 @@ export default function PropertiesPanel({
             disabled={readOnly}
             onChange={(event) => updateKubernetesRelationshipType(event.target.value)}
           >
-            {kubernetesRelationshipTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+            {kubernetesRelationshipTypes.map((type) => {
+              const guidance = kubernetesRelationshipGuidance;
+              const hasEndpoints = Boolean(guidance?.sourceResourceType && guidance?.targetResourceType);
+              const compatible = guidance?.compatibleRelationshipTypes?.includes(type);
+              const label = !hasEndpoints ? type : `${type}${compatible ? " · compatible" : " · incompatible"}`;
+              return <option key={type} value={type}>{label}</option>;
+            })}
           </select>
         </div>
+        {kubernetesRelationshipGuidance?.sourceResourceType && kubernetesRelationshipGuidance?.targetResourceType && (
+          <p className={`kubernetes-relationship-guidance${kubernetesRelationshipGuidance.isCompatible ? " is-compatible" : " is-incompatible"}`} role="status">
+            {kubernetesRelationshipGuidance.isCompatible
+              ? `Compatible: ${kubernetesRelationshipGuidance.sourceResourceType} → ${kubernetesRelationshipGuidance.targetResourceType}.`
+              : `This type does not match ${kubernetesRelationshipGuidance.sourceResourceType} → ${kubernetesRelationshipGuidance.targetResourceType}.`}
+            {kubernetesRelationshipGuidance.compatibleRelationshipTypes.length
+              ? ` Suggested types: ${kubernetesRelationshipGuidance.compatibleRelationshipTypes.join(", ")}.`
+              : " Use connects-to for a general connection."}
+          </p>
+        )}
       </div>
     )}
 

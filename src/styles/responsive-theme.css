@@ -854,3 +854,23 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
     height: 42px;
   }
 }
+
+
+/* Kubernetes relationship authoring feedback */
+.kubernetes-relationship-guidance {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid #36855b;
+  border-radius: 4px;
+  background: rgba(54, 133, 91, .08);
+  color: var(--ui-text, #333);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.kubernetes-relationship-guidance.is-incompatible {
+  border-left-color: #c57b22;
+  background: rgba(197, 123, 34, .10);
+}
+.theme-dark .kubernetes-relationship-guidance {
+  color: #e5e5e5;
+}

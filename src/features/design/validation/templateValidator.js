@@ -18,7 +18,7 @@ function getElementLabel(element, elements) {
   return insideText?.text?.trim() || "";
 }
 
-function inferRole(element, elements) {
+export function inferDesignRole(element, elements = []) {
   const explicit = element?.customData?.design?.role;
   if (typeof explicit === "string" && explicit.trim()) return explicit.trim().toLowerCase();
   const label = getElementLabel(element, elements).toLowerCase();
@@ -59,7 +59,7 @@ export function validateDesignTemplate(elements = [], profile = null) {
   if (!template) return [{ code: "template.unknown", severity: "warning", message: `Template '${profile.templateId}' is not available in this Sketchizi version.` }];
   const liveElements = elements.filter((element) => element && !element.isDeleted);
   const shapes = liveElements.filter((element) => ["rectangle", "ellipse", "diamond", "polygon", "image", "frame"].includes(element.type));
-  const roles = shapes.map((element) => ({ element, role: inferRole(element, liveElements) })).filter((item) => item.role);
+  const roles = shapes.map((element) => ({ element, role: inferDesignRole(element, liveElements) })).filter((item) => item.role);
   const diagnostics = [];
   const severity = profile.ruleMode === "strict" ? "error" : "warning";
 
@@ -77,11 +77,32 @@ export function validateDesignTemplate(elements = [], profile = null) {
       diagnostics.push({ code: "template.unbound-connector", severity: "warning", elementId: connector.id, message: "This connector is not bound to two recognized elements." });
       continue;
     }
-    const sourceRole = inferRole(source, liveElements);
-    const targetRole = inferRole(target, liveElements);
+    const sourceRole = inferDesignRole(source, liveElements);
+    const targetRole = inferDesignRole(target, liveElements);
     if (sourceRole && targetRole && template.allowedRelationships?.length) {
       const allowed = template.allowedRelationships.some(([from, to]) => from === sourceRole && to === targetRole);
-      if (!allowed) diagnostics.push({ code: "template.relationship", severity, elementId: connector.id, message: `The connection from '${sourceRole}' to '${targetRole}' is not listed in the ${template.name} template rules.` });
+      if (!allowed) {
+        const allowedTargets = [...new Set((template.allowedRelationships || [])
+          .filter(([from]) => from === sourceRole)
+          .map(([, to]) => to))];
+        const allowedSources = [...new Set((template.allowedRelationships || [])
+          .filter(([, to]) => to === targetRole)
+          .map(([from]) => from))];
+        const suggestions = [];
+        if (allowedTargets.length) suggestions.push(`From '${sourceRole}', allowed targets are: ${allowedTargets.join(", ")}.`);
+        if (allowedSources.length) suggestions.push(`To '${targetRole}', allowed sources are: ${allowedSources.join(", ")}.`);
+        if (!suggestions.length) suggestions.push("Review the template's allowed relationships or change the component roles.");
+        diagnostics.push({
+          code: "template.relationship",
+          severity,
+          elementId: connector.id,
+          sourceRole,
+          targetRole,
+          allowedRelationships: (template.allowedRelationships || []).map(([from, to]) => ({ from, to })),
+          suggestions,
+          message: `The connection from '${sourceRole}' to '${targetRole}' is not listed in the ${template.name} template rules.`,
+        });
+      }
     }
   }
   return diagnostics;

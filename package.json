@@ -1,7 +1,7 @@
 {
   "name": "sketchizi",
   "private": true,
-  "version": "1.10.90",
+  "version": "1.13.13",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,7 +28,22 @@
     "test:font-assets": "node --test tests/font-assets.test.js",
     "test:font-family-defaults": "node --test tests/font-family-defaults.test.js",
     "test:file-format": "node --test tests/sketchizi-format.test.js",
-    "test:design": "node --test tests/design-framework.test.js"
+    "test:design": "node --test tests/design-framework.test.js",
+    "test:kubernetes-catalog": "node --test tests/kubernetes-catalog.test.js",
+    "test:kubernetes-graph": "node --test tests/kubernetes-architecture-graph.test.js",
+    "test:kubernetes-relationships": "node --test tests/kubernetes-relationships.test.js",
+    "test:kubernetes-validation": "node --test tests/kubernetes-validation-guidance.test.js",
+    "test:kubernetes-diagnostic-fixes": "node --test tests/kubernetes-diagnostic-fixes.test.js",
+    "test:kubernetes-resource-validation": "node --test tests/kubernetes-resource-validation.test.js",
+    "test:kubernetes-completeness": "node --test tests/kubernetes-architecture-completeness.test.js",
+    "test:kubernetes-readiness": "node --test tests/kubernetes-deployment-readiness.test.js",
+    "test:kubernetes-review-ui": "node --test tests/kubernetes-deployment-review-ui.test.js",
+    "test:kubernetes-review-export": "node --test tests/kubernetes-deployment-review-export.test.js",
+    "test:kubernetes-review-comparison": "node --test tests/kubernetes-deployment-review-comparison.test.js",
+    "test:kubernetes-review-history": "node --test tests/kubernetes-deployment-review-history.test.js",
+    "test:kubernetes-review-history-ui": "node --test tests/kubernetes-deployment-review-history.test.js tests/kubernetes-deployment-review-ui.test.js",
+    "test:kubernetes-review-comparison-export": "node --test tests/kubernetes-deployment-review-comparison-export.test.js",
+    "test:kubernetes-remediation-checklist": "node --test tests/kubernetes-remediation-checklist.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

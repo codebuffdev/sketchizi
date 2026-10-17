@@ -56,7 +56,7 @@ export default function CreateDesignDialog({ open, onClose, onCreate }) {
               <label htmlFor="design-template">{mode === "pattern" ? "Design pattern" : "Template"}</label>
               <div className="design-template-grid" role="radiogroup" aria-label={mode === "pattern" ? "Design pattern" : "Design template"}>
                 {templates.filter((template) => mode === "pattern" ? template.creationMode === "pattern" : template.creationMode === "template").map((template) => (
-                  <button type="button" key={template.id} className={templateId === template.id ? "design-template-card selected" : "design-template-card"} onClick={() => { setTemplateId(template.id); setName(template.name); }} aria-pressed={templateId === template.id}>
+                  <button type="button" key={template.id} className={templateId === template.id ? "design-template-card selected" : "design-template-card"} onClick={() => { setTemplateId(template.id); setName(template.name); if (template.ruleMode) setRuleMode(template.ruleMode); }} aria-pressed={templateId === template.id}>
                     <span className="design-template-category">{template.category}</span>
                     <strong>{template.name}</strong>
                     <small>{template.description}</small>

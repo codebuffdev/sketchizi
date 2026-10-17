@@ -1,10 +1,10 @@
-export const KUBERNETES_RELATIONSHIP_TYPES = [
-  "connects-to",
-  "contains",
-  "schedules",
-  "exposes",
-  "runs-on",
-];
+import {
+  KUBERNETES_RELATIONSHIP_TYPES,
+  getCompatibleKubernetesRelationshipTypes,
+  isKubernetesRelationshipTypeCompatible,
+} from "./kubernetesRelationshipSemantics.js";
+
+export { KUBERNETES_RELATIONSHIP_TYPES } from "./kubernetesRelationshipSemantics.js";
 
 const KUBERNETES_RELATIONSHIP_TYPE = KUBERNETES_RELATIONSHIP_TYPES[0];
 
@@ -144,4 +144,30 @@ export function updateKubernetesRelationshipMetadata(elements, relationshipId, p
   });
 
   return { elements: nextElements, changed };
+}
+
+/** Resolve semantic guidance for the selected connector without changing scene data. */
+export function getKubernetesRelationshipGuidance(connector, elements = []) {
+  const relationship = getKubernetesRelationship(connector);
+  if (!relationship) return null;
+
+  const scene = Array.isArray(elements) ? elements : [];
+  const findResource = (resourceId) => scene.find((element) =>
+    !element?.isDeleted && element?.customData?.kubernetesResource?.kubernetesResourceId === resourceId
+  )?.customData?.kubernetesResource || null;
+  const source = findResource(relationship.sourceResourceId);
+  const target = findResource(relationship.targetResourceId);
+  const sourceResourceType = typeof source?.resourceType === "string" ? source.resourceType : null;
+  const targetResourceType = typeof target?.resourceType === "string" ? target.resourceType : null;
+
+  if (!sourceResourceType || !targetResourceType) {
+    return { sourceResourceType, targetResourceType, compatibleRelationshipTypes: [], isCompatible: null };
+  }
+
+  return {
+    sourceResourceType,
+    targetResourceType,
+    compatibleRelationshipTypes: getCompatibleKubernetesRelationshipTypes(sourceResourceType, targetResourceType),
+    isCompatible: isKubernetesRelationshipTypeCompatible(relationship.relationshipType, sourceResourceType, targetResourceType),
+  };
 }

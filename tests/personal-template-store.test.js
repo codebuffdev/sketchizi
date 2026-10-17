@@ -52,3 +52,38 @@ test("cloning template elements creates fresh IDs and repairs internal bindings"
   assert.equal(cloned[2].startBinding.elementId, cloned[0].id);
   assert.equal(cloned[2].endBinding.elementId, cloned[1].id);
 });
+
+test("personal template rules can be edited and persist through listing and export", async () => {
+  const previous = globalThis.localStorage;
+  globalThis.localStorage = new MemoryStorage();
+  try {
+    const store = await import(`../src/features/design/templates/personalTemplateStore.js?rules=${Date.now()}`);
+    const template = store.savePersonalTemplate({ name: "Rules demo", elements: [{ id: "a", type: "rectangle" }] });
+    const updated = store.updatePersonalTemplateRules(template.id, {
+      requiredRoles: ["Client", "service", "client"],
+      allowedRelationships: [["client", "service"], ["service", "database"]],
+      ruleMode: "strict",
+    });
+    assert.deepEqual(updated.requiredRoles, ["client", "service"]);
+    assert.deepEqual(updated.allowedRelationships, [["client", "service"], ["service", "database"]]);
+    assert.equal(updated.ruleMode, "strict");
+    const listed = store.listPersonalTemplates()[0];
+    assert.deepEqual(listed.requiredRoles, ["client", "service"]);
+    assert.equal(JSON.parse(store.exportPersonalTemplate(template.id)).template.ruleMode, "strict");
+  } finally {
+    if (previous === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previous;
+  }
+});
+
+test("updating rules for an unknown personal template is rejected", async () => {
+  const previous = globalThis.localStorage;
+  globalThis.localStorage = new MemoryStorage();
+  try {
+    const store = await import(`../src/features/design/templates/personalTemplateStore.js?missing=${Date.now()}`);
+    assert.throws(() => store.updatePersonalTemplateRules("missing", {}), /not found/i);
+  } finally {
+    if (previous === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previous;
+  }
+});
