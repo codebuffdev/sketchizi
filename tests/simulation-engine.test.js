@@ -100,3 +100,28 @@ test("infers start and end from labels and creates only one entry token", () => 
   assert.equal(result.virtualTimeMs, 100);
   assert.ok(result.eventLog.some((event) => event.message === "Flow completed."));
 });
+
+
+test("infers labels from standalone text inside shapes and respects arrowhead direction", () => {
+  const elements = [
+    { id: "s", type: "ellipse", x: 0, y: 0, width: 100, height: 80 },
+    { id: "s-label", type: "text", x: 25, y: 30, width: 50, height: 20, text: "start" },
+    { id: "p", type: "rectangle", x: 150, y: 0, width: 120, height: 80 },
+    { id: "p-label", type: "text", x: 180, y: 30, width: 60, height: 20, text: "process" },
+    { id: "e", type: "ellipse", x: 320, y: 0, width: 100, height: 80 },
+    { id: "e-label", type: "text", x: 345, y: 30, width: 50, height: 20, text: "end" },
+    // The first arrow's arrowhead is at its start endpoint, so its logical
+    // direction is endBinding -> startBinding despite binding order.
+    { id: "sp", type: "arrow", startBinding: { elementId: "p" }, endBinding: { elementId: "s" }, startArrowhead: "arrow" },
+    { id: "pe", type: "arrow", startBinding: { elementId: "p" }, endBinding: { elementId: "e" }, endArrowhead: "arrow" },
+  ];
+  const normalized = normalizeSimulationGraph(elements);
+  assert.equal(normalized.nodes.find((node) => node.id === "s").type, "start");
+  assert.equal(normalized.nodes.find((node) => node.id === "e").type, "end");
+  assert.deepEqual(normalized.entryNodeIds, ["s"]);
+  assert.deepEqual(normalized.edges.map(({ sourceId, targetId }) => [sourceId, targetId]), [["s", "p"], ["p", "e"]]);
+  const result = createSimulation(normalized, { seed: 100 }).runToCompletion();
+  assert.equal(result.metrics.started, 1);
+  assert.equal(result.metrics.completed, 1);
+  assert.equal(result.virtualTimeMs, 100);
+});
