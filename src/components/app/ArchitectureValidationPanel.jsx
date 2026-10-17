@@ -338,14 +338,26 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
     });
   };
 
-  const resetReviewView = () => {
+  const resetFindingFilters = () => {
     setFindingFilter("all");
     setResourceFilter("all");
+  };
+
+  const resetComparisonFilters = () => {
     setComparisonFilter("all");
     setComparisonResourceQuery("");
     setComparisonSort("severity");
+  };
+
+  const resetRemediationFilters = () => {
     setRemediationFilter("all");
     setRemediationQuery("");
+  };
+
+  const resetReviewView = () => {
+    resetFindingFilters();
+    resetComparisonFilters();
+    resetRemediationFilters();
   };
 
   const toggleRemediationTask = (task) => {
@@ -690,7 +702,7 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
                 {(comparisonFilter !== "all" || comparisonResourceQuery.trim() || comparisonSort !== "severity") && (
                   <div className="architecture-review-active-filters" aria-label="Active comparison filters">
                     <span><strong>Active filters:</strong> {comparisonFilter !== "all" ? `Show: ${{"changed-only":"Changed and resolved","severity-increased":"Severity increased","remediation-changed":"Remediation changed","unresolved-errors":"Unresolved errors"}[comparisonFilter] || comparisonFilter}` : ""}{comparisonFilter !== "all" && (comparisonResourceQuery.trim() || comparisonSort !== "severity") ? " · " : ""}{comparisonResourceQuery.trim() ? `Search: “${comparisonResourceQuery.trim()}”` : ""}{comparisonResourceQuery.trim() && comparisonSort !== "severity" ? " · " : ""}{comparisonSort !== "severity" ? `Sort: ${{code:"Finding code",resource:"Resource"}[comparisonSort] || comparisonSort}` : ""}</span>
-                    <button type="button" className="architecture-review-reset-filters" onClick={() => { setComparisonFilter("all"); setComparisonResourceQuery(""); setComparisonSort("severity"); }}>Clear comparison filters</button>
+                    <button type="button" className="architecture-review-reset-filters" onClick={resetComparisonFilters}>Clear comparison filters</button>
                   </div>
                 )}
                 <p className="architecture-review-filter-status" role="status" aria-live="polite" aria-atomic="true">
@@ -702,11 +714,7 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
                       <p>No findings match the current comparison filters.</p>
                       <p>Try a broader filter or clear the resource search.</p>
                       {(comparisonFilter !== "all" || comparisonResourceQuery.trim() || comparisonSort !== "severity") && (
-                        <button type="button" className="architecture-review-reset-filters" onClick={() => {
-                          setComparisonFilter("all");
-                          setComparisonResourceQuery("");
-                          setComparisonSort("severity");
-                        }}>Reset comparison filters</button>
+                        <button type="button" className="architecture-review-reset-filters" onClick={resetComparisonFilters}>Reset comparison filters</button>
                       )}
                     </div>
                   )
@@ -776,7 +784,7 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
             {(remediationFilter !== "all" || remediationQuery.trim()) && (
               <div className="architecture-review-active-filters" aria-label="Active remediation filters">
                 <span><strong>Active filters:</strong> {remediationFilter !== "all" ? `Status: ${{pending:"Pending",completed:"Completed",errors:"Pending errors only",active:"Active findings",resolved:"Resolved findings"}[remediationFilter] || remediationFilter}` : ""}{remediationFilter !== "all" && remediationQuery.trim() ? " · " : ""}{remediationQuery.trim() ? `Search: “${remediationQuery.trim()}”` : ""}</span>
-                <button type="button" className="architecture-review-reset-filters" onClick={() => { setRemediationFilter("all"); setRemediationQuery(""); }}>Clear task filters</button>
+                <button type="button" className="architecture-review-reset-filters" onClick={resetRemediationFilters}>Clear task filters</button>
               </div>
             )}
             {remediationMessage && <p className="architecture-remediation-checklist-message" role="status">{remediationMessage}</p>}
@@ -792,10 +800,7 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
                     <p>No tasks match the current filters.</p>
                     <p>Try a different status or search term.</p>
                     {(remediationFilter !== "all" || remediationQuery.trim()) && (
-                      <button type="button" className="architecture-review-reset-filters" onClick={() => {
-                        setRemediationFilter("all");
-                        setRemediationQuery("");
-                      }}>Reset task filters</button>
+                      <button type="button" className="architecture-review-reset-filters" onClick={resetRemediationFilters}>Reset task filters</button>
                     )}
                   </>
                 )}
@@ -851,12 +856,23 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
             {(findingFilter !== "all" || resourceFilter !== "all") && (
               <div className="architecture-review-active-filters" aria-label="Active finding filters">
                 <span><strong>Active filters:</strong> {findingFilter !== "all" ? `Status: ${findingFilter === "unreviewed" ? "Not reviewed" : "Reviewed"}` : ""}{findingFilter !== "all" && resourceFilter !== "all" ? " · " : ""}{resourceFilter !== "all" ? `Resource: ${resourceFilter}` : ""}</span>
-                <button type="button" className="architecture-review-reset-filters" onClick={() => { setFindingFilter("all"); setResourceFilter("all"); }}>Clear finding filters</button>
+                <button type="button" className="architecture-review-reset-filters" onClick={resetFindingFilters}>Clear finding filters</button>
               </div>
             )}
           </section>
           {visibleDiagnostics.length === 0 ? (
-            <div className="architecture-validation-empty">No findings match these filters.</div>
+            <div className="architecture-validation-empty">
+              {allDiagnostics.length === 0 ? (
+                <p>No Kubernetes findings are currently reported.</p>
+              ) : (
+                <>
+                  <p>No findings match the selected filters.</p>
+                  {(findingFilter !== "all" || resourceFilter !== "all") && (
+                    <button type="button" className="architecture-review-reset-filters" onClick={resetFindingFilters}>Clear finding filters</button>
+                  )}
+                </>
+              )}
+            </div>
           ) : (
             <>
               <DiagnosticGroup title="Errors" diagnostics={visibleErrors} {...sharedProps} reviewedFindings={reviewedFindings} onToggleReviewed={toggleReviewed} />

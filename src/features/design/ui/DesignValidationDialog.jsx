@@ -164,6 +164,8 @@ export default function DesignValidationDialog({ open, onClose, apiRef, profile,
   };
   const warnings = result.filter((item) => item.severity === "warning").length;
 
+  if (!open) return null;
+
   return (
     <div className="design-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="design-dialog design-validation-dialog" role="dialog" aria-modal="true" aria-labelledby="design-validation-title">

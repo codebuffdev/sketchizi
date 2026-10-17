@@ -1502,3 +1502,22 @@
     scroll-behavior: auto;
   }
 }
+
+
+/* v1.13.14: Consistent reset actions and meaningful finding empty states. */
+.architecture-validation-empty p {
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+}
+
+.architecture-validation-empty .architecture-review-reset-filters {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 520px) {
+  .architecture-validation-empty .architecture-review-reset-filters {
+    width: 100%;
+  }
+}

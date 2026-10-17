@@ -58,6 +58,7 @@ function App() {
   const [createDesignOpen, setCreateDesignOpen] = useState(false);
   const [designValidationOpen, setDesignValidationOpen] = useState(false);
   const [liveDesignDiagnostics, setLiveDesignDiagnostics] = useState([]);
+  const liveDesignDiagnosticsSignatureRef = useRef("[]");
   const [templateRulesEditorOpen, setTemplateRulesEditorOpen] = useState(false);
   const [designProfile, setDesignProfile] = useState(null);
   const documentMetadataRef = useRef({ metadata: {}, extensions: {} });
@@ -408,8 +409,19 @@ Only the relationship type will change. The relationship ID and both endpoints w
   }, [showToast]);
 
   const updateLiveDesignDiagnostics = useCallback((elements) => {
-    setLiveDesignDiagnostics(validateDesignTemplate(elements, designProfile));
+    const nextDiagnostics = validateDesignTemplate(elements, designProfile);
+    const nextSignature = JSON.stringify(nextDiagnostics);
+    if (nextSignature === liveDesignDiagnosticsSignatureRef.current) return;
+    liveDesignDiagnosticsSignatureRef.current = nextSignature;
+    setLiveDesignDiagnostics(nextDiagnostics);
   }, [designProfile]);
+
+  const handleStrictConnectionRejected = useCallback((count) => {
+    showToast(
+      `${count} prohibited connection${count === 1 ? "" : "s"} blocked by strict template rules`,
+      "error",
+    );
+  }, [showToast]);
 
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
@@ -417,10 +429,7 @@ Only the relationship type will change. The relationship ID and both endpoints w
     collaborationRemoteUpdateRef, collaborationRef, gridEnabled, gridSize, canEdit: collaborationCanEdit,
     onArchitectureSceneChange: updateArchitectureValidation,
     onDesignSceneChange: updateLiveDesignDiagnostics,
-    onStrictConnectionRejected: (count) => showToast(
-      `${count} prohibited connection${count === 1 ? "" : "s"} blocked by strict template rules`,
-      "error",
-    ),
+    onStrictConnectionRejected: handleStrictConnectionRejected,
   });
   // Reconcile against the live Excalidraw API after its onChange/theme cycle.
   // Never apply a color from the callback's appState argument: that snapshot can

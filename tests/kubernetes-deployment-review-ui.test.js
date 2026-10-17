@@ -249,9 +249,11 @@ test("active review, comparison, and remediation filters are visible and can be 
   assert.match(panel, /Clear comparison filters/);
   assert.match(panel, /aria-label="Active remediation filters"/);
   assert.match(panel, /Clear task filters/);
-  assert.match(panel, /setFindingFilter\("all"\); setResourceFilter\("all"\)/);
-  assert.match(panel, /setComparisonFilter\("all"\); setComparisonResourceQuery\(""\); setComparisonSort\("severity"\)/);
-  assert.match(panel, /setRemediationFilter\("all"\); setRemediationQuery\(""\)/);
+  assert.match(panel, /const resetFindingFilters = \(\) =>/);
+  assert.match(panel, /onClick=\{resetFindingFilters\}/);
+  assert.ok(panel.includes('const resetComparisonFilters = () => {\n    setComparisonFilter("all");\n    setComparisonResourceQuery("");\n    setComparisonSort("severity");\n  };'));
+  assert.ok(panel.includes('const resetRemediationFilters = () => {\n    setRemediationFilter("all");\n    setRemediationQuery("");\n  };'));
+  assert.match(panel, /onClick=\{resetRemediationFilters\}/);
   assert.match(styles, /architecture-review-active-filters/);
   assert.match(styles, /scroll-margin-top: 18px/);
   assert.match(styles, /@media \(max-width: 520px\)/);
@@ -290,4 +292,24 @@ test("review navigation respects the operating system reduced-motion preference"
   assert.match(panel, /window\.matchMedia\("\(prefers-reduced-motion: reduce\)"\)/);
   assert.match(panel, /behavior: prefersReducedMotion \? "auto" : "smooth"/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
+});
+
+
+test("review reset handlers are shared across filter summaries and empty states", () => {
+  assert.match(panel, /const resetFindingFilters = \(\) => \{[\s\S]*?setFindingFilter\("all"\);[\s\S]*?setResourceFilter\("all"\);/);
+  assert.ok(panel.includes('const resetComparisonFilters = () => {\n    setComparisonFilter("all");\n    setComparisonResourceQuery("");\n    setComparisonSort("severity");\n  };'));
+  assert.ok(panel.includes('const resetRemediationFilters = () => {\n    setRemediationFilter("all");\n    setRemediationQuery("");\n  };'));
+  assert.match(panel, /Reset comparison filters<\/button>/);
+  assert.match(panel, /onClick=\{resetComparisonFilters\}/);
+  assert.match(panel, /Reset task filters<\/button>/);
+  assert.match(panel, /onClick=\{resetRemediationFilters\}/);
+  assert.match(panel, /onClick=\{resetFindingFilters\}/);
+});
+
+test("finding empty state distinguishes no diagnostics from filtered-out findings", () => {
+  assert.match(panel, /No Kubernetes findings are currently reported/);
+  assert.match(panel, /No findings match the selected filters/);
+  assert.match(panel, /allDiagnostics\.length === 0/);
+  assert.match(panel, /\(findingFilter !== "all" \|\| resourceFilter !== "all"\) &&/);
+  assert.match(styles, /\.architecture-validation-empty p/);
 });

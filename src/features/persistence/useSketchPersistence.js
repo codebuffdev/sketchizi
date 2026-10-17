@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   clearEmergencyBackup,
   loadEmergencyBackup,
@@ -38,7 +38,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     };
   }, []);
 
-  const persistSketchNow = (payload) => {
+  const persistSketchNow = useCallback((payload) => {
     if (!payload) return Promise.resolve(false);
     saveRequestRef.current = saveRequestRef.current
       .catch(() => {})
@@ -60,18 +60,18 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
         return false;
       });
     return saveRequestRef.current;
-  };
+  }, []);
 
-  const queueSketchSave = (elements, appState) => {
+  const queueSketchSave = useCallback((elements, appState) => {
     if (!sketchReady || !apiRef.current) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
       const files = apiRef.current?.getFiles?.() || {};
       persistSketchNow({ elements, appState, files, metadata: documentMetadataRef?.current?.metadata || {}, extensions: documentMetadataRef?.current?.extensions || {} });
     }, 350);
-  };
+  }, [apiRef, documentMetadataRef, persistSketchNow, sketchReady]);
 
-  const retryLocalSave = () => {
+  const retryLocalSave = useCallback(() => {
     const api = apiRef.current;
     if (!api) return;
     persistSketchNow({
@@ -81,9 +81,9 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
       metadata: documentMetadataRef?.current?.metadata || {},
       extensions: documentMetadataRef?.current?.extensions || {},
     });
-  };
+  }, [apiRef, documentMetadataRef, persistSketchNow]);
 
-  const downloadRecoveryBackup = () => {
+  const downloadRecoveryBackup = useCallback(() => {
     const api = apiRef.current;
     if (!api) return;
     const extensions = documentMetadataRef?.current?.extensions || {};
@@ -107,7 +107,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-  };
+  }, [apiRef, documentMetadataRef]);
 
   return {
     savedSketch,

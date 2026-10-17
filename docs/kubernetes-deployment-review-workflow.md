@@ -145,3 +145,14 @@ The checklist keeps two independent states visible: **Pending/Completed** is the
 - Dashboard shortcuts show selected-state text and expose `aria-pressed` for filter shortcuts; the saved-history shortcut exposes its expanded state.
 - Findings navigation clears a conflicting resource filter; pending-task navigation clears task search; comparison navigation clears resource search and returns sorting to severity so shortcuts are not defeated by stale secondary filters.
 - Added selected shortcut styling and reduced-motion support for review-section navigation.
+
+
+## Review workflow consistency and runtime update-loop safeguards (1.13.14)
+
+- Consolidated finding, comparison, and remediation filter resets into shared section-level handlers. The unified reset invokes those same handlers, reducing the risk of reset behavior drifting.
+- Finding empty states distinguish an empty diagnostic set from findings that have been hidden by active filters and offer a clear-filters action when appropriate.
+- Design validation now avoids publishing a new diagnostics array when a canvas change produces the same serialized findings, preventing unnecessary parent re-renders.
+- Stabilized sketch persistence callbacks so the Excalidraw scene-change handler is less likely to churn identity across unrelated renders.
+- The strict-template rejection callback is now memoized instead of being recreated inline.
+- The Design validation dialog respects its `open` prop and does not render its overlay while closed.
+- These changes target a possible feedback loop consistent with React error #185 (maximum update depth exceeded). Browser reproduction testing is still required to confirm the deployed crash is resolved.

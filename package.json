@@ -1,7 +1,7 @@
 {
   "name": "sketchizi",
   "private": true,
-  "version": "1.13.13",
+  "version": "1.13.14",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,7 +28,7 @@
     "test:font-assets": "node --test tests/font-assets.test.js",
     "test:font-family-defaults": "node --test tests/font-family-defaults.test.js",
     "test:file-format": "node --test tests/sketchizi-format.test.js",
-    "test:design": "node --test tests/design-framework.test.js",
+    "test:design": "node --test tests/design-framework.test.js tests/design-validation-runtime-safety.test.js",
     "test:kubernetes-catalog": "node --test tests/kubernetes-catalog.test.js",
     "test:kubernetes-graph": "node --test tests/kubernetes-architecture-graph.test.js",
     "test:kubernetes-relationships": "node --test tests/kubernetes-relationships.test.js",
