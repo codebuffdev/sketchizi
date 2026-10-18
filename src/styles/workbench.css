@@ -89,6 +89,75 @@
 }
 .desktop-canvas-region { position: relative; min-width: 0; }
 
+
+/* UX refinement: separate the Workbench into task-oriented panes so the user no longer scrolls through every tool at once. */
+.workbench-task-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ui-border, #e5e8ef);
+  background: var(--ui-surface-solid, #fff);
+}
+.theme-dark .workbench-task-tabs { border-color: #343947; background: #171a22; }
+.workbench-task-tabs > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 33px;
+  padding: 5px 3px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ui-text-muted, #727a8c);
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.workbench-task-tabs > button > span { color: #7968d1; font-size: 13px; line-height: 1; }
+.workbench-task-tabs > button[aria-selected="true"] { border-color: #8070db; background: #f0edff; color: #5948b5; }
+.theme-dark .workbench-task-tabs > button[aria-selected="true"] { background: #292541; color: #d4cdff; }
+.theme-dark .workbench-task-tabs > button { color: #afb5c5; }
+.workbench-task-tabs > button:focus-visible { outline: 2px solid #8a7ae3; outline-offset: 1px; }
+.workbench-task-pane { min-width: 0; }
+.workbench-task-pane[hidden] { display: none !important; }
+.workbench-task-pane > .workbench-section:first-child { border-top: 0; }
+.workbench-view-context { margin-top: 7px; }
+.workbench-disclosure-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.workbench-disclosure-title { flex: 0 0 auto; color: var(--ui-text-muted, #727a8c); font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.workbench-review-status { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: 4px; }
+.workbench-review-status .workbench-severity { padding: 4px 6px; }
+.workbench-disclosure-chevron { margin-left: auto; color: var(--ui-text-muted, #727a8c); font-size: 16px; transform: rotate(-90deg); transition: transform 120ms ease; }
+.workbench-disclosure-chevron.expanded { transform: rotate(0deg); }
+.workbench-review-content { margin-top: 10px; }
+.workbench-artifact-preview { max-height: none; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.workbench-artifacts .workbench-section-intro { margin-bottom: 9px; }
+.workbench-artifacts .workbench-artifact-result > .workbench-artifact-actions { margin-top: 7px; }
+.workbench-artifact-result .workbench-artifact-actions > button { flex: 1 1 auto; }
+.workbench-panel-footer { padding-block: 8px; }
+.workbench-panel-footer p { margin-top: 3px; font-size: 9px; }
+@media (max-width: 360px) {
+  .workbench-task-tabs { padding-inline: 6px; gap: 3px; }
+  .workbench-task-tabs > button { gap: 2px; font-size: 9px; }
+}
+
 /* Workbench 0.6 — semantic inspector and typed relations */
 .workbench-inspector { flex: 0 0 auto; max-height: none; overflow: visible; }
 .workbench-inspector-body { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
@@ -368,3 +437,11 @@
 .theme-dark .sim-improvement-heading strong, .theme-dark .sim-improvement-result > strong, .theme-dark .sim-improvement-metrics strong { color: #e7eaf2; }
 .theme-dark .sim-improvement-metrics > div { border-color: #343947; }
 @media (max-width: 360px) { .sim-improvement-metrics { grid-template-columns: minmax(0, 1fr); } }
+
+/* Compact simulation setup/results: reveal secondary explanations only when asked for. */
+.sim-scope-explainer { margin: 7px 0 9px; color: var(--ui-text-muted, #777f90); font-size: 9px; }
+.sim-scope-explainer > summary { cursor: pointer; font-weight: 750; }
+.sim-scope-explainer > p { margin: 6px 0 0; line-height: 1.45; }
+.sim-profile-editor-summary-note { float: right; margin-left: 8px; color: var(--ui-text-muted, #777f90); font-size: 8px; font-weight: 600; }
+.sim-show-more-explanations { align-self: flex-start; padding: 5px 0; border: 0; background: transparent; color: #7868d1; font-size: 9px; font-weight: 750; cursor: pointer; }
+.theme-dark .sim-show-more-explanations { color: #c6bdff; }

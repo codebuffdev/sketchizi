@@ -37,3 +37,29 @@ test("simulation panel gives explicit guidance when typed request links are miss
   assert.match(simulationPanel, /Warnings and context — not blockers/);
   assert.match(styles, /\.sim-typed-request-guidance\s*\{/);
 });
+
+test("Workbench task tabs separate build, run, add, and inspect so all tools are not stacked in one scroll", () => {
+  assert.match(panelSource, /aria-label="Workbench workspace"/);
+  for (const tab of ["build", "run", "components", "inspect"]) assert.match(panelSource, new RegExp(`activePanelTab === "${tab}"`));
+  assert.match(panelSource, /<div hidden=\{activePanelTab !== "build"\} className="workbench-task-pane" role="tabpanel" aria-label="Build and review"/);
+  assert.match(panelSource, /<div hidden=\{activePanelTab !== "run"\} className="workbench-task-pane" role="tabpanel" aria-label="Run and debug"/);
+  assert.match(panelSource, /<div hidden=\{activePanelTab !== "components"\} className="workbench-task-pane" role="tabpanel" aria-label="Add components"/);
+  assert.match(panelSource, /<div hidden=\{activePanelTab !== "inspect"\} className="workbench-task-pane" role="tabpanel" aria-label="Inspect component"/);
+  assert.doesNotMatch(panelSource, /activePanelTab === "run" && <div className="workbench-task-pane"/, "the Run pane should stay mounted so experiment results survive tab changes");
+});
+
+test("Workbench model review and generated source preview use progressive disclosure", () => {
+  assert.match(panelSource, /className="workbench-disclosure-trigger" aria-expanded=\{reviewExpanded\}/);
+  assert.match(panelSource, /artifactPreviewExpanded \? "Hide preview" : "View preview"/);
+  assert.match(panelSource, /artifactPreviewExpanded && <pre className="workbench-artifact-preview">/);
+  assert.match(styles, /\.workbench-artifact-preview\s*\{\s*max-height:\s*none;\s*overflow:\s*visible;[^}]*white-space:\s*pre-wrap/);
+});
+
+test("simulation comparisons and secondary diagnostic copy are collapsed until requested", async () => {
+  const simulationPanel = await readFile(new URL("../src/features/simulation/experiments/SimulationExperimentPanel.jsx", import.meta.url), "utf8");
+  assert.match(simulationPanel, /<details className="sim-suite-overview">/);
+  assert.doesNotMatch(simulationPanel, /<details className="sim-suite-overview" open/);
+  assert.match(simulationPanel, /<details className="sim-scope-explainer">/);
+  assert.match(simulationPanel, /showAllExplanations \? explanations\.length : 2/);
+  assert.match(styles, /\.sim-show-more-explanations/);
+});

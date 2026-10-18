@@ -46,6 +46,9 @@ export default function WorkbenchPanel({
   const [relationTargetId, setRelationTargetId] = useState("");
   const [generatedArtifact, setGeneratedArtifact] = useState(null);
   const [showPocPreview, setShowPocPreview] = useState(false);
+  const [activePanelTab, setActivePanelTab] = useState("build");
+  const [reviewExpanded, setReviewExpanded] = useState(false);
+  const [artifactPreviewExpanded, setArtifactPreviewExpanded] = useState(false);
   useEffect(() => {
     const available = selectedEntity ? WORKBENCH_RELATIONS.filter((item) => item.sourceKinds.includes(selectedEntity.kind)) : [];
     if (!available.some((item) => item.kind === relationKind)) setRelationKind(available[0]?.kind || "depends-on");
@@ -72,6 +75,7 @@ export default function WorkbenchPanel({
   const generateArtifact = (generator) => {
     try {
       setGeneratedArtifact(generator(workbench));
+      setArtifactPreviewExpanded(false);
     } catch (error) {
       setGeneratedArtifact({
         kind: "error", filename: "", mimeType: "text/plain;charset=utf-8", ok: false,
@@ -79,6 +83,13 @@ export default function WorkbenchPanel({
         errors: [{ code: "artifact.generator-error", severity: "error", message: error?.message || "Artifact generation failed." }],
       });
     }
+  };
+  const changePanelTab = (tab, targetId = null) => {
+    setActivePanelTab(tab);
+    globalThis.requestAnimationFrame?.(() => {
+      if (targetId) document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      else document.querySelector(".workbench-task-tabs")?.scrollIntoView({ behavior: "auto", block: "start" });
+    });
   };
 
   return (
@@ -126,9 +137,17 @@ export default function WorkbenchPanel({
                 </button>
               ))}
             </div>
-            <p className="workbench-note">Active view: {currentView?.label || "System"}. The model is shared; each view has its own canvas layout.</p>
+            <p className="workbench-note workbench-view-context" title="The engineering model is shared across views; each view has its own canvas layout.">Active view: {currentView?.label || "System"} · shared model</p>
           </div>
 
+
+          <nav className="workbench-task-tabs" role="tablist" aria-label="Workbench workspace">
+            <button type="button" role="tab" aria-selected={activePanelTab === "build"} className={activePanelTab === "build" ? "active" : ""} onClick={() => changePanelTab("build")}><span aria-hidden="true">◇</span>Build</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Run</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "components"} className={activePanelTab === "components" ? "active" : ""} onClick={() => changePanelTab("components")}><span aria-hidden="true">＋</span>Add</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "inspect"} className={activePanelTab === "inspect" ? "active" : ""} onClick={() => changePanelTab("inspect")}><span aria-hidden="true">☷</span>Inspect</button>
+          </nav>
+          <div hidden={activePanelTab !== "build"} className="workbench-task-pane" role="tabpanel" aria-label="Build and review">
           {workbench.entities.length === 0 && workbench.relations.length === 0 && (
             <section className="workbench-section workbench-poc-template" aria-label="Create a POC from a template">
               <div className="workbench-section-heading"><span>START WITH A POC</span><span className="workbench-count">1</span></div>
@@ -164,33 +183,38 @@ export default function WorkbenchPanel({
                 <button type="button" className="workbench-secondary" disabled={!canEdit || busy || activeViewId !== "system"} onClick={onCompletePocArtifacts}>{busy ? "Adding starter artifacts…" : "Add starter API + table"}</button>
               </div> : <p className="workbench-note">Includes <code>GET /api/items</code> and an <code>items</code> table, so OpenAPI and SQL previews have a valid starting point.</p>}
               <div className="workbench-poc-steps">
-                <button type="button" onClick={() => document.getElementById("workbench-inspector")?.scrollIntoView({ behavior: "smooth", block: "start" })}>1. Configure</button>
-                <button type="button" onClick={() => document.getElementById("workbench-model-review")?.scrollIntoView({ behavior: "smooth", block: "start" })}>2. Validate</button>
-                <button type="button" onClick={() => document.getElementById("workbench-experiments")?.scrollIntoView({ behavior: "smooth", block: "start" })}>3. Experiment & debug</button>
+                <button type="button" onClick={() => { changePanelTab("inspect"); const entity = workbench.entities.find((item) => item.kind === "frontend.react-app") || workbench.entities[0]; if (entity) onFocusFinding?.({ entityIds: [entity.id] }); }}>1. Configure</button>
+                <button type="button" onClick={() => { setReviewExpanded(true); changePanelTab("build", "workbench-model-review"); }}>2. Validate</button>
+                <button type="button" onClick={() => changePanelTab("run", "workbench-experiments")}>3. Experiment & debug</button>
               </div>
               <p className="workbench-note">Review the synthetic assumptions in Experiments and explicitly confirm them before running.</p>
             </section>
           )}
 
           <section id="workbench-model-review" className="workbench-section workbench-findings" aria-label="Architecture validation" aria-live="polite">
-            <div className="workbench-section-heading"><span>MODEL REVIEW</span><span className="workbench-count">{findings.length}</span></div>
-            <div className="workbench-findings-summary">
-              <span className={findingErrors ? "workbench-severity error" : "workbench-severity clear"}>{findingErrors} errors</span>
-              <span className={findingWarnings ? "workbench-severity warning" : "workbench-severity clear"}>{findingWarnings} warnings</span>
-            </div>
-            {findings.length === 0 ? (
-              <p className="workbench-findings-empty">No semantic findings. This means the current model passes the checks available in this prototype; it does not certify runtime behavior.</p>
-            ) : (
-              <div className="workbench-finding-list">
-                {findings.slice(0, 8).map((finding) => (
-                  <button key={finding.id} type="button" className={`workbench-finding ${finding.severity}`} onClick={() => onFocusFinding?.(finding)} title={finding.message}>
-                    <span className={`workbench-finding-marker ${finding.severity}`} aria-hidden="true">{finding.severity === "error" ? "!" : "i"}</span>
-                    <span className="workbench-finding-copy"><strong>{finding.title}</strong><small>{finding.message}</small>{finding.suggestedAction && <em>{finding.suggestedAction}</em>}</span>
-                  </button>
-                ))}
-                {findings.length > 8 && <p className="workbench-findings-more">Showing 8 of {findings.length} findings.</p>}
-              </div>
-            )}
+            <button type="button" className="workbench-disclosure-trigger" aria-expanded={reviewExpanded} onClick={() => setReviewExpanded((value) => !value)}>
+              <span className="workbench-disclosure-title">MODEL REVIEW</span>
+              <span className="workbench-review-status">
+                <span className={`workbench-severity ${findingErrors ? "error" : "clear"}`}>{findingErrors} errors</span>
+                <span className={`workbench-severity ${findingWarnings ? "warning" : "clear"}`}>{findingWarnings} warnings</span>
+              </span>
+              <span className={`workbench-disclosure-chevron ${reviewExpanded ? "expanded" : ""}`} aria-hidden="true">⌄</span>
+            </button>
+            {reviewExpanded && <div className="workbench-review-content">
+              {findings.length === 0 ? (
+                <p className="workbench-findings-empty">No semantic findings. The model passes the checks available in this prototype; this does not certify runtime behavior.</p>
+              ) : (
+                <div className="workbench-finding-list">
+                  {findings.slice(0, 8).map((finding) => (
+                    <button key={finding.id} type="button" className={`workbench-finding ${finding.severity}`} onClick={() => onFocusFinding?.(finding)} title={finding.message}>
+                      <span className={`workbench-finding-marker ${finding.severity}`} aria-hidden="true">{finding.severity === "error" ? "!" : "i"}</span>
+                      <span className="workbench-finding-copy"><strong>{finding.title}</strong><small>{finding.message}</small>{finding.suggestedAction && <em>{finding.suggestedAction}</em>}</span>
+                    </button>
+                  ))}
+                  {findings.length > 8 && <p className="workbench-findings-more">Showing 8 of {findings.length} findings.</p>}
+                </div>
+              )}
+            </div>}
           </section>
 
           <section id="workbench-artifacts" className="workbench-section workbench-artifacts" aria-label="Generated engineering artifacts">
@@ -209,15 +233,19 @@ export default function WorkbenchPanel({
                 {generatedArtifact.ok && <>
                   <div className="workbench-artifact-actions">
                     <button type="button" className="workbench-secondary" disabled={artifactStale} onClick={() => downloadWorkbenchArtifact(generatedArtifact)}>Download {generatedArtifact.filename}</button>
-                    <button type="button" className="workbench-secondary" onClick={() => setGeneratedArtifact(null)}>Dismiss</button>
+                    <button type="button" className="workbench-secondary" onClick={() => setArtifactPreviewExpanded((value) => !value)} aria-expanded={artifactPreviewExpanded}>{artifactPreviewExpanded ? "Hide preview" : "View preview"}</button>
+                    <button type="button" className="workbench-secondary" onClick={() => { setGeneratedArtifact(null); setArtifactPreviewExpanded(false); }}>Dismiss</button>
                   </div>
-                  <pre className="workbench-artifact-preview">{generatedArtifact.text}</pre>
+                  {artifactPreviewExpanded && <pre className="workbench-artifact-preview">{generatedArtifact.text}</pre>}
                 </>}
               </div>
             )}
             <p className="workbench-note">OpenAPI requires API endpoint components connected to exactly one REST service. SQL requires PostgreSQL table components connected to a database. Outputs must be reviewed and tested before use.</p>
           </section>
 
+          </div>
+
+          <div hidden={activePanelTab !== "run"} className="workbench-task-pane" role="tabpanel" aria-label="Run and debug">
           <SimulationExperimentPanel
             workbench={workbench}
             visibleEntityIds={visibleEntityIds}
@@ -230,6 +258,9 @@ export default function WorkbenchPanel({
             canEdit={canEdit}
           />
 
+          </div>
+
+          <div hidden={activePanelTab !== "components"} className="workbench-task-pane" role="tabpanel" aria-label="Add components">
           <div className="workbench-section workbench-components-section">
             <div className="workbench-section-heading"><span>COMPONENTS</span><span className="workbench-count">{workbench.entities.length}</span></div>
             <p className="workbench-section-intro">Insert a typed component into the active view. These components become part of the document's semantic model.</p>
@@ -249,6 +280,9 @@ export default function WorkbenchPanel({
             ))}
           </div>
 
+          </div>
+
+          <div hidden={activePanelTab !== "inspect"} className="workbench-task-pane" role="tabpanel" aria-label="Inspect component">
           <section id="workbench-inspector" className="workbench-section workbench-inspector" aria-label="Component inspector">
             <div className="workbench-section-heading"><span>INSPECTOR</span><span className="workbench-count">{selectedEntity ? "1" : "0"}</span></div>
             {!selectedEntity ? (
@@ -287,6 +321,8 @@ export default function WorkbenchPanel({
               </div>;
             })()}
           </section>
+          </div>
+
           </div>
 
           <footer className="workbench-panel-footer">

@@ -118,7 +118,7 @@ function ScenarioComparisonOverview({ overview, onFocusEntity, onSelectScenario 
   const scenarios = overview.scenarios;
   const notableComponents = overview.components.filter((component) => component.hasPressure).slice(0, 8);
   const componentRows = notableComponents.length ? notableComponents : overview.components.slice(0, 4);
-  return <details className="sim-suite-overview" open>
+  return <details className="sim-suite-overview">
     <summary><span>Compare all scenarios</span><small>{scenarios.filter((item) => item.status === "completed").length}/{scenarios.length} completed</small></summary>
     <div className="sim-suite-table-wrap">
       <table className="sim-suite-table">
@@ -179,6 +179,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const [runError, setRunError] = useState("");
   const [improvementResult, setImprovementResult] = useState(null);
   const [improvementError, setImprovementError] = useState("");
+  const [profileEditorOpen, setProfileEditorOpen] = useState(true);
+  const [showAllExplanations, setShowAllExplanations] = useState(false);
 
   useEffect(() => {
     // The controller may clone Workbench metadata after an autosave or an unrelated
@@ -238,6 +240,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     try {
       const profile = createIllustrativeSimulationProfile(simulationScope.scoped ? simulationScope.workbench : workbench);
       setDraftProfile(profile);
+      setProfileEditorOpen(true);
       setAcknowledged(false);
       setResults(null); setImprovementResult(null); setImprovementError("");
       onUpdateSimulationProfile?.(profile);
@@ -248,6 +251,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     try {
       const merged = mergeMissingIllustrativeProfiles(workbench, draftProfile, simulationScope.scoped ? simulationScope.entityIds : undefined);
       setDraftProfile(merged.profile);
+      setProfileEditorOpen(true);
       setAcknowledged(false);
       setResults(null); setImprovementResult(null); setImprovementError("");
       onUpdateSimulationProfile?.(merged.profile);
@@ -268,6 +272,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       }
     }
     setDraftProfile(next);
+    setProfileEditorOpen(true);
     setAcknowledged(false);
     setResults(null); setImprovementResult(null); setImprovementError("");
     onUpdateSimulationProfile?.(next);
@@ -299,6 +304,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         runScopeEntityIds: suite.provenance?.scopeEntityIds || simulationScope.entityIds,
       };
       setResults(displaySuite);
+      setProfileEditorOpen(false);
+      setShowAllExplanations(false);
       setActiveRunKey("baseline");
       if (["completed", "partial"].includes(suite.status)) {
         const entry = createSimulationHistoryEntry(suite, { workbench, simulationProfile: draftProfile });
@@ -365,8 +372,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
 
   return <section id="workbench-experiments" className="workbench-section sim-experiment-panel" aria-label="Simulation experiments">
     <div className="workbench-section-heading"><span>EXPERIMENTS</span><span className="workbench-count">{results?.status === "completed" ? Object.keys(results.runs).length : "—"}</span></div>
-    <p className="workbench-section-intro">Test synthetic runtime behavior against explicit assumptions. These are modeled results, not measurements of a deployed system.</p>
-    <p className="sim-profile-scope-note">Only runtime components reachable from a React traffic source through typed relationships are simulated. Disconnected components stay in your document and are listed as excluded, so they cannot silently block or distort these results.</p>
+    <p className="workbench-section-intro">Run modeled scenarios with explicit assumptions. Results are synthetic, not live-system measurements.</p>
+    <details className="sim-scope-explainer"><summary>What gets simulated?</summary><p>Only runtime components reachable from a React traffic source through typed relationships are included. Disconnected components remain in your document but are excluded from the current run.</p></details>
     {typedRequestGuidance && <section className="sim-typed-request-guidance" aria-label="Connect the typed simulation request path">
       <strong>Connect the typed request path</strong>
       <p>The arrows already drawn on the canvas are visual only unless they are linked to a Workbench relationship. Use the actions below to add the semantic relationship; a matching bound arrow will be reused instead of duplicated.</p>
@@ -386,8 +393,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         <strong>{availableProfileEntities.length} profiled runtime component(s) in this scope</strong>
         <span>{simulationScope.scoped ? "Traffic sources and their typed-connected runtime path" : "Whole-model scope"} · illustrative profile — not measured</span>
       </div>
-      <details className="sim-profile-editor" open>
-        <summary>Simulation assumptions and workload</summary>
+      <details className="sim-profile-editor" open={profileEditorOpen} onToggle={(event) => setProfileEditorOpen(event.currentTarget.open)}>
+        <summary>Simulation assumptions and workload <span className="sim-profile-editor-summary-note">{profileEditorOpen ? "hide settings" : "edit settings"}</span></summary>
         <div className="sim-profile-scenario-fields">
           <label><span>Observation window (seconds)</span><input type="number" min="1" max="3600" value={(draftProfile.defaultScenario?.durationMs || 15000) / 1000} disabled={!canEdit} onChange={(event) => { const next = deepClone(draftProfile); next.defaultScenario ||= {}; next.defaultScenario.durationMs = Math.round(Number(event.target.value) * 1000); next.profileKind = "illustrative-synthetic"; setDraftProfile(next); setAcknowledged(false); setResults(null); setImprovementResult(null); setImprovementError(""); }} /></label>
           <label><span>Random seed</span><input type="number" step="1" value={draftProfile.defaultScenario?.seed ?? 211} disabled={!canEdit} onChange={(event) => { const next = deepClone(draftProfile); next.defaultScenario ||= {}; next.defaultScenario.seed = Number(event.target.value); next.profileKind = "illustrative-synthetic"; setDraftProfile(next); setAcknowledged(false); setResults(null); setImprovementResult(null); setImprovementError(""); }} /></label>
@@ -400,6 +407,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
               <input type="number" min={field.min} max={field.max} step={field.step} value={profile.parameters?.[field.key] ?? ""} disabled={!canEdit} onChange={(event) => {
                 const parsed = event.target.value === "" ? "" : Number(event.target.value);
                 setDraftProfile((current) => setField(current, entityId, field.key, parsed));
+                setProfileEditorOpen(true);
                 setAcknowledged(false);
                 setResults(null); setImprovementResult(null); setImprovementError("");
               }} />
@@ -425,7 +433,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         {simulationHistory.map((entry) => <div className="sim-history-item" key={entry.id}>
           <div><strong>{new Date(entry.createdAt).toLocaleString()}</strong><small>{entry.status} · {entry.engineVersion || "engine version unavailable"}</small><small>Model {entry.modelFingerprint ? `${entry.modelFingerprint.slice(0, 12)}…` : "fingerprint unavailable"}</small></div>
           <button type="button" className="workbench-secondary" onClick={() => {
-            try { setResults(restoreSimulationHistoryEntry(entry)); setImprovementResult(null); setImprovementError(""); setActiveRunKey("baseline"); setRunError(""); }
+            try { setResults(restoreSimulationHistoryEntry(entry)); setProfileEditorOpen(false); setShowAllExplanations(false); setImprovementResult(null); setImprovementError(""); setActiveRunKey("baseline"); setRunError(""); }
             catch (error) { setRunError(`Could not open saved experiment: ${error.message}`); }
           }}>Open results</button>
         </div>)}
@@ -490,7 +498,10 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
           <RunMetrics run={activeRun} />
           {comparison?.status === "ready" && <div className="sim-comparison-table-wrap"><strong>Change versus baseline</strong><table className="sim-comparison-table"><thead><tr><th>Metric</th><th>Baseline → current</th><th>Δ</th></tr></thead><tbody>{comparison.metrics.map((row) => <tr key={row.key}><td>{row.label}</td><td>{compareValue(row)}</td><td>{row.key === "successRate" ? formatPercent(row.delta.absolute) : isFiniteNumber(row.delta.absolute) ? `${row.delta.absolute > 0 ? "+" : ""}${formatDecimal(row.delta.absolute, row.unit === "requests" ? 0 : 2)}${row.unit === "requests" ? "" : row.unit === "requests/sec" ? " rps" : row.unit === "ms" ? " ms" : ""}` : "—"}</td></tr>)}</tbody></table></div>}
           <div className="sim-explanations"><div className="workbench-section-heading"><span>WHY THESE RESULTS?</span><span className="workbench-count">{explanations.length}</span></div>
-            {explanations.length === 0 ? <p className="workbench-findings-empty">No capacity or request-failure signal crossed the current explanation thresholds for this run. This does not prove the design is production-safe.</p> : explanations.map((finding) => <button type="button" className={`sim-explanation ${finding.severity}`} key={finding.id} onClick={() => finding.entityIds?.[0] && onFocusEntity?.(finding.entityIds[0])}><strong>{finding.title}</strong><span>{finding.message}</span><em>{finding.suggestedAction}</em>{finding.entityIds?.length > 0 && <small>Focus component on canvas</small>}</button>)}
+            {explanations.length === 0 ? <p className="workbench-findings-empty">No capacity or request-failure signal crossed the current explanation thresholds for this run. This does not prove the design is production-safe.</p> : <>
+              {explanations.slice(0, showAllExplanations ? explanations.length : 2).map((finding) => <button type="button" className={`sim-explanation ${finding.severity}`} key={finding.id} onClick={() => finding.entityIds?.[0] && onFocusEntity?.(finding.entityIds[0])}><strong>{finding.title}</strong><span>{finding.message}</span><em>{finding.suggestedAction}</em>{finding.entityIds?.length > 0 && <small>Focus component on canvas</small>}</button>)}
+              {explanations.length > 2 && <button type="button" className="sim-show-more-explanations" aria-expanded={showAllExplanations} onClick={() => setShowAllExplanations((value) => !value)}>{showAllExplanations ? "Show fewer explanations" : `Show all ${explanations.length} explanations`}</button>}
+            </>}
           </div>
           <details className="sim-provenance"><summary>Run provenance and assumptions</summary>
             <dl><dt>Model revision</dt><dd>{results.provenance.modelRevision ?? "unknown"}</dd><dt>Model fingerprint</dt><dd>{results.provenance.modelFingerprint || "unavailable"}</dd><dt>Profile fingerprint</dt><dd>{results.provenance.profileFingerprint || "unavailable"}</dd><dt>Adapter version</dt><dd>{results.provenance.adapterVersion}</dd><dt>Engine version</dt><dd>{results.provenance.engineVersion}</dd><dt>Run fingerprint</dt><dd>{activeRun.result.result.simulation.runFingerprint}</dd><dt>Scenario overrides</dt><dd>{JSON.stringify(activeRun.overrides || {})}</dd><dt>Seed</dt><dd>{activeRun.result.result.simulation.seed}</dd><dt>Observation window</dt><dd>{formatDecimal(activeRun.result.result.simulation.durationMs / 1000)} seconds</dd></dl>
