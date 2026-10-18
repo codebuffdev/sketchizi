@@ -60,6 +60,18 @@ Open the local development URL shown by Vite.
 npm run build
 ```
 
+### Full Local Release Check
+
+On Windows, macOS, or Linux, run the same release-gate stages used by GitHub Actions:
+
+```bash
+npm run verify:workbench-release
+```
+
+The runner records each command's output in `artifacts/ci-logs/` and writes JSON and Markdown summaries under `artifacts/`. It stops after the first blocking failure; the npm registry connectivity probe is diagnostic and does not replace `npm ci`. The full check needs registry access and may download Playwright/Chromium. A failed or skipped stage is never reported as passed.
+
+The release gate also applies the generated PostgreSQL DDL twice and checks the resulting schema, table, constraints, index, column types, and nullability. This stage mutates the target by creating a schema, table, constraint, and index, so it is fail-closed by default. For a local run, point `WORKBENCH_POSTGRES_URL` to a **disposable test database** where the current user can create a schema, and explicitly opt in with `WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION=true`. The default is `postgresql://workbench:workbench@127.0.0.1:5432/workbench`. Non-loopback hosts additionally require `WORKBENCH_POSTGRES_ALLOW_REMOTE=true`; protected database names such as `prod`, `production`, and `live` are rejected. These guardrails are not a substitute for using a disposable test database. Never point this verification stage at production. GitHub Actions sets the opt-in only for its own temporary PostgreSQL 17 service.
+
 ### Preview Production Build
 
 ```bash

@@ -43,6 +43,9 @@ desktop.ini
 *.swo
 *~
 
+# Local release-check logs and reports
+artifacts/
+
 # Testing / coverage
 coverage/
 .nyc_output/

@@ -60,7 +60,16 @@
     "check:excalidraw-font-assets": "node scripts/verify-excalidraw-font-assets.mjs",
     "test:excalidraw-font-preflight": "node --test tests/excalidraw-font-preflight.test.js",
     "check:npm-registry": "node scripts/probe-npm-registry.mjs",
-    "test:npm-registry-probe": "node --test tests/npm-registry-probe.test.mjs"
+    "test:npm-registry-probe": "node --test tests/npm-registry-probe.test.mjs",
+    "test:workbench-local-release": "node --test tests/workbench-local-release-runner.test.mjs",
+    "verify:workbench-release": "node scripts/run-workbench-release-check.mjs",
+    "check:package-lock-consistency": "node scripts/check-package-lock-consistency.mjs",
+    "test:package-lock-consistency": "node --test tests/package-lock-consistency.test.mjs",
+    "test:workbench-external-artifacts": "node --test tests/workbench-artifact-external-validation.test.mjs",
+    "test:workbench-postgres-artifact-integration": "node --test tests/workbench-postgres-artifact-integration.test.mjs",
+    "generate:workbench-artifact-fixtures": "node scripts/generate-workbench-artifact-fixtures.mjs",
+    "validate:workbench-generated-sql": "node scripts/validate-workbench-generated-sql.mjs",
+    "validate:workbench-generated-sql-postgres": "node scripts/validate-workbench-generated-sql-postgres.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

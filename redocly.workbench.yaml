@@ -1,0 +1,6 @@
+extends:
+  - minimal
+rules:
+  # The generator currently emits a success response only. Missing 4xx responses
+  # are an API-design limitation, not a syntactic OpenAPI 3.1 validity failure.
+  operation-4xx-response: off

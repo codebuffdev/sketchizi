@@ -4,13 +4,19 @@ import { createGateSummary, renderMarkdown } from "../scripts/write-workbench-ci
 
 const allSuccess = {
   TOOLCHAIN_OUTCOME: "success",
+  PACKAGE_LOCK_CHECK_TESTS_OUTCOME: "success",
+  PACKAGE_LOCK_CONSISTENCY_OUTCOME: "success",
   REGISTRY_PROBE_TESTS_OUTCOME: "success",
   INSTALL_OUTCOME: "success",
   FONT_ASSETS_OUTCOME: "success",
   BUILD_OUTCOME: "success",
   APPLICATION_TESTS_OUTCOME: "success",
   WORKBENCH_TESTS_OUTCOME: "success",
-  PLAYWRIGHT_INSTALL_OUTCOME: "success",
+  ARTIFACT_FIXTURES_OUTCOME: "success",
+  EXTERNAL_TOOLS_INSTALL_OUTCOME: "success",
+  OPENAPI_VALIDATION_OUTCOME: "success",
+  SQL_VALIDATION_OUTCOME: "success",
+  POSTGRESQL_EXECUTION_VALIDATION_OUTCOME: "success",
   CHROMIUM_INSTALL_OUTCOME: "success",
   BROWSER_SMOKE_OUTCOME: "success",
 };
@@ -18,7 +24,7 @@ const allSuccess = {
 test("release summary passes only when every release-gate stage succeeds", () => {
   const summary = createGateSummary(allSuccess, "2026-10-18T00:00:00.000Z");
   assert.equal(summary.status, "passed");
-  assert.equal(summary.stages.length, 10);
+  assert.equal(summary.stages.length, 16);
   assert.ok(summary.stages.every((stage) => stage.outcome === "success"));
   assert.equal(summary.firstNonSuccess, null);
 });
@@ -32,7 +38,10 @@ test("a failed registry diagnostic test is reported before skipped installation"
     BUILD_OUTCOME: "skipped",
     APPLICATION_TESTS_OUTCOME: "skipped",
     WORKBENCH_TESTS_OUTCOME: "skipped",
-    PLAYWRIGHT_INSTALL_OUTCOME: "skipped",
+    ARTIFACT_FIXTURES_OUTCOME: "skipped",
+    EXTERNAL_TOOLS_INSTALL_OUTCOME: "skipped",
+    OPENAPI_VALIDATION_OUTCOME: "skipped",
+    SQL_VALIDATION_OUTCOME: "skipped",
     CHROMIUM_INSTALL_OUTCOME: "skipped",
     BROWSER_SMOKE_OUTCOME: "skipped",
   });
@@ -49,7 +58,10 @@ test("a failed install cannot be hidden by skipped downstream stages", () => {
     BUILD_OUTCOME: "skipped",
     APPLICATION_TESTS_OUTCOME: "skipped",
     WORKBENCH_TESTS_OUTCOME: "skipped",
-    PLAYWRIGHT_INSTALL_OUTCOME: "skipped",
+    ARTIFACT_FIXTURES_OUTCOME: "skipped",
+    EXTERNAL_TOOLS_INSTALL_OUTCOME: "skipped",
+    OPENAPI_VALIDATION_OUTCOME: "skipped",
+    SQL_VALIDATION_OUTCOME: "skipped",
     CHROMIUM_INSTALL_OUTCOME: "skipped",
     BROWSER_SMOKE_OUTCOME: "skipped",
   });
@@ -72,6 +84,7 @@ test("summary states the boundaries of the browser smoke and calibration claims"
   const markdown = renderMarkdown(createGateSummary(allSuccess, "2026-10-18T00:00:00.000Z"));
   assert.match(markdown, /not a full end-to-end test/);
   assert.match(markdown, /real customer k6\/JMeter exports/);
+  assert.match(markdown, /does not validate application queries or production data migrations/);
   assert.match(markdown, /workbench-release-gate-diagnostics/);
   assert.match(markdown, /Excalidraw package and font assets/);
 });
@@ -108,4 +121,16 @@ test("a failed non-blocking registry probe is surfaced without overriding gate o
   assert.match(markdown, /Registry connectivity diagnostic \(non-blocking\)/);
   assert.match(markdown, /npm-registry-probe\.json/);
   assert.match(markdown, /npm ci remains the authoritative install gate|actual install result/);
+});
+
+
+test("release summary records PostgreSQL execution validation as a separate gate", () => {
+  const summary = createGateSummary({ ...allSuccess, POSTGRESQL_EXECUTION_VALIDATION_OUTCOME: "failure" }, "2026-10-18T00:00:00.000Z");
+  assert.equal(summary.schemaVersion, 5);
+  assert.equal(summary.status, "not-passed");
+  assert.equal(summary.firstNonSuccess.name, "Apply generated DDL to PostgreSQL and verify catalog objects");
+  const postgresStage = summary.stages.find((stage) => stage.name === "Apply generated DDL to PostgreSQL and verify catalog objects");
+  assert.equal(postgresStage.outcome, "failure");
+  assert.match(summary.firstNonSuccess.guidance, /WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION=true/);
+  assert.match(summary.firstNonSuccess.guidance, /WORKBENCH_POSTGRES_ALLOW_REMOTE=true/);
 });

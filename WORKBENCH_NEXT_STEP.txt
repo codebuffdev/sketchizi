@@ -1,9 +1,29 @@
-Current milestone: Workbench clean CI release gate 0.32.
+Sketchizi Workbench 0.45 — SQL-only fixture execution guard
 
-Added .github/workflows/workbench-release-gate.yml to run npm ci, production build, core app regression scripts, and Workbench regression scripts on a clean GitHub Actions runner with Node.js 22. It uploads dist/ only when the gate succeeds.
+Current priority: keep the release gate open until a real clean install, production build, external artifact validation, PostgreSQL 17 execution, and rendered-browser run pass.
 
-No CI run is claimed yet. Push this package to the intended GitHub repository and inspect Actions -> Workbench release gate. Fix the first failing step before adding features.
+This milestone hardens the PostgreSQL integration stage further. It accepts only SQL whose bytes exactly match the current known fixture generated through the Workbench SQL artifact generator. This stage is a release-fixture validator, not a generic SQL runner. Modified SQL is rejected before psql runs; files containing psql client meta-commands such as \connect or \! are refused because those commands could change the connection or run shell commands after connection target validation.
 
-Still open after CI: real rendered-browser end-to-end verification; validation of any generated OpenAPI against a real validator and SQL against a PostgreSQL parser/test database; adapter validation using representative real k6/JMeter exports; and production performance certification. This milestone does not claim any of those passed.
+The prior database-target safeguards remain active:
+- WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION=true is required.
+- WORKBENCH_POSTGRES_ALLOW_REMOTE=true is additionally required for non-loopback targets.
+- Protected database names such as prod, production, live, and common customer-data variants are refused.
 
-Application package version remains 1.10.86; 0.32 is a Workbench milestone label only.
+Command on a machine with npm registry access:
+  npm run verify:workbench-release
+
+For the PostgreSQL stage, ensure psql is installed and a disposable database is reachable at WORKBENCH_POSTGRES_URL. The default is:
+  postgresql://workbench:workbench@127.0.0.1:5432/workbench
+
+Before the local run, explicitly opt in to schema mutation only for the disposable test database:
+  $env:WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION = "true"
+For a non-loopback test host only, also set:
+  $env:WORKBENCH_POSTGRES_ALLOW_REMOTE = "true"
+Do not set these for production. The checks are guardrails, not proof that a database is disposable.
+
+Inspect:
+  artifacts/workbench-release-gate-summary.md
+  artifacts/ci-logs/
+  artifacts/generated/
+
+Do not call the release gate passed until clean install, font assets, production build, regression suites, external OpenAPI/SQL checks, PostgreSQL DDL execution, and rendered Chromium smoke all pass. Fixtures are synthetic and do not certify production capacity or real k6/JMeter adapter compatibility.

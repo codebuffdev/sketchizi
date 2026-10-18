@@ -40,6 +40,9 @@ test("release gate includes the browser server, fixture, summary, and rendered b
     "test:browser-index-fixture",
     "test:workbench-ci-summary",
     "test:workbench-ci-contract",
+    "test:workbench-local-release",
+    "test:workbench-external-artifacts",
+    "test:workbench-postgres-artifact-integration",
     "test:excalidraw-font-preflight",
     "test:workbench-browser-e2e",
   ]) {
@@ -47,6 +50,27 @@ test("release gate includes the browser server, fixture, summary, and rendered b
   }
   assert.match(workflow, /playwright@1\.64\.1/);
   assert.match(workflow, /playwright install --with-deps chromium/);
+  assert.match(workflow, /@redocly\/cli@2\.64\.1/);
+  assert.match(workflow, /pgsql-parser@18\.2\.12/);
+  assert.match(workflow, /redocly lint --config redocly\.workbench\.yaml artifacts\/generated\/openapi\.json/);
+  assert.match(workflow, /validate-workbench-generated-sql\.mjs/);
+  assert.match(workflow, /image: postgres:17-alpine/);
+  assert.match(workflow, /Apply generated DDL twice against PostgreSQL and assert catalog objects/);
+  assert.match(workflow, /validate-workbench-generated-sql-postgres\.mjs/);
+  assert.match(workflow, /WORKBENCH_POSTGRES_URL:/);
+  assert.match(workflow, /WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION:\s*["']true["']/);
+  assert.ok(workflow.includes("services:\n      postgres:\n        image: postgres:17-alpine"));
+  assert.match(workflow, /POSTGRESQL_EXECUTION_VALIDATION_OUTCOME:\s*\$\{\{\s*steps\.postgresql-execution-validation\.outcome\s*\}\}/);
+});
+
+test("only the disposable CI PostgreSQL service opts into schema mutation", () => {
+  const gateStart = workflow.indexOf("name: Apply generated DDL twice against PostgreSQL and assert catalog objects");
+  const gateEnd = workflow.indexOf("- name:", gateStart + 8);
+  assert.ok(gateStart >= 0 && gateEnd > gateStart, "PostgreSQL gate block must exist");
+  const gateBlock = workflow.slice(gateStart, gateEnd);
+  assert.match(gateBlock, /WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION:\s*["']true["']/);
+  assert.doesNotMatch(gateBlock, /WORKBENCH_POSTGRES_ALLOW_REMOTE:/, "the local GitHub service must not enable remote database mutation");
+  assert.equal((workflow.match(/WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION:/g) || []).length, 1, "schema mutation opt-in must be scoped to the PostgreSQL step");
 });
 
 test("diagnostics are generated and uploaded even when an earlier gate fails", () => {
@@ -64,12 +88,18 @@ test("diagnostics are generated and uploaded even when an earlier gate fails", (
 
 test("workflow gives failure logs useful labels and retention windows", () => {
   for (const log of [
+    "package-lock-check-tests.log",
+    "package-lock-consistency.log",
     "npm-ci.log",
     "excalidraw-font-assets.log",
     "production-build.log",
     "application-regressions.log",
     "workbench-regressions.log",
-    "playwright-install.log",
+    "artifact-fixtures.log",
+    "external-tools-install.log",
+    "openapi-validation.log",
+    "sql-validation.log",
+    "postgresql-execution-validation.log",
     "chromium-install.log",
     "browser-smoke.log",
   ]) {
@@ -85,6 +115,8 @@ test("release summary receives outcomes from the exact workflow step IDs", () =>
   const summaryBlock = workflow.slice(summaryStart, artifactStart);
   const expectedMappings = [
     ["TOOLCHAIN_OUTCOME", "toolchain"],
+    ["PACKAGE_LOCK_CHECK_TESTS_OUTCOME", "package-lock-check-tests"],
+    ["PACKAGE_LOCK_CONSISTENCY_OUTCOME", "package-lock-consistency"],
     ["REGISTRY_PROBE_TESTS_OUTCOME", "registry-probe-tests"],
     ["REGISTRY_PROBE_OUTCOME", "registry-probe"],
     ["INSTALL_OUTCOME", "install"],
@@ -92,7 +124,11 @@ test("release summary receives outcomes from the exact workflow step IDs", () =>
     ["BUILD_OUTCOME", "build"],
     ["APPLICATION_TESTS_OUTCOME", "application-tests"],
     ["WORKBENCH_TESTS_OUTCOME", "workbench-tests"],
-    ["PLAYWRIGHT_INSTALL_OUTCOME", "playwright-install"],
+    ["ARTIFACT_FIXTURES_OUTCOME", "artifact-fixtures"],
+    ["EXTERNAL_TOOLS_INSTALL_OUTCOME", "external-tools-install"],
+    ["OPENAPI_VALIDATION_OUTCOME", "openapi-validation"],
+    ["SQL_VALIDATION_OUTCOME", "sql-validation"],
+    ["POSTGRESQL_EXECUTION_VALIDATION_OUTCOME", "postgresql-execution-validation"],
     ["CHROMIUM_INSTALL_OUTCOME", "chromium-install"],
     ["BROWSER_SMOKE_OUTCOME", "browser-smoke"],
   ];
@@ -107,6 +143,17 @@ test("release summary receives outcomes from the exact workflow step IDs", () =>
 });
 
 
+test("package manifest and lockfile are checked offline before registry access and npm ci", () => {
+  const checkerTestsIndex = workflow.indexOf("name: Test dependency-free package-lock checker");
+  const checkerIndex = workflow.indexOf("name: Check package manifest and lockfile consistency (offline)");
+  const registryIndex = workflow.indexOf("name: Diagnose npm registry connectivity (non-blocking)");
+  const installIndex = workflow.indexOf("name: Install locked dependencies");
+  assert.ok(checkerTestsIndex >= 0 && checkerIndex > checkerTestsIndex, "lockfile checker tests must precede lockfile check");
+  assert.ok(registryIndex > checkerIndex && installIndex > registryIndex, "offline checks must precede registry probe and install");
+  assert.match(workflow.slice(checkerIndex, registryIndex), /node scripts\/check-package-lock-consistency\.mjs/);
+  assert.match(workflow, /npm run test:package-lock-consistency/);
+});
+
 test("npm registry probe runs before npm ci, is non-blocking, and keeps logs", () => {
   const probeIndex = workflow.indexOf("name: Diagnose npm registry connectivity (non-blocking)");
   const installIndex = workflow.indexOf("name: Install locked dependencies");
@@ -120,4 +167,18 @@ test("npm registry probe runs before npm ci, is non-blocking, and keeps logs", (
   assert.match(workflow, /id: registry-probe-tests/);
   assert.match(workflow, /REGISTRY_PROBE_TESTS_OUTCOME:\s*\$\{\{\s*steps\.registry-probe-tests\.outcome\s*\}\}/);
   assert.match(workflow, /npm-registry-probe\.json/);
+});
+
+
+test("external artifact validators run on generated fixtures before the browser smoke test", () => {
+  const generation = workflow.indexOf("name: Generate representative OpenAPI and PostgreSQL artifacts");
+  const install = workflow.indexOf("name: Install pinned external validators and Playwright");
+  const openapi = workflow.indexOf("name: Validate generated OpenAPI 3.1 document");
+  const sql = workflow.indexOf("name: Parse generated PostgreSQL DDL");
+  const postgresExecution = workflow.indexOf("name: Apply generated DDL twice against PostgreSQL and assert catalog objects");
+  const chromium = workflow.indexOf("name: Install Chromium for rendered-browser smoke test");
+  const upload = workflow.indexOf("name: Upload CI diagnostics and browser report");
+  assert.ok(generation >= 0 && install > generation && openapi > install && sql > openapi && postgresExecution > sql && chromium > postgresExecution && upload > chromium);
+  assert.match(workflow.slice(upload), /artifacts\/generated\//);
+  assert.match(workflow.slice(postgresExecution, chromium), /sudo apt-get install -y postgresql-client/);
 });

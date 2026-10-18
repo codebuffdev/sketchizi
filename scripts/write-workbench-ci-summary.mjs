@@ -7,26 +7,38 @@ const projectRoot = path.resolve(path.dirname(scriptPath), "..");
 
 const STAGES = [
   ["Toolchain", "TOOLCHAIN_OUTCOME"],
+  ["Package-lock consistency unit tests", "PACKAGE_LOCK_CHECK_TESTS_OUTCOME"],
+  ["Package manifest and lockfile consistency", "PACKAGE_LOCK_CONSISTENCY_OUTCOME"],
   ["Registry diagnostic unit tests", "REGISTRY_PROBE_TESTS_OUTCOME"],
   ["Clean dependency install (npm ci)", "INSTALL_OUTCOME"],
   ["Excalidraw package and font assets", "FONT_ASSETS_OUTCOME"],
   ["Production build", "BUILD_OUTCOME"],
   ["Application regression suites", "APPLICATION_TESTS_OUTCOME"],
   ["Workbench regression suites", "WORKBENCH_TESTS_OUTCOME"],
-  ["Playwright installation", "PLAYWRIGHT_INSTALL_OUTCOME"],
+  ["Generated artifact fixtures", "ARTIFACT_FIXTURES_OUTCOME"],
+  ["Install pinned external validators and Playwright", "EXTERNAL_TOOLS_INSTALL_OUTCOME"],
+  ["OpenAPI 3.1 external validation", "OPENAPI_VALIDATION_OUTCOME"],
+  ["PostgreSQL SQL syntax validation", "SQL_VALIDATION_OUTCOME"],
+  ["Apply generated DDL to PostgreSQL and verify catalog objects", "POSTGRESQL_EXECUTION_VALIDATION_OUTCOME"],
   ["Chromium installation", "CHROMIUM_INSTALL_OUTCOME"],
   ["Rendered-browser persistence smoke", "BROWSER_SMOKE_OUTCOME"],
 ];
 
 const FAILURE_GUIDANCE = new Map([
   ["Toolchain", "Inspect artifacts/ci-logs/toolchain.log and confirm the runner's Node.js/npm versions are supported."],
+  ["Package-lock consistency unit tests", "Inspect artifacts/ci-logs/package-lock-check-tests.log. Fix the dependency-free lockfile checker tests before interpreting later release stages."],
+  ["Package manifest and lockfile consistency", "Inspect artifacts/ci-logs/package-lock-consistency.log. Align package.json root metadata and direct dependency specifications with package-lock.json, then run npm ci when registry access is available. This check does not replace npm ci."],
   ["Registry diagnostic unit tests", "Inspect artifacts/ci-logs/npm-registry-probe-tests.log. Fix the dependency-free registry diagnostic tests before interpreting later skipped release stages."],
   ["Clean dependency install (npm ci)", "Inspect artifacts/ci-logs/npm-registry-probe.log and npm-registry-probe.json first, then artifacts/ci-logs/npm-ci.log. Distinguish DNS/network access errors from package-lock consistency and dependency-resolution errors before changing application code."],
   ["Excalidraw package and font assets", "Inspect artifacts/ci-logs/excalidraw-font-assets.log. Compare the declared, locked, and installed Excalidraw versions, then confirm the expected dist/prod/fonts directory contains font files."],
   ["Production build", "Inspect artifacts/ci-logs/production-build.log after the dependency and font-asset preflight passes."],
   ["Application regression suites", "Inspect artifacts/ci-logs/application-regressions.log and identify the first failing npm test command."],
   ["Workbench regression suites", "Inspect artifacts/ci-logs/workbench-regressions.log and identify the first failing npm test command."],
-  ["Playwright installation", "Inspect artifacts/ci-logs/playwright-install.log. Confirm the pinned Playwright version is available to the runner and the install did not mutate the lockfile."],
+  ["Generated artifact fixtures", "Inspect artifacts/ci-logs/artifact-fixtures.log. Fix generator errors before interpreting external validator results."],
+  ["Install pinned external validators and Playwright", "Inspect artifacts/ci-logs/external-tools-install.log. Confirm the pinned Redocly CLI, PostgreSQL parser, and Playwright packages can be installed."],
+  ["OpenAPI 3.1 external validation", "Inspect artifacts/ci-logs/openapi-validation.log and artifacts/generated/openapi.json; fix the OpenAPI lint errors while preserving the intended Workbench model."],
+  ["PostgreSQL SQL syntax validation", "Inspect artifacts/ci-logs/sql-validation.log and artifacts/generated/schema.sql; fix syntax errors reported by the PostgreSQL parser."],
+  ["Apply generated DDL to PostgreSQL and verify catalog objects", "Inspect artifacts/ci-logs/postgresql-execution-validation.log. Use a disposable test database, set WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION=true to explicitly permit schema creation, and set WORKBENCH_POSTGRES_ALLOW_REMOTE=true only if a remote test host is unavoidable. Protected database names such as prod, production, and live are refused. Then fix DDL execution, idempotency, table, constraint, index, or column assertions."],
   ["Chromium installation", "Inspect artifacts/ci-logs/chromium-install.log. Confirm the runner can download Chromium and its required system dependencies."],
   ["Rendered-browser persistence smoke", "Inspect artifacts/ci-logs/browser-smoke.log and artifacts/workbench-browser-smoke-result.json; use the first failed browser assertion as the next fix."],
 ]);
@@ -60,7 +72,7 @@ export function createGateSummary(env = process.env, generatedAt = new Date().to
       }
     : null;
   return {
-    schemaVersion: 3,
+    schemaVersion: 5,
     generatedAt,
     status: firstNonSuccess ? "not-passed" : "passed",
     context,
@@ -76,6 +88,7 @@ export function createGateSummary(env = process.env, generatedAt = new Date().to
     scope: [
       "This release gate is a clean-install/build/regression and Workbench persistence smoke test.",
       "It is not a full end-to-end test of every Sketchizi drawing workflow.",
+      "OpenAPI validation uses Redocly's minimal ruleset. Generated SQL is parsed and then applied twice to a disposable PostgreSQL test database with catalog assertions; this still does not validate application queries or production data migrations.",
       "It does not certify production capacity or validate adapters against real customer k6/JMeter exports.",
     ],
   };
@@ -144,7 +157,7 @@ export function renderMarkdown(summary) {
 
   lines.push("## Scope notes", "", ...summary.scope.map((note) => `- ${note}`), "");
   lines.push(
-    "Detailed console output is retained in the `workbench-release-gate-diagnostics` workflow artifact under `artifacts/ci-logs/`.",
+    "Generated OpenAPI/SQL fixtures are in `artifacts/generated/`. Detailed command output is retained in `artifacts/ci-logs/`. GitHub Actions uploads both in the `workbench-release-gate-diagnostics` workflow artifact.",
     "",
   );
   return lines.join("\n");

@@ -16,7 +16,21 @@ jobs:
   build-and-regression:
     name: Clean install, production build, regression suites
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: workbench
+          POSTGRES_PASSWORD: workbench
+          POSTGRES_DB: workbench
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U workbench -d workbench"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -36,6 +50,20 @@ jobs:
         run: |
           set -o pipefail
           { node --version; npm --version; } 2>&1 | tee artifacts/ci-logs/toolchain.log
+
+      - name: Test dependency-free package-lock checker
+        id: package-lock-check-tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:package-lock-consistency 2>&1 | tee artifacts/ci-logs/package-lock-check-tests.log
+
+      - name: Check package manifest and lockfile consistency (offline)
+        id: package-lock-consistency
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/check-package-lock-consistency.mjs 2>&1 | tee artifacts/ci-logs/package-lock-consistency.log
 
       - name: Test dependency-free registry diagnostic
         id: registry-probe-tests
@@ -114,14 +142,52 @@ jobs:
             npm run test:browser-index-fixture
             npm run test:workbench-ci-summary
             npm run test:workbench-ci-contract
+            npm run test:workbench-local-release
+            npm run test:workbench-external-artifacts
+            npm run test:workbench-postgres-artifact-integration
           } 2>&1 | tee artifacts/ci-logs/workbench-regressions.log
 
-      - name: Install pinned Playwright browser runner
-        id: playwright-install
+      - name: Generate representative OpenAPI and PostgreSQL artifacts
+        id: artifact-fixtures
         shell: bash
         run: |
           set -o pipefail
-          npm install --no-save --no-package-lock --ignore-scripts playwright@1.64.1 2>&1 | tee artifacts/ci-logs/playwright-install.log
+          node scripts/generate-workbench-artifact-fixtures.mjs 2>&1 | tee artifacts/ci-logs/artifact-fixtures.log
+
+      - name: Install pinned external validators and Playwright
+        id: external-tools-install
+        shell: bash
+        run: |
+          set -o pipefail
+          npm install --no-save --no-package-lock --ignore-scripts @redocly/cli@2.64.1 pgsql-parser@18.2.12 playwright@1.64.1 2>&1 | tee artifacts/ci-logs/external-tools-install.log
+
+      - name: Validate generated OpenAPI 3.1 document
+        id: openapi-validation
+        shell: bash
+        run: |
+          set -o pipefail
+          npx redocly lint --config redocly.workbench.yaml artifacts/generated/openapi.json 2>&1 | tee artifacts/ci-logs/openapi-validation.log
+
+      - name: Parse generated PostgreSQL DDL
+        id: sql-validation
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/validate-workbench-generated-sql.mjs 2>&1 | tee artifacts/ci-logs/sql-validation.log
+
+      - name: Apply generated DDL twice against PostgreSQL and assert catalog objects
+        id: postgresql-execution-validation
+        env:
+          WORKBENCH_POSTGRES_URL: postgresql://workbench:workbench@127.0.0.1:5432/workbench
+          WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION: "true"
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+            node scripts/validate-workbench-generated-sql-postgres.mjs
+          } 2>&1 | tee artifacts/ci-logs/postgresql-execution-validation.log
 
       - name: Install Chromium for rendered-browser smoke test
         id: chromium-install
@@ -152,6 +218,8 @@ jobs:
         if: always()
         env:
           TOOLCHAIN_OUTCOME: ${{ steps.toolchain.outcome }}
+          PACKAGE_LOCK_CHECK_TESTS_OUTCOME: ${{ steps.package-lock-check-tests.outcome }}
+          PACKAGE_LOCK_CONSISTENCY_OUTCOME: ${{ steps.package-lock-consistency.outcome }}
           REGISTRY_PROBE_TESTS_OUTCOME: ${{ steps.registry-probe-tests.outcome }}
           REGISTRY_PROBE_OUTCOME: ${{ steps.registry-probe.outcome }}
           INSTALL_OUTCOME: ${{ steps.install.outcome }}
@@ -159,7 +227,11 @@ jobs:
           BUILD_OUTCOME: ${{ steps.build.outcome }}
           APPLICATION_TESTS_OUTCOME: ${{ steps.application-tests.outcome }}
           WORKBENCH_TESTS_OUTCOME: ${{ steps.workbench-tests.outcome }}
-          PLAYWRIGHT_INSTALL_OUTCOME: ${{ steps.playwright-install.outcome }}
+          ARTIFACT_FIXTURES_OUTCOME: ${{ steps.artifact-fixtures.outcome }}
+          EXTERNAL_TOOLS_INSTALL_OUTCOME: ${{ steps.external-tools-install.outcome }}
+          OPENAPI_VALIDATION_OUTCOME: ${{ steps.openapi-validation.outcome }}
+          SQL_VALIDATION_OUTCOME: ${{ steps.sql-validation.outcome }}
+          POSTGRESQL_EXECUTION_VALIDATION_OUTCOME: ${{ steps.postgresql-execution-validation.outcome }}
           CHROMIUM_INSTALL_OUTCOME: ${{ steps.chromium-install.outcome }}
           BROWSER_SMOKE_OUTCOME: ${{ steps.browser-smoke.outcome }}
         run: node scripts/write-workbench-ci-summary.mjs
@@ -172,6 +244,8 @@ jobs:
           path: |
             artifacts/ci-logs/
             artifacts/ci-logs/npm-registry-probe.json
+            artifacts/ci-logs/package-lock-consistency.log
+            artifacts/generated/
             artifacts/workbench-release-gate-summary.json
             artifacts/workbench-release-gate-summary.md
             artifacts/workbench-browser-smoke-result.json
