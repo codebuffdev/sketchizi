@@ -44,7 +44,7 @@ test("runs a seeded client -> REST service -> PostgreSQL scenario with measurabl
   assert.ok(result.result.metrics.successfulLatencyMs.p95 >= result.result.metrics.successfulLatencyMs.p50);
   assert.equal(result.result.perNode.length, 2);
   assert.equal(result.result.perEdge.length, 2);
-  assert.equal(result.result.schemaVersion, 2);
+  assert.equal(result.result.schemaVersion, 4);
   assert.equal(result.result.timeSeries.source, "discrete-event-timestamps");
   assert.equal(result.result.timeSeries.points.length, 40);
   const points = result.result.timeSeries.points;
@@ -56,6 +56,36 @@ test("runs a seeded client -> REST service -> PostgreSQL scenario with measurabl
   assert.equal(points.reduce((sum, point) => sum + point.droppedRequests, 0) + drain.droppedRequests, result.result.metrics.droppedRequests);
   assert.ok(points.some((point) => point.offeredRps > 0));
   assert.ok(points.some((point) => point.latencyP95Ms !== null));
+  const traces = result.result.requestTraces;
+  assert.equal(traces.schemaVersion, 1);
+  assert.equal(traces.source, "discrete-event-request-lifecycle");
+  assert.equal(traces.totalTerminalRequests, result.result.metrics.terminalRequests);
+  assert.equal(traces.retainedCount, traces.traces.length);
+  assert.ok(traces.retainedCount <= traces.limit);
+  const successfulTrace = traces.traces.find((trace) => trace.outcome === "success");
+  assert.ok(successfulTrace, "should retain a successful example request");
+  assert.deepEqual(successfulTrace.hops.map((hop) => hop.entityId), ["web", "api", "db"]);
+  assert.equal(successfulTrace.hops[0].outcome, "sent");
+  const servicedHops = successfulTrace.hops.filter((hop) => hop.kind !== "traffic-source");
+  assert.ok(servicedHops.every((hop) => hop.serviceTimeMs > 0 && hop.queueWaitMs >= 0));
+  assert.ok(Math.abs(successfulTrace.totalLatencyMs - (successfulTrace.completedAtMs - successfulTrace.arrivalMs)) < 0.01);
+});
+
+test("records database read/write operations and actual write-contention overhead in results and request traces", () => {
+  const result = runSimulation({ projection: project({ durationMs: 10000, seed: 42 }) });
+  assert.equal(result.status, "completed");
+  const db = result.result.perNode.find((item) => item.sourceEntityId === "db");
+  assert.ok(db.readOperationsStarted > 0);
+  assert.ok(db.writeOperationsStarted > 0);
+  assert.equal(db.writeContentionMsTotal, Number((db.writeOperationsStarted * 15).toFixed(4)));
+  const writeTrace = result.result.requestTraces.traces.find((trace) => trace.hops.some((hop) => hop.entityId === "db" && hop.operation === "write"));
+  assert.ok(writeTrace, "bounded traces should retain a modeled write example for this seed");
+  const writeHop = writeTrace.hops.find((hop) => hop.entityId === "db");
+  assert.equal(writeHop.writeContentionMs, 15);
+  assert.equal(writeHop.operation, "write");
+  const readTrace = result.result.requestTraces.traces.find((trace) => trace.hops.some((hop) => hop.entityId === "db" && hop.operation === "read"));
+  assert.ok(readTrace, "bounded traces should retain a modeled read example for this seed");
+  assert.equal(readTrace.hops.find((hop) => hop.entityId === "db").writeContentionMs, null);
 });
 
 test("identical model, profile, seed and overrides reproduce byte-equivalent result metrics", () => {
@@ -82,6 +112,7 @@ test("a forced database failure is traceable and drives success rate to zero", (
   assert.equal(result.result.metrics.failedRequests, result.result.metrics.offeredRequests - result.result.metrics.droppedRequests);
   assert.equal(result.result.simulation.requestedFailureOverrides.db, 1);
   assert.ok(result.result.perNode.find((item) => item.sourceEntityId === "db").failed > 0);
+  assert.ok(result.result.requestTraces.traces.some((trace) => trace.outcome === "failed" && trace.hops.some((hop) => hop.entityId === "db" && hop.outcome === "failed")));
 });
 
 test("a hard database outage fails at the dependency boundary without consuming database service capacity", () => {
@@ -94,6 +125,19 @@ test("a hard database outage fails at the dependency boundary without consuming 
   assert.equal(outage.result.perNode.find((item) => item.sourceEntityId === "db").utilization, 0);
   assert.ok(outage.result.metrics.terminalLatencyMs.mean < baseline.result.metrics.successfulLatencyMs.mean);
   assert.deepEqual(outage.result.simulation.unavailableNodeIds, ["sim-node:db"]);
+  assert.ok(outage.result.requestTraces.traces.some((trace) => trace.outcome === "failed" && trace.hops.at(-1)?.outcome === "unavailable"));
+});
+
+test("request trace capture is deterministic and bounded while retaining terminal outcome examples", () => {
+  const projection = project({ durationMs: 15000, seed: 211 });
+  const first = runSimulation({ projection, scenarioOverrides: { trafficMultiplier: 5 } });
+  const second = runSimulation({ projection, scenarioOverrides: { trafficMultiplier: 5 } });
+  assert.deepEqual(first.result.requestTraces, second.result.requestTraces);
+  assert.ok(first.result.requestTraces.totalTerminalRequests > first.result.requestTraces.retainedCount);
+  assert.ok(first.result.requestTraces.retainedCount <= first.result.requestTraces.limit);
+  assert.ok(first.result.requestTraces.traces.some((trace) => trace.outcome === "dropped"));
+  const sorted = [...first.result.requestTraces.traces].sort((a, b) => a.arrivalMs - b.arrivalMs || a.requestId.localeCompare(b.requestId));
+  assert.deepEqual(first.result.requestTraces.traces, sorted);
 });
 
 test("rejects malformed experiment overrides and unknown option keys", () => {

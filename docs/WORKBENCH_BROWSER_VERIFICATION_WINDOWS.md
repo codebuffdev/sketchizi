@@ -13,7 +13,7 @@ This test uses real browser IndexedDB/localStorage and forces a page reload. It 
    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-workbench-browser.ps1
    ```
 
-5. A browser tab opens. Wait for the page to perform a reload and display `PASS — browser reload and simulation-history test` with all individual checks marked `PASS`.
+5. A browser tab opens. Wait for the page to perform a reload and display `PASS — browser reload, experiment history, and index artifact test` with all individual checks marked `PASS`.
 6. Return to PowerShell and press Enter to stop the temporary server.
 
 The test writes only to storage scoped to `127.0.0.1:8765`; it does not use the normal app's storage origin.

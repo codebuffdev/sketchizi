@@ -64,8 +64,8 @@ try {
 }
 
 if ($RunExitCode -eq 0) {
-  Write-Host "`nPASS — browser reload and simulation-history test" -ForegroundColor Green
+  Write-Host "`nPASS — browser reload, experiment history, and index artifact test" -ForegroundColor Green
 } else {
-  Write-Host "`nFAIL — browser reload and simulation-history test" -ForegroundColor Red
+  Write-Host "`nFAIL — browser reload, experiment history, and index artifact test" -ForegroundColor Red
 }
 exit $RunExitCode

@@ -41,6 +41,7 @@ export default function WorkbenchPanel({
   onUpdateSimulationProfile,
   simulationHistory = [],
   onUpdateSimulationHistory,
+  onRuntimeOverlayChange,
 }) {
   const [relationKind, setRelationKind] = useState("calls");
   const [relationTargetId, setRelationTargetId] = useState("");
@@ -259,8 +260,10 @@ export default function WorkbenchPanel({
             onSwitchToAdd={() => changePanelTab("components")}
             simulationProfile={simulationProfile}
             onUpdateSimulationProfile={onUpdateSimulationProfile}
+            onUpdateEntity={onUpdateEntity}
             simulationHistory={simulationHistory}
             onUpdateSimulationHistory={onUpdateSimulationHistory}
+            onRuntimeOverlayChange={onRuntimeOverlayChange}
             onCreateTypedRelation={onCreateRelationBetween}
             onFocusEntity={(entityId) => onFocusFinding?.({ entityIds: [entityId] })}
             canEdit={canEdit}

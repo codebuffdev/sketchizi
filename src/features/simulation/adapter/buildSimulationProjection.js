@@ -47,6 +47,12 @@ const ENTITY_NODE_MAP = Object.freeze({
       writeContentionMs: { type: "number", min: 0 },
       failureProbability: { type: "number", min: 0, max: 1 },
     },
+    // Optional, backward-compatible synthetic index hypothesis fields. Older
+    // saved profiles omit them and retain their previous semantics.
+    optional: {
+      indexBenefitReadFraction: { type: "number", min: 0, max: 1 },
+      indexReadSpeedupFactor: { type: "number", min: 1, max: 20 },
+    },
   },
   "messaging.queue": {
     kind: "message-queue",
@@ -279,7 +285,7 @@ export function buildSimulationProjection({ workbench, simulationProfile, scopeE
     }
     const params = isRecord(profile.parameters) ? profile.parameters : {};
     const invalidFields = [];
-    const knownFields = new Set(Object.keys(mapping.required));
+    const knownFields = new Set([...Object.keys(mapping.required), ...Object.keys(mapping.optional || {})]);
     for (const field of Object.keys(params)) {
       if (!knownFields.has(field)) invalidFields.push(`${field} is not supported by profile kind ${mapping.profileKind}`);
     }
@@ -288,6 +294,15 @@ export function buildSimulationProjection({ workbench, simulationProfile, scopeE
         invalidFields.push(`${field} is required`);
         continue;
       }
+      const problem = paramProblem(params[field], rule);
+      if (problem) invalidFields.push(`${field} ${problem}`);
+      const assumption = profile.assumptions?.[field];
+      if (assumption && assumption.status !== "user-confirmed") {
+        push(diagnostic("SIM-ASSUMPTION-UNCONFIRMED", "blocker", "Simulation assumption needs confirmation", `Confirm '${field}' for '${entity.name || entity.id}' before running the simulation.`, { entityIds: [entity.id], details: { field, assumptionStatus: assumption.status || "unspecified" } }));
+      }
+    }
+    for (const [field, rule] of Object.entries(mapping.optional || {})) {
+      if (!Object.hasOwn(params, field)) continue;
       const problem = paramProblem(params[field], rule);
       if (problem) invalidFields.push(`${field} ${problem}`);
       const assumption = profile.assumptions?.[field];

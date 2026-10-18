@@ -51,6 +51,7 @@ function App() {
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
+  const [workbenchRuntimeOverlay, setWorkbenchRuntimeOverlay] = useState(null);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
@@ -476,6 +477,9 @@ function App() {
             isDarkTheme={isDarkTheme}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
+            workbench={workbenchController.workbench}
+            runtimeOverlay={workbenchRuntimeOverlay}
+            onFocusRuntimeEntity={(entityId) => workbenchController.focusFinding({ entityIds: [entityId] })}
             handleDrop={handleDrop}
             minimapOpen={minimapOpen}
             minimapScene={minimapScene}
@@ -509,6 +513,7 @@ function App() {
             onUpdateSimulationProfile={workbenchController.updateSimulationProfile}
             simulationHistory={workbenchController.workbench?.simulationHistory || []}
             onUpdateSimulationHistory={workbenchController.updateSimulationHistory}
+            onRuntimeOverlayChange={setWorkbenchRuntimeOverlay}
             selectedEntity={workbenchController.selectedEntity}
             visibleEntityIds={workbenchController.visibleEntityIds}
             inspectorError={workbenchController.inspectorError}

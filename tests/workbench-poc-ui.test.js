@@ -54,11 +54,11 @@ test("older POC templates can add starter OpenAPI and SQL models without recreat
 
 test("guided debugging offers a one-variable capacity trial and records the comparison in experiment history", () => {
   assert.match(simulationPanel, /createCapacityImprovementProfile/);
-  assert.match(simulationPanel, /Test a capacity improvement/);
+  assert.match(simulationPanel, /Test higher concurrency/);
   assert.match(simulationPanel, /chooseCapacityImprovementScenarioKey\(results\.runs, activeRunKey\)/);
   assert.match(simulationPanel, /compareSimulationRuns\(originalScenario\.result, improvedScenario\.result\)/);
   assert.match(simulationPanel, /comparisonScenarioLabel: originalScenario\.label/);
-  assert.match(simulationPanel, /Test a capacity improvement/);
+  assert.match(simulationPanel, /Test higher concurrency/);
   assert.match(simulationPanel, /Traffic-surge scenario/);
   assert.match(simulationPanel, /<SimulationTimeSeries run=\{activeRun\}/);
   assert.match(simulationPanel, /timeSeries\?\.points/);

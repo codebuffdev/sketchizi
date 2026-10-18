@@ -59,6 +59,7 @@ function createStarterEntity(kind, idFactory) {
     entity.properties = {
       ...entity.properties,
       tableName: "items",
+      indexes: "[]",
       columns: JSON.stringify([
         { name: "id", type: "UUID", primaryKey: true, nullable: false },
         { name: "name", type: "TEXT", nullable: false },

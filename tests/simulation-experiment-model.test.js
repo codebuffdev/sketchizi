@@ -5,6 +5,8 @@ import { runSimulation } from "../src/features/simulation/engine/runSimulation.j
 import { runWorkbenchExperiments } from "../src/features/simulation/runWorkbenchExperiments.js";
 import {
   compareSimulationRuns,
+  buildTimeSeriesComparisonPoints,
+  summarizeSimulationImprovement,
   chooseCapacityImprovementScenarioKey,
   getCapacityPressureRows,
   buildScenarioComparisonOverview,
@@ -92,7 +94,7 @@ test("capacity improvement targets the most pressured load scenario and never op
   assert.equal(chooseCapacityImprovementScenarioKey(runs, "baseline"), "trafficSurge");
   assert.equal(chooseCapacityImprovementScenarioKey(runs, "trafficSurge"), "trafficSurge", "an explicitly selected load scenario is respected");
   assert.equal(chooseCapacityImprovementScenarioKey(runs, "outage"), "trafficSurge", "capacity increases do not target an unavailable dependency scenario");
-  assert.deepEqual(getCapacityPressureRows(runs.trafficSurge), [{ entityId: "db", hasPressure: true, maxDropped: 810, maxFailed: 0, peakUtilization: 0.997 }]);
+  assert.deepEqual(getCapacityPressureRows(runs.trafficSurge), [{ entityId: "db", hasPressure: true, maxDropped: 810, maxFailed: 0, peakUtilization: 0.997, queueWaitP95Ms: null, serviceTimeP95Ms: null, readOperationsStarted: 0, indexedReadOperationsStarted: 0, indexAssumedTimeSavedMsTotal: 0, writeOperationsStarted: 0, writeContentionMsTotal: 0 }]);
 });
 
 test("prepares a one-variable capacity improvement using pressure evidence without mutating the base profile", () => {
@@ -151,6 +153,11 @@ test("one-variable capacity trial compares the same pressured traffic scenario b
   assert.equal(trialSuite.runs[scenarioKey].result.status, "completed");
   const comparison = compareSimulationRuns(baseSuite.runs[scenarioKey].result, trialSuite.runs[scenarioKey].result);
   assert.equal(comparison.status, "ready");
+  const seriesComparison = buildTimeSeriesComparisonPoints(baseSuite.runs[scenarioKey].result, trialSuite.runs[scenarioKey].result);
+  assert.equal(seriesComparison.status, "ready", "real engine event-series buckets align for the same stressed scenario");
+  assert.ok(seriesComparison.points.length > 0);
+  assert.ok(seriesComparison.points.every((point) => Number.isFinite(point.startMs) && Number.isFinite(point.endMs)));
+  assert.ok(["improved", "mixed", "regressed", "no-material-change"].includes(summarizeSimulationImprovement(comparison).status));
   assert.ok(comparison.metrics.some((item) => item.key === "droppedRequests"));
   assert.ok(comparison.metrics.find((item) => item.key === "offeredRequests").before > baseSuite.runs.baseline.result.result.metrics.offeredRequests * 4);
   const dropComparison = comparison.metrics.find((item) => item.key === "droppedRequests");

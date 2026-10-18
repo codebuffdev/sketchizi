@@ -37,6 +37,7 @@ function compactRun(run) {
       simulation: isRecord(engineResult.simulation) ? clone(engineResult.simulation) : {},
       metrics: isRecord(engineResult.metrics) ? clone(engineResult.metrics) : {},
       timeSeries: isRecord(engineResult.timeSeries) ? clone(engineResult.timeSeries) : null,
+      requestTraces: isRecord(engineResult.requestTraces) ? clone(engineResult.requestTraces) : null,
       perNode: Array.isArray(engineResult.perNode) ? clone(engineResult.perNode) : [],
       perEdge: Array.isArray(engineResult.perEdge) ? clone(engineResult.perEdge) : [],
       bottlenecks: Array.isArray(engineResult.bottlenecks) ? clone(engineResult.bottlenecks) : [],

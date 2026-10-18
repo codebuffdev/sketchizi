@@ -30,6 +30,8 @@ test("history snapshots retain metrics, node evidence, explanations and provenan
   assert.ok(entry.runs.baseline.result.metrics.offeredRequests > 0);
   assert.equal(entry.runs.baseline.result.timeSeries.points.length, 40);
   assert.equal(entry.runs.trafficSurge.result.timeSeries.source, "discrete-event-timestamps");
+  assert.equal(entry.runs.baseline.result.requestTraces.source, "discrete-event-request-lifecycle");
+  assert.ok(entry.runs.baseline.result.requestTraces.traces.length <= entry.runs.baseline.result.requestTraces.limit);
   assert.ok(Array.isArray(entry.runs.baseline.result.perNode));
   assert.ok(Array.isArray(entry.runs.trafficSurge.explanations));
   assert.equal("projection" in entry, false);
@@ -59,6 +61,7 @@ test("saved history reopens as results without rerunning the engine", () => {
   assert.equal(restored.runs.baseline.result.status, "completed");
   assert.deepEqual(restored.runs.baseline.result.result.metrics, entry.runs.baseline.result.metrics);
   assert.deepEqual(restored.runs.baseline.result.result.timeSeries, entry.runs.baseline.result.timeSeries);
+  assert.deepEqual(restored.runs.baseline.result.result.requestTraces, entry.runs.baseline.result.requestTraces);
   assert.deepEqual(restored.runs.trafficSurge.explanations, entry.runs.trafficSurge.explanations);
   assert.equal(restored.sourceModelSnapshot.entities.find((item) => item.id === "api").name, "api");
 });
@@ -138,6 +141,7 @@ test("history round-trips inside .sketchizi metadata while preserving unknown ex
   const reopened = readWorkbenchDocument(drawing).workbench;
   assert.equal(reopened.simulationHistory[0].id, entry.id);
   assert.deepEqual(reopened.simulationHistory[0].runs.baseline.result.metrics, entry.runs.baseline.result.metrics);
+  assert.deepEqual(reopened.simulationHistory[0].runs.baseline.result.requestTraces, entry.runs.baseline.result.requestTraces);
   assert.deepEqual(drawing.elements, elements);
   assert.deepEqual(drawing.extensions["com.example.unknown"], { ok: true });
 });

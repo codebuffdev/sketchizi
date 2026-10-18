@@ -1,9 +1,9 @@
 import { loadRecentSketch, loadSketch, saveEmergencyBackup, saveRecentSketch, saveSketch } from "../../src/persistence.js";
 import { parseDrawing, serializeDrawing } from "../../src/fileSystem.js";
-import { createWorkbenchExtension, withWorkbenchExtension, WORKBENCH_EXTENSION_KEY } from "../../src/features/workbench/workbenchDocument.js";
-import { runWorkbenchExperiments } from "../../src/features/simulation/runWorkbenchExperiments.js";
-import { createIllustrativeSimulationProfile, markSimulationAssumptionsConfirmed } from "../../src/features/simulation/experiments/simulationExperimentModel.js";
+import { withWorkbenchExtension, WORKBENCH_EXTENSION_KEY } from "../../src/features/workbench/workbenchDocument.js";
+import { generateOpenApiArtifact, generateSqlArtifact } from "../../src/features/workbench/workbenchArtifacts.js";
 import { appendSimulationHistory, createSimulationHistoryEntry, restoreSimulationHistoryEntry, simulationResultsAreStale } from "../../src/features/simulation/experiments/simulationHistory.js";
+import { createIndexHypothesisBrowserSmokeFixture } from "./workbench-index-smoke-fixture.js";
 
 const status = document.querySelector("#status");
 const details = document.querySelector("#details");
@@ -12,30 +12,8 @@ const expect = (condition, message) => {
   if (!condition) throw new Error(message);
   results.push(`PASS ${message}`);
 };
-const equalsJson = (actual, expected) => JSON.stringify(actual) === JSON.stringify(expected);
-const workbench = createWorkbenchExtension({
-  activeViewId: "system",
-  modelRevision: 9,
-  entities: [
-    { id: "ui-1", kind: "frontend.react-app", name: "Web UI", properties: {} },
-    { id: "api-1", kind: "backend.rest-service", name: "API", properties: { port: 8080 } },
-    { id: "db-1", kind: "data.postgresql-database", name: "Primary DB", properties: {} },
-  ],
-  relations: [
-    { id: "rel-1", kind: "calls", sourceId: "ui-1", targetId: "api-1" },
-    { id: "rel-2", kind: "reads", sourceId: "api-1", targetId: "db-1" },
-  ],
-  views: [{ id: "system", kind: "system", title: "System" }, { id: "apis", kind: "apis", title: "APIs" }],
-  viewScenes: {
-    apis: {
-      elements: [{ id: "api-placement", type: "rectangle", x: 80, y: 40, width: 120, height: 60, customData: { sketchizi: { workbenchEntityId: "api-1" } } }],
-      appState: { scrollX: -4, scrollY: -8, zoom: { value: 1.2 } }, files: {},
-    },
-  },
-});
-const simulationProfile = markSimulationAssumptionsConfirmed(createIllustrativeSimulationProfile(workbench, { durationMs: 2000, seed: 913 }));
-const experimentSuite = runWorkbenchExperiments({ workbench, simulationProfile });
-if (experimentSuite.status !== "completed") throw new Error(`Smoke fixture simulation did not complete: ${experimentSuite.status}`);
+const { workbench, simulationProfile, experimentSuite, indexEvidence } = createIndexHypothesisBrowserSmokeFixture();
+sessionStorage.setItem("workbench-browser-smoke-index", JSON.stringify(indexEvidence));
 const historyEntry = createSimulationHistoryEntry(experimentSuite, { workbench, simulationProfile, createdAt: "2026-10-17T12:00:00.000Z", id: "browser-smoke-history-1" });
 workbench.simulationProfile = simulationProfile;
 workbench.simulationHistory = appendSimulationHistory([], historyEntry);
@@ -90,16 +68,30 @@ async function readPhase() {
   const serialized = sessionStorage.getItem("workbench-browser-smoke-file");
   const parsed = parseDrawing(serialized);
   expect(parsed.format === "sketchizi", "serialized file identifies as .sketchizi document");
-  expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.entities?.length === 3, "serialized file retains shared entities");
+  expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.entities?.length === 5, "serialized file retains shared runtime, endpoint, and table entities");
   expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory?.[0]?.id === "browser-smoke-history-1", "file serialization retains simulation history");
   expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.viewScenes?.apis?.elements?.[0]?.id === "api-placement", "serialized file retains the second view scene");
   expect(parsed.files?.["image-1"]?.mimeType === "image/png", "serialized file retains referenced image payload");
 
-  status.textContent = "PASS — browser reload and simulation-history test";
+  const restoredWorkbench = active?.extensions?.[WORKBENCH_EXTENSION_KEY];
+  const restoredTable = restoredWorkbench?.entities?.find((entity) => entity.id === "table-1");
+  expect(restoredTable?.properties?.indexes === JSON.stringify([{ name: "idx_items_created_at", columns: ["created_at"], method: "btree", unique: false }]), "accepted PostgreSQL index metadata survives IndexedDB reload");
+  const restoredSql = generateSqlArtifact(restoredWorkbench);
+  expect(restoredSql.ok === true && restoredSql.text.includes('CREATE INDEX IF NOT EXISTS "idx_items_created_at"'), "regenerated SQL retains accepted CREATE INDEX after reload");
+  const restoredOpenApi = generateOpenApiArtifact(restoredWorkbench);
+  expect(restoredOpenApi.ok === true && Object.hasOwn(JSON.parse(restoredOpenApi.text).paths || {}, "/api/items"), "OpenAPI path survives reload and regenerates from the same model");
+  const indexEvidence = JSON.parse(sessionStorage.getItem("workbench-browser-smoke-index") || "null");
+  expect(indexEvidence?.candidateColumn === "name" && indexEvidence?.candidateSql?.includes("CREATE INDEX IF NOT EXISTS"), "index hypothesis retains an explicit candidate column and reviewable SQL");
+  expect(indexEvidence?.beforeFraction === 0 && indexEvidence?.afterFraction === 0.25, "index hypothesis records before/after assumption values");
+  expect(indexEvidence?.indexedReadOperationsStarted > 0 && indexEvidence?.indexAssumedTimeSavedMsTotal > 0, "index trial records event-derived indexed-read evidence");
+  expect(indexEvidence?.acceptedSchemaSql?.includes('CREATE INDEX IF NOT EXISTS "idx_items_created_at"') && indexEvidence?.openApiPath === "/api/items", "starter artifacts are generated from the same persisted model");
+
+  status.textContent = "PASS — browser reload, experiment history, and index artifact test";
   status.style.color = "#16733d";
   details.textContent = results.join("\n");
   document.body.dataset.result = "passed";
   sessionStorage.removeItem("workbench-browser-smoke-phase");
+  sessionStorage.removeItem("workbench-browser-smoke-index");
   await reportResult({ status: "passed", results });
 }
 
@@ -119,7 +111,7 @@ try {
     await writePhase();
   }
 } catch (error) {
-  status.textContent = "FAIL — browser reload and simulation-history test";
+  status.textContent = "FAIL — browser reload, experiment history, and index artifact test";
   status.style.color = "#b42318";
   details.textContent = `${results.join("\n")}\nFAIL ${error?.stack || error}`;
   document.body.dataset.result = "failed";

@@ -4,12 +4,20 @@ import { getTypedRequestGuidance } from "./typedRequestGuidance.js";
 import { partitionSimulationDiagnostics } from "./diagnosticPresentation.js";
 import { deriveSimulationScope } from "../adapter/deriveSimulationScope.js";
 import { appendSimulationHistory, createSimulationHistoryEntry, createSimulationModelSnapshot, restoreSimulationHistoryEntry, simulationResultsAreStale } from "./simulationHistory.js";
+import { buildRuntimeOverlayModel } from "./runtimeOverlayModel.js";
+import { deriveTraceInvestigation, findTraceWindowBucketRange } from "./traceInvestigation.js";
 import {
   compareSimulationRuns,
   buildScenarioComparisonOverview,
   chooseCapacityImprovementScenarioKey,
   getCapacityPressureRows,
   createCapacityImprovementProfile,
+  createServiceTimeImprovementProfile,
+  createDatabaseContentionImprovementProfile,
+  getDatabaseIndexCandidates,
+  createDatabaseIndexImprovementProfile,
+  buildTimeSeriesComparisonPoints,
+  summarizeSimulationImprovement,
   createIllustrativeSimulationProfile,
   markSimulationAssumptionsConfirmed,
   mergeMissingIllustrativeProfiles,
@@ -46,6 +54,35 @@ function confirmProfileAssumptionsForEntityIds(profile, entityIds) {
   const allConfirmed = Object.values(next.profilesByEntityId || {}).length > 0
     && Object.values(next.profilesByEntityId || {}).every((item) => Object.values(item.assumptions || {}).every((assumption) => assumption.status === "user-confirmed"));
   next.profileKind = allConfirmed ? "user-confirmed-synthetic" : "illustrative-synthetic";
+  return next;
+}
+
+function ensureDatabaseIndexProfileDefaults(profile) {
+  if (!profile || typeof profile !== "object") return null;
+  const next = deepClone(profile);
+  let changed = false;
+  for (const item of Object.values(next.profilesByEntityId || {})) {
+    if (item?.kind !== "relational-store") continue;
+    item.parameters ||= {};
+    item.assumptions ||= {};
+    if (!Object.hasOwn(item.parameters, "indexBenefitReadFraction")) {
+      item.parameters.indexBenefitReadFraction = 0;
+      item.assumptions.indexBenefitReadFraction = {
+        status: "proposed", source: "backward-compatible-synthetic-index-default",
+        note: "Default assumption: no reads are assumed to benefit from a proposed index until explicitly tested.",
+      };
+      changed = true;
+    }
+    if (!Object.hasOwn(item.parameters, "indexReadSpeedupFactor")) {
+      item.parameters.indexReadSpeedupFactor = 3;
+      item.assumptions.indexReadSpeedupFactor = {
+        status: "proposed", source: "backward-compatible-synthetic-index-default",
+        note: "Synthetic assumption: an index-benefiting read uses one third of sampled base database service time; this is not a measured SQL plan.",
+      };
+      changed = true;
+    }
+  }
+  if (changed) next.profileKind = "illustrative-synthetic";
   return next;
 }
 
@@ -116,16 +153,25 @@ function timeSeriesPath(values, maximum, width = 320, height = 86) {
   return segments.map((part) => part.join(" "));
 }
 
-function SimulationTrendChart({ title, points, series, unit }) {
+function SimulationTrendChart({ title, points, series, unit, selectedWindow }) {
   const allValues = series.flatMap((item) => points.map((point) => point[item.key])).filter(isFiniteNumber);
   const hasSamples = allValues.length > 0;
   const actualPeak = hasSamples ? Math.max(0, ...allValues) : null;
   const scaleMaximum = Math.max(1, actualPeak ?? 0);
   const chartHeight = 86;
+  const selectedBuckets = findTraceWindowBucketRange(points, selectedWindow);
+  const bucketCount = points.length;
+  const pointSpacing = bucketCount > 1 ? 306 / (bucketCount - 1) : 4;
+  const pointX = (index) => 7 + 306 * index / Math.max(1, bucketCount - 1);
+  const highlightX = selectedBuckets ? Math.max(7, pointX(selectedBuckets.startIndex) - pointSpacing / 2) : 0;
+  const highlightRight = selectedBuckets ? Math.min(313, pointX(selectedBuckets.endIndex) + pointSpacing / 2) : 0;
+  const highlightWidth = selectedBuckets ? Math.max(4, highlightRight - highlightX) : 0;
+  const highlightLeft = selectedBuckets ? Math.max(7, Math.min(313 - highlightWidth, highlightX)) : 0;
   return <section className="sim-time-chart" aria-label={`${title} time series`}>
     <div className="sim-time-chart-heading"><strong>{title}</strong><small>{hasSamples ? `Peak ${formatDecimal(actualPeak)}${unit ? ` ${unit}` : ""}` : "No samples in this interval"}</small></div>
     <div className="sim-time-chart-legend">{series.map((item) => <span key={item.key}><i className={item.className} aria-hidden="true"/>{item.label}</span>)}</div>
     <svg className="sim-time-chart-svg" viewBox={`0 0 320 ${chartHeight}`} role="img" aria-label={`${title}; ${points.length} event-derived time buckets`}>
+      {selectedBuckets && <rect x={highlightLeft} y="7" width={highlightWidth} height={chartHeight - 14} rx="2" className="sim-time-chart-investigation-window"><title>Selected request hop interval</title></rect>}
       {[0.25, 0.5, 0.75].map((fraction) => <line key={fraction} x1="7" x2="313" y1={8 + (chartHeight - 16) * fraction} y2={8 + (chartHeight - 16) * fraction} className="sim-time-chart-grid"/>)}
       {series.map((item) => {
         const values = points.map((point) => point[item.key]);
@@ -144,27 +190,102 @@ function SimulationTrendChart({ title, points, series, unit }) {
   </section>;
 }
 
-function SimulationTimeSeries({ run }) {
+function SimulationTimeSeries({ run, investigation }) {
   const timeSeries = run?.result?.result?.timeSeries;
   const points = timeSeries?.points;
   if (!Array.isArray(points) || !points.length) return null;
   const drain = timeSeries.postWindowDrain || {};
   const drainTotal = (drain.successfulRequests || 0) + (drain.failedRequests || 0) + (drain.droppedRequests || 0);
-  return <details className="sim-time-series">
+  return <details className="sim-time-series" open={Boolean(investigation?.hasTimeWindow)}>
     <summary><span>Performance over time</span><small>{points.length} event-derived intervals</small></summary>
     <p>Each point is calculated from simulated request-arrival and completion timestamps. Outcomes after the observation window are reported separately as drain results.</p>
+    {investigation && <div className="sim-trace-chart-link" role="status"><strong>{investigation.componentLabel}</strong><span>{investigation.reason === "request-problem-point" ? `Request ${investigation.requestId} · ${investigation.hopOutcome} point` : `Request ${investigation.requestId} · ${formatDecimal(investigation.durationMs)} ms measured queue + service time`}</span>{investigation.hasTimeWindow ? <small>Highlighted interval: {formatDecimal(investigation.startMs)}–{formatDecimal(investigation.endMs)} ms from run start.</small> : <small>This hop has no complete recorded time interval to highlight.</small>}</div>}
     <SimulationTrendChart title="Offered load and successful throughput" points={points} unit="req/s" series={[
       { key: "offeredRps", label: "Offered", className: "series-offered" },
       { key: "successfulRps", label: "Succeeded", className: "series-success" },
-    ]}/>
+    ]} selectedWindow={investigation}/>
     <SimulationTrendChart title="Successful p95 latency" points={points} unit="ms" series={[
       { key: "latencyP95Ms", label: "p95 latency", className: "series-latency" },
-    ]}/>
+    ]} selectedWindow={investigation}/>
     <SimulationTrendChart title="Failures and capacity drops" points={points} unit="requests" series={[
       { key: "failedRequests", label: "Failed", className: "series-failed" },
       { key: "droppedRequests", label: "Dropped", className: "series-dropped" },
-    ]}/>
+    ]} selectedWindow={investigation}/>
     {drainTotal > 0 && <p className="sim-time-drain-note">After-window drain: {formatInteger(drain.successfulRequests || 0)} succeeded, {formatInteger(drain.failedRequests || 0)} failed, {formatInteger(drain.droppedRequests || 0)} dropped while already offered work finished. These outcomes are included in aggregate totals but not plotted inside the observation window.</p>}
+  </details>;
+}
+
+function ImprovementTimeSeriesComparison({ comparison, investigation }) {
+  if (comparison?.status !== "ready" || !Array.isArray(comparison.points) || comparison.points.length === 0) {
+    return <p className="sim-improvement-series-unavailable">{comparison?.reason || "Matching event-derived time-series data is not available for both runs. Aggregate comparison remains available."}</p>;
+  }
+  const points = comparison.points;
+  const pairedSeries = (key, label) => [
+    { key: `before${key}`, label: `Before · ${label}`, className: "series-before" },
+    { key: `after${key}`, label: `After · ${label}`, className: "series-after" },
+  ];
+  return <details className="sim-improvement-series" open>
+    <summary><span>Before / after over time</span><small>{points.length} matched event-derived intervals</small></summary>
+    <p>Both curves use the same stressed scenario, seed, observation window, and bucket boundaries. Highlighted intervals refer to the originally investigated request.</p>
+    <SimulationTrendChart title="Successful throughput" points={points} unit="req/s" series={pairedSeries("SuccessfulRps", "success")} selectedWindow={investigation}/>
+    <SimulationTrendChart title="Successful p95 latency" points={points} unit="ms" series={pairedSeries("LatencyP95Ms", "p95")} selectedWindow={investigation}/>
+    <SimulationTrendChart title="Dropped requests per interval" points={points} unit="requests" series={pairedSeries("DroppedRequests", "drops")} selectedWindow={investigation}/>
+  </details>;
+}
+
+function RequestTraceExplorer({ run, scenarioKey, onFocusEntity, onInvestigateTrace, investigation }) {
+  const traceCapture = run?.result?.result?.requestTraces;
+  const traces = Array.isArray(traceCapture?.traces) ? traceCapture.traces : [];
+  const [selectedRequestId, setSelectedRequestId] = useState("");
+  const preferredTrace = traces.find((trace) => trace.outcome === "dropped")
+    || traces.find((trace) => trace.outcome === "failed")
+    || [...traces].sort((a, b) => (b.totalLatencyMs ?? -1) - (a.totalLatencyMs ?? -1) || String(a.requestId).localeCompare(String(b.requestId)))[0]
+    || null;
+  const selectedTrace = traces.find((trace) => trace.requestId === selectedRequestId) || preferredTrace;
+  const traceInvestigation = deriveTraceInvestigation(selectedTrace);
+  if (!traceCapture || traces.length === 0) return null;
+  const totalRequests = Number.isSafeInteger(traceCapture.totalTerminalRequests) ? traceCapture.totalTerminalRequests : traces.length;
+  const outcomeLabel = (outcome) => ({ success: "Succeeded", failed: "Failed", dropped: "Dropped" })[outcome] || String(outcome || "Unknown");
+  const hopOutcomeLabel = (outcome) => ({ sent: "Traffic offered", success: "Request completed", completed: "Hop completed", failed: "Failed here", unavailable: "Dependency unavailable", dropped: "Dropped before service" })[outcome] || String(outcome || "Unknown");
+  const displayTime = (value) => isFiniteNumber(value) ? `${formatDecimal(value, 2)} ms` : "Not recorded";
+  return <details className="sim-request-traces">
+    <summary><span>Request-level traces</span><small>{traces.length} sampled · {formatInteger(totalRequests)} terminal requests</small></summary>
+    <p>Trace samples are recorded from discrete-event request lifecycles. We keep a few examples of each outcome plus the slowest requests; this is not a full distributed trace of a deployed service.</p>
+    <label className="sim-request-trace-select">Request sample
+      <select aria-label="Select request trace" value={selectedTrace?.requestId || ""} onChange={(event) => setSelectedRequestId(event.target.value)}>
+        {traces.map((trace) => <option key={trace.requestId} value={trace.requestId}>{trace.requestId} · {outcomeLabel(trace.outcome)} · {formatDecimal(trace.totalLatencyMs)} ms</option>)}
+      </select>
+    </label>
+    {selectedTrace && <>
+      <div className={`sim-request-trace-summary outcome-${selectedTrace.outcome}`}>
+        <div><span>Outcome</span><strong>{outcomeLabel(selectedTrace.outcome)}</strong></div>
+        <div><span>End-to-end modeled time</span><strong>{formatDecimal(selectedTrace.totalLatencyMs)} ms</strong></div>
+        <div><span>Arrival</span><strong>{formatDecimal(selectedTrace.arrivalMs)} ms</strong></div>
+        <div><span>Completion</span><strong>{formatDecimal(selectedTrace.completedAtMs)} ms</strong></div>
+        <small>{selectedTrace.withinObservationWindow ? "Completed within the observation window" : "Completed during post-window drain"}</small>
+      </div>
+      {traceInvestigation && <div className={`sim-trace-investigation ${traceInvestigation.reason === "request-problem-point" ? "problem" : "slowest"}`}>
+        <div><strong>{traceInvestigation.reason === "request-problem-point" ? "Recorded problem point" : traceInvestigation.reason === "hop-without-timing-evidence" ? "Hop selected · timing unavailable" : "Slowest measured hop"}</strong><span>{traceInvestigation.componentLabel}{traceInvestigation.durationMs !== null ? ` · ${formatDecimal(traceInvestigation.durationMs)} ms queue + service` : ` · ${hopOutcomeLabel(traceInvestigation.hopOutcome)}`}</span></div>
+        <button type="button" className="workbench-secondary" onClick={() => { onInvestigateTrace?.({ ...traceInvestigation, scenarioKey }); if (traceInvestigation.entityId) onFocusEntity?.(traceInvestigation.entityId); }}>Investigate on charts & canvas</button>
+        {investigation?.scenarioKey === scenarioKey && investigation?.requestId === selectedTrace.requestId && investigation?.hopIndex === traceInvestigation.hopIndex && <small className="sim-trace-investigation-active">Currently highlighted in charts and canvas.</small>}
+      </div>}
+      <ol className="sim-request-trace-hops">
+        {(selectedTrace.hops || []).map((hop, index) => <li key={`${selectedTrace.requestId}-${hop.nodeId}-${index}`} className={`sim-request-trace-hop outcome-${hop.outcome}`}>
+          <div className="sim-request-trace-hop-head"><span className="sim-request-trace-step">{index + 1}</span><div><strong>{hop.label || hop.entityId || hop.nodeId}</strong><small>{hop.kind || "runtime component"} · {hopOutcomeLabel(hop.outcome)}</small></div></div>
+          <dl>
+            {hop.kind === "traffic-source" ? <div><dt>Request offered</dt><dd>{displayTime(hop.arrivalMs)}</dd></div> : <>
+              <div><dt>Arrival</dt><dd>{displayTime(hop.arrivalMs)}</dd></div>
+              <div><dt>Queue wait</dt><dd>{displayTime(hop.queueWaitMs)}</dd></div>
+              <div><dt>Service time</dt><dd>{displayTime(hop.serviceTimeMs)}</dd></div>
+              <div><dt>Service started</dt><dd>{displayTime(hop.serviceStartedAtMs)}</dd></div>
+              <div><dt>Service ended / outcome</dt><dd>{displayTime(hop.outcomeAtMs)}</dd></div>
+            </>}
+          </dl>
+          {hop.entityId && <button type="button" className="sim-request-trace-focus" onClick={() => onFocusEntity?.(hop.entityId)}>Focus component</button>}
+        </li>)}
+      </ol>
+      <small className="sim-request-trace-footnote">Queue wait and service time are reported separately. Unavailable or dropped hops have no service time. Times are relative to the start of this synthetic run.</small>
+    </>}
   </details>;
 }
 
@@ -227,7 +348,7 @@ function ScenarioComparisonOverview({ overview, onFocusEntity, onSelectScenario 
   </details>;
 }
 
-export default function SimulationExperimentPanel({ workbench, simulationProfile, onUpdateSimulationProfile, simulationHistory = [], onUpdateSimulationHistory, onCreateTypedRelation, onFocusEntity, visibleEntityIds = null, activeViewId = "system", onSwitchView, onSwitchToAdd, canEdit = true }) {
+export default function SimulationExperimentPanel({ workbench, simulationProfile, onUpdateSimulationProfile, simulationHistory = [], onUpdateSimulationHistory, onCreateTypedRelation, onFocusEntity, onUpdateEntity, visibleEntityIds = null, activeViewId = "system", onSwitchView, onSwitchToAdd, onRuntimeOverlayChange, canEdit = true }) {
   const scopeSignature = Array.isArray(visibleEntityIds) ? JSON.stringify([...new Set(visibleEntityIds)].sort()) : "__model_scope__";
   const scopeSeeds = useMemo(() => scopeSignature === "__model_scope__" ? null : JSON.parse(scopeSignature), [scopeSignature]);
   const simulationScope = useMemo(() => workbench ? deriveSimulationScope(workbench, scopeSeeds) : { workbench: null, entityIds: [], seedEntityIds: [], excludedEntityIds: [], scoped: Array.isArray(scopeSeeds) }, [workbench, scopeSignature]);
@@ -239,7 +360,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const missingTrafficSource = simulationScope.scoped && !activeViewHasTrafficSource;
   const scopeEntityIdSet = useMemo(() => new Set(simulationScope.entityIds), [simulationScope]);
   const effectiveScopeSignature = JSON.stringify(simulationScope.entityIds);
-  const [draftProfile, setDraftProfile] = useState(simulationProfile ? deepClone(simulationProfile) : null);
+  const [draftProfile, setDraftProfile] = useState(() => ensureDatabaseIndexProfileDefaults(simulationProfile));
   const draftProfileRef = useRef(draftProfile);
   draftProfileRef.current = draftProfile;
   const [acknowledged, setAcknowledged] = useState(() => profileIsConfirmed(profileForEntityIds(simulationProfile, simulationScope.entityIds)));
@@ -249,19 +370,22 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const [runError, setRunError] = useState("");
   const [improvementResult, setImprovementResult] = useState(null);
   const [improvementError, setImprovementError] = useState("");
+  const [databaseIndexCandidateKey, setDatabaseIndexCandidateKey] = useState("");
+  const [schemaUpdateNotice, setSchemaUpdateNotice] = useState("");
   const [profileEditorOpen, setProfileEditorOpen] = useState(true);
   const [showAllExplanations, setShowAllExplanations] = useState(false);
   const [trafficMultiplier, setTrafficMultiplier] = useState(5);
+  const [investigation, setInvestigation] = useState(null);
 
   useEffect(() => {
     // The controller may clone Workbench metadata after an autosave or an unrelated
     // model update. If profile values are unchanged, preserve current results and
     // run-local assumption acknowledgement; modelRevision still marks stale results.
-    if (profileIsSame(draftProfileRef.current, simulationProfile)) return;
-    const next = simulationProfile ? deepClone(simulationProfile) : null;
+    if (profileIsSame(draftProfileRef.current, ensureDatabaseIndexProfileDefaults(simulationProfile))) return;
+    const next = ensureDatabaseIndexProfileDefaults(simulationProfile);
     setDraftProfile(next);
     setAcknowledged(profileIsConfirmed(profileForEntityIds(next, simulationScope.entityIds)));
-    setResults(null); setImprovementResult(null); setImprovementError("");
+    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
     setProfileError("");
     setRunError("");
   }, [simulationProfile, effectiveScopeSignature, scopeSignature]);
@@ -270,7 +394,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   // again. Saved history remains available and is marked stale where appropriate.
   useEffect(() => {
     setAcknowledged(false);
-    setResults(null); setImprovementResult(null); setImprovementError("");
+    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
     setRunError("");
   }, [effectiveScopeSignature]);
 
@@ -279,7 +403,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   // from the previous model revision and require fresh assumption review.
   const modelRevision = workbench?.modelRevision ?? null;
   useEffect(() => {
-    setResults(null); setImprovementResult(null); setImprovementError("");
+    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
     setAcknowledged(false);
     setRunError("");
   }, [modelRevision]);
@@ -298,6 +422,15 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const activeRun = results?.runs?.[activeRunKey];
   const capacityScenarioKey = useMemo(() => chooseCapacityImprovementScenarioKey(results?.runs, activeRunKey), [results, activeRunKey]);
   const capacityScenario = capacityScenarioKey ? results?.runs?.[capacityScenarioKey] : null;
+  const databaseIndexCandidates = useMemo(() => getDatabaseIndexCandidates({
+    profile: draftProfile,
+    workbench,
+    scopeEntityIds: simulationScope.entityIds,
+    componentRows: getCapacityPressureRows(capacityScenario),
+  }), [draftProfile, workbench, simulationScope, capacityScenario]);
+  const candidateKey = (candidate) => candidate ? `${candidate.entityId}::${candidate.tableEntityId}::${candidate.columnName}` : "";
+  const selectedDatabaseIndexCandidate = databaseIndexCandidates.find((candidate) => candidateKey(candidate) === databaseIndexCandidateKey)
+    || (databaseIndexCandidates.length === 1 ? databaseIndexCandidates[0] : null);
   const baselineRun = results?.runs?.baseline?.result;
   const comparisonRun = activeRunKey === "baseline" ? baselineRun : activeRun?.result;
   const comparison = activeRunKey !== "baseline" && baselineRun && comparisonRun
@@ -309,6 +442,78 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const resultsEntitiesById = useMemo(() => new Map((resultsModel?.entities || []).map((entity) => [entity.id, entity])), [resultsModel?.entities]);
   const resultsProfile = results?.profileUsed || results?.historyProfileSnapshot;
   const scenarioOverview = useMemo(() => results ? buildScenarioComparisonOverview(results, resultsModel) : null, [results, resultsModel]);
+  const activeInvestigation = investigation?.scenarioKey === activeRunKey && !staleModel ? investigation : null;
+  const capacityTraceTargetEntityId = useMemo(() => {
+    if (!activeInvestigation || activeInvestigation.scenarioKey !== capacityScenarioKey
+      || activeInvestigation.requestOutcome !== "success"
+      || activeInvestigation.reason !== "largest-measured-hop-duration"
+      || !activeInvestigation.entityId) return null;
+    const pressure = getCapacityPressureRows(capacityScenario).find((row) => row.entityId === activeInvestigation.entityId);
+    // Concurrency is appropriate to test only when the selected hop has some
+    // observed queueing or component-level pressure. A large service time alone
+    // is not evidence that adding concurrency is the right intervention.
+    return (activeInvestigation.queueWaitMs ?? 0) > 0 || pressure?.hasPressure
+      ? activeInvestigation.entityId
+      : null;
+  }, [activeInvestigation, capacityScenarioKey, capacityScenario]);
+  const serviceTimeTraceTargetEntityId = useMemo(() => {
+    if (!activeInvestigation || activeInvestigation.scenarioKey !== capacityScenarioKey
+      || activeInvestigation.requestOutcome !== "success"
+      || activeInvestigation.reason !== "largest-measured-hop-duration"
+      || !activeInvestigation.entityId
+      || !isFiniteNumber(activeInvestigation.serviceTimeMs)
+      || activeInvestigation.serviceTimeMs <= 0
+      || (activeInvestigation.queueWaitMs ?? 0) > activeInvestigation.serviceTimeMs) return null;
+    const row = getCapacityPressureRows(capacityScenario).find((item) => item.entityId === activeInvestigation.entityId);
+    return isFiniteNumber(row?.serviceTimeP95Ms) && row.serviceTimeP95Ms > 0
+      ? activeInvestigation.entityId
+      : null;
+  }, [activeInvestigation, capacityScenarioKey, capacityScenario]);
+  const databaseContentionEvidenceRows = useMemo(() => getCapacityPressureRows(capacityScenario)
+    .filter((row) => {
+      const entity = entitiesById.get(row.entityId);
+      const item = profiles[row.entityId];
+      return scopeEntityIdSet.has(row.entityId)
+        && entity?.kind === "data.postgresql-database"
+        && item?.kind === "relational-store"
+        && isFiniteNumber(item?.parameters?.writeContentionMs)
+        && item.parameters.writeContentionMs > 0
+        && row.writeOperationsStarted > 0
+        && row.writeContentionMsTotal > 0;
+    })
+    .sort((a, b) => b.writeContentionMsTotal - a.writeContentionMsTotal
+      || b.maxDropped - a.maxDropped
+      || b.peakUtilization - a.peakUtilization
+      || a.entityId.localeCompare(b.entityId)),
+  [capacityScenario, entitiesById, profiles, scopeEntityIdSet]);
+  const databaseContentionTraceTargetEntityId = useMemo(() => {
+    if (!activeInvestigation || activeInvestigation.scenarioKey !== capacityScenarioKey
+      || activeInvestigation.requestOutcome !== "success"
+      || activeInvestigation.operation !== "write"
+      || !isFiniteNumber(activeInvestigation.writeContentionMs)
+      || activeInvestigation.writeContentionMs <= 0) return null;
+    return databaseContentionEvidenceRows.some((row) => row.entityId === activeInvestigation.entityId)
+      ? activeInvestigation.entityId
+      : null;
+  }, [activeInvestigation, capacityScenarioKey, databaseContentionEvidenceRows]);
+  const databaseContentionTargetEntityId = databaseContentionTraceTargetEntityId
+    || databaseContentionEvidenceRows[0]?.entityId
+    || null;
+  const runtimeOverlayModel = useMemo(() => buildRuntimeOverlayModel({
+    results,
+    activeRunKey,
+    workbench,
+    activeViewId,
+    stale: staleModel,
+    investigation: activeInvestigation,
+  }), [results, activeRunKey, workbench, activeViewId, staleModel, activeInvestigation]);
+
+  useEffect(() => {
+    // A null update clears the canvas layer whenever results are absent, blocked,
+    // stale, or scoped to another view. The canvas independently validates the
+    // model revision before rendering any badge.
+    onRuntimeOverlayChange?.(runtimeOverlayModel);
+  }, [onRuntimeOverlayChange, runtimeOverlayModel]);
 
   const prepareProfile = () => {
     try {
@@ -316,7 +521,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       setDraftProfile(profile);
       setProfileEditorOpen(true);
       setAcknowledged(false);
-      setResults(null); setImprovementResult(null); setImprovementError("");
+      setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
       onUpdateSimulationProfile?.(profile);
       setProfileError("");
     } catch (error) { setProfileError(error.message); }
@@ -327,7 +532,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       setDraftProfile(merged.profile);
       setProfileEditorOpen(true);
       setAcknowledged(false);
-      setResults(null); setImprovementResult(null); setImprovementError("");
+      setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
       onUpdateSimulationProfile?.(merged.profile);
       setProfileError(merged.addedEntityIds.length ? `Added proposed profiles for ${merged.addedEntityIds.length} component(s). Review the values and acknowledge the assumptions before running.` : "All supported components already have profiles.");
     } catch (error) { setProfileError(error.message); }
@@ -348,13 +553,14 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     setDraftProfile(next);
     setProfileEditorOpen(true);
     setAcknowledged(false);
-    setResults(null); setImprovementResult(null); setImprovementError("");
+    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
     onUpdateSimulationProfile?.(next);
     setProfileError("");
   };
   const runExperiments = () => {
     setImprovementResult(null);
     setImprovementError("");
+    setInvestigation(null);
     setRunError("");
     if (missingTrafficSource) { setRunError("The active view has no React traffic source. Switch to a view containing the React application before running request-path experiments."); return; }
     if (!draftProfile) { setRunError("Prepare a simulation profile first."); return; }
@@ -390,7 +596,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     } catch (error) { setRunError(error.message); }
   };
 
-  const runCapacityImprovement = () => {
+  const runImprovementExperiment = (interventionKind = "capacity") => {
     setImprovementError("");
     setImprovementResult(null);
     if (!canEdit) { setImprovementError("Edit permission is required to run a controlled improvement experiment."); return; }
@@ -403,15 +609,49 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       const comparisonScenarioKey = chooseCapacityImprovementScenarioKey(results.runs, activeRunKey);
       const originalScenario = comparisonScenarioKey ? results.runs?.[comparisonScenarioKey] : null;
       if (!originalScenario || originalScenario.result?.status !== "completed") {
-        throw new Error("No completed load scenario is available for a capacity comparison. Run the baseline and traffic-surge scenarios first.");
+        throw new Error("No completed load scenario is available for an improvement comparison. Run the baseline and traffic-surge scenarios first.");
       }
       const pressureRows = getCapacityPressureRows(originalScenario);
-      const improvement = createCapacityImprovementProfile({
-        profile: draftProfile,
-        workbench,
-        scopeEntityIds: simulationScope.entityIds,
-        componentRows: pressureRows,
-      });
+      const isServiceTime = interventionKind === "service-time";
+      const isWriteContention = interventionKind === "write-contention";
+      const isDatabaseIndex = interventionKind === "database-index";
+      const preferredEntityId = isDatabaseIndex
+        ? selectedDatabaseIndexCandidate?.entityId
+        : isWriteContention ? databaseContentionTraceTargetEntityId
+          : isServiceTime ? serviceTimeTraceTargetEntityId : capacityTraceTargetEntityId;
+      const improvement = isDatabaseIndex
+        ? createDatabaseIndexImprovementProfile({
+          profile: draftProfile,
+          workbench,
+          scopeEntityIds: simulationScope.entityIds,
+          componentRows: pressureRows,
+          preferredEntityId,
+          preferredTableId: selectedDatabaseIndexCandidate?.tableEntityId,
+          preferredColumnName: selectedDatabaseIndexCandidate?.columnName,
+        })
+        : isWriteContention
+        ? createDatabaseContentionImprovementProfile({
+          profile: draftProfile,
+          workbench,
+          scopeEntityIds: simulationScope.entityIds,
+          componentRows: pressureRows,
+          preferredEntityId,
+        })
+        : isServiceTime
+          ? createServiceTimeImprovementProfile({
+            profile: draftProfile,
+            workbench,
+            scopeEntityIds: simulationScope.entityIds,
+            componentRows: pressureRows,
+            preferredEntityId,
+          })
+          : createCapacityImprovementProfile({
+            profile: draftProfile,
+            workbench,
+            scopeEntityIds: simulationScope.entityIds,
+            componentRows: pressureRows,
+            preferredEntityId,
+          });
       const suite = runWorkbenchExperiments({ workbench, simulationProfile: improvement.profile, trafficMultiplier: results.trafficMultiplier ?? trafficMultiplier, scopeEntityIds: scopeSeeds ?? undefined });
       const improvedScenario = suite.runs?.[comparisonScenarioKey];
       if (improvedScenario?.result?.status !== "completed") {
@@ -420,14 +660,28 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       }
       const comparisonResult = compareSimulationRuns(originalScenario.result, improvedScenario.result);
       if (comparisonResult.status !== "ready") throw new Error(comparisonResult.reason || "The improved scenario could not be compared against the same original scenario.");
+      const timeSeriesComparison = buildTimeSeriesComparisonPoints(originalScenario.result, improvedScenario.result);
+      const outcomeSummary = summarizeSimulationImprovement(comparisonResult);
+      const traceMatchesTarget = preferredEntityId === activeInvestigation?.entityId
+        && activeInvestigation?.scenarioKey === comparisonScenarioKey
+        && (improvement.selectionReason?.startsWith("selected-trace")
+          || (isDatabaseIndex && activeInvestigation?.operation === "read" && activeInvestigation?.requestOutcome === "success"));
+      const traceInvestigationSnapshot = traceMatchesTarget ? deepClone(activeInvestigation) : null;
 
       const displayImprovement = {
         ...improvement,
+        interventionKind,
         comparison: comparisonResult,
+        timeSeriesComparison,
+        outcomeSummary,
         comparisonScenarioKey,
         comparisonScenarioLabel: originalScenario.label || comparisonScenarioKey,
+        targetSelectionReason: improvement.selectionReason,
+        traceInvestigationSnapshot,
         baselineRunFingerprint: results.runs?.baseline?.result?.result?.simulation?.runFingerprint || null,
         comparisonRunFingerprint: originalScenario.result?.result?.simulation?.runFingerprint || null,
+        beforeRunFingerprint: originalScenario.result?.result?.simulation?.runFingerprint || null,
+        afterRunFingerprint: improvedScenario.result?.result?.simulation?.runFingerprint || null,
         suite,
         createdAt: new Date().toISOString(),
       };
@@ -440,12 +694,26 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         sourceModelSnapshot: createSimulationModelSnapshot(workbench),
         experimentMetadata: {
           kind: "one-variable-improvement",
+          interventionKind,
           title: improvement.label,
           changedEntityId: improvement.entityId,
           field: improvement.field,
           comparisonScenarioKey,
           comparisonScenarioLabel: originalScenario.label || comparisonScenarioKey,
           comparisonRunFingerprint: originalScenario.result?.result?.simulation?.runFingerprint || null,
+          beforeRunFingerprint: originalScenario.result?.result?.simulation?.runFingerprint || null,
+          afterRunFingerprint: improvedScenario.result?.result?.simulation?.runFingerprint || null,
+          targetSelectionReason: improvement.selectionReason,
+          traceRequestId: traceInvestigationSnapshot?.requestId || null,
+          traceHopIndex: traceInvestigationSnapshot?.hopIndex ?? null,
+          tracedEntityId: traceInvestigationSnapshot?.entityId || null,
+          traceQueueWaitMs: traceInvestigationSnapshot?.queueWaitMs ?? null,
+          traceServiceTimeMs: traceInvestigationSnapshot?.serviceTimeMs ?? null,
+          traceOperation: traceInvestigationSnapshot?.operation ?? null,
+          traceWriteContentionMs: traceInvestigationSnapshot?.writeContentionMs ?? null,
+          interventionEvidence: improvement.evidence || null,
+          proposedIndex: improvement.proposedIndex || null,
+          modelingLimit: improvement.modelingLimit || null,
           before: improvement.before,
           after: improvement.after,
           baseProfileSnapshot: deepClone(draftProfile),
@@ -457,6 +725,33 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       onUpdateSimulationHistory?.(appendSimulationHistory(simulationHistory, entry));
     } catch (error) {
       setImprovementError(error.message || "Could not run the improvement experiment.");
+    }
+  };
+  const runCapacityImprovement = () => runImprovementExperiment("capacity");
+  const runServiceTimeImprovement = () => runImprovementExperiment("service-time");
+  const runDatabaseContentionImprovement = () => runImprovementExperiment("write-contention");
+  const runDatabaseIndexImprovement = () => runImprovementExperiment("database-index");
+  const applyProposedIndexToSchema = () => {
+    const proposed = improvementResult?.proposedIndex;
+    const table = proposed ? entitiesById.get(proposed.tableEntityId) : null;
+    if (!canEdit || typeof onUpdateEntity !== "function" || !proposed || !table || table.kind !== "data.postgresql-table") {
+      setImprovementError("The proposed index cannot be added to the model in the current context. Check edit permissions and the target table.");
+      return;
+    }
+    try {
+      const raw = table.properties?.indexes;
+      const existingIndexes = raw == null || String(raw).trim() === "" ? [] : typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (!Array.isArray(existingIndexes)) throw new Error("The table indexes property must be a JSON array before adding a proposed index.");
+      if (existingIndexes.some((index) => index?.name === proposed.indexName || (Array.isArray(index?.columns) && index.columns.includes(proposed.columnName)))) {
+        setSchemaUpdateNotice(`An index on ${proposed.tableName}.${proposed.columnName} is already modeled. Review the table schema and regenerate SQL.`);
+        return;
+      }
+      const nextIndexes = [...existingIndexes, { name: proposed.indexName, columns: [proposed.columnName], method: "btree", unique: false }];
+      onUpdateEntity(table.id, { properties: { indexes: JSON.stringify(nextIndexes, null, 2) } });
+      setSchemaUpdateNotice(`Candidate index added to the schema model: ${proposed.indexName}. Switch to Build and regenerate SQL. The experiment results are historical for the previous model revision.`);
+      setImprovementError("");
+    } catch (error) {
+      setImprovementError(`Could not add the candidate index: ${error.message}`);
     }
   };
 
@@ -492,8 +787,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       <details className="sim-profile-editor" open={profileEditorOpen} onToggle={(event) => setProfileEditorOpen(event.currentTarget.open)}>
         <summary>Simulation assumptions and workload <span className="sim-profile-editor-summary-note">{profileEditorOpen ? "hide settings" : "edit settings"}</span></summary>
         <div className="sim-profile-scenario-fields">
-          <label><span>Observation window (seconds)</span><input type="number" min="1" max="3600" value={(draftProfile.defaultScenario?.durationMs || 15000) / 1000} disabled={!canEdit} onChange={(event) => { const next = deepClone(draftProfile); next.defaultScenario ||= {}; next.defaultScenario.durationMs = Math.round(Number(event.target.value) * 1000); next.profileKind = "illustrative-synthetic"; setDraftProfile(next); setAcknowledged(false); setResults(null); setImprovementResult(null); setImprovementError(""); }} /></label>
-          <label><span>Random seed</span><input type="number" step="1" value={draftProfile.defaultScenario?.seed ?? 211} disabled={!canEdit} onChange={(event) => { const next = deepClone(draftProfile); next.defaultScenario ||= {}; next.defaultScenario.seed = Number(event.target.value); next.profileKind = "illustrative-synthetic"; setDraftProfile(next); setAcknowledged(false); setResults(null); setImprovementResult(null); setImprovementError(""); }} /></label>
+          <label><span>Observation window (seconds)</span><input type="number" min="1" max="3600" value={(draftProfile.defaultScenario?.durationMs || 15000) / 1000} disabled={!canEdit} onChange={(event) => { const next = deepClone(draftProfile); next.defaultScenario ||= {}; next.defaultScenario.durationMs = Math.round(Number(event.target.value) * 1000); next.profileKind = "illustrative-synthetic"; setDraftProfile(next); setAcknowledged(false); setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null); }} /></label>
+          <label><span>Random seed</span><input type="number" step="1" value={draftProfile.defaultScenario?.seed ?? 211} disabled={!canEdit} onChange={(event) => { const next = deepClone(draftProfile); next.defaultScenario ||= {}; next.defaultScenario.seed = Number(event.target.value); next.profileKind = "illustrative-synthetic"; setDraftProfile(next); setAcknowledged(false); setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null); }} /></label>
         </div>
         {availableProfileEntities.map(({ entity, entityId, profile }) => <details className="sim-profile-entity" key={entityId}>
           <summary><span>{entity.name || entity.id}</span><small>{profile.kind}</small></summary>
@@ -505,7 +800,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
                 setDraftProfile((current) => setField(current, entityId, field.key, parsed));
                 setProfileEditorOpen(true);
                 setAcknowledged(false);
-                setResults(null); setImprovementResult(null); setImprovementError("");
+                setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
               }} />
             </label>)}
             <p className="sim-profile-assumption-note">Values are scenario assumptions. This prototype does not infer them from live infrastructure.</p>
@@ -541,6 +836,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
               const safeMultiplier = Number.isFinite(savedMultiplier) && savedMultiplier >= 2 && savedMultiplier <= 10 ? savedMultiplier : 5;
               setTrafficMultiplier(safeMultiplier);
               setResults({ ...restored, trafficMultiplier: safeMultiplier });
+              setInvestigation(null);
               setProfileEditorOpen(false); setShowAllExplanations(false); setImprovementResult(null); setImprovementError(""); setActiveRunKey("baseline"); setRunError("");
             } catch (error) { setRunError(`Could not open saved experiment: ${error.message}`); }
           }}>Open results</button>
@@ -588,15 +884,47 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         <ScenarioComparisonOverview overview={scenarioOverview} onFocusEntity={onFocusEntity} onSelectScenario={setActiveRunKey} />
         {results.status === "completed" && <section className="sim-improvement-lab" aria-label="Test an improvement">
           <div className="sim-improvement-heading"><strong>TEST AN IMPROVEMENT</strong><small>Controlled one-variable experiment</small></div>
-          <p>Tests a higher concurrency assumption on the highest-pressure component from the selected scenario. If Baseline is selected, Sketchizi picks the most pressured completed load scenario (normally {results.runs?.trafficSurge?.label || "the traffic-surge scenario"}). Outage runs are excluded because adding capacity cannot restore an unavailable dependency.</p>
-          {capacityScenario && <p className="sim-capacity-target">Comparison target: <strong>{capacityScenario.label}</strong>. The before/after comparison reruns this same scenario with the same seed, duration, model, and traffic multiplier.</p>}
-          <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel || !capacityScenarioKey} onClick={runCapacityImprovement}>Test a capacity improvement</button>
+          <p>Test one hypothesis at a time under the same stressed scenario: add concurrency when capacity pressure is recorded, reduce mean service time when timing evidence supports it, or reduce PostgreSQL write-contention overhead when the run records writes with applied contention. These are synthetic what-if experiments, not guaranteed real-world fixes. Outage scenarios are excluded.</p>
+          {capacityScenario && <p className="sim-capacity-target">Comparison target: <strong>{capacityScenario.label}</strong>. Each trial reruns this same scenario with the same seed, duration, model, and traffic multiplier.</p>}
+          {capacityTraceTargetEntityId && <p className="sim-capacity-target">Capacity target from current evidence: <strong>{entitiesById.get(capacityTraceTargetEntityId)?.name || capacityTraceTargetEntityId}</strong>.</p>}
+          {serviceTimeTraceTargetEntityId && <p className="sim-capacity-target">Service-time target from the selected trace: <strong>{entitiesById.get(serviceTimeTraceTargetEntityId)?.name || serviceTimeTraceTargetEntityId}</strong>. Recorded service time is at least as large as queue wait for this hop.</p>}
+          <div className="sim-improvement-actions">
+            <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel || !capacityScenarioKey} onClick={runCapacityImprovement}>{capacityTraceTargetEntityId ? `Test capacity at ${entitiesById.get(capacityTraceTargetEntityId)?.name || "selected component"}` : "Test higher concurrency"}</button>
+            <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel || !capacityScenarioKey} onClick={runServiceTimeImprovement}>{serviceTimeTraceTargetEntityId ? `Test service time at ${entitiesById.get(serviceTimeTraceTargetEntityId)?.name || "selected component"}` : "Test lower service time"}</button>
+          </div>
+          <details className="sim-database-contention-experiment">
+            <summary>PostgreSQL write-contention hypothesis {databaseContentionTargetEntityId ? "· available" : "· needs write evidence"}</summary>
+            <p>Tests a 20% reduction in the model's per-write contention overhead. It does not tune a real SQL query or database setting.</p>
+            {databaseContentionTargetEntityId
+              ? <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel || !capacityScenarioKey} onClick={runDatabaseContentionImprovement}>{databaseContentionTraceTargetEntityId ? `Test write contention at ${entitiesById.get(databaseContentionTraceTargetEntityId)?.name || "PostgreSQL"}` : `Test lower write contention at ${entitiesById.get(databaseContentionTargetEntityId)?.name || "PostgreSQL"}`}</button>
+              : <p className="sim-capacity-target">Available only when this scenario records PostgreSQL write operations with non-zero modeled contention overhead. A read-only relationship cannot produce write-contention evidence.</p>}
+          </details>
+          <details className="sim-database-index-experiment">
+            <summary>Query / index hypothesis {selectedDatabaseIndexCandidate ? "· candidate available" : "· needs read evidence"}</summary>
+            <p>Tests whether a share of database reads benefiting from a proposed btree index would change this stressed scenario. The engine models an assumed read-time speedup; it does not parse SQL, select indexes, or run a PostgreSQL query planner.</p>
+            {databaseIndexCandidates.length > 0 ? <>
+              <label className="sim-index-candidate-select"><span>Candidate table column</span><select value={candidateKey(selectedDatabaseIndexCandidate)} disabled={!canEdit || unsaved || staleModel} onChange={(event) => setDatabaseIndexCandidateKey(event.target.value)}><option value="">Choose a column to hypothesize an index…</option>{databaseIndexCandidates.map((candidate) => <option key={candidateKey(candidate)} value={candidateKey(candidate)}>{candidate.tableName}.{candidate.columnName} · {candidate.databaseName}</option>)}</select></label>
+              <small className="sim-capacity-target">{selectedDatabaseIndexCandidate ? `Scenario recorded ${formatInteger(selectedDatabaseIndexCandidate.evidence.readOperationsStarted)} read operation(s); assumed speedup is ${formatDecimal(selectedDatabaseIndexCandidate.speedupFactor, 1)}× for the reads counted as index-benefiting.` : "Choose the column the hypothetical query filters or sorts by. Aggregate read metrics cannot identify that column for you."}</small>
+              <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel || !capacityScenarioKey || !selectedDatabaseIndexCandidate} onClick={runDatabaseIndexImprovement}>{selectedDatabaseIndexCandidate ? `Test proposed index on ${selectedDatabaseIndexCandidate.tableName}.${selectedDatabaseIndexCandidate.columnName}` : "Choose a candidate column"}</button>
+            </> : <p className="sim-capacity-target">Available when the selected load scenario records read operations on a typed Reads from path and the PostgreSQL database contains a table with an unindexed, non-primary-key column.</p>}
+          </details>
+          {schemaUpdateNotice && <p className="sim-inline-note" role="status">{schemaUpdateNotice}</p>}
           {improvementError && <p className="workbench-inspector-error" role="alert">{improvementError}</p>}
           {improvementResult && <div className="sim-improvement-result" role="status">
             <strong>{improvementResult.label}</strong>
-            <p>Concurrency changed from {improvementResult.before} to {improvementResult.after} for this experiment only.</p>
+            <p>{improvementResult.field === "concurrency"
+              ? `Concurrency changed from ${improvementResult.before} to ${improvementResult.after} for this experiment only.`
+              : improvementResult.field === "meanServiceMs"
+                ? `Mean service time changed from ${formatDecimal(improvementResult.before)} ms to ${formatDecimal(improvementResult.after)} ms for this experiment only.`
+                : improvementResult.field === "writeContentionMs"
+                  ? `Modeled PostgreSQL write-contention overhead changed from ${formatDecimal(improvementResult.before, 4)} to ${formatDecimal(improvementResult.after, 4)} ms per write operation for this experiment only.`
+                  : `Share of reads assumed to benefit from the proposed index changed from ${formatPercent(improvementResult.before)} to ${formatPercent(improvementResult.after)}. The assumed speedup factor remains ${formatDecimal(improvementResult.evidence?.assumedIndexedReadSpeedupFactor ?? 3, 1)}×.`}</p>
+            {improvementResult.proposedIndex && <div className="sim-index-hypothesis-result"><strong>Proposed schema index</strong><p>{improvementResult.proposedIndex.tableName}.{improvementResult.proposedIndex.columnName} · btree · synthetic what-if only</p><pre>{improvementResult.proposedIndex.sqlStatement}</pre><small>No SQL planner or live database was consulted. Validate the candidate with real query plans and workload measurements before treating it as an optimization.</small><button type="button" className="workbench-secondary" disabled={!canEdit || typeof onUpdateEntity !== "function" || staleModel} onClick={applyProposedIndexToSchema}>Add candidate index to schema model</button></div>}
             <p className="sim-capacity-target">Compared under <strong>{improvementResult.comparisonScenarioLabel}</strong>, not against an unstressed baseline.</p>
+            {improvementResult.traceInvestigationSnapshot && <p className="sim-capacity-target">Target linked to request <strong>{improvementResult.traceInvestigationSnapshot.requestId}</strong> at hop {improvementResult.traceInvestigationSnapshot.hopIndex + 1}. The selected trace is evidence for investigation, not proof that the parameter change caused the observed outcome.</p>}
+            <div className={`sim-improvement-outcome status-${improvementResult.outcomeSummary.status}`} role="status"><strong>{improvementResult.outcomeSummary.status === "improved" ? "Measured outcomes improved" : improvementResult.outcomeSummary.status === "mixed" ? "Mixed result — review trade-offs" : improvementResult.outcomeSummary.status === "regressed" ? "Measured outcomes regressed" : improvementResult.outcomeSummary.status === "no-material-change" ? "No material change measured" : "Comparison inconclusive"}</strong><p>{improvementResult.outcomeSummary.message}</p>{improvementResult.outcomeSummary.gains.length > 0 && <ul>{improvementResult.outcomeSummary.gains.map((item) => <li key={item.key}>{item.label} {item.direction} by {formatDecimal(item.change)} {item.unit}</li>)}</ul>}{improvementResult.outcomeSummary.regressions.length > 0 && <ul>{improvementResult.outcomeSummary.regressions.map((item) => <li key={item.key}>{item.label} {item.direction} by {formatDecimal(item.change)} {item.unit}</li>)}</ul>}</div>
             <div className="sim-improvement-metrics"><div><span>Success rate</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "successRate"))}</strong></div><div><span>Throughput (req/sec)</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "throughputRps"))}</strong></div><div><span>p95 latency (ms)</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "p95LatencyMs"))}</strong></div><div><span>Dropped requests</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "droppedRequests"))}</strong></div></div>
+            <ImprovementTimeSeriesComparison comparison={improvementResult.timeSeriesComparison} investigation={improvementResult.traceInvestigationSnapshot}/>
             <small>Original scenario → improved version of that same scenario. These are synthetic model outputs, not production measurements. The trial was added to Saved experiment history.</small>
           </div>}
         </section>}
@@ -606,7 +934,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         </div>
         {activeRun?.result?.status === "completed" ? <>
           <RunMetrics run={activeRun} />
-          <SimulationTimeSeries run={activeRun} />
+          <SimulationTimeSeries run={activeRun} investigation={activeInvestigation} />
+          <RequestTraceExplorer key={activeRunKey} run={activeRun} scenarioKey={activeRunKey} onFocusEntity={onFocusEntity} investigation={investigation} onInvestigateTrace={(next) => setInvestigation(next)} />
           {comparison?.status === "ready" && <div className="sim-comparison-table-wrap"><strong>Change versus baseline</strong><table className="sim-comparison-table"><thead><tr><th>Metric</th><th>Baseline → current</th><th>Δ</th></tr></thead><tbody>{comparison.metrics.map((row) => <tr key={row.key}><td>{row.label}</td><td>{compareValue(row)}</td><td>{row.key === "successRate" ? formatPercent(row.delta.absolute) : isFiniteNumber(row.delta.absolute) ? `${row.delta.absolute > 0 ? "+" : ""}${formatDecimal(row.delta.absolute, row.unit === "requests" ? 0 : 2)}${row.unit === "requests" ? "" : row.unit === "requests/sec" ? " rps" : row.unit === "ms" ? " ms" : ""}` : "—"}</td></tr>)}</tbody></table></div>}
           <div className="sim-explanations"><div className="workbench-section-heading"><span>WHY THESE RESULTS?</span><span className="workbench-count">{explanations.length}</span></div>
             {explanations.length === 0 ? <p className="workbench-findings-empty">No capacity or request-failure signal crossed the current explanation thresholds for this run. This does not prove the design is production-safe.</p> : <>

@@ -1,27 +1,19 @@
-Current milestone: Workbench POC template workflow 0.16.
+Current milestone: Workbench query / index hypothesis 0.24.
 
-Implemented in this prototype:
-- One-action React → REST service → PostgreSQL template creation from an empty Workbench model.
-- Two canonical typed relationships with matching visual connector metadata.
-- Valid initial synthetic profiles using the existing simulation schema.
-- Component placements and relationships prepared before one canvas update; existing visual-only drawing remains in place.
-- Template preview, no-overwrite safeguards, and navigation into Configure, Validate, and Experiment/debug sections.
-- A controlled one-variable capacity experiment based on modeled pressure evidence. It clones the base profile, changes only concurrency, compares trial baseline output with the previous baseline, and records the trial with its base-profile snapshot in bounded experiment history.
-- Tests covering canonical model creation, connector references, persistence round-trip, overwrite guards, completed baseline/traffic-surge/PostgreSQL-outage suite, improvement trial isolation, comparison and history metadata.
+Added a synthetic, evidence-gated PostgreSQL index hypothesis distinct from concurrency, mean service-time, and write-contention trials. It requires a typed Reads from path, recorded database reads in the selected load scenario, a contained table, and an explicitly chosen eligible column when multiple candidates exist. The model changes only the assumed share of reads that benefit from an index; the speedup factor is fixed and disclosed. The engine does not parse SQL or run PostgreSQL query planning.
 
-Verification:
-- Full Node suite: 309 passed, 0 failed.
-- JSX syntax parsing passed for the changed React files; JavaScript syntax checks passed for changed modules/tests.
-- Production build and full browser UI workflow remain unverified because the worktree lacks installed Excalidraw dependencies/font assets.
+An index is only added to the semantic schema after the user explicitly selects Add candidate index to schema model. SQL artifact generation then emits validated CREATE INDEX DDL from the schema. Changing the schema invalidates prior experiment results and requires artifact regeneration.
 
-Next gate — run on Windows in a fresh extracted folder:
+Run locally from sketchizi-main:
 1. npm ci
 2. npm run build
-3. npm run test:workbench-poc
+3. npm run test:database-index-improvement
 4. npm run test:simulation
 5. npm run test:workbench-artifacts
 6. npm run dev
-7. Create POC, inspect the two typed relationships, acknowledge the synthetic assumptions, run all three scenarios, test a capacity improvement, save and reopen the .sketchizi document, and confirm the same model/history remain intact.
-8. Regression-check ordinary .excalidraw files, freeform drawing, collaboration, Day/Night theme and narrow/half-screen layout.
 
-Only after the app-level verification gate passes should the next work deepen OpenAPI/SQL generation and broaden domain support. The application package version stays at 1.10.86; 0.16 is a Workbench prototype iteration label.
+Manual browser gate: create/open the React -> REST -> PostgreSQL POC, confirm assumptions, run 5x traffic, explicitly select a candidate table column in Query / index hypothesis, run the trial, and verify before/after metrics plus trace evidence. Then explicitly accept the candidate index into the table schema, regenerate SQL, and confirm the CREATE INDEX statement appears. Save/reopen and confirm schema/model freshness behavior.
+
+Current verification boundary: Node regression tests and JSX syntax parsing passed in this environment. Production build is blocked before Vite by missing node_modules/@excalidraw/excalidraw/dist/prod/fonts. The UI has not been tested in a real browser; do not call the feature browser-verified until the manual gate passes.
+
+Application package version remains 1.10.86; 0.24 is an Engineering Workbench prototype milestone, not an application release version.
