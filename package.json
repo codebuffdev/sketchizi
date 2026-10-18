@@ -53,7 +53,14 @@
     "test:database-index-improvement": "node --test tests/database-index-improvement.test.js tests/simulation-engine.test.js tests/simulation-history.test.js tests/workbench-artifacts.test.js",
     "test:browser-index-fixture": "node --test tests/workbench-index-browser-smoke-fixture.test.js",
     "test:infrastructure-profiles": "node --test tests/infrastructure-profile.test.js tests/simulation-profile-persistence.test.js",
-    "test:load-test-calibration": "node --test tests/load-test-calibration.test.js"
+    "test:load-test-calibration": "node --test tests/load-test-calibration.test.js",
+    "test:workbench-browser-e2e": "node scripts/run-workbench-browser-smoke.mjs",
+    "test:workbench-ci-summary": "node --test tests/workbench-ci-summary.test.mjs",
+    "test:workbench-ci-contract": "node --test tests/workbench-ci-contract.test.mjs",
+    "check:excalidraw-font-assets": "node scripts/verify-excalidraw-font-assets.mjs",
+    "test:excalidraw-font-preflight": "node --test tests/excalidraw-font-preflight.test.js",
+    "check:npm-registry": "node scripts/probe-npm-registry.mjs",
+    "test:npm-registry-probe": "node --test tests/npm-registry-probe.test.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

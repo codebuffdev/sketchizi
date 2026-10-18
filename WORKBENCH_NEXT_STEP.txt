@@ -1,23 +1,9 @@
-Current milestone: Workbench JMeter CSV / XML JTL import adapter 0.30.
+Current milestone: Workbench clean CI release gate 0.32.
 
-Phase 1 — Simulation outcome clarity — implemented: separate dependency-unavailable from component failures; show queued/in-service/in-flight work at the observation-window boundary; disclose synthetic, assumption-dependent outputs.
+Added .github/workflows/workbench-release-gate.yml to run npm ci, production build, core app regression scripts, and Workbench regression scripts on a clean GitHub Actions runner with Node.js 22. It uploads dist/ only when the gate succeeds.
 
-Phase 2 — Infrastructure Profiles — implemented: evidence-aware, persisted REST and PostgreSQL deployment/resource profiles. Resource values are descriptive and do not silently change simulated capacity.
+No CI run is claimed yet. Push this package to the intended GitHub repository and inspect Actions -> Workbench release gate. Fix the first failing step before adding features.
 
-Phase 3 — Load-test evidence & calibration workflow — implemented in increments:
-- Manual measurement entry and validated Sketchizi JSON import.
-- k6 summary JSON import with explicit Sketchizi metadata; maps available request-rate, failed-rate, latency, and VU metrics while noting the successful-throughput interpretation.
-- Apache JMeter raw sample-level CSV/JTL and XML JTL import. Offered RPS and configured test duration are required metadata, never inferred from completed samples. p95 is calculated from individual sample elapsed times; aggregate report CSV is rejected because sampler percentiles cannot be combined into a defensible global p95.
-- Evidence is persisted with the Workbench profile and historical run snapshots. Comparisons guard against offered-load and observation-window mismatch. Simulated drops remain separate from measured HTTP errors.
-- Reviewable meanServiceMs proposals require repeated component-level measurements in the same environment across multiple offered-load levels. CPU/RAM are not converted to invented RPS ceilings.
+Still open after CI: real rendered-browser end-to-end verification; validation of any generated OpenAPI against a real validator and SQL against a PostgreSQL parser/test database; adapter validation using representative real k6/JMeter exports; and production performance certification. This milestone does not claim any of those passed.
 
-Verification for 0.30:
-- Load-test calibration suite: 15 passed.
-- Simulation suite: 124 passed.
-- Workbench artifact 11, UI/model 32, validation 25, POC 13, format/persistence 22, infrastructure/persistence 9, browser test server 6, browser fixture 1 passed.
-- Syntax checks passed for edited source.
-- Production build remains blocked before Vite because `node_modules/@excalidraw/excalidraw/dist/prod/fonts` is missing in this extracted environment. Full browser UI is not verified. Test data is synthetic; no real JMeter export was supplied for calibration validation.
-
-Next action: close the production build and real-browser release gate on a machine with dependencies installed, then test all JSON/k6/JMeter adapters against representative real exports and confirm their metric definitions. Only after that should simulated capacity be calibrated further.
-
-Application package version remains 1.10.86; 0.30 is a Workbench prototype milestone, not an application release version.
+Application package version remains 1.10.86; 0.32 is a Workbench milestone label only.

@@ -1,0 +1,188 @@
+name: Workbench release gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workbench-release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-regression:
+    name: Clean install, production build, regression suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Prepare CI diagnostic directory
+        run: mkdir -p artifacts/ci-logs
+
+      - name: Record toolchain versions
+        id: toolchain
+        shell: bash
+        run: |
+          set -o pipefail
+          { node --version; npm --version; } 2>&1 | tee artifacts/ci-logs/toolchain.log
+
+      - name: Test dependency-free registry diagnostic
+        id: registry-probe-tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:npm-registry-probe 2>&1 | tee artifacts/ci-logs/npm-registry-probe-tests.log
+
+      - name: Diagnose npm registry connectivity (non-blocking)
+        id: registry-probe
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run check:npm-registry 2>&1 | tee artifacts/ci-logs/npm-registry-probe.log
+
+      - name: Install locked dependencies
+        id: install
+        shell: bash
+        run: |
+          set -o pipefail
+          npm ci --no-audit --no-fund 2>&1 | tee artifacts/ci-logs/npm-ci.log
+
+      - name: Verify pinned Excalidraw package and self-hosted font assets
+        id: font-assets
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run check:excalidraw-font-assets 2>&1 | tee artifacts/ci-logs/excalidraw-font-assets.log
+
+      - name: Build production bundle
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee artifacts/ci-logs/production-build.log
+
+      - name: Run application regression suites
+        id: application-tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            npm run test:networking
+            npm run test:catalog
+            npm run test:chat
+            npm run test:sync
+            npm run test:ui-defaults
+            npm run test:auth
+            npm run test:ai
+            npm run test:collaboration-host-auth
+            npm run test:device
+            npm run test:backend-warmup
+            npm run test:recovery
+            npm run test:community-gateway
+            npm run test:font-assets
+            npm run test:excalidraw-font-preflight
+            npm run test:font-family-defaults
+          } 2>&1 | tee artifacts/ci-logs/application-regressions.log
+
+      - name: Run Workbench regression suites
+        id: workbench-tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            npm run test:load-test-calibration
+            npm run test:simulation
+            npm run test:workbench-artifacts
+            npm run test:workbench-format
+            npm run test:infrastructure-profiles
+            npm run test:workbench-ui
+            npm run test:workbench-validation
+            npm run test:workbench-poc
+            npm run test:browser-verification-server
+            npm run test:browser-index-fixture
+            npm run test:workbench-ci-summary
+            npm run test:workbench-ci-contract
+          } 2>&1 | tee artifacts/ci-logs/workbench-regressions.log
+
+      - name: Install pinned Playwright browser runner
+        id: playwright-install
+        shell: bash
+        run: |
+          set -o pipefail
+          npm install --no-save --no-package-lock --ignore-scripts playwright@1.64.1 2>&1 | tee artifacts/ci-logs/playwright-install.log
+
+      - name: Install Chromium for rendered-browser smoke test
+        id: chromium-install
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright install --with-deps chromium 2>&1 | tee artifacts/ci-logs/chromium-install.log
+
+      - name: Run rendered-browser persistence smoke test
+        id: browser-smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:workbench-browser-e2e 2>&1 | tee artifacts/ci-logs/browser-smoke.log
+
+      - name: Record dependency tree for diagnostics
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/ci-logs
+          {
+            echo 'npm ls --depth=0 (exit code intentionally ignored for diagnostics)'
+            npm ls --depth=0 || true
+          } 2>&1 | tee artifacts/ci-logs/dependency-tree.log
+
+      - name: Write release gate summary
+        id: gate-summary
+        if: always()
+        env:
+          TOOLCHAIN_OUTCOME: ${{ steps.toolchain.outcome }}
+          REGISTRY_PROBE_TESTS_OUTCOME: ${{ steps.registry-probe-tests.outcome }}
+          REGISTRY_PROBE_OUTCOME: ${{ steps.registry-probe.outcome }}
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          FONT_ASSETS_OUTCOME: ${{ steps.font-assets.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          APPLICATION_TESTS_OUTCOME: ${{ steps.application-tests.outcome }}
+          WORKBENCH_TESTS_OUTCOME: ${{ steps.workbench-tests.outcome }}
+          PLAYWRIGHT_INSTALL_OUTCOME: ${{ steps.playwright-install.outcome }}
+          CHROMIUM_INSTALL_OUTCOME: ${{ steps.chromium-install.outcome }}
+          BROWSER_SMOKE_OUTCOME: ${{ steps.browser-smoke.outcome }}
+        run: node scripts/write-workbench-ci-summary.mjs
+
+      - name: Upload CI diagnostics and browser report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workbench-release-gate-diagnostics
+          path: |
+            artifacts/ci-logs/
+            artifacts/ci-logs/npm-registry-probe.json
+            artifacts/workbench-release-gate-summary.json
+            artifacts/workbench-release-gate-summary.md
+            artifacts/workbench-browser-smoke-result.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload production bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sketchizi-workbench-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
