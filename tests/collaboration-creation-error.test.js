@@ -78,10 +78,14 @@ test("initial join acknowledgement timeout starts after the payload is queued", 
   const client = await read("../src/collaboration.js");
   const openHandler = client.indexOf("socket.onopen = async () => {");
   const sendJoin = client.indexOf("const joinSent = this.send(joinMessage);", openHandler);
-  const callback = client.indexOf("if (joinSent) this.onJoinSent?.(", sendJoin);
+  const joinSentBlock = client.indexOf("if (joinSent) {", sendJoin);
+  const ackTimer = client.indexOf("this.startJoinAckTimeout(socket);", joinSentBlock);
+  const callback = client.indexOf("this.onJoinSent?.(", joinSentBlock);
   assert.ok(openHandler >= 0, "WebSocket open handler must exist");
   assert.ok(sendJoin > openHandler, "join payload should be sent after socket opens");
-  assert.ok(callback > sendJoin, "the acknowledgement deadline must be armed after the join payload is queued");
+  assert.ok(joinSentBlock > sendJoin, "acknowledgement timeout must only start after send succeeds");
+  assert.ok(ackTimer > joinSentBlock, "the client must arm its acknowledgement timeout after the join payload is queued");
+  assert.ok(callback > ackTimer, "the creation callback must run after the acknowledgement deadline is armed");
   assert.match(client, /Collaboration initial snapshot prepared/);
   assert.match(client, /Collaboration join payload serialized/);
   assert.match(client, /Collaboration join message send completed/);

@@ -13,7 +13,7 @@ This test uses real browser IndexedDB/localStorage and forces a page reload. It 
    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-workbench-browser.ps1
    ```
 
-5. A browser tab opens. Wait for the page to perform a reload and display `PASS — real Chromium reload persistence test` with all individual checks marked `PASS`.
+5. A browser tab opens. Wait for the page to perform a reload and display `PASS — browser reload and simulation-history test` with all individual checks marked `PASS`.
 6. Return to PowerShell and press Enter to stop the temporary server.
 
 The test writes only to storage scoped to `127.0.0.1:8765`; it does not use the normal app's storage origin.
@@ -34,4 +34,4 @@ Open `http://127.0.0.1:8765/tests/browser/workbench-persistence-smoke.html` in t
 
 ## Scope
 
-This verifies real browser IndexedDB/localStorage and serializer persistence after a reload. It does not by itself verify the complete React/Excalidraw app startup lifecycle or prove the production bundle builds.
+This verifies real browser IndexedDB/localStorage, simulation-history persistence, stale-result detection, and serializer persistence after a reload. It does not by itself verify the complete React/Excalidraw app startup lifecycle or prove the production bundle builds.

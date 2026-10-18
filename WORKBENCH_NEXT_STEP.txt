@@ -1,9 +1,27 @@
-Engineering Workbench UI prototype 0.5 is available in docs/ENGINEERING_WORKBENCH_UI_PROTOTYPE_0.5.md.
+Current milestone: Workbench POC template workflow 0.16.
 
-Next validation gate:
-1. npm ci in a network-enabled development environment.
-2. npm run test:workbench-format and npm run test:sync.
-3. npm run build.
-4. Manually test Workbench enablement, semantic insertion, System/APIs/Data/Deployment switching, .sketchizi save/reopen, and ordinary .excalidraw compatibility.
+Implemented in this prototype:
+- One-action React → REST service → PostgreSQL template creation from an empty Workbench model.
+- Two canonical typed relationships with matching visual connector metadata.
+- Valid initial synthetic profiles using the existing simulation schema.
+- Component placements and relationships prepared before one canvas update; existing visual-only drawing remains in place.
+- Template preview, no-overwrite safeguards, and navigation into Configure, Validate, and Experiment/debug sections.
+- A controlled one-variable capacity experiment based on modeled pressure evidence. It clones the base profile, changes only concurrency, compares trial baseline output with the previous baseline, and records the trial with its base-profile snapshot in bounded experiment history.
+- Tests covering canonical model creation, connector references, persistence round-trip, overwrite guards, completed baseline/traffic-surge/PostgreSQL-outage suite, improvement trial isolation, comparison and history metadata.
 
-Do not merge into the mainline or use on the only copy of an important drawing before the validation gate passes. Relation creation, inspector editing, validation, and artifact generation are later slices.
+Verification:
+- Full Node suite: 309 passed, 0 failed.
+- JSX syntax parsing passed for the changed React files; JavaScript syntax checks passed for changed modules/tests.
+- Production build and full browser UI workflow remain unverified because the worktree lacks installed Excalidraw dependencies/font assets.
+
+Next gate — run on Windows in a fresh extracted folder:
+1. npm ci
+2. npm run build
+3. npm run test:workbench-poc
+4. npm run test:simulation
+5. npm run test:workbench-artifacts
+6. npm run dev
+7. Create POC, inspect the two typed relationships, acknowledge the synthetic assumptions, run all three scenarios, test a capacity improvement, save and reopen the .sketchizi document, and confirm the same model/history remain intact.
+8. Regression-check ordinary .excalidraw files, freeform drawing, collaboration, Day/Night theme and narrow/half-screen layout.
+
+Only after the app-level verification gate passes should the next work deepen OpenAPI/SQL generation and broaden domain support. The application package version stays at 1.10.86; 0.16 is a Workbench prototype iteration label.

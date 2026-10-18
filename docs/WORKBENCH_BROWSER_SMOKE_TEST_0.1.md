@@ -12,7 +12,7 @@ This smoke test exercises the actual persistence and file-format modules in a re
    ```
 
 3. Open `http://127.0.0.1:8765/tests/browser/workbench-persistence-smoke.html` in Chrome/Chromium.
-4. Wait for `PASS — real Chromium reload persistence test`.
+4. Wait for `PASS — browser reload and simulation-history test`.
 5. Check the result list on the page. The second page load is intentional; it verifies storage across a document reload.
 
 The static server is on port 8765, a separate origin from the usual Vite dev server on port 5173, so the test uses an isolated IndexedDB/localStorage namespace and will not overwrite the normal app's local autosave.
@@ -26,6 +26,8 @@ The static server is on port 8765, a separate origin from the usual Vite dev ser
 - Recent-file snapshot stored/restored across reload.
 - Emergency localStorage backup preservation.
 - `serializeDrawing`/`parseDrawing` round-trip.
+- Completed synthetic simulation history retained in the saved document and restored without rerunning the engine.
+- Restored history is current when model/profile match and marked stale after a semantic model or simulation-profile change.
 
 ## Limits
 

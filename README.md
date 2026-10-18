@@ -313,6 +313,20 @@ The application shell uses containing `100%` dimensions with document-level over
 The optional Google Sign-In foundation and Spring Boot authentication service are documented in [`docs/GOOGLE_AUTH_SETUP.md`](docs/GOOGLE_AUTH_SETUP.md). Authentication is optional; diagramming and collaboration remain available without signing in. The current implementation does not include AI Ask, Spring AI, Gemini, or AI usage limits. See [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) for the verification status and remaining manual integration checks.
 
 
+
+## Engineering Workbench (experimental)
+
+The Engineering Workbench is an experimental layer over the Excalidraw canvas. It stores typed components and relationships in the `.sketchizi` Workbench extension while ordinary shapes and `.excalidraw` diagrams remain supported.
+
+The prototype includes System, APIs, Data, and Deployment views; semantic validation; synthetic request-path experiments; and a first artifact-generation slice:
+
+- **OpenAPI 3.1 JSON:** add API endpoint components, connect each to exactly one REST service with an `Exposes API` relationship, then use **ARTIFACTS → Generate OpenAPI**. Endpoint request/response JSON Schema is optional; path parameters such as `/users/{userId}` are represented in the generated contract.
+- **PostgreSQL DDL:** add a PostgreSQL component and PostgreSQL table components, connect the database to each table with `Contains table`, configure each table's columns JSON, then use **ARTIFACTS → Generate SQL**. The initial generator supports one database target and a conservative set of column types.
+
+Generation is a reviewable preview, not deployment. Invalid ownership, duplicate routes, malformed schema JSON, unsafe identifiers, or unsupported SQL types block the download. A preview becomes stale after a semantic model revision and must be regenerated. The current SQL slice does not infer foreign keys, indexes, migrations, or runtime behavior.
+
+See [`docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md`](docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md). Focused checks can be run with `npm run test:workbench-artifacts`; the broader prototype test suite can be run with `node --import ./tests/register-sync-test-loader.mjs --test tests/*.test.js`.
+
 ### Collaboration creation troubleshooting
 
 The Node collaboration service emits structured JSON logs for WebSocket upgrade requests, accepted connections, `join` messages, host authorization rejection reasons, room creation, join acknowledgement, and close codes/reasons. Search the Render collaboration-service logs for `Collaboration host authorization rejected` to distinguish missing configuration from a signature or room-claim mismatch. Never paste `COLLAB_HOST_TOKEN_SECRET` or any host token into logs or support messages. The same `COLLAB_HOST_TOKEN_SECRET` (at least 32 UTF-8 bytes) must be configured independently in both the Spring Boot auth service and Node collaboration service.

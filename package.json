@@ -28,8 +28,21 @@
     "test:font-assets": "node --test tests/font-assets.test.js",
     "test:font-family-defaults": "node --test tests/font-family-defaults.test.js",
     "test:file-format": "node --test tests/sketchizi-format.test.js",
-    "test:workbench-format": "node --test tests/sketchizi-format.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js tests/workbench-registry.test.js",
-    "test:workbench-ui": "node --test tests/workbench-registry.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js"
+    "test:workbench-format": "node --test tests/sketchizi-format.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js tests/workbench-registry.test.js tests/workbench-model.test.js",
+    "test:workbench-artifacts": "node --test tests/workbench-artifacts.test.js",
+    "test:workbench-ui": "node --test tests/workbench-registry.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js tests/workbench-model.test.js tests/workbench-panel-layout.test.js tests/workbench-poc-ui.test.js",
+    "test:workbench-validation": "node --test tests/workbench-validation.test.js tests/workbench-model.test.js tests/workbench-registry.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js",
+    "test:simulation-projection": "node --test tests/simulation-projection.test.js",
+    "test:simulation-engine": "node --test tests/simulation-engine.test.js",
+    "example:simulation": "node examples/simulation/client-api-postgres.mjs",
+    "test:simulation": "node --test tests/simulation-projection.test.js tests/simulation-engine.test.js tests/simulation-experiment-model.test.js tests/simulation-profile-persistence.test.js tests/workbench-simulation-runner.test.js tests/simulation-history.test.js",
+    "test:simulation-runner": "node --test tests/workbench-simulation-runner.test.js",
+    "test:simulation-guidance": "node --test tests/typed-request-guidance.test.js tests/typed-relation-scene.test.js tests/simulation-diagnostic-presentation.test.js tests/workbench-quick-connect-integration.test.js tests/workbench-panel-layout.test.js tests/workbench-simulation-runner.test.js",
+    "test:simulation-experiments": "node --test tests/simulation-experiment-model.test.js tests/simulation-profile-persistence.test.js",
+    "example:workbench-simulation": "node examples/simulation/workbench-experiment-runner.mjs",
+    "test:simulation-history": "node --test tests/simulation-history.test.js",
+    "test:browser-verification-server": "node --test tests/workbench-browser-test-server.test.js",
+    "test:workbench-poc": "node --test tests/workbench-poc-template.test.js tests/workbench-poc-ui.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

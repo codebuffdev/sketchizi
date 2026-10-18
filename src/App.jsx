@@ -155,7 +155,7 @@ function App() {
 
   const collaborationCanEdit = (!collaborationRoom && !collaborationEndedSession) || collaborationEndedSession?.returned === true || (Boolean(collaborationRoom) && collaborationStatus === "connected" && collaborationHostRecovery?.state !== "recovering" && (collaborationPermission === "host" || collaborationPermission === "editor"));
   const workbenchController = useWorkbenchController({
-    apiRef, documentMetadataRef, sketchReady, savedSketch, canEdit: collaborationCanEdit,
+    apiRef, documentMetadataRef, sketchReady, savedSketch, selectedElements, canEdit: collaborationCanEdit,
     persistSketchNow, showToast,
   });
   const moreTools = useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit: collaborationCanEdit });
@@ -497,8 +497,20 @@ function App() {
             isOpen={workbenchController.isOpen}
             onClose={() => workbenchController.setIsOpen(false)}
             onInitialize={workbenchController.initialize}
+            onCreatePoc={workbenchController.createPoc}
             onSwitchView={workbenchController.switchView}
             onAddComponent={workbenchController.addComponent}
+            onUpdateEntity={workbenchController.updateEntity}
+            onCreateRelation={workbenchController.createRelation}
+            onCreateRelationBetween={workbenchController.createRelationBetween}
+            onFocusFinding={workbenchController.focusFinding}
+            simulationProfile={workbenchController.workbench?.simulationProfile || null}
+            onUpdateSimulationProfile={workbenchController.updateSimulationProfile}
+            simulationHistory={workbenchController.workbench?.simulationHistory || []}
+            onUpdateSimulationHistory={workbenchController.updateSimulationHistory}
+            selectedEntity={workbenchController.selectedEntity}
+            visibleEntityIds={workbenchController.visibleEntityIds}
+            inspectorError={workbenchController.inspectorError}
             busy={workbenchController.busy}
             canEdit={collaborationCanEdit}
           />

@@ -1,0 +1,27 @@
+{
+  "format": "sketchizi-simulation-profile-example",
+  "schemaVersion": 1,
+  "workbenchNote": "Reference entity and relation IDs must match a .sketchizi Workbench extension.",
+  "profilesByEntityId": {
+    "web": {
+      "kind": "traffic-source",
+      "parameters": { "trafficRps": 50 },
+      "assumptions": { "trafficRps": { "status": "user-confirmed", "reason": "Illustrative baseline workload, not production telemetry" } }
+    },
+    "api": {
+      "kind": "request-service",
+      "parameters": { "concurrency": 8, "meanServiceMs": 25, "serviceTimeCv": 0.6, "bufferCapacity": 64, "failureProbability": 0, "timeoutMs": 0, "retryAttempts": 0 },
+      "assumptions": { "meanServiceMs": { "status": "user-confirmed", "reason": "Illustrative service-time estimate" } }
+    },
+    "db": {
+      "kind": "relational-store",
+      "parameters": { "concurrency": 6, "meanServiceMs": 30, "serviceTimeCv": 0.7, "bufferCapacity": 32, "readFraction": 0.9, "writeContentionMs": 15, "failureProbability": 0 },
+      "assumptions": { "readFraction": { "status": "user-confirmed", "reason": "Illustrative 90 percent read mix" } }
+    }
+  },
+  "defaultScenario": { "durationMs": 30000, "seed": 42 },
+  "notes": [
+    "All parameters are engine-neutral Sketchizi SimIR fields, not Breakscale NodeConfig fields.",
+    "The profile contains example assumptions only; output metrics would describe this scenario, not a real deployment."
+  ]
+}

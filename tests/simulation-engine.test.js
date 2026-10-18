@@ -1,127 +1,131 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createSimulation } from "../src/features/simulation/engine/simulationEngine.js";
-import { normalizeSimulationGraph, validateSimulationGraph } from "../src/features/simulation/graph/normalizeSimulationGraph.js";
+import { buildSimulationProjection } from "../src/features/simulation/adapter/buildSimulationProjection.js";
+import { runSimulation, SIMULATION_ENGINE_VERSION } from "../src/features/simulation/engine/runSimulation.js";
 
-function graph(nodes, edges = []) {
-  return { schemaVersion: 1, domain: "process", nodes, edges, entryNodeIds: nodes.filter((node) => node.type === "start").map((node) => node.id), diagnostics: {} };
+const entity = (id, kind, name = id, properties = {}) => ({ id, kind, name, properties });
+const relation = (id, kind, sourceId, targetId, properties = {}) => ({ id, kind, sourceId, targetId, properties });
+const baseEntities = [
+  entity("web", "frontend.react-app", "Web client"),
+  entity("api", "backend.rest-service", "Checkout API"),
+  entity("endpoint", "backend.api-endpoint", "Checkout", { method: "POST", path: "/checkout" }),
+  entity("db", "data.postgresql-database", "Checkout DB"),
+];
+const baseRelations = [
+  relation("web-calls-endpoint", "calls", "web", "endpoint"),
+  relation("api-exposes-endpoint", "exposes", "api", "endpoint"),
+  relation("api-reads-db", "reads", "api", "db"),
+  relation("api-writes-db", "writes", "api", "db"),
+];
+const baseProfiles = {
+  web: { kind: "traffic-source", parameters: { trafficRps: 50 } },
+  api: { kind: "request-service", parameters: { concurrency: 8, meanServiceMs: 25, serviceTimeCv: 0.2, bufferCapacity: 64, failureProbability: 0, timeoutMs: 0, retryAttempts: 0 } },
+  db: { kind: "relational-store", parameters: { concurrency: 6, meanServiceMs: 30, serviceTimeCv: 0.2, bufferCapacity: 32, readFraction: 0.9, writeContentionMs: 15, failureProbability: 0 } },
+};
+function project({ entities = baseEntities, relations = baseRelations, profilesByEntityId = baseProfiles, durationMs = 10000, seed = 42 } = {}) {
+  const built = buildSimulationProjection({
+    workbench: { schemaVersion: 1, modelRevision: 7, activeViewId: "system", views: [{ id: "system", label: "System" }], entities: structuredClone(entities), relations: structuredClone(relations), viewScenes: {} },
+    simulationProfile: { schemaVersion: 1, profilesByEntityId: structuredClone(profilesByEntityId), defaultScenario: { durationMs, seed } },
+  });
+  assert.equal(built.status, "ready", JSON.stringify(built.diagnostics, null, 2));
+  return built;
 }
+const blockerCodes = (result) => result.diagnostics.filter((item) => item.severity === "blocker").map((item) => item.code);
 
-test("normalizes bound shapes and arrows without changing element metadata", () => {
-  const elements = [
-    { id: "a", type: "ellipse", customData: { awsResource: { id: "keep" } } },
-    { id: "b", type: "rectangle", customData: { simulation: { nodeType: "task", config: { durationMs: 25 } } } },
-    { id: "edge", type: "arrow", startBinding: { elementId: "a" }, endBinding: { elementId: "b" }, customData: { awsRelationship: { relationshipType: "routes-to" } } },
-  ];
-  const result = normalizeSimulationGraph(elements);
-  assert.equal(result.nodes.length, 2);
-  assert.equal(result.edges[0].sourceId, "a");
-  assert.equal(result.nodes.find((node) => node.id === "b").config.durationMs, 25);
-  assert.equal(elements[0].customData.awsResource.id, "keep");
-  assert.equal(elements[2].customData.awsRelationship.relationshipType, "routes-to");
+test("runs a seeded client -> REST service -> PostgreSQL scenario with measurable results", () => {
+  const result = runSimulation({ projection: project() });
+  assert.equal(result.status, "completed", JSON.stringify(result.diagnostics, null, 2));
+  assert.equal(result.result.simulation.engineVersion, SIMULATION_ENGINE_VERSION);
+  assert.equal(result.result.simulation.deterministic, true);
+  assert.ok(result.result.metrics.offeredRequests > 0);
+  assert.ok(result.result.metrics.successfulRequests > 0);
+  assert.equal(result.result.metrics.offeredRequests, result.result.metrics.successfulRequests + result.result.metrics.failedRequests + result.result.metrics.droppedRequests);
+  assert.ok(result.result.metrics.successfulLatencyMs.p50 > 0);
+  assert.ok(result.result.metrics.successfulLatencyMs.p95 >= result.result.metrics.successfulLatencyMs.p50);
+  assert.equal(result.result.perNode.length, 2);
+  assert.equal(result.result.perEdge.length, 2);
 });
 
-test("executes a start-task-end flow with virtual duration", () => {
-  const model = graph([
-    { id: "s", type: "start", config: {}, label: "Start" },
-    { id: "t", type: "task", config: { durationMs: 100 }, label: "Task" },
-    { id: "e", type: "end", config: {}, label: "End" },
-  ], [
-    { id: "st", sourceId: "s", targetId: "t", latencyMs: 10, condition: "always" },
-    { id: "te", sourceId: "t", targetId: "e", latencyMs: 5, condition: "always" },
-  ]);
-  const engine = createSimulation(model, { seed: 5 });
-  const result = engine.runToCompletion();
+test("identical model, profile, seed and overrides reproduce byte-equivalent result metrics", () => {
+  const projection = project();
+  const first = runSimulation({ projection });
+  const second = runSimulation({ projection });
+  assert.deepEqual(first.result, second.result);
+});
+
+test("increasing offered traffic produces additional capacity pressure in the example profile", () => {
+  const projection = project({ durationMs: 15000, seed: 211 });
+  const normal = runSimulation({ projection });
+  const surge = runSimulation({ projection, scenarioOverrides: { trafficMultiplier: 5 } });
+  assert.equal(normal.status, "completed");
+  assert.equal(surge.status, "completed");
+  assert.ok(surge.result.metrics.offeredRequests > normal.result.metrics.offeredRequests * 4);
+  assert.ok(surge.result.metrics.droppedRequests > normal.result.metrics.droppedRequests || surge.result.bottlenecks.length > normal.result.bottlenecks.length || surge.result.perNode.some((item) => item.utilization > normal.result.perNode.find((x) => x.nodeId === item.nodeId).utilization));
+});
+
+test("a forced database failure is traceable and drives success rate to zero", () => {
+  const result = runSimulation({ projection: project(), scenarioOverrides: { failureProbabilityByNodeId: { db: 1 } } });
   assert.equal(result.status, "completed");
-  assert.equal(result.virtualTimeMs, 115);
-  assert.equal(result.metrics.completed, 1);
+  assert.equal(result.result.metrics.successfulRequests, 0);
+  assert.equal(result.result.metrics.failedRequests, result.result.metrics.offeredRequests - result.result.metrics.droppedRequests);
+  assert.equal(result.result.simulation.requestedFailureOverrides.db, 1);
+  assert.ok(result.result.perNode.find((item) => item.sourceEntityId === "db").failed > 0);
 });
 
-test("repeats seeded failure attempts and honors retry limit", () => {
-  const model = graph([
-    { id: "s", type: "start", config: {}, label: "Start" },
-    { id: "t", type: "task", config: { durationMs: 1, failureProbability: 1, maxRetries: 2, retryDelayMs: 5 }, label: "Unreliable" },
-    { id: "e", type: "end", config: {}, label: "End" },
-  ], [
-    { id: "st", sourceId: "s", targetId: "t", latencyMs: 0, condition: "always" },
-    { id: "te", sourceId: "t", targetId: "e", latencyMs: 0, condition: "success" },
-  ]);
-  const result = createSimulation(model, { seed: 42 }).runToCompletion();
-  assert.equal(result.status, "completed");
-  assert.equal(result.metrics.retries, 2);
-  assert.equal(result.metrics.failedAttempts, 3);
-  assert.ok(result.eventLog.some((event) => event.type === "failure"));
+test("a hard database outage fails at the dependency boundary without consuming database service capacity", () => {
+  const projection = project();
+  const baseline = runSimulation({ projection });
+  const outage = runSimulation({ projection, scenarioOverrides: { unavailableNodeIds: ["db"] } });
+  assert.equal(outage.status, "completed");
+  assert.equal(outage.result.metrics.successfulRequests, 0);
+  assert.equal(outage.result.metrics.failedRequests, outage.result.metrics.offeredRequests);
+  assert.equal(outage.result.perNode.find((item) => item.sourceEntityId === "db").utilization, 0);
+  assert.ok(outage.result.metrics.terminalLatencyMs.mean < baseline.result.metrics.successfulLatencyMs.mean);
+  assert.deepEqual(outage.result.simulation.unavailableNodeIds, ["sim-node:db"]);
 });
 
-test("validation rejects invalid duration and failure probability", () => {
-  const issues = validateSimulationGraph(graph([{ id: "s", type: "start", config: { durationMs: -1, failureProbability: 2 }, label: "Start" }]));
-  assert.ok(issues.some((issue) => issue.code === "invalid-duration"));
-  assert.ok(issues.some((issue) => issue.code === "invalid-failure-probability"));
+test("rejects malformed experiment overrides and unknown option keys", () => {
+  const projection = project();
+  assert.equal(runSimulation({ projection, scenarioOverrides: { unavailableNodeIds: "db" } }).status, "blocked");
+  assert.equal(runSimulation({ projection, scenarioOverrides: { unexpectedFlag: true } }).status, "blocked");
+  assert.equal(runSimulation({ projection, scenarioOverrides: { failureProbabilityByNodeId: null } }).status, "blocked");
 });
 
-
-test("decision node routes using its seeded true/false outcome", () => {
-  const model = graph([
-    { id: "s", type: "start", config: {}, label: "Start" },
-    { id: "d", type: "decision", config: { trueProbability: 1 }, label: "Decision" },
-    { id: "yes", type: "end", config: {}, label: "Yes" },
-    { id: "no", type: "end", config: {}, label: "No" },
-  ], [
-    { id: "sd", sourceId: "s", targetId: "d", condition: "always", latencyMs: 0 },
-    { id: "dy", sourceId: "d", targetId: "yes", condition: "true", latencyMs: 0 },
-    { id: "dn", sourceId: "d", targetId: "no", condition: "false", latencyMs: 0 },
-  ]);
-  const result = createSimulation(model, { seed: 12 }).runToCompletion();
-  assert.equal(result.status, "completed");
-  assert.ok(result.eventLog.some((event) => event.message.includes("selected true")));
-  assert.ok(result.eventLog.some((event) => event.nodeId === "yes"));
-  assert.ok(!result.eventLog.some((event) => event.nodeId === "no"));
+test("blocks non-zero timeout and retry profiles instead of silently approximating them", () => {
+  const profiles = structuredClone(baseProfiles);
+  profiles.api.parameters.timeoutMs = 500;
+  profiles.api.parameters.retryAttempts = 1;
+  const projection = project({ profilesByEntityId: profiles });
+  const result = runSimulation({ projection });
+  assert.equal(result.status, "blocked");
+  assert.ok(blockerCodes(result).includes("ENGINE-TIMEOUT-UNSUPPORTED"));
+  assert.ok(blockerCodes(result).includes("ENGINE-RETRY-UNSUPPORTED"));
 });
 
-test("infers start and end from labels and creates only one entry token", () => {
-  const elements = [
-    { id: "s", type: "ellipse" },
-    { id: "s-label", type: "text", text: "start", containerId: "s" },
-    { id: "p", type: "rectangle" },
-    { id: "p-label", type: "text", text: "process", containerId: "p" },
-    { id: "e", type: "ellipse" },
-    { id: "e-label", type: "text", text: "end", containerId: "e" },
-    { id: "sp", type: "arrow", startBinding: { elementId: "s" }, endBinding: { elementId: "p" } },
-    { id: "pe", type: "arrow", startBinding: { elementId: "p" }, endBinding: { elementId: "e" } },
-  ];
-  const normalized = normalizeSimulationGraph(elements);
-  assert.equal(normalized.nodes.find((node) => node.id === "s").type, "start");
-  assert.equal(normalized.nodes.find((node) => node.id === "p").type, "task");
-  assert.equal(normalized.nodes.find((node) => node.id === "e").type, "end");
-  assert.deepEqual(normalized.entryNodeIds, ["s"]);
-  const result = createSimulation(normalized, { seed: 2 }).runToCompletion();
-  assert.equal(result.metrics.started, 1);
-  assert.equal(result.metrics.completed, 1);
-  assert.equal(result.virtualTimeMs, 100);
-  assert.ok(result.eventLog.some((event) => event.message === "Flow completed."));
+test("blocks asynchronous queue edges until queue scheduling semantics are implemented", () => {
+  const entities = [...baseEntities, entity("queue", "messaging.queue", "Jobs"), entity("worker", "backend.worker", "Worker")];
+  const relations = [...baseRelations, relation("api-publishes", "publishes", "api", "queue"), relation("worker-subscribes", "subscribes", "worker", "queue")];
+  const profiles = { ...structuredClone(baseProfiles), queue: { kind: "message-queue", parameters: { bufferCapacity: 100, enqueueMs: 1, failureProbability: 0 } }, worker: { kind: "message-worker", parameters: { concurrency: 2, processingTimeMs: 20, serviceTimeCv: 0, bufferCapacity: 0, failureProbability: 0 } } };
+  const projection = project({ entities, relations, profilesByEntityId: profiles });
+  const result = runSimulation({ projection });
+  assert.equal(result.status, "blocked");
+  assert.ok(blockerCodes(result).includes("ENGINE-NODE-KIND-UNSUPPORTED") || blockerCodes(result).includes("ENGINE-EDGE-KIND-UNSUPPORTED"));
 });
 
+test("blocks multi-target routing instead of treating every connection as a required call", () => {
+  const entities = [...baseEntities, entity("payments", "integrations.external-api", "Payments")];
+  const relations = [...baseRelations.map((item) => ["api-reads-db", "api-writes-db"].includes(item.id) ? { ...item, properties: { invocation: "required" } } : item), relation("api-calls-payment", "calls", "api", "payments", { invocation: "required" })];
+  const profiles = { ...structuredClone(baseProfiles), payments: { kind: "external-service-approximation", parameters: { concurrency: 2, meanServiceMs: 50, serviceTimeCv: 0, bufferCapacity: 5, failureProbability: 0, timeoutMs: 0 } } };
+  const projection = project({ entities, relations, profilesByEntityId: profiles });
+  const result = runSimulation({ projection });
+  assert.equal(result.status, "blocked");
+  assert.ok(blockerCodes(result).includes("ENGINE-ROUTING-UNSUPPORTED"));
+});
 
-test("infers labels from standalone text inside shapes and respects arrowhead direction", () => {
-  const elements = [
-    { id: "s", type: "ellipse", x: 0, y: 0, width: 100, height: 80 },
-    { id: "s-label", type: "text", x: 25, y: 30, width: 50, height: 20, text: "start" },
-    { id: "p", type: "rectangle", x: 150, y: 0, width: 120, height: 80 },
-    { id: "p-label", type: "text", x: 180, y: 30, width: 60, height: 20, text: "process" },
-    { id: "e", type: "ellipse", x: 320, y: 0, width: 100, height: 80 },
-    { id: "e-label", type: "text", x: 345, y: 30, width: 50, height: 20, text: "end" },
-    // The first arrow's arrowhead is at its start endpoint, so its logical
-    // direction is endBinding -> startBinding despite binding order.
-    { id: "sp", type: "arrow", startBinding: { elementId: "p" }, endBinding: { elementId: "s" }, startArrowhead: "arrow" },
-    { id: "pe", type: "arrow", startBinding: { elementId: "p" }, endBinding: { elementId: "e" }, endArrowhead: "arrow" },
-  ];
-  const normalized = normalizeSimulationGraph(elements);
-  assert.equal(normalized.nodes.find((node) => node.id === "s").type, "start");
-  assert.equal(normalized.nodes.find((node) => node.id === "e").type, "end");
-  assert.deepEqual(normalized.entryNodeIds, ["s"]);
-  assert.deepEqual(normalized.edges.map(({ sourceId, targetId }) => [sourceId, targetId]), [["s", "p"], ["p", "e"]]);
-  const result = createSimulation(normalized, { seed: 100 }).runToCompletion();
-  assert.equal(result.metrics.started, 1);
-  assert.equal(result.metrics.completed, 1);
-  assert.equal(result.virtualTimeMs, 100);
+test("blocks invalid override and excessive scenario sizes", () => {
+  const projection = project();
+  assert.equal(runSimulation({ projection, scenarioOverrides: { trafficMultiplier: 0 } }).status, "blocked");
+  const bounded = runSimulation({ projection, limits: { maxRequests: 2 } });
+  assert.equal(bounded.status, "blocked");
+  assert.ok(blockerCodes(bounded).includes("ENGINE-REQUEST-LIMIT-EXCEEDED"));
 });

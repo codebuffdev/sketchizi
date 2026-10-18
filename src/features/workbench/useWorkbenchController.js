@@ -6,7 +6,10 @@ import {
   readWorkbenchDocument,
   withWorkbenchExtension,
 } from "./workbenchDocument.js";
-import { WORKBENCH_COMPONENTS, WORKBENCH_VIEWS } from "./workbenchRegistry.js";
+import { WORKBENCH_COMPONENTS, WORKBENCH_RELATIONS, WORKBENCH_VIEWS } from "./workbenchRegistry.js";
+import { createWorkbenchRelation, getComponentDefinition, validateRelationEndpoints, updateWorkbenchEntity } from "./workbenchModel.js";
+import { attachWorkbenchRelationToArrow, findReusableVisualArrow } from "./typedRelationScene.js";
+import { buildReactRestPostgresPocSceneDescriptors, createReactRestPostgresPoc } from "./workbenchPocTemplate.js";
 
 function makeId(prefix) {
   const uuid = globalThis.crypto?.randomUUID?.();
@@ -28,10 +31,11 @@ function currentScene(api) {
   return { elements, appState: api.getAppState?.() || {}, files };
 }
 
-export function useWorkbenchController({ apiRef, documentMetadataRef, sketchReady, savedSketch, canEdit, persistSketchNow, showToast }) {
+export function useWorkbenchController({ apiRef, documentMetadataRef, sketchReady, savedSketch, selectedElements = [], canEdit, persistSketchNow, showToast }) {
   const [workbench, setWorkbench] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [inspectorError, setInspectorError] = useState("");
 
   useEffect(() => {
     if (!sketchReady) return;
@@ -138,6 +142,80 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     }
   }, [apiRef, busy, canEdit, documentMetadataRef, saveDocument, showToast, workbench]);
 
+  const createPoc = useCallback(() => {
+    if (!canEdit || busy) return false;
+    const api = apiRef.current;
+    if (!api) {
+      showToast?.("Canvas is still starting. Try creating the POC again in a moment.", "error");
+      return false;
+    }
+    if (!workbench) {
+      showToast?.("Enable the Engineering Workbench before creating a POC.", "error");
+      return false;
+    }
+    setBusy(true);
+    try {
+      // Build the complete semantic model and all scene descriptors before making
+      // a single canvas/document update. Existing visual-only drawing is retained.
+      const next = createReactRestPostgresPoc({ workbench, idFactory: makeId });
+      const live = currentScene(api);
+      const canvas = document.querySelector(".excalidraw");
+      const rect = canvas?.getBoundingClientRect?.() || {
+        left: 0, top: 0,
+        width: globalThis.window?.innerWidth || 1280,
+        height: globalThis.window?.innerHeight || 800,
+      };
+      const appStateBefore = api.getAppState?.() || live.appState || {};
+      const center = viewportCoordsToSceneCoords({
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2,
+      }, appStateBefore);
+      const descriptors = buildReactRestPostgresPocSceneDescriptors({
+        workbench: next,
+        x: center.x - 560,
+        y: center.y - 60,
+        idFactory: makeId,
+      });
+      const inserted = convertToExcalidrawElements(descriptors).map((element, index) => ({
+        ...element,
+        customData: {
+          ...(element.customData || {}),
+          workbench: structuredClone(descriptors[index]?.customData?.workbench || {}),
+        },
+      }));
+      const elements = [...live.elements, ...inserted];
+      const clientId = next.entities.find((entity) => entity.kind === "frontend.react-app")?.id;
+      const clientContainer = inserted.find((element) => element.customData?.workbench?.role === "container"
+        && element.customData?.workbench?.entityId === clientId);
+      if (!clientContainer) throw new Error("The POC canvas could not resolve its React application placement.");
+      const selectedAppState = {
+        ...appStateBefore,
+        selectedElementIds: { [clientContainer.id]: true },
+        selectedGroupIds: {},
+        selectedGroupForOperation: null,
+      };
+      // Preflight extension validation before applying the scene update.
+      withWorkbenchExtension(documentMetadataRef.current?.extensions, next);
+      api.updateScene({
+        elements,
+        appState: selectedAppState,
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      });
+      saveDocument(next, { ...live, elements, appState: selectedAppState });
+      try { api.scrollToContent?.(inserted, { fitToContent: true, fitToViewport: true, animate: true }); } catch { /* Canvas framing is best-effort; model creation has already succeeded. */ }
+      setInspectorError("");
+      setIsOpen(true);
+      showToast?.("POC created with two typed relationships. Review the synthetic assumptions before running experiments.");
+      return true;
+    } catch (error) {
+      setInspectorError(error.message || "Could not create the POC.");
+      showToast?.(`Could not create POC: ${error.message}`, "error");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [apiRef, busy, canEdit, documentMetadataRef, saveDocument, showToast, workbench]);
+
   const addComponent = useCallback((componentKind) => {
     if (!canEdit || busy) return;
     const api = apiRef.current;
@@ -154,7 +232,7 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
         next = createWorkbenchExtension({ activeViewId: "system", views, entities: [], relations: [], viewScenes, modelRevision: 0 });
       }
       const entityId = makeId("entity");
-      const entity = { id: entityId, kind: definition.kind, name: definition.label, properties: {}, createdAt: new Date().toISOString() };
+      const entity = { id: entityId, kind: definition.kind, name: definition.label, properties: Object.fromEntries((definition.properties || []).map((property) => [property.key, property.defaultValue])), createdAt: new Date().toISOString() };
       const canvas = document.querySelector(".excalidraw");
       const rect = canvas?.getBoundingClientRect?.() || { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
       const appState = api.getAppState();
@@ -193,7 +271,165 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     }
   }, [apiRef, busy, canEdit, documentMetadataRef, saveDocument, showToast, workbench]);
 
+  const selectedEntityIds = [...new Set((selectedElements || [])
+    .map((element) => element?.customData?.workbench?.entityId)
+    .filter(Boolean))];
+  const selectedEntity = selectedEntityIds.length === 1
+    ? workbench?.entities?.find((entity) => entity.id === selectedEntityIds[0]) || null
+    : null;
+  const visibleEntityIds = [...new Set((apiRef.current?.getSceneElements?.() || [])
+    .filter((element) => !element.isDeleted && element?.customData?.workbench?.role === "container" && element.customData.workbench.viewId === workbench?.activeViewId)
+    .map((element) => element.customData.workbench.entityId))];
+
+  const updateEntity = useCallback((entityId, patch) => {
+    if (!canEdit || !workbench) return;
+    try {
+      const entities = updateWorkbenchEntity(workbench.entities, entityId, patch);
+      const next = { ...structuredClone(workbench), modelRevision: workbench.modelRevision + 1, entities };
+      const target = entities.find((entity) => entity.id === entityId);
+      const api = apiRef.current;
+      const scene = currentScene(api);
+      const elements = scene.elements.map((element) => {
+        if (element?.customData?.workbench?.entityId !== entityId) return element;
+        if (element.customData.workbench.role === "label") {
+          return { ...element, text: target.name, width: Math.max(100, Math.min(400, target.name.length * 12)), originalText: target.name };
+        }
+        return element;
+      });
+      api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      saveDocument(next, { ...scene, elements });
+      setInspectorError("");
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not update component: ${error.message}`, "error");
+    }
+  }, [apiRef, canEdit, saveDocument, showToast, workbench]);
+
+  const createRelationBetween = useCallback(({ sourceId, kind, targetId }) => {
+    if (!canEdit || !workbench) return false;
+    try {
+      const sourceEntity = workbench.entities.find((entity) => entity.id === sourceId);
+      const targetEntity = workbench.entities.find((entity) => entity.id === targetId);
+      if (!sourceEntity || !targetEntity) throw new Error("Choose two existing Workbench components before connecting them.");
+      const validation = validateRelationEndpoints(kind, sourceEntity, targetEntity);
+      if (!validation.valid) throw new Error(validation.reason);
+      const duplicate = workbench.relations.some((relation) => relation.kind === kind && relation.sourceId === sourceEntity.id && relation.targetId === targetEntity.id);
+      if (duplicate) throw new Error("This typed relationship already exists.");
+      const api = apiRef.current;
+      if (!api) throw new Error("The drawing canvas is not ready.");
+      const scene = currentScene(api);
+      const containers = new Map();
+      for (const element of scene.elements) {
+        const metadata = element?.customData?.workbench;
+        if (metadata?.role === "container" && metadata.viewId === workbench.activeViewId && !element.isDeleted) containers.set(metadata.entityId, element);
+      }
+      const sourceShape = containers.get(sourceEntity.id);
+      const targetShape = containers.get(targetEntity.id);
+      if (!sourceShape || !targetShape) throw new Error("Both components must be placed in the active view before connecting them.");
+      const relationId = makeId("relation");
+      const relation = createWorkbenchRelation({ id: relationId, kind, sourceEntity, targetEntity, viewId: workbench.activeViewId });
+
+      // If the user already drew and bound an ordinary arrow in the intended
+      // direction, promote it instead of drawing a visually duplicate connector.
+      const reusableArrowIndex = findReusableVisualArrow(scene.elements, sourceShape, targetShape, workbench.activeViewId);
+      let elements;
+      if (reusableArrowIndex >= 0) {
+        elements = scene.elements.map((element, index) => index === reusableArrowIndex
+          ? attachWorkbenchRelationToArrow(element, { relationId, viewId: workbench.activeViewId, kind })
+          : element);
+      } else {
+        const sx = sourceShape.x + sourceShape.width / 2;
+        const sy = sourceShape.y + sourceShape.height / 2;
+        const tx = targetShape.x + targetShape.width / 2;
+        const ty = targetShape.y + targetShape.height / 2;
+        const dx = tx - sx; const dy = ty - sy;
+        const width = Math.max(1, Math.abs(dx)); const height = Math.max(1, Math.abs(dy));
+        const rawArrow = {
+          type: "arrow", x: Math.min(sx, tx), y: Math.min(sy, ty), width, height,
+          points: [[dx < 0 ? width : 0, dy < 0 ? height : 0], [dx < 0 ? 0 : width, dy < 0 ? 0 : height]],
+          strokeWidth: 2, roughness: 0, endArrowhead: "arrow",
+          customData: { workbench: { relationId, viewId: workbench.activeViewId, role: "relation", kind } },
+        };
+        const arrow = convertToExcalidrawElements([rawArrow]).map((element) => ({
+          ...element,
+          customData: { ...(element.customData || {}), workbench: { relationId, viewId: workbench.activeViewId, role: "relation", kind } },
+        }));
+        elements = [...scene.elements, ...arrow];
+      }
+      const next = { ...structuredClone(workbench), modelRevision: workbench.modelRevision + 1, relations: [...workbench.relations, relation] };
+      api.updateScene({ elements, appState: { ...api.getAppState(), selectedElementIds: {}, selectedGroupIds: {}, selectedGroupForOperation: null }, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      saveDocument(next, { ...scene, elements });
+      setInspectorError("");
+      return true;
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not create typed relationship: ${error.message}`, "error");
+      return false;
+    }
+  }, [apiRef, canEdit, saveDocument, showToast, workbench]);
+
+  const createRelation = useCallback(({ kind, targetId }) => {
+    if (!selectedEntity) {
+      setInspectorError("Select a Workbench component on the canvas before creating a relationship.");
+      return false;
+    }
+    return createRelationBetween({ sourceId: selectedEntity.id, kind, targetId });
+  }, [createRelationBetween, selectedEntity]);
+
+  const focusFinding = useCallback((finding) => {
+    if (!workbench || !finding?.entityIds?.length) return;
+    const entityIds = new Set(finding.entityIds);
+    const findContainer = (scene) => (scene?.elements || []).find((element) => !element.isDeleted
+      && element?.customData?.workbench?.role === "container"
+      && entityIds.has(element.customData.workbench.entityId));
+    const api = apiRef.current;
+    if (!api) return;
+    const focus = () => {
+      const container = findContainer(currentScene(api));
+      if (!container) {
+        showToast?.("This finding's component is not placed in the active view yet.", "info");
+        return;
+      }
+      api.updateScene({ appState: { ...api.getAppState(), selectedElementIds: { [container.id]: true }, selectedGroupIds: {}, selectedGroupForOperation: null } });
+      api.scrollToContent?.([container], { fitToViewport: false, animate: true });
+    };
+    if (findContainer(currentScene(api))) {
+      focus();
+      return;
+    }
+    const destination = (workbench.views || []).find((view) => findContainer(workbench.viewScenes?.[view.id]));
+    if (!destination || destination.id === workbench.activeViewId) {
+      showToast?.("This component has no canvas placement yet.", "info");
+      return;
+    }
+    switchView(destination.id);
+    globalThis.requestAnimationFrame?.(() => globalThis.requestAnimationFrame?.(focus));
+  }, [apiRef, showToast, switchView, workbench]);
+
+  const updateSimulationProfile = useCallback((profile) => {
+    if (!canEdit || !workbench) return;
+    try {
+      const next = { ...structuredClone(workbench), simulationProfile: structuredClone(profile) };
+      saveDocument(next);
+      setInspectorError("");
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not save simulation profile: ${error.message}`, "error");
+    }
+  }, [canEdit, saveDocument, showToast, workbench]);
+
+  const updateSimulationHistory = useCallback((history) => {
+    if (!canEdit || !workbench) return;
+    try {
+      const next = { ...structuredClone(workbench), simulationHistory: structuredClone(history) };
+      saveDocument(next);
+      setInspectorError("");
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not save simulation history: ${error.message}`, "error");
+    }
+  }, [canEdit, saveDocument, showToast, workbench]);
+
   const activeView = workbench?.views?.find((view) => view.id === workbench.activeViewId) || null;
-  const selectedEntity = null; // Inspector editing is deliberately a later slice.
-  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, initialize, switchView, addComponent };
+  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, visibleEntityIds, inspectorError, clearInspectorError: () => setInspectorError(""), updateEntity, createRelation, createRelationBetween, updateSimulationProfile, updateSimulationHistory, focusFinding, initialize, switchView, addComponent, createPoc };
 }

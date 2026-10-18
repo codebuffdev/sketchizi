@@ -179,3 +179,65 @@ test("save and emergency-recovery payload enrichment keeps document metadata whe
   assert.deepEqual(overrides.metadata, { title: "Explicit" });
   assert.deepEqual(overrides.extensions, {});
 });
+
+test("typed relationships and their canvas connector references survive a save/reopen round trip", () => {
+  const typedRelations = [
+    { id: "rel-ui-api", kind: "calls", sourceId: "frontend-1", targetId: "api-1", viewIds: ["system"], properties: {} },
+    { id: "rel-api-db", kind: "reads", sourceId: "api-1", targetId: "db-1", viewIds: ["system"], properties: {} },
+  ];
+  const workbench = createWorkbenchExtension({
+    activeViewId: "system",
+    modelRevision: 12,
+    entities: entityModel,
+    relations: typedRelations,
+    views,
+    viewScenes: { apis: apiScene, data: dataScene },
+  });
+  const relationScene = {
+    elements: [
+      ...[
+        ["shape-frontend", "frontend-1"],
+        ["shape-api", "api-1"],
+        ["shape-db", "db-1"],
+      ].map(([id, entityId]) => ({
+        id, type: "rectangle", x: 10, y: 10, width: 120, height: 60,
+        customData: { workbench: { entityId, viewId: "system", role: "container" } },
+      })),
+      {
+        id: "arrow-ui-api", type: "arrow", x: 130, y: 30, width: 100, height: 0,
+        customData: { workbench: { relationId: "rel-ui-api", viewId: "system", role: "relation", kind: "calls" } },
+      },
+      {
+        id: "arrow-api-db", type: "arrow", x: 250, y: 30, width: 100, height: 0,
+        customData: { workbench: { relationId: "rel-api-db", viewId: "system", role: "relation", kind: "reads" } },
+      },
+    ],
+    appState: { viewBackgroundColor: "#ffffff", scrollX: 0, scrollY: 0, zoom: { value: 1 } },
+    files: {},
+  };
+
+  const serialized = serializeDrawing({
+    ...relationScene,
+    format: "sketchizi",
+    metadata: { title: "Typed relationship persistence" },
+    extensions: withWorkbenchExtension({}, workbench),
+  });
+  const parsed = parseDrawing(serialized);
+  const restored = readWorkbenchDocument(parsed);
+  const connectors = restored.activeScene.elements
+    .filter((element) => element.customData?.workbench?.role === "relation")
+    .map((element) => ({
+      relationId: element.customData.workbench.relationId,
+      viewId: element.customData.workbench.viewId,
+      kind: element.customData.workbench.kind,
+    }));
+
+  assert.deepEqual(restored.workbench.relations, typedRelations);
+  assert.deepEqual(connectors, [
+    { relationId: "rel-ui-api", viewId: "system", kind: "calls" },
+    { relationId: "rel-api-db", viewId: "system", kind: "reads" },
+  ]);
+  for (const relation of restored.workbench.relations) {
+    assert.ok(connectors.some((connector) => connector.relationId === relation.id && connector.kind === relation.kind));
+  }
+});

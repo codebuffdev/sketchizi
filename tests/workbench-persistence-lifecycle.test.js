@@ -94,6 +94,15 @@ const workbench = createWorkbenchExtension({
     },
   },
 });
+workbench.simulationHistory = [{
+  schemaVersion: 1,
+  id: "sim-history-lifecycle-1",
+  createdAt: "2026-10-17T12:00:00.000Z",
+  status: "completed",
+  modelRevision: 4,
+  profileSnapshot: { schemaVersion: 1, defaultScenario: { durationMs: 5000, seed: 17 }, profilesByEntityId: {} },
+  runs: { baseline: { key: "baseline", label: "Baseline", status: "completed", result: { metrics: { successfulRequests: 10 } } } },
+}];
 const extensionBag = withWorkbenchExtension({ "com.example.opaque": { preserveMe: true } }, workbench);
 const scene = {
   elements: [{ id: "ui-placement", type: "rectangle", x: 20, y: 20, width: 130, height: 70, customData: { sketchizi: { workbenchEntityId: "ui-1" } } }],
@@ -107,6 +116,7 @@ test("real autosave/load APIs preserve the full Workbench document payload acros
   assert.equal(restoredRecord.format, "sketchizi");
   assert.deepEqual(restoredRecord.metadata, { title: "Lifecycle SaaS" });
   assert.deepEqual(restoredRecord.extensions[WORKBENCH_EXTENSION_KEY], workbench);
+  assert.deepEqual(restoredRecord.extensions[WORKBENCH_EXTENSION_KEY].simulationHistory, workbench.simulationHistory);
   assert.deepEqual(restoredRecord.extensions["com.example.opaque"], { preserveMe: true });
   assert.deepEqual(restoredRecord.elements, scene.elements);
   assert.deepEqual(restoredRecord.files, scene.files);
