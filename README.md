@@ -318,14 +318,16 @@ The optional Google Sign-In foundation and Spring Boot authentication service ar
 
 The Engineering Workbench is an experimental layer over the Excalidraw canvas. It stores typed components and relationships in the `.sketchizi` Workbench extension while ordinary shapes and `.excalidraw` diagrams remain supported.
 
-The prototype includes System, APIs, Data, and Deployment views; semantic validation; synthetic request-path experiments; and a first artifact-generation slice:
+The prototype includes System, APIs, Data, and Deployment views; semantic validation; synthetic request-path experiments; and the first artifact-generation workflow.
 
-- **OpenAPI 3.1 JSON:** add API endpoint components, connect each to exactly one REST service with an `Exposes API` relationship, then use **ARTIFACTS → Generate OpenAPI**. Endpoint request/response JSON Schema is optional; path parameters such as `/users/{userId}` are represented in the generated contract.
-- **PostgreSQL DDL:** add a PostgreSQL component and PostgreSQL table components, connect the database to each table with `Contains table`, configure each table's columns JSON, then use **ARTIFACTS → Generate SQL**. The initial generator supports one database target and a conservative set of column types.
+- **Create POC:** the React + REST + PostgreSQL template creates the three runtime components, their typed request/data relationships, a starter `GET /api/items` endpoint exposed by the REST service, and an `items` PostgreSQL table. API and table entities are contract/schema metadata, not additional simulated runtime nodes.
+- **OpenAPI 3.1 JSON:** generate a reviewable API contract from endpoint components connected to exactly one REST service using `Exposes API`. The starter POC is preconfigured to generate its first OpenAPI preview without manually adding an endpoint.
+- **PostgreSQL DDL:** generate SQL from table components connected to a PostgreSQL database using `Contains table`. The starter POC includes an `items` table with a primary key and example columns.
+- **Existing POCs:** older documents created by the three-component template can use **POC WORKFLOW → Add starter API + table** to add the missing endpoint and table without recreating their existing diagram or runtime model.
 
-Generation is a reviewable preview, not deployment. Invalid ownership, duplicate routes, malformed schema JSON, unsafe identifiers, or unsupported SQL types block the download. A preview becomes stale after a semantic model revision and must be regenerated. The current SQL slice does not infer foreign keys, indexes, migrations, or runtime behavior.
+Generation is a reviewable preview, not deployment. Invalid ownership, duplicate routes, malformed schema JSON, unsafe identifiers, or unsupported SQL types block the download. A preview becomes stale after a semantic model revision and must be regenerated. The current SQL slice supports one database target and does not infer foreign keys, indexes, migrations, deployment settings, or runtime behavior.
 
-See [`docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md`](docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md). Focused checks can be run with `npm run test:workbench-artifacts`; the broader prototype test suite can be run with `node --import ./tests/register-sync-test-loader.mjs --test tests/*.test.js`.
+See [`docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md`](docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md) and [`docs/WORKBENCH_POC_ARTIFACT_STARTER_0.16.1_REPORT.md`](docs/WORKBENCH_POC_ARTIFACT_STARTER_0.16.1_REPORT.md). Focused checks can be run with `npm run test:workbench-poc` and `npm run test:workbench-artifacts`; the broader prototype test suite can be run with `node --import ./tests/register-sync-test-loader.mjs --test tests/*.test.js`.
 
 ### Collaboration creation troubleshooting
 

@@ -33,6 +33,8 @@ test("template creation is guarded against overwriting an existing semantic mode
 test("POC UI provides component/relationship preview and navigation to configure, validate and experiment", () => {
   assert.match(panel, /Preview architecture/);
   assert.match(panel, /React application <b>Calls<\/b> REST service/);
+  assert.match(panel, /GET \/api\/items/);
+  assert.match(panel, /valid starting point/);
   assert.match(panel, /REST service <b>Reads from<\/b> PostgreSQL/);
   assert.match(panel, /scrollIntoView\(\{ behavior: "smooth", block: "start" \}\)/);
   assert.match(panel, /id="workbench-model-review"/);
@@ -41,6 +43,14 @@ test("POC UI provides component/relationship preview and navigation to configure
   assert.match(styles, /\.workbench-poc-template/);
 });
 
+
+test("older POC templates can add starter OpenAPI and SQL models without recreating the diagram", () => {
+  assert.match(app, /onCompletePocArtifacts=\{workbenchController\.completePocArtifacts\}/);
+  assert.match(controller, /addMissingReactRestPostgresPocArtifacts/);
+  assert.match(controller, /buildReactRestPostgresArtifactScaffoldingSceneDescriptors/);
+  assert.match(panel, /Add starter API \+ table/);
+  assert.match(panel, /needsPocArtifactScaffolding/);
+});
 
 test("guided debugging offers a one-variable capacity trial and records the comparison in experiment history", () => {
   assert.match(simulationPanel, /createCapacityImprovementProfile/);

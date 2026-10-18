@@ -25,6 +25,7 @@ export default function WorkbenchPanel({
   onClose,
   onInitialize,
   onCreatePoc,
+  onCompletePocArtifacts,
   onSwitchView,
   onAddComponent,
   onUpdateEntity,
@@ -61,6 +62,13 @@ export default function WorkbenchPanel({
     return groups;
   }, {});
   const artifactStale = Boolean(generatedArtifact && generatedArtifact.modelRevision !== (workbench?.modelRevision ?? 0));
+  const pocEndpoints = (workbench?.entities || []).filter((entity) => entity.kind === "backend.api-endpoint");
+  const pocTables = (workbench?.entities || []).filter((entity) => entity.kind === "data.postgresql-table");
+  const needsPocArtifactScaffolding = workbench?.pocTemplate?.id === "react-rest-postgresql" && (
+    pocEndpoints.length === 0 || pocTables.length === 0
+    || (pocEndpoints.length === 1 && !workbench.relations.some((relation) => relation.kind === "exposes" && relation.targetId === pocEndpoints[0].id))
+    || (pocTables.length === 1 && !workbench.relations.some((relation) => relation.kind === "contains-table" && relation.targetId === pocTables[0].id))
+  );
   const generateArtifact = (generator) => {
     try {
       setGeneratedArtifact(generator(workbench));
@@ -125,7 +133,7 @@ export default function WorkbenchPanel({
             <section className="workbench-section workbench-poc-template" aria-label="Create a POC from a template">
               <div className="workbench-section-heading"><span>START WITH A POC</span><span className="workbench-count">1</span></div>
               <h2>Web application with database</h2>
-              <p className="workbench-section-intro">Create a connected React, REST, and PostgreSQL model with typed relationships and editable simulation profiles in one action.</p>
+              <p className="workbench-section-intro">Create a connected React, REST, and PostgreSQL model, including a starter API contract and table schema for immediate OpenAPI and SQL previews.</p>
               <div className="workbench-poc-path" aria-label="Template architecture">
                 <span>React application</span><span aria-hidden="true">→</span><span>REST service</span><span aria-hidden="true">→</span><span>PostgreSQL</span>
               </div>
@@ -135,10 +143,12 @@ export default function WorkbenchPanel({
               </div>
               {activeViewId !== "system" && <p className="workbench-note">Switch to the System view before creating the template.</p>}
               {showPocPreview && <div className="workbench-poc-preview">
-                <strong>Components</strong>
+                <strong>Runtime components</strong>
                 <ul><li>React application — traffic source</li><li>REST service — request processing</li><li>PostgreSQL — relational data store</li></ul>
+                <strong>Starter contract and schema</strong>
+                <ul><li><code>GET /api/items</code> — OpenAPI endpoint</li><li><code>items</code> — PostgreSQL table with ID, name, and creation timestamp</li></ul>
                 <strong>Typed relationships</strong>
-                <ul><li>React application <b>Calls</b> REST service</li><li>REST service <b>Reads from</b> PostgreSQL</li></ul>
+                <ul><li>React application <b>Calls</b> REST service</li><li>REST service <b>Reads from</b> PostgreSQL</li><li>REST service <b>Exposes API</b> endpoint</li><li>PostgreSQL <b>Contains table</b> items</li></ul>
                 <p>Profiles start with illustrative synthetic assumptions. Review and acknowledge them before running experiments.</p>
               </div>}
               <p className="workbench-note">Your existing freeform drawing is retained. The template creates semantic entities and typed relationships; it does not overwrite visual-only shapes.</p>
@@ -149,6 +159,10 @@ export default function WorkbenchPanel({
               <div className="workbench-section-heading"><span>POC WORKFLOW</span><span className="workbench-count">3</span></div>
               <strong>Full-stack POC created</strong>
               <p className="workbench-poc-path">React application <span aria-hidden="true">→</span> REST service <span aria-hidden="true">→</span> PostgreSQL</p>
+              {needsPocArtifactScaffolding ? <div className="workbench-poc-upgrade">
+                <p className="workbench-note">This POC was created before the starter API contract and SQL table were included.</p>
+                <button type="button" className="workbench-secondary" disabled={!canEdit || busy || activeViewId !== "system"} onClick={onCompletePocArtifacts}>{busy ? "Adding starter artifacts…" : "Add starter API + table"}</button>
+              </div> : <p className="workbench-note">Includes <code>GET /api/items</code> and an <code>items</code> table, so OpenAPI and SQL previews have a valid starting point.</p>}
               <div className="workbench-poc-steps">
                 <button type="button" onClick={() => document.getElementById("workbench-inspector")?.scrollIntoView({ behavior: "smooth", block: "start" })}>1. Configure</button>
                 <button type="button" onClick={() => document.getElementById("workbench-model-review")?.scrollIntoView({ behavior: "smooth", block: "start" })}>2. Validate</button>

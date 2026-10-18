@@ -498,6 +498,7 @@ function App() {
             onClose={() => workbenchController.setIsOpen(false)}
             onInitialize={workbenchController.initialize}
             onCreatePoc={workbenchController.createPoc}
+            onCompletePocArtifacts={workbenchController.completePocArtifacts}
             onSwitchView={workbenchController.switchView}
             onAddComponent={workbenchController.addComponent}
             onUpdateEntity={workbenchController.updateEntity}

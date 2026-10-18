@@ -85,10 +85,12 @@ const ENTITY_NODE_MAP = Object.freeze({
 
 const NON_RUNTIME_ENTITY_KINDS = new Set([
   "backend.api-endpoint",
+  "data.postgresql-table",
   "devops.deployment-target",
 ]);
 
 const NON_RUNTIME_RELATIONS = new Set([
+  "contains-table",
   "deploys-to",
   "authenticates-with",
   "depends-on",

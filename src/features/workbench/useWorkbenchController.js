@@ -9,7 +9,7 @@ import {
 import { WORKBENCH_COMPONENTS, WORKBENCH_RELATIONS, WORKBENCH_VIEWS } from "./workbenchRegistry.js";
 import { createWorkbenchRelation, getComponentDefinition, validateRelationEndpoints, updateWorkbenchEntity } from "./workbenchModel.js";
 import { attachWorkbenchRelationToArrow, findReusableVisualArrow } from "./typedRelationScene.js";
-import { buildReactRestPostgresPocSceneDescriptors, createReactRestPostgresPoc } from "./workbenchPocTemplate.js";
+import { addMissingReactRestPostgresPocArtifacts, buildReactRestPostgresArtifactScaffoldingSceneDescriptors, buildReactRestPostgresPocSceneDescriptors, createReactRestPostgresPoc } from "./workbenchPocTemplate.js";
 
 function makeId(prefix) {
   const uuid = globalThis.crypto?.randomUUID?.();
@@ -205,11 +205,85 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
       try { api.scrollToContent?.(inserted, { fitToContent: true, fitToViewport: true, animate: true }); } catch { /* Canvas framing is best-effort; model creation has already succeeded. */ }
       setInspectorError("");
       setIsOpen(true);
-      showToast?.("POC created with two typed relationships. Review the synthetic assumptions before running experiments.");
+      showToast?.("POC created with a typed request path, one API contract, and one PostgreSQL table. Review the synthetic assumptions before running experiments.");
       return true;
     } catch (error) {
       setInspectorError(error.message || "Could not create the POC.");
       showToast?.(`Could not create POC: ${error.message}`, "error");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [apiRef, busy, canEdit, documentMetadataRef, saveDocument, showToast, workbench]);
+
+
+  const completePocArtifacts = useCallback(() => {
+    if (!canEdit || busy) return false;
+    const api = apiRef.current;
+    if (!api) {
+      showToast?.("Canvas is still starting. Try again in a moment.", "error");
+      return false;
+    }
+    if (!workbench?.pocTemplate || workbench.pocTemplate.id !== "react-rest-postgresql") {
+      showToast?.("Starter artifacts can only be added to the React + REST + PostgreSQL POC template.", "error");
+      return false;
+    }
+    if (workbench.activeViewId !== "system") {
+      showToast?.("Switch to the System view before adding starter artifacts.", "error");
+      return false;
+    }
+    setBusy(true);
+    try {
+      const upgrade = addMissingReactRestPostgresPocArtifacts({ workbench, idFactory: makeId });
+      if (!upgrade.changed) {
+        showToast?.("The POC already has a starter API contract and SQL table.");
+        return true;
+      }
+      const live = currentScene(api);
+      const existingPlacements = {};
+      const existingRelationIds = [];
+      for (const element of live.elements) {
+        if (element.isDeleted) continue;
+        const semantic = element.customData?.workbench;
+        if (!semantic) continue;
+        if (semantic.role === "container" && semantic.entityId && Number.isFinite(element.x) && Number.isFinite(element.y)) {
+          existingPlacements[semantic.entityId] = { x: element.x, y: element.y, width: element.width || 280, height: element.height || 120 };
+        }
+        if (semantic.role === "relation" && semantic.relationId) existingRelationIds.push(semantic.relationId);
+      }
+      const descriptors = buildReactRestPostgresArtifactScaffoldingSceneDescriptors({
+        workbench: upgrade.workbench,
+        existingPlacements,
+        existingRelationIds,
+        idFactory: makeId,
+      });
+      const inserted = convertToExcalidrawElements(descriptors).map((element, index) => ({
+        ...element,
+        customData: {
+          ...(element.customData || {}),
+          workbench: structuredClone(descriptors[index]?.customData?.workbench || {}),
+        },
+      }));
+      const elements = [...live.elements, ...inserted];
+      const firstNewContainer = inserted.find((element) => element.customData?.workbench?.role === "container");
+      const appStateBefore = api.getAppState?.() || live.appState || {};
+      const selectedAppState = {
+        ...appStateBefore,
+        selectedElementIds: firstNewContainer ? { [firstNewContainer.id]: true } : {},
+        selectedGroupIds: {},
+        selectedGroupForOperation: null,
+      };
+      withWorkbenchExtension(documentMetadataRef.current?.extensions, upgrade.workbench);
+      api.updateScene({ elements, appState: selectedAppState, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      saveDocument(upgrade.workbench, { ...live, elements, appState: selectedAppState });
+      try { api.scrollToContent?.(inserted, { fitToViewport: false, animate: true }); } catch { /* Placement is committed; framing is best-effort. */ }
+      setInspectorError("");
+      setIsOpen(true);
+      showToast?.("Starter API contract and PostgreSQL table added. Generate OpenAPI and SQL previews from ARTIFACTS.");
+      return true;
+    } catch (error) {
+      setInspectorError(error.message || "Could not add starter artifacts.");
+      showToast?.(`Could not add starter artifacts: ${error.message}`, "error");
       return false;
     } finally {
       setBusy(false);
@@ -431,5 +505,5 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
   }, [canEdit, saveDocument, showToast, workbench]);
 
   const activeView = workbench?.views?.find((view) => view.id === workbench.activeViewId) || null;
-  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, visibleEntityIds, inspectorError, clearInspectorError: () => setInspectorError(""), updateEntity, createRelation, createRelationBetween, updateSimulationProfile, updateSimulationHistory, focusFinding, initialize, switchView, addComponent, createPoc };
+  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, visibleEntityIds, inspectorError, clearInspectorError: () => setInspectorError(""), updateEntity, createRelation, createRelationBetween, updateSimulationProfile, updateSimulationHistory, focusFinding, initialize, switchView, addComponent, createPoc, completePocArtifacts };
 }
