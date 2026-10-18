@@ -35,7 +35,8 @@
     "test:simulation-projection": "node --test tests/simulation-projection.test.js",
     "test:simulation-engine": "node --test tests/simulation-engine.test.js",
     "example:simulation": "node examples/simulation/client-api-postgres.mjs",
-    "test:simulation": "node --test tests/simulation-projection.test.js tests/simulation-engine.test.js tests/simulation-experiment-model.test.js tests/simulation-profile-persistence.test.js tests/workbench-simulation-runner.test.js tests/simulation-history.test.js tests/runtime-overlay-model.test.js tests/runtime-overlay-ui.test.js tests/request-trace-ui.test.js tests/trace-investigation.test.js tests/capacity-improvement-comparison.test.js tests/service-time-improvement.test.js tests/database-contention-improvement.test.js tests/database-index-improvement.test.js",
+    "test:simulation": "node --test tests/simulation-projection.test.js tests/simulation-engine.test.js tests/simulation-experiment-model.test.js tests/simulation-profile-persistence.test.js tests/infrastructure-profile.test.js tests/load-test-calibration.test.js tests/workbench-simulation-runner.test.js tests/simulation-history.test.js tests/runtime-overlay-model.test.js tests/runtime-overlay-ui.test.js tests/request-trace-ui.test.js tests/trace-investigation.test.js tests/capacity-improvement-comparison.test.js tests/service-time-improvement.test.js tests/database-contention-improvement.test.js tests/database-index-improvement.test.js",
+    "test:simulation-outcomes": "node --test tests/simulation-engine.test.js tests/simulation-experiment-model.test.js tests/simulation-diagnostic-presentation.test.js tests/simulation-history.test.js",
     "test:runtime-overlays": "node --test tests/runtime-overlay-model.test.js",
     "test:request-traces": "node --test tests/simulation-engine.test.js tests/simulation-history.test.js tests/request-trace-ui.test.js",
     "test:simulation-runner": "node --test tests/workbench-simulation-runner.test.js",
@@ -50,7 +51,9 @@
     "test:service-time-improvement": "node --test tests/service-time-improvement.test.js tests/capacity-improvement-comparison.test.js tests/simulation-experiment-model.test.js tests/simulation-history.test.js",
     "test:database-contention-improvement": "node --test tests/database-contention-improvement.test.js tests/simulation-engine.test.js tests/simulation-history.test.js",
     "test:database-index-improvement": "node --test tests/database-index-improvement.test.js tests/simulation-engine.test.js tests/simulation-history.test.js tests/workbench-artifacts.test.js",
-    "test:browser-index-fixture": "node --test tests/workbench-index-browser-smoke-fixture.test.js"
+    "test:browser-index-fixture": "node --test tests/workbench-index-browser-smoke-fixture.test.js",
+    "test:infrastructure-profiles": "node --test tests/infrastructure-profile.test.js tests/simulation-profile-persistence.test.js",
+    "test:load-test-calibration": "node --test tests/load-test-calibration.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

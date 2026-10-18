@@ -1,19 +1,23 @@
-Current milestone: Workbench query / index hypothesis 0.24.
+Current milestone: Workbench JMeter CSV / XML JTL import adapter 0.30.
 
-Added a synthetic, evidence-gated PostgreSQL index hypothesis distinct from concurrency, mean service-time, and write-contention trials. It requires a typed Reads from path, recorded database reads in the selected load scenario, a contained table, and an explicitly chosen eligible column when multiple candidates exist. The model changes only the assumed share of reads that benefit from an index; the speedup factor is fixed and disclosed. The engine does not parse SQL or run PostgreSQL query planning.
+Phase 1 — Simulation outcome clarity — implemented: separate dependency-unavailable from component failures; show queued/in-service/in-flight work at the observation-window boundary; disclose synthetic, assumption-dependent outputs.
 
-An index is only added to the semantic schema after the user explicitly selects Add candidate index to schema model. SQL artifact generation then emits validated CREATE INDEX DDL from the schema. Changing the schema invalidates prior experiment results and requires artifact regeneration.
+Phase 2 — Infrastructure Profiles — implemented: evidence-aware, persisted REST and PostgreSQL deployment/resource profiles. Resource values are descriptive and do not silently change simulated capacity.
 
-Run locally from sketchizi-main:
-1. npm ci
-2. npm run build
-3. npm run test:database-index-improvement
-4. npm run test:simulation
-5. npm run test:workbench-artifacts
-6. npm run dev
+Phase 3 — Load-test evidence & calibration workflow — implemented in increments:
+- Manual measurement entry and validated Sketchizi JSON import.
+- k6 summary JSON import with explicit Sketchizi metadata; maps available request-rate, failed-rate, latency, and VU metrics while noting the successful-throughput interpretation.
+- Apache JMeter raw sample-level CSV/JTL and XML JTL import. Offered RPS and configured test duration are required metadata, never inferred from completed samples. p95 is calculated from individual sample elapsed times; aggregate report CSV is rejected because sampler percentiles cannot be combined into a defensible global p95.
+- Evidence is persisted with the Workbench profile and historical run snapshots. Comparisons guard against offered-load and observation-window mismatch. Simulated drops remain separate from measured HTTP errors.
+- Reviewable meanServiceMs proposals require repeated component-level measurements in the same environment across multiple offered-load levels. CPU/RAM are not converted to invented RPS ceilings.
 
-Manual browser gate: create/open the React -> REST -> PostgreSQL POC, confirm assumptions, run 5x traffic, explicitly select a candidate table column in Query / index hypothesis, run the trial, and verify before/after metrics plus trace evidence. Then explicitly accept the candidate index into the table schema, regenerate SQL, and confirm the CREATE INDEX statement appears. Save/reopen and confirm schema/model freshness behavior.
+Verification for 0.30:
+- Load-test calibration suite: 15 passed.
+- Simulation suite: 124 passed.
+- Workbench artifact 11, UI/model 32, validation 25, POC 13, format/persistence 22, infrastructure/persistence 9, browser test server 6, browser fixture 1 passed.
+- Syntax checks passed for edited source.
+- Production build remains blocked before Vite because `node_modules/@excalidraw/excalidraw/dist/prod/fonts` is missing in this extracted environment. Full browser UI is not verified. Test data is synthetic; no real JMeter export was supplied for calibration validation.
 
-Current verification boundary: Node regression tests and JSX syntax parsing passed in this environment. Production build is blocked before Vite by missing node_modules/@excalidraw/excalidraw/dist/prod/fonts. The UI has not been tested in a real browser; do not call the feature browser-verified until the manual gate passes.
+Next action: close the production build and real-browser release gate on a machine with dependencies installed, then test all JSON/k6/JMeter adapters against representative real exports and confirm their metric definitions. Only after that should simulated capacity be calibrated further.
 
-Application package version remains 1.10.86; 0.24 is an Engineering Workbench prototype milestone, not an application release version.
+Application package version remains 1.10.86; 0.30 is a Workbench prototype milestone, not an application release version.

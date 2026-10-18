@@ -189,7 +189,9 @@ export function buildSimulationProjection({ workbench, simulationProfile, scopeE
   const allProfiles = isRecord(simulationProfile.profilesByEntityId) ? simulationProfile.profilesByEntityId : {};
   const inScopeEntityIds = new Set(simulationScope.entityIds);
   const profiles = Object.fromEntries(Object.entries(allProfiles).filter(([entityId]) => inScopeEntityIds.has(entityId)));
-  const scopedProfileForFingerprint = { ...simulationProfile, profilesByEntityId: profiles };
+  const allInfrastructureProfiles = isRecord(simulationProfile.infrastructureByEntityId) ? simulationProfile.infrastructureByEntityId : {};
+  const infrastructureByEntityId = Object.fromEntries(Object.entries(allInfrastructureProfiles).filter(([entityId]) => inScopeEntityIds.has(entityId)));
+  const scopedProfileForFingerprint = { ...simulationProfile, profilesByEntityId: profiles, infrastructureByEntityId };
   const scenario = simulationProfile.defaultScenario;
   if (simulationScope.scoped && simulationScope.excludedEntityIds.length) {
     const excludedRuntimeEntities = workbench.entities.filter((entity) => simulationScope.excludedEntityIds.includes(entity.id) && ENTITY_NODE_MAP[entity.kind]);

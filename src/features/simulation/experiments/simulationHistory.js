@@ -59,6 +59,15 @@ function compactProfile(profile) {
         parameters: isRecord(item?.parameters) ? clone(item.parameters) : {},
       }])
       .sort(([left], [right]) => left.localeCompare(right))),
+    // Retain the exact deployment context used when a result was created.
+    // These fields are provenance only; the current simulation engine does not
+    // consume them as capacity multipliers.
+    infrastructureByEntityId: Object.fromEntries(Object.entries(profile.infrastructureByEntityId || {})
+      .map(([id, item]) => [id, isRecord(item) ? clone(item) : {}])
+      .sort(([left], [right]) => left.localeCompare(right))),
+    // Measurements are saved as separate calibration evidence. They are not
+    // model inputs and are deliberately excluded from stale-result fingerprints.
+    loadTestEvidence: isRecord(profile.loadTestEvidence) ? clone(profile.loadTestEvidence) : { schemaVersion: 1, records: [] },
   };
 }
 
@@ -91,6 +100,7 @@ const stableProfileConfiguration = (profile) => {
     schemaVersion: compact.schemaVersion,
     defaultScenario: compact.defaultScenario,
     profilesByEntityId: compact.profilesByEntityId,
+    infrastructureByEntityId: compact.infrastructureByEntityId || {},
   });
 };
 

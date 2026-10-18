@@ -200,6 +200,27 @@ test("explains capacity pressure with a stable link to the source Workbench enti
   assert.ok(databaseFinding.message.includes("simulated run") || databaseFinding.message.includes("observed utilization"));
 });
 
+test("explains dependency outage separately from component failure", () => {
+  const { model, projection } = runPair();
+  const outage = runSimulation({ projection, scenarioOverrides: { unavailableNodeIds: ["db"] } });
+  const outageFinding = explainSimulationRun(outage, model, { scenarioLabel: "PostgreSQL unavailable" })
+    .find((item) => item.kind === "request-failures");
+  assert.ok(outageFinding);
+  assert.match(outageFinding.title, /dependency was unavailable/i);
+  assert.match(outageFinding.message, /explicitly marked a dependency unavailable/i);
+  assert.match(outageFinding.message, /not evidence that the deployed dependency is unavailable/i);
+  assert.equal(outageFinding.evidence.dependencyUnavailableRequests, outage.result.metrics.failedRequests);
+  assert.equal(outageFinding.evidence.componentFailedRequests, 0);
+
+  const componentFailure = runSimulation({ projection, scenarioOverrides: { failureProbabilityByNodeId: { db: 1 } } });
+  const componentFinding = explainSimulationRun(componentFailure, model, { scenarioLabel: "DB component failure" })
+    .find((item) => item.kind === "request-failures");
+  assert.ok(componentFinding);
+  assert.match(componentFinding.title, /component-failure/i);
+  assert.equal(componentFinding.evidence.componentFailedRequests, componentFailure.result.metrics.failedRequests);
+  assert.equal(componentFinding.evidence.dependencyUnavailableRequests, 0);
+});
+
 test("does not invent explanations for blocked simulation runs", () => {
   const model = workbench();
   const explanations = explainSimulationRun({ status: "blocked", result: null }, model);

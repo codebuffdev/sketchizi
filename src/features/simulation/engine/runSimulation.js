@@ -1,12 +1,12 @@
 /**
- * Sketchizi-owned deterministic discrete-event simulation engine, v0.4.0.
+ * Sketchizi-owned deterministic discrete-event simulation engine, v0.6.0.
  *
  * This engine intentionally supports a narrow, auditable synchronous request path.
  * It is not a Breakscale engine clone and does not import Breakscale code. Unsupported
  * features are blocked rather than approximated silently.
  */
-export const SIMULATION_ENGINE_VERSION = "0.5.0";
-export const SIMULATION_RESULT_SCHEMA_VERSION = 4;
+export const SIMULATION_ENGINE_VERSION = "0.6.0";
+export const SIMULATION_RESULT_SCHEMA_VERSION = 5;
 const TIME_SERIES_BUCKET_COUNT = 40;
 const REQUEST_TRACE_FIRST_PER_OUTCOME = 3;
 const REQUEST_TRACE_SLOWEST_LIMIT = 20;
@@ -130,7 +130,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
   if (!Number.isSafeInteger(seed)) diagnostics.push(makeDiagnostic("ENGINE-SEED-INVALID", "blocker", "Invalid random seed", "The scenario seed must be a safe integer."));
   if (!Number.isSafeInteger(durationMs) || durationMs <= 0) diagnostics.push(makeDiagnostic("ENGINE-DURATION-INVALID", "blocker", "Invalid simulation duration", "The projection must contain a positive integer durationMs."));
   if (Object.keys(scenarioOverrides).some((key) => !["trafficMultiplier", "failureProbabilityByNodeId", "unavailableNodeIds", "seed"].includes(key))) {
-    diagnostics.push(makeDiagnostic("ENGINE-OVERRIDE-UNKNOWN", "blocker", "Unknown experiment override", "Only trafficMultiplier, failureProbabilityByNodeId, unavailableNodeIds, and seed are supported by engine v0.3.0."));
+    diagnostics.push(makeDiagnostic("ENGINE-OVERRIDE-UNKNOWN", "blocker", "Unknown experiment override", "Only trafficMultiplier, failureProbabilityByNodeId, unavailableNodeIds, and seed are supported by engine v0.6.0."));
   }
   const nodes = topology.nodes.slice().sort((a, b) => String(a?.id).localeCompare(String(b?.id)));
   const edges = topology.edges.slice().sort((a, b) => String(a?.id).localeCompare(String(b?.id)));
@@ -143,14 +143,14 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     }
     if (nodeById.has(node.id)) diagnostics.push(makeDiagnostic("ENGINE-NODE-ID-DUPLICATE", "blocker", "Duplicate runtime node", `Runtime node '${node.id}' is duplicated.`));
     nodeById.set(node.id, node);
-    if (!SUPPORTED_NODE_KINDS.has(node.kind)) diagnostics.push(makeDiagnostic("ENGINE-NODE-KIND-UNSUPPORTED", "blocker", "Runtime node kind not supported", `Node '${node.id}' uses '${node.kind}', which is not supported by engine v0.3.0.`, { nodeIds: [node.id] }));
+    if (!SUPPORTED_NODE_KINDS.has(node.kind)) diagnostics.push(makeDiagnostic("ENGINE-NODE-KIND-UNSUPPORTED", "blocker", "Runtime node kind not supported", `Node '${node.id}' uses '${node.kind}', which is not supported by engine v0.6.0.`, { nodeIds: [node.id] }));
     if (node.kind === "request-service" || node.kind === "external-service-approximation" || node.kind === "relational-store") {
       const p = node.parameters || {};
       if (!Number.isSafeInteger(p.concurrency) || p.concurrency < 1 || !finite(p.meanServiceMs) || p.meanServiceMs <= 0 || !finite(p.serviceTimeCv) || p.serviceTimeCv < 0 || !Number.isSafeInteger(p.bufferCapacity) || p.bufferCapacity < 0 || !finite(p.failureProbability) || p.failureProbability < 0 || p.failureProbability > 1) {
         diagnostics.push(makeDiagnostic("ENGINE-NODE-PARAMETERS-INVALID", "blocker", "Invalid processing profile", `Node '${node.id}' has invalid concurrency, service time, variability, queue capacity, or failure probability.`, { nodeIds: [node.id] }));
       }
-      if (p.retryAttempts !== undefined && p.retryAttempts !== 0) diagnostics.push(makeDiagnostic("ENGINE-RETRY-UNSUPPORTED", "blocker", "Retries are not supported yet", `Node '${node.id}' has retryAttempts > 0. Engine v0.3.0 does not model retry/cancellation semantics.` , { nodeIds: [node.id] }));
-      if (p.timeoutMs !== undefined && p.timeoutMs !== 0) diagnostics.push(makeDiagnostic("ENGINE-TIMEOUT-UNSUPPORTED", "blocker", "Timeouts are not supported yet", `Node '${node.id}' has timeoutMs > 0. Engine v0.3.0 does not model timeout/cancellation semantics.`, { nodeIds: [node.id] }));
+      if (p.retryAttempts !== undefined && p.retryAttempts !== 0) diagnostics.push(makeDiagnostic("ENGINE-RETRY-UNSUPPORTED", "blocker", "Retries are not supported yet", `Node '${node.id}' has retryAttempts > 0. Engine v0.6.0 does not model retry/cancellation semantics.` , { nodeIds: [node.id] }));
+      if (p.timeoutMs !== undefined && p.timeoutMs !== 0) diagnostics.push(makeDiagnostic("ENGINE-TIMEOUT-UNSUPPORTED", "blocker", "Timeouts are not supported yet", `Node '${node.id}' has timeoutMs > 0. Engine v0.6.0 does not model timeout/cancellation semantics.`, { nodeIds: [node.id] }));
     }
     if (node.kind === "relational-store") {
       const p = node.parameters || {};
@@ -168,14 +168,14 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     if (!isRecord(edge) || typeof edge.id !== "string" || !edge.id) { diagnostics.push(makeDiagnostic("ENGINE-EDGE-ID-INVALID", "blocker", "Invalid runtime edge", "Every edge must have a non-empty id.")); continue; }
     if (edgeById.has(edge.id)) diagnostics.push(makeDiagnostic("ENGINE-EDGE-ID-DUPLICATE", "blocker", "Duplicate runtime edge", `Runtime edge '${edge.id}' is duplicated.`));
     edgeById.set(edge.id, edge);
-    if (edge.kind !== "request") { diagnostics.push(makeDiagnostic("ENGINE-EDGE-KIND-UNSUPPORTED", "blocker", "Runtime edge kind not supported", `Edge '${edge.id}' has kind '${edge.kind}'. Engine v0.3.0 supports synchronous request edges only.`, { edgeIds: [edge.id] })); continue; }
+    if (edge.kind !== "request") { diagnostics.push(makeDiagnostic("ENGINE-EDGE-KIND-UNSUPPORTED", "blocker", "Runtime edge kind not supported", `Edge '${edge.id}' has kind '${edge.kind}'. Engine v0.6.0 supports synchronous request edges only.`, { edgeIds: [edge.id] })); continue; }
     if (!nodeById.has(edge.sourceId) || !nodeById.has(edge.targetId)) { diagnostics.push(makeDiagnostic("ENGINE-EDGE-ENDPOINT-MISSING", "blocker", "Runtime edge endpoint missing", `Edge '${edge.id}' references a missing runtime node.`, { edgeIds: [edge.id] })); continue; }
     outgoing.get(edge.sourceId).push(edge); incoming.get(edge.targetId).push(edge); edgeCounts.set(edge.id, 0);
   }
   for (const node of nodes) {
     const outs = outgoing.get(node.id) || [];
     if (node.kind === "traffic-source" && outs.length !== 1) diagnostics.push(makeDiagnostic("ENGINE-TRAFFIC-ROUTE-INVALID", "blocker", "Traffic source must have one route", `Traffic source '${node.label || node.id}' must have exactly one outgoing request edge. Ordinary Excalidraw arrows are visual only; create a Workbench Calls relationship from this React application to a REST service or API endpoint in the component Inspector.`, { nodeIds: [node.id] }));
-    if (node.kind !== "traffic-source" && outs.length > 1) diagnostics.push(makeDiagnostic("ENGINE-ROUTING-UNSUPPORTED", "blocker", "Multi-target routing is not supported yet", `Node '${node.id}' has ${outs.length} outgoing request edges. Engine v0.3.0 supports one successor per request path.`, { nodeIds: [node.id], edgeIds: outs.map((edge) => edge.id) }));
+    if (node.kind !== "traffic-source" && outs.length > 1) diagnostics.push(makeDiagnostic("ENGINE-ROUTING-UNSUPPORTED", "blocker", "Multi-target routing is not supported yet", `Node '${node.id}' has ${outs.length} outgoing request edges. Engine v0.6.0 supports one successor per request path.`, { nodeIds: [node.id], edgeIds: outs.map((edge) => edge.id) }));
     if (node.kind === "traffic-source" && incoming.get(node.id).length > 0) diagnostics.push(makeDiagnostic("ENGINE-TRAFFIC-INCOMING-INVALID", "blocker", "Traffic source cannot receive requests", `Traffic source '${node.id}' has incoming request edges.`, { nodeIds: [node.id] }));
   }
   const failureOverrides = Object.hasOwn(scenarioOverrides, "failureProbabilityByNodeId") ? scenarioOverrides.failureProbabilityByNodeId : {};
@@ -225,7 +225,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     writeOperationsStarted: 0, writeContentionMsTotal: 0,
     queueWaits: [], serviceTimes: [], active: 0, waiting: [],
   }]));
-  const terminal = { successful: 0, successfulWithinWindow: 0, failed: 0, dropped: 0, allLatencies: [], successfulLatencies: [] };
+  const terminal = { successful: 0, successfulWithinWindow: 0, failed: 0, componentFailed: 0, dependencyUnavailable: 0, dropped: 0, allLatencies: [], successfulLatencies: [] };
   // Capture a bounded, deterministic set of request traces: a few first examples
   // of each outcome plus the slowest terminal requests. Never retain the full
   // event queue or all request-level detail for high-volume scenarios.
@@ -239,6 +239,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     const record = {
       requestId: request.id,
       outcome,
+      failureKind: request.failureKind || null,
       arrivalMs: round(request.arrivalMs),
       completedAtMs: round(completedAtMs),
       totalLatencyMs: round(Math.max(0, completedAtMs - request.arrivalMs)),
@@ -260,10 +261,12 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     offeredRequests: 0,
     successfulRequests: 0,
     failedRequests: 0,
+    componentFailedRequests: 0,
+    dependencyUnavailableRequests: 0,
     droppedRequests: 0,
     successfulLatenciesMs: [],
   }));
-  const postWindowDrain = { successfulRequests: 0, failedRequests: 0, droppedRequests: 0 };
+  const postWindowDrain = { successfulRequests: 0, failedRequests: 0, componentFailedRequests: 0, dependencyUnavailableRequests: 0, droppedRequests: 0 };
   const timeSeriesBucketAt = (timeMs) => {
     if (timeMs > durationMs || timeMs < 0) return null;
     const index = Math.min(TIME_SERIES_BUCKET_COUNT - 1, Math.floor((timeMs / durationMs) * TIME_SERIES_BUCKET_COUNT));
@@ -284,7 +287,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
         arrivalMs: round(timeMs), queueWaitMs: null, serviceStartedAtMs: null,
         serviceCompletedAtMs: null, outcomeAtMs: round(timeMs), serviceTimeMs: null, outcome: "unavailable",
       };
-      finishRequest({ ...request, trace: [...(request.trace || []), hop] }, "failed", timeMs);
+      finishRequest({ ...request, trace: [...(request.trace || []), hop] }, "failed", timeMs, "dependency-unavailable");
       return;
     }
     const queued = { request, queuedAt: timeMs, incomingEdgeId };
@@ -349,9 +352,9 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     stats.busyObservedMs += Math.max(0, Math.min(endMs, durationMs) - Math.min(timeMs, durationMs));
     schedule({ type: "service-complete", timeMs: endMs, nodeId, queued, serviceMs, serviceStartedAtMs: timeMs, operation, writeContentionMs: extraMs, indexAssumptionApplied: operation === "read" ? indexAssumptionApplied : null, indexReadSpeedupFactor: operation === "read" ? indexReadSpeedupFactor : null, indexTimeSavedMs });
   };
-  function finishRequest(request, outcome, timeMs) {
+  function finishRequest(request, outcome, timeMs, failureKind = null) {
     const latency = Math.max(0, timeMs - request.arrivalMs);
-    retainRequestTrace(request, outcome, timeMs);
+    retainRequestTrace({ ...request, failureKind }, outcome, timeMs);
     terminal.allLatencies.push(latency);
     const bucket = timeSeriesBucketAt(timeMs);
     const drainKey = outcome === "success" ? "successfulRequests" : outcome === "dropped" ? "droppedRequests" : "failedRequests";
@@ -360,9 +363,17 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
         bucket.successfulRequests += 1;
         bucket.successfulLatenciesMs.push(latency);
       } else if (outcome === "dropped") bucket.droppedRequests += 1;
-      else bucket.failedRequests += 1;
+      else {
+        bucket.failedRequests += 1;
+        if (failureKind === "dependency-unavailable") bucket.dependencyUnavailableRequests += 1;
+        else bucket.componentFailedRequests += 1;
+      }
     } else if (timeMs > durationMs) {
       postWindowDrain[drainKey] += 1;
+      if (outcome === "failed") {
+        if (failureKind === "dependency-unavailable") postWindowDrain.dependencyUnavailableRequests += 1;
+        else postWindowDrain.componentFailedRequests += 1;
+      }
     }
     if (outcome === "success") {
       terminal.successful += 1;
@@ -370,8 +381,29 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
       if (timeMs <= durationMs) terminal.successfulWithinWindow += 1;
     }
     else if (outcome === "dropped") terminal.dropped += 1;
-    else terminal.failed += 1;
+    else {
+      terminal.failed += 1;
+      if (failureKind === "dependency-unavailable") terminal.dependencyUnavailable += 1;
+      else terminal.componentFailed += 1;
+    }
   }
+
+  const captureObservationBoundary = () => {
+    const byNode = [...nodeStats.entries()].map(([nodeId, stats]) => ({
+      nodeId,
+      sourceEntityId: nodeById.get(nodeId)?.sourceEntityId ?? nodeId,
+      activeServiceRequests: stats.active,
+      queuedRequests: stats.waiting.length,
+      inFlightRequests: stats.active + stats.waiting.length,
+    })).sort((a, b) => a.nodeId.localeCompare(b.nodeId));
+    return {
+      activeServiceRequests: byNode.reduce((total, node) => total + node.activeServiceRequests, 0),
+      queuedRequests: byNode.reduce((total, node) => total + node.queuedRequests, 0),
+      inFlightRequests: byNode.reduce((total, node) => total + node.inFlightRequests, 0),
+      byNode,
+    };
+  };
+  let observationBoundary = null;
 
   // Pre-generate a deterministic Poisson arrival stream for each traffic source.
   let totalOffered = 0;
@@ -390,6 +422,10 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
   let maxEventTimeMs = durationMs;
   while (events.size) {
     const event = events.pop();
+    // Capture state after all events at or before the observation deadline and
+    // before draining completions that happen later. The popped event remains
+    // eligible for normal processing below; this snapshot is observational only.
+    if (observationBoundary === null && event.timeMs > durationMs) observationBoundary = captureObservationBoundary();
     maxEventTimeMs = Math.max(maxEventTimeMs, event.timeMs);
     if (event.type === "request-arrival") {
       const arrivalBucket = timeSeriesBucketAt(event.timeMs);
@@ -427,7 +463,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     };
     const completedRequest = { ...event.queued.request, trace: [...(event.queued.request.trace || []), hop] };
     if (failed) {
-      stats.failures += 1; finishRequest(completedRequest, "failed", event.timeMs);
+      stats.failures += 1; finishRequest(completedRequest, "failed", event.timeMs, "component-failure");
     } else if (!edge) finishRequest(completedRequest, "success", event.timeMs);
     else {
       edgeCounts.set(edge.id, edgeCounts.get(edge.id) + 1);
@@ -436,6 +472,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     const next = stats.waiting.shift();
     if (next) startService(node.id, next, event.timeMs);
   }
+  if (observationBoundary === null) observationBoundary = captureObservationBoundary();
   const perNode = [...nodeStats.entries()].map(([nodeId, stats]) => {
     const node = nodeById.get(nodeId);
     const capacityMs = node.parameters.concurrency * durationMs;
@@ -463,6 +500,8 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
       offeredRequests: bucket.offeredRequests,
       successfulRequests: bucket.successfulRequests,
       failedRequests: bucket.failedRequests,
+      componentFailedRequests: bucket.componentFailedRequests,
+      dependencyUnavailableRequests: bucket.dependencyUnavailableRequests,
       droppedRequests: bucket.droppedRequests,
       offeredRps: round(bucket.offeredRequests / bucketSeconds),
       successfulRps: round(bucket.successfulRequests / bucketSeconds),
@@ -480,6 +519,10 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
       durationMs: round(Math.max(0, maxEventTimeMs - durationMs)),
       ...postWindowDrain,
       terminalRequests: postWindowDrain.successfulRequests + postWindowDrain.failedRequests + postWindowDrain.droppedRequests,
+    },
+    observationBoundary: {
+      capturedAtMs: durationMs,
+      ...observationBoundary,
     },
   };
   const retainedTraceMap = new Map();
@@ -504,7 +547,11 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
       schemaVersion: SIMULATION_RESULT_SCHEMA_VERSION,
       simulation: { runFingerprint, engineVersion: SIMULATION_ENGINE_VERSION, seed, durationMs, drainDurationMs: round(Math.max(0, maxEventTimeMs - durationMs)), trafficMultiplier: multiplier, requestedFailureOverrides: structuredClone(failureOverrides), unavailableNodeIds: [...unavailableNodeIdSet].sort(), deterministic: true },
       metrics: {
-        offeredRequests: totalOffered, successfulRequests: terminal.successful, successfulCompletionsWithinWindow: terminal.successfulWithinWindow, failedRequests: terminal.failed, droppedRequests: terminal.dropped,
+        offeredRequests: totalOffered, successfulRequests: terminal.successful, successfulCompletionsWithinWindow: terminal.successfulWithinWindow,
+        failedRequests: terminal.failed, componentFailedRequests: terminal.componentFailed, dependencyUnavailableRequests: terminal.dependencyUnavailable, droppedRequests: terminal.dropped,
+        requestsInFlightAtWindowEnd: observationBoundary.inFlightRequests,
+        requestsQueuedAtWindowEnd: observationBoundary.queuedRequests,
+        requestsInServiceAtWindowEnd: observationBoundary.activeServiceRequests,
         terminalRequests: terminal.successful + terminal.failed + terminal.dropped,
         successRate: round(totalOffered ? terminal.successful / totalOffered : 0),
         throughputRps: round(successesPerSecond),

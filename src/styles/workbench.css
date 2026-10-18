@@ -227,6 +227,30 @@
 .sim-profile-entity > summary small { color: #6c5ac8; font-size: 8px; font-weight: 600; }
 .sim-profile-field-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; padding-top: 8px; }
 .sim-profile-assumption-note, .sim-inline-note { margin: 3px 0 0; color: var(--ui-text-muted, #777f90); font-size: 9px; line-height: 1.45; }
+/* Workbench 0.27 — evidence-aware infrastructure profiles. */
+.sim-infrastructure-editor { margin-top: 9px; padding: 9px; border: 1px solid var(--ui-border, #e0e4ed); border-radius: 8px; }
+.sim-infrastructure-editor > summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; cursor: pointer; color: var(--ui-text, #303647); font-size: 10px; font-weight: 750; }
+.sim-infrastructure-editor > summary small { color: var(--ui-text-muted, #727a8c); font-size: 8px; font-weight: 600; text-align: right; }
+.theme-dark .sim-infrastructure-editor > summary { color: #e7eaf2; }
+.sim-infrastructure-intro { margin: 8px 0; color: var(--ui-text-muted, #777f90); font-size: 9px; line-height: 1.5; }
+.sim-infrastructure-component { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ui-border, #e5e8ef); }
+.sim-infrastructure-component-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.sim-infrastructure-component-heading strong { color: var(--ui-text, #303647); font-size: 10px; overflow-wrap: anywhere; }
+.sim-infrastructure-component-heading span { color: var(--ui-text-muted, #777f90); font-size: 8px; white-space: nowrap; }
+.theme-dark .sim-infrastructure-component-heading strong { color: #e7eaf2; }
+.sim-infrastructure-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sim-infrastructure-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border, #e0e4ed); border-radius: 7px; }
+.sim-infrastructure-field label { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--ui-text-muted, #727a8c); font-size: 9px; }
+.sim-infrastructure-field input, .sim-infrastructure-field select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 29px; padding: 5px 6px; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 6px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #303647); font: inherit; font-size: 10px; }
+.theme-dark .sim-infrastructure-field { border-color: #343947; }
+.theme-dark .sim-infrastructure-field input, .theme-dark .sim-infrastructure-field select { border-color: #3a4050; background: #20242e; color: #e7eaf2; }
+.sim-infrastructure-field .sim-infrastructure-evidence { padding-top: 5px; border-top: 1px dashed var(--ui-border, #e0e4ed); }
+.sim-infrastructure-evidence-summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-top: 10px; padding: 8px; border-radius: 7px; background: var(--ui-surface-soft, #f7f8fc); color: var(--ui-text-muted, #727a8c); font-size: 9px; line-height: 1.45; }
+.sim-infrastructure-evidence-summary strong { color: var(--ui-text, #303647); font-size: 9px; }
+.theme-dark .sim-infrastructure-evidence-summary { background: #20242e; }
+.theme-dark .sim-infrastructure-evidence-summary strong { color: #e7eaf2; }
+@media (max-width: 420px) { .sim-infrastructure-field-grid { grid-template-columns: minmax(0, 1fr); } .sim-infrastructure-component-heading { align-items: flex-start; flex-direction: column; gap: 3px; } }
+
 .sim-profile-scope-note { margin: 0 0 8px; color: var(--ui-text-muted, #777f90); font-size: 9px; line-height: 1.45; }
 .sim-profile-warning, .sim-stale-banner { padding: 8px; border: 1px solid #e8ce91; border-radius: 7px; background: #fff7e5; color: #78520d; font-size: 9px; line-height: 1.45; }
 .theme-dark .sim-profile-warning, .theme-dark .sim-stale-banner { border-color: #594822; background: #332b1c; color: #efd18b; }
@@ -251,6 +275,11 @@
 .sim-result-metric small { color: var(--ui-text-muted, #777f90); font-size: 8px; }
 .theme-dark .sim-result-metric { border-color: #343947; }
 .theme-dark .sim-result-metric strong { color: #e7eaf2; }
+.sim-model-assumption-note { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid #b9a9f2; border-radius: 7px; background: rgba(130, 107, 221, .07); }
+.sim-model-assumption-note strong { color: var(--ui-text, #303647); font-size: 10px; }
+.sim-model-assumption-note span, .sim-model-assumption-note small { color: var(--ui-text-muted, #777f90); font-size: 9px; line-height: 1.45; }
+.theme-dark .sim-model-assumption-note { border-color: #4d426f; background: rgba(130, 107, 221, .08); }
+.theme-dark .sim-model-assumption-note strong { color: #e7eaf2; }
 .sim-comparison-table-wrap > strong { display: block; margin-bottom: 6px; color: var(--ui-text, #303647); font-size: 10px; }
 .theme-dark .sim-comparison-table-wrap > strong { color: #e7eaf2; }
 .sim-comparison-table { width: 100%; border-collapse: collapse; font-size: 9px; }
@@ -258,6 +287,12 @@
 .sim-comparison-table th { color: var(--ui-text-muted, #727a8c); font-size: 8px; }
 .sim-comparison-table td { color: var(--ui-text, #303647); font-variant-numeric: tabular-nums; }
 .theme-dark .sim-comparison-table th, .theme-dark .sim-comparison-table td { border-color: #343947; color: #e7eaf2; }
+.sim-observation-boundary { padding: 8px; border: 1px solid var(--ui-border, #e2e6ee); border-radius: 7px; }
+.sim-observation-boundary summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ui-text, #303647); font-size: 9px; font-weight: 750; cursor: pointer; }
+.sim-observation-boundary summary small { color: var(--ui-text-muted, #777f90); font-size: 8px; font-weight: 600; text-align: right; }
+.sim-observation-boundary > p { margin: 7px 0; color: var(--ui-text-muted, #777f90); font-size: 9px; line-height: 1.45; }
+.theme-dark .sim-observation-boundary { border-color: #343947; }
+.theme-dark .sim-observation-boundary summary { color: #e7eaf2; }
 .sim-explanations { display: flex; flex-direction: column; gap: 6px; }
 .sim-explanation { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; padding: 8px; border: 1px solid var(--ui-border, #e2e6ee); border-radius: 7px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .sim-explanation:hover, .sim-explanation:focus-visible { border-color: #9e92e8; outline: none; }
@@ -789,3 +824,57 @@
 .theme-dark .sim-index-candidate-select select { border-color: #414756; background: #1b1e26; color: #e6e9f1; }
 .theme-dark .sim-index-hypothesis-result { border-color: #414756; background: #1d2029; }
 .theme-dark .sim-index-hypothesis-result pre { background: #14161d; color: #e6e9f1; }
+
+/* Load-test evidence and calibration workflow */
+.sim-load-test-calibration { margin-top: 9px; padding: 9px; border: 1px solid var(--ui-border, #e0e4ed); border-radius: 8px; }
+.sim-load-test-calibration > summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; cursor: pointer; color: var(--ui-text, #303647); font-size: 10px; font-weight: 750; }
+.sim-load-test-calibration > summary small { color: var(--ui-text-muted, #727a8c); font-size: 8px; font-weight: 600; text-align: right; }
+.theme-dark .sim-load-test-calibration > summary { color: #e7eaf2; }
+.sim-load-test-intro, .sim-load-test-add-form p, .sim-load-test-import p, .sim-load-test-proposals > p { margin: 8px 0; color: var(--ui-text-muted, #777f90); font-size: 9px; line-height: 1.5; }
+.sim-load-test-readiness, .sim-load-test-comparison-status { display: flex; flex-direction: column; gap: 4px; margin: 9px 0; padding: 9px; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 7px; background: var(--ui-surface-soft, #f7f8fc); font-size: 9px; line-height: 1.45; }
+.sim-load-test-readiness strong, .sim-load-test-comparison-status strong { color: var(--ui-text, #303647); font-size: 10px; }
+.sim-load-test-readiness span, .sim-load-test-comparison-status span, .sim-load-test-readiness small { color: var(--ui-text-muted, #777f90); }
+.sim-load-test-readiness.ready { border-color: #4c9f79; }
+.sim-load-test-comparison-status.comparable { border-color: #4c9f79; }
+.sim-load-test-comparison-status.workload-mismatch { border-color: #c58b36; }
+.sim-load-test-comparison-status.incomplete { border-color: #8c8a9c; }
+.theme-dark .sim-load-test-readiness, .theme-dark .sim-load-test-comparison-status { background: #20242e; border-color: #3a4050; }
+.theme-dark .sim-load-test-readiness strong, .theme-dark .sim-load-test-comparison-status strong { color: #e7eaf2; }
+.sim-load-test-add-form, .sim-load-test-import { margin-top: 8px; padding: 8px; border: 1px solid var(--ui-border, #e0e4ed); border-radius: 7px; }
+.sim-load-test-add-form > summary, .sim-load-test-import > summary { cursor: pointer; color: var(--ui-text, #303647); font-size: 9px; font-weight: 700; }
+.theme-dark .sim-load-test-add-form > summary, .theme-dark .sim-load-test-import > summary { color: #e7eaf2; }
+.sim-load-test-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
+.sim-load-test-field-grid label, .sim-load-test-comparison > label, .sim-load-test-notes { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--ui-text-muted, #727a8c); font-size: 9px; }
+.sim-load-test-field-grid input, .sim-load-test-field-grid select, .sim-load-test-comparison > label select, .sim-load-test-notes textarea, .sim-load-test-import textarea { box-sizing: border-box; width: 100%; min-width: 0; padding: 6px; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 6px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #303647); font: inherit; font-size: 10px; }
+.sim-load-test-import textarea, .sim-load-test-notes textarea { resize: vertical; }
+.theme-dark .sim-load-test-field-grid input, .theme-dark .sim-load-test-field-grid select, .theme-dark .sim-load-test-comparison > label select, .theme-dark .sim-load-test-notes textarea, .theme-dark .sim-load-test-import textarea { border-color: #3a4050; background: #20242e; color: #e7eaf2; }
+.sim-load-test-metric-groups { display: grid; gap: 9px; margin-top: 10px; }
+.sim-load-test-metric-groups > section { padding-top: 8px; border-top: 1px solid var(--ui-border, #e0e4ed); }
+.sim-load-test-metric-groups > section > strong { color: var(--ui-text, #303647); font-size: 9px; }
+.sim-load-test-metric-groups > section > p { margin: 5px 0; color: var(--ui-text-muted, #777f90); font-size: 8px; line-height: 1.5; }
+.theme-dark .sim-load-test-metric-groups > section > strong { color: #e7eaf2; }
+.sim-load-test-notes { margin: 10px 0; }
+.sim-load-test-actions, .sim-load-test-actions, .sim-load-test-record { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sim-load-test-actions { margin-top: 8px; flex-wrap: wrap; }
+.sim-load-test-record-list, .sim-load-test-comparison, .sim-load-test-proposals { display: grid; gap: 8px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ui-border, #e0e4ed); }
+.sim-load-test-record-list > strong, .sim-load-test-comparison > strong, .sim-load-test-proposals > strong { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text, #303647); font-size: 10px; }
+.sim-load-test-record-list > strong small { color: var(--ui-text-muted, #777f90); font-size: 8px; }
+.theme-dark .sim-load-test-record-list > strong, .theme-dark .sim-load-test-comparison > strong, .theme-dark .sim-load-test-proposals > strong { color: #e7eaf2; }
+.sim-load-test-record { padding: 8px; border: 1px solid var(--ui-border, #e0e4ed); border-radius: 7px; }
+.sim-load-test-record > div, .sim-load-test-proposal > div { display: grid; gap: 3px; min-width: 0; }
+.sim-load-test-record > div strong, .sim-load-test-proposal > div strong { color: var(--ui-text, #303647); font-size: 9px; overflow-wrap: anywhere; }
+.sim-load-test-record small, .sim-load-test-proposal small, .sim-load-test-proposal span { color: var(--ui-text-muted, #777f90); font-size: 8px; line-height: 1.45; overflow-wrap: anywhere; }
+.theme-dark .sim-load-test-record > div strong, .theme-dark .sim-load-test-proposal > div strong { color: #e7eaf2; }
+.sim-load-test-comparison > label { margin-top: 3px; }
+.sim-load-test-resource-context { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; padding: 8px; border-radius: 7px; background: var(--ui-surface-soft, #f7f8fc); color: var(--ui-text-muted, #777f90); font-size: 8px; }
+.sim-load-test-resource-context strong { grid-column: 1 / -1; color: var(--ui-text, #303647); font-size: 9px; }
+.theme-dark .sim-load-test-resource-context { background: #20242e; }
+.theme-dark .sim-load-test-resource-context strong { color: #e7eaf2; }
+.sim-load-test-footnote, .sim-load-test-proposals > small { color: var(--ui-text-muted, #777f90); font-size: 8px; line-height: 1.5; }
+.sim-load-test-proposal { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px; border: 1px solid var(--ui-border, #e0e4ed); border-radius: 7px; }
+.sim-load-test-proposal button { flex: 0 0 auto; }
+@media (max-width: 420px) { .sim-load-test-field-grid, .sim-load-test-resource-context { grid-template-columns: minmax(0, 1fr); } .sim-load-test-record, .sim-load-test-proposal { align-items: stretch; flex-direction: column; } .sim-load-test-proposal button { align-self: flex-start; } }
+
+.sim-load-test-import-format { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; color: var(--ui-text-muted, #727a8c); font-size: 9px; }
+.sim-load-test-import-format select { box-sizing: border-box; width: 100%; min-width: 0; padding: 6px; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 6px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #303647); font: inherit; font-size: 10px; }
+.theme-dark .sim-load-test-import-format select { border-color: #3a4050; background: #20242e; color: #e7eaf2; }

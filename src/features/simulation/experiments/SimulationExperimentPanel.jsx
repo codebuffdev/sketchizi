@@ -23,6 +23,24 @@ import {
   mergeMissingIllustrativeProfiles,
   SIMULATION_PROFILE_FIELD_DEFINITIONS,
 } from "./simulationExperimentModel.js";
+import {
+  INFRASTRUCTURE_EVIDENCE_OPTIONS,
+  INFRASTRUCTURE_PROFILE_FIELD_DEFINITIONS,
+  ensureInfrastructureProfileDefaults,
+  summarizeInfrastructureProfile,
+  updateInfrastructureField,
+} from "./infrastructureProfile.js";
+import {
+  LOAD_TEST_MEASUREMENT_FIELDS,
+  assessLoadTestEvidence,
+  compareLoadTestToSimulation,
+  createEmptyLoadTestRecord,
+  createLoadTestJsonTemplate,
+  normalizeLoadTestRecord,
+  parseLoadTestEvidenceJson,
+  parseJMeterLoadTestText,
+  proposeServiceTimeCalibrations,
+} from "./loadTestCalibration.js";
 
 const deepClone = (value) => structuredClone(value);
 const isFiniteNumber = (value) => typeof value === "number" && Number.isFinite(value);
@@ -37,6 +55,7 @@ function profileForEntityIds(profile, entityIds) {
   return {
     ...deepClone(profile),
     profilesByEntityId: Object.fromEntries(Object.entries(profile.profilesByEntityId || {}).filter(([entityId]) => included.has(entityId))),
+    infrastructureByEntityId: Object.fromEntries(Object.entries(profile.infrastructureByEntityId || {}).filter(([entityId]) => included.has(entityId))),
   };
 }
 
@@ -86,7 +105,7 @@ function ensureDatabaseIndexProfileDefaults(profile) {
   return next;
 }
 
-function profileValues(profile) {
+function simulationInputValues(profile) {
   if (!profile) return null;
   const profilesByEntityId = Object.fromEntries(Object.keys(profile.profilesByEntityId || {}).sort().map((id) => {
     const item = profile.profilesByEntityId[id] || {};
@@ -95,8 +114,35 @@ function profileValues(profile) {
   return { schemaVersion: profile.schemaVersion, defaultScenario: profile.defaultScenario || {}, profilesByEntityId };
 }
 
+function runConfigurationValues(profile) {
+  if (!profile) return null;
+  const infrastructureByEntityId = Object.fromEntries(Object.keys(profile.infrastructureByEntityId || {}).sort().map((id) => {
+    const item = profile.infrastructureByEntityId[id] || {};
+    return [id, { schemaVersion: item.schemaVersion, entityKind: item.entityKind, fields: item.fields || {} }];
+  }));
+  return { ...simulationInputValues(profile), infrastructureByEntityId };
+}
+
+function profileValues(profile) {
+  if (!profile) return null;
+  return {
+    ...runConfigurationValues(profile),
+    loadTestEvidence: profile.loadTestEvidence?.records || [],
+  };
+}
+
 function profileIsSame(a, b) {
   return JSON.stringify(profileValues(a)) === JSON.stringify(profileValues(b));
+}
+
+function runConfigurationIsSame(a, b) {
+  return JSON.stringify(runConfigurationValues(a)) === JSON.stringify(runConfigurationValues(b));
+}
+
+function formatCalibrationValue(value, unit) {
+  if (!isFiniteNumber(value)) return "—";
+  const rendered = unit === "requests" ? formatInteger(value) : formatDecimal(value, 2);
+  return unit === "%" ? `${formatDecimal(value, 2)}%` : unit ? `${rendered} ${unit}` : rendered;
 }
 
 function setField(profile, entityId, field, value) {
@@ -135,8 +181,24 @@ function RunMetrics({ run }) {
     <MetricCard label="Dropped" value={formatInteger(metrics.droppedRequests)} detail="capacity / buffer" />
     <MetricCard label="Throughput" value={formatDecimal(metrics.throughputRps)} detail="successful req/sec" />
     <MetricCard label="p95 latency" value={formatDecimal(metrics.successfulLatencyMs?.p95)} detail="milliseconds" />
-    <MetricCard label="Failed" value={formatInteger(metrics.failedRequests)} detail="requests" />
+    <MetricCard label="Failed" value={formatInteger(metrics.failedRequests)} detail={`${formatInteger(metrics.dependencyUnavailableRequests || 0)} dependency · ${formatInteger(metrics.componentFailedRequests || 0)} component`} />
+    <MetricCard label="In flight at window end" value={formatInteger(metrics.requestsInFlightAtWindowEnd || 0)} detail={`${formatInteger(metrics.requestsQueuedAtWindowEnd || 0)} queued · ${formatInteger(metrics.requestsInServiceAtWindowEnd || 0)} in service`} />
   </div>;
+}
+
+function ObservationBoundaryTable({ run }) {
+  const result = run?.result?.result;
+  const boundary = result?.timeSeries?.observationBoundary;
+  const rows = Array.isArray(boundary?.byNode) ? boundary.byNode : [];
+  if (!boundary || rows.length === 0) return null;
+  const perNode = Array.isArray(result?.perNode) ? result.perNode : [];
+  const nodeLabel = (row) => perNode.find((node) => node.nodeId === row.nodeId)?.label || row.sourceEntityId || row.nodeId;
+  return <details className="sim-observation-boundary">
+    <summary>Queued and in-service requests at the observation boundary <small>{formatInteger(boundary.inFlightRequests)} in flight</small></summary>
+    <p>This is a point-in-time snapshot at {formatDecimal(boundary.capturedAtMs / 1000)} seconds, before the post-window drain. It is not an additional terminal outcome.</p>
+    <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Component</th><th>In service</th><th>Queued</th><th>In flight</th></tr></thead><tbody>{rows.map((row) => <tr key={row.nodeId}><td>{nodeLabel(row)}</td><td>{formatInteger(row.activeServiceRequests)}</td><td>{formatInteger(row.queuedRequests)}</td><td>{formatInteger(row.inFlightRequests)}</td></tr>)}</tbody></table></div>
+    {boundary.inFlightRequests === 0 && <p>No requests were active or queued at the observation boundary.</p>}
+  </details>;
 }
 
 function timeSeriesPath(values, maximum, width = 320, height = 86) {
@@ -246,6 +308,7 @@ function RequestTraceExplorer({ run, scenarioKey, onFocusEntity, onInvestigateTr
   if (!traceCapture || traces.length === 0) return null;
   const totalRequests = Number.isSafeInteger(traceCapture.totalTerminalRequests) ? traceCapture.totalTerminalRequests : traces.length;
   const outcomeLabel = (outcome) => ({ success: "Succeeded", failed: "Failed", dropped: "Dropped" })[outcome] || String(outcome || "Unknown");
+  const traceOutcomeLabel = (trace) => trace?.failureKind === "dependency-unavailable" ? "Dependency unavailable" : trace?.failureKind === "component-failure" ? "Component failure" : outcomeLabel(trace?.outcome);
   const hopOutcomeLabel = (outcome) => ({ sent: "Traffic offered", success: "Request completed", completed: "Hop completed", failed: "Failed here", unavailable: "Dependency unavailable", dropped: "Dropped before service" })[outcome] || String(outcome || "Unknown");
   const displayTime = (value) => isFiniteNumber(value) ? `${formatDecimal(value, 2)} ms` : "Not recorded";
   return <details className="sim-request-traces">
@@ -253,12 +316,12 @@ function RequestTraceExplorer({ run, scenarioKey, onFocusEntity, onInvestigateTr
     <p>Trace samples are recorded from discrete-event request lifecycles. We keep a few examples of each outcome plus the slowest requests; this is not a full distributed trace of a deployed service.</p>
     <label className="sim-request-trace-select">Request sample
       <select aria-label="Select request trace" value={selectedTrace?.requestId || ""} onChange={(event) => setSelectedRequestId(event.target.value)}>
-        {traces.map((trace) => <option key={trace.requestId} value={trace.requestId}>{trace.requestId} · {outcomeLabel(trace.outcome)} · {formatDecimal(trace.totalLatencyMs)} ms</option>)}
+        {traces.map((trace) => <option key={trace.requestId} value={trace.requestId}>{trace.requestId} · {traceOutcomeLabel(trace)} · {formatDecimal(trace.totalLatencyMs)} ms</option>)}
       </select>
     </label>
     {selectedTrace && <>
       <div className={`sim-request-trace-summary outcome-${selectedTrace.outcome}`}>
-        <div><span>Outcome</span><strong>{outcomeLabel(selectedTrace.outcome)}</strong></div>
+        <div><span>Outcome</span><strong>{traceOutcomeLabel(selectedTrace)}</strong></div>
         <div><span>End-to-end modeled time</span><strong>{formatDecimal(selectedTrace.totalLatencyMs)} ms</strong></div>
         <div><span>Arrival</span><strong>{formatDecimal(selectedTrace.arrivalMs)} ms</strong></div>
         <div><span>Completion</span><strong>{formatDecimal(selectedTrace.completedAtMs)} ms</strong></div>
@@ -360,7 +423,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const missingTrafficSource = simulationScope.scoped && !activeViewHasTrafficSource;
   const scopeEntityIdSet = useMemo(() => new Set(simulationScope.entityIds), [simulationScope]);
   const effectiveScopeSignature = JSON.stringify(simulationScope.entityIds);
-  const [draftProfile, setDraftProfile] = useState(() => ensureDatabaseIndexProfileDefaults(simulationProfile));
+  const [draftProfile, setDraftProfile] = useState(() => ensureInfrastructureProfileDefaults(ensureDatabaseIndexProfileDefaults(simulationProfile), workbench));
   const draftProfileRef = useRef(draftProfile);
   draftProfileRef.current = draftProfile;
   const [acknowledged, setAcknowledged] = useState(() => profileIsConfirmed(profileForEntityIds(simulationProfile, simulationScope.entityIds)));
@@ -376,19 +439,29 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const [showAllExplanations, setShowAllExplanations] = useState(false);
   const [trafficMultiplier, setTrafficMultiplier] = useState(5);
   const [investigation, setInvestigation] = useState(null);
+  const [loadTestDraft, setLoadTestDraft] = useState(() => createEmptyLoadTestRecord());
+  const [loadTestImportText, setLoadTestImportText] = useState("");
+  const [loadTestImportFormat, setLoadTestImportFormat] = useState("json");
+  const [loadTestImportMetadata, setLoadTestImportMetadata] = useState({ name: "", testedAt: "", targetEnvironment: "", offeredRps: "", durationSeconds: "", concurrency: "", notes: "" });
+  const [loadTestError, setLoadTestError] = useState("");
+  const [selectedLoadTestId, setSelectedLoadTestId] = useState("");
 
   useEffect(() => {
     // The controller may clone Workbench metadata after an autosave or an unrelated
     // model update. If profile values are unchanged, preserve current results and
     // run-local assumption acknowledgement; modelRevision still marks stale results.
-    if (profileIsSame(draftProfileRef.current, ensureDatabaseIndexProfileDefaults(simulationProfile))) return;
-    const next = ensureDatabaseIndexProfileDefaults(simulationProfile);
+    const next = ensureInfrastructureProfileDefaults(ensureDatabaseIndexProfileDefaults(simulationProfile), workbench);
+    const previousDraft = draftProfileRef.current;
+    if (profileIsSame(previousDraft, next)) return;
+    const simulationConfigurationChanged = !runConfigurationIsSame(previousDraft, next);
     setDraftProfile(next);
-    setAcknowledged(profileIsConfirmed(profileForEntityIds(next, simulationScope.entityIds)));
-    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
-    setProfileError("");
-    setRunError("");
-  }, [simulationProfile, effectiveScopeSignature, scopeSignature]);
+    if (simulationConfigurationChanged) {
+      setAcknowledged(profileIsConfirmed(profileForEntityIds(next, simulationScope.entityIds)));
+      setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
+      setProfileError("");
+      setRunError("");
+    }
+  }, [simulationProfile, effectiveScopeSignature, scopeSignature, workbench?.modelRevision]);
 
   // Changing the active-view scope requires reviewing that scope's assumptions
   // again. Saved history remains available and is marked stale where appropriate.
@@ -410,6 +483,12 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
 
   const entitiesById = useMemo(() => new Map((workbench?.entities || []).map((entity) => [entity.id, entity])), [workbench?.entities]);
   const profiles = draftProfile?.profilesByEntityId || {};
+  const infrastructureByEntityId = draftProfile?.infrastructureByEntityId || {};
+  const availableInfrastructureEntities = Object.entries(infrastructureByEntityId).map(([entityId, infrastructure]) => ({ entity: entitiesById.get(entityId), entityId, infrastructure })).filter((item) => item.entity && scopeEntityIdSet.has(item.entityId) && INFRASTRUCTURE_PROFILE_FIELD_DEFINITIONS[item.entity.kind]);
+  const loadTestRecords = draftProfile?.loadTestEvidence?.records || [];
+  const loadTestAssessment = useMemo(() => assessLoadTestEvidence(loadTestRecords), [loadTestRecords]);
+  const serviceTimeProposals = useMemo(() => proposeServiceTimeCalibrations(loadTestRecords, workbench, draftProfile), [loadTestRecords, workbench, draftProfile]);
+  const selectedLoadTestRecord = loadTestRecords.find((record) => record.id === selectedLoadTestId) || loadTestRecords[0] || null;
   const availableProfileEntities = Object.entries(profiles).map(([entityId, profile]) => ({ entity: entitiesById.get(entityId), entityId, profile })).filter((item) => item.entity && scopeEntityIdSet.has(item.entityId));
   const missingProfileEntityIds = useMemo(() => {
     if (!simulationScope.workbench) return [];
@@ -420,6 +499,9 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const staleModel = simulationResultsAreStale(results, workbench, simulationProfile, simulationScope.entityIds)
     || Boolean(results && Number.isFinite(results.trafficMultiplier) && results.trafficMultiplier !== trafficMultiplier);
   const activeRun = results?.runs?.[activeRunKey];
+  const calibrationComparison = useMemo(() => activeRun?.result?.status === "completed" && selectedLoadTestRecord
+    ? compareLoadTestToSimulation(activeRun.result.result, selectedLoadTestRecord)
+    : null, [activeRun, selectedLoadTestRecord]);
   const capacityScenarioKey = useMemo(() => chooseCapacityImprovementScenarioKey(results?.runs, activeRunKey), [results, activeRunKey]);
   const capacityScenario = capacityScenarioKey ? results?.runs?.[capacityScenarioKey] : null;
   const databaseIndexCandidates = useMemo(() => getDatabaseIndexCandidates({
@@ -518,6 +600,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const prepareProfile = () => {
     try {
       const profile = createIllustrativeSimulationProfile(simulationScope.scoped ? simulationScope.workbench : workbench);
+      profile.loadTestEvidence = deepClone(draftProfile?.loadTestEvidence || simulationProfile?.loadTestEvidence || { schemaVersion: 1, records: [] });
       setDraftProfile(profile);
       setProfileEditorOpen(true);
       setAcknowledged(false);
@@ -540,23 +623,100 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const saveProfile = () => {
     if (!draftProfile) return;
     const next = deepClone(draftProfile);
-    next.profileKind = "illustrative-synthetic";
-    next.sourceModelRevision = workbench?.modelRevision ?? null;
-    for (const item of Object.values(next.profilesByEntityId || {})) {
-      item.assumptions ||= {};
-      for (const field of Object.keys(item.parameters || {})) {
-        if (!item.assumptions[field] || item.assumptions[field].source === "explicit-user-acknowledgement") {
-          item.assumptions[field] = { status: "proposed", source: "profile-edited", note: "Review and explicitly confirm before running." };
+    const simulationInputsChanged = JSON.stringify(simulationInputValues(next)) !== JSON.stringify(simulationInputValues(simulationProfile));
+    const runConfigurationChanged = !runConfigurationIsSame(next, simulationProfile);
+    if (simulationInputsChanged) {
+      next.profileKind = "illustrative-synthetic";
+      for (const item of Object.values(next.profilesByEntityId || {})) {
+        item.assumptions ||= {};
+        for (const field of Object.keys(item.parameters || {})) {
+          if (!item.assumptions[field] || item.assumptions[field].source === "explicit-user-acknowledgement") {
+            item.assumptions[field] = { status: "proposed", source: "profile-edited", note: "Review and explicitly confirm before running." };
+          }
         }
       }
     }
+    next.sourceModelRevision = workbench?.modelRevision ?? null;
     setDraftProfile(next);
     setProfileEditorOpen(true);
-    setAcknowledged(false);
-    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
+    if (simulationInputsChanged) setAcknowledged(false);
+    if (runConfigurationChanged) { setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null); }
     onUpdateSimulationProfile?.(next);
     setProfileError("");
   };
+  const addLoadTestRecord = () => {
+    try {
+      if (!draftProfile) throw new Error("Prepare a simulation profile before adding load-test evidence.");
+      const normalized = normalizeLoadTestRecord(loadTestDraft);
+      const existing = draftProfile.loadTestEvidence?.records || [];
+      if (existing.length >= 25) throw new Error("The profile already has the maximum of 25 load-test records. Remove an old record before adding another.");
+      const next = deepClone(draftProfile);
+      next.loadTestEvidence = { schemaVersion: 1, records: [normalized, ...existing] };
+      setDraftProfile(next);
+      setProfileEditorOpen(true);
+      setLoadTestDraft(createEmptyLoadTestRecord());
+      setLoadTestError("");
+    } catch (error) { setLoadTestError(error.message || "Could not add load-test evidence."); }
+  };
+  const importLoadTestEvidence = () => {
+    try {
+      if (!draftProfile) throw new Error("Prepare a simulation profile before importing load-test evidence.");
+      const imported = loadTestImportFormat === "json"
+        ? parseLoadTestEvidenceJson(loadTestImportText)
+        : [parseJMeterLoadTestText(loadTestImportText, loadTestImportMetadata, loadTestImportFormat === "jmeter-xml" ? "xml" : "csv")];
+      const current = draftProfile.loadTestEvidence?.records || [];
+      const combined = [...current];
+      let added = 0;
+      for (const record of imported) {
+        if (combined.some((item) => item.id === record.id)) continue;
+        if (combined.length >= 25) break;
+        combined.push(record); added += 1;
+      }
+      if (!added) throw new Error("No new records were imported. Check whether the IDs already exist or the 25-record limit has been reached.");
+      const next = deepClone(draftProfile);
+      next.loadTestEvidence = { schemaVersion: 1, records: combined };
+      setDraftProfile(next);
+      setProfileEditorOpen(true);
+      setLoadTestImportText("");
+      setLoadTestError(`Imported ${added} load-test record(s). Save profile changes to persist the evidence.`);
+    } catch (error) { setLoadTestError(error.message || "Could not import load-test evidence."); }
+  };
+  const removeLoadTestRecord = (recordId) => {
+    if (!canEdit || !draftProfile) return;
+    const next = deepClone(draftProfile);
+    next.loadTestEvidence = { schemaVersion: 1, records: (next.loadTestEvidence?.records || []).filter((record) => record.id !== recordId) };
+    setDraftProfile(next);
+    setProfileEditorOpen(true);
+    setLoadTestError("");
+  };
+  const updateLoadTestDraftField = (section, field, value) => {
+    setLoadTestDraft((current) => section
+      ? { ...current, [section]: { ...current[section], [field]: value } }
+      : { ...current, [field]: value });
+  };
+  const applyServiceTimeCalibration = (proposal) => {
+    if (!canEdit || !draftProfile) return;
+    const next = deepClone(draftProfile);
+    const profileEntry = next.profilesByEntityId?.[proposal.entityId];
+    if (!profileEntry || !isFiniteNumber(proposal.proposedValue) || proposal.proposedValue <= 0) {
+      setLoadTestError("The proposed service-time calibration no longer matches a supported component.");
+      return;
+    }
+    profileEntry.parameters.meanServiceMs = proposal.proposedValue;
+    profileEntry.assumptions ||= {};
+    profileEntry.assumptions.meanServiceMs = {
+      status: "proposed",
+      source: "repeated-component-load-test-measurements",
+      note: `Reviewable proposal from ${proposal.testCount} load tests and ${proposal.sampleCount} component service-time samples in environment '${proposal.environment}' across offered-load levels ${proposal.workloadLevelsRps.join(", ")} req/s. This updates only the synthetic mean service-time parameter and is not a calibrated production-capacity guarantee. ${proposal.note}`,
+    };
+    next.profileKind = "illustrative-synthetic";
+    setDraftProfile(next);
+    setAcknowledged(false);
+    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
+    setLoadTestError(`Applied a proposed mean service-time value to ${proposal.entityName}. Save the profile, review the changed assumption, then rerun the same workload to compare it with measured evidence.`);
+    setProfileError("");
+  };
+
   const runExperiments = () => {
     setImprovementResult(null);
     setImprovementError("");
@@ -813,6 +973,53 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         </div>
         <label className="sim-confirm-assumptions"><input type="checkbox" checked={acknowledged} disabled={!canEdit} onChange={(event) => setAcknowledged(event.target.checked)} /><span>I reviewed these synthetic assumptions and accept them for this experiment.</span></label>
       </details>
+      <details className="sim-infrastructure-editor">
+        <summary><span>Infrastructure &amp; capacity profiles</span><small>{availableInfrastructureEntities.length} runtime components · deployment facts</small></summary>
+        <p className="sim-infrastructure-intro">Record the actual hosting and resource settings for the REST service and PostgreSQL. Every value has an evidence source. Blank or Unknown means Sketchizi does not know it. These fields are saved with the document and run provenance, but they do not change the synthetic capacity calculation in this release.</p>
+        {availableInfrastructureEntities.length === 0 && <p className="sim-profile-assumption-note">No REST or PostgreSQL infrastructure profile is in the current simulation scope.</p>}
+        {availableInfrastructureEntities.map(({ entity, entityId, infrastructure }) => {
+          const definitions = INFRASTRUCTURE_PROFILE_FIELD_DEFINITIONS[entity.kind] || [];
+          const summary = summarizeInfrastructureProfile(infrastructure);
+          return <section className="sim-infrastructure-component" key={entityId}>
+            <div className="sim-infrastructure-component-heading"><strong>{entity.name || entity.id}</strong><span>{summary.populated}/{summary.total} values entered · {summary.unknown} unknown</span></div>
+            <div className="sim-infrastructure-field-grid">
+              {definitions.map((field) => {
+                const saved = infrastructure.fields?.[field.key] || { value: field.type === "select" ? "unknown" : field.type === "text" ? "" : null, evidence: "unknown" };
+                const hasValue = saved.value !== null && saved.value !== undefined && saved.value !== "" && saved.value !== "unknown";
+                return <div className="sim-infrastructure-field" key={field.key}>
+                  <label><span>{field.label}</span>
+                    {field.type === "select" ? <select value={saved.value ?? "unknown"} disabled={!canEdit} onChange={(event) => {
+                      const value = event.target.value;
+                      setDraftProfile((current) => updateInfrastructureField(current, entityId, field.key, "value", value));
+                      setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
+                    }}>{field.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> :
+                    <input type={field.type === "number" ? "number" : "text"} min={field.min} max={field.max} step={field.step} placeholder={field.placeholder || "Not specified"} value={saved.value ?? ""} disabled={!canEdit} onChange={(event) => {
+                      const raw = event.target.value;
+                      const value = field.type === "number" ? (raw === "" ? null : Number(raw)) : raw;
+                      setDraftProfile((current) => updateInfrastructureField(current, entityId, field.key, "value", value));
+                      setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
+                    }} />}
+                  </label>
+                  <label className="sim-infrastructure-evidence"><span>Evidence source</span><select value={saved.evidence || "unknown"} disabled={!canEdit || !hasValue} onChange={(event) => {
+                    setDraftProfile((current) => updateInfrastructureField(current, entityId, field.key, "evidence", event.target.value));
+                    setResults(null); setImprovementResult(null); setImprovementError(""); setInvestigation(null);
+                  }}>{INFRASTRUCTURE_EVIDENCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                </div>;
+              })}
+            </div>
+            <p className="sim-profile-assumption-note">Infrastructure data is descriptive only until the capacity model is calibrated. Enter exact configuration where available; do not guess to satisfy every field.</p>
+          </section>;
+        })}
+        <div className="sim-infrastructure-evidence-summary">
+          <strong>Evidence definitions</strong>
+          <span><b>Deployment config</b> — copied from a hosting, container or database configuration.</span>
+          <span><b>Measured</b> — confirmed through monitoring, metrics or a load test.</span>
+          <span><b>Estimate</b> — a human estimate, not verified.</span>
+          <span><b>Defaulted</b> — provider or platform default, not independently checked.</span>
+          <span><b>Unknown</b> — value or its evidence source has not been established.</span>
+        </div>
+        <div className="sim-profile-actions"><button type="button" className="workbench-secondary" disabled={!canEdit || !unsaved} onClick={saveProfile}>Save infrastructure profile</button></div>
+      </details>
       {externalApprox && <p className="sim-profile-warning">External APIs use a generic approximation. This warning does not block a run after you confirm assumptions; results are not provider measurements.</p>}
       <div className="sim-traffic-control">
         <label htmlFor="sim-traffic-multiplier"><span>Traffic-surge scenario</span><strong>{trafficMultiplier}× offered load</strong></label>
@@ -822,6 +1029,87 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       </div>
       <button type="button" className="workbench-primary sim-run-button" disabled={!canEdit || missingTrafficSource || unsaved || missingProfileEntityIds.length > 0 || typedCallMissing || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={runExperiments}>{missingTrafficSource ? "Switch to System view to run" : typedCallMissing ? "Create Calls relationship to run" : "Run experiments"}</button>
     </>}
+    {draftProfile && <details className="sim-load-test-calibration" open={loadTestRecords.length > 0 || Boolean(results)}>
+      <summary><span>Load-test evidence &amp; calibration</span><small>{loadTestRecords.length} saved measurement set(s)</small></summary>
+      <p className="sim-load-test-intro">Enter actual measurements from k6, JMeter, an APM tool or monitoring. JSON import accepts the Sketchizi template and k6 summary JSON when a top-level sketchizi metadata object supplies the test name, date, environment, duration and offered RPS. Raw JMeter CSV/JTL and provider-specific exports still need mapping. Keep the environment identifier consistent for tests against the same deployment. Measurements are evidence—not live telemetry automatically discovered by Sketchizi.</p>
+      <div className={`sim-load-test-readiness ${loadTestAssessment.readyForCrossLoadAssessment ? "ready" : "incomplete"}`} role="status">
+        <strong>{loadTestAssessment.readyForCrossLoadAssessment ? "Cross-load assessment is possible" : "Calibration evidence is incomplete"}</strong>
+        <span>{loadTestAssessment.message}</span>
+        <small>This status indicates evidence coverage only. It does not certify model accuracy or production capacity.</small>
+      </div>
+      <details className="sim-load-test-add-form">
+        <summary>Add measured load-test result</summary>
+        <div className="sim-load-test-field-grid">
+          <label><span>Test name</span><input value={loadTestDraft.name} disabled={!canEdit} placeholder="e.g. 50 req/s sustained load" onChange={(event) => updateLoadTestDraftField(null, "name", event.target.value)} /></label>
+          <label><span>Test date</span><input type="date" value={loadTestDraft.testedAt} disabled={!canEdit} onChange={(event) => updateLoadTestDraftField(null, "testedAt", event.target.value)} /></label>
+          <label><span>Target environment ID</span><input value={loadTestDraft.targetEnvironment} disabled={!canEdit} placeholder="e.g. prod-eu-west-api-tier-a" onChange={(event) => updateLoadTestDraftField(null, "targetEnvironment", event.target.value)} /></label>
+          <label><span>Measurement source</span><input value={loadTestDraft.source} disabled={!canEdit} placeholder="e.g. k6 + Prometheus" onChange={(event) => updateLoadTestDraftField(null, "source", event.target.value)} /></label>
+          <label><span>Test duration (seconds)</span><input type="number" min="1" max="604800" value={loadTestDraft.workload.durationSeconds ?? ""} disabled={!canEdit} onChange={(event) => updateLoadTestDraftField("workload", "durationSeconds", event.target.value === "" ? null : Number(event.target.value))} /></label>
+          <label><span>Offered load (req/s)</span><input type="number" min="0.001" max="100000000" step="0.1" value={loadTestDraft.workload.offeredRps ?? ""} disabled={!canEdit} onChange={(event) => updateLoadTestDraftField("workload", "offeredRps", event.target.value === "" ? null : Number(event.target.value))} /></label>
+          <label><span>Concurrent virtual users / clients</span><input type="number" min="1" step="1" value={loadTestDraft.workload.concurrency ?? ""} disabled={!canEdit} onChange={(event) => updateLoadTestDraftField("workload", "concurrency", event.target.value === "" ? null : Number(event.target.value))} /></label>
+        </div>
+        <div className="sim-load-test-metric-groups">
+          <section><strong>Request-level measurements</strong><div className="sim-load-test-field-grid">
+            {LOAD_TEST_MEASUREMENT_FIELDS.filter((field) => field.group === "request").map((field) => <label key={field.key}><span>{field.label}</span><input type="number" min={field.min} max={field.max} step={field.step} value={loadTestDraft.observed[field.key] ?? ""} disabled={!canEdit} onChange={(event) => updateLoadTestDraftField("observed", field.key, event.target.value === "" ? null : Number(event.target.value))} /></label>)}
+          </div></section>
+          <section><strong>Resource and database observations</strong><div className="sim-load-test-field-grid">
+            {LOAD_TEST_MEASUREMENT_FIELDS.filter((field) => field.group === "resource").map((field) => <label key={field.key}><span>{field.label}</span><input type="number" min={field.min} max={field.max} step={field.step} value={loadTestDraft.observed[field.key] ?? ""} disabled={!canEdit} onChange={(event) => updateLoadTestDraftField("observed", field.key, event.target.value === "" ? null : Number(event.target.value))} /></label>)}
+          </div></section>
+          <section><strong>Optional component service-time evidence for a reviewable calibration proposal</strong><p>Use per-component means from server-side/APM or database measurements—not end-to-end p95. Exclude queue waits and downstream waiting so the same time is not counted twice.</p><div className="sim-load-test-field-grid">
+            {LOAD_TEST_MEASUREMENT_FIELDS.filter((field) => field.group === "service").map((field) => <label key={field.key}><span>{field.label}</span><input type="number" min={field.min} max={field.max} step={field.step} value={loadTestDraft.observed[field.key] ?? ""} disabled={!canEdit} onChange={(event) => updateLoadTestDraftField("observed", field.key, event.target.value === "" ? null : Number(event.target.value))} /></label>)}
+          </div></section>
+        </div>
+        <label className="sim-load-test-notes"><span>Notes / collection details</span><textarea rows="2" maxLength={4000} value={loadTestDraft.notes} disabled={!canEdit} placeholder="Include workload mix, environment details, test tool settings, and metric definitions." onChange={(event) => updateLoadTestDraftField(null, "notes", event.target.value)} /></label>
+        <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={addLoadTestRecord}>Add load-test evidence</button>
+      </details>
+      <details className="sim-load-test-import">
+        <summary>Import load-test evidence</summary>
+        <label className="sim-load-test-import-format"><span>Source format</span><select value={loadTestImportFormat} disabled={!canEdit} onChange={(event) => { setLoadTestImportFormat(event.target.value); setLoadTestError(""); }}><option value="json">Sketchizi / k6 summary JSON</option><option value="jmeter-csv">Apache JMeter sample CSV / JTL</option><option value="jmeter-xml">Apache JMeter XML JTL</option></select></label>
+        {loadTestImportFormat === "json" ? <p>Paste a record formatted with the Sketchizi template, an array of records, an object with a <code>records</code> array, or a k6 summary JSON export enriched with a top-level <code>sketchizi</code> object. k6 summaries need explicit test date, target environment, duration and offered RPS because those details cannot be reliably inferred from the summary.</p> : <>
+          <p>Paste a raw sample-level JMeter CSV or XML JTL export. JMeter Aggregate Report CSV is not accepted because percentiles from sampler groups cannot be combined into a trustworthy global p95. Export sample results with timestamps, elapsed time and success flags. With CSV, avoid exporting transaction-controller parent rows alongside the same underlying samplers; XML JTL excludes parent samples when nested sample elements are present.</p>
+          <div className="sim-load-test-field-grid sim-jmeter-metadata-grid">
+            <label><span>Test name</span><input value={loadTestImportMetadata.name} disabled={!canEdit} placeholder="e.g. checkout load test" onChange={(event) => setLoadTestImportMetadata((current) => ({ ...current, name: event.target.value }))} /></label>
+            <label><span>Test date</span><input type="date" value={loadTestImportMetadata.testedAt} disabled={!canEdit} onChange={(event) => setLoadTestImportMetadata((current) => ({ ...current, testedAt: event.target.value }))} /></label>
+            <label><span>Target environment</span><input value={loadTestImportMetadata.targetEnvironment} disabled={!canEdit} placeholder="e.g. staging-api-a" onChange={(event) => setLoadTestImportMetadata((current) => ({ ...current, targetEnvironment: event.target.value }))} /></label>
+            <label><span>Configured offered load (req/s)</span><input type="number" min="0.001" step="0.1" value={loadTestImportMetadata.offeredRps} disabled={!canEdit} placeholder="Enter configured load" onChange={(event) => setLoadTestImportMetadata((current) => ({ ...current, offeredRps: event.target.value }))} /></label>
+            <label><span>Configured test duration (seconds)</span><input type="number" min="1" step="1" value={loadTestImportMetadata.durationSeconds} disabled={!canEdit} placeholder="e.g. 300" onChange={(event) => setLoadTestImportMetadata((current) => ({ ...current, durationSeconds: event.target.value }))} /></label>
+            <label><span>Concurrent users / threads (optional override)</span><input type="number" min="1" step="1" value={loadTestImportMetadata.concurrency} disabled={!canEdit} placeholder="Use JTL allThreads when available" onChange={(event) => setLoadTestImportMetadata((current) => ({ ...current, concurrency: event.target.value }))} /></label>
+          </div>
+          <p>Offered RPS and configured duration must be supplied explicitly. Completed sample rows do not reveal requests that the load generator intended to send but never issued or dropped.</p>
+        </>}
+        <textarea rows="8" spellCheck="false" value={loadTestImportText} disabled={!canEdit} placeholder={loadTestImportFormat === "json" ? "Paste Sketchizi or k6 summary JSON here" : loadTestImportFormat === "jmeter-xml" ? "Paste JMeter XML JTL here" : "Paste JMeter sample CSV / JTL here"} onChange={(event) => setLoadTestImportText(event.target.value)} />
+        <div className="sim-load-test-actions">{loadTestImportFormat === "json" && <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => setLoadTestImportText(createLoadTestJsonTemplate())}>Insert JSON template</button>}<button type="button" className="workbench-secondary" disabled={!canEdit || !loadTestImportText.trim()} onClick={importLoadTestEvidence}>Validate &amp; import {loadTestImportFormat === "json" ? "JSON" : "JMeter results"}</button></div>
+      </details>
+      {loadTestRecords.length > 0 && <div className="sim-load-test-record-list">
+        <strong>Saved measurement records <small>{loadTestRecords.length}/25</small></strong>
+        {loadTestRecords.map((record) => <div className="sim-load-test-record" key={record.id}>
+          <div><strong>{record.name}</strong><small>{record.testedAt} · {record.targetEnvironment} · {record.source}</small><small>{formatDecimal(record.workload.offeredRps)} offered req/s · {formatDecimal(record.observed.throughputRps)} measured throughput · {formatDecimal(record.observed.p95LatencyMs)} ms p95</small></div>
+          <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => removeLoadTestRecord(record.id)} aria-label={`Remove ${record.name}`}>Remove</button>
+        </div>)}
+        <button type="button" className="workbench-secondary" disabled={!canEdit || !unsaved} onClick={saveProfile}>Save measurement evidence</button>
+      </div>}
+      {loadTestError && <p className="sim-inline-note" role="status">{loadTestError}</p>}
+      {loadTestRecords.length > 0 && <section className="sim-load-test-comparison">
+        <strong>Compare a recorded test with the current simulation</strong>
+        <label><span>Measurement record</span><select value={selectedLoadTestRecord?.id || ""} onChange={(event) => setSelectedLoadTestId(event.target.value)}>{loadTestRecords.map((record) => <option key={record.id} value={record.id}>{record.name} · {record.testedAt}</option>)}</select></label>
+        {!activeRun?.result?.result ? <p>Run a scenario or open a saved experiment to compare its recorded result against these measurements.</p> : calibrationComparison && <>
+          <div className={`sim-load-test-comparison-status ${calibrationComparison.status}`}><strong>{calibrationComparison.status === "comparable" ? "Workload setup is aligned" : calibrationComparison.status === "workload-mismatch" ? "Workloads / observation windows are not comparable" : calibrationComparison.status === "incomplete" ? "Measurement fields are incomplete" : "Simulation result unavailable"}</strong><span>{calibrationComparison.reason}</span></div>
+          <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Metric</th><th>Simulation</th><th>Measured</th><th>Δ model − measured</th></tr></thead><tbody>{calibrationComparison.rows.map((row) => <tr key={row.key}><td>{row.label}</td><td>{formatCalibrationValue(row.simulated, row.unit)}</td><td>{formatCalibrationValue(row.measured, row.unit)}</td><td>{isFiniteNumber(row.delta) ? formatCalibrationValue(row.delta, row.unit) : "—"}</td></tr>)}</tbody></table></div>
+          <div className="sim-load-test-resource-context"><strong>Measured resource context — not simulated</strong><span>REST CPU: {formatCalibrationValue(calibrationComparison.measuredContext.appCpuPercent, "%")}</span><span>REST memory: {formatCalibrationValue(calibrationComparison.measuredContext.appMemoryGb, "GB")}</span><span>Database CPU: {formatCalibrationValue(calibrationComparison.measuredContext.dbCpuPercent, "%")}</span><span>Database connections: {formatCalibrationValue(calibrationComparison.measuredContext.dbConnections, "connections")}</span><span>Database query p95: {formatCalibrationValue(calibrationComparison.measuredContext.dbP95QueryMs, "ms")}</span></div>
+          <p className="sim-load-test-footnote">The simulator does not generate CPU, RAM, I/O or database-connection telemetry. Resource measurements provide context; only offered load, throughput, p95 latency and failed-request rate are compared here. Simulated drops remain a separate signal and are not treated as measured HTTP errors.</p>
+        </>}
+      </section>}
+      <section className="sim-load-test-proposals">
+        <strong>Reviewable service-time calibration proposals</strong>
+        <p>Sketchizi only proposes mean-service-time changes from repeated component-level measurements for the same target environment across multiple load levels. Aggregate throughput or end-to-end p95 alone is not enough to infer REST or database service time.</p>
+        {serviceTimeProposals.length === 0 ? <small>No service-time proposal is eligible yet. Capture REST exclusive mean processing time and/or PostgreSQL mean query execution time, including sample counts, in at least three tests at two distinct offered-load levels for the same environment.</small> : serviceTimeProposals.map((proposal) => <div className="sim-load-test-proposal" key={proposal.entityId}>
+          <div><strong>{proposal.entityName} · {proposal.label}</strong><small>{formatDecimal(proposal.currentValue)} ms current → {formatDecimal(proposal.proposedValue)} ms measured weighted mean</small><small>{proposal.testCount} tests · {formatInteger(proposal.sampleCount)} samples · environment {proposal.environment} · offered levels {proposal.workloadLevelsRps.join(", ")} req/s</small><span>{proposal.note}</span></div>
+          <button type="button" className="workbench-secondary" disabled={!canEdit || !proposal.changed || unsaved || staleModel} onClick={() => applyServiceTimeCalibration(proposal)}>{proposal.changed ? "Apply proposal" : "Already aligned"}</button>
+        </div>)}
+        <small>Applying a proposal changes only the selected synthetic meanServiceMs assumption. The assumption remains proposed until reviewed and explicitly confirmed; it does not alter vCPU/RAM-derived capacity, queue limits or live infrastructure.</small>
+      </section>
+      <div className="sim-profile-actions"><button type="button" className="workbench-secondary" disabled={!canEdit || !unsaved} onClick={saveProfile}>Save profile &amp; evidence</button></div>
+    </details>}
     {profileError && <p className="sim-inline-note" role="status">{profileError}</p>}
     {runError && <p className="workbench-inspector-error" role="alert">{runError}</p>}
     {simulationHistory.length > 0 && <details className="sim-history-list">
@@ -850,6 +1138,21 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
           <div className="sim-history-assumption-list">{Object.entries(results.historyProfileSnapshot?.profilesByEntityId || {}).filter(([entityId]) => !Array.isArray(results.provenance?.scopeEntityIds) || results.provenance.scopeEntityIds.includes(entityId)).map(([entityId, profile]) => <div key={entityId}><strong>{resultsEntitiesById.get(entityId)?.name || entityId}</strong><small>{profile.kind}</small><code>{JSON.stringify(profile.parameters || {})}</code></div>)}</div>
           <small>These are the values recorded for this historical run. They are not live telemetry and do not imply the current model uses the same values.</small>
         </details>
+        {Object.keys(results.historyProfileSnapshot?.infrastructureByEntityId || {}).length > 0 && <details className="sim-history-assumptions">
+          <summary>Recorded infrastructure evidence ({Object.keys(results.historyProfileSnapshot.infrastructureByEntityId).length} components)</summary>
+          <div className="sim-history-assumption-list">{Object.entries(results.historyProfileSnapshot.infrastructureByEntityId).filter(([entityId]) => !Array.isArray(results.provenance?.scopeEntityIds) || results.provenance.scopeEntityIds.includes(entityId)).map(([entityId, infrastructure]) => {
+            const definitions = INFRASTRUCTURE_PROFILE_FIELD_DEFINITIONS[infrastructure.entityKind] || [];
+            const recorded = definitions.map((field) => {
+              const item = infrastructure.fields?.[field.key];
+              const value = item?.value;
+              if (value === null || value === undefined || value === "" || value === "unknown") return null;
+              const evidence = INFRASTRUCTURE_EVIDENCE_OPTIONS.find((option) => option.value === item.evidence)?.label || "Unknown source";
+              return `${field.label}: ${value} [${evidence}]`;
+            }).filter(Boolean);
+            return <div key={entityId}><strong>{resultsEntitiesById.get(entityId)?.name || entityId}</strong><small>Deployment context · not used to calculate capacity in this release</small><code>{recorded.length ? recorded.join(" · ") : "No infrastructure values recorded; actual machine capacity remains unknown."}</code></div>;
+          })}</div>
+          <small>These values and evidence labels were saved with the historical run. They are not live telemetry and do not establish production capacity.</small>
+        </details>}
       </>}
       {staleModel && <p className="sim-stale-banner">The current semantic model or simulation profile differs from the inputs recorded for these results. The saved comparison remains historical; rerun to evaluate the current inputs.</p>}
       {results.status === "blocked" && <div className="sim-blocked-results"><strong>Simulation blocked</strong><p>Resolve the blocking model, profile, or engine diagnostics shown below, then rerun the scenario.</p>
@@ -934,6 +1237,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         </div>
         {activeRun?.result?.status === "completed" ? <>
           <RunMetrics run={activeRun} />
+          <div className="sim-model-assumption-note" role="note"><strong>Uncalibrated synthetic model</strong><span>Machine size, instance count and live resource usage are not discovered by Sketchizi. Throughput, latency, drops and failures depend on the displayed concurrency, service-time, queue and scenario assumptions. Treat them as what-if results, not production capacity guarantees.</span><small>In-flight at the observation boundary is a point-in-time subset; those requests may later appear in the final outcomes during post-window drain. Do not add the in-flight figure to the final success, failure and drop totals.</small><small>Final outcome totals and success rate include post-window drain; successful throughput uses only completions within the observation window, while p95 latency includes successful requests completed during the drain.</small><small>Non-zero timeout or retry settings are blocked because timeout/cancellation and retry semantics are not modeled yet.</small></div>
+          <ObservationBoundaryTable run={activeRun} />
           <SimulationTimeSeries run={activeRun} investigation={activeInvestigation} />
           <RequestTraceExplorer key={activeRunKey} run={activeRun} scenarioKey={activeRunKey} onFocusEntity={onFocusEntity} investigation={investigation} onInvestigateTrace={(next) => setInvestigation(next)} />
           {comparison?.status === "ready" && <div className="sim-comparison-table-wrap"><strong>Change versus baseline</strong><table className="sim-comparison-table"><thead><tr><th>Metric</th><th>Baseline → current</th><th>Δ</th></tr></thead><tbody>{comparison.metrics.map((row) => <tr key={row.key}><td>{row.label}</td><td>{compareValue(row)}</td><td>{row.key === "successRate" ? formatPercent(row.delta.absolute) : isFiniteNumber(row.delta.absolute) ? `${row.delta.absolute > 0 ? "+" : ""}${formatDecimal(row.delta.absolute, row.unit === "requests" ? 0 : 2)}${row.unit === "requests" ? "" : row.unit === "requests/sec" ? " rps" : row.unit === "ms" ? " ms" : ""}` : "—"}</td></tr>)}</tbody></table></div>}

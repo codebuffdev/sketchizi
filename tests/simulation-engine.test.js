@@ -44,7 +44,7 @@ test("runs a seeded client -> REST service -> PostgreSQL scenario with measurabl
   assert.ok(result.result.metrics.successfulLatencyMs.p95 >= result.result.metrics.successfulLatencyMs.p50);
   assert.equal(result.result.perNode.length, 2);
   assert.equal(result.result.perEdge.length, 2);
-  assert.equal(result.result.schemaVersion, 4);
+  assert.equal(result.result.schemaVersion, 5);
   assert.equal(result.result.timeSeries.source, "discrete-event-timestamps");
   assert.equal(result.result.timeSeries.points.length, 40);
   const points = result.result.timeSeries.points;
@@ -105,11 +105,31 @@ test("increasing offered traffic produces additional capacity pressure in the ex
   assert.ok(surge.result.metrics.droppedRequests > normal.result.metrics.droppedRequests || surge.result.bottlenecks.length > normal.result.bottlenecks.length || surge.result.perNode.some((item) => item.utilization > normal.result.perNode.find((x) => x.nodeId === item.nodeId).utilization));
 });
 
+test("captures queued and in-service work at the observation boundary without relabeling it as failed", () => {
+  const result = runSimulation({ projection: project({ durationMs: 15000, seed: 211 }), scenarioOverrides: { trafficMultiplier: 5 } });
+  assert.equal(result.status, "completed");
+  const metrics = result.result.metrics;
+  const boundary = result.result.timeSeries.observationBoundary;
+  assert.equal(boundary.capturedAtMs, 15000);
+  assert.equal(result.result.timeSeries.points.reduce((sum, point) => sum + point.componentFailedRequests, 0) + result.result.timeSeries.postWindowDrain.componentFailedRequests, metrics.componentFailedRequests);
+  assert.equal(result.result.timeSeries.points.reduce((sum, point) => sum + point.dependencyUnavailableRequests, 0) + result.result.timeSeries.postWindowDrain.dependencyUnavailableRequests, metrics.dependencyUnavailableRequests);
+  assert.equal(metrics.requestsInFlightAtWindowEnd, metrics.requestsQueuedAtWindowEnd + metrics.requestsInServiceAtWindowEnd);
+  assert.equal(metrics.requestsInFlightAtWindowEnd, boundary.inFlightRequests);
+  assert.equal(metrics.requestsQueuedAtWindowEnd, boundary.queuedRequests);
+  assert.equal(metrics.requestsInServiceAtWindowEnd, boundary.activeServiceRequests);
+  assert.ok(metrics.requestsInFlightAtWindowEnd > 0, "the surge should leave work active or queued at the observation deadline");
+  assert.equal(metrics.offeredRequests, metrics.successfulRequests + metrics.failedRequests + metrics.droppedRequests);
+  assert.equal(metrics.failedRequests, metrics.componentFailedRequests + metrics.dependencyUnavailableRequests);
+  assert.ok(boundary.byNode.some((node) => node.queuedRequests > 0 || node.activeServiceRequests > 0));
+});
+
 test("a forced database failure is traceable and drives success rate to zero", () => {
   const result = runSimulation({ projection: project(), scenarioOverrides: { failureProbabilityByNodeId: { db: 1 } } });
   assert.equal(result.status, "completed");
   assert.equal(result.result.metrics.successfulRequests, 0);
   assert.equal(result.result.metrics.failedRequests, result.result.metrics.offeredRequests - result.result.metrics.droppedRequests);
+  assert.equal(result.result.metrics.componentFailedRequests, result.result.metrics.failedRequests);
+  assert.equal(result.result.metrics.dependencyUnavailableRequests, 0);
   assert.equal(result.result.simulation.requestedFailureOverrides.db, 1);
   assert.ok(result.result.perNode.find((item) => item.sourceEntityId === "db").failed > 0);
   assert.ok(result.result.requestTraces.traces.some((trace) => trace.outcome === "failed" && trace.hops.some((hop) => hop.entityId === "db" && hop.outcome === "failed")));
@@ -122,6 +142,8 @@ test("a hard database outage fails at the dependency boundary without consuming 
   assert.equal(outage.status, "completed");
   assert.equal(outage.result.metrics.successfulRequests, 0);
   assert.equal(outage.result.metrics.failedRequests, outage.result.metrics.offeredRequests);
+  assert.equal(outage.result.metrics.dependencyUnavailableRequests, outage.result.metrics.offeredRequests);
+  assert.equal(outage.result.metrics.componentFailedRequests, 0);
   assert.equal(outage.result.perNode.find((item) => item.sourceEntityId === "db").utilization, 0);
   assert.ok(outage.result.metrics.terminalLatencyMs.mean < baseline.result.metrics.successfulLatencyMs.mean);
   assert.deepEqual(outage.result.simulation.unavailableNodeIds, ["sim-node:db"]);

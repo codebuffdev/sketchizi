@@ -1,3 +1,5 @@
+import { ensureInfrastructureProfileDefaults } from "./infrastructureProfile.js";
+
 const PROFILE_DEFAULTS = Object.freeze({
   "frontend.react-app": {
     kind: "traffic-source",
@@ -72,13 +74,13 @@ export function createIllustrativeSimulationProfile(workbench, { durationMs = 15
       assumptions: assumptionsFor(parameters),
     };
   }
-  return {
+  return ensureInfrastructureProfileDefaults({
     schemaVersion: 1,
     sourceModelRevision: Number.isSafeInteger(workbench.modelRevision) ? workbench.modelRevision : null,
     profileKind: "illustrative-synthetic",
     profilesByEntityId,
     defaultScenario: { durationMs, seed },
-  };
+  }, workbench);
 }
 
 export function markSimulationAssumptionsConfirmed(profile) {
@@ -105,7 +107,7 @@ export function mergeMissingIllustrativeProfiles(workbench, profile, scopeEntity
     durationMs: profile?.defaultScenario?.durationMs ?? 15000,
     seed: profile?.defaultScenario?.seed ?? 211,
   });
-  const next = profile ? structuredClone(profile) : generated;
+  const next = ensureInfrastructureProfileDefaults(profile ? structuredClone(profile) : generated, workbench);
   next.profilesByEntityId ||= {};
   const addedEntityIds = [];
   for (const [entityId, item] of Object.entries(generated.profilesByEntityId)) {
@@ -114,9 +116,14 @@ export function mergeMissingIllustrativeProfiles(workbench, profile, scopeEntity
       addedEntityIds.push(entityId);
     }
   }
-  next.sourceModelRevision = Number.isSafeInteger(workbench?.modelRevision) ? workbench.modelRevision : null;
-  if (addedEntityIds.length) next.profileKind = "illustrative-synthetic";
-  return { profile: next, addedEntityIds };
+  next.infrastructureByEntityId ||= {};
+  for (const [entityId, item] of Object.entries(generated.infrastructureByEntityId || {})) {
+    if (!next.infrastructureByEntityId[entityId]) next.infrastructureByEntityId[entityId] = item;
+  }
+  const withInfrastructureDefaults = ensureInfrastructureProfileDefaults(next, workbench);
+  withInfrastructureDefaults.sourceModelRevision = Number.isSafeInteger(workbench?.modelRevision) ? workbench.modelRevision : null;
+  if (addedEntityIds.length) withInfrastructureDefaults.profileKind = "illustrative-synthetic";
+  return { profile: withInfrastructureDefaults, addedEntityIds };
 }
 
 export function explainSimulationRun(run, workbench, { scenarioLabel = "Baseline" } = {}) {
@@ -152,15 +159,28 @@ export function explainSimulationRun(run, workbench, { scenarioLabel = "Baseline
   }
   const metrics = run.result.metrics;
   if (metrics.failedRequests > 0) {
+    const unavailable = metrics.dependencyUnavailableRequests ?? 0;
+    const componentFailures = metrics.componentFailedRequests ?? Math.max(0, metrics.failedRequests - unavailable);
+    const failureDescription = [
+      unavailable ? `${unavailable} dependency-unavailable` : null,
+      componentFailures ? `${componentFailures} component-failure` : null,
+    ].filter(Boolean).join(" and ");
+    const dependencyOnly = unavailable > 0 && componentFailures === 0;
     explanations.push({
       id: `failures:${scenarioLabel}`,
       kind: "request-failures",
       severity: "warning",
-      title: `${metrics.failedRequests} requests failed`,
-      message: `The simulation recorded ${metrics.failedRequests} failed requests out of ${metrics.offeredRequests} offered (${(100 * metrics.successRate).toFixed(1)}% succeeded). Review per-component failures and enabled failure overrides.`,
-      suggestedAction: "Inspect the failed dependency and confirm the failure assumptions are intentional.",
+      title: dependencyOnly
+        ? `${unavailable} requests failed because a dependency was unavailable`
+        : `${metrics.failedRequests} requests failed (${failureDescription || "failure type not recorded"})`,
+      message: dependencyOnly
+        ? `The scenario explicitly marked a dependency unavailable. ${unavailable} requests reached that dependency boundary and failed without using its modeled service capacity. This is a scenario result, not evidence that the deployed dependency is unavailable.`
+        : `The simulation recorded ${metrics.failedRequests} failed requests out of ${metrics.offeredRequests} offered (${(100 * metrics.successRate).toFixed(1)} succeeded): ${unavailable} dependency-unavailable and ${componentFailures} component-failure. These categories are modeled outcomes, not live telemetry.`,
+      suggestedAction: dependencyOnly
+        ? "Confirm the dependency outage is intentional, or rerun with the dependency available to inspect capacity behavior."
+        : "Inspect the component failure assumptions and any enabled failure overrides, then rerun the same scenario.",
       entityIds: [...new Set((run.result.perNode || []).filter((node) => node.failed > 0).map((node) => node.sourceEntityId))],
-      evidence: { offeredRequests: metrics.offeredRequests, failedRequests: metrics.failedRequests, successRate: metrics.successRate },
+      evidence: { offeredRequests: metrics.offeredRequests, failedRequests: metrics.failedRequests, dependencyUnavailableRequests: unavailable, componentFailedRequests: componentFailures, successRate: metrics.successRate },
     });
   }
   return explanations;
