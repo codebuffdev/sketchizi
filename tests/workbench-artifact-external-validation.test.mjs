@@ -33,9 +33,18 @@ test("SQL parser adapter calls the injected PostgreSQL parser and requires state
   assert.equal(validated.statementCount, 3);
 });
 
+test("SQL parser adapter accepts pgsql-parser's result object with a stmts array", async () => {
+  const validated = await validateGeneratedSql(fixture.sql.text, async () => ({
+    version: 170000,
+    stmts: [{ RawStmt: {} }, { RawStmt: {} }, { RawStmt: {} }],
+  }));
+  assert.equal(validated.statementCount, 3);
+});
+
 test("SQL parser adapter rejects empty SQL and empty parser results", async () => {
   await assert.rejects(() => validateGeneratedSql("  ", async () => []), /empty/);
   await assert.rejects(() => validateGeneratedSql("SELECT 1", async () => []), /no statements/);
+  await assert.rejects(() => validateGeneratedSql("SELECT 1", async () => ({ stmts: [] })), /no statements/);
 });
 
 test("Redocly validation configuration includes the minimal ruleset", async () => {

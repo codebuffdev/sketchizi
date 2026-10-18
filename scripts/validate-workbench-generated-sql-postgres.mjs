@@ -121,8 +121,8 @@ export function resolvePostgresConnection(databaseUrl = process.env.WORKBENCH_PO
   return env;
 }
 
-function executePsql({ args, env, runCommand, stepLabel }) {
-  const result = runCommand("psql", ["-X", "--set", "ON_ERROR_STOP=1", ...args], env);
+function executePsql({ args, env, runCommand, stepLabel, stdin }) {
+  const result = runCommand("psql", ["-X", "--set", "ON_ERROR_STOP=1", ...args], env, stdin);
   if (result?.error) {
     throw new Error(`${stepLabel} could not start psql: ${result.error.message || result.error}`);
   }
@@ -141,7 +141,9 @@ function executePsql({ args, env, runCommand, stepLabel }) {
 export async function validateGeneratedSqlAgainstPostgres({
   sqlPath = defaultSqlPath,
   databaseUrl = process.env.WORKBENCH_POSTGRES_URL || DEFAULT_POSTGRES_URL,
-  runCommand = (command, args, env) => spawnSync(command, args, { cwd: projectRoot, env, encoding: "utf8", timeout: 120_000 }),
+  runCommand = (command, args, env, stdin) => spawnSync(command, args, {
+    cwd: projectRoot, env, encoding: "utf8", timeout: 120_000, ...(stdin === undefined ? {} : { input: stdin }),
+  }),
   baseEnv = process.env,
 } = {}) {
   const sql = await readFile(sqlPath, "utf8");
@@ -161,9 +163,11 @@ export async function validateGeneratedSqlAgainstPostgres({
 
   const safeTarget = assertSafePostgresTarget(databaseUrl, baseEnv);
   const env = resolvePostgresConnection(databaseUrl, baseEnv);
-  const fileArgs = ["--file", path.resolve(sqlPath)];
-  executePsql({ args: fileArgs, env, runCommand, stepLabel: "First PostgreSQL DDL application" });
-  executePsql({ args: fileArgs, env, runCommand, stepLabel: "Idempotent PostgreSQL DDL re-application" });
+  // Feed the exact bytes that passed validation to psql over stdin. Reopening sqlPath
+  // with --file would create a validation/execution race if the file changed in between.
+  const stdinArgs = ["--file", "-"];
+  executePsql({ args: stdinArgs, env, runCommand, stdin: sql, stepLabel: "First PostgreSQL DDL application" });
+  executePsql({ args: stdinArgs, env, runCommand, stdin: sql, stepLabel: "Idempotent PostgreSQL DDL re-application" });
   executePsql({ args: ["--command", catalogAssertions], env, runCommand, stepLabel: "PostgreSQL catalog assertions" });
 
   return {

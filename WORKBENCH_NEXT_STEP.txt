@@ -1,29 +1,15 @@
-Sketchizi Workbench 0.45 — SQL-only fixture execution guard
+Sketchizi Workbench 0.46 — execute only the already-validated SQL bytes
 
-Current priority: keep the release gate open until a real clean install, production build, external artifact validation, PostgreSQL 17 execution, and rendered-browser run pass.
+Current priority: complete one successful end-to-end release gate before expanding Workbench functionality.
 
-This milestone hardens the PostgreSQL integration stage further. It accepts only SQL whose bytes exactly match the current known fixture generated through the Workbench SQL artifact generator. This stage is a release-fixture validator, not a generic SQL runner. Modified SQL is rejected before psql runs; files containing psql client meta-commands such as \connect or \! are refused because those commands could change the connection or run shell commands after connection target validation.
+The PostgreSQL release-fixture validator now passes the exact SQL text that matched the generated fixture to psql over stdin (`--file -`). It no longer reopens the original SQL path after validation, closing the validation/execution file-replacement window. The SQL fixture restrictions and database-target opt-ins remain unchanged.
 
-The prior database-target safeguards remain active:
-- WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION=true is required.
-- WORKBENCH_POSTGRES_ALLOW_REMOTE=true is additionally required for non-loopback targets.
-- Protected database names such as prod, production, live, and common customer-data variants are refused.
-
-Command on a machine with npm registry access:
+Next action on a network-enabled Windows machine:
   npm run verify:workbench-release
-
-For the PostgreSQL stage, ensure psql is installed and a disposable database is reachable at WORKBENCH_POSTGRES_URL. The default is:
-  postgresql://workbench:workbench@127.0.0.1:5432/workbench
-
-Before the local run, explicitly opt in to schema mutation only for the disposable test database:
-  $env:WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION = "true"
-For a non-loopback test host only, also set:
-  $env:WORKBENCH_POSTGRES_ALLOW_REMOTE = "true"
-Do not set these for production. The checks are guardrails, not proof that a database is disposable.
 
 Inspect:
   artifacts/workbench-release-gate-summary.md
   artifacts/ci-logs/
   artifacts/generated/
 
-Do not call the release gate passed until clean install, font assets, production build, regression suites, external OpenAPI/SQL checks, PostgreSQL DDL execution, and rendered Chromium smoke all pass. Fixtures are synthetic and do not certify production capacity or real k6/JMeter adapter compatibility.
+The release gate must remain open until clean install, font assets, production build, regression suites, external OpenAPI/SQL checks, PostgreSQL DDL execution/catalog checks, and rendered Chromium smoke all pass. The integration tests in this ZIP use an injected psql runner and are not evidence of live database execution.

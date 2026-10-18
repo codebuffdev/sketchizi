@@ -10,7 +10,10 @@ export async function validateGeneratedSql(sql, parser = null) {
   if (typeof sql !== "string" || !sql.trim()) throw new Error("Generated SQL is empty.");
   const parseSql = parser ?? (await import("pgsql-parser")).parse;
   if (typeof parseSql !== "function") throw new Error("pgsql-parser did not export a parse() function.");
-  const statements = await parseSql(sql);
+  const parsed = await parseSql(sql);
+  // pgsql-parser returns a parse result object with a `stmts` array; injected
+  // adapters may return that array directly. Normalize both supported shapes.
+  const statements = Array.isArray(parsed) ? parsed : parsed?.stmts;
   if (!Array.isArray(statements) || statements.length === 0) {
     throw new Error("PostgreSQL parser returned no statements for generated SQL.");
   }

@@ -37,8 +37,8 @@ test("generated DDL is applied twice and catalog assertions run last", async () 
     sqlPath: fixtureSqlPath,
     databaseUrl: DEFAULT_POSTGRES_URL,
     baseEnv: { WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION: "true" },
-    runCommand: (command, args, env) => {
-      calls.push({ command, args, env });
+    runCommand: (command, args, env, stdin) => {
+      calls.push({ command, args, env, stdin });
       return okResult(calls.length === 3 ? "DO" : "CREATE");
     },
   });
@@ -46,7 +46,11 @@ test("generated DDL is applied twice and catalog assertions run last", async () 
   assert.equal(calls.length, 3);
   assert.ok(calls.every((call) => call.command === "psql"));
   assert.deepEqual(calls[0].args, calls[1].args);
-  assert.ok(calls[0].args.includes("--file"));
+  assert.deepEqual(calls[0].args.slice(-2), ["--file", "-"]);
+  assert.deepEqual(calls[1].args.slice(-2), ["--file", "-"]);
+  assert.equal(calls[0].stdin, createArtifactFixtures().sql.text);
+  assert.equal(calls[1].stdin, createArtifactFixtures().sql.text);
+  assert.equal(calls[2].stdin, undefined);
   assert.ok(calls[2].args.includes("--command"));
   assert.match(calls[2].args.at(-1), /created_at_index_count/);
   assert.equal(calls[0].env.PGPASSWORD, "workbench");
