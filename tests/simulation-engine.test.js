@@ -44,6 +44,18 @@ test("runs a seeded client -> REST service -> PostgreSQL scenario with measurabl
   assert.ok(result.result.metrics.successfulLatencyMs.p95 >= result.result.metrics.successfulLatencyMs.p50);
   assert.equal(result.result.perNode.length, 2);
   assert.equal(result.result.perEdge.length, 2);
+  assert.equal(result.result.schemaVersion, 2);
+  assert.equal(result.result.timeSeries.source, "discrete-event-timestamps");
+  assert.equal(result.result.timeSeries.points.length, 40);
+  const points = result.result.timeSeries.points;
+  const drain = result.result.timeSeries.postWindowDrain;
+  assert.equal(points.reduce((sum, point) => sum + point.offeredRequests, 0), result.result.metrics.offeredRequests);
+  assert.equal(points.reduce((sum, point) => sum + point.successfulRequests, 0), result.result.metrics.successfulCompletionsWithinWindow);
+  assert.equal(points.reduce((sum, point) => sum + point.successfulRequests, 0) + drain.successfulRequests, result.result.metrics.successfulRequests);
+  assert.equal(points.reduce((sum, point) => sum + point.failedRequests, 0) + drain.failedRequests, result.result.metrics.failedRequests);
+  assert.equal(points.reduce((sum, point) => sum + point.droppedRequests, 0) + drain.droppedRequests, result.result.metrics.droppedRequests);
+  assert.ok(points.some((point) => point.offeredRps > 0));
+  assert.ok(points.some((point) => point.latencyP95Ms !== null));
 });
 
 test("identical model, profile, seed and overrides reproduce byte-equivalent result metrics", () => {

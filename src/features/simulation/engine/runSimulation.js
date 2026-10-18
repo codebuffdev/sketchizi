@@ -5,8 +5,9 @@
  * It is not a Breakscale engine clone and does not import Breakscale code. Unsupported
  * features are blocked rather than approximated silently.
  */
-export const SIMULATION_ENGINE_VERSION = "0.1.0";
-export const SIMULATION_RESULT_SCHEMA_VERSION = 1;
+export const SIMULATION_ENGINE_VERSION = "0.2.0";
+export const SIMULATION_RESULT_SCHEMA_VERSION = 2;
+const TIME_SERIES_BUCKET_COUNT = 40;
 const SUPPORTED_NODE_KINDS = new Set(["traffic-source", "request-service", "relational-store", "external-service-approximation"]);
 const SERVICE_NODE_KINDS = new Set(["request-service", "relational-store", "external-service-approximation"]);
 
@@ -126,7 +127,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
   if (!Number.isSafeInteger(seed)) diagnostics.push(makeDiagnostic("ENGINE-SEED-INVALID", "blocker", "Invalid random seed", "The scenario seed must be a safe integer."));
   if (!Number.isSafeInteger(durationMs) || durationMs <= 0) diagnostics.push(makeDiagnostic("ENGINE-DURATION-INVALID", "blocker", "Invalid simulation duration", "The projection must contain a positive integer durationMs."));
   if (Object.keys(scenarioOverrides).some((key) => !["trafficMultiplier", "failureProbabilityByNodeId", "unavailableNodeIds", "seed"].includes(key))) {
-    diagnostics.push(makeDiagnostic("ENGINE-OVERRIDE-UNKNOWN", "blocker", "Unknown experiment override", "Only trafficMultiplier, failureProbabilityByNodeId, unavailableNodeIds, and seed are supported by engine v0.1."));
+    diagnostics.push(makeDiagnostic("ENGINE-OVERRIDE-UNKNOWN", "blocker", "Unknown experiment override", "Only trafficMultiplier, failureProbabilityByNodeId, unavailableNodeIds, and seed are supported by engine v0.2.0."));
   }
   const nodes = topology.nodes.slice().sort((a, b) => String(a?.id).localeCompare(String(b?.id)));
   const edges = topology.edges.slice().sort((a, b) => String(a?.id).localeCompare(String(b?.id)));
@@ -139,7 +140,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     }
     if (nodeById.has(node.id)) diagnostics.push(makeDiagnostic("ENGINE-NODE-ID-DUPLICATE", "blocker", "Duplicate runtime node", `Runtime node '${node.id}' is duplicated.`));
     nodeById.set(node.id, node);
-    if (!SUPPORTED_NODE_KINDS.has(node.kind)) diagnostics.push(makeDiagnostic("ENGINE-NODE-KIND-UNSUPPORTED", "blocker", "Runtime node kind not supported", `Node '${node.id}' uses '${node.kind}', which is not supported by engine v0.1.`, { nodeIds: [node.id] }));
+    if (!SUPPORTED_NODE_KINDS.has(node.kind)) diagnostics.push(makeDiagnostic("ENGINE-NODE-KIND-UNSUPPORTED", "blocker", "Runtime node kind not supported", `Node '${node.id}' uses '${node.kind}', which is not supported by engine v0.2.0.`, { nodeIds: [node.id] }));
     if (node.kind === "request-service" || node.kind === "external-service-approximation" || node.kind === "relational-store") {
       const p = node.parameters || {};
       if (!Number.isSafeInteger(p.concurrency) || p.concurrency < 1 || !finite(p.meanServiceMs) || p.meanServiceMs <= 0 || !finite(p.serviceTimeCv) || p.serviceTimeCv < 0 || !Number.isSafeInteger(p.bufferCapacity) || p.bufferCapacity < 0 || !finite(p.failureProbability) || p.failureProbability < 0 || p.failureProbability > 1) {
@@ -218,6 +219,24 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     queueWaits: [], serviceTimes: [], active: 0, waiting: [],
   }]));
   const terminal = { successful: 0, successfulWithinWindow: 0, failed: 0, dropped: 0, allLatencies: [], successfulLatencies: [] };
+  // Aggregate genuine event timestamps into a bounded observation-window series.
+  // Outcomes after the observation window are retained separately as drain data.
+  const bucketDurationMs = durationMs / TIME_SERIES_BUCKET_COUNT;
+  const timeSeriesBuckets = Array.from({ length: TIME_SERIES_BUCKET_COUNT }, (_, index) => ({
+    startMs: index * bucketDurationMs,
+    endMs: (index + 1) * bucketDurationMs,
+    offeredRequests: 0,
+    successfulRequests: 0,
+    failedRequests: 0,
+    droppedRequests: 0,
+    successfulLatenciesMs: [],
+  }));
+  const postWindowDrain = { successfulRequests: 0, failedRequests: 0, droppedRequests: 0 };
+  const timeSeriesBucketAt = (timeMs) => {
+    if (timeMs > durationMs || timeMs < 0) return null;
+    const index = Math.min(TIME_SERIES_BUCKET_COUNT - 1, Math.floor((timeMs / durationMs) * TIME_SERIES_BUCKET_COUNT));
+    return timeSeriesBuckets[index] || null;
+  };
   const enqueueRoute = (nodeId, request, timeMs, incomingEdgeId = null) => {
     const node = nodeById.get(nodeId);
     const stats = nodeStats.get(nodeId);
@@ -256,6 +275,17 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
   function finishRequest(request, outcome, timeMs) {
     const latency = Math.max(0, timeMs - request.arrivalMs);
     terminal.allLatencies.push(latency);
+    const bucket = timeSeriesBucketAt(timeMs);
+    const drainKey = outcome === "success" ? "successfulRequests" : outcome === "dropped" ? "droppedRequests" : "failedRequests";
+    if (bucket) {
+      if (outcome === "success") {
+        bucket.successfulRequests += 1;
+        bucket.successfulLatenciesMs.push(latency);
+      } else if (outcome === "dropped") bucket.droppedRequests += 1;
+      else bucket.failedRequests += 1;
+    } else if (timeMs > durationMs) {
+      postWindowDrain[drainKey] += 1;
+    }
     if (outcome === "success") {
       terminal.successful += 1;
       terminal.successfulLatencies.push(latency);
@@ -284,6 +314,8 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     const event = events.pop();
     maxEventTimeMs = Math.max(maxEventTimeMs, event.timeMs);
     if (event.type === "request-arrival") {
+      const arrivalBucket = timeSeriesBucketAt(event.timeMs);
+      if (arrivalBucket) arrivalBucket.offeredRequests += 1;
       const edge = outgoing.get(event.sourceId)[0];
       edgeCounts.set(edge.id, edgeCounts.get(edge.id) + 1);
       enqueueRoute(edge.targetId, event.request, event.timeMs, edge.id);
@@ -318,6 +350,34 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
     };
   }).sort((a, b) => a.nodeId.localeCompare(b.nodeId));
   const successesPerSecond = terminal.successfulWithinWindow / (durationMs / 1000);
+  const timeSeriesPoints = timeSeriesBuckets.map((bucket) => {
+    const bucketSeconds = (bucket.endMs - bucket.startMs) / 1000;
+    const latency = summarize(bucket.successfulLatenciesMs);
+    return {
+      startMs: round(bucket.startMs),
+      endMs: round(bucket.endMs),
+      offeredRequests: bucket.offeredRequests,
+      successfulRequests: bucket.successfulRequests,
+      failedRequests: bucket.failedRequests,
+      droppedRequests: bucket.droppedRequests,
+      offeredRps: round(bucket.offeredRequests / bucketSeconds),
+      successfulRps: round(bucket.successfulRequests / bucketSeconds),
+      latencyP95Ms: latency.p95,
+      latencySamples: latency.count,
+    };
+  });
+  const timeSeries = {
+    schemaVersion: 1,
+    source: "discrete-event-timestamps",
+    observationWindowMs: durationMs,
+    bucketDurationMs: round(bucketDurationMs),
+    points: timeSeriesPoints,
+    postWindowDrain: {
+      durationMs: round(Math.max(0, maxEventTimeMs - durationMs)),
+      ...postWindowDrain,
+      terminalRequests: postWindowDrain.successfulRequests + postWindowDrain.failedRequests + postWindowDrain.droppedRequests,
+    },
+  };
   const fingerprintInput = { sourceModelFingerprint: projection.provenance?.sourceModelFingerprint ?? null, simulationProfileFingerprint: projection.provenance?.simulationProfileFingerprint ?? null, engineVersion: SIMULATION_ENGINE_VERSION, durationMs, seed, scenarioOverrides };
   const runFingerprint = hash(fingerprintInput);
   const bottlenecks = perNode.filter((item) => item.utilization >= 0.8 || item.dropped > 0).sort((a, b) => b.utilization - a.utilization || b.dropped - a.dropped).map((item) => ({ nodeId: item.nodeId, sourceEntityId: item.sourceEntityId, utilization: item.utilization, dropped: item.dropped, signal: item.dropped > 0 ? "capacity-or-buffer-pressure-observed" : "high-utilization-observed" }));
@@ -335,6 +395,7 @@ export function runSimulation({ projection, scenarioOverrides = {}, limits = {} 
         terminalLatencyMs: summarize(terminal.allLatencies), successfulLatencyMs: summarize(terminal.successfulLatencies),
         observationWindowMs: durationMs,
       },
+      timeSeries,
       perNode, perEdge: edges.map((edge) => ({ edgeId: edge.id, sourceId: edge.sourceId, targetId: edge.targetId, requests: edgeCounts.get(edge.id) ?? 0, sourceRelationIds: edge.sourceRelationIds || [] })).sort((a, b) => a.edgeId.localeCompare(b.edgeId)),
       bottlenecks,
       provenance: { sourceModelRevision: projection.provenance?.sourceModelRevision ?? null, sourceModelFingerprint: projection.provenance?.sourceModelFingerprint ?? null, simulationProfileFingerprint: projection.provenance?.simulationProfileFingerprint ?? null, engineVersion: SIMULATION_ENGINE_VERSION, runFingerprint },

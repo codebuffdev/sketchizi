@@ -63,3 +63,31 @@ test("simulation comparisons and secondary diagnostic copy are collapsed until r
   assert.match(simulationPanel, /showAllExplanations \? explanations\.length : 2/);
   assert.match(styles, /\.sim-show-more-explanations/);
 });
+
+test("component catalog is searchable and category groups collapse to reduce vertical clutter", () => {
+  assert.match(panelSource, /aria-label="Search components"/);
+  assert.match(panelSource, /componentSearch/);
+  assert.match(panelSource, /className="workbench-component-group-trigger" aria-expanded=\{expanded\}/);
+  assert.match(panelSource, /No components found/);
+  assert.match(styles, /\.workbench-component-search\s*\{/);
+  assert.match(styles, /\.workbench-component-group-trigger\s*\{/);
+});
+
+test("empty inspector offers clear next actions instead of a plain help sentence", () => {
+  assert.match(panelSource, /className="workbench-inspector-empty"/);
+  assert.match(panelSource, /No component selected/);
+  assert.match(panelSource, /Browse components/);
+  assert.match(panelSource, /Go to System view/);
+  assert.match(styles, /\.workbench-inspector-empty\s*\{/);
+});
+
+test("simulation explains when the active view lacks a React traffic source and offers navigation", async () => {
+  const simulationPanel = await readFile(new URL("../src/features/simulation/experiments/SimulationExperimentPanel.jsx", import.meta.url), "utf8");
+  assert.match(panelSource, /activeViewId=\{activeViewId\}/);
+  assert.match(panelSource, /onSwitchView=\{onSwitchView\}/);
+  assert.match(simulationPanel, /No React traffic source in this view/);
+  assert.match(simulationPanel, /Switch to System view/);
+  assert.match(simulationPanel, /disabled=\{!canEdit \|\| missingTrafficSource/);
+  assert.match(simulationPanel, /if \(missingTrafficSource\) \{ setRunError/);
+  assert.match(styles, /\.sim-view-scope-notice\s*\{/);
+});

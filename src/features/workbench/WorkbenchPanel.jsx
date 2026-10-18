@@ -49,6 +49,8 @@ export default function WorkbenchPanel({
   const [activePanelTab, setActivePanelTab] = useState("build");
   const [reviewExpanded, setReviewExpanded] = useState(false);
   const [artifactPreviewExpanded, setArtifactPreviewExpanded] = useState(false);
+  const [componentSearch, setComponentSearch] = useState("");
+  const [expandedComponentGroups, setExpandedComponentGroups] = useState({ Application: true, Data: true });
   useEffect(() => {
     const available = selectedEntity ? WORKBENCH_RELATIONS.filter((item) => item.sourceKinds.includes(selectedEntity.kind)) : [];
     if (!available.some((item) => item.kind === relationKind)) setRelationKind(available[0]?.kind || "depends-on");
@@ -60,7 +62,10 @@ export default function WorkbenchPanel({
   const findings = validateWorkbench(workbench);
   const findingErrors = findings.filter((finding) => finding.severity === "error").length;
   const findingWarnings = findings.filter((finding) => finding.severity === "warning").length;
-  const grouped = WORKBENCH_COMPONENTS.reduce((groups, component) => {
+  const normalizedComponentSearch = componentSearch.trim().toLowerCase();
+  const filteredComponents = WORKBENCH_COMPONENTS.filter((component) => !normalizedComponentSearch ||
+    `${component.label} ${component.details} ${component.group} ${component.kind}`.toLowerCase().includes(normalizedComponentSearch));
+  const grouped = filteredComponents.reduce((groups, component) => {
     (groups[component.group] ||= []).push(component);
     return groups;
   }, {});
@@ -249,6 +254,9 @@ export default function WorkbenchPanel({
           <SimulationExperimentPanel
             workbench={workbench}
             visibleEntityIds={visibleEntityIds}
+            activeViewId={activeViewId}
+            onSwitchView={onSwitchView}
+            onSwitchToAdd={() => changePanelTab("components")}
             simulationProfile={simulationProfile}
             onUpdateSimulationProfile={onUpdateSimulationProfile}
             simulationHistory={simulationHistory}
@@ -262,12 +270,22 @@ export default function WorkbenchPanel({
 
           <div hidden={activePanelTab !== "components"} className="workbench-task-pane" role="tabpanel" aria-label="Add components">
           <div className="workbench-section workbench-components-section">
-            <div className="workbench-section-heading"><span>COMPONENTS</span><span className="workbench-count">{workbench.entities.length}</span></div>
-            <p className="workbench-section-intro">Insert a typed component into the active view. These components become part of the document's semantic model.</p>
-            {Object.entries(grouped).map(([group, components]) => (
-              <div className="workbench-component-group" key={group}>
-                <h3>{group}</h3>
-                <div className="workbench-component-list">
+            <div className="workbench-section-heading"><span>COMPONENT CATALOG</span><span className="workbench-count">{filteredComponents.length}</span></div>
+            <p className="workbench-section-intro">Search by component or browse a category. Additions become part of the shared semantic model.</p>
+            <label className="workbench-component-search">
+              <span aria-hidden="true">⌕</span>
+              <input type="search" value={componentSearch} onChange={(event) => setComponentSearch(event.target.value)} placeholder="Search components…" aria-label="Search components" />
+              {componentSearch && <button type="button" onClick={() => setComponentSearch("")} aria-label="Clear component search">×</button>}
+            </label>
+            {Object.entries(grouped).map(([group, components]) => {
+              const expanded = Boolean(normalizedComponentSearch || expandedComponentGroups[group]);
+              return <section className="workbench-component-group" key={group}>
+                {normalizedComponentSearch ? <div className="workbench-component-group-trigger workbench-component-group-label" aria-label={`${group} search results`}>
+                  <span>{group}</span><small>{components.length}</small>
+                </div> : <button type="button" className="workbench-component-group-trigger" aria-expanded={expanded} onClick={() => setExpandedComponentGroups((current) => ({ ...current, [group]: !current[group] }))}>
+                  <span>{group}</span><small>{components.length}</small><span className={`workbench-component-group-chevron ${expanded ? "expanded" : ""}`} aria-hidden="true">⌄</span>
+                </button>}
+                {expanded && <div className="workbench-component-list">
                   {components.map((component) => (
                     <button type="button" className="workbench-component" key={component.kind} disabled={!canEdit || busy} onClick={() => onAddComponent(component.kind)} title={component.details}>
                       <span className="workbench-component-symbol" style={{ "--component-fill": component.fill, "--component-stroke": component.stroke }} aria-hidden="true"><span /></span>
@@ -275,9 +293,10 @@ export default function WorkbenchPanel({
                       <span className="workbench-component-add" aria-hidden="true">+</span>
                     </button>
                   ))}
-                </div>
-              </div>
-            ))}
+                </div>}
+              </section>;
+            })}
+            {filteredComponents.length === 0 && <div className="workbench-catalog-empty"><strong>No components found</strong><p>Try a different name or category.</p><button type="button" className="workbench-secondary" onClick={() => setComponentSearch("")}>Clear search</button></div>}
           </div>
 
           </div>
@@ -286,7 +305,13 @@ export default function WorkbenchPanel({
           <section id="workbench-inspector" className="workbench-section workbench-inspector" aria-label="Component inspector">
             <div className="workbench-section-heading"><span>INSPECTOR</span><span className="workbench-count">{selectedEntity ? "1" : "0"}</span></div>
             {!selectedEntity ? (
-              <p className="workbench-section-intro">Select a Workbench component on the canvas to inspect its properties or create a typed relationship.</p>
+              <div className="workbench-inspector-empty">
+                <span className="workbench-inspector-empty-icon" aria-hidden="true">◇</span>
+                <strong>No component selected</strong>
+                <p>Select a component on the canvas to edit its properties or create a typed relationship.</p>
+                <button type="button" className="workbench-secondary" onClick={() => changePanelTab("components")}>Browse components</button>
+                {activeViewId !== "system" && <button type="button" className="workbench-secondary" onClick={() => onSwitchView?.("system")}>Go to System view</button>}
+              </div>
             ) : (() => {
               const definition = WORKBENCH_COMPONENTS.find((item) => item.kind === selectedEntity.kind);
               const possibleRelations = WORKBENCH_RELATIONS.filter((item) => item.sourceKinds.includes(selectedEntity.kind));

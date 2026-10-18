@@ -5,6 +5,8 @@ import { runSimulation } from "../src/features/simulation/engine/runSimulation.j
 import { runWorkbenchExperiments } from "../src/features/simulation/runWorkbenchExperiments.js";
 import {
   compareSimulationRuns,
+  chooseCapacityImprovementScenarioKey,
+  getCapacityPressureRows,
   buildScenarioComparisonOverview,
   createCapacityImprovementProfile,
   createIllustrativeSimulationProfile,
@@ -81,6 +83,18 @@ test("merges profiles for new supported components without overwriting existing 
 });
 
 
+test("capacity improvement targets the most pressured load scenario and never optimizes an outage", () => {
+  const runs = {
+    baseline: { label: "Baseline", result: { status: "completed", result: { metrics: { droppedRequests: 0, failedRequests: 0, successRate: 1, successfulLatencyMs: { p95: 65 } }, perNode: [{ sourceEntityId: "db", utilization: 0.25, dropped: 0, failed: 0 }] } } },
+    trafficSurge: { label: "5× traffic", result: { status: "completed", result: { metrics: { droppedRequests: 810, failedRequests: 0, successRate: 0.789, successfulLatencyMs: { p95: 232 } }, perNode: [{ sourceEntityId: "db", utilization: 0.997, dropped: 810, failed: 0 }] } } },
+    outage: { label: "PostgreSQL unavailable", result: { status: "completed", result: { metrics: { droppedRequests: 0, failedRequests: 700, successRate: 0, successfulLatencyMs: { p95: null } }, perNode: [{ sourceEntityId: "db", utilization: 0, dropped: 0, failed: 700 }] } } },
+  };
+  assert.equal(chooseCapacityImprovementScenarioKey(runs, "baseline"), "trafficSurge");
+  assert.equal(chooseCapacityImprovementScenarioKey(runs, "trafficSurge"), "trafficSurge", "an explicitly selected load scenario is respected");
+  assert.equal(chooseCapacityImprovementScenarioKey(runs, "outage"), "trafficSurge", "capacity increases do not target an unavailable dependency scenario");
+  assert.deepEqual(getCapacityPressureRows(runs.trafficSurge), [{ entityId: "db", hasPressure: true, maxDropped: 810, maxFailed: 0, peakUtilization: 0.997 }]);
+});
+
 test("prepares a one-variable capacity improvement using pressure evidence without mutating the base profile", () => {
   const model = workbench();
   const profile = createIllustrativeSimulationProfile(model);
@@ -115,26 +129,33 @@ test("prepares a one-variable capacity improvement using pressure evidence witho
   assert.deepEqual(changedParameterPaths, ["db.concurrency"]);
 });
 
-test("one-variable capacity trial runs through the public runner and compares against the unchanged baseline", () => {
+test("one-variable capacity trial compares the same pressured traffic scenario before and after", () => {
   const model = workbench();
   const proposed = createIllustrativeSimulationProfile(model);
   const confirmed = markSimulationAssumptionsConfirmed(proposed);
   const baseSnapshot = structuredClone(confirmed);
-  const baseSuite = runWorkbenchExperiments({ workbench: model, simulationProfile: confirmed });
+  const baseSuite = runWorkbenchExperiments({ workbench: model, simulationProfile: confirmed, trafficMultiplier: 5 });
   assert.equal(baseSuite.status, "completed");
 
+  const scenarioKey = chooseCapacityImprovementScenarioKey(baseSuite.runs, "baseline");
+  assert.equal(scenarioKey, "trafficSurge");
   const improvement = createCapacityImprovementProfile({
     profile: confirmed,
     workbench: model,
     scopeEntityIds: ["web", "api", "endpoint", "db"],
-    componentRows: [{ entityId: "db", hasPressure: true, maxDropped: 50, maxFailed: 0, peakUtilization: 0.99 }],
+    componentRows: getCapacityPressureRows(baseSuite.runs[scenarioKey]),
   });
-  const trialSuite = runWorkbenchExperiments({ workbench: model, simulationProfile: improvement.profile });
+  assert.equal(improvement.entityId, "db", "capacity is selected from pressure in the stressed scenario");
+  const trialSuite = runWorkbenchExperiments({ workbench: model, simulationProfile: improvement.profile, trafficMultiplier: 5 });
   assert.equal(trialSuite.status, "completed");
-  assert.equal(trialSuite.runs.baseline.result.status, "completed");
-  const comparison = compareSimulationRuns(baseSuite.runs.baseline.result, trialSuite.runs.baseline.result);
+  assert.equal(trialSuite.runs[scenarioKey].result.status, "completed");
+  const comparison = compareSimulationRuns(baseSuite.runs[scenarioKey].result, trialSuite.runs[scenarioKey].result);
   assert.equal(comparison.status, "ready");
   assert.ok(comparison.metrics.some((item) => item.key === "droppedRequests"));
+  assert.ok(comparison.metrics.find((item) => item.key === "offeredRequests").before > baseSuite.runs.baseline.result.result.metrics.offeredRequests * 4);
+  const dropComparison = comparison.metrics.find((item) => item.key === "droppedRequests");
+  const successComparison = comparison.metrics.find((item) => item.key === "successRate");
+  assert.ok(dropComparison.after < dropComparison.before || successComparison.after > successComparison.before, "the same stressed workload should reflect the capacity change when it materially changes outcomes");
   assert.deepEqual(confirmed, baseSnapshot, "the base profile used for comparison is unchanged");
   assert.equal(model.modelRevision, 7, "the canonical Workbench model is unchanged");
 });

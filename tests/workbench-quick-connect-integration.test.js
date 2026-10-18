@@ -23,6 +23,6 @@ test("quick-connect creates semantic model data and promotes an existing visual 
 
 test("the run action cannot be started without a typed React Calls relationship", () => {
   assert.match(simulationPanel, /const typedCallMissing = Boolean\(typedRequestGuidance\?\.missingLinks\.some\(\(link\) => link\.relationKind === "calls"\)\)/);
-  assert.match(simulationPanel, /disabled=\{!canEdit \|\| unsaved \|\| missingProfileEntityIds\.length > 0 \|\| typedCallMissing/);
+  assert.match(simulationPanel, /disabled=\{!canEdit \|\| missingTrafficSource \|\| unsaved \|\| missingProfileEntityIds\.length > 0 \|\| typedCallMissing/);
   assert.match(simulationPanel, /Create Calls relationship to run/);
 });

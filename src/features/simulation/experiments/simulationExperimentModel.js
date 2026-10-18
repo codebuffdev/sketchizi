@@ -267,6 +267,45 @@ export function compareSimulationRuns(baselineRun, comparisonRun) {
   };
 }
 
+/**
+ * Select the most useful non-outage scenario for a controlled capacity trial.
+ * If the user is viewing the traffic-surge run, preserve that explicit choice.
+ * Outage scenarios are excluded because adding capacity cannot repair an unavailable dependency.
+ */
+export function chooseCapacityImprovementScenarioKey(runs, activeScenarioKey = "baseline") {
+  const isCompleted = (key) => runs?.[key]?.result?.status === "completed" && Boolean(runs?.[key]?.result?.result?.metrics);
+  if (activeScenarioKey && activeScenarioKey !== "baseline" && activeScenarioKey !== "outage" && isCompleted(activeScenarioKey)) {
+    return activeScenarioKey;
+  }
+  const candidates = ["baseline", "trafficSurge"].filter(isCompleted);
+  if (!candidates.length) return null;
+  const pressureScore = (key) => {
+    const output = runs[key].result.result;
+    const metrics = output.metrics || {};
+    const peakUtilization = Math.max(0, ...(output.perNode || []).map((node) => Number.isFinite(node.utilization) ? node.utilization : 0));
+    const p95 = metrics.successfulLatencyMs?.p95 || 0;
+    return (metrics.droppedRequests || 0) * 1000
+      + (metrics.failedRequests || 0) * 100
+      + Math.max(0, 1 - (metrics.successRate ?? 1)) * 100
+      + peakUtilization * 10
+      + p95 / 10;
+  };
+  return candidates.sort((a, b) => pressureScore(b) - pressureScore(a) || (a === "trafficSurge" ? -1 : b === "trafficSurge" ? 1 : a.localeCompare(b)))[0];
+}
+
+/** Convert one scenario's actual per-node output to the capacity selector's evidence contract. */
+export function getCapacityPressureRows(run) {
+  const perNode = run?.result?.result?.perNode;
+  if (!Array.isArray(perNode)) return [];
+  return perNode.filter((row) => typeof row.sourceEntityId === "string" && row.sourceEntityId).map((row) => ({
+    entityId: row.sourceEntityId,
+    hasPressure: (row.utilization ?? 0) >= 0.8 || (row.dropped ?? 0) > 0 || (row.failed ?? 0) > 0,
+    maxDropped: row.dropped || 0,
+    maxFailed: row.failed || 0,
+    peakUtilization: row.utilization ?? 0,
+  }));
+}
+
 
 /**
  * Build a compact, UI-neutral comparison across every scenario in a runner result.

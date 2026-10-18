@@ -1,7 +1,7 @@
 /**
  * Small, document-persisted history for synthetic simulation experiments.
- * Stores metrics, per-node/per-edge evidence, explanations and provenance only;
- * never stores event queues or the full compiled projection.
+ * Stores metrics, bounded event-derived time-series buckets, per-node/per-edge
+ * evidence, explanations and provenance; never stores event queues or the full projection.
  */
 export const SIMULATION_HISTORY_SCHEMA_VERSION = 1;
 export const SIMULATION_HISTORY_LIMIT = 5;
@@ -36,6 +36,7 @@ function compactRun(run) {
       schemaVersion: engineResult.schemaVersion,
       simulation: isRecord(engineResult.simulation) ? clone(engineResult.simulation) : {},
       metrics: isRecord(engineResult.metrics) ? clone(engineResult.metrics) : {},
+      timeSeries: isRecord(engineResult.timeSeries) ? clone(engineResult.timeSeries) : null,
       perNode: Array.isArray(engineResult.perNode) ? clone(engineResult.perNode) : [],
       perEdge: Array.isArray(engineResult.perEdge) ? clone(engineResult.perEdge) : [],
       bottlenecks: Array.isArray(engineResult.bottlenecks) ? clone(engineResult.bottlenecks) : [],

@@ -7,6 +7,8 @@ import { appendSimulationHistory, createSimulationHistoryEntry, createSimulation
 import {
   compareSimulationRuns,
   buildScenarioComparisonOverview,
+  chooseCapacityImprovementScenarioKey,
+  getCapacityPressureRows,
   createCapacityImprovementProfile,
   createIllustrativeSimulationProfile,
   markSimulationAssumptionsConfirmed,
@@ -100,6 +102,72 @@ function RunMetrics({ run }) {
   </div>;
 }
 
+function timeSeriesPath(values, maximum, width = 320, height = 86) {
+  const left = 7; const right = width - 7; const top = 8; const bottom = height - 8;
+  const segments = []; let segment = [];
+  const flush = () => { if (segment.length) segments.push(segment); segment = []; };
+  values.forEach((value, index) => {
+    if (!isFiniteNumber(value)) { flush(); return; }
+    const x = left + (values.length <= 1 ? 0 : (right - left) * index / (values.length - 1));
+    const y = bottom - (Math.max(0, value) / maximum) * (bottom - top);
+    segment.push(`${index === 0 || segment.length === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`);
+  });
+  flush();
+  return segments.map((part) => part.join(" "));
+}
+
+function SimulationTrendChart({ title, points, series, unit }) {
+  const allValues = series.flatMap((item) => points.map((point) => point[item.key])).filter(isFiniteNumber);
+  const hasSamples = allValues.length > 0;
+  const actualPeak = hasSamples ? Math.max(0, ...allValues) : null;
+  const scaleMaximum = Math.max(1, actualPeak ?? 0);
+  const chartHeight = 86;
+  return <section className="sim-time-chart" aria-label={`${title} time series`}>
+    <div className="sim-time-chart-heading"><strong>{title}</strong><small>{hasSamples ? `Peak ${formatDecimal(actualPeak)}${unit ? ` ${unit}` : ""}` : "No samples in this interval"}</small></div>
+    <div className="sim-time-chart-legend">{series.map((item) => <span key={item.key}><i className={item.className} aria-hidden="true"/>{item.label}</span>)}</div>
+    <svg className="sim-time-chart-svg" viewBox={`0 0 320 ${chartHeight}`} role="img" aria-label={`${title}; ${points.length} event-derived time buckets`}>
+      {[0.25, 0.5, 0.75].map((fraction) => <line key={fraction} x1="7" x2="313" y1={8 + (chartHeight - 16) * fraction} y2={8 + (chartHeight - 16) * fraction} className="sim-time-chart-grid"/>)}
+      {series.map((item) => {
+        const values = points.map((point) => point[item.key]);
+        return <g key={item.key} className={item.className}>
+          {timeSeriesPath(values, scaleMaximum, 320, chartHeight).map((path, index) => <path key={index} d={path} className="sim-time-chart-line"/>)}
+          {values.map((value, index) => {
+            if (!isFiniteNumber(value)) return null;
+            const x = 7 + (values.length <= 1 ? 0 : 306 * index / (values.length - 1));
+            const y = chartHeight - 8 - (Math.max(0, value) / scaleMaximum) * (chartHeight - 16);
+            return <circle key={index} cx={x} cy={y} r="1.4" className="sim-time-chart-point"><title>{`${formatDecimal(points[index].endMs / 1000)}s · ${item.label}: ${formatDecimal(value)}${unit ? ` ${unit}` : ""}`}</title></circle>;
+          })}
+        </g>;
+      })}
+    </svg>
+    <div className="sim-time-chart-axis"><span>0 s</span><span>{formatDecimal(points.at(-1)?.endMs / 1000 || 0)} s</span></div>
+  </section>;
+}
+
+function SimulationTimeSeries({ run }) {
+  const timeSeries = run?.result?.result?.timeSeries;
+  const points = timeSeries?.points;
+  if (!Array.isArray(points) || !points.length) return null;
+  const drain = timeSeries.postWindowDrain || {};
+  const drainTotal = (drain.successfulRequests || 0) + (drain.failedRequests || 0) + (drain.droppedRequests || 0);
+  return <details className="sim-time-series">
+    <summary><span>Performance over time</span><small>{points.length} event-derived intervals</small></summary>
+    <p>Each point is calculated from simulated request-arrival and completion timestamps. Outcomes after the observation window are reported separately as drain results.</p>
+    <SimulationTrendChart title="Offered load and successful throughput" points={points} unit="req/s" series={[
+      { key: "offeredRps", label: "Offered", className: "series-offered" },
+      { key: "successfulRps", label: "Succeeded", className: "series-success" },
+    ]}/>
+    <SimulationTrendChart title="Successful p95 latency" points={points} unit="ms" series={[
+      { key: "latencyP95Ms", label: "p95 latency", className: "series-latency" },
+    ]}/>
+    <SimulationTrendChart title="Failures and capacity drops" points={points} unit="requests" series={[
+      { key: "failedRequests", label: "Failed", className: "series-failed" },
+      { key: "droppedRequests", label: "Dropped", className: "series-dropped" },
+    ]}/>
+    {drainTotal > 0 && <p className="sim-time-drain-note">After-window drain: {formatInteger(drain.successfulRequests || 0)} succeeded, {formatInteger(drain.failedRequests || 0)} failed, {formatInteger(drain.droppedRequests || 0)} dropped while already offered work finished. These outcomes are included in aggregate totals but not plotted inside the observation window.</p>}
+  </details>;
+}
+
 function compareValue(row) {
   if (!isFiniteNumber(row.before) || !isFiniteNumber(row.after)) return "—";
   if (row.unit === "ratio") return `${formatPercent(row.before)} → ${formatPercent(row.after)}`;
@@ -159,7 +227,7 @@ function ScenarioComparisonOverview({ overview, onFocusEntity, onSelectScenario 
   </details>;
 }
 
-export default function SimulationExperimentPanel({ workbench, simulationProfile, onUpdateSimulationProfile, simulationHistory = [], onUpdateSimulationHistory, onCreateTypedRelation, onFocusEntity, visibleEntityIds = null, canEdit = true }) {
+export default function SimulationExperimentPanel({ workbench, simulationProfile, onUpdateSimulationProfile, simulationHistory = [], onUpdateSimulationHistory, onCreateTypedRelation, onFocusEntity, visibleEntityIds = null, activeViewId = "system", onSwitchView, onSwitchToAdd, canEdit = true }) {
   const scopeSignature = Array.isArray(visibleEntityIds) ? JSON.stringify([...new Set(visibleEntityIds)].sort()) : "__model_scope__";
   const scopeSeeds = useMemo(() => scopeSignature === "__model_scope__" ? null : JSON.parse(scopeSignature), [scopeSignature]);
   const simulationScope = useMemo(() => workbench ? deriveSimulationScope(workbench, scopeSeeds) : { workbench: null, entityIds: [], seedEntityIds: [], excludedEntityIds: [], scoped: Array.isArray(scopeSeeds) }, [workbench, scopeSignature]);
@@ -167,6 +235,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   // Keep the run control aligned with the same semantic path analysis used by the
   // quick-connect guidance. A visual canvas arrow alone never satisfies this check.
   const typedCallMissing = Boolean(typedRequestGuidance?.missingLinks.some((link) => link.relationKind === "calls"));
+  const activeViewHasTrafficSource = !simulationScope.scoped || simulationScope.seedEntityIds.some((id) => workbench?.entities?.some((entity) => entity.id === id && entity.kind === "frontend.react-app"));
+  const missingTrafficSource = simulationScope.scoped && !activeViewHasTrafficSource;
   const scopeEntityIdSet = useMemo(() => new Set(simulationScope.entityIds), [simulationScope]);
   const effectiveScopeSignature = JSON.stringify(simulationScope.entityIds);
   const [draftProfile, setDraftProfile] = useState(simulationProfile ? deepClone(simulationProfile) : null);
@@ -181,6 +251,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const [improvementError, setImprovementError] = useState("");
   const [profileEditorOpen, setProfileEditorOpen] = useState(true);
   const [showAllExplanations, setShowAllExplanations] = useState(false);
+  const [trafficMultiplier, setTrafficMultiplier] = useState(5);
 
   useEffect(() => {
     // The controller may clone Workbench metadata after an autosave or an unrelated
@@ -222,8 +293,11 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     return simulationScope.workbench.entities.filter((entity) => supported.has(entity.kind) && !profiles[entity.id]).map((entity) => entity.id);
   }, [simulationScope, profiles]);
   const unsaved = Boolean(draftProfile && simulationProfile && !profileIsSame(draftProfile, simulationProfile));
-  const staleModel = simulationResultsAreStale(results, workbench, simulationProfile, simulationScope.entityIds);
+  const staleModel = simulationResultsAreStale(results, workbench, simulationProfile, simulationScope.entityIds)
+    || Boolean(results && Number.isFinite(results.trafficMultiplier) && results.trafficMultiplier !== trafficMultiplier);
   const activeRun = results?.runs?.[activeRunKey];
+  const capacityScenarioKey = useMemo(() => chooseCapacityImprovementScenarioKey(results?.runs, activeRunKey), [results, activeRunKey]);
+  const capacityScenario = capacityScenarioKey ? results?.runs?.[capacityScenarioKey] : null;
   const baselineRun = results?.runs?.baseline?.result;
   const comparisonRun = activeRunKey === "baseline" ? baselineRun : activeRun?.result;
   const comparison = activeRunKey !== "baseline" && baselineRun && comparisonRun
@@ -282,6 +356,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     setImprovementResult(null);
     setImprovementError("");
     setRunError("");
+    if (missingTrafficSource) { setRunError("The active view has no React traffic source. Switch to a view containing the React application before running request-path experiments."); return; }
     if (!draftProfile) { setRunError("Prepare a simulation profile first."); return; }
     if (!acknowledged) { setRunError("Review and confirm the illustrative assumptions before running."); return; }
     if (unsaved) { setRunError("Save profile changes before running experiments."); return; }
@@ -296,9 +371,10 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         ? confirmProfileAssumptionsForEntityIds(draftProfile, simulationScope.entityIds)
         : confirmAllProfileAssumptions(draftProfile);
       confirmed.sourceModelRevision = workbench?.modelRevision ?? null;
-      const suite = runWorkbenchExperiments({ workbench, simulationProfile: confirmed, scopeEntityIds: scopeSeeds ?? undefined });
+      const suite = runWorkbenchExperiments({ workbench, simulationProfile: confirmed, trafficMultiplier, scopeEntityIds: scopeSeeds ?? undefined });
       const displaySuite = {
         ...suite,
+        trafficMultiplier,
         sourceModelSnapshot: createSimulationModelSnapshot(workbench),
         profileUsed: deepClone(draftProfile),
         runScopeEntityIds: suite.provenance?.scopeEntityIds || simulationScope.entityIds,
@@ -324,28 +400,39 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     }
     if (unsaved) { setImprovementError("Save the current simulation profile before testing an improvement."); return; }
     try {
+      const comparisonScenarioKey = chooseCapacityImprovementScenarioKey(results.runs, activeRunKey);
+      const originalScenario = comparisonScenarioKey ? results.runs?.[comparisonScenarioKey] : null;
+      if (!originalScenario || originalScenario.result?.status !== "completed") {
+        throw new Error("No completed load scenario is available for a capacity comparison. Run the baseline and traffic-surge scenarios first.");
+      }
+      const pressureRows = getCapacityPressureRows(originalScenario);
       const improvement = createCapacityImprovementProfile({
         profile: draftProfile,
         workbench,
         scopeEntityIds: simulationScope.entityIds,
-        componentRows: scenarioOverview?.components || [],
+        componentRows: pressureRows,
       });
-      const suite = runWorkbenchExperiments({ workbench, simulationProfile: improvement.profile, scopeEntityIds: scopeSeeds ?? undefined });
-      if (suite.status !== "completed" || suite.runs?.baseline?.result?.status !== "completed") {
-        const blocking = (suite.diagnostics || []).filter((item) => item.severity === "blocker").map((item) => item.message || item.title);
-        throw new Error(blocking[0] || "The improvement experiment did not complete. Review its model and profile diagnostics.");
+      const suite = runWorkbenchExperiments({ workbench, simulationProfile: improvement.profile, trafficMultiplier: results.trafficMultiplier ?? trafficMultiplier, scopeEntityIds: scopeSeeds ?? undefined });
+      const improvedScenario = suite.runs?.[comparisonScenarioKey];
+      if (improvedScenario?.result?.status !== "completed") {
+        const blocking = (improvedScenario?.result?.diagnostics || suite.diagnostics || []).filter((item) => item.severity === "blocker").map((item) => item.message || item.title);
+        throw new Error(blocking[0] || `The improved ${originalScenario.label || comparisonScenarioKey} scenario did not complete.`);
       }
-      const comparisonResult = compareSimulationRuns(results.runs?.baseline?.result, suite.runs.baseline.result);
-      if (comparisonResult.status !== "ready") throw new Error(comparisonResult.reason || "The improved baseline could not be compared with the saved baseline.");
+      const comparisonResult = compareSimulationRuns(originalScenario.result, improvedScenario.result);
+      if (comparisonResult.status !== "ready") throw new Error(comparisonResult.reason || "The improved scenario could not be compared against the same original scenario.");
 
       const displayImprovement = {
         ...improvement,
         comparison: comparisonResult,
+        comparisonScenarioKey,
+        comparisonScenarioLabel: originalScenario.label || comparisonScenarioKey,
         baselineRunFingerprint: results.runs?.baseline?.result?.result?.simulation?.runFingerprint || null,
+        comparisonRunFingerprint: originalScenario.result?.result?.simulation?.runFingerprint || null,
         suite,
         createdAt: new Date().toISOString(),
       };
       setImprovementResult(displayImprovement);
+      setActiveRunKey(comparisonScenarioKey);
       // Keep the trial in the same bounded experiment history as normal runs,
       // while preserving the canonical profile and model unchanged.
       const historySuite = {
@@ -356,6 +443,9 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
           title: improvement.label,
           changedEntityId: improvement.entityId,
           field: improvement.field,
+          comparisonScenarioKey,
+          comparisonScenarioLabel: originalScenario.label || comparisonScenarioKey,
+          comparisonRunFingerprint: originalScenario.result?.result?.simulation?.runFingerprint || null,
           before: improvement.before,
           after: improvement.after,
           baseProfileSnapshot: deepClone(draftProfile),
@@ -373,6 +463,12 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   return <section id="workbench-experiments" className="workbench-section sim-experiment-panel" aria-label="Simulation experiments">
     <div className="workbench-section-heading"><span>EXPERIMENTS</span><span className="workbench-count">{results?.status === "completed" ? Object.keys(results.runs).length : "—"}</span></div>
     <p className="workbench-section-intro">Run modeled scenarios with explicit assumptions. Results are synthetic, not live-system measurements.</p>
+    {missingTrafficSource && <div className="sim-view-scope-notice" role="status">
+      <span className="sim-view-scope-icon" aria-hidden="true">↗</span>
+      <div><strong>No React traffic source in this view</strong><p>Run experiments from a view containing the React application. The POC's complete request path is available in the System view.</p>
+        {activeViewId !== "system" ? <button type="button" onClick={() => onSwitchView?.("system")}>Switch to System view</button> : <button type="button" onClick={() => onSwitchToAdd?.()}>Browse components</button>}
+      </div>
+    </div>}
     <details className="sim-scope-explainer"><summary>What gets simulated?</summary><p>Only runtime components reachable from a React traffic source through typed relationships are included. Disconnected components remain in your document but are excluded from the current run.</p></details>
     {typedRequestGuidance && <section className="sim-typed-request-guidance" aria-label="Connect the typed simulation request path">
       <strong>Connect the typed request path</strong>
@@ -388,7 +484,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       </li>)}</ol>
       <p className="sim-typed-request-guidance-next">Create the Calls relationship first. The simulator then follows only the typed-connected path. Review the newly in-scope profile and confirm its synthetic assumptions before running.</p>
     </section>}
-    {!draftProfile ? <button type="button" className="workbench-secondary sim-profile-prepare" disabled={!canEdit || !workbench?.entities?.length || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={prepareProfile}>Prepare illustrative profile</button> : <>
+    {!draftProfile ? <button type="button" className="workbench-secondary sim-profile-prepare" disabled={!canEdit || !workbench?.entities?.length || missingTrafficSource || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={prepareProfile}>Prepare illustrative profile</button> : <>
       <div className="sim-profile-summary">
         <strong>{availableProfileEntities.length} profiled runtime component(s) in this scope</strong>
         <span>{simulationScope.scoped ? "Traffic sources and their typed-connected runtime path" : "Whole-model scope"} · illustrative profile — not measured</span>
@@ -423,7 +519,13 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         <label className="sim-confirm-assumptions"><input type="checkbox" checked={acknowledged} disabled={!canEdit} onChange={(event) => setAcknowledged(event.target.checked)} /><span>I reviewed these synthetic assumptions and accept them for this experiment.</span></label>
       </details>
       {externalApprox && <p className="sim-profile-warning">External APIs use a generic approximation. This warning does not block a run after you confirm assumptions; results are not provider measurements.</p>}
-      <button type="button" className="workbench-primary sim-run-button" disabled={!canEdit || unsaved || missingProfileEntityIds.length > 0 || typedCallMissing || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={runExperiments}>{typedCallMissing ? "Create Calls relationship to run" : "Run experiments"}</button>
+      <div className="sim-traffic-control">
+        <label htmlFor="sim-traffic-multiplier"><span>Traffic-surge scenario</span><strong>{trafficMultiplier}× offered load</strong></label>
+        <input id="sim-traffic-multiplier" aria-label="Traffic-surge multiplier" type="range" min="2" max="10" step="1" value={trafficMultiplier} disabled={!canEdit} onChange={(event) => setTrafficMultiplier(Number(event.target.value))}/>
+        <div className="sim-traffic-range-labels"><span>2×</span><span>10×</span></div>
+        <small>Baseline uses the configured traffic rate. This multiplier applies only to the surge scenario.</small>
+      </div>
+      <button type="button" className="workbench-primary sim-run-button" disabled={!canEdit || missingTrafficSource || unsaved || missingProfileEntityIds.length > 0 || typedCallMissing || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={runExperiments}>{missingTrafficSource ? "Switch to System view to run" : typedCallMissing ? "Create Calls relationship to run" : "Run experiments"}</button>
     </>}
     {profileError && <p className="sim-inline-note" role="status">{profileError}</p>}
     {runError && <p className="workbench-inspector-error" role="alert">{runError}</p>}
@@ -433,8 +535,14 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         {simulationHistory.map((entry) => <div className="sim-history-item" key={entry.id}>
           <div><strong>{new Date(entry.createdAt).toLocaleString()}</strong><small>{entry.status} · {entry.engineVersion || "engine version unavailable"}</small><small>Model {entry.modelFingerprint ? `${entry.modelFingerprint.slice(0, 12)}…` : "fingerprint unavailable"}</small></div>
           <button type="button" className="workbench-secondary" onClick={() => {
-            try { setResults(restoreSimulationHistoryEntry(entry)); setProfileEditorOpen(false); setShowAllExplanations(false); setImprovementResult(null); setImprovementError(""); setActiveRunKey("baseline"); setRunError(""); }
-            catch (error) { setRunError(`Could not open saved experiment: ${error.message}`); }
+            try {
+              const restored = restoreSimulationHistoryEntry(entry);
+              const savedMultiplier = Number(restored.runs?.trafficSurge?.overrides?.trafficMultiplier ?? 5);
+              const safeMultiplier = Number.isFinite(savedMultiplier) && savedMultiplier >= 2 && savedMultiplier <= 10 ? savedMultiplier : 5;
+              setTrafficMultiplier(safeMultiplier);
+              setResults({ ...restored, trafficMultiplier: safeMultiplier });
+              setProfileEditorOpen(false); setShowAllExplanations(false); setImprovementResult(null); setImprovementError(""); setActiveRunKey("baseline"); setRunError("");
+            } catch (error) { setRunError(`Could not open saved experiment: ${error.message}`); }
           }}>Open results</button>
         </div>)}
       </div>
@@ -480,14 +588,16 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         <ScenarioComparisonOverview overview={scenarioOverview} onFocusEntity={onFocusEntity} onSelectScenario={setActiveRunKey} />
         {results.status === "completed" && <section className="sim-improvement-lab" aria-label="Test an improvement">
           <div className="sim-improvement-heading"><strong>TEST AN IMPROVEMENT</strong><small>Controlled one-variable experiment</small></div>
-          <p>Test a higher concurrency assumption on the highest-pressure eligible runtime component (about 25%, with a minimum increase of one for integer capacity). The trial uses the same seed, duration, and model; it does not change your saved component or base profile.</p>
-          <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel} onClick={runCapacityImprovement}>Test a capacity improvement</button>
+          <p>Tests a higher concurrency assumption on the highest-pressure component from the selected scenario. If Baseline is selected, Sketchizi picks the most pressured completed load scenario (normally {results.runs?.trafficSurge?.label || "the traffic-surge scenario"}). Outage runs are excluded because adding capacity cannot restore an unavailable dependency.</p>
+          {capacityScenario && <p className="sim-capacity-target">Comparison target: <strong>{capacityScenario.label}</strong>. The before/after comparison reruns this same scenario with the same seed, duration, model, and traffic multiplier.</p>}
+          <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel || !capacityScenarioKey} onClick={runCapacityImprovement}>Test a capacity improvement</button>
           {improvementError && <p className="workbench-inspector-error" role="alert">{improvementError}</p>}
           {improvementResult && <div className="sim-improvement-result" role="status">
             <strong>{improvementResult.label}</strong>
             <p>Concurrency changed from {improvementResult.before} to {improvementResult.after} for this experiment only.</p>
+            <p className="sim-capacity-target">Compared under <strong>{improvementResult.comparisonScenarioLabel}</strong>, not against an unstressed baseline.</p>
             <div className="sim-improvement-metrics"><div><span>Success rate</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "successRate"))}</strong></div><div><span>Throughput (req/sec)</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "throughputRps"))}</strong></div><div><span>p95 latency (ms)</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "p95LatencyMs"))}</strong></div><div><span>Dropped requests</span><strong>{compareValue(improvementResult.comparison.metrics.find((item) => item.key === "droppedRequests"))}</strong></div></div>
-            <small>Baseline → improved trial. These are synthetic model outputs, not production measurements. The trial was added to Saved experiment history.</small>
+            <small>Original scenario → improved version of that same scenario. These are synthetic model outputs, not production measurements. The trial was added to Saved experiment history.</small>
           </div>}
         </section>}
         {results.status === "partial" && <p className="sim-profile-warning">One or more scenarios were blocked. Completed scenarios remain available below.</p>}
@@ -496,6 +606,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         </div>
         {activeRun?.result?.status === "completed" ? <>
           <RunMetrics run={activeRun} />
+          <SimulationTimeSeries run={activeRun} />
           {comparison?.status === "ready" && <div className="sim-comparison-table-wrap"><strong>Change versus baseline</strong><table className="sim-comparison-table"><thead><tr><th>Metric</th><th>Baseline → current</th><th>Δ</th></tr></thead><tbody>{comparison.metrics.map((row) => <tr key={row.key}><td>{row.label}</td><td>{compareValue(row)}</td><td>{row.key === "successRate" ? formatPercent(row.delta.absolute) : isFiniteNumber(row.delta.absolute) ? `${row.delta.absolute > 0 ? "+" : ""}${formatDecimal(row.delta.absolute, row.unit === "requests" ? 0 : 2)}${row.unit === "requests" ? "" : row.unit === "requests/sec" ? " rps" : row.unit === "ms" ? " ms" : ""}` : "—"}</td></tr>)}</tbody></table></div>}
           <div className="sim-explanations"><div className="workbench-section-heading"><span>WHY THESE RESULTS?</span><span className="workbench-count">{explanations.length}</span></div>
             {explanations.length === 0 ? <p className="workbench-findings-empty">No capacity or request-failure signal crossed the current explanation thresholds for this run. This does not prove the design is production-safe.</p> : <>
