@@ -2,7 +2,8 @@ import { loadRecentSketch, loadSketch, saveEmergencyBackup, saveRecentSketch, sa
 import { parseDrawing, serializeDrawing } from "../../src/fileSystem.js";
 import { withWorkbenchExtension, WORKBENCH_EXTENSION_KEY } from "../../src/features/workbench/workbenchDocument.js";
 import { generateOpenApiArtifact, generateSqlArtifact } from "../../src/features/workbench/workbenchArtifacts.js";
-import { appendSimulationHistory, createSimulationHistoryEntry, restoreSimulationHistoryEntry, simulationResultsAreStale } from "../../src/features/simulation/experiments/simulationHistory.js";
+import { appendSimulationHistory, assessSimulationReproducibility, compareSimulationHistoryEntries, createSimulationHistoryEntry, restoreSimulationHistoryEntry, simulationResultsAreStale } from "../../src/features/simulation/experiments/simulationHistory.js";
+import { runWorkbenchExperiments } from "../../src/features/simulation/runWorkbenchExperiments.js";
 import { createIndexHypothesisBrowserSmokeFixture } from "./workbench-index-smoke-fixture.js";
 
 const status = document.querySelector("#status");
@@ -15,8 +16,12 @@ const expect = (condition, message) => {
 const { workbench, simulationProfile, experimentSuite, indexEvidence } = createIndexHypothesisBrowserSmokeFixture();
 sessionStorage.setItem("workbench-browser-smoke-index", JSON.stringify(indexEvidence));
 const historyEntry = createSimulationHistoryEntry(experimentSuite, { workbench, simulationProfile, createdAt: "2026-10-17T12:00:00.000Z", id: "browser-smoke-history-1" });
+const replaySuite = runWorkbenchExperiments({ workbench, simulationProfile });
+if (replaySuite.status !== "completed") throw new Error(`Browser workflow replay did not complete: ${JSON.stringify(replaySuite.diagnostics)}`);
+const replayEntry = createSimulationHistoryEntry(replaySuite, { workbench, simulationProfile, createdAt: "2026-10-17T12:01:00.000Z", id: "browser-smoke-history-replay-2" });
+replayEntry.name = "Browser smoke deterministic replay";
 workbench.simulationProfile = simulationProfile;
-workbench.simulationHistory = appendSimulationHistory([], historyEntry);
+workbench.simulationHistory = appendSimulationHistory(appendSimulationHistory([], replayEntry), historyEntry);
 const extensions = withWorkbenchExtension({ "com.example.opaque": { preserveMe: true, schema: 3 } }, workbench);
 const scene = {
   elements: [
@@ -42,8 +47,18 @@ async function readPhase() {
   expect(active?.format === "sketchizi", "IndexedDB active sketch survives page reload with Sketchizi format");
   expect(active?.metadata?.title === "Workbench Browser Round Trip", "active document metadata survives reload");
   expect(active?.extensions?.[WORKBENCH_EXTENSION_KEY]?.modelRevision === 9, "semantic model survives reload");
-  expect(active?.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory?.length === 1, "simulation history survives IndexedDB save and page reload");
-  const savedHistory = active?.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory?.[0];
+  expect(active?.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory?.length === 2, "original and replay experiment history survive IndexedDB save and page reload");
+  const persistedHistory = active?.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory || [];
+  const savedHistory = persistedHistory.find((entry) => entry.id === "browser-smoke-history-1");
+  const replayHistory = persistedHistory.find((entry) => entry.id === "browser-smoke-history-replay-2");
+  expect(Boolean(savedHistory && replayHistory), "saved original evidence and replay remain separate history entries");
+  expect(replayHistory?.name === "Browser smoke deterministic replay", "replay label survives document reload");
+  const reproducibility = assessSimulationReproducibility(savedHistory, replayHistory);
+  expect(reproducibility.status === "exact-match", `unchanged model and profile produce an exact reproducibility verdict (${reproducibility.status})`);
+  const comparison = compareSimulationHistoryEntries(savedHistory, replayHistory);
+  expect(comparison.rows.length > 0 && comparison.rows.every((row) => row.matched), "saved experiment comparison matches scenario sets after reload");
+  expect(comparison.rows.every((row) => row.metrics.every((metric) => metric.delta === 0 || metric.delta === null)), "unchanged replay has zero deltas for comparable metrics and leaves unavailable metrics null");
+  expect(comparison.rows.some((row) => row.metrics.some((metric) => metric.delta === 0)), "replay comparison includes at least one comparable zero-delta metric");
   expect(savedHistory?.runs?.baseline?.result?.metrics?.offeredRequests > 0, "saved history retains baseline metrics without rerunning the engine");
   const restoredHistory = restoreSimulationHistoryEntry(savedHistory);
   expect(restoredHistory?.historyEntryId === "browser-smoke-history-1", "saved history can be restored into the results model");
@@ -69,7 +84,7 @@ async function readPhase() {
   const parsed = parseDrawing(serialized);
   expect(parsed.format === "sketchizi", "serialized file identifies as .sketchizi document");
   expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.entities?.length === 5, "serialized file retains shared runtime, endpoint, and table entities");
-  expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory?.[0]?.id === "browser-smoke-history-1", "file serialization retains simulation history");
+  expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory?.some((entry) => entry.id === "browser-smoke-history-1") && parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.simulationHistory?.some((entry) => entry.id === "browser-smoke-history-replay-2"), "file serialization retains both original and replay experiment evidence");
   expect(parsed.extensions?.[WORKBENCH_EXTENSION_KEY]?.viewScenes?.apis?.elements?.[0]?.id === "api-placement", "serialized file retains the second view scene");
   expect(parsed.files?.["image-1"]?.mimeType === "image/png", "serialized file retains referenced image payload");
 
@@ -86,7 +101,7 @@ async function readPhase() {
   expect(indexEvidence?.indexedReadOperationsStarted > 0 && indexEvidence?.indexAssumedTimeSavedMsTotal > 0, "index trial records event-derived indexed-read evidence");
   expect(indexEvidence?.acceptedSchemaSql?.includes('CREATE INDEX IF NOT EXISTS "idx_items_created_at"') && indexEvidence?.openApiPath === "/api/items", "starter artifacts are generated from the same persisted model");
 
-  status.textContent = "PASS — browser reload, experiment history, and index artifact test";
+  status.textContent = "PASS — browser experiment run, save, reload, rerun, compare, stale-result, and index artifact test";
   status.style.color = "#16733d";
   details.textContent = results.join("\n");
   document.body.dataset.result = "passed";

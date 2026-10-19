@@ -148,6 +148,7 @@ export function createSimulationHistoryEntry(experimentSuite, { workbench, simul
   return {
     schemaVersion: SIMULATION_HISTORY_SCHEMA_VERSION,
     id: entryId,
+    name: String(experimentSuite.name || experimentSuite.experimentMetadata?.title || `Experiment ${new Date(createdAt).toLocaleString()}`).slice(0, 120),
     createdAt,
     status: experimentSuite.status,
     modelRevision: workbench?.modelRevision ?? provenance.modelRevision ?? null,
@@ -225,4 +226,128 @@ export function restoreSimulationHistoryEntry(entry) {
     ...(isRecord(entry.experimentMetadata) ? { experimentMetadata: clone(entry.experimentMetadata) } : {}),
     sourceModelSnapshot: clone(entry.sourceModelSnapshot || { modelRevision: entry.modelRevision ?? null, entities: [], relations: [] }),
   };
+}
+
+
+/** Rename a retained history item without changing its recorded evidence. */
+export function renameSimulationHistoryEntry(history, entryId, name) {
+  if (!Array.isArray(history)) throw new TypeError("Simulation history must be an array.");
+  if (typeof entryId !== "string" || !entryId) throw new TypeError("A saved experiment ID is required.");
+  const normalizedName = String(name ?? "").trim().slice(0, 120);
+  if (!normalizedName) throw new TypeError("Experiment name cannot be empty.");
+  let found = false;
+  const next = history.map((entry) => {
+    if (entry.id !== entryId) return clone(entry);
+    found = true;
+    return { ...clone(entry), name: normalizedName };
+  });
+  if (!found) throw new Error("Saved experiment was not found.");
+  return next;
+}
+
+/** Search names, status, engine, fingerprints and scenario labels without mutating history. */
+export function searchSimulationHistory(history, query = "") {
+  const items = Array.isArray(history) ? history : [];
+  const needle = String(query ?? "").trim().toLocaleLowerCase();
+  if (!needle) return items;
+  return items.filter((entry) => {
+    const scenarioLabels = Object.values(entry.runs || {}).map((run) => `${run.label || ""} ${run.key || ""}`).join(" ");
+    const haystack = [entry.name, entry.status, entry.engineVersion, entry.modelFingerprint, entry.profileFingerprint, scenarioLabels]
+      .filter(Boolean).join(" ").toLocaleLowerCase();
+    return haystack.includes(needle);
+  });
+}
+
+/**
+ * Classify whether a replay reproduced the saved evidence. This is stricter than
+ * a metric-delta comparison: inputs, scenario coverage, run fingerprints and
+ * recorded metrics must all agree before claiming an exact reproduction.
+ */
+export function assessSimulationReproducibility(original, replay) {
+  if (!isRecord(original) || !isRecord(replay) || !isRecord(original.runs) || !isRecord(replay.runs)) {
+    throw new TypeError("Two valid saved experiment entries are required for reproducibility assessment.");
+  }
+  const warnings = [];
+  if (!original.modelFingerprint || !replay.modelFingerprint || original.modelFingerprint !== replay.modelFingerprint) warnings.push("Model fingerprints are missing or differ.");
+  if (!original.profileFingerprint || !replay.profileFingerprint || original.profileFingerprint !== replay.profileFingerprint) warnings.push("Profile fingerprints are missing or differ.");
+  if (!original.engineVersion || !replay.engineVersion || original.engineVersion !== replay.engineVersion) warnings.push("Engine versions are missing or differ.");
+  if (original.runnerVersion !== replay.runnerVersion) warnings.push("Runner versions differ.");
+  const originalKeys = Object.keys(original.runs).sort();
+  const replayKeys = Object.keys(replay.runs).sort();
+  const sameScenarioSet = stableStringify(originalKeys) === stableStringify(replayKeys);
+  if (!sameScenarioSet) warnings.push("Scenario sets differ.");
+  let complete = sameScenarioSet && originalKeys.length > 0;
+  let sameMetrics = complete;
+  let sameRunFingerprints = complete;
+  for (const key of originalKeys) {
+    const before = original.runs[key];
+    const after = replay.runs[key];
+    if (!before || !after || before.status !== "completed" || after.status !== "completed" || !isRecord(before.result?.metrics) || !isRecord(after.result?.metrics)) {
+      complete = false; sameMetrics = false; sameRunFingerprints = false;
+      continue;
+    }
+    if (stableStringify(before.result.metrics) !== stableStringify(after.result.metrics)) sameMetrics = false;
+    const beforeFingerprint = before.result.simulation?.runFingerprint;
+    const afterFingerprint = after.result.simulation?.runFingerprint;
+    if (!beforeFingerprint || !afterFingerprint || beforeFingerprint !== afterFingerprint) sameRunFingerprints = false;
+  }
+  if (!complete) warnings.push("At least one scenario is missing or incomplete; exact reproduction cannot be established.");
+  const sameInputs = Boolean(original.modelFingerprint && replay.modelFingerprint && original.modelFingerprint === replay.modelFingerprint
+    && original.profileFingerprint && replay.profileFingerprint && original.profileFingerprint === replay.profileFingerprint
+    && original.engineVersion && replay.engineVersion && original.engineVersion === replay.engineVersion
+    && original.runnerVersion === replay.runnerVersion);
+  let status;
+  if (!complete) status = "incomplete";
+  else if (sameInputs && sameRunFingerprints && sameMetrics) status = "exact-match";
+  else if (sameMetrics) status = "metrics-match-inputs-differ";
+  else status = "metrics-differ";
+  if (status === "metrics-differ") warnings.push(sameRunFingerprints ? "Metrics differ despite matching run fingerprints; investigate a determinism or evidence-integrity defect." : "One or more scenario metrics differ from the saved evidence.");
+  if (status === "metrics-match-inputs-differ") warnings.push("Metrics match, but provenance or run fingerprints differ; this is not an exact reproduction.");
+  return { status, complete, sameInputs, sameMetrics, sameRunFingerprints, sameScenarioSet, warnings: [...new Set(warnings)] };
+}
+
+/** Compare matching scenario metrics in two retained suites; never invent missing values. */
+export function compareSimulationHistoryEntries(left, right) {
+  if (!isRecord(left) || !isRecord(right) || !isRecord(left.runs) || !isRecord(right.runs)) {
+    throw new TypeError("Two valid saved experiment entries are required.");
+  }
+  const warnings = [];
+  if (left.modelFingerprint !== right.modelFingerprint) warnings.push("Model fingerprints differ; the runs use different semantic model snapshots.");
+  if (left.profileFingerprint !== right.profileFingerprint) warnings.push("Profile fingerprints differ; simulation assumptions may differ.");
+  if (left.engineVersion !== right.engineVersion) warnings.push("Engine versions differ; numeric changes may reflect engine behavior as well as model changes.");
+  const keys = [...new Set([...Object.keys(left.runs), ...Object.keys(right.runs)])];
+  const metricKeys = [
+    ["throughputRps", "Successful throughput", "requests/sec"],
+    ["p95LatencyMs", "p95 latency", "ms"],
+    ["failedRatePercent", "Failure rate", "%"],
+  ];
+  const rows = keys.map((key) => {
+    const a = left.runs[key]; const b = right.runs[key];
+    const aMetrics = a?.result?.metrics || {}; const bMetrics = b?.result?.metrics || {};
+    const metricValue = (metrics, metricKey) => {
+      if (metricKey === "p95LatencyMs") return metrics.successfulLatencyMs?.p95;
+      if (metricKey === "failedRatePercent") {
+        return Number.isFinite(metrics.offeredRequests) && metrics.offeredRequests > 0 && Number.isFinite(metrics.failedRequests)
+          ? (metrics.failedRequests / metrics.offeredRequests) * 100 : null;
+      }
+      return metrics[metricKey];
+    };
+    return {
+      key,
+      label: a?.label || b?.label || key,
+      matched: Boolean(a && b),
+      statusLeft: a?.status || "missing",
+      statusRight: b?.status || "missing",
+      metrics: metricKeys.map(([metricKey, label, unit]) => {
+        const beforeValue = metricValue(aMetrics, metricKey);
+        const afterValue = metricValue(bMetrics, metricKey);
+        const before = a?.status === "completed" && Number.isFinite(beforeValue) ? beforeValue : null;
+        const after = b?.status === "completed" && Number.isFinite(afterValue) ? afterValue : null;
+        return { key: metricKey, label, unit, before, after, delta: before != null && after != null ? after - before : null };
+      }),
+    };
+  });
+  if (rows.some((row) => !row.matched)) warnings.push("Scenario sets differ; unmatched scenarios are identified and no deltas are fabricated.");
+  if (rows.some((row) => row.metrics.some((metric) => metric.delta == null))) warnings.push("Some metrics are unavailable because a scenario did not complete or did not record that metric.");
+  return { leftId: left.id, rightId: right.id, warnings, rows };
 }

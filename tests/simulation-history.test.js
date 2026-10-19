@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appendSimulationHistory, createSimulationHistoryEntry, restoreSimulationHistoryEntry, simulationResultsAreStale, SIMULATION_HISTORY_LIMIT } from "../src/features/simulation/experiments/simulationHistory.js";
+import { appendSimulationHistory, assessSimulationReproducibility, compareSimulationHistoryEntries, createSimulationHistoryEntry, renameSimulationHistoryEntry, restoreSimulationHistoryEntry, searchSimulationHistory, simulationResultsAreStale, SIMULATION_HISTORY_LIMIT } from "../src/features/simulation/experiments/simulationHistory.js";
 import { runWorkbenchExperiments } from "../src/features/simulation/runWorkbenchExperiments.js";
 import { createIllustrativeSimulationProfile, markSimulationAssumptionsConfirmed } from "../src/features/simulation/experiments/simulationExperimentModel.js";
 import { createWorkbenchExtension, readWorkbenchDocument, withWorkbenchExtension } from "../src/features/workbench/workbenchDocument.js";
@@ -160,4 +160,71 @@ test("blocked or invalid history entries are rejected", () => {
   assert.throws(() => createSimulationHistoryEntry({ status: "blocked", runs: {} }), /Only completed or partial/);
   assert.throws(() => appendSimulationHistory([], { schemaVersion: 99, id: "bad" }), /Invalid simulation history/);
   assert.throws(() => restoreSimulationHistoryEntry({ schemaVersion: 1, runs: [] }), /invalid or unsupported/);
+});
+
+test("saved experiment library supports rename, search, and comparable metric deltas without mutating evidence", () => {
+  const { workbench, profile, suite } = fixture();
+  const first = createSimulationHistoryEntry(suite, { workbench, simulationProfile: profile, createdAt: "2026-10-18T10:00:00.000Z", id: "first" });
+  const second = structuredClone(first);
+  second.id = "second";
+  second.name = "Traffic capacity trial";
+  second.modelFingerprint = "different-model";
+  second.runs.baseline.result.metrics.throughputRps += 12;
+  second.runs.baseline.result.metrics.successfulLatencyMs.p95 += 4;
+  second.runs.baseline.result.metrics.failedRequests = 2;
+  const history = [first, second];
+  const renamed = renameSimulationHistoryEntry(history, "first", "Baseline reference");
+  assert.equal(renamed[0].name, "Baseline reference");
+  assert.equal(history[0].name, first.name);
+  assert.deepEqual(searchSimulationHistory(renamed, "baseline reference").map((entry) => entry.id), ["first"]);
+  assert.deepEqual(searchSimulationHistory(renamed, "traffic capacity").map((entry) => entry.id), ["second"]);
+  const comparison = compareSimulationHistoryEntries(renamed[0], renamed[1]);
+  const baseline = comparison.rows.find((row) => row.key === "baseline");
+  assert.equal(baseline.metrics.find((metric) => metric.key === "throughputRps").delta, 12);
+  assert.equal(baseline.metrics.find((metric) => metric.key === "p95LatencyMs").delta, 4);
+  assert.ok(Number.isFinite(baseline.metrics.find((metric) => metric.key === "failedRatePercent").delta));
+  assert.ok(comparison.warnings.some((warning) => warning.includes("Model fingerprints differ")));
+  assert.throws(() => renameSimulationHistoryEntry(history, "first", "  "), /cannot be empty/);
+});
+
+
+test("reproducibility assessment requires matching provenance, scenario fingerprints, and metrics", () => {
+  const { workbench, profile, suite } = fixture();
+  const original = createSimulationHistoryEntry(suite, { workbench, simulationProfile: profile, createdAt: "2026-10-19T10:00:00.000Z", id: "repro-original" });
+  const exactReplay = structuredClone(original); exactReplay.id = "repro-exact";
+  assert.deepEqual(assessSimulationReproducibility(original, exactReplay), {
+    status: "exact-match", complete: true, sameInputs: true, sameMetrics: true, sameRunFingerprints: true, sameScenarioSet: true, warnings: [],
+  });
+
+  const differentInputs = structuredClone(exactReplay);
+  differentInputs.id = "repro-different-inputs"; differentInputs.profileFingerprint = "different-profile";
+  assert.equal(assessSimulationReproducibility(original, differentInputs).status, "metrics-match-inputs-differ");
+
+  const changedMetrics = structuredClone(exactReplay);
+  changedMetrics.id = "repro-metrics-differ"; changedMetrics.runs.baseline.result.metrics.successfulRequests += 1;
+  assert.equal(assessSimulationReproducibility(original, changedMetrics).status, "metrics-differ");
+
+  const incomplete = structuredClone(exactReplay);
+  incomplete.id = "repro-incomplete"; delete incomplete.runs.outage;
+  assert.equal(assessSimulationReproducibility(original, incomplete).status, "incomplete");
+});
+
+test("changed simulation assumptions alter profile and run fingerprints and are never called exact reproduction", () => {
+  const { workbench, profile, suite } = fixture();
+  const original = createSimulationHistoryEntry(suite, { workbench, simulationProfile: profile, createdAt: "2026-10-19T11:00:00.000Z", id: "assumption-original" });
+  const changedProfile = structuredClone(profile);
+  changedProfile.defaultScenario.seed += 1;
+  const changedSuite = runWorkbenchExperiments({ workbench, simulationProfile: changedProfile });
+  assert.equal(changedSuite.status, "completed");
+  const changed = createSimulationHistoryEntry(changedSuite, { workbench, simulationProfile: changedProfile, createdAt: "2026-10-19T11:01:00.000Z", id: "assumption-changed" });
+  assert.notEqual(original.profileFingerprint, changed.profileFingerprint);
+  assert.notEqual(original.runs.baseline.result.simulation.runFingerprint, changed.runs.baseline.result.simulation.runFingerprint);
+  const assessment = assessSimulationReproducibility(original, changed);
+  assert.equal(assessment.status, "metrics-differ");
+  assert.ok(assessment.warnings.some((warning) => warning.includes("Profile fingerprints")));
+  assert.notEqual(assessment.status, "exact-match");
+});
+
+test("reproducibility assessment rejects malformed inputs instead of guessing", () => {
+  assert.throws(() => assessSimulationReproducibility(null, {}), /valid saved experiment entries/);
 });

@@ -39,19 +39,24 @@ test("local release plan preserves install, font preflight, build, regressions, 
   assert.ok(ciWorkflow.includes("name: Clean install, production build, regression suites"));
 });
 
-test("a blocking install failure skips every downstream stage and preserves the failure", async () => {
+test("an install failure does not block independent diagnostics but skips dependent build stages", async () => {
   const plan = [
-    { id: "install", blocking: true, commands: [{ label: "install" }] },
-    { id: "font-assets", blocking: true, commands: [{ label: "fonts" }] },
-    { id: "build", blocking: true, commands: [{ label: "build" }] },
+    { id: "install", blocking: true, requires: [], commands: [{ label: "install" }] },
+    { id: "font-assets", blocking: true, requires: ["install"], commands: [{ label: "fonts" }] },
+    { id: "build", blocking: true, requires: ["install"], commands: [{ label: "build" }] },
+    { id: "simulation-tests", blocking: true, requires: [], commands: [{ label: "simulation" }] },
+    { id: "fixtures", blocking: true, requires: [], commands: [{ label: "fixtures" }] },
   ];
   const seen = [];
   const outcomes = await executeReleasePlan(plan, async (command) => {
     seen.push(command.label);
     return { exitCode: command.label === "install" ? 1 : 0 };
   });
-  assert.deepEqual(seen, ["install"]);
-  assert.deepEqual(outcomes, { install: "failure", "font-assets": "skipped", build: "skipped" });
+  assert.deepEqual(seen, ["install", "simulation", "fixtures"]);
+  assert.deepEqual(outcomes, {
+    install: "failure", "font-assets": "skipped", build: "skipped",
+    "simulation-tests": "success", fixtures: "success",
+  });
 });
 
 test("a failed registry connectivity diagnostic is non-blocking", async () => {
@@ -68,20 +73,31 @@ test("a failed registry connectivity diagnostic is non-blocking", async () => {
   assert.deepEqual(outcomes, { "registry-probe": "failure", install: "success" });
 });
 
-test("a failure inside a multi-command stage stops that stage and all blocking follow-ups", async () => {
+test("a failure stops the current stage but only skips stages that depend on it", async () => {
   const plan = [
-    { id: "application-tests", blocking: true, commands: [{ label: "test-one" }, { label: "test-two" }, { label: "test-three" }] },
-    { id: "workbench-tests", blocking: true, commands: [{ label: "workbench" }] },
+    { id: "application-tests", blocking: true, requires: [], commands: [{ label: "test-one" }, { label: "test-two" }, { label: "test-three" }] },
+    { id: "build", blocking: true, requires: ["application-tests"], commands: [{ label: "build" }] },
+    { id: "artifact-fixtures", blocking: true, requires: [], commands: [{ label: "fixtures" }] },
   ];
   const seen = [];
   const outcomes = await executeReleasePlan(plan, async (command) => {
     seen.push(command.label);
     return { exitCode: command.label === "test-two" ? 2 : 0 };
   });
-  assert.deepEqual(seen, ["test-one", "test-two"]);
-  assert.deepEqual(outcomes, { "application-tests": "failure", "workbench-tests": "skipped" });
+  assert.deepEqual(seen, ["test-one", "test-two", "fixtures"]);
+  assert.deepEqual(outcomes, { "application-tests": "failure", build: "skipped", "artifact-fixtures": "success" });
 });
 
+test("release plan declares only real prerequisite boundaries", () => {
+  const byId = Object.fromEntries(createReleasePlan().map((stage) => [stage.id, stage]));
+  assert.deepEqual(byId["font-assets"].requires, ["install"]);
+  assert.deepEqual(byId.build.requires, ["install"]);
+  assert.deepEqual(byId["openapi-validation"].requires, ["artifact-fixtures", "external-tools-install"]);
+  assert.deepEqual(byId["sql-validation"].requires, ["artifact-fixtures", "external-tools-install"]);
+  assert.deepEqual(byId["postgresql-execution-validation"].requires, ["artifact-fixtures"]);
+  assert.deepEqual(byId["browser-smoke"].requires, ["chromium-install"]);
+  assert.deepEqual(byId["workbench-tests"].requires, []);
+});
 
 test("local outcomes map to the shared release summary schema", () => {
   const summary = createGateSummary(mapOutcomesToSummaryEnv({
@@ -122,4 +138,14 @@ test("every release-plan stage has an isolated diagnostic log", () => {
   assert.ok(names.includes("openapi-validation.log"));
   assert.ok(names.includes("sql-validation.log"));
   assert.ok(names.includes("postgresql-execution-validation.log"));
+});
+
+
+test("local release gate verifies the packaged bundle and preserves a strict exit status", async () => {
+  const runner = await readFile(path.join(root, "scripts", "run-workbench-release-check.mjs"), "utf8");
+  const packageIndex = runner.indexOf("createDiagnosticBundle({ root: PROJECT_ROOT })");
+  const verifyIndex = runner.indexOf("scripts/verify-workbench-diagnostic-bundle.mjs", packageIndex);
+  assert.ok(packageIndex >= 0 && verifyIndex > packageIndex, "bundle must be packaged before verification");
+  assert.match(runner.slice(verifyIndex), /if \(verification\.exitCode !== 0\)[\s\S]*?process\.exitCode = 1/);
+  assert.match(runner, /workbench-release-diagnostic-verification\.json/);
 });

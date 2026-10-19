@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { runWorkbenchExperiments, WORKBENCH_SIMULATION_RUNNER_VERSION } from "../src/features/simulation/runWorkbenchExperiments.js";
+import { runWorkbenchExperiments, runTrafficSweep, runResilienceMatrix, runFailureChainMatrix, WORKBENCH_SIMULATION_RUNNER_VERSION } from "../src/features/simulation/runWorkbenchExperiments.js";
 import {
   createIllustrativeSimulationProfile,
   markSimulationAssumptionsConfirmed,
@@ -158,4 +158,120 @@ test("engine blockers are surfaced at suite level with semantic component refere
   assert.ok(routeBlockers.length > 0, JSON.stringify(suite.diagnostics, null, 2));
   assert.ok(routeBlockers.every((item) => item.entityIds?.includes("web")), "engine node IDs should map to Workbench entity IDs for focus actions");
   assert.ok(suite.diagnostics.some((item) => item.code === "SIM-OUTSIDE-ACTIVE-SCOPE" && item.entityIds.includes("api") && item.entityIds.includes("db")), "disconnected runtime components should be explained rather than silently included");
+});
+
+
+test("traffic sweep returns ordered deterministic points with explicit synthetic SLO classification", () => {
+  const workbench = makeWorkbench();
+  const profile = confirmedProfile(workbench);
+  const options = {
+    workbench,
+    simulationProfile: profile,
+    multipliers: [1, 2, 3, 5],
+    maxP95LatencyMs: 100000,
+    maxErrorRatePercent: 100,
+  };
+  const first = runTrafficSweep(options);
+  const second = runTrafficSweep(options);
+  assert.equal(first.status, "completed", JSON.stringify(first.diagnostics, null, 2));
+  assert.deepEqual(first.points.map((point) => point.multiplier), [1, 2, 3, 5]);
+  assert.ok(first.points.every((point) => point.status === "completed"));
+  assert.ok(first.points.every((point) => point.sloStatus === "pass"));
+  assert.ok(first.points[1].metrics.offeredRequests > first.points[0].metrics.offeredRequests);
+  assert.deepEqual(first.points.map((point) => point.result.result), second.points.map((point) => point.result.result));
+  assert.equal(first.lastPassingMultiplier, 5);
+  assert.equal(first.firstFailureMultiplier, null);
+  assert.match(first.interpretation, /does not prove/i);
+});
+
+test("traffic sweep leaves SLO status unevaluated until both targets are supplied", () => {
+  const workbench = makeWorkbench();
+  const result = runTrafficSweep({ workbench, simulationProfile: confirmedProfile(workbench), multipliers: [1, 2] });
+  assert.equal(result.status, "completed");
+  assert.ok(result.points.every((point) => point.sloStatus === "targets-not-set"));
+  assert.equal(result.targets, null);
+  assert.match(result.interpretation, /Set both SLO targets/);
+});
+
+test("traffic sweep rejects duplicate or invalid load multipliers", () => {
+  const workbench = makeWorkbench();
+  const result = runTrafficSweep({ workbench, simulationProfile: confirmedProfile(workbench), multipliers: [1, 2, 2] });
+  assert.equal(result.status, "blocked");
+  assert.ok(result.diagnostics.some((item) => item.code === "TRAFFIC-SWEEP-MULTIPLIERS-INVALID"));
+  assert.deepEqual(result.points, []);
+});
+
+test("traffic sweep identifies the first sampled SLO failure without interpolating capacity", () => {
+  const workbench = makeWorkbench();
+  const result = runTrafficSweep({
+    workbench,
+    simulationProfile: confirmedProfile(workbench),
+    multipliers: [1, 2, 3, 5, 8],
+    maxP95LatencyMs: 0.1,
+    maxErrorRatePercent: 0,
+  });
+  assert.equal(result.status, "completed");
+  assert.equal(result.firstFailureMultiplier, 1);
+  assert.equal(result.lastPassingMultiplier, null);
+  assert.match(result.interpretation, /actual failure threshold lies somewhere between tested points/);
+});
+
+
+test("resilience matrix runs deterministic single-component outages and ranks throughput impact", () => {
+  const workbench = makeWorkbench();
+  const profile = confirmedProfile(workbench);
+  const options = { workbench, simulationProfile: profile };
+  const first = runResilienceMatrix(options);
+  const second = runResilienceMatrix(options);
+  assert.equal(first.status, "completed", JSON.stringify(first.diagnostics, null, 2));
+  assert.ok(first.scenarios.some((scenario) => scenario.id === "api"));
+  assert.ok(first.scenarios.some((scenario) => scenario.id === "db"));
+  assert.ok(first.scenarios.every((scenario) => scenario.status === "completed"));
+  assert.ok(first.scenarios.every((scenario) => Number.isFinite(scenario.metrics?.offeredRequests)));
+  assert.deepEqual(first.scenarios.map((scenario) => scenario.id), second.scenarios.map((scenario) => scenario.id));
+  assert.deepEqual(first.scenarios.map((scenario) => scenario.result.result), second.scenarios.map((scenario) => scenario.result.result));
+  assert.match(first.interpretation, /synthetic/i);
+});
+
+test("resilience matrix rejects invalid traffic multiplier", () => {
+  const workbench = makeWorkbench();
+  const result = runResilienceMatrix({ workbench, simulationProfile: confirmedProfile(workbench), trafficMultiplier: 0 });
+  assert.equal(result.status, "blocked");
+  assert.deepEqual(result.scenarios, []);
+  assert.ok(result.diagnostics.some((item) => item.code === "RESILIENCE-MATRIX-TRAFFIC-INVALID"));
+});
+
+
+test("failure-chain matrix evaluates deterministic pairs and compares combined impact with individual outages", () => {
+  const workbench = makeWorkbench();
+  const options = { workbench, simulationProfile: confirmedProfile(workbench) };
+  const first = runFailureChainMatrix(options);
+  const second = runFailureChainMatrix(options);
+  assert.equal(first.status, "completed", JSON.stringify(first.diagnostics, null, 2));
+  assert.equal(first.totalPairCount, 1);
+  assert.equal(first.evaluatedPairCount, 1);
+  assert.equal(first.scenarios[0].targets.length, 2);
+  assert.ok(["worse-than-either-alone", "less-impact-than-strongest-alone", "similar-to-strongest-alone", "not-comparable"].includes(first.scenarios[0].interaction));
+  assert.deepEqual(first.scenarios.map((item) => item.result.result), second.scenarios.map((item) => item.result.result));
+  assert.match(first.interpretation, /synthetic what-if/i);
+});
+
+test("failure-chain matrix rejects invalid load and pair limits", () => {
+  const workbench = makeWorkbench();
+  const profile = confirmedProfile(workbench);
+  const invalidTraffic = runFailureChainMatrix({ workbench, simulationProfile: profile, trafficMultiplier: 0 });
+  assert.equal(invalidTraffic.status, "blocked");
+  assert.ok(invalidTraffic.diagnostics.some((item) => item.code === "FAILURE-CHAIN-TRAFFIC-INVALID"));
+  const invalidPairs = runFailureChainMatrix({ workbench, simulationProfile: profile, maxPairs: 0 });
+  assert.equal(invalidPairs.status, "blocked");
+  assert.ok(invalidPairs.diagnostics.some((item) => item.code === "FAILURE-CHAIN-PAIR-LIMIT-INVALID"));
+});
+
+test("failure-chain matrix blocks when fewer than two outage candidates exist", () => {
+  const workbench = makeWorkbench();
+  workbench.entities = workbench.entities.filter((item) => item.id !== "db");
+  workbench.relations = workbench.relations.filter((item) => !item.targetId.includes("db"));
+  const result = runFailureChainMatrix({ workbench, simulationProfile: confirmedProfile(workbench) });
+  assert.equal(result.status, "blocked");
+  assert.ok(result.diagnostics.some((item) => item.code === "FAILURE-CHAIN-NEEDS-TWO-TARGETS"));
 });

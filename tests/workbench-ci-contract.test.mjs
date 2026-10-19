@@ -41,6 +41,7 @@ test("release gate includes the browser server, fixture, summary, and rendered b
     "test:workbench-ci-summary",
     "test:workbench-ci-contract",
     "test:workbench-local-release",
+    "test:workbench-diagnostic-bundle",
     "test:workbench-external-artifacts",
     "test:workbench-postgres-artifact-integration",
     "test:excalidraw-font-preflight",
@@ -81,7 +82,15 @@ test("diagnostics are generated and uploaded even when an earlier gate fails", (
   assert.ok(productionIndex > artifactIndex, "production bundle upload must follow diagnostics upload");
   assert.match(workflow.slice(summaryIndex, artifactIndex), /if: always\(\)/);
   assert.match(workflow.slice(artifactIndex, productionIndex), /if: always\(\)/);
+  assert.match(workflow.slice(summaryIndex, artifactIndex), /name: Package one downloadable release diagnostic bundle/);
+  assert.match(workflow.slice(summaryIndex, artifactIndex), /node scripts\/package-workbench-diagnostic-bundle\.mjs/);
+  assert.match(workflow.slice(summaryIndex, artifactIndex), /name: Verify packaged diagnostic bundle integrity/);
+  assert.match(workflow.slice(summaryIndex, artifactIndex), /name: Verify packaged diagnostic bundle integrity\s+if: always\(\)/);
+  assert.match(workflow.slice(summaryIndex, artifactIndex), /node scripts\/verify-workbench-diagnostic-bundle\.mjs artifacts\/workbench-release-diagnostic-bundle\.zip/);
+  assert.match(workflow.slice(artifactIndex, productionIndex), /artifacts\/workbench-release-diagnostic-verification\.json/);
   assert.match(workflow.slice(artifactIndex, productionIndex), /name: workbench-release-gate-diagnostics/);
+  assert.match(workflow.slice(artifactIndex, productionIndex), /artifacts\/workbench-release-diagnostic-bundle\.zip/);
+  assert.match(workflow.slice(artifactIndex, productionIndex), /artifacts\/workbench-release-diagnostic-manifest\.json/);
   assert.match(workflow.slice(productionIndex), /if: success\(\)/);
   assert.match(workflow.slice(productionIndex), /name: sketchizi-workbench-dist/);
 });
@@ -181,4 +190,25 @@ test("external artifact validators run on generated fixtures before the browser 
   assert.ok(generation >= 0 && install > generation && openapi > install && sql > openapi && postgresExecution > sql && chromium > postgresExecution && upload > chromium);
   assert.match(workflow.slice(upload), /artifacts\/generated\//);
   assert.match(workflow.slice(postgresExecution, chromium), /sudo apt-get install -y postgresql-client/);
+});
+
+test("release gate continues independent diagnostics after earlier failures without masking the gate result", () => {
+  for (const stepName of [
+    "Run application regression suites",
+    "Run Workbench regression suites",
+    "Generate representative OpenAPI and PostgreSQL artifacts",
+    "Install pinned external validators and Playwright",
+    "Install Chromium for rendered-browser smoke test",
+  ]) {
+    const stepIndex = workflow.indexOf(`- name: ${stepName}`);
+    assert.ok(stepIndex >= 0, `missing step ${stepName}`);
+    const nextStepIndex = workflow.indexOf("      - name:", stepIndex + 10);
+    const block = workflow.slice(stepIndex, nextStepIndex < 0 ? workflow.length : nextStepIndex);
+    assert.match(block, /if: always\(\)/, `${stepName} must run after prior failures`);
+  }
+  assert.match(workflow, /if: \$\{\{ always\(\) && steps\.install\.outcome == 'success' \}\}/);
+  assert.match(workflow, /if: \$\{\{ always\(\) && steps\.external-tools-install\.outcome == 'success' && steps\.artifact-fixtures\.outcome == 'success' \}\}/);
+  assert.match(workflow, /if: \$\{\{ always\(\) && steps\.artifact-fixtures\.outcome == 'success' \}\}/);
+  assert.match(workflow, /if: \$\{\{ always\(\) && steps\.chromium-install\.outcome == 'success' \}\}/);
+  assert.match(workflow, /id: gate-summary[\s\S]*?if: always\(\)/);
 });

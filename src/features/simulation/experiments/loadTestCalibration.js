@@ -437,6 +437,117 @@ export function assessLoadTestEvidence(records = []) {
   };
 }
 
+
+/**
+ * Summarize the highest observed offered-load point meeting caller-supplied SLOs.
+ * This reports only tested points: it never interpolates or extrapolates capacity.
+ */
+export function assessObservedOperatingEnvelope(records = [], { maxP95LatencyMs, maxErrorRatePercent } = {}) {
+  if (!numeric(maxP95LatencyMs) || maxP95LatencyMs <= 0 || !numeric(maxErrorRatePercent) || maxErrorRatePercent < 0 || maxErrorRatePercent > 100) {
+    return { status: "invalid-thresholds", environments: [], reason: "Enter a positive p95 latency target and an error-rate target from 0 to 100%." };
+  }
+  const valid = [];
+  for (const raw of Array.isArray(records) ? records : []) {
+    try {
+      const item = normalizeLoadTestRecord(raw);
+      if (numeric(item.observed.throughputRps) && numeric(item.observed.p95LatencyMs) && numeric(item.observed.errorRatePercent)) valid.push(item);
+    } catch { /* Invalid saved records are ignored; document loading remains resilient. */ }
+  }
+  const grouped = new Map();
+  for (const record of valid) {
+    if (!grouped.has(record.targetEnvironment)) grouped.set(record.targetEnvironment, []);
+    grouped.get(record.targetEnvironment).push(record);
+  }
+  const environments = [...grouped.entries()].map(([environment, items]) => {
+    const points = items.map((record) => ({
+      id: record.id,
+      name: record.name,
+      testedAt: record.testedAt,
+      offeredRps: record.workload.offeredRps,
+      throughputRps: record.observed.throughputRps,
+      p95LatencyMs: record.observed.p95LatencyMs,
+      errorRatePercent: record.observed.errorRatePercent,
+      meetsTargets: record.observed.p95LatencyMs <= maxP95LatencyMs && record.observed.errorRatePercent <= maxErrorRatePercent,
+    })).sort((a, b) => a.offeredRps - b.offeredRps || a.testedAt.localeCompare(b.testedAt));
+    // Group nearby offered-load values using the same 10% tolerance as the
+    // calibration-level assessment, then summarize repeat-run ranges without
+    // declaring arbitrary stability thresholds.
+    const loadLevels = [];
+    for (const point of points) {
+      const match = loadLevels.find((level) => Math.abs(point.offeredRps - level.center) / Math.max(point.offeredRps, level.center, 0.001) <= 0.1);
+      if (!match) loadLevels.push({ center: point.offeredRps, points: [point] });
+      else {
+        match.points.push(point);
+        match.center = match.points.reduce((sum, item) => sum + item.offeredRps, 0) / match.points.length;
+      }
+    }
+    const repeatabilityByLoad = loadLevels.map((level) => {
+      const range = (key) => {
+        const values = level.points.map((point) => point[key]).filter(numeric).sort((a, b) => a - b);
+        if (!values.length) return null;
+        const min = values[0];
+        const max = values[values.length - 1];
+        const spread = max - min;
+        const middle = Math.floor(values.length / 2);
+        const median = values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+        // A descriptive scale comparison only; this is not a confidence interval
+        // or a claim that repeated measurements are statistically stable.
+        const spreadPercentOfMedian = median > 0 ? (spread / median) * 100 : spread === 0 ? 0 : null;
+        return { min, max, spread, median, spreadPercentOfMedian };
+      };
+      const passingRunCount = level.points.filter((point) => point.meetsTargets).length;
+      const failingRunCount = level.points.length - passingRunCount;
+      const sloOutcomeStatus = level.points.length === 1
+        ? "single-observation"
+        : passingRunCount === level.points.length
+          ? "all-pass"
+          : failingRunCount === level.points.length
+            ? "all-fail"
+            : "mixed-outcome";
+      return {
+        offeredRps: Number(level.center.toFixed(2)),
+        runCount: level.points.length,
+        passingRunCount,
+        failingRunCount,
+        sloOutcomeStatus,
+        p95LatencyMs: range("p95LatencyMs"),
+        errorRatePercent: range("errorRatePercent"),
+        throughputRps: range("throughputRps"),
+        status: level.points.length >= 2 ? "repeat-observed" : "single-observation",
+      };
+    });
+    const passing = points.filter((point) => point.meetsTargets);
+    const failing = points.filter((point) => !point.meetsTargets);
+    const highestPassing = passing.reduce((best, point) => !best || point.offeredRps > best.offeredRps ? point : best, null);
+    const nextFailing = highestPassing
+      ? failing.filter((point) => point.offeredRps > highestPassing.offeredRps).reduce((best, point) => !best || point.offeredRps < best.offeredRps ? point : best, null)
+      : failing.reduce((best, point) => !best || point.offeredRps < best.offeredRps ? point : best, null);
+    return {
+      environment,
+      testedPointCount: points.length,
+      distinctLoadLevelCount: groupOfferedLoadLevels(items).length,
+      points,
+      repeatabilityByLoad,
+      repeatedLoadLevelCount: repeatabilityByLoad.filter((level) => level.runCount >= 2).length,
+      singleObservationLoadLevelCount: repeatabilityByLoad.filter((level) => level.runCount === 1).length,
+      highestPassingOfferedRps: highestPassing?.offeredRps ?? null,
+      highestPassing,
+      nextFailing,
+      status: highestPassing ? "observed-passing-point" : "no-tested-point-meets-targets",
+    };
+  }).sort((a, b) => (b.highestPassingOfferedRps ?? -1) - (a.highestPassingOfferedRps ?? -1) || a.environment.localeCompare(b.environment));
+  return {
+    status: valid.length ? "assessed" : "insufficient-evidence",
+    maxP95LatencyMs,
+    maxErrorRatePercent,
+    completeRecordCount: valid.length,
+    environments,
+    reason: valid.length
+      ? "This is the highest observed tested load that met your targets. It is not an extrapolated capacity estimate or a production guarantee."
+      : "Add measurements with throughput, p95 latency and error rate to assess tested operating points.",
+  };
+}
+
 export function compareLoadTestToSimulation(simulationResult, record) {
   const measured = normalizeLoadTestRecord(record);
   const metrics = simulationResult?.metrics;

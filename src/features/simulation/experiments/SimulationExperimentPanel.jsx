@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { runWorkbenchExperiments } from "../runWorkbenchExperiments.js";
+import { runWorkbenchExperiments, runTrafficSweep, runResilienceMatrix, runFailureChainMatrix } from "../runWorkbenchExperiments.js";
 import { getTypedRequestGuidance } from "./typedRequestGuidance.js";
 import { partitionSimulationDiagnostics } from "./diagnosticPresentation.js";
 import { deriveSimulationScope } from "../adapter/deriveSimulationScope.js";
-import { appendSimulationHistory, createSimulationHistoryEntry, createSimulationModelSnapshot, restoreSimulationHistoryEntry, simulationResultsAreStale } from "./simulationHistory.js";
+import { appendSimulationHistory, assessSimulationReproducibility, compareSimulationHistoryEntries, createSimulationHistoryEntry, createSimulationModelSnapshot, renameSimulationHistoryEntry, restoreSimulationHistoryEntry, searchSimulationHistory, simulationResultsAreStale } from "./simulationHistory.js";
+import { createSimulationEvidenceReport } from "./simulationEvidenceReport.js";
+import { compareSimulationEvidenceReports, parseSimulationEvidenceReport } from "./simulationEvidenceComparison.js";
 import { buildRuntimeOverlayModel } from "./runtimeOverlayModel.js";
 import { deriveTraceInvestigation, findTraceWindowBucketRange } from "./traceInvestigation.js";
 import {
@@ -33,6 +35,7 @@ import {
 import {
   LOAD_TEST_MEASUREMENT_FIELDS,
   assessLoadTestEvidence,
+  assessObservedOperatingEnvelope,
   compareLoadTestToSimulation,
   createEmptyLoadTestRecord,
   createLoadTestJsonTemplate,
@@ -43,6 +46,21 @@ import {
 } from "./loadTestCalibration.js";
 
 const deepClone = (value) => structuredClone(value);
+
+function downloadSimulationEvidence(experimentType, results) {
+  if (!results || typeof document === "undefined") return;
+  const artifact = createSimulationEvidenceReport({ experimentType, results });
+  const blob = new Blob([artifact.text], { type: artifact.mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = artifact.filename;
+  anchor.rel = "noopener";
+  document.body?.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  globalThis.setTimeout?.(() => URL.revokeObjectURL(url), 1000);
+}
 const isFiniteNumber = (value) => typeof value === "number" && Number.isFinite(value);
 const formatInteger = (value) => isFiniteNumber(value) ? Math.round(value).toLocaleString() : "—";
 const formatDecimal = (value, digits = 2) => isFiniteNumber(value) ? value.toFixed(digits) : "—";
@@ -428,6 +446,20 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   draftProfileRef.current = draftProfile;
   const [acknowledged, setAcknowledged] = useState(() => profileIsConfirmed(profileForEntityIds(simulationProfile, simulationScope.entityIds)));
   const [results, setResults] = useState(null);
+  const [trafficSweepResults, setTrafficSweepResults] = useState(null);
+  const [trafficSweepError, setTrafficSweepError] = useState("");
+  const [resilienceMatrixResults, setResilienceMatrixResults] = useState(null);
+  const [resilienceMatrixError, setResilienceMatrixError] = useState("");
+  const [failureChainResults, setFailureChainResults] = useState(null);
+  const [failureChainError, setFailureChainError] = useState("");
+  const [evidenceComparison, setEvidenceComparison] = useState(null);
+  const [evidenceComparisonError, setEvidenceComparisonError] = useState("");
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyCompareIds, setHistoryCompareIds] = useState([]);
+  const [historyComparison, setHistoryComparison] = useState(null);
+  const [historyActionError, setHistoryActionError] = useState("");
+  const [historyRerunComparison, setHistoryRerunComparison] = useState(null);
+  const [historyRerunBusyId, setHistoryRerunBusyId] = useState("");
   const [activeRunKey, setActiveRunKey] = useState("baseline");
   const [profileError, setProfileError] = useState("");
   const [runError, setRunError] = useState("");
@@ -444,6 +476,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const [loadTestImportFormat, setLoadTestImportFormat] = useState("json");
   const [loadTestImportMetadata, setLoadTestImportMetadata] = useState({ name: "", testedAt: "", targetEnvironment: "", offeredRps: "", durationSeconds: "", concurrency: "", notes: "" });
   const [loadTestError, setLoadTestError] = useState("");
+  const [operatingEnvelopeLatencyTarget, setOperatingEnvelopeLatencyTarget] = useState("");
+  const [operatingEnvelopeErrorTarget, setOperatingEnvelopeErrorTarget] = useState("");
   const [selectedLoadTestId, setSelectedLoadTestId] = useState("");
 
   useEffect(() => {
@@ -487,6 +521,10 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const availableInfrastructureEntities = Object.entries(infrastructureByEntityId).map(([entityId, infrastructure]) => ({ entity: entitiesById.get(entityId), entityId, infrastructure })).filter((item) => item.entity && scopeEntityIdSet.has(item.entityId) && INFRASTRUCTURE_PROFILE_FIELD_DEFINITIONS[item.entity.kind]);
   const loadTestRecords = draftProfile?.loadTestEvidence?.records || [];
   const loadTestAssessment = useMemo(() => assessLoadTestEvidence(loadTestRecords), [loadTestRecords]);
+  const operatingEnvelope = useMemo(() => assessObservedOperatingEnvelope(loadTestRecords, {
+    maxP95LatencyMs: operatingEnvelopeLatencyTarget === "" ? null : Number(operatingEnvelopeLatencyTarget),
+    maxErrorRatePercent: operatingEnvelopeErrorTarget === "" ? null : Number(operatingEnvelopeErrorTarget),
+  }), [loadTestRecords, operatingEnvelopeLatencyTarget, operatingEnvelopeErrorTarget]);
   const serviceTimeProposals = useMemo(() => proposeServiceTimeCalibrations(loadTestRecords, workbench, draftProfile), [loadTestRecords, workbench, draftProfile]);
   const selectedLoadTestRecord = loadTestRecords.find((record) => record.id === selectedLoadTestId) || loadTestRecords[0] || null;
   const availableProfileEntities = Object.entries(profiles).map(([entityId, profile]) => ({ entity: entitiesById.get(entityId), entityId, profile })).filter((item) => item.entity && scopeEntityIdSet.has(item.entityId));
@@ -498,6 +536,14 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const unsaved = Boolean(draftProfile && simulationProfile && !profileIsSame(draftProfile, simulationProfile));
   const staleModel = simulationResultsAreStale(results, workbench, simulationProfile, simulationScope.entityIds)
     || Boolean(results && Number.isFinite(results.trafficMultiplier) && results.trafficMultiplier !== trafficMultiplier);
+  const trafficSweepStale = Boolean(trafficSweepResults && (
+    unsaved
+    || trafficSweepResults.provenance?.modelRevision !== (workbench?.modelRevision ?? null)
+    || trafficSweepResults.targets?.maxP95LatencyMs !== (operatingEnvelopeLatencyTarget.trim() === "" ? undefined : Number(operatingEnvelopeLatencyTarget))
+    || trafficSweepResults.targets?.maxErrorRatePercent !== (operatingEnvelopeErrorTarget.trim() === "" ? undefined : Number(operatingEnvelopeErrorTarget))
+  ));
+  const resilienceMatrixStale = Boolean(resilienceMatrixResults && (unsaved || resilienceMatrixResults.provenance?.modelRevision !== (workbench?.modelRevision ?? null) || JSON.stringify(resilienceMatrixResults.provenance?.scopeEntityIds || null) !== JSON.stringify(simulationScope.entityIds)));
+  const failureChainStale = Boolean(failureChainResults && (unsaved || failureChainResults.provenance?.modelRevision !== (workbench?.modelRevision ?? null) || JSON.stringify(failureChainResults.provenance?.scopeEntityIds || null) !== JSON.stringify(simulationScope.entityIds)));
   const activeRun = results?.runs?.[activeRunKey];
   const calibrationComparison = useMemo(() => activeRun?.result?.status === "completed" && selectedLoadTestRecord
     ? compareLoadTestToSimulation(activeRun.result.result, selectedLoadTestRecord)
@@ -718,6 +764,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   };
 
   const runExperiments = () => {
+    setTrafficSweepResults(null); setTrafficSweepError("");
     setImprovementResult(null);
     setImprovementError("");
     setInvestigation(null);
@@ -754,6 +801,68 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         onUpdateSimulationHistory?.(appendSimulationHistory(simulationHistory, entry));
       }
     } catch (error) { setRunError(error.message); }
+  };
+
+  const runTrafficSweepExperiment = () => {
+    setTrafficSweepError("");
+    setTrafficSweepResults(null);
+    if (missingTrafficSource) { setTrafficSweepError("Switch to a view containing the React application before running a traffic sweep."); return; }
+    if (!draftProfile) { setTrafficSweepError("Prepare a simulation profile first."); return; }
+    if (!acknowledged) { setTrafficSweepError("Review and confirm the illustrative assumptions before running."); return; }
+    if (unsaved) { setTrafficSweepError("Save profile changes before running a traffic sweep."); return; }
+    if (simulationScope.scoped && simulationScope.seedEntityIds.length === 0) { setTrafficSweepError("No Workbench components are placed in the active view."); return; }
+    try {
+      const confirmed = simulationScope.scoped
+        ? confirmProfileAssumptionsForEntityIds(draftProfile, simulationScope.entityIds)
+        : confirmAllProfileAssumptions(draftProfile);
+      confirmed.sourceModelRevision = workbench?.modelRevision ?? null;
+      const maxP95LatencyMs = operatingEnvelopeLatencyTarget.trim() === "" ? undefined : Number(operatingEnvelopeLatencyTarget);
+      const maxErrorRatePercent = operatingEnvelopeErrorTarget.trim() === "" ? undefined : Number(operatingEnvelopeErrorTarget);
+      const sweep = runTrafficSweep({
+        workbench,
+        simulationProfile: confirmed,
+        multipliers: [1, 2, 3, 5, 8, 10],
+        maxP95LatencyMs,
+        maxErrorRatePercent,
+        scopeEntityIds: scopeSeeds ?? undefined,
+      });
+      setTrafficSweepResults({ ...sweep, sourceModelSnapshot: createSimulationModelSnapshot(workbench), profileUsed: deepClone(draftProfile) });
+      if (sweep.status === "blocked") setTrafficSweepError(sweep.diagnostics?.find((item) => item.severity === "blocker")?.message || "The traffic sweep could not be run.");
+    } catch (error) { setTrafficSweepError(error.message || "The traffic sweep could not be run."); }
+  };
+
+  const runResilienceMatrixExperiment = () => {
+    setResilienceMatrixError("");
+    setResilienceMatrixResults(null);
+    if (!canEdit) { setResilienceMatrixError("Edit permission is required to run resilience experiments."); return; }
+    if (missingTrafficSource) { setResilienceMatrixError("Switch to a view containing the React application before running a resilience matrix."); return; }
+    if (!draftProfile) { setResilienceMatrixError("Prepare a simulation profile first."); return; }
+    if (!acknowledged) { setResilienceMatrixError("Review and confirm the illustrative assumptions before running."); return; }
+    if (unsaved) { setResilienceMatrixError("Save profile changes before running a resilience matrix."); return; }
+    if (simulationScope.scoped && simulationScope.seedEntityIds.length === 0) { setResilienceMatrixError("No Workbench components are placed in the active view."); return; }
+    try {
+      const confirmed = profileForEntityIds(draftProfile, simulationScope.entityIds);
+      const matrix = runResilienceMatrix({ workbench, simulationProfile: confirmed, trafficMultiplier: 1, scopeEntityIds: scopeSeeds ?? undefined });
+      setResilienceMatrixResults({ ...matrix, sourceModelSnapshot: createSimulationModelSnapshot(workbench), profileUsed: deepClone(draftProfile) });
+      if (matrix.status === "blocked") setResilienceMatrixError(matrix.diagnostics?.find((item) => item.severity === "blocker")?.message || "The resilience matrix could not be run.");
+    } catch (error) { setResilienceMatrixError(error.message || "The resilience matrix could not be run."); }
+  };
+
+  const runFailureChainExperiment = () => {
+    setFailureChainError("");
+    setFailureChainResults(null);
+    if (!canEdit) { setFailureChainError("Edit permission is required to run failure-chain experiments."); return; }
+    if (missingTrafficSource) { setFailureChainError("Switch to a view containing the React application before running failure-chain experiments."); return; }
+    if (!draftProfile) { setFailureChainError("Prepare a simulation profile first."); return; }
+    if (!acknowledged) { setFailureChainError("Review and confirm the illustrative assumptions before running."); return; }
+    if (unsaved) { setFailureChainError("Save profile changes before running failure-chain experiments."); return; }
+    if (simulationScope.scoped && simulationScope.seedEntityIds.length === 0) { setFailureChainError("No Workbench components are placed in the active view."); return; }
+    try {
+      const confirmed = profileForEntityIds(draftProfile, simulationScope.entityIds);
+      const matrix = runFailureChainMatrix({ workbench, simulationProfile: confirmed, trafficMultiplier: 1, scopeEntityIds: scopeSeeds ?? undefined });
+      setFailureChainResults({ ...matrix, sourceModelSnapshot: createSimulationModelSnapshot(workbench), profileUsed: deepClone(draftProfile) });
+      if (matrix.status === "blocked") setFailureChainError(matrix.diagnostics?.find((item) => item.severity === "blocker")?.message || "Failure-chain experiments could not be run.");
+    } catch (error) { setFailureChainError(error.message || "Failure-chain experiments could not be run."); }
   };
 
   const runImprovementExperiment = (interventionKind = "capacity") => {
@@ -915,6 +1024,56 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     }
   };
 
+  const handleEvidenceReportFiles = async (event) => {
+    const files = Array.from(event.target.files || []);
+    setEvidenceComparison(null);
+    setEvidenceComparisonError("");
+    if (files.length !== 2) {
+      setEvidenceComparisonError("Select exactly two exported evidence JSON files to compare.");
+      return;
+    }
+    try {
+      const [leftText, rightText] = await Promise.all(files.map((file) => file.text()));
+      const left = parseSimulationEvidenceReport(leftText);
+      const right = parseSimulationEvidenceReport(rightText);
+      setEvidenceComparison(compareSimulationEvidenceReports(left, right));
+    } catch (error) {
+      setEvidenceComparisonError(error instanceof Error ? error.message : "Unable to compare evidence reports.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const rerunSavedExperiment = (entry) => {
+    setHistoryActionError(""); setHistoryRerunComparison(null); setHistoryRerunBusyId(entry.id);
+    try {
+      if (!entry?.profileSnapshot || !workbench) throw new Error("This saved experiment does not contain enough profile/model context to rerun.");
+      const rawMultiplier = Number(entry.runs?.trafficSurge?.overrides?.trafficMultiplier ?? 5);
+      const multiplier = Number.isFinite(rawMultiplier) && rawMultiplier > 0 && rawMultiplier !== 1 ? rawMultiplier : 5;
+      const replayProfile = markSimulationAssumptionsConfirmed(ensureInfrastructureProfileDefaults(ensureDatabaseIndexProfileDefaults(deepClone(entry.profileSnapshot)), workbench));
+      const scopeSeedsForReplay = Array.isArray(entry.scopeSeedEntityIds) ? entry.scopeSeedEntityIds : undefined;
+      const suite = runWorkbenchExperiments({ workbench, simulationProfile: replayProfile, trafficMultiplier: multiplier, scopeEntityIds: scopeSeedsForReplay });
+      if (suite.runs?.baseline?.result?.status !== "completed") {
+        const message = suite.diagnostics?.find((item) => item.severity === "blocker")?.message;
+        throw new Error(message || "The saved experiment could not be rerun against the current model.");
+      }
+      suite.name = `Re-run: ${entry.name || "Saved experiment"}`;
+      suite.experimentMetadata = { kind: "reproducibility-rerun", originalHistoryEntryId: entry.id, originalCreatedAt: entry.createdAt, note: "Saved assumptions rerun against the current semantic model; original evidence remains unchanged." };
+      const rerunEntry = createSimulationHistoryEntry(suite, { workbench, simulationProfile: replayProfile });
+      rerunEntry.experimentMetadata = deepClone(suite.experimentMetadata);
+      const comparison = compareSimulationHistoryEntries(entry, rerunEntry);
+      const reproducibility = assessSimulationReproducibility(entry, rerunEntry);
+      const metricRegressions = comparison.rows.flatMap((row) => row.metrics.filter((metric) => metric.delta != null && ((metric.key === "throughputRps" && metric.delta < 0) || (metric.key === "p95LatencyMs" && metric.delta > 0) || (metric.key === "failedRatePercent" && metric.delta > 0))).map((metric) => ({ scenario: row.label, ...metric })));
+      const warnings = [...comparison.warnings];
+      if (entry.modelFingerprint !== rerunEntry.modelFingerprint) warnings.push("The current model differs from the original saved model. Treat this as a changed-model replay, not a bit-for-bit reproduction.");
+      setHistoryRerunComparison({ originalName: entry.name, rerunName: rerunEntry.name, reproducibility, comparison: { ...comparison, warnings: [...new Set([...warnings, ...reproducibility.warnings])] }, metricRegressions });
+      onUpdateSimulationHistory?.(appendSimulationHistory(simulationHistory, rerunEntry));
+      setResults({ ...suite, trafficMultiplier: multiplier, sourceModelSnapshot: createSimulationModelSnapshot(workbench), profileUsed: deepClone(replayProfile), runScopeEntityIds: suite.provenance?.scopeEntityIds || [] });
+      setProfileEditorOpen(false); setActiveRunKey("baseline");
+    } catch (error) { setHistoryActionError(`Could not rerun saved experiment: ${error.message || "Unknown error"}`); }
+    finally { setHistoryRerunBusyId(""); }
+  };
+
   return <section id="workbench-experiments" className="workbench-section sim-experiment-panel" aria-label="Simulation experiments">
     <div className="workbench-section-heading"><span>EXPERIMENTS</span><span className="workbench-count">{results?.status === "completed" ? Object.keys(results.runs).length : "—"}</span></div>
     <p className="workbench-section-intro">Run modeled scenarios with explicit assumptions. Results are synthetic, not live-system measurements.</p>
@@ -1028,6 +1187,61 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         <small>Baseline uses the configured traffic rate. This multiplier applies only to the surge scenario.</small>
       </div>
       <button type="button" className="workbench-primary sim-run-button" disabled={!canEdit || missingTrafficSource || unsaved || missingProfileEntityIds.length > 0 || typedCallMissing || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={runExperiments}>{missingTrafficSource ? "Switch to System view to run" : typedCallMissing ? "Create Calls relationship to run" : "Run experiments"}</button>
+      <button type="button" className="workbench-secondary sim-run-button" disabled={!canEdit || missingTrafficSource || unsaved || missingProfileEntityIds.length > 0 || typedCallMissing || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={runTrafficSweepExperiment}>Run 6-point traffic sweep</button>
+      <button type="button" className="workbench-secondary sim-run-button" disabled={!canEdit || missingTrafficSource || unsaved || missingProfileEntityIds.length > 0 || typedCallMissing || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={runResilienceMatrixExperiment}>Run resilience matrix</button>
+      {resilienceMatrixError && <p className="sim-profile-warning" role="alert">{resilienceMatrixError}</p>}
+      <button type="button" className="workbench-secondary sim-run-button" disabled={!canEdit || missingTrafficSource || unsaved || missingProfileEntityIds.length > 0 || typedCallMissing || (simulationScope.scoped && simulationScope.seedEntityIds.length === 0)} onClick={runFailureChainExperiment}>Run failure-chain matrix</button>
+      {failureChainError && <p className="sim-profile-warning" role="alert">{failureChainError}</p>}
+      <section className="sim-traffic-sweep" aria-label="Saved experiment comparison">
+        <div className="workbench-section-heading"><span>SAVED EXPERIMENT COMPARISON</span><span className="workbench-count">JSON evidence</span></div>
+        <p className="sim-capacity-target">Select two JSON reports exported by Sketchizi Workbench. The second report is treated as the newer/current run; differing model, profile, engine, assumptions, or scenario sets are called out explicitly.</p>
+        <label className="workbench-secondary sim-run-button" style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}>
+          Compare two evidence files
+          <input type="file" accept="application/json,.json" multiple onChange={handleEvidenceReportFiles} style={{ display: "none" }} />
+        </label>
+        {evidenceComparisonError && <p className="sim-inline-error" role="alert">{evidenceComparisonError}</p>}
+        {evidenceComparison && <>
+          <div className="sim-provenance"><strong>Earlier report</strong><dl><dt>Experiment</dt><dd>{evidenceComparison.left.experimentType}</dd><dt>Model revision</dt><dd>{evidenceComparison.left.modelRevision ?? "unknown"}</dd><dt>Model fingerprint</dt><dd>{evidenceComparison.left.modelFingerprint || "unavailable"}</dd><dt>Profile fingerprint</dt><dd>{evidenceComparison.left.profileFingerprint || "unavailable"}</dd><dt>Engine</dt><dd>{evidenceComparison.left.engineVersion || "unknown"}</dd></dl><strong>Later report</strong><dl><dt>Experiment</dt><dd>{evidenceComparison.right.experimentType}</dd><dt>Model revision</dt><dd>{evidenceComparison.right.modelRevision ?? "unknown"}</dd><dt>Model fingerprint</dt><dd>{evidenceComparison.right.modelFingerprint || "unavailable"}</dd><dt>Profile fingerprint</dt><dd>{evidenceComparison.right.profileFingerprint || "unavailable"}</dd><dt>Engine</dt><dd>{evidenceComparison.right.engineVersion || "unknown"}</dd></dl></div>
+          {evidenceComparison.warnings.length > 0 && <div className="sim-advisory-results"><strong>Comparability warnings</strong>{evidenceComparison.warnings.map((warning) => <div className="sim-diagnostic warning" key={warning}><small>{warning}</small></div>)}</div>}
+          <div className="sim-suite-table-wrap"><table className="sim-suite-table"><thead><tr><th>Scenario</th><th>Match</th><th>Throughput Δ (req/s)</th><th>p95 latency Δ (ms)</th><th>Failure rate Δ (pp)</th></tr></thead><tbody>
+            {evidenceComparison.rows.map((row) => <tr key={row.key}><td>{row.name}</td><td>{row.matched ? "Matched" : "Missing in later report"}</td><td>{row.throughputDeltaRps == null ? "—" : `${row.throughputDeltaRps > 0 ? "+" : ""}${formatDecimal(row.throughputDeltaRps)}`}</td><td>{row.p95DeltaMs == null ? "—" : `${row.p95DeltaMs > 0 ? "+" : ""}${formatDecimal(row.p95DeltaMs)}`}</td><td>{row.failedRateDeltaPercentagePoints == null ? "—" : `${row.failedRateDeltaPercentagePoints > 0 ? "+" : ""}${formatDecimal(row.failedRateDeltaPercentagePoints)}`}</td></tr>)}
+            {evidenceComparison.unmatchedRows.map((row) => <tr key={`unmatched-${row.key}`}><td>{row.name}</td><td>Only in later report</td><td>—</td><td>—</td><td>—</td></tr>)}
+          </tbody></table></div>
+          <p className="sim-capacity-target">Deltas are later minus earlier. Positive latency or failure-rate deltas indicate worse results; positive throughput delta indicates higher throughput. These are synthetic reports, not live telemetry.</p>
+          <button type="button" className="workbench-secondary sim-run-button" onClick={() => setEvidenceComparison(null)}>Clear comparison</button>
+        </>}
+      </section>
+      {failureChainResults && <section className="sim-traffic-sweep" aria-label="Failure-chain experiment results">
+        <div className="workbench-section-heading"><span>FAILURE-CHAIN MATRIX</span><span className="workbench-count">{failureChainResults.evaluatedPairCount} / {failureChainResults.totalPairCount} pairs</span></div>
+        <button type="button" className="workbench-secondary sim-run-button" onClick={() => downloadSimulationEvidence("failure-chain-matrix", failureChainResults)}>Export evidence JSON</button>
+        {failureChainStale && <p className="sim-profile-warning" role="status">The model, profile or active scope changed since this matrix was run. Rerun it before using these results.</p>}
+        <p className="sim-capacity-target">Pairwise outages are compared with the stronger of the two individual outages. {failureChainResults.truncated ? "The pair limit was reached; not every possible pair was evaluated." : "All available component pairs were evaluated."}</p>
+        <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Combined outage</th><th>Outcome</th><th>Combined throughput loss</th><th>Strongest individual loss</th><th>Additional loss</th><th>Interpretation</th></tr></thead><tbody>
+          {failureChainResults.scenarios.map((scenario) => <tr key={scenario.id}><td><strong>{scenario.name}</strong><small>{scenario.targets.map((target) => target.kind).join(" + ")}</small></td><td>{scenario.status === "completed" ? "Completed" : scenario.status}</td><td>{scenario.throughputLossPercent == null ? "—" : `${formatDecimal(scenario.throughputLossPercent)}%`}</td><td>{scenario.strongestIndividualLossPercent == null ? "—" : `${formatDecimal(scenario.strongestIndividualLossPercent)}%`}</td><td>{scenario.additionalLossPercent == null ? "—" : `${formatDecimal(scenario.additionalLossPercent)} percentage points`}</td><td>{scenario.interaction === "worse-than-either-alone" ? "Worse than either alone" : scenario.interaction === "less-impact-than-strongest-alone" ? "Less impact than strongest alone" : scenario.interaction === "similar-to-strongest-alone" ? "Similar to strongest alone" : "Not comparable"}</td></tr>)}
+        </tbody></table></div>
+        <p className="sim-capacity-target">{failureChainResults.interpretation}</p>
+      </section>}
+      {resilienceMatrixResults && <section className="sim-traffic-sweep" aria-label="Resilience matrix results">
+        <div className="workbench-section-heading"><span>RESILIENCE MATRIX</span><span className="workbench-count">{resilienceMatrixResults.scenarios.length} outage scenarios</span></div>
+        <button type="button" className="workbench-secondary sim-run-button" onClick={() => downloadSimulationEvidence("resilience-matrix", resilienceMatrixResults)}>Export evidence JSON</button>
+        {resilienceMatrixStale && <p className="sim-profile-warning" role="status">The model, profile or active scope changed since this matrix was run. Rerun it before using these results.</p>}
+        <p className="sim-capacity-target">Baseline: {formatDecimal(resilienceMatrixResults.baseline?.metrics?.throughputRps)} successful requests/sec. Each row disables one supported runtime component at a time.</p>
+        <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Component outage</th><th>Outcome</th><th>Throughput</th><th>Throughput loss</th><th>p95 latency</th><th>Failed requests</th></tr></thead><tbody>
+          {resilienceMatrixResults.scenarios.map((scenario) => <tr key={scenario.id}><td><strong>{scenario.name}</strong><small>{scenario.kind}</small></td><td>{scenario.status === "completed" ? "Completed" : scenario.status}</td><td>{formatDecimal(scenario.metrics?.throughputRps)} req/s</td><td>{scenario.throughputLossPercent == null ? "—" : `${formatDecimal(scenario.throughputLossPercent)}%`}</td><td>{scenario.p95LatencyMs == null ? "—" : `${formatDecimal(scenario.p95LatencyMs)} ms`}</td><td>{scenario.failedRatePercent == null ? "—" : `${formatDecimal(scenario.failedRatePercent)}%`}</td></tr>)}
+        </tbody></table></div>
+        <p className="sim-capacity-target">{resilienceMatrixResults.interpretation}</p>
+      </section>}
+      {trafficSweepError && <p className="sim-profile-warning" role="alert">{trafficSweepError}</p>}
+      {trafficSweepResults && <section className="sim-traffic-sweep" aria-label="Traffic sweep results">
+        <div className="workbench-section-heading"><span>TRAFFIC SWEEP</span><span className="workbench-count">{trafficSweepResults.points.length} points</span></div>
+        <button type="button" className="workbench-secondary sim-run-button" onClick={() => downloadSimulationEvidence("traffic-sweep", trafficSweepResults)}>Export evidence JSON</button>
+        {trafficSweepStale && <p className="sim-profile-warning" role="status">The model, profile or SLO targets have changed since this sweep. Rerun it before using these results.</p>}
+        <p className="sim-capacity-target">Six deterministic what-if runs use the same model, profile and seed. These are synthetic outputs, not production capacity measurements.</p>
+        <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Load</th><th>Offered</th><th>Throughput</th><th>p95 latency</th><th>Failed requests</th><th>SLO</th></tr></thead><tbody>
+          {trafficSweepResults.points.map((point) => <tr key={point.multiplier}><td>{point.label}</td><td>{formatInteger(point.metrics?.offeredRequests)}</td><td>{formatDecimal(point.metrics?.throughputRps)}</td><td>{formatDecimal(point.p95LatencyMs)} ms</td><td>{point.failedRatePercent == null ? "—" : `${formatDecimal(point.failedRatePercent)}%`}</td><td><span className={`sim-repeat-slo-outcome ${point.sloStatus === "pass" ? "all-pass" : point.sloStatus === "fail" ? "all-fail" : "single-observation"}`}>{point.sloStatus === "pass" ? "Pass" : point.sloStatus === "fail" ? "Fail" : point.sloStatus === "targets-not-set" ? "Set SLOs" : point.status}</span></td></tr>)}
+        </tbody></table></div>
+        <p className="sim-capacity-target">{trafficSweepResults.interpretation}</p>
+      </section>}
     </>}
     {draftProfile && <details className="sim-load-test-calibration" open={loadTestRecords.length > 0 || Boolean(results)}>
       <summary><span>Load-test evidence &amp; calibration</span><small>{loadTestRecords.length} saved measurement set(s)</small></summary>
@@ -1037,6 +1251,33 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         <span>{loadTestAssessment.message}</span>
         <small>This status indicates evidence coverage only. It does not certify model accuracy or production capacity.</small>
       </div>
+      <section className="sim-operating-envelope" aria-labelledby="sim-operating-envelope-title">
+        <strong id="sim-operating-envelope-title">Measured operating envelope</strong>
+        <p>Set your service-level targets to identify the highest offered load that actually passed in recorded tests. This uses observed evidence only; it does not predict untested capacity.</p>
+        <div className="sim-load-test-field-grid">
+          <label><span>Maximum end-to-end p95 latency (ms)</span><input type="number" min="0.1" step="1" value={operatingEnvelopeLatencyTarget} placeholder="Enter your latency SLO" onChange={(event) => setOperatingEnvelopeLatencyTarget(event.target.value)} /></label>
+          <label><span>Maximum failed-request rate (%)</span><input type="number" min="0" max="100" step="0.1" value={operatingEnvelopeErrorTarget} placeholder="Enter your error budget" onChange={(event) => setOperatingEnvelopeErrorTarget(event.target.value)} /></label>
+        </div>
+        {operatingEnvelope.status === "invalid-thresholds" ? <small>{operatingEnvelope.reason}</small> : operatingEnvelope.status === "insufficient-evidence" ? <small>{operatingEnvelope.reason}</small> : <>
+          {operatingEnvelope.environments.map((environment) => <div className="sim-operating-envelope-result" key={environment.environment}>
+            <div><strong>{environment.environment}</strong><small>{environment.testedPointCount} complete test(s) · {environment.distinctLoadLevelCount} distinct offered-load level(s)</small></div>
+            {environment.highestPassing ? <div><span>Highest observed passing load: <b>{formatDecimal(environment.highestPassing.offeredRps)} req/s</b></span><small>p95 {formatDecimal(environment.highestPassing.p95LatencyMs)} ms · errors {formatDecimal(environment.highestPassing.errorRatePercent)}%</small></div> : <span>No recorded test in this environment meets both targets.</span>}
+            {environment.nextFailing && <small>Next higher failing point: {formatDecimal(environment.nextFailing.offeredRps)} req/s ({environment.nextFailing.p95LatencyMs > operatingEnvelope.maxP95LatencyMs ? "p95 latency exceeded" : "error rate exceeded"}).</small>}
+            <div className="sim-operating-envelope-points">{environment.points.map((point) => <span key={point.id} className={point.meetsTargets ? "pass" : "fail"} title={`${point.name}: ${point.p95LatencyMs} ms p95, ${point.errorRatePercent}% errors`}>{formatDecimal(point.offeredRps)} req/s · {point.meetsTargets ? "pass" : "fail"}</span>)}</div>
+            <div className="sim-operating-repeatability" aria-label={`Repeat-run summaries for ${environment.environment}`}>
+              <strong>Repeat-run evidence</strong>
+              <small>{environment.repeatedLoadLevelCount} load level(s) have repeat runs · {environment.singleObservationLoadLevelCount} have only one observation. Ranges describe recorded variation; they do not certify statistical stability.</small>
+              {environment.repeatabilityByLoad.map((level) => <div className="sim-operating-repeatability-row" key={`${environment.environment}-${level.offeredRps}`}>
+                <b>{formatDecimal(level.offeredRps)} req/s</b>
+                <span>{level.runCount} run(s)</span>
+                <span className={`sim-repeat-slo-outcome ${level.sloOutcomeStatus}`} title={`${level.passingRunCount} passing and ${level.failingRunCount} failing run(s)`}>{level.sloOutcomeStatus === "all-pass" ? "All runs pass SLOs" : level.sloOutcomeStatus === "all-fail" ? "All runs fail SLOs" : level.sloOutcomeStatus === "mixed-outcome" ? "Mixed SLO outcomes" : "Single observation"} ({level.passingRunCount} pass / {level.failingRunCount} fail)</span>
+                {level.runCount >= 2 ? <small>p95 {formatDecimal(level.p95LatencyMs.min)}–{formatDecimal(level.p95LatencyMs.max)} ms (spread {level.p95LatencyMs.spreadPercentOfMedian == null ? "n/a" : `${formatDecimal(level.p95LatencyMs.spreadPercentOfMedian)}% of median`}) · errors {formatDecimal(level.errorRatePercent.min)}–{formatDecimal(level.errorRatePercent.max)}% (spread {level.errorRatePercent.spreadPercentOfMedian == null ? "n/a" : `${formatDecimal(level.errorRatePercent.spreadPercentOfMedian)}% of median`}) · throughput {formatDecimal(level.throughputRps.min)}–{formatDecimal(level.throughputRps.max)} req/s (spread {level.throughputRps.spreadPercentOfMedian == null ? "n/a" : `${formatDecimal(level.throughputRps.spreadPercentOfMedian)}% of median`})</small> : <small>Repeat this load level to observe run-to-run variation.</small>}
+              </div>)}
+            </div>
+          </div>)}
+          <small>{operatingEnvelope.reason}</small>
+        </>}
+      </section>
       <details className="sim-load-test-add-form">
         <summary>Add measured load-test result</summary>
         <div className="sim-load-test-field-grid">
@@ -1113,10 +1354,35 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     {profileError && <p className="sim-inline-note" role="status">{profileError}</p>}
     {runError && <p className="workbench-inspector-error" role="alert">{runError}</p>}
     {simulationHistory.length > 0 && <details className="sim-history-list">
-      <summary><span>Saved experiment history</span><small>{simulationHistory.length} saved · latest 5 retained</small></summary>
+      <summary><span>Saved experiment library</span><small>{simulationHistory.length} saved · latest 5 retained</small></summary>
+      <div className="sim-history-library-controls">
+        <input aria-label="Search saved experiments" type="search" value={historySearch} onChange={(event) => setHistorySearch(event.target.value)} placeholder="Search names, scenarios, fingerprints…" />
+        <button type="button" className="workbench-secondary" disabled={historyCompareIds.length !== 2} onClick={() => {
+          try {
+            const left = simulationHistory.find((entry) => entry.id === historyCompareIds[0]);
+            const right = simulationHistory.find((entry) => entry.id === historyCompareIds[1]);
+            if (!left || !right) throw new Error("Select two retained experiments to compare.");
+            setHistoryComparison(compareSimulationHistoryEntries(left, right)); setHistoryActionError("");
+          } catch (error) { setHistoryActionError(error.message); setHistoryComparison(null); }
+        }}>Compare selected ({historyCompareIds.length}/2)</button>
+      </div>
+      {historyActionError && <p className="sim-inline-note" role="alert">{historyActionError}</p>}
       <div className="sim-history-items">
-        {simulationHistory.map((entry) => <div className="sim-history-item" key={entry.id}>
-          <div><strong>{new Date(entry.createdAt).toLocaleString()}</strong><small>{entry.status} · {entry.engineVersion || "engine version unavailable"}</small><small>Model {entry.modelFingerprint ? `${entry.modelFingerprint.slice(0, 12)}…` : "fingerprint unavailable"}</small></div>
+        {searchSimulationHistory(simulationHistory, historySearch).map((entry) => <div className="sim-history-item" key={entry.id}>
+          <label className="sim-history-select"><input type="checkbox" aria-label={`Select ${entry.name || "saved experiment"} for comparison`} checked={historyCompareIds.includes(entry.id)} onChange={(event) => {
+            setHistoryCompareIds((current) => event.target.checked ? [...current.filter((id) => id !== entry.id).slice(-1), entry.id] : current.filter((id) => id !== entry.id));
+            setHistoryComparison(null); setHistoryActionError("");
+          }} /></label>
+          <div className="sim-history-details">
+            <input aria-label={`Name saved experiment ${entry.name || entry.id}`} className="sim-history-name" defaultValue={entry.name || `Experiment ${new Date(entry.createdAt).toLocaleString()}`} maxLength={120} disabled={!canEdit} onBlur={(event) => {
+              const nextName = event.currentTarget.value.trim();
+              if (!nextName || nextName === (entry.name || `Experiment ${new Date(entry.createdAt).toLocaleString()}`)) return;
+              try { onUpdateSimulationHistory?.(renameSimulationHistoryEntry(simulationHistory, entry.id, nextName)); setHistoryActionError(""); }
+              catch (error) { setHistoryActionError(error.message); event.currentTarget.value = entry.name || `Experiment ${new Date(entry.createdAt).toLocaleString()}`; }
+            }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
+            <small>{new Date(entry.createdAt).toLocaleString()} · {entry.status} · {entry.engineVersion || "engine version unavailable"}</small>
+            <small>Model {entry.modelFingerprint ? `${entry.modelFingerprint.slice(0, 12)}…` : "fingerprint unavailable"}</small>
+          </div>
           <button type="button" className="workbench-secondary" onClick={() => {
             try {
               const restored = restoreSimulationHistoryEntry(entry);
@@ -1128,8 +1394,30 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
               setProfileEditorOpen(false); setShowAllExplanations(false); setImprovementResult(null); setImprovementError(""); setActiveRunKey("baseline"); setRunError("");
             } catch (error) { setRunError(`Could not open saved experiment: ${error.message}`); }
           }}>Open results</button>
+          <button type="button" className="workbench-secondary" disabled={!canEdit || Boolean(historyRerunBusyId)} onClick={() => rerunSavedExperiment(entry)}>{historyRerunBusyId === entry.id ? "Rerunning…" : "Rerun on current model"}</button>
         </div>)}
+        {searchSimulationHistory(simulationHistory, historySearch).length === 0 && <p className="workbench-findings-empty">No saved experiments match this search.</p>}
       </div>
+      {historyRerunComparison && <section className="sim-history-comparison" aria-label="Saved experiment rerun regression report">
+        <strong>Rerun regression report</strong>
+        <small>{historyRerunComparison.originalName || "Original run"} → {historyRerunComparison.rerunName}</small>
+        <p><strong>Reproducibility assessment: </strong>{({ "exact-match": "Exact match — provenance, scenario fingerprints, and recorded metrics match.", "metrics-match-inputs-differ": "Metrics match, but provenance or run fingerprints differ.", "metrics-differ": "Replay metrics differ from saved evidence.", incomplete: "Inconclusive — one or more scenarios are missing or incomplete." })[historyRerunComparison.reproducibility?.status] || "Assessment unavailable."}</p>
+        {historyRerunComparison.comparison.warnings.map((warning) => <p className="sim-inline-note" key={warning}>{warning}</p>)}
+        <p>{historyRerunComparison.metricRegressions.length === 0 ? "No worsening metric deltas were detected among comparable completed scenarios. This does not prove production behavior." : `${historyRerunComparison.metricRegressions.length} worsening metric delta(s) detected.`}</p>
+        <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Scenario</th><th>Metric</th><th>Original</th><th>Rerun</th><th>Delta</th><th>Assessment</th></tr></thead><tbody>{historyRerunComparison.comparison.rows.flatMap((row) => row.metrics.map((metric) => {
+          const regression = historyRerunComparison.metricRegressions.some((item) => item.scenario === row.label && item.key === metric.key);
+          return <tr key={`${row.key}-${metric.key}`}><td>{row.label}{!row.matched ? " (not matched)" : ""}</td><td>{metric.label}</td><td>{metric.before == null ? "—" : `${formatDecimal(metric.before)} ${metric.unit}`}</td><td>{metric.after == null ? "—" : `${formatDecimal(metric.after)} ${metric.unit}`}</td><td>{metric.delta == null ? "—" : `${metric.delta > 0 ? "+" : ""}${formatDecimal(metric.delta)} ${metric.unit}`}</td><td>{metric.delta == null ? "Not comparable" : regression ? "Worsened" : "No worsening"}</td></tr>;
+        }))}</tbody></table></div>
+        <small>The original saved evidence was not overwritten. This rerun uses recorded synthetic assumptions against the current model; it is not production measurement.</small>
+        <button type="button" className="workbench-secondary" onClick={() => setHistoryRerunComparison(null)}>Close regression report</button>
+      </section>}
+      {historyComparison && <section className="sim-history-comparison" aria-label="Saved experiment comparison">
+        <strong>Saved run comparison</strong>
+        <small>{simulationHistory.find((entry) => entry.id === historyComparison.leftId)?.name || "Earlier selection"} → {simulationHistory.find((entry) => entry.id === historyComparison.rightId)?.name || "Later selection"}</small>
+        {historyComparison.warnings.map((warning) => <p className="sim-inline-note" key={warning}>{warning}</p>)}
+        <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Scenario</th><th>Metric</th><th>Earlier</th><th>Later</th><th>Delta</th></tr></thead><tbody>{historyComparison.rows.flatMap((row) => row.metrics.map((metric) => <tr key={`${row.key}-${metric.key}`}><td>{row.label}{!row.matched ? " (not matched)" : ""}</td><td>{metric.label}</td><td>{metric.before == null ? "—" : `${formatDecimal(metric.before)} ${metric.unit}`}</td><td>{metric.after == null ? "—" : `${formatDecimal(metric.after)} ${metric.unit}`}</td><td>{metric.delta == null ? "—" : `${metric.delta > 0 ? "+" : ""}${formatDecimal(metric.delta)} ${metric.unit}`}</td></tr>))}</tbody></table></div>
+        <button type="button" className="workbench-secondary" onClick={() => setHistoryComparison(null)}>Close comparison</button>
+      </section>}
     </details>}
     {results && <div className="sim-results-area">
       {results.historyCreatedAt && <>

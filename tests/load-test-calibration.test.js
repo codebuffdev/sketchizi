@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   assessLoadTestEvidence,
+  assessObservedOperatingEnvelope,
   compareLoadTestToSimulation,
   createEmptyLoadTestRecord,
   createLoadTestJsonTemplate,
@@ -251,4 +252,88 @@ test("JMeter imports reject unsafe XML declarations, malformed rows, and oversiz
   assert.throws(() => parseJMeterLoadTestText('<testResults><httpSample t="1" ts="1000" s="true"></testResults>', metadata, "xml"), /closing tag .* does not match/);
   assert.throws(() => parseJMeterLoadTestText("timeStamp,elapsed,success\nnope,10,true", metadata, "csv"), /invalid timestamp or elapsed/);
   assert.throws(() => parseJMeterLoadTestText("x".repeat(10 * 1024 * 1024 + 1), metadata, "csv"), /limited to 10 MB/);
+});
+
+
+test("observed operating envelope uses explicit SLOs and reports only tested passing points", () => {
+  const tests = [
+    record({ id: "low", name: "low load", workload: { durationSeconds: 60, offeredRps: 20 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 19, p95LatencyMs: 100, errorRatePercent: 0.2 } }),
+    record({ id: "medium", name: "medium load", workload: { durationSeconds: 60, offeredRps: 40 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 37, p95LatencyMs: 240, errorRatePercent: 0.8 } }),
+    record({ id: "high", name: "high load", workload: { durationSeconds: 60, offeredRps: 80 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 60, p95LatencyMs: 700, errorRatePercent: 2.5 } }),
+  ];
+  const result = assessObservedOperatingEnvelope(tests, { maxP95LatencyMs: 300, maxErrorRatePercent: 1 });
+  assert.equal(result.status, "assessed");
+  assert.equal(result.environments[0].highestPassingOfferedRps, 40);
+  assert.equal(result.environments[0].nextFailing.offeredRps, 80);
+  assert.equal(result.environments[0].points.length, 3);
+  assert.match(result.reason, /does not predict untested capacity|not an extrapolated capacity estimate/);
+});
+
+test("operating envelope summarizes repeat-run ranges without claiming statistical stability", () => {
+  const tests = [
+    record({ id: "low-a", name: "low run A", workload: { durationSeconds: 60, offeredRps: 20 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 19, p95LatencyMs: 100, errorRatePercent: 0.2 } }),
+    record({ id: "low-b", name: "low run B", workload: { durationSeconds: 60, offeredRps: 21 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 18, p95LatencyMs: 140, errorRatePercent: 0.4 } }),
+    record({ id: "high-a", name: "high run A", workload: { durationSeconds: 60, offeredRps: 80 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 60, p95LatencyMs: 700, errorRatePercent: 2.5 } }),
+  ];
+  const result = assessObservedOperatingEnvelope(tests, { maxP95LatencyMs: 300, maxErrorRatePercent: 1 });
+  const environment = result.environments[0];
+  assert.equal(environment.repeatabilityByLoad.length, 2);
+  assert.equal(environment.repeatedLoadLevelCount, 1);
+  assert.equal(environment.singleObservationLoadLevelCount, 1);
+  assert.equal(environment.repeatabilityByLoad[0].runCount, 2);
+  assert.equal(environment.repeatabilityByLoad[0].p95LatencyMs.min, 100);
+  assert.equal(environment.repeatabilityByLoad[0].p95LatencyMs.max, 140);
+  assert.equal(environment.repeatabilityByLoad[0].errorRatePercent.spread, 0.2);
+  assert.equal(environment.repeatabilityByLoad[0].p95LatencyMs.median, 120);
+  assert.equal(environment.repeatabilityByLoad[0].p95LatencyMs.spreadPercentOfMedian, (40 / 120) * 100);
+  assert.equal(environment.repeatabilityByLoad[0].status, "repeat-observed");
+  assert.equal(environment.repeatabilityByLoad[1].status, "single-observation");
+});
+
+
+test("repeat-run summaries expose mixed SLO outcomes at the same offered load", () => {
+  const tests = [
+    record({ id: "mixed-pass", targetEnvironment: "mixed-env", workload: { durationSeconds: 60, offeredRps: 50 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 48, p95LatencyMs: 90, errorRatePercent: 0.2 } }),
+    record({ id: "mixed-fail", targetEnvironment: "mixed-env", workload: { durationSeconds: 60, offeredRps: 52 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 45, p95LatencyMs: 400, errorRatePercent: 2 } }),
+    record({ id: "all-pass-a", targetEnvironment: "mixed-env", workload: { durationSeconds: 60, offeredRps: 20 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 19, p95LatencyMs: 80, errorRatePercent: 0.1 } }),
+    record({ id: "all-pass-b", targetEnvironment: "mixed-env", workload: { durationSeconds: 60, offeredRps: 21 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 20, p95LatencyMs: 85, errorRatePercent: 0.1 } }),
+    record({ id: "single-fail", targetEnvironment: "mixed-env", workload: { durationSeconds: 60, offeredRps: 100 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 60, p95LatencyMs: 500, errorRatePercent: 3 } }),
+  ];
+  const result = assessObservedOperatingEnvelope(tests, { maxP95LatencyMs: 200, maxErrorRatePercent: 1 });
+  const levels = result.environments[0].repeatabilityByLoad;
+  const mixed = levels.find((level) => level.sloOutcomeStatus === "mixed-outcome");
+  const allPass = levels.find((level) => level.sloOutcomeStatus === "all-pass");
+  const single = levels.find((level) => level.sloOutcomeStatus === "single-observation");
+  assert.ok(mixed);
+  assert.equal(mixed.passingRunCount, 1);
+  assert.equal(mixed.failingRunCount, 1);
+  assert.equal(allPass.passingRunCount, 2);
+  assert.equal(allPass.failingRunCount, 0);
+  assert.equal(single.passingRunCount, 0);
+  assert.equal(single.failingRunCount, 1);
+});
+
+test("repeat-run relative spread handles zero medians without producing infinity", () => {
+  const tests = [
+    record({ id: "zero-a", targetEnvironment: "zero-env", workload: { durationSeconds: 60, offeredRps: 10 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 10, p95LatencyMs: 50, errorRatePercent: 0 } }),
+    record({ id: "zero-b", targetEnvironment: "zero-env", workload: { durationSeconds: 60, offeredRps: 10.2 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 10, p95LatencyMs: 50, errorRatePercent: 0 } }),
+  ];
+  const result = assessObservedOperatingEnvelope(tests, { maxP95LatencyMs: 100, maxErrorRatePercent: 0 });
+  const level = result.environments[0].repeatabilityByLoad[0];
+  assert.equal(level.errorRatePercent.median, 0);
+  assert.equal(level.errorRatePercent.spreadPercentOfMedian, 0);
+  assert.equal(Number.isFinite(level.errorRatePercent.spreadPercentOfMedian), true);
+});
+
+test("operating envelope keeps target environments separate and rejects missing or invalid SLOs", () => {
+  const mixed = [
+    record({ id: "a", targetEnvironment: "env-a", workload: { durationSeconds: 60, offeredRps: 20 } }),
+    record({ id: "b", targetEnvironment: "env-b", workload: { durationSeconds: 60, offeredRps: 90 }, observed: { ...createEmptyLoadTestRecord().observed, throughputRps: 80, p95LatencyMs: 50, errorRatePercent: 0 } }),
+  ];
+  assert.equal(assessObservedOperatingEnvelope(mixed, {}).status, "invalid-thresholds");
+  assert.equal(assessObservedOperatingEnvelope(mixed, { maxP95LatencyMs: 100, maxErrorRatePercent: 101 }).status, "invalid-thresholds");
+  const result = assessObservedOperatingEnvelope(mixed, { maxP95LatencyMs: 100, maxErrorRatePercent: 1 });
+  assert.equal(result.environments.length, 2);
+  assert.notEqual(result.environments[0].environment, result.environments[1].environment);
+  assert.equal(result.environments[0].highestPassingOfferedRps, 90);
 });

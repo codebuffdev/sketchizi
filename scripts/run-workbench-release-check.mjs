@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, rm, unlink, writeFile } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import { finished } from "node:stream/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createGateSummary, renderMarkdown } from "./write-workbench-ci-summary.mjs";
+import { createDiagnosticBundle } from "./package-workbench-diagnostic-bundle.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.resolve(scriptDirectory, "..");
@@ -50,11 +51,13 @@ export function createReleasePlan(platform = process.platform) {
     "test:workbench-ci-summary",
     "test:workbench-ci-contract",
     "test:workbench-local-release",
+    "test:workbench-diagnostic-bundle",
+    "test:workbench-diagnostic-verifier",
     "test:workbench-external-artifacts",
     "test:workbench-postgres-artifact-integration",
   ];
 
-  return [
+  const plan = [
     {
       id: "toolchain",
       label: "Toolchain",
@@ -178,16 +181,30 @@ export function createReleasePlan(platform = process.platform) {
       commands: [npmRun("test:workbench-browser-e2e")],
     },
   ];
+
+  // Match the GitHub Actions gate: keep collecting independent diagnostics,
+  // but never run a validator or browser test without its required inputs.
+  const requirements = {
+    "font-assets": ["install"],
+    build: ["install"],
+    "openapi-validation": ["artifact-fixtures", "external-tools-install"],
+    "sql-validation": ["artifact-fixtures", "external-tools-install"],
+    "postgresql-execution-validation": ["artifact-fixtures"],
+    "browser-smoke": ["chromium-install"],
+  };
+  for (const stage of plan) stage.requires = requirements[stage.id] ?? [];
+  return plan;
 }
 
-/** Execute plan with an injectable command runner for deterministic tests. */
+/** Execute every independent stage; skip only stages with failed prerequisites. */
 export async function executeReleasePlan(stages, runCommand, onStage = () => {}) {
   const outcomes = Object.fromEntries(stages.map((stage) => [stage.id, "skipped"]));
-  let blocked = false;
 
   for (const stage of stages) {
-    if (blocked) {
+    const failedRequirements = (stage.requires ?? []).filter((requiredId) => outcomes[requiredId] !== "success");
+    if (failedRequirements.length > 0) {
       outcomes[stage.id] = "skipped";
+      onStage(stage, "skipped", { failedRequirements });
       continue;
     }
 
@@ -207,7 +224,6 @@ export async function executeReleasePlan(stages, runCommand, onStage = () => {})
 
     outcomes[stage.id] = outcome;
     onStage(stage, outcome);
-    if (stage.blocking && outcome !== "success") blocked = true;
   }
 
   return outcomes;
@@ -302,12 +318,15 @@ async function writeSummary(outcomes) {
 async function main() {
   const artifactDirectory = path.join(PROJECT_ROOT, "artifacts");
   await mkdir(LOG_DIRECTORY, { recursive: true });
+  // Generated fixtures are run-scoped; never let a previous run masquerade as current evidence.
+  await rm(path.join(artifactDirectory, "generated"), { recursive: true, force: true });
   // Remove stale reports so an interrupted run cannot leave previous success evidence behind.
   for (const stalePath of [
     path.join(LOG_DIRECTORY, "npm-registry-probe.json"),
     path.join(artifactDirectory, "workbench-browser-smoke-result.json"),
     path.join(artifactDirectory, "workbench-release-gate-summary.json"),
     path.join(artifactDirectory, "workbench-release-gate-summary.md"),
+    path.join(artifactDirectory, "workbench-release-diagnostic-verification.json"),
   ]) {
     await unlink(stalePath).catch((error) => {
       if (error?.code !== "ENOENT") throw error;
@@ -317,12 +336,25 @@ async function main() {
   for (const stage of createReleasePlan()) {
     await writeFile(path.join(LOG_DIRECTORY, stage.logFile), "", "utf8");
   }
+  await writeFile(path.join(LOG_DIRECTORY, "diagnostic-bundle-verification.log"), "", "utf8");
   const plan = createReleasePlan();
   const outcomes = await executeReleasePlan(plan, invokeCommand, (stage, outcome) => {
-    const pass = outcome === "success";
-    console.log(`${pass ? "PASS" : "FAIL"} — ${stage.label}${stage.blocking ? "" : " (non-blocking diagnostic)"}`);
+    const status = outcome === "success" ? "PASS" : outcome === "skipped" ? "SKIP" : "FAIL";
+    console.log(`${status} — ${stage.label}${stage.blocking ? "" : " (non-blocking diagnostic)"}`);
   });
   const summary = await writeSummary(outcomes);
+  const bundle = await createDiagnosticBundle({ root: PROJECT_ROOT });
+  console.log(`Diagnostic bundle: ${path.relative(PROJECT_ROOT, bundle.bundlePath)} (${bundle.bundleBytes} bytes)`);
+  console.log(`Diagnostic manifest: ${path.relative(PROJECT_ROOT, bundle.manifestPath)}`);
+  // Verify the exact archive that will be shared. This is a separate strict gate:
+  // integrity never changes the release summary's original application verdict.
+  const verification = await invokeCommand({ command: process.execPath, args: ["scripts/verify-workbench-diagnostic-bundle.mjs", bundle.bundlePath] }, {
+    logFile: "diagnostic-bundle-verification.log",
+  });
+  if (verification.exitCode !== 0) {
+    console.error("Diagnostic bundle verification failed; inspect artifacts/workbench-release-diagnostic-verification.json.");
+    process.exitCode = 1;
+  }
   if (summary.status !== "passed") process.exitCode = 1;
 }
 
