@@ -64,6 +64,8 @@ test("OpenAPI generation produces explicit OpenAPI 3.1 paths, response schemas, 
   assert.equal(spec.paths["/accounts/{accountId}"].get.parameters[0].name, "accountId");
   assert.equal(spec.paths["/accounts/{accountId}"].get.parameters[0].required, true);
   assert.equal(spec.paths["/accounts/{accountId}"].get.responses["200"].content["application/json"].schema.type, "object");
+  assert.equal(spec.paths["/accounts/{accountId}"].get["x-sketchizi-source-entity-id"], "get-account");
+  assert.equal(spec.paths["/accounts/{accountId}"].get["x-sketchizi-source-service-id"], "api");
   assert.equal(spec.paths["/accounts"].post.requestBody.content["application/json"].schema.required[0], "email");
   assert.equal(JSON.stringify(model), before, "generation must not mutate the canonical model");
 });

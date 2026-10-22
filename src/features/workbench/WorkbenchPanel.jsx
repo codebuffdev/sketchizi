@@ -6,6 +6,30 @@ import PolicyApprovalPanel from "./PolicyApprovalPanel.jsx";
 import { validateWorkbench } from "./workbenchValidation.js";
 import { analyzeWorkbenchArtifactScope, generateOpenApiArtifact, generateSqlArtifact, scopeWorkbenchToService } from "./workbenchArtifacts.js";
 
+const WORKBENCH_LAYOUT_PREFERENCES_KEY = "sketchizi.workbench.layout.v1";
+
+function readWorkbenchLayoutPreferences() {
+  try {
+    const raw = globalThis.localStorage?.getItem(WORKBENCH_LAYOUT_PREFERENCES_KEY);
+    const value = raw ? JSON.parse(raw) : null;
+    return {
+      workspaceWidth: value?.workspaceWidth === "focus" ? "focus" : "standard",
+      resultsExpanded: value?.resultsExpanded === true,
+      panelCollapsed: value?.panelCollapsed === true,
+    };
+  } catch {
+    return { workspaceWidth: "standard", resultsExpanded: false, panelCollapsed: false };
+  }
+}
+
+function writeWorkbenchLayoutPreferences(preferences) {
+  try {
+    globalThis.localStorage?.setItem(WORKBENCH_LAYOUT_PREFERENCES_KEY, JSON.stringify(preferences));
+  } catch {
+    // Layout preferences are optional; storage failures must not block design work.
+  }
+}
+
 function downloadWorkbenchArtifact(artifact) {
   if (!artifact?.ok || !artifact.text || typeof document === "undefined") return;
   const blob = new Blob([artifact.text], { type: artifact.mimeType || "text/plain;charset=utf-8" });
@@ -51,15 +75,20 @@ export default function WorkbenchPanel({
   const [generatedArtifact, setGeneratedArtifact] = useState(null);
   const [showPocPreview, setShowPocPreview] = useState(false);
   const [activePanelTab, setActivePanelTab] = useState("build");
-  const [workspaceWidth, setWorkspaceWidth] = useState("standard");
+  const [workspaceWidth, setWorkspaceWidth] = useState(() => readWorkbenchLayoutPreferences().workspaceWidth);
   const [reviewExpanded, setReviewExpanded] = useState(false);
   const [artifactPreviewExpanded, setArtifactPreviewExpanded] = useState(false);
-  const [resultsExpanded, setResultsExpanded] = useState(false);
+  const [resultsExpanded, setResultsExpanded] = useState(() => readWorkbenchLayoutPreferences().resultsExpanded);
+  const [panelCollapsed, setPanelCollapsed] = useState(() => readWorkbenchLayoutPreferences().panelCollapsed);
   const [artifactServiceId, setArtifactServiceId] = useState("");
   const [componentSearch, setComponentSearch] = useState("");
   const [modelSearch, setModelSearch] = useState("");
   const [lldParentId, setLldParentId] = useState("");
   const [expandedComponentGroups, setExpandedComponentGroups] = useState({ Application: true, Data: true });
+  useEffect(() => {
+    writeWorkbenchLayoutPreferences({ workspaceWidth, resultsExpanded, panelCollapsed });
+  }, [workspaceWidth, resultsExpanded, panelCollapsed]);
+
   useEffect(() => {
     const available = selectedEntity ? WORKBENCH_RELATIONS.filter((item) => item.sourceKinds.includes(selectedEntity.kind)) : [];
     if (!available.some((item) => item.kind === relationKind)) setRelationKind(available[0]?.kind || "depends-on");
@@ -118,7 +147,7 @@ export default function WorkbenchPanel({
   };
 
   return (
-    <section className={`workbench-panel${workspaceWidth === "focus" ? " workbench-panel-focus" : ""}`} aria-label="Engineering Workbench">
+    <section className={`workbench-panel${workspaceWidth === "focus" ? " workbench-panel-focus" : ""}${panelCollapsed ? " workbench-panel-collapsed" : ""}`} aria-label="Engineering Workbench">
       <header className="workbench-panel-header">
         <div className="workbench-panel-brand">
           <span className="workbench-mark" aria-hidden="true">W</span>
@@ -128,6 +157,7 @@ export default function WorkbenchPanel({
           </div>
         </div>
         <div className="workbench-header-actions">
+          <button type="button" className="workbench-collapse-toggle" onClick={() => setPanelCollapsed((value) => !value)} aria-expanded={!panelCollapsed} aria-label={panelCollapsed ? "Expand Workbench panel" : "Collapse Workbench panel"} title={panelCollapsed ? "Expand Workbench" : "Collapse Workbench to free canvas space"}>{panelCollapsed ? "›" : "‹"}</button>
           <button type="button" className="workbench-width-toggle" onClick={() => setWorkspaceWidth((value) => value === "focus" ? "standard" : "focus")} aria-pressed={workspaceWidth === "focus"} aria-label={workspaceWidth === "focus" ? "Use compact Workbench" : "Expand Workbench workspace"} title={workspaceWidth === "focus" ? "Compact workspace" : "Expand workspace"}>{workspaceWidth === "focus" ? "↙" : "↗"}</button>
           <button type="button" className="workbench-close" onClick={onClose} aria-label="Close Engineering Workbench" title="Close Workbench">×</button>
         </div>

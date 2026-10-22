@@ -239,6 +239,9 @@ export function generateOpenApiArtifact(workbench) {
       operationId,
       summary: String(props.summary || endpoint.name || operationId).trim(),
       tags: [String(service.name || "REST service")],
+      // Stable source references let generated operations be traced back to the canonical model.
+      "x-sketchizi-source-entity-id": endpoint.id,
+      "x-sketchizi-source-service-id": service.id,
       ...(parameters.length ? { parameters } : {}),
       ...(requestSchema ? { requestBody: { required: true, content: { "application/json": { schema: requestSchema } } } } : {}),
       responses: {
@@ -440,6 +443,9 @@ export function generateSqlArtifact(workbench) {
       });
       const primaryKeys = columns.filter((column) => column.primaryKey === true).map((column) => column.name);
       if (primaryKeys.length) columnLines.push(`  PRIMARY KEY (${primaryKeys.map(quoteIdentifier).join(", ")})`);
+      // SQL comments preserve traceability without changing the generated schema semantics.
+      statements.push(`-- Sketchizi source table entity ID: ${String(table.id).replace(/[\r\n]/g, " ")}.`);
+      statements.push(`-- Sketchizi source database entity ID: ${String(database.id).replace(/[\r\n]/g, " ")}.`);
       statements.push(`CREATE TABLE IF NOT EXISTS ${quoteIdentifier(schemaName)}.${quoteIdentifier(tableName)} (\n${columnLines.join(",\n")}\n);`, "");
       const indexes = parseIndexes(table, columns, errors);
       for (const index of indexes) {

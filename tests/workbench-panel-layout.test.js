@@ -153,3 +153,22 @@ test("expandable Results dock summarizes model validation and distinguishes synt
   assert.match(styles, /\.workbench-results-dock\s*\{/);
   assert.match(styles, /\.workbench-results-content\s*\{/);
 });
+
+test("Workbench layout preferences persist separately from the engineering model", () => {
+  assert.match(panelSource, /WORKBENCH_LAYOUT_PREFERENCES_KEY = "sketchizi\.workbench\.layout\.v1"/);
+  assert.match(panelSource, /readWorkbenchLayoutPreferences\(\)\.workspaceWidth/);
+  assert.match(panelSource, /readWorkbenchLayoutPreferences\(\)\.resultsExpanded/);
+  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed \}\)/);
+  assert.match(panelSource, /localStorage\?\.setItem\(WORKBENCH_LAYOUT_PREFERENCES_KEY/);
+  assert.match(panelSource, /Layout preferences are optional; storage failures must not block design work/);
+});
+
+
+test("Workbench can collapse to a compact canvas-reclaiming rail and persist that preference", () => {
+  assert.match(panelSource, /panelCollapsed: value\?\.panelCollapsed === true/);
+  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed \}\)/);
+  assert.match(panelSource, /aria-label=\{panelCollapsed \? "Expand Workbench panel" : "Collapse Workbench panel"\}/);
+  assert.match(panelSource, /workbench-panel-collapsed/);
+  assert.match(styles, /\.workbench-panel-collapsed > :not\(\.workbench-panel-header\) \{ display: none !important; \}/);
+  assert.match(styles, /\.workbench-panel-collapsed \.workbench-width-toggle/);
+});

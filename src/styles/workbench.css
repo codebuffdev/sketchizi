@@ -1666,3 +1666,21 @@
   .workbench-results-trigger { padding-inline: 10px; }
   .workbench-results-summary { gap: 5px; }
 }
+
+
+/* Workbench 1.29 — collapse the overlay to a compact rail so the drawing canvas can reclaim space. */
+.workbench-panel-collapsed { width: 48px; min-width: 48px; border-radius: 12px; }
+.workbench-panel-collapsed.workbench-panel-focus { width: 48px; }
+.workbench-panel-collapsed > :not(.workbench-panel-header) { display: none !important; }
+.workbench-panel-collapsed .workbench-panel-header { justify-content: center; padding: 8px 5px; border-bottom: 0; }
+.workbench-panel-collapsed .workbench-panel-brand { display: none; }
+.workbench-collapse-toggle { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; padding: 0; border: 1px solid var(--ui-border, #e2e5ed); border-radius: 7px; background: transparent; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+.workbench-collapse-toggle:hover, .workbench-collapse-toggle:focus-visible { border-color: #a99be9; background: var(--ui-surface-soft, #f0f2f7); outline-offset: 2px; }
+.theme-dark .workbench-collapse-toggle { border-color: #363b4b; }
+.workbench-panel-collapsed .workbench-header-actions { flex-direction: column; gap: 6px; }
+.workbench-panel-collapsed .workbench-width-toggle { display: none; }
+.workbench-panel-collapsed .workbench-close { width: 28px; height: 28px; }
+@media (max-width: 700px) {
+  .workbench-panel-collapsed { width: 44px; min-width: 44px; }
+  .workbench-panel-collapsed.workbench-panel-focus { width: 44px; }
+}
