@@ -91,3 +91,13 @@ test("simulation explains when the active view lacks a React traffic source and 
   assert.match(simulationPanel, /if \(missingTrafficSource\) \{ setRunError/);
   assert.match(styles, /\.sim-view-scope-notice\s*\{/);
 });
+
+
+test("empty Workbench model offers a persistent HLD/LLD starting action outside the Build tab", () => {
+  assert.match(panelSource, /aria-label="Start an HLD and LLD design"/);
+  assert.match(panelSource, /No architecture model yet/);
+  assert.match(panelSource, /Create starter architecture/);
+  assert.match(panelSource, /Or build from components/);
+  assert.match(panelSource, /activePanelTab !== "build"/);
+  assert.match(styles, /\.workbench-empty-design\s*\{/);
+});

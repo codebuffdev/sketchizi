@@ -150,6 +150,25 @@ export default function WorkbenchPanel({
           </div>
 
 
+          {workbench.entities.length === 0 && workbench.relations.length === 0 && activePanelTab !== "build" && (
+            <section className="workbench-section workbench-empty-design" aria-label="Start an HLD and LLD design">
+              <div className="workbench-empty-design-mark" aria-hidden="true">◇</div>
+              <div className="workbench-section-heading"><span>START YOUR DESIGN</span><span className="workbench-count">HLD · LLD</span></div>
+              <h2>No architecture model yet</h2>
+              <p className="workbench-section-intro">Start with a connected system architecture, then add API contracts, database tables, and detailed component properties. The model is shared across Workbench views.</p>
+              <button
+                type="button"
+                className="workbench-primary"
+                disabled={!canEdit || busy}
+                onClick={() => activeViewId === "system" ? onCreatePoc?.() : onSwitchView?.("system")}
+              >
+                {activeViewId === "system" ? (busy ? "Creating architecture…" : "Create starter architecture") : "Go to System view to start"}
+              </button>
+              <button type="button" className="workbench-secondary workbench-empty-browse" onClick={() => changePanelTab("components")}>Or build from components</button>
+              <p className="workbench-note">This creates a starter model, not a production-ready design. You can edit it and expand it to match your system.</p>
+            </section>
+          )}
+
           <nav className="workbench-task-tabs" role="tablist" aria-label="Workbench workspace">
             <button type="button" role="tab" aria-selected={activePanelTab === "build"} className={activePanelTab === "build" ? "active" : ""} onClick={() => changePanelTab("build")}><span aria-hidden="true">◇</span>Build</button>
             <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Run</button>

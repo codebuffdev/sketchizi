@@ -104,7 +104,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
-    "pgsql-parser": "^18.2.12",
     "vite": "^5.4.8"
   }
 }
