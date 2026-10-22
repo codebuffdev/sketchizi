@@ -52,6 +52,7 @@ function App() {
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [workbenchRuntimeOverlay, setWorkbenchRuntimeOverlay] = useState(null);
+  const [narrowWorkspaceView, setNarrowWorkspaceView] = useState("workbench");
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
@@ -449,7 +450,10 @@ function App() {
 
       </DesktopAppHeader>
 
-      <div className={`desktop-workspace ${workbenchController.isOpen ? "desktop-workspace-workbench-open" : "desktop-workspace-workbench-closed"} ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
+      <div className={`desktop-workspace ${workbenchController.isOpen ? "desktop-workspace-workbench-open" : "desktop-workspace-workbench-closed"} narrow-workspace-view-${narrowWorkspaceView} ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
+        {workbenchController.isOpen && <nav className="narrow-workspace-switcher" aria-label="Workspace panels">
+          {[ ["palette", "Palette"], ["canvas", "Canvas"], ["workbench", "Engineering"], ["inspector", "Inspector"] ].map(([id, label]) => <button key={id} type="button" aria-pressed={narrowWorkspaceView === id} onClick={() => setNarrowWorkspaceView(id)}>{label}</button>)}
+        </nav>}
         <aside className={`desktop-resources-region ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
           {collaborationCanEdit && (
             <IconLibraryPanel

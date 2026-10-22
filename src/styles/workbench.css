@@ -1728,19 +1728,19 @@
    real grid lane beside the canvas instead of covering it with an overlay. */
 @media (min-width: 1101px) {
   .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-open.desktop-workspace-context-open {
-    grid-template-columns: minmax(190px, 220px) minmax(300px, 1fr) minmax(300px, 340px) minmax(240px, 280px);
+    grid-template-columns: minmax(150px, 18vw) minmax(0, 1fr) minmax(260px, 25vw) minmax(210px, 22vw);
     grid-template-areas: "resources canvas workbench context";
   }
   .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-open.desktop-workspace-context-closed {
-    grid-template-columns: minmax(190px, 220px) minmax(300px, 1fr) minmax(300px, 340px);
+    grid-template-columns: minmax(150px, 18vw) minmax(0, 1fr) minmax(260px, 25vw);
     grid-template-areas: "resources canvas workbench";
   }
   .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-closed.desktop-workspace-context-open {
-    grid-template-columns: minmax(300px, 1fr) minmax(300px, 340px) minmax(240px, 280px);
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 25vw) minmax(210px, 22vw);
     grid-template-areas: "canvas workbench context";
   }
   .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-closed.desktop-workspace-context-closed {
-    grid-template-columns: minmax(300px, 1fr) minmax(300px, 340px);
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 25vw);
     grid-template-areas: "canvas workbench";
   }
   .desktop-workspace-workbench-open .desktop-resources-region { grid-area: resources; }
@@ -1762,15 +1762,189 @@
   .desktop-workspace-workbench-open .workbench-panel-dock-right { left: auto; right: auto; }
   .desktop-workspace-workbench-open .workbench-panel-focus { width: auto; }
 }
+/* Workbench 1.36 — narrow desktop uses an explicit split view rather than
+   overlaying the canvas. The palette/inspector are intentionally deferred to
+   their own views at this width so both canvas and Workbench remain usable. */
 @media (min-width: 761px) and (max-width: 1100px) {
-  .desktop-workspace-workbench-open > .workbench-panel {
-    position: absolute;
-    z-index: 35;
-    top: 8px;
-    bottom: 8px;
-    left: 8px;
-    width: min(360px, calc(100% - 16px));
-    border-radius: 12px;
+  .desktop-workspace.desktop-workspace-workbench-open {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 36%);
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
   }
-  .desktop-workspace-workbench-open > .workbench-panel.workbench-panel-dock-right { left: auto; right: 8px; }
+  .desktop-workspace.desktop-workspace-workbench-open .desktop-canvas-region {
+    position: relative;
+    inset: auto;
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+  }
+  .desktop-workspace.desktop-workspace-workbench-open > .workbench-panel {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 0;
+    border-radius: 0;
+    border-left: 1px solid var(--sketchizi-desktop-border, #343947);
+    box-shadow: none;
+  }
+  .desktop-workspace.desktop-workspace-workbench-open > .workbench-panel-dock-left {
+    grid-column: 1;
+    grid-row: 1;
+    border-left: 0;
+    border-right: 1px solid var(--sketchizi-desktop-border, #343947);
+  }
+  .desktop-workspace.desktop-workspace-workbench-open:has(> .workbench-panel-dock-left) .desktop-canvas-region {
+    grid-column: 2;
+  }
+  .desktop-workspace.desktop-workspace-workbench-open .desktop-resources-region,
+  .desktop-workspace.desktop-workspace-workbench-open .desktop-context-region {
+    display: none;
+  }
+}
+
+/* Workbench 1.35 — honor the persisted dock side in the actual desktop grid.
+   Dock preference changes document flow, not merely the panel's overlay offset. */
+@media (min-width: 1101px) {
+  .desktop-workspace-workbench-open:has(> .workbench-panel-dock-left).desktop-workspace-library-open.desktop-workspace-context-open {
+    grid-template-columns: minmax(150px, 18vw) minmax(260px, 25vw) minmax(0, 1fr) minmax(210px, 22vw);
+    grid-template-areas: "resources workbench canvas context";
+  }
+  .desktop-workspace-workbench-open:has(> .workbench-panel-dock-left).desktop-workspace-library-open.desktop-workspace-context-closed {
+    grid-template-columns: minmax(150px, 18vw) minmax(260px, 25vw) minmax(0, 1fr);
+    grid-template-areas: "resources workbench canvas";
+  }
+  .desktop-workspace-workbench-open:has(> .workbench-panel-dock-left).desktop-workspace-library-closed.desktop-workspace-context-open {
+    grid-template-columns: minmax(260px, 25vw) minmax(0, 1fr) minmax(210px, 22vw);
+    grid-template-areas: "workbench canvas context";
+  }
+  .desktop-workspace-workbench-open:has(> .workbench-panel-dock-left).desktop-workspace-library-closed.desktop-workspace-context-closed {
+    grid-template-columns: minmax(260px, 25vw) minmax(0, 1fr);
+    grid-template-areas: "workbench canvas";
+  }
+  .desktop-workspace-workbench-open:has(> .workbench-panel-dock-left) > .workbench-panel {
+    border-left: 0;
+    border-right: 1px solid var(--sketchizi-desktop-border);
+  }
+}
+
+/* Workbench 1.37 — keep each desktop workspace lane shrink-safe. The canvas
+   owns its own viewport; the Workbench owns one vertical scroll region. */
+@media (min-width: 761px) {
+  .desktop-workspace {
+    min-width: 0;
+    min-height: 0;
+  }
+  .desktop-workspace > .desktop-resources-region,
+  .desktop-workspace > .desktop-canvas-region,
+  .desktop-workspace > .desktop-context-region,
+  .desktop-workspace > .workbench-panel {
+    min-width: 0;
+    min-height: 0;
+  }
+  .desktop-workspace-workbench-open > .workbench-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .desktop-workspace-workbench-open .workbench-workspace-path,
+  .desktop-workspace-workbench-open .workbench-quick-views,
+  .desktop-workspace-workbench-open .workbench-panel-header,
+  .desktop-workspace-workbench-open .workbench-panel-footer,
+  .desktop-workspace-workbench-open .workbench-results-dock {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+  .desktop-workspace-workbench-open .workbench-panel-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+
+/* Workbench 1.38 — let the canvas absorb width changes instead of forcing
+   the combined side lanes beyond the viewport at the low end of desktop. */
+@media (min-width: 1101px) {
+  .desktop-workspace.desktop-workspace-workbench-open {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .desktop-workspace.desktop-workspace-workbench-open .desktop-canvas-region {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .desktop-workspace.desktop-workspace-workbench-open > .workbench-panel {
+    min-width: 0;
+  }
+}
+
+/* Workbench 1.39 — explicit panel switching for narrow desktop windows.
+   Only one auxiliary region is shown at a time; the canvas is never covered. */
+.narrow-workspace-switcher { display: none; }
+@media (min-width: 761px) and (max-width: 1100px) {
+  .desktop-workspace.desktop-workspace-workbench-open {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .desktop-workspace-workbench-open > .narrow-workspace-switcher {
+    display: flex;
+    grid-column: 1;
+    grid-row: 1;
+    gap: 5px;
+    align-items: center;
+    min-width: 0;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--sketchizi-desktop-border, #343947);
+    background: var(--sketchizi-panel-bg, #171a21);
+    overflow-x: auto;
+  }
+  .narrow-workspace-switcher button {
+    flex: 0 0 auto;
+    border: 1px solid var(--sketchizi-desktop-border, #343947);
+    border-radius: 7px;
+    padding: 6px 10px;
+    color: var(--sketchizi-text, #e8eaf0);
+    background: transparent;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .narrow-workspace-switcher button[aria-pressed="true"] {
+    background: var(--sketchizi-accent-soft, rgba(92, 139, 255, .16));
+    border-color: var(--sketchizi-accent, #6b8cff);
+  }
+  .desktop-workspace-workbench-open > .desktop-resources-region,
+  .desktop-workspace-workbench-open > .desktop-canvas-region,
+  .desktop-workspace-workbench-open > .workbench-panel,
+  .desktop-workspace-workbench-open > .desktop-context-region {
+    grid-column: 1;
+    grid-row: 2;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+  }
+  .desktop-workspace-workbench-open > .desktop-resources-region,
+  .desktop-workspace-workbench-open > .desktop-canvas-region,
+  .desktop-workspace-workbench-open > .workbench-panel,
+  .desktop-workspace-workbench-open > .desktop-context-region { display: none; }
+  .desktop-workspace-workbench-open.narrow-workspace-view-palette > .desktop-resources-region,
+  .desktop-workspace-workbench-open.narrow-workspace-view-canvas > .desktop-canvas-region,
+  .desktop-workspace-workbench-open.narrow-workspace-view-workbench > .workbench-panel,
+  .desktop-workspace-workbench-open.narrow-workspace-view-inspector > .desktop-context-region { display: flex; }
+  .desktop-workspace-workbench-open.narrow-workspace-view-canvas > .desktop-canvas-region { display: block; }
+  .desktop-workspace-workbench-open.narrow-workspace-view-palette > .desktop-resources-region { overflow: hidden; }
+  .desktop-workspace-workbench-open.narrow-workspace-view-workbench > .workbench-panel { position: relative; inset: auto; max-width: none; border-radius: 0; box-shadow: none; }
+  .desktop-workspace-workbench-open.narrow-workspace-view-inspector > .desktop-context-region { overflow: auto; }
 }

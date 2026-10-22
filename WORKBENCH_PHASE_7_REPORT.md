@@ -1,17 +1,18 @@
-# Workbench Phase 7 — Structural Workspace Layout
+# Workbench Phase 7 — Workspace lane overflow discipline
+
+## Scope
+
+This phase tightens layout behavior for the existing desktop workspace lanes. It ensures grid children can shrink without forcing page-level overflow and makes the Workbench's header, workspace navigation, footer, and Results dock fixed flex regions around its single scroll owner.
 
 ## Changes
-- On wide desktop viewports (1101px and wider), the Workbench panel is a real CSS Grid lane rather than an absolutely positioned overlay.
-- The desktop layout can show the resource palette, Excalidraw canvas, Engineering Workbench, and contextual inspector as separate regions.
-- The grid contracts when the resource palette or contextual inspector is closed.
-- At desktop/tablet widths from 761px through 1100px, the Workbench remains an overlay fallback to avoid squeezing the canvas excessively.
-- No semantic model, persistence payload, or package version changes were made. Package version remains 1.10.86.
 
-## Verification
-- Focused tests: 34 passed, 0 failed.
-- ZIP integrity: checked after packaging.
-- Production build: not run; dependencies are not installed in this source bundle.
-- Browser visual verification: not run.
+- Added `min-width: 0` and `min-height: 0` safeguards to the desktop workspace and its primary regions.
+- Made the open desktop Workbench a flex column with clipped outer overflow.
+- Kept header, workspace path/navigation, footer, and Results dock outside the main scrolling area.
+- Preserved the existing 1.36 narrow-desktop split-view behavior and package version.
 
-## Known limitation
-This phase establishes the dedicated Workbench grid lane on wide desktop screens. It does not yet fully simplify the redundant task navigation or combine the palette and model navigator into the final agreed information architecture. The visual result should be verified in a running browser before claiming full UI alignment.
+## Validation
+
+- Focused Node test suite: 37 passed, 0 failed across four targeted test files.
+- ZIP integrity: verified after packaging.
+- Production build and browser visual validation are not claimed unless explicitly completed.

@@ -208,24 +208,6 @@ export default function WorkbenchPanel({
             <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Explore</button>
           </nav>
           {activePanelTab === "build" ? <div className="workbench-section workbench-perspectives-section">
-            <div className="workbench-section-heading"><span>DESIGN PERSPECTIVES</span><span className="workbench-count">{workbench.views.length}</span></div>
-            <div className="workbench-view-list" role="tablist" aria-label="Workbench views">
-              {availableViews.map((view) => (
-                <button
-                  type="button"
-                  role="tab"
-                  key={view.id}
-                  aria-selected={view.id === activeViewId}
-                  className={view.id === activeViewId ? "workbench-view active" : "workbench-view"}
-                  disabled={!canEdit || busy || view.id === activeViewId}
-                  onClick={() => onSwitchView(view.id)}
-                >
-                  <span className={`workbench-view-icon workbench-view-${view.id}`} aria-hidden="true">{({ system: "◈", apis: "⇄", data: "▤", deployment: "⌘", lld: "{}" })[view.id] || "◇"}</span>
-                  <span className="workbench-view-copy"><strong>{view.label}</strong><small>{view.description}</small></span>
-                  {view.id === activeViewId && <span className="workbench-active-dot" aria-hidden="true" />}
-                </button>
-              ))}
-            </div>
             <p className="workbench-note workbench-view-context" title="The engineering model is shared across views; each view has its own canvas layout.">Active view: {currentView?.label || "System"} · shared model</p>
             <div className="workbench-design-level-summary">
               <span className="workbench-level-kicker">CURRENT DESIGN LEVEL</span>

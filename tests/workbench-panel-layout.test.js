@@ -199,3 +199,40 @@ test("wide desktop Workbench uses a dedicated grid lane instead of covering the 
   assert.match(styles, /grid-template-areas:\s*"resources canvas workbench"/);
   assert.match(styles, /@media\s*\(min-width:\s*761px\) and \(max-width:\s*1100px\)/);
 });
+
+
+test("design workspace navigation has a single primary control instead of a duplicated perspectives list", () => {
+  assert.match(panelSource, /aria-label="Design workspaces"/);
+  assert.doesNotMatch(panelSource, /DESIGN PERSPECTIVES/);
+  assert.doesNotMatch(panelSource, /aria-label="Workbench views"/);
+  assert.match(panelSource, /workbench-view-context/);
+});
+
+test("desktop left/right docking changes grid flow instead of only changing overlay offsets", () => {
+  assert.match(styles, /:has\(> \.workbench-panel-dock-left\)[\s\S]*grid-template-areas:\s*"resources workbench canvas context"/);
+  assert.match(styles, /:has\(> \.workbench-panel-dock-left\)[\s\S]*grid-template-areas:\s*"resources workbench canvas"/);
+  assert.match(styles, /:has\(> \.workbench-panel-dock-left\) > \.workbench-panel\s*\{[^}]*border-right:?/s);
+});
+
+test("narrow desktop uses a split view instead of an overlay when Workbench is open", () => {
+  assert.match(styles, /@media \(min-width: 761px\) and \(max-width: 1100px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(280px, 36%\)/);
+  assert.match(styles, /@media \(min-width: 761px\) and \(max-width: 1100px\)[\s\S]*?\.desktop-workspace\.desktop-workspace-workbench-open > \.workbench-panel\s*\{[^}]*position:\s*relative/s);
+  assert.match(styles, /\.desktop-workspace\.desktop-workspace-workbench-open:has\(> \.workbench-panel-dock-left\) \.desktop-canvas-region\s*\{\s*grid-column:\s*2/s);
+});
+
+test("desktop workspace grid lets the canvas absorb width changes without fixed minimum overflow", () => {
+  assert.match(styles, /grid-template-columns:\s*minmax\(150px, 18vw\)\s+minmax\(0, 1fr\)\s+minmax\(260px, 25vw\)/);
+  assert.match(styles, /grid-template-columns:\s*minmax\(0, 1fr\)\s+minmax\(260px, 25vw\)/);
+  assert.match(styles, /desktop-workspace\.desktop-workspace-workbench-open \.desktop-canvas-region\s*\{\s*min-width:\s*0;\s*overflow:\s*hidden;/);
+});
+
+test("narrow desktop exposes explicit Palette, Canvas, Engineering and Inspector views", async () => {
+  const appSource = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+  assert.match(appSource, /aria-label="Workspace panels"/);
+  for (const label of ["Palette", "Canvas", "Engineering", "Inspector"]) assert.ok(appSource.includes(`"${label}"`), `missing ${label} workspace view`);
+  assert.match(appSource, /narrowWorkspaceView === id/);
+  assert.match(styles, /\.desktop-workspace-workbench-open\.narrow-workspace-view-palette > \.desktop-resources-region/);
+  assert.match(styles, /\.desktop-workspace-workbench-open\.narrow-workspace-view-canvas > \.desktop-canvas-region/);
+  assert.match(styles, /\.desktop-workspace-workbench-open\.narrow-workspace-view-workbench > \.workbench-panel/);
+  assert.match(styles, /\.desktop-workspace-workbench-open\.narrow-workspace-view-inspector > \.desktop-context-region/);
+});
