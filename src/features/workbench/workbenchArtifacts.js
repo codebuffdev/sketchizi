@@ -107,6 +107,80 @@ function operationPath(rawPath, entityId, errors) {
   return { path, params };
 }
 
+/** Explain the exact component scope before generating a service-specific artifact. */
+export function analyzeWorkbenchArtifactScope(workbench, serviceId = "") {
+  const entities = Array.isArray(workbench?.entities) ? workbench.entities : [];
+  const relations = Array.isArray(workbench?.relations) ? workbench.relations : [];
+  if (!serviceId) {
+    return {
+      service: null,
+      scoped: false,
+      includedEntities: entities,
+      excludedEntities: [],
+      includedRelations: relations,
+      warnings: [],
+    };
+  }
+  const service = entities.find((entity) => entity?.id === serviceId && ["backend.rest-service", "backend.worker", "frontend.react-app"].includes(entity.kind));
+  if (!service) {
+    return {
+      service: null, scoped: true, includedEntities: [], excludedEntities: entities,
+      includedRelations: [], warnings: [{ code: "scope.unknown-service", severity: "error", message: "The selected HLD scope no longer exists. Choose a valid service before generating artifacts." }],
+    };
+  }
+  const included = new Set([service.id]);
+  for (const entity of entities) if (entity?.properties?.implementationParentId === service.id) included.add(entity.id);
+  for (const relation of relations) if (relation?.kind === "exposes" && relation.sourceId === service.id) included.add(relation.targetId);
+  for (const relation of relations) if (relation?.kind === "contains-table" && included.has(relation.targetId)) included.add(relation.sourceId);
+  const includedEntities = entities.filter((entity) => included.has(entity.id));
+  const includedIds = new Set(includedEntities.map((entity) => entity.id));
+  const includedRelations = relations.filter((relation) => includedIds.has(relation.sourceId) && includedIds.has(relation.targetId));
+  const unassigned = entities.filter((entity) => WORKBENCH_LLD_KINDS.has(entity.kind) && !entity.properties?.implementationParentId);
+  const ownedTables = includedEntities.filter((entity) => entity.kind === "data.postgresql-table");
+  const endpoints = includedEntities.filter((entity) => entity.kind === "backend.api-endpoint");
+  const warnings = [];
+  if (unassigned.length) warnings.push({ code: "scope.unassigned-implementation", severity: "warning", entityIds: unassigned.map((entity) => entity.id), message: `${unassigned.length} low-level component(s) have no parent HLD assignment and are excluded from this service scope.` });
+  if (service.kind === "backend.rest-service" && endpoints.length === 0) warnings.push({ code: "scope.no-api-endpoints", severity: "warning", entityIds: [service.id], message: "This REST service has no included API endpoints. OpenAPI generation will need endpoint components exposed by this service." });
+  if (ownedTables.length === 0) warnings.push({ code: "scope.no-tables", severity: "warning", entityIds: [service.id], message: "No PostgreSQL tables are included in this scope. SQL generation may not produce a useful schema." });
+  return {
+    service, scoped: true, includedEntities,
+    excludedEntities: entities.filter((entity) => !includedIds.has(entity.id)),
+    includedRelations, warnings,
+  };
+}
+
+const WORKBENCH_LLD_KINDS = new Set([
+  "backend.api-endpoint", "backend.rest-controller", "backend.java-interface", "backend.java-class",
+  "backend.repository", "data.postgresql-table", "design.domain-entity",
+]);
+
+/** Restrict artifact generation to one HLD service and its explicitly owned or exposed elements. */
+export function scopeWorkbenchToService(workbench, serviceId) {
+  const entities = Array.isArray(workbench?.entities) ? workbench.entities : [];
+  const relations = Array.isArray(workbench?.relations) ? workbench.relations : [];
+  const service = entities.find((entity) => entity?.id === serviceId && ["backend.rest-service", "backend.worker", "frontend.react-app"].includes(entity.kind));
+  if (!service) return { ...workbench, entities: [], relations: [], artifactScope: { serviceId: "", serviceName: "" } };
+  const included = new Set([service.id]);
+  for (const entity of entities) {
+    if (entity?.properties?.implementationParentId === service.id) included.add(entity.id);
+  }
+  for (const relation of relations) {
+    if (relation?.kind === "exposes" && relation.sourceId === service.id) included.add(relation.targetId);
+  }
+  // Include only databases that contain an explicitly owned table; keep relation endpoints closed.
+  for (const relation of relations) {
+    if (relation?.kind === "contains-table" && included.has(relation.targetId)) included.add(relation.sourceId);
+  }
+  const scopedEntities = entities.filter((entity) => included.has(entity.id));
+  const ids = new Set(scopedEntities.map((entity) => entity.id));
+  return {
+    ...workbench,
+    entities: scopedEntities,
+    relations: relations.filter((relation) => ids.has(relation.sourceId) && ids.has(relation.targetId)),
+    artifactScope: { serviceId: service.id, serviceName: service.name || service.id },
+  };
+}
+
 /** Build an OpenAPI 3.1 document from endpoints with exactly one exposing REST service. */
 export function generateOpenApiArtifact(workbench) {
   const entities = Array.isArray(workbench?.entities) ? workbench.entities : [];
@@ -195,8 +269,10 @@ export function generateOpenApiArtifact(workbench) {
     info: { title: infoTitle, version: infoVersion, description: "Generated from the Sketchizi Engineering Workbench semantic model." },
     paths,
     "x-sketchizi-model-revision": Number.isSafeInteger(workbench?.modelRevision) ? workbench.modelRevision : 0,
+    ...(workbench?.artifactScope?.serviceId ? { "x-sketchizi-artifact-scope": { serviceId: workbench.artifactScope.serviceId, serviceName: workbench.artifactScope.serviceName } } : {}),
   };
-  return result({ kind: "openapi", filename: "openapi.json", mimeType: "application/json;charset=utf-8", value: spec, errors, warnings, modelRevision: workbench?.modelRevision });
+  const scopedSlug = String(workbench?.artifactScope?.serviceName || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return result({ kind: "openapi", filename: scopedSlug ? `openapi-${scopedSlug}.json` : "openapi.json", mimeType: "application/json;charset=utf-8", value: spec, errors, warnings, modelRevision: workbench?.modelRevision });
 }
 
 function parseColumns(table, errors) {
@@ -326,7 +402,8 @@ export function generateSqlArtifact(workbench) {
   const tableById = new Map(tables.map((table) => [table.id, table]));
   const tablesPerSchema = new Set();
   const indexesPerSchema = new Set();
-  const statements = ["-- Generated by Sketchizi Engineering Workbench.", `-- Source model revision: ${Number.isSafeInteger(workbench?.modelRevision) ? workbench.modelRevision : 0}.`, "-- Review and test this preview before applying it to a database.", ""];
+  const scopedName = workbench?.artifactScope?.serviceName;
+  const statements = ["-- Generated by Sketchizi Engineering Workbench.", `-- Source model revision: ${Number.isSafeInteger(workbench?.modelRevision) ? workbench.modelRevision : 0}.`, ...(scopedName ? [`-- HLD artifact scope: ${String(scopedName).replace(/[\r\n]/g, " ")}.`] : []), "-- Review and test this preview before applying it to a database.", ""];
 
   for (const database of databases) {
     const props = database.properties || {};
@@ -389,5 +466,6 @@ export function generateSqlArtifact(workbench) {
   }
 
   const text = statements.join("\n").trimEnd() + "\n";
-  return result({ kind: "sql", filename: "schema.sql", mimeType: "text/sql;charset=utf-8", value: text, errors, warnings, modelRevision: workbench?.modelRevision });
+  const scopedSlug = String(workbench?.artifactScope?.serviceName || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return result({ kind: "sql", filename: scopedSlug ? `schema-${scopedSlug}.sql` : "schema.sql", mimeType: "text/sql;charset=utf-8", value: text, errors, warnings, modelRevision: workbench?.modelRevision });
 }

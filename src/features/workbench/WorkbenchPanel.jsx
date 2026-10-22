@@ -4,7 +4,7 @@ import { validateRelationEndpoints } from "./workbenchModel.js";
 import SimulationExperimentPanel from "../simulation/experiments/SimulationExperimentPanel.jsx";
 import PolicyApprovalPanel from "./PolicyApprovalPanel.jsx";
 import { validateWorkbench } from "./workbenchValidation.js";
-import { generateOpenApiArtifact, generateSqlArtifact } from "./workbenchArtifacts.js";
+import { analyzeWorkbenchArtifactScope, generateOpenApiArtifact, generateSqlArtifact, scopeWorkbenchToService } from "./workbenchArtifacts.js";
 
 function downloadWorkbenchArtifact(artifact) {
   if (!artifact?.ok || !artifact.text || typeof document === "undefined") return;
@@ -54,6 +54,8 @@ export default function WorkbenchPanel({
   const [workspaceWidth, setWorkspaceWidth] = useState("standard");
   const [reviewExpanded, setReviewExpanded] = useState(false);
   const [artifactPreviewExpanded, setArtifactPreviewExpanded] = useState(false);
+  const [resultsExpanded, setResultsExpanded] = useState(false);
+  const [artifactServiceId, setArtifactServiceId] = useState("");
   const [componentSearch, setComponentSearch] = useState("");
   const [modelSearch, setModelSearch] = useState("");
   const [lldParentId, setLldParentId] = useState("");
@@ -87,6 +89,7 @@ export default function WorkbenchPanel({
     return groups;
   }, {});
   const artifactStale = Boolean(generatedArtifact && generatedArtifact.modelRevision !== (workbench?.modelRevision ?? 0));
+  const artifactScopeReview = analyzeWorkbenchArtifactScope(workbench, artifactServiceId);
   const pocEndpoints = (workbench?.entities || []).filter((entity) => entity.kind === "backend.api-endpoint");
   const pocTables = (workbench?.entities || []).filter((entity) => entity.kind === "data.postgresql-table");
   const needsPocArtifactScaffolding = workbench?.pocTemplate?.id === "react-rest-postgresql" && (
@@ -129,6 +132,25 @@ export default function WorkbenchPanel({
           <button type="button" className="workbench-close" onClick={onClose} aria-label="Close Engineering Workbench" title="Close Workbench">×</button>
         </div>
       </header>
+
+      {workbench && (
+        <>
+          <div className="workbench-workspace-path" aria-label="Current workspace location">
+            <span>Project</span><span aria-hidden="true">/</span>
+            <strong>{activeViewId === "system" ? "Architecture" : currentView?.label || "Design"}</strong>
+            {activeViewId === "lld" && lldParentId && workbench.entities.find((entity) => entity.id === lldParentId) && <>
+              <span aria-hidden="true">/</span><span>{workbench.entities.find((entity) => entity.id === lldParentId)?.name || "Service implementation"}</span>
+            </>}
+          </div>
+          <nav className="workbench-quick-views" aria-label="Design workspaces">
+            {availableViews.map((view) => (
+              <button key={view.id} type="button" className={view.id === activeViewId ? "active" : ""} aria-current={view.id === activeViewId ? "page" : undefined} disabled={view.id === activeViewId || busy} onClick={() => onSwitchView(view.id)} title={view.description}>
+                <span aria-hidden="true">{({ system: "◇", apis: "⇄", data: "▤", deployment: "⌘", lld: "{}" })[view.id] || "◇"}</span>{view.label}
+              </button>
+            ))}
+          </nav>
+        </>
+      )}
 
       {!workbench ? (
         <div className="workbench-panel-scroll">
@@ -322,10 +344,22 @@ export default function WorkbenchPanel({
           <section id="workbench-artifacts" className="workbench-section workbench-artifacts" aria-label="Generated engineering artifacts">
             <div className="workbench-section-heading"><span>ARTIFACTS</span><span className="workbench-count">2</span></div>
             <p className="workbench-section-intro">Generate reviewable OpenAPI and PostgreSQL DDL previews from the semantic model. Generation never deploys or changes your design.</p>
+            <label className="workbench-artifact-scope"><span>Artifact scope</span><select aria-label="Artifact scope" value={artifactServiceId} onChange={(event) => setArtifactServiceId(event.target.value)}><option value="">Entire model</option>{(workbench?.entities || []).filter((entity) => ["backend.rest-service", "backend.worker", "frontend.react-app"].includes(entity.kind)).map((entity) => <option key={entity.id} value={entity.id}>{entity.name || entity.id}</option>)}</select></label>
             <div className="workbench-artifact-actions">
-              <button type="button" className="workbench-primary" onClick={() => generateArtifact(generateOpenApiArtifact)}>Generate OpenAPI</button>
-              <button type="button" className="workbench-secondary" onClick={() => generateArtifact(generateSqlArtifact)}>Generate SQL</button>
+              <button type="button" className="workbench-primary" onClick={() => generateArtifact((model) => generateOpenApiArtifact(artifactServiceId ? scopeWorkbenchToService(model, artifactServiceId) : model))}>Generate OpenAPI</button>
+              <button type="button" className="workbench-secondary" onClick={() => generateArtifact((model) => generateSqlArtifact(artifactServiceId ? scopeWorkbenchToService(model, artifactServiceId) : model))}>Generate SQL</button>
             </div>
+            {artifactServiceId && <section className="workbench-artifact-scope-review" aria-label="Artifact scope review">
+              <div className="workbench-artifact-scope-review-heading"><strong>Scope review</strong><span>{artifactScopeReview.includedEntities.length} included · {artifactScopeReview.excludedEntities.length} excluded</span></div>
+              {artifactScopeReview.warnings.length > 0 && <ul className="workbench-artifact-warnings">{artifactScopeReview.warnings.map((item) => <li key={item.code}>{item.message}</li>)}</ul>}
+              <details className="workbench-artifact-scope-details">
+                <summary>Review included and excluded components</summary>
+                <div className="workbench-artifact-scope-lists">
+                  <div><strong>Included ({artifactScopeReview.includedEntities.length})</strong>{artifactScopeReview.includedEntities.length ? <ul>{artifactScopeReview.includedEntities.map((entity) => <li key={entity.id}>{entity.name || entity.id}<small>{entity.kind}</small></li>)}</ul> : <p>No components included.</p>}</div>
+                  <div><strong>Excluded ({artifactScopeReview.excludedEntities.length})</strong>{artifactScopeReview.excludedEntities.length ? <ul>{artifactScopeReview.excludedEntities.map((entity) => <li key={entity.id}>{entity.name || entity.id}<small>{entity.kind}</small></li>)}</ul> : <p>No components excluded.</p>}</div>
+                </div>
+              </details>
+            </section>}
             {generatedArtifact && (
               <div className={`workbench-artifact-result ${generatedArtifact.ok ? "success" : "error"}`} aria-live="polite">
                 <strong>{generatedArtifact.ok ? `${generatedArtifact.filename} preview ready` : `${generatedArtifact.kind === "sql" ? "SQL" : generatedArtifact.kind === "openapi" ? "OpenAPI" : "Artifact"} generation needs attention`}</strong>
@@ -457,6 +491,23 @@ export default function WorkbenchPanel({
           </div>
 
           </div>
+
+          <section className={`workbench-results-dock${resultsExpanded ? " expanded" : ""}`} aria-label="Engineering results">
+            <button type="button" className="workbench-results-trigger" aria-expanded={resultsExpanded} onClick={() => setResultsExpanded((value) => !value)}>
+              <span className="workbench-results-trigger-title"><span aria-hidden="true">▤</span><strong>Results</strong></span>
+              <span className="workbench-results-summary">
+                {findingErrors > 0 ? <span className="has-errors">{findingErrors} errors</span> : <span className="no-errors">No errors</span>}
+                {findingWarnings > 0 && <span>{findingWarnings} warnings</span>}
+              </span>
+              <span className="workbench-results-chevron" aria-hidden="true">{resultsExpanded ? "⌄" : "⌃"}</span>
+            </button>
+            {resultsExpanded && <div className="workbench-results-content">
+              <p>{findingErrors === 0 && findingWarnings === 0 ? "Model validation found no errors or warnings." : `${findingErrors} errors and ${findingWarnings} warnings in the current engineering model.`}</p>
+              <button type="button" className="workbench-secondary" onClick={() => changePanelTab("policy")}>Open validation results</button>
+              {generatedArtifact && <div className="workbench-results-artifact"><strong>{generatedArtifact.ok ? "Artifact preview ready" : "Artifact generation needs attention"}</strong><span>{generatedArtifact.filename || (generatedArtifact.kind === "sql" ? "SQL" : "OpenAPI")}{artifactStale ? " · stale for current model" : ""}</span><button type="button" className="workbench-secondary" onClick={() => { setArtifactPreviewExpanded(true); changePanelTab("policy"); }}>Inspect artifact</button></div>}
+              <p className="workbench-results-note">Simulation results are synthetic unless explicitly connected to a real runtime or database.</p>
+            </div>}
+          </section>
 
           <footer className="workbench-panel-footer">
             <div><strong>{workbench.entities.length}</strong> semantic components <span>·</span> <strong>{workbench.relations.length}</strong> relations</div>

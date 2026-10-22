@@ -1,14 +1,1 @@
-Workbench iteration 1.22 — HLD-to-LLD scoped navigation
-
-Changes:
-- Added a direct “LLD” action beside supported HLD application components.
-- Opening LLD from an HLD component establishes a temporary parent context without changing the persisted model.
-- In that context, the model navigator lists LLD components reachable within two steps of existing typed relationships.
-- Added a parent-context banner, an explicit “Show all LLD components” reset, and empty-state guidance.
-- Kept the HLD focus action separate from the LLD navigation action for valid, accessible button structure.
-- This is relationship-derived navigation, not a persisted ownership/containment model; disconnected LLD elements remain available through the all-LLD view.
-
-Verification performed:
-- Targeted Workbench tests: 32/32 passed, including three HLD-to-LLD navigation checks.
-- ZIP integrity checked after packaging.
-- Production build and browser visual checks were not run in this extracted package.
+Next milestone after 1.25: add source traceability to generated artifacts so OpenAPI operations and SQL tables can identify the source endpoint/table/entity IDs and model revision. Keep previews non-deploying, preserve whole-model generation as the default, and never infer ownership for unassigned elements.

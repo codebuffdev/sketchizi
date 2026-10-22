@@ -25,3 +25,35 @@ test("clearing HLD ownership unassigns an LLD component without deleting it", ()
   assert.equal(updated.find((item) => item.id === "controller").properties.implementationParentId, "");
   assert.equal(updated.length, 2);
 });
+
+import { scopeWorkbenchToService } from "../src/features/workbench/workbenchArtifacts.js";
+
+test("service artifact scope includes explicitly owned components and exposed endpoints only", () => {
+  const workbench = {
+    modelRevision: 7,
+    entities: [
+      entity("service-a", "backend.rest-service"),
+      entity("service-b", "backend.rest-service"),
+      entity("controller-a", "backend.rest-controller", { implementationParentId: "service-a" }),
+      entity("controller-b", "backend.rest-controller", { implementationParentId: "service-b" }),
+      entity("endpoint-a", "backend.api-endpoint"),
+      entity("endpoint-b", "backend.api-endpoint"),
+    ],
+    relations: [
+      { id: "r1", kind: "exposes", sourceId: "service-a", targetId: "endpoint-a" },
+      { id: "r2", kind: "exposes", sourceId: "service-b", targetId: "endpoint-b" },
+      { id: "r3", kind: "calls", sourceId: "controller-a", targetId: "endpoint-a" },
+    ],
+  };
+  const scoped = scopeWorkbenchToService(workbench, "service-a");
+  assert.deepEqual(scoped.entities.map((item) => item.id).sort(), ["controller-a", "endpoint-a", "service-a"]);
+  assert.deepEqual(scoped.relations.map((item) => item.id).sort(), ["r1", "r3"]);
+  assert.equal(scoped.artifactScope.serviceName, "service-a");
+  assert.equal(scoped.modelRevision, 7);
+});
+
+test("unknown artifact scope fails closed rather than returning the full model", () => {
+  const scoped = scopeWorkbenchToService({ entities: [entity("service", "backend.rest-service")], relations: [] }, "missing");
+  assert.equal(scoped.entities.length, 0);
+  assert.equal(scoped.relations.length, 0);
+});

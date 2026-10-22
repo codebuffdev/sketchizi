@@ -134,3 +134,22 @@ test("Design perspective exposes a searchable HLD/LLD semantic model navigator",
   assert.match(styles, /\.workbench-model-navigator\s*\{/);
   assert.match(styles, /\.workbench-model-entity:focus-visible/);
 });
+
+test("canvas-first shell exposes workspace breadcrumbs and direct design-view navigation", () => {
+  assert.match(panelSource, /className="workbench-workspace-path"/);
+  assert.match(panelSource, /aria-label="Current workspace location"/);
+  assert.match(panelSource, /className="workbench-quick-views" aria-label="Design workspaces"/);
+  assert.match(panelSource, /onSwitchView\(view\.id\)/);
+  assert.match(styles, /\.workbench-workspace-path\s*\{/);
+  assert.match(styles, /\.workbench-quick-views\s*\{/);
+});
+
+test("expandable Results dock summarizes model validation and distinguishes synthetic simulation", () => {
+  assert.match(panelSource, /className=\{`workbench-results-dock/);
+  assert.match(panelSource, /aria-label="Engineering results"/);
+  assert.match(panelSource, /aria-expanded=\{resultsExpanded\}/);
+  assert.match(panelSource, /Open validation results/);
+  assert.match(panelSource, /Simulation results are synthetic unless explicitly connected to a real runtime or database/);
+  assert.match(styles, /\.workbench-results-dock\s*\{/);
+  assert.match(styles, /\.workbench-results-content\s*\{/);
+});
