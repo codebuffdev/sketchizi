@@ -115,3 +115,22 @@ test("HLD and LLD have separate component catalogs while retaining the shared se
   assert.match(panelSource, /workbench-level-hint/);
   assert.match(styles, /\.workbench-level-hint/);
 });
+
+test("design perspective navigation is shown only in Design; other tasks use a compact current-context summary", () => {
+  assert.match(panelSource, /activePanelTab === "build" \? <div className="workbench-section workbench-perspectives-section">/);
+  assert.match(panelSource, /className="workbench-current-context" aria-live="polite"/);
+  assert.match(panelSource, /Change design view/);
+  assert.match(styles, /\.workbench-current-context\s*\{/);
+  assert.match(styles, /\.workbench-current-context \.workbench-secondary/);
+});
+
+test("Design perspective exposes a searchable HLD/LLD semantic model navigator", () => {
+  assert.match(panelSource, /aria-label="Engineering model navigator"/);
+  assert.match(panelSource, /aria-label="Search model components"/);
+  assert.match(panelSource, /HIGH-LEVEL DESIGN/);
+  assert.match(panelSource, /LOW-LEVEL DESIGN/);
+  assert.match(panelSource, /workbench\.relations\.filter\(\(relation\) => relation\.sourceId === entity\.id \|\| relation\.targetId === entity\.id\)/);
+  assert.match(panelSource, /onFocusFinding\?\.\(\{ entityIds: \[entity\.id\] \}\); changePanelTab\("inspect"\)/);
+  assert.match(styles, /\.workbench-model-navigator\s*\{/);
+  assert.match(styles, /\.workbench-model-entity:focus-visible/);
+});

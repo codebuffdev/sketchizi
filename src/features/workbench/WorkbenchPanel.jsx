@@ -51,9 +51,12 @@ export default function WorkbenchPanel({
   const [generatedArtifact, setGeneratedArtifact] = useState(null);
   const [showPocPreview, setShowPocPreview] = useState(false);
   const [activePanelTab, setActivePanelTab] = useState("build");
+  const [workspaceWidth, setWorkspaceWidth] = useState("standard");
   const [reviewExpanded, setReviewExpanded] = useState(false);
   const [artifactPreviewExpanded, setArtifactPreviewExpanded] = useState(false);
   const [componentSearch, setComponentSearch] = useState("");
+  const [modelSearch, setModelSearch] = useState("");
+  const [lldParentId, setLldParentId] = useState("");
   const [expandedComponentGroups, setExpandedComponentGroups] = useState({ Application: true, Data: true });
   useEffect(() => {
     const available = selectedEntity ? WORKBENCH_RELATIONS.filter((item) => item.sourceKinds.includes(selectedEntity.kind)) : [];
@@ -112,7 +115,7 @@ export default function WorkbenchPanel({
   };
 
   return (
-    <section className="workbench-panel" aria-label="Engineering Workbench">
+    <section className={`workbench-panel${workspaceWidth === "focus" ? " workbench-panel-focus" : ""}`} aria-label="Engineering Workbench">
       <header className="workbench-panel-header">
         <div className="workbench-panel-brand">
           <span className="workbench-mark" aria-hidden="true">W</span>
@@ -121,7 +124,10 @@ export default function WorkbenchPanel({
             <span>{workbench ? "Connected engineering model" : "Early access · experimental"}</span>
           </div>
         </div>
-        <button type="button" className="workbench-close" onClick={onClose} aria-label="Close Engineering Workbench" title="Close Workbench">×</button>
+        <div className="workbench-header-actions">
+          <button type="button" className="workbench-width-toggle" onClick={() => setWorkspaceWidth((value) => value === "focus" ? "standard" : "focus")} aria-pressed={workspaceWidth === "focus"} aria-label={workspaceWidth === "focus" ? "Use compact Workbench" : "Expand Workbench workspace"} title={workspaceWidth === "focus" ? "Compact workspace" : "Expand workspace"}>{workspaceWidth === "focus" ? "↙" : "↗"}</button>
+          <button type="button" className="workbench-close" onClick={onClose} aria-label="Close Engineering Workbench" title="Close Workbench">×</button>
+        </div>
       </header>
 
       {!workbench ? (
@@ -144,7 +150,7 @@ export default function WorkbenchPanel({
             <button type="button" role="tab" aria-selected={activePanelTab === "policy"} className={activePanelTab === "policy" ? "active" : ""} onClick={() => changePanelTab("policy")}><span aria-hidden="true">✓</span>Validate</button>
             <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Explore</button>
           </nav>
-          <div className="workbench-section">
+          {activePanelTab === "build" ? <div className="workbench-section workbench-perspectives-section">
             <div className="workbench-section-heading"><span>DESIGN PERSPECTIVES</span><span className="workbench-count">{workbench.views.length}</span></div>
             <div className="workbench-view-list" role="tablist" aria-label="Workbench views">
               {availableViews.map((view) => (
@@ -170,16 +176,60 @@ export default function WorkbenchPanel({
               <small>{activeViewId === "lld" ? "Model classes, interfaces, controllers and repositories." : activeViewId === "system" ? "Model system boundaries, services and infrastructure." : `Design perspective: ${currentView?.label || "current view"}.`}</small>
             </div>
             {activeViewId === "system" && <p className="workbench-level-hint"><strong>HLD</strong> Define system boundaries and how major services communicate. Select a service to inspect its responsibilities.</p>}
+            <section className="workbench-model-navigator" aria-label="Engineering model navigator">
+              <div className="workbench-section-heading"><span>MODEL NAVIGATOR</span><span className="workbench-count">{workbench.entities.length}</span></div>
+              <p className="workbench-section-intro">Jump to a component in the shared HLD/LLD model. Relationships are counted from the typed model, not visual arrows.</p>
+              <label className="workbench-model-search-wrap"><span className="sr-only">Search model components</span><input type="search" value={modelSearch} onChange={(event) => setModelSearch(event.target.value)} placeholder="Find a service, class, table…" aria-label="Search model components" /></label>
+              {(() => {
+                const normalized = modelSearch.trim().toLowerCase();
+                const parent = workbench.entities.find((entity) => entity.id === lldParentId) || null;
+                const entities = workbench.entities.filter((entity) => {
+                  const definition = WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind);
+                  const matchesSearch = !normalized || `${entity.name || ""} ${entity.kind} ${definition?.label || ""}`.toLowerCase().includes(normalized);
+                  const matchesParentScope = activeViewId !== "lld" || !parent || (definition?.designLevel === "lld" && entity.properties?.implementationParentId === parent.id);
+                  return matchesSearch && matchesParentScope;
+                });
+                const groups = [
+                  { id: "hld", label: "HIGH-LEVEL DESIGN", entities: activeViewId === "lld" && parent ? [] : entities.filter((entity) => WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind)?.designLevel !== "lld") },
+                  { id: "lld", label: parent && activeViewId === "lld" ? `LLD · ${parent.name || WORKBENCH_COMPONENTS.find((item) => item.kind === parent.kind)?.label || "Selected service"}` : "LOW-LEVEL DESIGN", entities: entities.filter((entity) => WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind)?.designLevel === "lld") },
+                ];
+                return groups.map((group) => group.entities.length > 0 && <div className="workbench-model-group" key={group.id}>
+                  <h3>{group.label}<span>{group.entities.length}</span></h3>
+                  {group.entities.map((entity) => {
+                    const definition = WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind);
+                    const relationCount = workbench.relations.filter((relation) => relation.sourceId === entity.id || relation.targetId === entity.id).length;
+                    return <div className="workbench-model-entity-row" key={entity.id}>
+                      <button type="button" className="workbench-model-entity" onClick={() => { onFocusFinding?.({ entityIds: [entity.id] }); changePanelTab("inspect"); }} title={`Focus ${entity.name || definition?.label || entity.kind} on the canvas`}>
+                        <span className={`workbench-model-entity-mark ${group.id}`} aria-hidden="true">{group.id === "lld" ? "{}" : "◇"}</span>
+                        <span className="workbench-model-entity-copy"><strong>{entity.name || definition?.label || entity.kind}</strong><small>{definition?.label || entity.kind}</small></span>
+                        <span className="workbench-model-relation-count" title={`${relationCount} typed relationships`}>{relationCount}</span>
+                      </button>
+                      {group.id === "hld" && ["backend.rest-service", "backend.worker", "frontend.react-app"].includes(entity.kind) && <button type="button" className="workbench-model-open-lld" onClick={() => { setLldParentId(entity.id); onSwitchView("lld"); }} aria-label={`Design LLD for ${entity.name || definition?.label || entity.kind}`} title="Open implementation design">LLD ↗</button>}
+                      {group.id === "lld" && <label className="workbench-model-parent-select"><span className="sr-only">Parent HLD component for {entity.name || definition?.label || entity.kind}</span><select aria-label={`Parent HLD component for ${entity.name || definition?.label || entity.kind}`} disabled={!canEdit || busy} value={entity.properties?.implementationParentId || ""} onChange={(event) => onUpdateEntity?.(entity.id, { properties: { implementationParentId: event.target.value } })}><option value="">Unassigned</option>{workbench.entities.filter((candidate) => ["backend.rest-service", "backend.worker", "frontend.react-app"].includes(candidate.kind)).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name || WORKBENCH_COMPONENTS.find((item) => item.kind === candidate.kind)?.label || candidate.kind}</option>)}</select></label>}
+                    </div>;
+                  })}
+                </div>);
+              })()}
+              {workbench.entities.length === 0 && <p className="workbench-model-empty">No components yet. Add a system component to start the hierarchy.</p>}
+              {workbench.entities.length > 0 && modelSearch.trim() && !workbench.entities.some((entity) => `${entity.name || ""} ${entity.kind} ${WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind)?.label || ""}`.toLowerCase().includes(modelSearch.trim().toLowerCase())) && <p className="workbench-model-empty">No matching components found.</p>}
+              {activeViewId === "lld" && lldParentId && groups.every((group) => group.entities.length === 0) && !normalized && <p className="workbench-model-empty">No implementation elements are assigned to this HLD component yet. Return to the full LLD list and set their Parent HLD component.</p>}
+            </section>
+            {activeViewId === "lld" && lldParentId && workbench.entities.some((entity) => entity.id === lldParentId) && <div className="workbench-lld-parent-context"><span>IMPLEMENTING HLD COMPONENT</span><strong>{workbench.entities.find((entity) => entity.id === lldParentId)?.name || WORKBENCH_COMPONENTS.find((item) => item.kind === workbench.entities.find((entity) => entity.id === lldParentId)?.kind)?.label}</strong><p>Only low-level elements explicitly assigned to this component appear in this scoped view. Assign components using the Parent HLD control in the full LLD list.</p><button type="button" className="workbench-secondary" onClick={() => setLldParentId("")}>Show all LLD components</button></div>}
             {activeViewId === "lld" && <div className="workbench-lld-start-card">
               <div className="workbench-lld-start-heading"><span className="workbench-lld-start-icon" aria-hidden="true">{ }</span><div><strong>Design inside a service</strong><small>Build implementation details, not another system map.</small></div></div>
               <p>Add controllers, Java classes, interfaces, repositories, API contracts and domain entities. Use typed relationships to describe how they work together.</p>
               <button type="button" className="workbench-primary" disabled={!canEdit || busy} onClick={() => changePanelTab("components")}>＋ Add a design element</button>
               <button type="button" className="workbench-secondary workbench-lld-back-button" onClick={() => onSwitchView("system")}>← Return to system architecture</button>
             </div>}
-          </div>
+          </div> : <div className="workbench-current-context" aria-live="polite">
+            <span className="workbench-current-context-kicker">CURRENT DESIGN</span>
+            <strong>{currentView?.label || "System"}</strong>
+            <span>{workbench.entities.length} components · {workbench.relations.length} relationships</span>
+            <button type="button" className="workbench-secondary" onClick={() => changePanelTab("build")}>Change design view</button>
+          </div>}
 
 
-          {workbench.entities.length === 0 && workbench.relations.length === 0 && activePanelTab !== "build" && (
+          {workbench.entities.length === 0 && workbench.relations.length === 0 && ["inspect", "policy", "run"].includes(activePanelTab) && (
             <section className="workbench-section workbench-empty-design" aria-label="Start an HLD and LLD design">
               <div className="workbench-empty-design-mark" aria-hidden="true">◇</div>
               <div className="workbench-section-heading"><span>START YOUR DESIGN</span><span className="workbench-count">HLD · LLD</span></div>
