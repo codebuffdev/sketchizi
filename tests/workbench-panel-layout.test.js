@@ -192,3 +192,10 @@ test("Workbench dock side can switch left/right and persists as a layout prefere
   assert.match(styles, /\.workbench-panel-dock-right \{ left: auto; right: 10px; \}/);
   assert.match(styles, /\.workbench-panel-collapsed \.workbench-dock-toggle \{ display: none; \}/);
 });
+
+test("wide desktop Workbench uses a dedicated grid lane instead of covering the canvas", () => {
+  assert.match(styles, /desktop-workspace-workbench-open\s*>\s*\.workbench-panel\s*\{[^}]*position:\s*relative/s);
+  assert.match(styles, /grid-template-areas:\s*"resources canvas workbench context"/);
+  assert.match(styles, /grid-template-areas:\s*"resources canvas workbench"/);
+  assert.match(styles, /@media\s*\(min-width:\s*761px\) and \(max-width:\s*1100px\)/);
+});

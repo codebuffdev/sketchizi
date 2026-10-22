@@ -1723,3 +1723,54 @@
   .workbench-task-tabs { gap: 3px; }
   .workbench-task-tabs button { padding-inline: 5px; font-size: 10px; }
 }
+
+/* Workbench 1.33 — structural desktop layout override. The panel becomes a
+   real grid lane beside the canvas instead of covering it with an overlay. */
+@media (min-width: 1101px) {
+  .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-open.desktop-workspace-context-open {
+    grid-template-columns: minmax(190px, 220px) minmax(300px, 1fr) minmax(300px, 340px) minmax(240px, 280px);
+    grid-template-areas: "resources canvas workbench context";
+  }
+  .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-open.desktop-workspace-context-closed {
+    grid-template-columns: minmax(190px, 220px) minmax(300px, 1fr) minmax(300px, 340px);
+    grid-template-areas: "resources canvas workbench";
+  }
+  .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-closed.desktop-workspace-context-open {
+    grid-template-columns: minmax(300px, 1fr) minmax(300px, 340px) minmax(240px, 280px);
+    grid-template-areas: "canvas workbench context";
+  }
+  .desktop-workspace.desktop-workspace-workbench-open.desktop-workspace-library-closed.desktop-workspace-context-closed {
+    grid-template-columns: minmax(300px, 1fr) minmax(300px, 340px);
+    grid-template-areas: "canvas workbench";
+  }
+  .desktop-workspace-workbench-open .desktop-resources-region { grid-area: resources; }
+  .desktop-workspace-workbench-open .desktop-canvas-region { grid-area: canvas; }
+  .desktop-workspace-workbench-open > .workbench-panel {
+    position: relative;
+    inset: auto;
+    grid-area: workbench;
+    width: auto;
+    height: 100%;
+    max-width: none;
+    min-height: 0;
+    border: 0;
+    border-left: 1px solid var(--sketchizi-desktop-border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .desktop-workspace-workbench-open .desktop-context-region { grid-area: context; }
+  .desktop-workspace-workbench-open .workbench-panel-dock-right { left: auto; right: auto; }
+  .desktop-workspace-workbench-open .workbench-panel-focus { width: auto; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .desktop-workspace-workbench-open > .workbench-panel {
+    position: absolute;
+    z-index: 35;
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: min(360px, calc(100% - 16px));
+    border-radius: 12px;
+  }
+  .desktop-workspace-workbench-open > .workbench-panel.workbench-panel-dock-right { left: auto; right: 8px; }
+}
