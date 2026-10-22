@@ -449,7 +449,7 @@ function App() {
 
       </DesktopAppHeader>
 
-      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
+      <div className={`desktop-workspace ${workbenchController.isOpen ? "desktop-workspace-workbench-open" : "desktop-workspace-workbench-closed"} ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
         <aside className={`desktop-resources-region ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
           {collaborationCanEdit && (
             <IconLibraryPanel
@@ -496,6 +496,21 @@ function App() {
             viewModeEnabled={collaborationPermission === "viewer"}
           />
 
+
+
+          {draggingIcon && (
+            <div
+              className="icon-drag-ghost"
+              style={{ left: draggingIcon.x, top: draggingIcon.y }}
+              aria-hidden="true"
+            >
+              <img src={draggingIcon.icon.src} alt="" draggable={false} />
+              <span>{draggingIcon.icon.name}</span>
+            </div>
+          )}
+
+        </section>
+
           <WorkbenchPanel
             workbench={workbenchController.workbench}
             isOpen={workbenchController.isOpen}
@@ -522,19 +537,6 @@ function App() {
             busy={workbenchController.busy}
             canEdit={collaborationCanEdit}
           />
-
-          {draggingIcon && (
-            <div
-              className="icon-drag-ghost"
-              style={{ left: draggingIcon.x, top: draggingIcon.y }}
-              aria-hidden="true"
-            >
-              <img src={draggingIcon.icon.src} alt="" draggable={false} />
-              <span>{draggingIcon.icon.name}</span>
-            </div>
-          )}
-
-        </section>
 
         <aside
           className={`desktop-context-region ${propertiesOpen ? "properties-state-open" : "properties-state-closed"} ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}

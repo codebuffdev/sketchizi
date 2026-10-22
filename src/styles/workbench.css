@@ -18,6 +18,7 @@
   font-size: 12px;
 }
 .workbench-panel-focus { width: min(560px, calc(100% - 20px)); }
+.workbench-panel-dock-right { left: auto; right: 10px; }
 .theme-dark .workbench-panel {
   color: var(--ui-text, #e8ebf4);
   background: #171a22;
@@ -35,6 +36,9 @@
 .workbench-panel-brand strong { font-size: 12px; font-weight: 750; letter-spacing: -.01em; }
 .workbench-panel-brand span:not(.workbench-mark) { color: var(--ui-text-muted, #777f90); font-size: 10px; }
 .workbench-header-actions { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+.workbench-dock-toggle { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--ui-border, #e2e5ed); border-radius: 7px; background: transparent; color: inherit; font-size: 16px; cursor: pointer; }
+.workbench-dock-toggle:hover { background: var(--ui-surface-soft, #f0f2f7); border-color: #a99be9; }
+.theme-dark .workbench-dock-toggle { border-color: #363b4b; }
 .workbench-width-toggle { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--ui-border, #e2e5ed); border-radius: 7px; background: transparent; color: inherit; font-size: 16px; cursor: pointer; }
 .workbench-width-toggle:hover, .workbench-width-toggle[aria-pressed="true"] { background: var(--ui-surface-soft, #f0f2f7); border-color: #a99be9; }
 .theme-dark .workbench-width-toggle { border-color: #363b4b; }
@@ -97,6 +101,7 @@
 @media (max-width: 700px) {
   .workbench-panel { top: 6px; bottom: 6px; left: 6px; width: min(306px, calc(100% - 12px)); border-radius: 12px; }
   .workbench-panel-focus { width: calc(100% - 12px); }
+  .workbench-panel-dock-right { left: auto; right: 6px; }
   .workbench-toggle { min-height: 28px; padding-inline: 7px; font-size: 10px; }
 }
 .desktop-canvas-region { position: relative; min-width: 0; }
@@ -1679,8 +1684,42 @@
 .theme-dark .workbench-collapse-toggle { border-color: #363b4b; }
 .workbench-panel-collapsed .workbench-header-actions { flex-direction: column; gap: 6px; }
 .workbench-panel-collapsed .workbench-width-toggle { display: none; }
+.workbench-panel-collapsed .workbench-dock-toggle { display: none; }
 .workbench-panel-collapsed .workbench-close { width: 28px; height: 28px; }
 @media (max-width: 700px) {
   .workbench-panel-collapsed { width: 44px; min-width: 44px; }
   .workbench-panel-collapsed.workbench-panel-focus { width: 44px; }
+}
+
+
+/* Workbench 1.30 — responsive workspace density and independently collapsible navigator. */
+.workbench-model-navigator-toggle { width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.workbench-model-navigator-toggle:focus-visible { outline: 2px solid #8a7ae3; outline-offset: 3px; border-radius: 4px; }
+.workbench-model-navigator-chevron { margin-left: 5px; color: var(--ui-text-muted, #777f90); font-size: 13px; letter-spacing: 0; }
+.workbench-model-navigator-collapsed { padding-bottom: 12px; }
+@media (min-width: 701px) and (max-width: 1040px) {
+  .workbench-panel { width: min(292px, calc(100% - 20px)); }
+  .workbench-panel-focus { width: min(430px, calc(100% - 20px)); }
+  .workbench-panel-brand > div > span:not(.workbench-mark) { display: none; }
+  .workbench-view-list { grid-template-columns: minmax(0, 1fr); }
+  .workbench-view-copy small { display: block; }
+}
+@media (max-width: 700px) {
+  .workbench-panel { max-height: calc(100dvh - 12px); }
+  .workbench-panel-focus { width: calc(100% - 12px); }
+  .workbench-panel-dock-right { left: auto; right: 6px; }
+  .workbench-panel-header { padding: 9px; gap: 5px; }
+  .workbench-panel-brand { gap: 7px; }
+  .workbench-mark { width: 29px; height: 29px; flex-basis: 29px; }
+  .workbench-panel-brand strong { font-size: 11px; }
+  .workbench-header-actions { gap: 4px; }
+  .workbench-collapse-toggle, .workbench-width-toggle, .workbench-close { width: 27px; height: 27px; flex-basis: 27px; }
+  .workbench-quick-views { overflow-x: auto; scrollbar-width: thin; }
+  .workbench-quick-views button { flex: 0 0 auto; }
+}
+@media (max-width: 380px) {
+  .workbench-panel-brand > div > span:not(.workbench-mark) { display: none; }
+  .workbench-view-list { grid-template-columns: minmax(0, 1fr); }
+  .workbench-task-tabs { gap: 3px; }
+  .workbench-task-tabs button { padding-inline: 5px; font-size: 10px; }
 }
