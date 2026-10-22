@@ -101,3 +101,15 @@ test("empty Workbench model offers a persistent HLD/LLD starting action outside 
   assert.match(panelSource, /activePanelTab !== "build"/);
   assert.match(styles, /\.workbench-empty-design\s*\{/);
 });
+
+
+test("HLD and LLD have separate component catalogs while retaining the shared semantic model", async () => {
+  const registry = await readFile(new URL("../src/features/workbench/workbenchRegistry.js", import.meta.url), "utf8");
+  assert.match(panelSource, /activeViewId === "lld"/);
+  assert.match(panelSource, /component\.designLevel === "lld"/);
+  assert.match(panelSource, /component\.designLevel !== "lld"/);
+  assert.match(registry, /Low-level design/);
+  assert.match(registry, /Classes, interfaces, repositories and domain models/);
+  assert.match(panelSource, /workbench-level-hint/);
+  assert.match(styles, /\.workbench-level-hint/);
+});

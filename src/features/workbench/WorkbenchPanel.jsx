@@ -62,12 +62,22 @@ export default function WorkbenchPanel({
   }, [selectedEntity?.id, selectedEntity?.kind]);
   if (!isOpen) return null;
   const activeViewId = workbench?.activeViewId || "system";
-  const currentView = (workbench?.views || WORKBENCH_VIEWS).find((view) => view.id === activeViewId);
+  const availableViews = WORKBENCH_VIEWS.map((definition) => ({ ...definition, ...(workbench?.views || []).find((view) => view.id === definition.id) }));
+  const currentView = availableViews.find((view) => view.id === activeViewId);
   const findings = validateWorkbench(workbench);
   const findingErrors = findings.filter((finding) => finding.severity === "error").length;
   const findingWarnings = findings.filter((finding) => finding.severity === "warning").length;
   const normalizedComponentSearch = componentSearch.trim().toLowerCase();
-  const filteredComponents = WORKBENCH_COMPONENTS.filter((component) => !normalizedComponentSearch ||
+  const viewScopedComponents = activeViewId === "lld"
+    ? WORKBENCH_COMPONENTS.filter((component) => component.designLevel === "lld")
+    : activeViewId === "system"
+      ? WORKBENCH_COMPONENTS.filter((component) => component.designLevel !== "lld")
+      : activeViewId === "apis"
+        ? WORKBENCH_COMPONENTS.filter((component) => component.kind.startsWith("backend.") && ["backend.rest-service", "backend.api-endpoint", "backend.rest-controller", "backend.java-interface", "backend.java-class"].includes(component.kind))
+        : activeViewId === "data"
+          ? WORKBENCH_COMPONENTS.filter((component) => component.kind.startsWith("data.") || component.kind === "design.domain-entity" || component.kind === "messaging.queue" || component.kind === "backend.repository")
+          : WORKBENCH_COMPONENTS.filter((component) => component.kind === "devops.deployment-target" || component.designLevel === "hld");
+  const filteredComponents = viewScopedComponents.filter((component) => !normalizedComponentSearch ||
     `${component.label} ${component.details} ${component.group} ${component.kind}`.toLowerCase().includes(normalizedComponentSearch));
   const grouped = filteredComponents.reduce((groups, component) => {
     (groups[component.group] ||= []).push(component);
@@ -130,7 +140,7 @@ export default function WorkbenchPanel({
           <div className="workbench-section">
             <div className="workbench-section-heading"><span>VIEWS</span><span className="workbench-count">{workbench.views.length}</span></div>
             <div className="workbench-view-list" role="tablist" aria-label="Workbench views">
-              {(workbench.views || WORKBENCH_VIEWS).map((view) => (
+              {availableViews.map((view) => (
                 <button
                   type="button"
                   role="tab"
@@ -140,13 +150,15 @@ export default function WorkbenchPanel({
                   disabled={!canEdit || busy || view.id === activeViewId}
                   onClick={() => onSwitchView(view.id)}
                 >
-                  <span className={`workbench-view-icon workbench-view-${view.id}`} aria-hidden="true">{({ system: "◈", apis: "⇄", data: "▤", deployment: "⌘" })[view.id] || "◇"}</span>
+                  <span className={`workbench-view-icon workbench-view-${view.id}`} aria-hidden="true">{({ system: "◈", apis: "⇄", data: "▤", deployment: "⌘", lld: "{}" })[view.id] || "◇"}</span>
                   <span className="workbench-view-copy"><strong>{view.label}</strong><small>{view.description}</small></span>
                   {view.id === activeViewId && <span className="workbench-active-dot" aria-hidden="true" />}
                 </button>
               ))}
             </div>
             <p className="workbench-note workbench-view-context" title="The engineering model is shared across views; each view has its own canvas layout.">Active view: {currentView?.label || "System"} · shared model</p>
+            {activeViewId === "system" && <p className="workbench-level-hint"><strong>HLD</strong> System boundaries, services, data stores and infrastructure.</p>}
+            {activeViewId === "lld" && <p className="workbench-level-hint"><strong>LLD</strong> Classes, interfaces, controllers, repositories and domain entities. Add detailed elements here and connect them with typed relationships.</p>}
           </div>
 
 

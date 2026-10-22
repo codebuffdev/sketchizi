@@ -1319,3 +1319,8 @@
 .policy-approval-summary span { border: 1px solid var(--color-border, #8886); border-radius: 7px; padding: 8px 5px; text-align: center; font-size: 11px; }
 .policy-approval-summary strong { display: block; font-size: 16px; margin-top: 4px; }
 @media (max-width: 520px) { .policy-approval-grid { grid-template-columns: minmax(0, 1fr); } .policy-approval-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* HLD/LLD separation: make the active design level explicit without splitting the canonical model. */
+.workbench-level-hint { margin: 8px 0 0; padding: 9px 10px; border: 1px solid var(--ui-border, #e5e8ef); border-radius: 9px; color: var(--ui-text-muted, #737b8b); font-size: 11px; line-height: 1.5; }
+.workbench-level-hint strong { display: inline-block; margin-right: 6px; color: var(--ui-text, #272b35); font-size: 10px; letter-spacing: .08em; }
+.theme-dark .workbench-level-hint strong { color: #f1f3f8; }

@@ -117,6 +117,11 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     setBusy(true);
     try {
       const seeded = structuredClone(workbench);
+      const targetDefinition = WORKBENCH_VIEWS.find((view) => view.id === targetViewId);
+      if (targetDefinition && !seeded.views.some((view) => view.id === targetViewId)) {
+        seeded.views.push({ id: targetDefinition.id, label: targetDefinition.label, description: targetDefinition.description });
+        seeded.viewScenes[targetViewId] = emptyScene(api.getAppState?.() || {});
+      }
       for (const view of seeded.views) {
         if (view.id !== seeded.activeViewId && !seeded.viewScenes[view.id]) {
           seeded.viewScenes[view.id] = emptyScene(api.getAppState?.() || {});
