@@ -20,3 +20,10 @@ test("narrow viewports retain an overlay fallback rather than compressing the ca
   assert.match(styles, /@media \(max-width:\s*700px\)[\s\S]*?\.desktop-workspace\.desktop-workspace-workbench-open\s*\{\s*display:\s*block/);
   assert.match(styles, /\.desktop-workspace\.desktop-workspace-workbench-open \.workbench-panel\s*\{[^}]*position:\s*absolute/);
 });
+
+test("narrow workspace selection is restored and persisted as a presentation preference", () => {
+  assert.match(app, /sketchizi\.workbench\.narrowWorkspaceView/);
+  assert.match(app, /\["palette", "canvas", "workbench", "inspector"\]\.includes\(savedView\)/);
+  assert.match(app, /localStorage\.setItem\("sketchizi\.workbench\.narrowWorkspaceView", narrowWorkspaceView\)/);
+  assert.match(app, /\[narrowWorkspaceView\]/);
+});

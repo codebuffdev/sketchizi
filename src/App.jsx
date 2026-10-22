@@ -52,7 +52,14 @@ function App() {
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [workbenchRuntimeOverlay, setWorkbenchRuntimeOverlay] = useState(null);
-  const [narrowWorkspaceView, setNarrowWorkspaceView] = useState("workbench");
+  const [narrowWorkspaceView, setNarrowWorkspaceView] = useState(() => {
+    try {
+      const savedView = window.localStorage.getItem("sketchizi.workbench.narrowWorkspaceView");
+      return ["palette", "canvas", "workbench", "inspector"].includes(savedView) ? savedView : "workbench";
+    } catch {
+      return "workbench";
+    }
+  });
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
@@ -106,6 +113,14 @@ function App() {
   const panelState = usePanelState({ apiRef, closeNativeMenu });
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("sketchizi.workbench.narrowWorkspaceView", narrowWorkspaceView);
+    } catch {
+      // Workspace presentation preferences are optional when storage is unavailable.
+    }
+  }, [narrowWorkspaceView]);
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   useEffect(() => {
