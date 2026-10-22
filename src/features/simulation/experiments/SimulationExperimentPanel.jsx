@@ -8,6 +8,20 @@ import { createSimulationEvidenceReport } from "./simulationEvidenceReport.js";
 import { compareSimulationEvidenceReports, parseSimulationEvidenceReport } from "./simulationEvidenceComparison.js";
 import { buildRuntimeOverlayModel } from "./runtimeOverlayModel.js";
 import { deriveTraceInvestigation, findTraceWindowBucketRange } from "./traceInvestigation.js";
+import { buildOptimizationPortfolio } from "./optimizationPortfolio.js";
+import { architectureSnapshotsMatch, buildArchitectureChangeImpact } from "./architectureChangeImpact.js";
+import { buildArchitectureDecisionReport, formatArchitectureDecisionReportMarkdown } from "./architectureDecisionReport.js";
+import { ARCHITECTURE_DECISION_STATUSES, createArchitectureDecisionRecord, formatArchitectureDecisionRecordMarkdown, updateArchitectureDecisionRecords } from "./architectureDecisionRecord.js";
+import { buildRolloutReadiness, normalizeRolloutChecks } from "./rolloutReadiness.js";
+import { buildReleaseEvidenceBundle } from "./releaseEvidenceBundle.js";
+import { reviewReleaseEvidenceBundle } from "./releaseEvidenceBundleReview.js";
+import { buildRemediationEffectivenessSummary, buildReviewFindingObservationTimeline, confirmRemediationVerification, mergeReleaseBundleReviewFindings, normalizeDecisionReviewFindings, recordRemediationSourceDriftResolution, recordRemediationVerificationRun, reopenTrackedReviewFinding, REMEDIATION_VERIFICATION_OUTCOME_OPTIONS, REMEDIATION_VERIFICATION_RUN_TYPE_OPTIONS, REVIEW_FINDING_STATUS_OPTIONS, summarizeDecisionReviewFindings, updateTrackedReviewFinding } from "./reviewFindingTracking.js";
+import { getRemediationAcceptanceMetricDefinitions } from "./remediationAcceptanceCriteria.js";
+import { captureRemediationMeasurementSources, evaluateRemediationMeasurementSourceDrift, getLoadTestSourceMetric, REMEDIATION_MEASUREMENT_SOURCE_OPTIONS } from "./remediationEvidenceMapping.js";
+import { REMEDIATION_SOURCE_DRIFT_DISPOSITION_OPTIONS, summarizeRemediationSourceDriftResolution } from "./remediationSourceDriftResolution.js";
+import { buildRemediationWorkQueue, filterRemediationWorkQueue, REMEDIATION_WORK_QUEUE_FILTERS } from "./remediationWorkQueue.js";
+import { acknowledgeRemediationWorkQueueEscalation, getRemediationTaskMetadata, recordRemediationWorkQueueFollowUpNote, reopenRemediationWorkQueueTask, resolveRemediationWorkQueueTask, updateRemediationWorkQueueTask } from "./remediationWorkQueueMetadata.js";
+import { appendRemediationHandoffNote, createRemediationHandoffActions, formatRemediationHandoffMarkdown, normalizeRemediationHandoffNotes, recordRemediationHandoffReceipt, reconcileRemediationHandoff, updateRemediationHandoffAction } from "./remediationHandoff.js";
 import {
   compareSimulationRuns,
   buildScenarioComparisonOverview,
@@ -17,6 +31,7 @@ import {
   createServiceTimeImprovementProfile,
   createDatabaseContentionImprovementProfile,
   getDatabaseIndexCandidates,
+  recommendSimulationImprovements,
   createDatabaseIndexImprovementProfile,
   buildTimeSeriesComparisonPoints,
   summarizeSimulationImprovement,
@@ -55,6 +70,66 @@ function downloadSimulationEvidence(experimentType, results) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = artifact.filename;
+  anchor.rel = "noopener";
+  document.body?.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  globalThis.setTimeout?.(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadArchitectureDecisionReport(report) {
+  if (!report || typeof document === "undefined") return;
+  const markdown = formatArchitectureDecisionReportMarkdown(report);
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "sketchizi-architecture-decision-report.md";
+  anchor.rel = "noopener";
+  document.body?.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  globalThis.setTimeout?.(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadArchitectureDecisionRecord(record, loadTestRecords = []) {
+  if (!record || typeof document === "undefined") return;
+  const markdown = formatArchitectureDecisionRecordMarkdown(record, { loadTestRecords });
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `sketchizi-decision-record-${String(record.id || "decision").replace(/[^a-zA-Z0-9_-]/g, "-")}.md`;
+  anchor.rel = "noopener";
+  document.body?.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  globalThis.setTimeout?.(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadRemediationHandoff(queue, decisionRecords) {
+  if (!queue || typeof document === "undefined") return;
+  const markdown = formatRemediationHandoffMarkdown({ queue, decisionRecords });
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `sketchizi-escalation-handoff-${queue.evaluatedDate || "current"}.md`;
+  anchor.rel = "noopener";
+  document.body?.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  globalThis.setTimeout?.(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadReleaseEvidenceBundle(record, loadTestRecords) {
+  if (!record || typeof document === "undefined") return;
+  const bundle = buildReleaseEvidenceBundle({ record, loadTestRecords });
+  const blob = new Blob([`${JSON.stringify(bundle, null, 2)}\n`], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `sketchizi-release-evidence-${String(record.id || "decision").replace(/[^a-zA-Z0-9_-]/g, "-")}.json`;
   anchor.rel = "noopener";
   document.body?.appendChild(anchor);
   anchor.click();
@@ -429,7 +504,22 @@ function ScenarioComparisonOverview({ overview, onFocusEntity, onSelectScenario 
   </details>;
 }
 
-export default function SimulationExperimentPanel({ workbench, simulationProfile, onUpdateSimulationProfile, simulationHistory = [], onUpdateSimulationHistory, onCreateTypedRelation, onFocusEntity, onUpdateEntity, visibleEntityIds = null, activeViewId = "system", onSwitchView, onSwitchToAdd, onRuntimeOverlayChange, canEdit = true }) {
+function sourceDriftSnapshotRows(snapshot) {
+  if (!snapshot) return [["Snapshot", "Source record is currently missing"]];
+  const metadata = snapshot.recordMetadata || {};
+  const workload = snapshot.workload || {};
+  const definition = snapshot.fieldDefinition || {};
+  const present = (value) => value === null || value === undefined || value === "" ? "not recorded" : String(value);
+  return [
+    ["Record / schema", `${present(snapshot.recordId)} · schema ${present(snapshot.schemaVersion)}`],
+    ["Field / value", `${present(snapshot.sourceField)} = ${present(snapshot.sourceValue)}${snapshot.transformation ? ` · ${snapshot.transformation}` : ""}`],
+    ["Metadata", `name ${present(metadata.name)} · tested ${present(metadata.testedAt)} · env ${present(metadata.targetEnvironment)} · source ${present(metadata.source)}`],
+    ["Workload", `duration ${present(workload.durationSeconds)}s · offered ${present(workload.offeredRps)} RPS · concurrency ${present(workload.concurrency)}`],
+    ["Field definition", definition.key ? `${definition.label || definition.key} · ${definition.key} · min ${present(definition.min)} · max ${present(definition.max)} · step ${present(definition.step)} · group ${present(definition.group)}` : "Definition unavailable in original snapshot"],
+  ];
+}
+
+export default function SimulationExperimentPanel({ workbench, simulationProfile, onUpdateSimulationProfile, simulationHistory = [], onUpdateSimulationHistory, onUpdateArchitectureDecisionRecords, onCreateTypedRelation, onFocusEntity, onUpdateEntity, visibleEntityIds = null, activeViewId = "system", onSwitchView, onSwitchToAdd, onRuntimeOverlayChange, canEdit = true }) {
   const scopeSignature = Array.isArray(visibleEntityIds) ? JSON.stringify([...new Set(visibleEntityIds)].sort()) : "__model_scope__";
   const scopeSeeds = useMemo(() => scopeSignature === "__model_scope__" ? null : JSON.parse(scopeSignature), [scopeSignature]);
   const simulationScope = useMemo(() => workbench ? deriveSimulationScope(workbench, scopeSeeds) : { workbench: null, entityIds: [], seedEntityIds: [], excludedEntityIds: [], scoped: Array.isArray(scopeSeeds) }, [workbench, scopeSignature]);
@@ -455,15 +545,35 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const [evidenceComparison, setEvidenceComparison] = useState(null);
   const [evidenceComparisonError, setEvidenceComparisonError] = useState("");
   const [historySearch, setHistorySearch] = useState("");
+  const [architectureBaselineId, setArchitectureBaselineId] = useState("");
   const [historyCompareIds, setHistoryCompareIds] = useState([]);
   const [historyComparison, setHistoryComparison] = useState(null);
   const [historyActionError, setHistoryActionError] = useState("");
+  const [decisionRecordActionError, setDecisionRecordActionError] = useState("");
+  const [releaseBundleReview, setReleaseBundleReview] = useState(null);
+  const [releaseBundleReviewError, setReleaseBundleReviewError] = useState("");
+  const [releaseBundleTrackingMessage, setReleaseBundleTrackingMessage] = useState("");
+  const [reviewFindingDrafts, setReviewFindingDrafts] = useState({});
+  const [remediationVerificationDrafts, setRemediationVerificationDrafts] = useState({});
+  const [sourceDriftReviewDrafts, setSourceDriftReviewDrafts] = useState({});
+  const [remediationWorkQueueFilter, setRemediationWorkQueueFilter] = useState("all");
+  const [remediationWorkQueueTaskDrafts, setRemediationWorkQueueTaskDrafts] = useState({});
+  const [remediationHandoffDraft, setRemediationHandoffDraft] = useState({ author: "", handedTo: "", note: "" });
+  const [remediationHandoffReceiptDraft, setRemediationHandoffReceiptDraft] = useState({ reviewer: "", status: "received", note: "" });
+  const [remediationHandoffReconciliation, setRemediationHandoffReconciliation] = useState(null);
+  const [remediationHandoffActionDraft, setRemediationHandoffActionDraft] = useState({ owner: "", dueDate: "", closureCriteria: "", actor: "" });
+  const [remediationHandoffClosureEvidence, setRemediationHandoffClosureEvidence] = useState("");
+  const [focusedRemediationWorkItem, setFocusedRemediationWorkItem] = useState(null);
+  const [selectedDecisionRecordId, setSelectedDecisionRecordId] = useState(() => workbench?.decisionRecords?.[0]?.id || "");
+  const [decisionRecordDraft, setDecisionRecordDraft] = useState({ title: "", owner: "", status: "proposed", rationale: "" });
+  const [rolloutEvidenceDrafts, setRolloutEvidenceDrafts] = useState({});
   const [historyRerunComparison, setHistoryRerunComparison] = useState(null);
   const [historyRerunBusyId, setHistoryRerunBusyId] = useState("");
   const [activeRunKey, setActiveRunKey] = useState("baseline");
   const [profileError, setProfileError] = useState("");
   const [runError, setRunError] = useState("");
   const [improvementResult, setImprovementResult] = useState(null);
+  const [optimizationPortfolioTrials, setOptimizationPortfolioTrials] = useState([]);
   const [improvementError, setImprovementError] = useState("");
   const [databaseIndexCandidateKey, setDatabaseIndexCandidateKey] = useState("");
   const [schemaUpdateNotice, setSchemaUpdateNotice] = useState("");
@@ -479,6 +589,42 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const [operatingEnvelopeLatencyTarget, setOperatingEnvelopeLatencyTarget] = useState("");
   const [operatingEnvelopeErrorTarget, setOperatingEnvelopeErrorTarget] = useState("");
   const [selectedLoadTestId, setSelectedLoadTestId] = useState("");
+  const architectureDecisionRecords = Array.isArray(workbench?.decisionRecords) ? workbench.decisionRecords : [];
+  const selectedDecisionRecord = architectureDecisionRecords.find((record) => record.id === selectedDecisionRecordId) || null;
+  const selectedRolloutReadiness = useMemo(() => buildRolloutReadiness(selectedDecisionRecord, { loadTestRecords: draftProfile?.loadTestEvidence?.records || [] }), [selectedDecisionRecord, draftProfile?.loadTestEvidence?.records]);
+  const selectedRolloutChecks = useMemo(() => normalizeRolloutChecks(selectedDecisionRecord?.rolloutChecks), [selectedDecisionRecord]);
+
+  useEffect(() => {
+    if (!selectedDecisionRecordId && architectureDecisionRecords.length) {
+      setSelectedDecisionRecordId(architectureDecisionRecords[0].id);
+      return;
+    }
+    if (selectedDecisionRecordId && !architectureDecisionRecords.some((record) => record.id === selectedDecisionRecordId)) {
+      setSelectedDecisionRecordId(architectureDecisionRecords[0]?.id || "");
+    }
+  }, [architectureDecisionRecords, selectedDecisionRecordId]);
+
+  useEffect(() => {
+    if (!selectedDecisionRecord) {
+      setDecisionRecordDraft({ title: "", owner: "", status: "proposed", rationale: "" });
+      return;
+    }
+    setDecisionRecordDraft({
+      title: selectedDecisionRecord.title || "",
+      owner: selectedDecisionRecord.owner || "",
+      status: selectedDecisionRecord.status || "proposed",
+      rationale: selectedDecisionRecord.rationale || "",
+    });
+    setDecisionRecordActionError("");
+  }, [selectedDecisionRecordId]);
+
+  useEffect(() => {
+    if (!selectedDecisionRecord) {
+      setRolloutEvidenceDrafts({});
+      return;
+    }
+    setRolloutEvidenceDrafts(Object.fromEntries(normalizeRolloutChecks(selectedDecisionRecord.rolloutChecks).map((check) => [`${selectedDecisionRecord.id}:${check.id}`, check.evidence])));
+  }, [selectedDecisionRecordId]);
 
   useEffect(() => {
     // The controller may clone Workbench metadata after an autosave or an unrelated
@@ -527,6 +673,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   }), [loadTestRecords, operatingEnvelopeLatencyTarget, operatingEnvelopeErrorTarget]);
   const serviceTimeProposals = useMemo(() => proposeServiceTimeCalibrations(loadTestRecords, workbench, draftProfile), [loadTestRecords, workbench, draftProfile]);
   const selectedLoadTestRecord = loadTestRecords.find((record) => record.id === selectedLoadTestId) || loadTestRecords[0] || null;
+  const remediationWorkQueue = useMemo(() => buildRemediationWorkQueue(architectureDecisionRecords, { loadTestRecords }), [architectureDecisionRecords, loadTestRecords]);
+  const visibleRemediationWorkItems = filterRemediationWorkQueue(remediationWorkQueue.items, remediationWorkQueueFilter, { upcomingDeadlines: remediationWorkQueue.upcomingDeadlines, resolvedItems: remediationWorkQueue.resolvedItems });
   const availableProfileEntities = Object.entries(profiles).map(([entityId, profile]) => ({ entity: entitiesById.get(entityId), entityId, profile })).filter((item) => item.entity && scopeEntityIdSet.has(item.entityId));
   const missingProfileEntityIds = useMemo(() => {
     if (!simulationScope.workbench) return [];
@@ -545,6 +693,20 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const resilienceMatrixStale = Boolean(resilienceMatrixResults && (unsaved || resilienceMatrixResults.provenance?.modelRevision !== (workbench?.modelRevision ?? null) || JSON.stringify(resilienceMatrixResults.provenance?.scopeEntityIds || null) !== JSON.stringify(simulationScope.entityIds)));
   const failureChainStale = Boolean(failureChainResults && (unsaved || failureChainResults.provenance?.modelRevision !== (workbench?.modelRevision ?? null) || JSON.stringify(failureChainResults.provenance?.scopeEntityIds || null) !== JSON.stringify(simulationScope.entityIds)));
   const activeRun = results?.runs?.[activeRunKey];
+  const currentArchitectureSnapshot = useMemo(() => createSimulationModelSnapshot(workbench), [workbench]);
+  const selectedArchitectureBaseline = simulationHistory.find((entry) => entry.id === architectureBaselineId) || simulationHistory[0] || null;
+  const currentResultsMatchArchitecture = Boolean(results?.sourceModelSnapshot && architectureSnapshotsMatch(results.sourceModelSnapshot, currentArchitectureSnapshot));
+  const architectureImpact = useMemo(() => buildArchitectureChangeImpact({
+    baselineSnapshot: selectedArchitectureBaseline?.sourceModelSnapshot,
+    proposedSnapshot: currentArchitectureSnapshot,
+    baselineMetrics: selectedArchitectureBaseline?.runs?.baseline?.result?.metrics || null,
+    proposedMetrics: currentResultsMatchArchitecture ? results?.runs?.baseline?.result?.result?.metrics || null : null,
+    proposedResultsMatchModel: currentResultsMatchArchitecture,
+    baselineProfileFingerprint: selectedArchitectureBaseline?.profileFingerprint || null,
+    proposedProfileFingerprint: results?.provenance?.profileFingerprint || null,
+    baselineScopeEntityIds: selectedArchitectureBaseline?.scopeEntityIds ?? null,
+    proposedScopeEntityIds: results?.runScopeEntityIds ?? results?.provenance?.scopeEntityIds ?? null,
+  }), [selectedArchitectureBaseline, currentArchitectureSnapshot, currentResultsMatchArchitecture, results]);
   const calibrationComparison = useMemo(() => activeRun?.result?.status === "completed" && selectedLoadTestRecord
     ? compareLoadTestToSimulation(activeRun.result.result, selectedLoadTestRecord)
     : null, [activeRun, selectedLoadTestRecord]);
@@ -559,6 +721,12 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const candidateKey = (candidate) => candidate ? `${candidate.entityId}::${candidate.tableEntityId}::${candidate.columnName}` : "";
   const selectedDatabaseIndexCandidate = databaseIndexCandidates.find((candidate) => candidateKey(candidate) === databaseIndexCandidateKey)
     || (databaseIndexCandidates.length === 1 ? databaseIndexCandidates[0] : null);
+  const optimizationRecommendations = useMemo(() => recommendSimulationImprovements({
+    run: capacityScenario,
+    profile: draftProfile,
+    workbench,
+    scopeEntityIds: simulationScope.entityIds,
+  }), [capacityScenario, draftProfile, workbench, simulationScope]);
   const baselineRun = results?.runs?.baseline?.result;
   const comparisonRun = activeRunKey === "baseline" ? baselineRun : activeRun?.result;
   const comparison = activeRunKey !== "baseline" && baselineRun && comparisonRun
@@ -571,6 +739,438 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
   const resultsProfile = results?.profileUsed || results?.historyProfileSnapshot;
   const scenarioOverview = useMemo(() => results ? buildScenarioComparisonOverview(results, resultsModel) : null, [results, resultsModel]);
   const activeInvestigation = investigation?.scenarioKey === activeRunKey && !staleModel ? investigation : null;
+  const architectureDecisionReport = useMemo(() => {
+    const pressureRows = getCapacityPressureRows(capacityScenario)
+      .filter((row) => row.hasPressure || row.maxDropped > 0 || row.maxFailed > 0 || (row.queueWaitP95Ms ?? 0) > 0)
+      .sort((left, right) => (right.maxDropped - left.maxDropped)
+        || (right.maxFailed - left.maxFailed)
+        || ((right.peakUtilization ?? 0) - (left.peakUtilization ?? 0))
+        || ((right.queueWaitP95Ms ?? 0) - (left.queueWaitP95Ms ?? 0)))
+      .slice(0, 4)
+      .map((row) => ({ ...row, label: entitiesById.get(row.entityId)?.name || row.entityId }));
+    return buildArchitectureDecisionReport({
+      baselineName: selectedArchitectureBaseline?.name || selectedArchitectureBaseline?.id || "Saved experiment baseline",
+      proposedName: "Current architecture",
+      architectureImpact,
+      bottlenecks: pressureRows,
+      traceEvidence: activeInvestigation ? {
+        ...activeInvestigation,
+        label: activeInvestigation.componentLabel,
+        scenarioLabel: results?.runs?.[activeInvestigation.scenarioKey]?.label || activeInvestigation.scenarioKey,
+      } : null,
+      optimizationRecommendations,
+      optimizationTrials: optimizationPortfolioTrials,
+      loadTestRecordsCount: loadTestRecords.length,
+      profileConfirmed: profileIsConfirmed(resultsProfile),
+      selectedScenarioLabel: capacityScenario?.label || null,
+    });
+  }, [capacityScenario, entitiesById, selectedArchitectureBaseline, architectureImpact, activeInvestigation, results, optimizationRecommendations, optimizationPortfolioTrials, loadTestRecords.length, resultsProfile]);
+  const createDecisionRecord = () => {
+    try {
+      const record = createArchitectureDecisionRecord({ report: architectureDecisionReport });
+      const nextRecords = [...architectureDecisionRecords, record].slice(-50);
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setSelectedDecisionRecordId(record.id);
+      setDecisionRecordDraft({ title: record.title, owner: record.owner, status: record.status, rationale: record.rationale });
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not create a decision record.");
+    }
+  };
+  const openRemediationWorkItem = (item) => {
+    if (!item) return;
+    setFocusedRemediationWorkItem({
+      recordId: item.recordId,
+      findingId: item.findingId,
+      runId: item.runId,
+      metricKey: item.metricKey,
+      side: item.side,
+    });
+    setSelectedDecisionRecordId(item.recordId);
+    setDecisionRecordActionError("");
+  };
+
+  useEffect(() => {
+    const target = focusedRemediationWorkItem;
+    if (!target || target.recordId !== selectedDecisionRecordId || typeof document === "undefined") return;
+    const findingNodes = Array.from(document.querySelectorAll("[data-review-finding-id]"));
+    const article = findingNodes.find((node) => node.dataset.reviewFindingId === target.findingId
+      && node.dataset.decisionRecordId === target.recordId);
+    if (!article) return;
+    let focusNode = article;
+    if (target.runId && target.metricKey && target.side) {
+      const driftTargets = Array.from(article.querySelectorAll("[data-remediation-drift-target]"));
+      focusNode = driftTargets.find((node) => node.dataset.remediationRunId === target.runId
+        && node.dataset.remediationMetricKey === target.metricKey
+        && node.dataset.remediationSide === target.side) || article.querySelector(".sim-remediation-effectiveness") || article;
+    } else {
+      focusNode = article.querySelector(".sim-remediation-effectiveness") || article;
+    }
+    if (typeof focusNode.scrollIntoView === "function") focusNode.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusedRemediationWorkItem, selectedDecisionRecordId]);
+
+  const saveRemediationWorkQueueTaskMetadata = (item) => {
+    if (!canEdit || !item?.recordId || !item?.id) return;
+    const record = architectureDecisionRecords.find((entry) => entry.id === item.recordId);
+    if (!record) {
+      setDecisionRecordActionError("The decision record for this queue task is no longer available.");
+      return;
+    }
+    const saved = getRemediationTaskMetadata(record, item.id);
+    const draft = remediationWorkQueueTaskDrafts[item.id] || { assignee: saved?.assignee || "", dueDate: saved?.dueDate || "" };
+    try {
+      const result = updateRemediationWorkQueueTask(record.workQueueTasks, item.id, {
+        assignee: draft.assignee ?? saved?.assignee ?? "",
+        dueDate: draft.dueDate ?? saved?.dueDate ?? "",
+      });
+      if (!result.changed) {
+        setDecisionRecordActionError("");
+        return;
+      }
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, record.id, { workQueueTasks: result.tasks });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), assignee: result.task?.assignee || "", dueDate: result.task?.dueDate || "" } }));
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not save remediation task ownership and due date.");
+    }
+  };
+
+  const saveRemediationTaskOperation = (item, operation, errorFallback = "Could not save remediation task follow-up.") => {
+    if (!canEdit || !item?.recordId || !item?.id) return;
+    const record = architectureDecisionRecords.find((entry) => entry.id === item.recordId);
+    if (!record) {
+      setDecisionRecordActionError("The decision record for this queue task is no longer available.");
+      return;
+    }
+    try {
+      const result = operation(record.workQueueTasks || []);
+      if (!result.changed) {
+        setDecisionRecordActionError("");
+        return;
+      }
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, record.id, { workQueueTasks: result.tasks });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError("");
+      return result.task;
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || errorFallback);
+      return null;
+    }
+  };
+
+  const acknowledgeRemediationEscalation = (item) => {
+    if (!item?.isEscalationCandidate || item.isEscalationAcknowledged) return;
+    const draft = remediationWorkQueueTaskDrafts[item.id] || {};
+    saveRemediationTaskOperation(item, (tasks) => acknowledgeRemediationWorkQueueEscalation(tasks, item.id, {
+      acknowledgedBy: draft.acknowledgedBy,
+      note: draft.acknowledgementNote,
+      fingerprint: item.escalationFingerprint,
+      dueDateSnapshot: item.dueDate,
+    }));
+  };
+
+  const addRemediationTaskFollowUpNote = (item) => {
+    const draft = remediationWorkQueueTaskDrafts[item.id] || {};
+    const result = saveRemediationTaskOperation(item, (tasks) => recordRemediationWorkQueueFollowUpNote(tasks, item.id, {
+      author: draft.followUpAuthor,
+      note: draft.followUpNote,
+    }));
+    if (result) setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), followUpNote: "" } }));
+  };
+
+  const resolveRemediationTask = (item) => {
+    const draft = remediationWorkQueueTaskDrafts[item.id] || {};
+    if (item.isEscalationCandidate && !item.isEscalationAcknowledged) {
+      setDecisionRecordActionError("Acknowledge the overdue blocker escalation before resolving its queue task.");
+      return;
+    }
+    const result = saveRemediationTaskOperation(item, (tasks) => resolveRemediationWorkQueueTask(tasks, item.id, {
+      resolvedBy: draft.resolvedBy,
+      note: draft.resolutionNote,
+      evidenceReference: draft.resolutionEvidenceReference,
+      fingerprint: item.lifecycleFingerprint,
+    }));
+    if (result) setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), resolutionNote: "", resolutionEvidenceReference: "" } }));
+  };
+
+  const reopenRemediationTask = (item) => {
+    const draft = remediationWorkQueueTaskDrafts[item.id] || {};
+    saveRemediationTaskOperation(item, (tasks) => reopenRemediationWorkQueueTask(tasks, item.id, {
+      reopenedBy: draft.reopenedBy,
+      note: draft.reopenNote,
+    }));
+  };
+
+  const saveRemediationHandoffNote = () => {
+    if (!canEdit || !selectedDecisionRecord) {
+      setDecisionRecordActionError("Select a saved decision record before recording handoff notes.");
+      return;
+    }
+    try {
+      const draft = remediationHandoffDraft || {};
+      const result = appendRemediationHandoffNote(selectedDecisionRecord.handoffNotes, {
+        author: draft.author || selectedDecisionRecord.owner || "",
+        handedTo: draft.handedTo,
+        note: draft.note,
+        handoffSummary: remediationWorkQueue.handoffSummary,
+      });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { handoffNotes: result.notes });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setRemediationHandoffDraft((current) => ({ ...current, note: "" }));
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not save the escalation handoff note.");
+    }
+  };
+
+  const saveRemediationHandoffReceipt = (handoffNoteId) => {
+    if (!canEdit || !selectedDecisionRecord) return;
+    try {
+      const result = recordRemediationHandoffReceipt(selectedDecisionRecord.handoffNotes, handoffNoteId, remediationHandoffReceiptDraft, {});
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { handoffNotes: result.notes });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not record the handoff receipt.");
+    }
+  };
+
+  const reconcileSavedRemediationHandoff = (handoffNote) => {
+    setRemediationHandoffReconciliation(reconcileRemediationHandoff(handoffNote, remediationWorkQueue));
+  };
+
+  const saveRemediationHandoffCarryForwardActions = () => {
+    if (!canEdit || !selectedDecisionRecord || !remediationHandoffReconciliation) return;
+    try {
+      const note = normalizeRemediationHandoffNotes(selectedDecisionRecord.handoffNotes).find((entry) => entry.id === remediationHandoffReconciliation.handoffNoteId);
+      const result = createRemediationHandoffActions(note, remediationHandoffReconciliation, remediationHandoffActionDraft, { actor: remediationHandoffActionDraft.actor || remediationHandoffActionDraft.owner });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { handoffNotes: normalizeRemediationHandoffNotes(selectedDecisionRecord.handoffNotes).map((entry) => entry.id === note.id ? result.note : entry) });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError(result.createdCount ? `Created ${result.createdCount} carry-forward action(s).` : "No new actions were needed; matching task/category actions already exist.");
+    } catch (error) { setDecisionRecordActionError(error?.message || "Could not create carry-forward actions."); }
+  };
+
+  const updateSavedRemediationHandoffAction = (handoffNoteId, actionId, patch) => {
+    if (!canEdit || !selectedDecisionRecord) return;
+    try {
+      const notes = normalizeRemediationHandoffNotes(selectedDecisionRecord.handoffNotes);
+      const note = notes.find((entry) => entry.id === handoffNoteId);
+      const result = updateRemediationHandoffAction(note, actionId, patch, { actor: remediationHandoffActionDraft.actor || remediationHandoffActionDraft.owner, updatedAt: new Date().toISOString() });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { handoffNotes: notes.map((entry) => entry.id === note.id ? result.note : entry) });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError("");
+    } catch (error) { setDecisionRecordActionError(error?.message || "Could not update the carry-forward action."); }
+  };
+
+  const saveDecisionRecordDraft = () => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    if (!decisionRecordDraft.title.trim()) {
+      setDecisionRecordActionError("Enter a title before saving this decision record.");
+      return;
+    }
+    if (["accepted", "rejected"].includes(decisionRecordDraft.status)
+      && (!decisionRecordDraft.owner.trim() || !decisionRecordDraft.rationale.trim())) {
+      setDecisionRecordActionError("Record an owner and rationale before accepting or rejecting this proposal.");
+      return;
+    }
+    try {
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, decisionRecordDraft);
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not save the decision record.");
+    }
+  };
+  const toggleDecisionValidationGate = (gateId, done) => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    try {
+      const validationGates = (selectedDecisionRecord.validationGates || []).map((gate) => gate.id === gateId ? { ...gate, done } : gate);
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { validationGates });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not update the validation gate.");
+    }
+  };
+  const reviewReleaseEvidenceFile = async (event) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    setReleaseBundleReview(null);
+    setReleaseBundleReviewError("");
+    setReleaseBundleTrackingMessage("");
+    if (file.size > 2 * 1024 * 1024) {
+      setReleaseBundleReviewError("The selected file exceeds the 2 MB review limit. Export a bounded Sketchizi release evidence bundle and try again.");
+      return;
+    }
+    try {
+      const source = await file.text();
+      setReleaseBundleReview(reviewReleaseEvidenceBundle(source, { sourceName: file.name }));
+    } catch (error) {
+      setReleaseBundleReviewError(error?.message || "Could not read the selected release evidence file.");
+    }
+  };
+  const clearReleaseEvidenceReview = () => {
+    setReleaseBundleReview(null);
+    setReleaseBundleReviewError("");
+    setReleaseBundleTrackingMessage("");
+  };
+
+  const trackReleaseBundleFindings = () => {
+    if (!selectedDecisionRecord || !releaseBundleReview || !canEdit) return;
+    try {
+      const merged = mergeReleaseBundleReviewFindings(selectedDecisionRecord.reviewFindings, releaseBundleReview, {
+        sourceName: releaseBundleReview.sourceName,
+        importedAt: new Date().toISOString(),
+      });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { reviewFindings: merged.findings });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setReleaseBundleTrackingMessage(`${merged.added} new finding(s) tracked; ${merged.reobserved} existing finding(s) matched; ${merged.reoccurrencesDetected || 0} previously closed finding(s) reappeared and need reviewer action. Existing dispositions were preserved.`);
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setReleaseBundleTrackingMessage("");
+      setReleaseBundleReviewError(error?.message || "Could not add release review findings to the selected decision record.");
+    }
+  };
+
+  const saveTrackedReviewFinding = (findingId) => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    const finding = normalizeDecisionReviewFindings(selectedDecisionRecord.reviewFindings).find((entry) => entry.id === findingId);
+    if (!finding) return;
+    const key = `${selectedDecisionRecord.id}:${findingId}`;
+    const draft = reviewFindingDrafts[key] || finding;
+    try {
+      const currentFinding = selectedDecisionRecord.reviewFindings.find((entry) => entry.id === findingId);
+      const updatedFindingSet = updateTrackedReviewFinding(selectedDecisionRecord.reviewFindings, findingId, {
+        owner: draft.owner,
+        status: draft.status,
+        rationale: draft.rationale,
+        evidence: draft.evidence,
+        acceptanceCriteria: draft.acceptanceCriteria ?? currentFinding?.acceptanceCriteria ?? {},
+      });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { reviewFindings: updatedFindingSet.findings });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setReviewFindingDrafts((current) => ({ ...current, [key]: {
+        owner: updatedFindingSet.finding.owner,
+        status: updatedFindingSet.finding.status,
+        rationale: updatedFindingSet.finding.rationale,
+        evidence: updatedFindingSet.finding.evidence,
+        acceptanceCriteria: updatedFindingSet.finding.acceptanceCriteria,
+      } }));
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not save the review finding.");
+    }
+  };
+
+  const saveRemediationVerificationRun = (findingId) => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    const key = `${selectedDecisionRecord.id}:${findingId}`;
+    const draft = remediationVerificationDrafts[key] || {};
+    try {
+      const result = recordRemediationVerificationRun(selectedDecisionRecord.reviewFindings, findingId, {
+        runType: draft.runType || "regression-test",
+        outcome: draft.outcome || "inconclusive",
+        beforeState: draft.beforeState,
+        afterState: draft.afterState,
+        summary: draft.summary,
+        evidence: draft.evidence,
+        recordedBy: draft.recordedBy,
+        measurements: draft.measurements || {},
+        measurementSources: draft.measurementSources || {},
+      }, { loadTestRecords });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { reviewFindings: result.findings });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setRemediationVerificationDrafts((current) => ({ ...current, [key]: {
+        runType: draft.runType || "regression-test", outcome: draft.outcome || "inconclusive",
+        beforeState: "", afterState: "", summary: "", evidence: "", measurements: {}, measurementSources: {}, recordedBy: draft.recordedBy || selectedDecisionRecord.owner || "",
+        verifiedBy: draft.verifiedBy || "", verificationRationale: draft.verificationRationale || "",
+      } }));
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not record the remediation verification run.");
+    }
+  };
+
+  const saveRemediationSourceDriftReview = (findingId, runId, metricKey, side, fingerprint) => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    const draftKey = `${selectedDecisionRecord.id}:${findingId}:${runId}:${metricKey}:${side}:${fingerprint}`;
+    const draft = sourceDriftReviewDrafts[draftKey] || {};
+    try {
+      const result = recordRemediationSourceDriftResolution(selectedDecisionRecord.reviewFindings, findingId, runId, metricKey, side, {
+        disposition: draft.disposition || "requires-reverification",
+        reviewer: draft.reviewer,
+        rationale: draft.rationale,
+      }, { loadTestRecords });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { reviewFindings: result.findings });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not record the source drift review.");
+    }
+  };
+
+  const confirmFindingRemediationVerification = (findingId, runId) => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    const key = `${selectedDecisionRecord.id}:${findingId}`;
+    const draft = remediationVerificationDrafts[key] || {};
+    try {
+      const result = confirmRemediationVerification(selectedDecisionRecord.reviewFindings, findingId, runId, {
+        verifiedBy: draft.verifiedBy,
+        rationale: draft.verificationRationale,
+        loadTestRecords,
+      });
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { reviewFindings: result.findings });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not confirm remediation effectiveness.");
+    }
+  };
+
+  const reopenRecurringReviewFinding = (findingId) => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    const key = `${selectedDecisionRecord.id}:${findingId}`;
+    try {
+      const reopened = reopenTrackedReviewFinding(selectedDecisionRecord.reviewFindings, findingId);
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { reviewFindings: reopened.findings });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setReviewFindingDrafts((current) => ({ ...current, [key]: {
+        ...reopened.finding,
+        status: "open",
+      } }));
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not reopen the recurring review finding.");
+    }
+  };
+
+  const saveRolloutCheck = (checkId, patch) => {
+    if (!selectedDecisionRecord || !canEdit) return;
+    try {
+      const currentChecks = normalizeRolloutChecks(selectedDecisionRecord.rolloutChecks);
+      const currentCheck = currentChecks.find((check) => check.id === checkId);
+      if (!currentCheck) throw new Error("That rollout check is not recognized.");
+      const evidenceKey = `${selectedDecisionRecord.id}:${checkId}`;
+      const evidence = Object.hasOwn(patch, "evidence")
+        ? String(patch.evidence ?? "").trim()
+        : String(rolloutEvidenceDrafts[evidenceKey] ?? currentCheck.evidence).trim();
+      let done = Object.hasOwn(patch, "done") ? patch.done === true : currentCheck.done;
+      if (Object.hasOwn(patch, "evidence") && !evidence) done = false;
+      if (done && !evidence) {
+        setDecisionRecordActionError("Add an evidence note or reference before marking a rollout check complete.");
+        return;
+      }
+      const rolloutChecks = currentChecks.map((check) => check.id === checkId ? { ...check, evidence, done } : check);
+      const nextRecords = updateArchitectureDecisionRecords(architectureDecisionRecords, selectedDecisionRecord.id, { rolloutChecks });
+      onUpdateArchitectureDecisionRecords?.(nextRecords);
+      setRolloutEvidenceDrafts((current) => ({ ...current, [evidenceKey]: evidence }));
+      setDecisionRecordActionError("");
+    } catch (error) {
+      setDecisionRecordActionError(error?.message || "Could not update the rollout checklist.");
+    }
+  };
   const capacityTraceTargetEntityId = useMemo(() => {
     if (!activeInvestigation || activeInvestigation.scenarioKey !== capacityScenarioKey
       || activeInvestigation.requestOutcome !== "success"
@@ -865,7 +1465,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     } catch (error) { setFailureChainError(error.message || "Failure-chain experiments could not be run."); }
   };
 
-  const runImprovementExperiment = (interventionKind = "capacity") => {
+  const runImprovementExperiment = (interventionKind = "capacity", recommendation = null) => {
     setImprovementError("");
     setImprovementResult(null);
     if (!canEdit) { setImprovementError("Edit permission is required to run a controlled improvement experiment."); return; }
@@ -884,10 +1484,12 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       const isServiceTime = interventionKind === "service-time";
       const isWriteContention = interventionKind === "write-contention";
       const isDatabaseIndex = interventionKind === "database-index";
-      const preferredEntityId = isDatabaseIndex
-        ? selectedDatabaseIndexCandidate?.entityId
+      const indexRecommendation = isDatabaseIndex && recommendation?.interventionKind === "database-index" ? recommendation : null;
+      const indexCandidate = indexRecommendation || selectedDatabaseIndexCandidate;
+      const preferredEntityId = recommendation?.entityId || (isDatabaseIndex
+        ? indexCandidate?.entityId
         : isWriteContention ? databaseContentionTraceTargetEntityId
-          : isServiceTime ? serviceTimeTraceTargetEntityId : capacityTraceTargetEntityId;
+          : isServiceTime ? serviceTimeTraceTargetEntityId : capacityTraceTargetEntityId);
       const improvement = isDatabaseIndex
         ? createDatabaseIndexImprovementProfile({
           profile: draftProfile,
@@ -895,8 +1497,8 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
           scopeEntityIds: simulationScope.entityIds,
           componentRows: pressureRows,
           preferredEntityId,
-          preferredTableId: selectedDatabaseIndexCandidate?.tableEntityId,
-          preferredColumnName: selectedDatabaseIndexCandidate?.columnName,
+          preferredTableId: indexCandidate?.tableEntityId,
+          preferredColumnName: indexCandidate?.columnName,
         })
         : isWriteContention
         ? createDatabaseContentionImprovementProfile({
@@ -955,6 +1557,7 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         createdAt: new Date().toISOString(),
       };
       setImprovementResult(displayImprovement);
+      setOptimizationPortfolioTrials((current) => [...current, { ...displayImprovement, id: `${displayImprovement.interventionKind}-${displayImprovement.createdAt}` }].slice(-12));
       setActiveRunKey(comparisonScenarioKey);
       // Keep the trial in the same bounded experiment history as normal runs,
       // while preserving the canonical profile and model unchanged.
@@ -1084,6 +1687,34 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
       </div>
     </div>}
     <details className="sim-scope-explainer"><summary>What gets simulated?</summary><p>Only runtime components reachable from a React traffic source through typed relationships are included. Disconnected components remain in your document but are excluded from the current run.</p></details>
+    <details className="sim-release-bundle-review">
+      <summary><span>Review exported release evidence bundle</span><small>Inspect structure, consistency, missing evidence and open requirements</small></summary>
+      <p>Import a previously exported Sketchizi release evidence JSON file for a read-only review. This checks the bundle's structure and internal consistency; it does not verify signatures, source authenticity, external references, or production safety.</p>
+      <label className="sim-release-bundle-file"><span>Choose release evidence bundle (.json)</span><input aria-label="Choose release evidence bundle JSON file" type="file" accept=".json,application/json" onChange={reviewReleaseEvidenceFile} /></label>
+      {releaseBundleReviewError && <p className="sim-release-bundle-error" role="alert">{releaseBundleReviewError}</p>}
+      {releaseBundleReview && <section className={`sim-release-bundle-result is-${releaseBundleReview.status}`} aria-live="polite" aria-label="Release evidence review results">
+        <div className="sim-architecture-decision-heading"><strong>{releaseBundleReview.label}</strong><span>{releaseBundleReview.sourceName}</span></div>
+        <p className="sim-release-bundle-identity">{releaseBundleReview.bundleMetadata.title || "No decision title"}{releaseBundleReview.bundleMetadata.recordId ? ` · ${releaseBundleReview.bundleMetadata.recordId}` : ""}</p>
+        <p className="sim-release-bundle-disposition">Decision: {releaseBundleReview.bundleMetadata.decisionStatus || "unavailable"} · Readiness: {releaseBundleReview.bundleMetadata.readinessStatus || "unavailable"} · Bundle disposition: {releaseBundleReview.bundleMetadata.disposition || "unavailable"}</p>
+        <div className="sim-release-bundle-summary-grid">
+          <div><strong>{releaseBundleReview.counts.errors}</strong><span>Structural errors</span></div>
+          <div><strong>{releaseBundleReview.counts.warnings}</strong><span>Findings to review</span></div>
+          <div><strong>{releaseBundleReview.counts.openChecks}</strong><span>Open readiness checks</span></div>
+          <div><strong>{releaseBundleReview.counts.loadTestRecords}/{releaseBundleReview.counts.loadTestRecordsAtExport ?? "?"}</strong><span>Load-test records included / at export</span></div>
+        </div>
+        {releaseBundleReview.counts.trackedReviewFindings > 0 && <p className="sim-release-bundle-disposition">Decision-record remediation status: {releaseBundleReview.counts.openReviewFindings} open · {releaseBundleReview.counts.blockingReviewFindings} open error blocker(s) · {releaseBundleReview.counts.acceptedRiskFindings} accepted risk(s) · {releaseBundleReview.counts.resolvedReviewFindings} resolved.</p>}
+        <div className="sim-release-bundle-findings"><strong>Review findings ({releaseBundleReview.findings.length})</strong>
+          {releaseBundleReview.findings.length === 0 ? <p>No structural or consistency findings were detected. This is not proof of evidence authenticity.</p> : <ul>{releaseBundleReview.findings.slice(0, 24).map((finding, index) => <li className={`is-${finding.severity}`} key={`${finding.code}-${index}`}><strong>{finding.title}</strong><small>{finding.detail}</small></li>)}</ul>}
+          {releaseBundleReview.findings.length > 24 && <small>Showing the first 24 findings. The summary counts include all findings.</small>}
+        </div>
+        <p className="sim-release-bundle-disclaimer">{releaseBundleReview.interpretation}</p>
+        {releaseBundleTrackingMessage && <p className="sim-inline-note" role="status">{releaseBundleTrackingMessage}</p>}
+        <div className="sim-release-bundle-actions">
+          <button type="button" className="workbench-primary" disabled={!canEdit || !selectedDecisionRecord || releaseBundleReview.findings.length === 0} onClick={trackReleaseBundleFindings}>{selectedDecisionRecord ? `Track findings in “${selectedDecisionRecord.title}”` : "Select a decision record to track findings"}</button>
+          <button type="button" className="workbench-secondary" onClick={clearReleaseEvidenceReview}>Clear review</button>
+        </div>
+      </section>}
+    </details>
     {typedRequestGuidance && <section className="sim-typed-request-guidance" aria-label="Connect the typed simulation request path">
       <strong>Connect the typed request path</strong>
       <p>The arrows already drawn on the canvas are visual only unless they are linked to a Workbench relationship. Use the actions below to add the semantic relationship; a matching bound arrow will be reused instead of duplicated.</p>
@@ -1237,9 +1868,10 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
         <button type="button" className="workbench-secondary sim-run-button" onClick={() => downloadSimulationEvidence("traffic-sweep", trafficSweepResults)}>Export evidence JSON</button>
         {trafficSweepStale && <p className="sim-profile-warning" role="status">The model, profile or SLO targets have changed since this sweep. Rerun it before using these results.</p>}
         <p className="sim-capacity-target">Six deterministic what-if runs use the same model, profile and seed. These are synthetic outputs, not production capacity measurements.</p>
-        <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Load</th><th>Offered</th><th>Throughput</th><th>p95 latency</th><th>Failed requests</th><th>SLO</th></tr></thead><tbody>
-          {trafficSweepResults.points.map((point) => <tr key={point.multiplier}><td>{point.label}</td><td>{formatInteger(point.metrics?.offeredRequests)}</td><td>{formatDecimal(point.metrics?.throughputRps)}</td><td>{formatDecimal(point.p95LatencyMs)} ms</td><td>{point.failedRatePercent == null ? "—" : `${formatDecimal(point.failedRatePercent)}%`}</td><td><span className={`sim-repeat-slo-outcome ${point.sloStatus === "pass" ? "all-pass" : point.sloStatus === "fail" ? "all-fail" : "single-observation"}`}>{point.sloStatus === "pass" ? "Pass" : point.sloStatus === "fail" ? "Fail" : point.sloStatus === "targets-not-set" ? "Set SLOs" : point.status}</span></td></tr>)}
+        <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Load</th><th>Offered</th><th>Throughput</th><th>p95 latency</th><th>p95 headroom</th><th>Failed requests</th><th>Error budget remaining</th><th>SLO</th></tr></thead><tbody>
+          {trafficSweepResults.points.map((point) => <tr key={point.multiplier}><td>{point.label}</td><td>{formatInteger(point.metrics?.offeredRequests)}</td><td>{formatDecimal(point.metrics?.throughputRps)}</td><td>{formatDecimal(point.p95LatencyMs)} ms</td><td>{point.sloBudget?.latencyHeadroomMs == null ? "—" : `${formatDecimal(point.sloBudget.latencyHeadroomMs)} ms (${formatDecimal(point.sloBudget.latencyHeadroomPercent)}%)`}</td><td>{point.failedRatePercent == null ? "—" : `${formatDecimal(point.failedRatePercent)}%`}</td><td>{point.sloBudget?.errorBudgetRemainingPercent == null ? (trafficSweepResults.targets?.maxErrorRatePercent === 0 ? (point.sloBudget?.errorBudgetStatus === "within-budget" ? "0% target met" : point.sloBudget?.errorBudgetStatus === "exhausted" ? "Zero budget exceeded" : "—") : "—") : `${formatDecimal(point.sloBudget.errorBudgetRemainingPercent)}%`}</td><td><span className={`sim-repeat-slo-outcome ${point.sloStatus === "pass" ? "all-pass" : point.sloStatus === "fail" ? "all-fail" : "single-observation"}`}>{point.sloStatus === "pass" ? "Pass" : point.sloStatus === "fail" ? "Fail" : point.sloStatus === "targets-not-set" ? "Set SLOs" : point.status}</span></td></tr>)}
         </tbody></table></div>
+        <p className="sim-capacity-target">p95 headroom is target minus observed p95; negative values exceed the latency target. Error budget remaining is relative to the configured error-rate allowance; negative values mean the allowance was exceeded. A zero-percent error target has no meaningful percentage budget, so the UI reports whether it was met without dividing by zero.</p>
         <p className="sim-capacity-target">{trafficSweepResults.interpretation}</p>
       </section>}
     </>}
@@ -1353,6 +1985,384 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
     </details>}
     {profileError && <p className="sim-inline-note" role="status">{profileError}</p>}
     {runError && <p className="workbench-inspector-error" role="alert">{runError}</p>}
+    {simulationHistory.length > 0 && <details className="sim-architecture-impact">
+      <summary><span>Architecture change impact</span><small>{architectureImpact.changeCount} semantic change(s) · compare current model with a saved baseline</small></summary>
+      <p>Select a saved experiment as the baseline, then compare its semantic component and typed-relationship snapshot with the current architecture. This analysis ignores canvas layout and highlights which components are directly changed or connected to a changed relationship.</p>
+      <label className="sim-architecture-baseline"><span>Saved architecture baseline</span><select aria-label="Saved architecture baseline" value={selectedArchitectureBaseline?.id || ""} onChange={(event) => setArchitectureBaselineId(event.target.value)}>
+        {simulationHistory.map((entry) => <option key={entry.id} value={entry.id}>{entry.name || entry.id} · {new Date(entry.createdAt).toLocaleDateString()}</option>)}
+      </select></label>
+      <div className={`sim-architecture-impact-status ${architectureImpact.status}`} role="status"><strong>{architectureImpact.status === "changed" ? `${architectureImpact.changeCount} change(s) detected` : architectureImpact.status === "identical" ? "No semantic changes detected" : "Impact analysis unavailable"}</strong><span>{architectureImpact.reason}</span></div>
+      {architectureImpact.status !== "unavailable" && <div className="sim-architecture-change-summary">
+        <div><strong>{architectureImpact.entityChanges.added.length}</strong><span>Components added</span></div>
+        <div><strong>{architectureImpact.entityChanges.removed.length}</strong><span>Components removed</span></div>
+        <div><strong>{architectureImpact.entityChanges.modified.length}</strong><span>Components modified</span></div>
+        <div><strong>{architectureImpact.relationChanges.added.length + architectureImpact.relationChanges.removed.length + architectureImpact.relationChanges.modified.length}</strong><span>Relationships changed</span></div>
+      </div>}
+      {architectureImpact.changes.length > 0 && <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Type</th><th>Change</th><th>Element</th><th>Details</th><th>Navigation</th></tr></thead><tbody>
+        {architectureImpact.changes.map((change) => <tr key={change.id}><td>{change.subjectType}</td><td>{change.action}</td><td><strong>{change.label}</strong><small>{change.subjectId}</small></td><td>{change.detail}</td><td>{change.entityIds?.some((id) => workbench?.entities?.some((entity) => entity.id === id)) ? <button type="button" className="sim-scenario-link" onClick={() => onFocusEntity?.(change.entityIds.find((id) => workbench?.entities?.some((entity) => entity.id === id)))}>Focus component</button> : "—"}</td></tr>)}
+      </tbody></table></div>}
+      <section className="sim-architecture-simulation-impact" aria-label="Simulation outcome comparison for architecture changes">
+        <strong>Simulation impact</strong>
+        <p>{architectureImpact.simulation.reason}</p>
+        {architectureImpact.simulation.status === "comparable" && <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Metric</th><th>Saved baseline</th><th>Current architecture</th><th>Δ</th><th>Direction</th></tr></thead><tbody>
+          {architectureImpact.simulation.metrics.map((metric) => <tr key={metric.key}><td>{metric.label}</td><td>{metric.before == null ? "—" : metric.key === "successRate" ? formatPercent(metric.before) : `${formatDecimal(metric.before)}${metric.key === "throughputRps" ? " req/s" : metric.key === "p95LatencyMs" ? " ms" : ""}`}</td><td>{metric.after == null ? "—" : metric.key === "successRate" ? formatPercent(metric.after) : `${formatDecimal(metric.after)}${metric.key === "throughputRps" ? " req/s" : metric.key === "p95LatencyMs" ? " ms" : ""}`}</td><td>{metric.delta == null ? "—" : metric.key === "successRate" ? `${metric.delta > 0 ? "+" : ""}${formatPercent(metric.delta)} pp` : `${metric.delta > 0 ? "+" : ""}${formatDecimal(metric.delta)}${metric.key === "throughputRps" ? " req/s" : metric.key === "p95LatencyMs" ? " ms" : ""}`}</td><td>{metric.direction === "improved" ? "Improved" : metric.direction === "regressed" ? "Regressed" : metric.direction === "unchanged" ? "Unchanged" : "Unavailable"}</td></tr>)}
+        </tbody></table></div>}
+        <small>Architecture comparison is semantic, not visual. Relationship changes also mark their endpoint components as affected. Metric deltas are shown only when the current run matches the proposed model and profile fingerprints and component scopes match. Even then, simulation values are synthetic, not live production measurements.</small>
+      </section>
+      <section className="sim-architecture-decision-report" aria-label="Architecture decision report">
+        <div className="sim-architecture-decision-heading"><strong>Architecture decision report</strong><span>{architectureDecisionReport.confidence}</span></div>
+        <p className="sim-architecture-decision-verdict">{architectureDecisionReport.decision}</p>
+        <p>{architectureDecisionReport.rationale}</p>
+        <div className="sim-architecture-decision-grid">
+          <div><strong>{architectureDecisionReport.counts.addedComponents + architectureDecisionReport.counts.removedComponents + architectureDecisionReport.counts.modifiedComponents}</strong><span>Component changes</span></div>
+          <div><strong>{architectureDecisionReport.counts.addedRelationships + architectureDecisionReport.counts.removedRelationships + architectureDecisionReport.counts.modifiedRelationships}</strong><span>Relationship changes</span></div>
+          <div><strong>{architectureDecisionReport.bottlenecks.length}</strong><span>Pressure signals</span></div>
+          <div><strong>{architectureDecisionReport.portfolio.length}</strong><span>Ranked portfolio trials</span></div>
+        </div>
+        {architectureDecisionReport.recommendations.length > 0 && <div className="sim-architecture-decision-list"><strong>Experiments to consider</strong><ul>{architectureDecisionReport.recommendations.map((item, index) => <li key={`${item.interventionKind}-${item.entityId || index}`}><span>{item.label}</span><small>{item.reason}</small></li>)}</ul></div>}
+        {architectureDecisionReport.risks.length > 0 && <div className="sim-architecture-decision-list"><strong>Risks and evidence gaps</strong><ul>{architectureDecisionReport.risks.slice(0, 4).map((risk) => <li key={risk}>{risk}</li>)}</ul></div>}
+        <button type="button" className="workbench-secondary" onClick={() => downloadArchitectureDecisionReport(architectureDecisionReport)}>Export decision report (.md)</button>
+        <small>The report combines semantic change detection, matched simulation deltas when available, current bottleneck signals, trace investigation, and this panel session's optimization portfolio. It does not automatically approve a change or claim production validation.</small>
+      </section>
+      <section className="sim-decision-records" aria-label="Architecture decision record lifecycle">
+        <div className="sim-architecture-decision-heading"><strong>Decision records</strong><span>{architectureDecisionRecords.length} saved in this document</span></div>
+        <p>Capture a review decision against a point-in-time report. The record and its evidence snapshot are saved with the Sketchizi Workbench document.</p>
+        <section className="sim-remediation-handoff" aria-label="Escalation review and handoff">
+          <div className="sim-architecture-decision-heading"><strong>Escalation review &amp; handoff</strong><span>{remediationWorkQueue.handoffSummary.acknowledgedBlockers.count} acknowledged blocker(s) · {remediationWorkQueue.handoffSummary.overdueTasks.count} overdue task(s) · {remediationWorkQueue.handoffSummary.resolvedTasksWithOpenFindings.count} resolved task(s) with open findings</span></div>
+          <p>Review the current cross-record queue state before handing work to another engineer or shift. Queue counts are derived from the active task set, while handoff notes are manually recorded and saved to the selected decision record. Neither action changes canonical findings or original evidence.</p>
+          <div className="sim-remediation-handoff-categories">
+            {[
+              { key: "acknowledgedBlockers", label: "Acknowledged blockers", description: "Overdue rollout blockers with a current acknowledgement." },
+              { key: "unresolvedFollowUps", label: "Unresolved follow-ups", description: "Active tasks that are not currently overdue." },
+              { key: "overdueTasks", label: "Overdue tasks", description: "All active tasks past their due date, including blockers." },
+              { key: "resolvedTasksWithOpenFindings", label: "Resolved tasks · findings still open", description: "Task follow-up was completed, but the underlying finding disposition remains open." },
+            ].map(({ key, label, description }) => {
+              const category = remediationWorkQueue.handoffSummary[key];
+              return <section className="sim-remediation-handoff-category" key={key} aria-label={label}>
+                <div className="sim-remediation-work-queue-subheading"><strong>{label}</strong><span>{category.count}</span></div>
+                <p>{description}</p>
+                {category.items.length ? <ul>{category.items.slice(0, 4).map((item) => <li key={item.id}><div><strong>{item.findingTitle}</strong><small>{item.recordTitle} · {item.assignee || "Unassigned"}{item.dueDate ? ` · due ${item.dueDate}` : " · no due date"}{item.blocksRollout ? " · rollout blocker" : ""}{item.findingStatus === "open" ? " · finding open" : ""}</small></div><button type="button" className="workbench-secondary" onClick={() => openRemediationWorkItem(item)}>Open task</button></li>)}</ul> : <small>No items in this category as of {remediationWorkQueue.handoffSummary.asOfDate}.</small>}
+                {category.truncated && <small>Showing {category.items.length} of {category.count} tasks in this category.</small>}
+              </section>;
+            })}
+          </div>
+          <section className="sim-remediation-handoff-note-editor" aria-label="Record handoff note">
+            <strong>Record handoff note</strong>
+            <p>Saved with the selected decision record: {selectedDecisionRecord?.title || "No decision record selected"}. The note includes a point-in-time snapshot of these queue categories.</p>
+            <div className="sim-remediation-handoff-note-fields">
+              <label><span>Author</span><input maxLength={120} disabled={!canEdit || !selectedDecisionRecord} value={remediationHandoffDraft.author || ""} onChange={(event) => setRemediationHandoffDraft((current) => ({ ...current, author: event.target.value }))} placeholder={selectedDecisionRecord?.owner || "Name or team"} /></label>
+              <label><span>Hand off to (optional)</span><input maxLength={120} disabled={!canEdit || !selectedDecisionRecord} value={remediationHandoffDraft.handedTo || ""} onChange={(event) => setRemediationHandoffDraft((current) => ({ ...current, handedTo: event.target.value }))} placeholder="Next shift or responsible team" /></label>
+            </div>
+            <label><span>Handoff notes</span><textarea maxLength={1800} rows={3} disabled={!canEdit || !selectedDecisionRecord} value={remediationHandoffDraft.note || ""} onChange={(event) => setRemediationHandoffDraft((current) => ({ ...current, note: event.target.value }))} placeholder="What must the next owner know, what is still blocked, and what should happen next?" /></label>
+            <div className="sim-remediation-handoff-actions"><button type="button" className="workbench-primary" disabled={!canEdit || !selectedDecisionRecord || !remediationHandoffDraft.note?.trim()} onClick={saveRemediationHandoffNote}>Save handoff note</button><button type="button" className="workbench-secondary" onClick={() => downloadRemediationHandoff(remediationWorkQueue, architectureDecisionRecords)}>Export escalation handoff (.md)</button></div>
+            {selectedDecisionRecord && normalizeRemediationHandoffNotes(selectedDecisionRecord.handoffNotes).length > 0 && <details className="sim-remediation-work-queue-history"><summary>Saved handoff notes ({normalizeRemediationHandoffNotes(selectedDecisionRecord.handoffNotes).length})</summary><ol>{normalizeRemediationHandoffNotes(selectedDecisionRecord.handoffNotes).slice().reverse().map((entry) => <li key={entry.id}>{entry.createdAt} — <strong>{entry.author}</strong>{entry.handedTo ? ` → ${entry.handedTo}` : ""}: {entry.note}{entry.summarySnapshot && <small> Snapshot {entry.summarySnapshot.asOfDate}: {entry.summarySnapshot.activeTaskCount} active, {entry.summarySnapshot.resolvedTaskCount} resolved, {entry.summarySnapshot.openRolloutBlockerCount} open blockers.</small>}<div className="sim-remediation-handoff-actions"><button type="button" className="workbench-secondary" onClick={() => reconcileSavedRemediationHandoff(entry)}>Compare snapshot with current queue</button></div>{entry.receipt ? <small>Receipt: {entry.receipt.status} · {entry.receipt.reviewer} · {entry.receipt.recordedAt}. Manual attestation only.</small> : <div className="sim-remediation-handoff-note-fields"><label><span>Receipt reviewer</span><input maxLength={120} disabled={!canEdit} value={remediationHandoffReceiptDraft.reviewer} onChange={(event) => setRemediationHandoffReceiptDraft((current) => ({ ...current, reviewer: event.target.value }))} placeholder="Reviewer name or team" /></label><label><span>Receipt status</span><select disabled={!canEdit} value={remediationHandoffReceiptDraft.status} onChange={(event) => setRemediationHandoffReceiptDraft((current) => ({ ...current, status: event.target.value }))}><option value="received">Received</option><option value="received-with-follow-up">Received — follow-up required</option><option value="not-received">Not received</option></select></label><label><span>Receipt note (optional)</span><input maxLength={1200} disabled={!canEdit} value={remediationHandoffReceiptDraft.note} onChange={(event) => setRemediationHandoffReceiptDraft((current) => ({ ...current, note: event.target.value }))} placeholder="Manual reviewer note" /></label><button type="button" className="workbench-secondary" disabled={!canEdit || !remediationHandoffReceiptDraft.reviewer.trim()} onClick={() => saveRemediationHandoffReceipt(entry.id)}>Record receipt</button></div>}{entry.followUpActions?.length > 0 && <section className="sim-remediation-handoff-reconciliation"><strong>Carry-forward action ledger ({entry.followUpActions.length})</strong><ul>{entry.followUpActions.map((action) => <li key={action.id}><strong>{action.status.toUpperCase()} · {action.findingTitle || action.taskId}</strong><small>Owner: {action.owner} · Due: {action.dueDate}</small><small>Closure criteria: {action.closureCriteria}</small>{action.closureEvidence && <small>Closure evidence: {action.closureEvidence}</small>}<small>{action.history.length} immutable history event(s). Manual workflow metadata only.</small>{action.status !== "closed" && <div className="sim-remediation-handoff-actions"><button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => updateSavedRemediationHandoffAction(entry.id, action.id, { status: "in-progress" })}>Mark in progress</button><input aria-label={`Closure evidence for ${action.findingTitle || action.taskId}`} maxLength={1200} disabled={!canEdit} value={remediationHandoffClosureEvidence} onChange={(event) => setRemediationHandoffClosureEvidence(event.target.value)} placeholder="Closure evidence reference" /><button type="button" className="workbench-secondary" disabled={!canEdit || !remediationHandoffClosureEvidence.trim()} onClick={() => { updateSavedRemediationHandoffAction(entry.id, action.id, { status: "closed", closureEvidence: remediationHandoffClosureEvidence }); setRemediationHandoffClosureEvidence(""); }}>Close with evidence</button></div>}</li>)}</ul></section>}</li>)}</ol></details>}{remediationHandoffReconciliation && <section className="sim-remediation-handoff-reconciliation" aria-live="polite"><strong>Snapshot reconciliation</strong><p>Compared {remediationHandoffReconciliation.comparedReferenceCount} bounded snapshot reference(s): {remediationHandoffReconciliation.unchangedCount} unchanged, {remediationHandoffReconciliation.carryForwardCount} needing follow-up.</p>{remediationHandoffReconciliation.carryForward.length > 0 ? <ul>{remediationHandoffReconciliation.carryForward.map((entry) => <li key={`${entry.category}:${entry.taskId}`}><strong>{entry.findingTitle || entry.findingCode || entry.taskId}</strong><small>{entry.reason}</small></li>)}</ul> : <small>No changes detected in the saved preview references.</small>}{remediationHandoffReconciliation.carryForward.length > 0 && <div className="sim-remediation-handoff-note-fields"><label><span>Action owner (required)</span><input maxLength={120} disabled={!canEdit} value={remediationHandoffActionDraft.owner} onChange={(event) => setRemediationHandoffActionDraft((current) => ({ ...current, owner: event.target.value }))} placeholder="Responsible person or team" /></label><label><span>Action due date (required)</span><input type="date" disabled={!canEdit} value={remediationHandoffActionDraft.dueDate} onChange={(event) => setRemediationHandoffActionDraft((current) => ({ ...current, dueDate: event.target.value }))} /></label><label><span>Closure criteria (required)</span><input maxLength={1200} disabled={!canEdit} value={remediationHandoffActionDraft.closureCriteria} onChange={(event) => setRemediationHandoffActionDraft((current) => ({ ...current, closureCriteria: event.target.value }))} placeholder="Define what must be true to close these actions" /></label><label><span>Recorded by</span><input maxLength={120} disabled={!canEdit} value={remediationHandoffActionDraft.actor} onChange={(event) => setRemediationHandoffActionDraft((current) => ({ ...current, actor: event.target.value }))} placeholder="Reviewer" /></label><button type="button" className="workbench-secondary" disabled={!canEdit || !remediationHandoffActionDraft.owner.trim() || !remediationHandoffActionDraft.dueDate || !remediationHandoffActionDraft.closureCriteria.trim()} onClick={saveRemediationHandoffCarryForwardActions}>Create carry-forward actions</button></div>}<small>{remediationHandoffReconciliation.disclaimer}</small></section>}
+          </section>
+          <small>Handoff notes are manual coordination context, not evidence verification, notification delivery, a change in finding disposition, or deployment approval.</small>
+        </section>
+        <section className="sim-remediation-work-queue" aria-label="Remediation work queue">
+          <div className="sim-architecture-decision-heading"><strong>Remediation work queue</strong><span>{remediationWorkQueue.totalCount} active · {remediationWorkQueue.totalResolvedCount} task(s) resolved · {remediationWorkQueue.blockingCount} active rollout blocker task(s) · {remediationWorkQueue.overdueCount} overdue</span></div>
+          <p>Prioritized follow-up across tracked findings in all saved decision records. Task acknowledgement and resolution are workflow metadata only: completing a task does not change the canonical finding disposition, erase historical evidence, or remove a still-open error finding from rollout readiness.</p>
+          <div className="sim-remediation-work-queue-toolbar">
+            <label><span>Show</span><select aria-label="Filter remediation work queue" value={remediationWorkQueueFilter} onChange={(event) => setRemediationWorkQueueFilter(event.target.value)}>{REMEDIATION_WORK_QUEUE_FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}</select></label>
+            <small>{remediationWorkQueue.sourceDriftReviewCount} source review(s) · {remediationWorkQueue.reVerificationCount} re-verification task(s) · {remediationWorkQueue.recurrenceReviewCount} recurrence review(s) · {remediationWorkQueue.unassignedCount} unassigned task(s) · {remediationWorkQueue.upcomingDeadlineCount} deadline(s) through {remediationWorkQueue.upcomingDeadlineThrough}</small>
+          </div>
+          <section className={`sim-remediation-work-queue-escalation ${remediationWorkQueue.escalationSummary.overdueBlockerCount ? "is-active" : ""}`} aria-label="Overdue blocker escalation">
+            <div className="sim-remediation-work-queue-subheading"><strong>Escalation summary — overdue rollout blockers</strong><span>{remediationWorkQueue.escalationSummary.overdueBlockerCount} task(s)</span></div>
+            {remediationWorkQueue.escalationSummary.overdueBlockerCount ? <>
+              <p role="alert">{remediationWorkQueue.escalationSummary.overdueBlockerCount} overdue blocking task(s) across {remediationWorkQueue.escalationSummary.affectedDecisionRecordCount} decision record(s); {remediationWorkQueue.escalationSummary.unassignedOverdueBlockerCount} unassigned. {remediationWorkQueue.escalationSummary.acknowledgedCount} acknowledged · {remediationWorkQueue.escalationSummary.unacknowledgedCount} not acknowledged. {remediationWorkQueue.escalationSummary.oldestDueDate ? `Oldest due date ${remediationWorkQueue.escalationSummary.oldestDueDate} (${remediationWorkQueue.escalationSummary.oldestDaysOverdue} day(s) overdue).` : ""}</p>
+              <div className="sim-remediation-work-queue-escalation-items">{remediationWorkQueue.escalationSummary.items.map((item) => <div className="sim-remediation-work-queue-escalation-item" key={item.id}><div><strong>{item.findingTitle}</strong><small>{item.recordTitle} · {item.assignee || "Unassigned"} · due {item.dueDate} · {item.daysOverdue} day(s) overdue · {item.isEscalationAcknowledged ? `Acknowledged by ${item.escalationAcknowledgement?.acknowledgedBy || "reviewer"}` : "Not acknowledged"}</small></div><button type="button" className="workbench-secondary" onClick={() => { setRemediationWorkQueueFilter(item.isEscalationAcknowledged ? "overdue-blockers" : "unacknowledged-escalations"); openRemediationWorkItem(item); }}>Open blocker task</button></div>)}</div>
+              {remediationWorkQueue.escalationSummary.truncated && <small>Showing the five oldest overdue blocker tasks in this escalation preview.</small>}
+              <button type="button" className="workbench-secondary" onClick={() => setRemediationWorkQueueFilter("overdue-blockers")}>View overdue blockers</button>
+            </> : <p role="status">No overdue rollout-blocking tasks were detected as of {remediationWorkQueue.evaluatedDate}.</p>}
+          </section>
+          <div className="sim-remediation-work-queue-accountability-grid">
+            <section className="sim-remediation-work-queue-workload" aria-label="Workload by assignee">
+              <div className="sim-remediation-work-queue-subheading"><strong>Workload by assignee</strong><span>{remediationWorkQueue.totalAssigneeCount} assignee group(s)</span></div>
+              {remediationWorkQueue.assigneeWorkloads.length ? <div className="sim-remediation-work-queue-workloads" role="list">{remediationWorkQueue.assigneeWorkloads.slice(0, 12).map((summary) => <div className="sim-remediation-work-queue-workload-row" role="listitem" key={summary.key}>
+                <strong>{summary.assignee}</strong><span>{summary.taskCount} task(s) · {summary.blockingCount} blocker(s)</span><small>{summary.overdueCount} overdue · {summary.overdueBlockerCount} overdue blocker(s) · {summary.upcomingDeadlineCount} deadline(s) in next 7 days · {summary.affectedDecisionRecordCount} decision record(s)</small>
+              </div>)}</div> : <p>No derived remediation tasks currently require assignment.</p>}
+              {remediationWorkQueue.assigneeWorkloadsTruncated && <small>Showing the 100 highest-priority assignee summaries. Counts cover all derived tasks.</small>}
+            </section>
+            <section className="sim-remediation-work-queue-upcoming" aria-label="Upcoming deadlines">
+              <div className="sim-remediation-work-queue-subheading"><strong>Upcoming deadlines</strong><span>{remediationWorkQueue.upcomingDeadlineCount} in next 7 days</span></div>
+              {remediationWorkQueue.upcomingDeadlines.length ? <ol className="sim-remediation-work-queue-upcoming-list">{remediationWorkQueue.upcomingDeadlines.slice(0, 8).map((item) => <li key={item.id}><div><strong>{item.dueDate}{item.dueState === "due-today" ? " · Due today" : ""}</strong><small>{item.findingTitle} · {item.assignee || "Unassigned"} · {item.blocksRollout ? "Rollout blocker" : item.priority === "high" ? "High priority" : "Normal priority"}</small></div><button type="button" className="workbench-secondary" onClick={() => openRemediationWorkItem(item)}>Open task</button></li>)}</ol> : <p>No tasks are due between {remediationWorkQueue.evaluatedDate} and {remediationWorkQueue.upcomingDeadlineThrough}.</p>}
+              {remediationWorkQueue.upcomingDeadlinesTruncated && <small>Showing the ten soonest deadline previews.</small>}
+              <button type="button" className="workbench-secondary" onClick={() => setRemediationWorkQueueFilter("upcoming")}>View upcoming deadlines</button>
+            </section>
+          </div>
+          {(remediationWorkQueueFilter === "resolved" ? remediationWorkQueue.resolvedItems.length === 0 : remediationWorkQueue.items.length === 0) ? <p className="workbench-findings-empty">{remediationWorkQueueFilter === "resolved" ? "No queue tasks have a current resolved status." : "No active remediation follow-up tasks were detected across the saved decision records."}</p>
+            : visibleRemediationWorkItems.length === 0 ? <p className="workbench-findings-empty">No tasks match this queue filter.</p>
+              : <ol className="sim-remediation-work-queue-list">{visibleRemediationWorkItems.map((item) => <li className={`sim-remediation-work-queue-item priority-${item.priority} ${focusedRemediationWorkItem?.recordId === item.recordId && focusedRemediationWorkItem?.findingId === item.findingId && focusedRemediationWorkItem?.runId === item.runId && focusedRemediationWorkItem?.metricKey === item.metricKey && focusedRemediationWorkItem?.side === item.side ? "is-focused" : ""}`} key={item.id}>
+                <div className="sim-remediation-work-queue-item-heading"><strong>{item.kindLabel}</strong><span className={`sim-remediation-work-queue-priority is-${item.priority}`}>{item.priority === "blocking" ? "Rollout blocker" : item.priority === "high" ? "High priority" : "Normal"}</span></div>
+                <p><strong>{item.findingTitle}</strong> · {item.severity.toUpperCase()} · {item.findingCode}</p>
+                <small>Decision: {item.recordTitle} · status {item.decisionStatus} · finding {item.findingStatus} · finding owner {item.owner || "unassigned"}</small>
+                <p>{item.reason}</p>
+                {item.taskResolutionStale && <p className="sim-remediation-work-queue-stale-resolution" role="alert">The earlier task resolution no longer matches the current task state. It remains in history; this item is active again and needs review.</p>}
+                {item.isTaskResolved && <div className="sim-remediation-work-queue-task-resolved" role="status"><strong>Queue task resolved</strong><small>{item.taskResolution?.resolvedAt} · {item.taskResolution?.resolvedBy}</small><p>{item.taskResolution?.note}</p>{item.taskResolution?.evidenceReference && <small>Reference: {item.taskResolution.evidenceReference}</small>}{item.blocksRollout && item.findingStatus === "open" && <p role="alert">This queue task is complete, but the underlying error finding remains open and still blocks rollout readiness.</p>}</div>}
+                <div className="sim-remediation-work-queue-schedule">
+                  <label><span>Task assignee</span><input aria-label={`Task assignee for ${item.findingTitle}`} maxLength={120} value={remediationWorkQueueTaskDrafts[item.id]?.assignee ?? item.assignee ?? ""} disabled={!canEdit} placeholder="Assign a person or team" onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || { assignee: item.assignee || "", dueDate: item.dueDate || "" }), assignee: event.target.value } }))} /></label>
+                  <label><span>Task due date</span><input aria-label={`Task due date for ${item.findingTitle}`} type="date" value={remediationWorkQueueTaskDrafts[item.id]?.dueDate ?? item.dueDate ?? ""} disabled={!canEdit} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || { assignee: item.assignee || "", dueDate: item.dueDate || "" }), dueDate: event.target.value } }))} /></label>
+                  <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => saveRemediationWorkQueueTaskMetadata(item)}>Save task details</button>
+                </div>
+                {item.isEscalationCandidate && <section className="sim-remediation-work-queue-acknowledgement" aria-label={`Escalation acknowledgement for ${item.findingTitle}`}>
+                  <strong>Overdue blocker escalation</strong>
+                  {item.isEscalationAcknowledged ? <p role="status">Acknowledged by {item.escalationAcknowledgement?.acknowledgedBy} on {item.escalationAcknowledgement?.acknowledgedAt}. {item.escalationAcknowledgement?.note}</p> : <>
+                    {item.isEscalationAcknowledgementStale && <p role="alert">The previous acknowledgement refers to a different overdue state and no longer applies.</p>}
+                    <label><span>Acknowledged by</span><input maxLength={120} aria-label={`Escalation acknowledged by for ${item.findingTitle}`} disabled={!canEdit} value={remediationWorkQueueTaskDrafts[item.id]?.acknowledgedBy || ""} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), acknowledgedBy: event.target.value } }))} placeholder="Reviewer or escalation owner" /></label>
+                    <label><span>Follow-up / acknowledgement note</span><textarea maxLength={1200} rows={2} aria-label={`Escalation acknowledgement note for ${item.findingTitle}`} disabled={!canEdit} value={remediationWorkQueueTaskDrafts[item.id]?.acknowledgementNote || ""} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), acknowledgementNote: event.target.value } }))} placeholder="Who is following up and what happens next?" /></label>
+                    <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => acknowledgeRemediationEscalation(item)}>Acknowledge escalation</button>
+                  </>}
+                </section>}
+                <section className="sim-remediation-work-queue-follow-up" aria-label={`Follow-up notes for ${item.findingTitle}`}>
+                  <strong>Follow-up notes</strong>
+                  <label><span>Note author</span><input maxLength={120} aria-label={`Follow-up note author for ${item.findingTitle}`} disabled={!canEdit} value={remediationWorkQueueTaskDrafts[item.id]?.followUpAuthor || ""} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), followUpAuthor: event.target.value } }))} placeholder="Name or team" /></label>
+                  <label><span>Follow-up note</span><textarea maxLength={1200} rows={2} aria-label={`Follow-up note for ${item.findingTitle}`} disabled={!canEdit} value={remediationWorkQueueTaskDrafts[item.id]?.followUpNote || ""} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), followUpNote: event.target.value } }))} placeholder="Next step, dependency, or review context" /></label>
+                  <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => addRemediationTaskFollowUpNote(item)}>Add follow-up note</button>
+                  {item.followUpNotes?.length > 0 && <details className="sim-remediation-work-queue-history"><summary>Follow-up note history ({item.followUpNotes.length})</summary><ol>{item.followUpNotes.slice().reverse().map((note) => <li key={note.id}>{note.at} — <strong>{note.author}</strong> ({note.type}): {note.note}</li>)}</ol></details>}
+                </section>
+                {item.isTaskResolved ? <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => reopenRemediationTask(item)}>Reopen queue task</button> : <section className="sim-remediation-work-queue-task-resolution" aria-label={`Task resolution for ${item.findingTitle}`}>
+                  <strong>Task-level resolution</strong><p>Resolution closes only this follow-up task. It does not change the finding's status or remove independent rollout blockers.</p>
+                  <label><span>Resolved by</span><input maxLength={120} aria-label={`Task resolved by for ${item.findingTitle}`} disabled={!canEdit} value={remediationWorkQueueTaskDrafts[item.id]?.resolvedBy || ""} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), resolvedBy: event.target.value } }))} placeholder="Name or team" /></label>
+                  <label><span>Resolution note</span><textarea maxLength={1200} rows={2} aria-label={`Task resolution note for ${item.findingTitle}`} disabled={!canEdit} value={remediationWorkQueueTaskDrafts[item.id]?.resolutionNote || ""} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), resolutionNote: event.target.value } }))} placeholder="What follow-up action is complete?" /></label>
+                  <label><span>Evidence / reference (optional)</span><input maxLength={600} aria-label={`Task resolution evidence for ${item.findingTitle}`} disabled={!canEdit} value={remediationWorkQueueTaskDrafts[item.id]?.resolutionEvidenceReference || ""} onChange={(event) => setRemediationWorkQueueTaskDrafts((current) => ({ ...current, [item.id]: { ...(current[item.id] || {}), resolutionEvidenceReference: event.target.value } }))} placeholder="Ticket, test run, or follow-up reference" /></label>
+                  <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => resolveRemediationTask(item)}>Mark task resolved</button>
+                </section>}
+                {item.dueState !== "not-set" && <p className={`sim-remediation-work-queue-due-state is-${item.dueState}`} role={item.isOverdue ? "alert" : "status"}>{item.isOverdue ? `OVERDUE — due ${item.dueDate}` : item.dueState === "due-today" ? `Due today — ${item.dueDate}` : `Due ${item.dueDate}`}</p>}
+                {item.taskMetadataUpdatedAt && <small>Task details updated {item.taskMetadataUpdatedAt}. Task-level history is separate from the finding audit.</small>}
+                {item.taskAuditTrail?.length > 0 && <details className="sim-remediation-work-queue-history"><summary>Task audit history ({item.taskAuditTrail.length})</summary><ol>{item.taskAuditTrail.slice().reverse().map((event) => <li key={event.id}>{event.at} — {event.message}</li>)}</ol></details>}
+                <button type="button" className="workbench-secondary" onClick={() => openRemediationWorkItem(item)}>{item.actionLabel}</button>
+              </li>)}</ol>}
+          {remediationWorkQueueFilter === "upcoming" && remediationWorkQueue.upcomingDeadlinesTruncated && <small>Showing the ten soonest deadlines out of {remediationWorkQueue.upcomingDeadlineCount}; the filter uses a bounded preview to keep the queue responsive.</small>}
+          {remediationWorkQueue.truncated && remediationWorkQueueFilter !== "upcoming" && <small>Only the first 300 prioritized tasks are shown. Review findings and audit history remain stored in their individual decision records.</small>}
+          <small className="sim-rollout-readiness-disclaimer">{remediationWorkQueue.disclaimer}</small>
+        </section>
+        <div className="sim-decision-record-toolbar">
+          <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={createDecisionRecord}>Create decision record from report</button>
+          {architectureDecisionRecords.length > 0 && <label><span>Open record</span><select aria-label="Open architecture decision record" value={selectedDecisionRecordId || ""} onChange={(event) => { setSelectedDecisionRecordId(event.target.value); setDecisionRecordActionError(""); }}>
+            {architectureDecisionRecords.slice().reverse().map((record) => <option key={record.id} value={record.id}>{record.title || record.id} · {record.status}</option>)}
+          </select></label>}
+        </div>
+        {decisionRecordActionError && <p className="sim-inline-note" role="alert">{decisionRecordActionError}</p>}
+        {!selectedDecisionRecord && <p className="workbench-findings-empty">No decision record has been created yet. Create one to preserve the current report as a reviewable decision.</p>}
+        {selectedDecisionRecord && <div className="sim-decision-record-editor">
+          <div className="sim-decision-record-snapshot"><strong>Evidence snapshot</strong><span>{selectedDecisionRecord.reportSnapshot?.recommendation || "Recommendation unavailable"}</span><small>Baseline: {selectedDecisionRecord.baselineName || "Unavailable"} · Proposed: {selectedDecisionRecord.proposedName || "Unavailable"} · Simulation: {selectedDecisionRecord.reportSnapshot?.simulationStatus || "unavailable"}</small><small>Created {selectedDecisionRecord.createdAt} · Updated {selectedDecisionRecord.updatedAt}</small></div>
+          <div className="sim-decision-record-fields">
+            <label><span>Record title</span><input maxLength={180} value={decisionRecordDraft.title} disabled={!canEdit} onChange={(event) => setDecisionRecordDraft((current) => ({ ...current, title: event.target.value }))} /></label>
+            <label><span>Review owner</span><input maxLength={120} value={decisionRecordDraft.owner} disabled={!canEdit} placeholder="Engineering owner" onChange={(event) => setDecisionRecordDraft((current) => ({ ...current, owner: event.target.value }))} /></label>
+            <label><span>Decision status</span><select value={decisionRecordDraft.status} disabled={!canEdit} onChange={(event) => setDecisionRecordDraft((current) => ({ ...current, status: event.target.value }))}>{ARCHITECTURE_DECISION_STATUSES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+            <label className="sim-decision-record-rationale"><span>Decision rationale</span><textarea maxLength={2000} rows={3} disabled={!canEdit} value={decisionRecordDraft.rationale} placeholder="Why is this proposal accepted, rejected, or deferred?" onChange={(event) => setDecisionRecordDraft((current) => ({ ...current, rationale: event.target.value }))} /></label>
+          </div>
+          <div className="sim-decision-record-gates"><strong>Validation gates</strong><small>Outstanding gates remain visible even after a decision is accepted. Acceptance is not a production rollout approval.</small>
+            {(selectedDecisionRecord.validationGates || []).length === 0 ? <p className="workbench-findings-empty">No validation gates were recorded for this report.</p> : <ul>{selectedDecisionRecord.validationGates.map((gate) => <li key={gate.id}><label><input type="checkbox" checked={gate.done === true} disabled={!canEdit} onChange={(event) => toggleDecisionValidationGate(gate.id, event.target.checked)} /><span>{gate.label}</span></label>{gate.done && gate.completedAt && <small>Completed {gate.completedAt}</small>}</li>)}</ul>}
+            <p className="sim-decision-record-open-gates">{(selectedDecisionRecord.validationGates || []).filter((gate) => !gate.done).length} outstanding gate(s)</p>
+          </div>
+          <section className="sim-rollout-readiness" aria-label="Rollout readiness checklist">
+            <div className="sim-architecture-decision-heading"><strong>Rollout readiness</strong><span>{selectedRolloutReadiness.completeCount}/{selectedRolloutReadiness.totalCount} checks complete</span></div>
+            <p className={`sim-rollout-readiness-status is-${selectedRolloutReadiness.status}`}>{selectedRolloutReadiness.label}</p>
+            <p className="sim-rollout-readiness-intro">Derived from the saved decision, evidence snapshot, validation gates, and required production checks. For each production check, add a short evidence note, ticket, test run, or runbook reference before marking it complete.</p>
+            <ul className="sim-rollout-readiness-list">
+              {selectedRolloutReadiness.checks.map((check) => {
+                const checkId = check.id.startsWith("production-") ? check.id.slice("production-".length) : null;
+                const savedCheck = checkId ? selectedRolloutChecks.find((entry) => entry.id === checkId) : null;
+                const evidenceKey = `${selectedDecisionRecord.id}:${checkId}`;
+                if (savedCheck) return <li className={`sim-rollout-check is-${check.state}`} key={check.id}>
+                  <label className="sim-rollout-check-toggle"><input type="checkbox" checked={savedCheck.done === true && Boolean(savedCheck.evidence.trim())} disabled={!canEdit} onChange={(event) => saveRolloutCheck(savedCheck.id, { done: event.target.checked })} /><span>{check.label}</span><small>{check.state}</small></label>
+                  <input className="sim-rollout-evidence-input" aria-label={`Evidence for ${check.label}`} maxLength={600} value={rolloutEvidenceDrafts[evidenceKey] ?? savedCheck.evidence} disabled={!canEdit} placeholder="Evidence note / ticket / test run reference" onChange={(event) => setRolloutEvidenceDrafts((current) => ({ ...current, [evidenceKey]: event.target.value }))} onBlur={(event) => {
+                    const value = event.currentTarget.value;
+                    if (value !== savedCheck.evidence) saveRolloutCheck(savedCheck.id, { evidence: value });
+                  }} />
+                  <small className="sim-rollout-check-detail">{check.detail}</small>
+                </li>;
+                return <li className={`sim-rollout-check is-${check.state}`} key={check.id}><div className="sim-rollout-system-check"><span>{check.label}</span><small>{check.state}</small></div><p>{check.detail}</p></li>;
+              })}
+            </ul>
+            <p className="sim-rollout-readiness-disclaimer">{selectedRolloutReadiness.disclaimer}</p>
+          </section>
+          {(() => {
+            const trackedFindings = normalizeDecisionReviewFindings(selectedDecisionRecord.reviewFindings);
+            const findingSummary = summarizeDecisionReviewFindings(trackedFindings, { loadTestRecords });
+            return <section className="sim-review-finding-tracker" aria-label="Release review findings and remediation">
+              <div className="sim-architecture-decision-heading"><strong>Review findings &amp; remediation</strong><span>{findingSummary.open} open · {findingSummary.blocking} blocking · {findingSummary.reoccurrences} reoccurred · {findingSummary.acceptedRisk} accepted risk · {findingSummary.resolved} resolved · {findingSummary.remediationVerified} effectiveness verified · {findingSummary.resolvedButUnverified} resolved but unverified</span></div>
+              <p>Findings imported from release bundles are stored in this decision record. Each imported observation records the source bundle and the observed severity, title, and detail; the latest two observations are compared field by field. A finding seen again after being marked Resolved or Accepted Risk is flagged for review without silently changing its disposition. Reopening requires fresh supporting evidence before the finding can be closed again. Unreviewed recurring error findings block rollout readiness. Accepted Risk and Resolved dispositions require an owner, rationale, and supporting evidence.</p>
+              {trackedFindings.length === 0 ? <p className="workbench-findings-empty">No release-bundle findings are tracked yet. Import a release evidence JSON above, then add its findings to this decision record.</p> : <div className="sim-review-finding-list">
+                {trackedFindings.map((finding) => {
+                  const key = `${selectedDecisionRecord.id}:${finding.id}`;
+                  const draft = reviewFindingDrafts[key] || finding;
+                  const observationTimeline = buildReviewFindingObservationTimeline(finding);
+                  const isQueueFocusedFinding = focusedRemediationWorkItem?.recordId === selectedDecisionRecord.id && focusedRemediationWorkItem?.findingId === finding.id;
+                  return <article data-review-finding-id={finding.id} data-decision-record-id={selectedDecisionRecord.id} className={`sim-review-finding is-${finding.severity} status-${finding.status}${isQueueFocusedFinding ? " is-work-queue-focus" : ""}`} key={finding.id}>
+                    <div className="sim-review-finding-heading"><strong>{finding.title}</strong><span className={`sim-review-finding-status is-${finding.status}`}>{finding.status === "accepted-risk" ? "Accepted Risk" : finding.status === "resolved" ? "Resolved" : "Open"}</span></div>
+                    <div className="sim-review-finding-meta"><span>{finding.severity.toUpperCase()}</span><code>{finding.code}</code><small>Created {finding.createdAt} · Updated {finding.updatedAt}</small></div>
+                    <p>{finding.detail || "No additional finding details were recorded."}</p>
+                    <small className="sim-review-finding-sources">Source bundle(s): {finding.sourceBundleNames.join(", ") || "Unspecified"}{finding.resolvedAt ? ` · Resolved ${finding.resolvedAt}` : ""}</small>
+                    {observationTimeline.timeline.length > 0 && <details className="sim-review-finding-timeline"><summary>Observation timeline ({observationTimeline.timeline.length} bundle observation{observationTimeline.timeline.length === 1 ? "" : "s"})</summary>
+                      {observationTimeline.previous && observationTimeline.latest && <div className="sim-review-finding-diff">
+                        <strong>{observationTimeline.hasDetailChanges ? "Latest observation differs from its predecessor" : "Latest observation matches its predecessor"}</strong>
+                        {observationTimeline.hasDetailChanges ? observationTimeline.changes.map((change) => <p key={change.field}><span>{change.field}</span><small>Previous: {change.previous || "(empty)"}</small><small>Latest: {change.current || "(empty)"}</small></p>) : <p>No severity, title, or detail changes were detected between the latest two recorded observations.</p>}
+                      </div>}
+                      <ol>{observationTimeline.timeline.map((observation) => <li key={observation.key}><strong>{observation.sourceName || "Release bundle"}</strong><small>Imported {observation.observedAt}{observation.generatedAt ? ` · Bundle generated ${observation.generatedAt}` : ""}</small>{observation.findingSnapshot && <p>{observation.findingSnapshot.severity.toUpperCase()} · {observation.findingSnapshot.title}<br />{observation.findingSnapshot.detail || "No detail recorded."}</p>}</li>)}</ol>
+                    </details>}
+                    {finding.reoccurrence?.state === "unreviewed" && <div className={`sim-review-finding-reoccurrence is-${finding.severity}`} role="alert">
+                      <strong>{finding.severity === "error" ? "Recurring error — rollout blocked" : "Previously closed finding reappeared"}</strong>
+                      <p>This finding was previously {finding.reoccurrence.previousStatus === "accepted-risk" ? "Accepted Risk" : "Resolved"} and reappeared in {finding.reoccurrence.sourceBundleName || "a later release bundle"} on {finding.reoccurrence.detectedAt}. The previous disposition is preserved until you review it.</p>
+                      <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => reopenRecurringReviewFinding(finding.id)}>Reopen finding</button>
+                    </div>}
+                    {finding.reoccurrence?.state === "reopened" && <p className="sim-review-finding-reopened">Reopened after reoccurrence review on {finding.reoccurrence.reviewedAt}. This finding is Open and follows the normal rollout-blocking rules.</p>}
+                    {finding.freshEvidenceRequired && <div className={`sim-review-finding-fresh-evidence is-${finding.severity}`} role="alert"><strong>Fresh supporting evidence required</strong><p>This finding was reopened. Earlier evidence is retained for comparison but cannot be reused to close this recurrence. Record a new, distinct test run, report, ticket, or remediation reference before marking it Resolved or Accepted Risk. Workbench timestamps when you enter the reference; it does not independently verify when the underlying artifact was created.</p>{finding.previousEvidence && <small>Previous evidence (historical only): {finding.previousEvidence}</small>}</div>}
+                    {(() => {
+                      const effectiveness = buildRemediationEffectivenessSummary(finding, { loadTestRecords });
+                      const verificationDraft = remediationVerificationDrafts[key] || {
+                        runType: "regression-test", outcome: "inconclusive", beforeState: "", afterState: "", summary: "", evidence: "", measurements: {}, measurementSources: {}, recordedBy: finding.owner || "", verifiedBy: "", verificationRationale: "",
+                      };
+                      const changeVerificationDraft = (field, value) => setRemediationVerificationDrafts((current) => ({ ...current, [key]: { ...(current[key] || verificationDraft), [field]: value } }));
+                      const changeVerificationMeasurement = (metricKey, side, value) => changeVerificationDraft("measurements", {
+                        ...(verificationDraft.measurements || {}),
+                        [metricKey]: { ...((verificationDraft.measurements || {})[metricKey] || {}), [side]: value },
+                      });
+                      const changeVerificationMeasurementSource = (metricKey, side, field, value) => changeVerificationDraft("measurementSources", {
+                        ...(verificationDraft.measurementSources || {}),
+                        [metricKey]: {
+                          ...((verificationDraft.measurementSources || {})[metricKey] || {}),
+                          [side]: { ...(((verificationDraft.measurementSources || {})[metricKey] || {})[side] || {}), [field]: value },
+                        },
+                      });
+                      const setVerificationMeasurementSourceType = (metricKey, side, sourceType) => changeVerificationDraft("measurementSources", {
+                        ...(verificationDraft.measurementSources || {}),
+                        [metricKey]: { ...((verificationDraft.measurementSources || {})[metricKey] || {}), [side]: { sourceType } },
+                      });
+                      const measurementSourcePreview = captureRemediationMeasurementSources(verificationDraft.measurementSources || {}, verificationDraft.measurements || {}, loadTestRecords).evaluation;
+                      const latestRun = effectiveness.latestRun;
+                      const acceptanceMetrics = getRemediationAcceptanceMetricDefinitions();
+                      const criteriaConfigured = Object.keys(finding.acceptanceCriteria || {}).length > 0;
+                      const acceptedNameOnlySourceDrift = effectiveness.status === "measurement-source-drift-detected"
+                        && effectiveness.sourceDriftResolutionSummary?.canUseHistoricalConfirmation === true;
+                      const canConfirmLatestRun = latestRun?.outcome === "pass" && !latestRun.verificationSupersededAt && !effectiveness.isVerified
+                        && (!(["criteria-not-evaluated", "measurement-sources-inconsistent", "measurement-sources-incomplete", "measurement-source-drift-detected", "measurement-source-snapshot-incomplete"].includes(effectiveness.status)) || acceptedNameOnlySourceDrift)
+                        && (!criteriaConfigured || effectiveness.acceptanceEvaluation.status === "pass")
+                        && (effectiveness.measurementSourceEvaluation?.measurementCount === 0 || effectiveness.measurementSourceEvaluation?.status === "complete");
+                      return <section className={`sim-remediation-effectiveness is-${effectiveness.status}`} aria-label="Remediation effectiveness verification">
+                        <div className="sim-remediation-effectiveness-heading"><strong>Remediation effectiveness</strong><span className={`sim-remediation-effectiveness-status is-${effectiveness.status}`}>{effectiveness.label}</span></div>
+                        <p>Supporting evidence submitted and remediation verified are separate states. Record the before/after observation and test outcome, then explicitly confirm a passing run as a reviewer. Workbench does not execute or authenticate the external test.</p>
+                        <div className="sim-remediation-criteria">
+                          <strong>Quantitative acceptance criteria</strong>
+                          <p>Set one or more measurable targets. Maximum targets apply to p95 latency and error rate; minimum targets apply to throughput and success rate. Save the finding before recording a run against these targets.</p>
+                          <div className="sim-remediation-criteria-fields">
+                            {acceptanceMetrics.map((metric) => <label key={metric.key}><span>{metric.label} target ({metric.unit}) · {metric.direction === "max" ? "maximum" : "minimum"}</span><input aria-label={`${metric.label} acceptance target`} type="number" min={metric.min} max={Number.isFinite(metric.max) ? metric.max : undefined} step="any" value={(draft.acceptanceCriteria ?? finding.acceptanceCriteria ?? {})[metric.key] ?? ""} disabled={!canEdit} placeholder="Not configured" onChange={(event) => setReviewFindingDrafts((current) => ({ ...current, [key]: { ...(current[key] || finding), acceptanceCriteria: { ...((current[key] || finding).acceptanceCriteria || finding.acceptanceCriteria || {}), [metric.key]: event.target.value } } }))} /></label>)}
+                          </div>
+                          {criteriaConfigured && <small>Current saved criteria: {acceptanceMetrics.filter((metric) => finding.acceptanceCriteria?.[metric.key] !== undefined).map((metric) => `${metric.label} ${metric.direction === "max" ? "≤" : "≥"} ${finding.acceptanceCriteria[metric.key]} ${metric.unit}`).join("; ")}. Changing targets invalidates prior verification until a new run passes and is confirmed.</small>}
+                        </div>
+                        {criteriaConfigured && <div className={`sim-remediation-criteria-result is-${effectiveness.acceptanceEvaluation.status}`}>
+                          <strong>Acceptance result: {effectiveness.acceptanceEvaluation.status.replaceAll("-", " ").toUpperCase()}</strong>
+                          <p>{effectiveness.acceptanceEvaluation.reason}</p>
+                          {effectiveness.acceptanceEvaluation.criteria.map((criterion) => <div key={criterion.key} className={`sim-remediation-criterion is-${criterion.state}`}>
+                            <span>{criterion.label}</span><span>Target: {criterion.comparator} {criterion.target} {criterion.unit}</span><span>Before: {criterion.before === null ? "not supplied" : `${criterion.before} ${criterion.unit}`}</span><span>After: {criterion.after === null ? "not supplied" : `${criterion.after} ${criterion.unit}`}</span><strong>{criterion.state.toUpperCase()}</strong>{criterion.delta !== null && <small>Change: {criterion.delta > 0 ? "+" : ""}{criterion.delta} {criterion.unit}</small>}
+                          </div>)}
+                        </div>}
+                        {effectiveness.sourceDriftEvaluation && !["not-evaluated", "not-applicable"].includes(effectiveness.sourceDriftEvaluation.status) && <div className={`sim-remediation-source-drift is-${effectiveness.sourceDriftEvaluation.status}`} role={effectiveness.sourceDriftEvaluation.status === "drift-detected" ? "alert" : "status"}>
+                          <strong>Current source drift: {effectiveness.sourceDriftEvaluation.status.replaceAll("-", " ").toUpperCase()}</strong>
+                          <p>{effectiveness.sourceDriftEvaluation.reason} The original verification snapshot is retained and is not silently replaced.</p>
+                          {effectiveness.sourceDriftResolutionSummary?.status && <p><strong>Reviewer disposition state:</strong> {effectiveness.sourceDriftResolutionSummary.status.replaceAll("-", " ").toUpperCase()}. {effectiveness.sourceDriftResolutionSummary.status === "accepted-context" ? "Only display-name metadata changed; the source measurement value and workload definition remain unchanged." : effectiveness.sourceDriftResolutionSummary.status === "reverification-required" || effectiveness.sourceDriftResolutionSummary.status === "needs-review" ? "This history does not overwrite the measurement snapshot. A new verification run is required for value, field, workload, missing-source, or incomplete-snapshot changes." : "Inspect any changed source snapshots before relying on this verification."}</p>}
+                          {(effectiveness.sourceDriftResolutionSummary?.items || []).map((item) => {
+                            const driftKey = `${selectedDecisionRecord.id}:${finding.id}:${latestRun?.id}:${item.metricKey}:${item.side}:${item.fingerprint}`;
+                            const driftDraft = sourceDriftReviewDrafts[driftKey] || {};
+                            const disposition = driftDraft.disposition || (item.canAcceptAsContext ? "acceptable-context" : "requires-reverification");
+                            const isQueueFocusedDrift = isQueueFocusedFinding && focusedRemediationWorkItem?.runId === latestRun?.id && focusedRemediationWorkItem?.metricKey === item.metricKey && focusedRemediationWorkItem?.side === item.side;
+                            return <div data-remediation-drift-target="" data-remediation-run-id={latestRun?.id || ""} data-remediation-metric-key={item.metricKey} data-remediation-side={item.side} className={`sim-remediation-source-drift-item${isQueueFocusedDrift ? " is-work-queue-focus" : ""}`} key={`${item.metricKey}-${item.side}-${item.sourceRecordId}-${item.fingerprint}`}>
+                              <strong>{item.metricLabel} {item.side} · {item.sourceRecordId || "source record missing"} · {item.state}</strong>
+                              {item.changes.map((change, changeIndex) => <small key={`${change.type}-${changeIndex}`}>{change.label}: {change.detail}</small>)}
+                              <div className="sim-remediation-source-comparison" aria-label={`${item.metricLabel} ${item.side} original and current source comparison`}>
+                                <div><strong>Original snapshot</strong>{sourceDriftSnapshotRows(item.originalSnapshot).map(([label, value]) => <p key={label}><span>{label}</span>{value}</p>)}</div>
+                                <div><strong>Current source</strong>{sourceDriftSnapshotRows(item.currentSnapshot).map(([label, value]) => <p key={label}><span>{label}</span>{value}</p>)}</div>
+                              </div>
+                              {item.latestReview && <p className="sim-remediation-source-review-state">Latest review for this exact snapshot: {item.latestReview.disposition.replaceAll("-", " ")} · {item.latestReview.reviewer} · {item.latestReview.reviewedAt}. {item.latestReview.rationale}</p>}
+                              <div className="sim-review-finding-fields sim-remediation-source-review-fields">
+                                <label><span>Disposition</span><select value={disposition} disabled={!canEdit} onChange={(event) => setSourceDriftReviewDrafts((current) => ({ ...current, [driftKey]: { ...(current[driftKey] || {}), disposition: event.target.value } }))}>{REMEDIATION_SOURCE_DRIFT_DISPOSITION_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={option.value === "acceptable-context" && !item.canAcceptAsContext}>{option.label}</option>)}</select></label>
+                                <label><span>Reviewer</span><input maxLength={120} value={driftDraft.reviewer || ""} disabled={!canEdit} placeholder="Reviewer recording this disposition" onChange={(event) => setSourceDriftReviewDrafts((current) => ({ ...current, [driftKey]: { ...(current[driftKey] || {}), reviewer: event.target.value } }))} /></label>
+                                <label><span>Rationale</span><textarea maxLength={1200} rows={2} value={driftDraft.rationale || ""} disabled={!canEdit} placeholder={disposition === "acceptable-context" ? "Why is this display-name-only change non-material?" : "Why does the current source require a new verification run?"} onChange={(event) => setSourceDriftReviewDrafts((current) => ({ ...current, [driftKey]: { ...(current[driftKey] || {}), rationale: event.target.value } }))} /></label>
+                              </div>
+                              <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => saveRemediationSourceDriftReview(finding.id, latestRun.id, item.metricKey, item.side, item.fingerprint)}>Save drift review</button>
+                              <small>{item.canAcceptAsContext ? "Acceptable-context is limited to a record display-name-only change. The historical source snapshot remains unchanged." : "This difference cannot be waived as context. The disposition requires a new verification run using the current source mappings below; prior measurements and snapshots remain historical and unchanged."}</small>
+                              {item.reviewHistory.length > 0 && <details className="sim-remediation-source-review-history"><summary>Prior review decisions ({item.reviewHistory.length})</summary><ol>{item.reviewHistory.slice().reverse().map((review) => <li key={review.id}>{review.disposition.replaceAll("-", " ")} · {review.reviewer} · {review.reviewedAt}<p>{review.rationale}</p></li>)}</ol></details>}
+                            </div>;
+                          })}
+                          <small>Source drift is a consistency comparison, not independent authentication.</small>
+                        </div>}
+                        {finding.sourceDriftReviews?.length > 0 && <details className="sim-remediation-source-review-history sim-remediation-source-review-audit"><summary>Saved source drift review history ({finding.sourceDriftReviews.length})</summary><ol>{finding.sourceDriftReviews.slice().reverse().map((review) => <li key={review.id}><strong>{review.metricLabel} {review.side} · {review.sourceRecordId} · {review.disposition.replaceAll("-", " ")}</strong><p>{review.reviewer} · {review.reviewedAt}</p><p>{review.rationale}</p><div className="sim-remediation-source-comparison"><div><strong>Original snapshot at review</strong>{sourceDriftSnapshotRows(review.originalSnapshot).map(([label, value]) => <p key={label}><span>{label}</span>{value}</p>)}</div><div><strong>Current snapshot at review</strong>{sourceDriftSnapshotRows(review.currentSnapshot).map(([label, value]) => <p key={label}><span>{label}</span>{value}</p>)}</div></div></li>)}</ol><small>Saved review snapshots are immutable history. A later source change requires a new review for the changed fingerprint.</small></details>}
+                        {effectiveness.isVerified && <div className="sim-remediation-verified-note"><strong>Currently verified by reviewer</strong><span>{effectiveness.verification.verifiedBy} · {effectiveness.verification.verifiedAt}</span><p>{effectiveness.verification.rationale}</p></div>}
+                        {effectiveness.verification?.status === "superseded" && <div className="sim-review-finding-reoccurrence"><strong>Prior verification is historical</strong><p>{effectiveness.verification.supersededReason || "A newer observation invalidated the prior verification."} The historic passing run is retained below, but is not current proof.</p></div>}
+                        {latestRun && <div className="sim-remediation-comparison"><strong>Latest recorded before / after comparison</strong><p><span>Before remediation</span>{latestRun.beforeState}</p><p><span>After remediation</span>{latestRun.afterState}</p><p><span>Outcome</span>{latestRun.outcome.toUpperCase()} · {latestRun.runType} · recorded by {latestRun.recordedBy} on {latestRun.recordedAt}</p><p><span>Summary</span>{latestRun.summary}</p><p><span>Evidence reference</span>{latestRun.evidence}</p>{latestRun.measurementSourceEvaluation && <p><span>Measurement source traceability</span>{latestRun.measurementSourceEvaluation.status} · {latestRun.measurementSourceEvaluation.linkedCount} linked, {latestRun.measurementSourceEvaluation.unlinkedCount} unlinked, {latestRun.measurementSourceEvaluation.incompleteCount} incomplete, {latestRun.measurementSourceEvaluation.mismatchCount} inconsistent.</p>}{latestRun.reviewerVerifiedAt && <p><span>Reviewer confirmation</span>{latestRun.reviewerVerifiedBy} · {latestRun.reviewerVerifiedAt}: {latestRun.verificationRationale}</p>}{latestRun.verificationSupersededAt && <p><span>Superseded</span>{latestRun.verificationSupersededAt}: {latestRun.verificationSupersededReason}</p>}</div>}
+                        <div className="sim-review-finding-fields sim-remediation-verification-fields">
+                          <label><span>Verification method</span><select value={verificationDraft.runType} disabled={!canEdit} onChange={(event) => changeVerificationDraft("runType", event.target.value)}>{REMEDIATION_VERIFICATION_RUN_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                          <label><span>Run outcome</span><select value={verificationDraft.outcome} disabled={!canEdit} onChange={(event) => changeVerificationDraft("outcome", event.target.value)}>{REMEDIATION_VERIFICATION_OUTCOME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                          <label><span>Before remediation</span><textarea maxLength={1000} rows={2} value={verificationDraft.beforeState} disabled={!canEdit} placeholder="Observed behavior before the fix" onChange={(event) => changeVerificationDraft("beforeState", event.target.value)} /></label>
+                          <label><span>After remediation</span><textarea maxLength={1000} rows={2} value={verificationDraft.afterState} disabled={!canEdit} placeholder="Observed behavior in this verification run" onChange={(event) => changeVerificationDraft("afterState", event.target.value)} /></label>
+                          <label><span>Run summary</span><textarea maxLength={1600} rows={2} value={verificationDraft.summary} disabled={!canEdit} placeholder="What was tested and what the result means" onChange={(event) => changeVerificationDraft("summary", event.target.value)} /></label>
+                          <label><span>Verification evidence reference</span><input maxLength={1200} value={verificationDraft.evidence} disabled={!canEdit} placeholder="Distinct test run, report, or monitoring reference" onChange={(event) => changeVerificationDraft("evidence", event.target.value)} /></label>
+                          <label><span>Recorded by</span><input maxLength={120} value={verificationDraft.recordedBy} disabled={!canEdit} placeholder="Person who ran or recorded the test" onChange={(event) => changeVerificationDraft("recordedBy", event.target.value)} /></label>
+                        </div>
+                        <div className="sim-remediation-measurements">
+                          <strong>Numeric before / after measurements</strong>
+                          <p>Enter values using the same metric units for both observations. Only metrics with saved acceptance targets affect the quantitative result.</p>
+                          {acceptanceMetrics.map((metric) => <div className="sim-remediation-measurement-group" key={metric.key}>
+                            <div className="sim-remediation-measurement-row"><strong>{metric.label} ({metric.unit})</strong><label><span>Before</span><input aria-label={`${metric.label} before measurement`} type="number" min={metric.min} max={Number.isFinite(metric.max) ? metric.max : undefined} step="any" value={verificationDraft.measurements?.[metric.key]?.before ?? ""} disabled={!canEdit} onChange={(event) => changeVerificationMeasurement(metric.key, "before", event.target.value)} /></label><label><span>After</span><input aria-label={`${metric.label} after measurement`} type="number" min={metric.min} max={Number.isFinite(metric.max) ? metric.max : undefined} step="any" value={verificationDraft.measurements?.[metric.key]?.after ?? ""} disabled={!canEdit} onChange={(event) => changeVerificationMeasurement(metric.key, "after", event.target.value)} /></label></div>
+                            <div className="sim-remediation-source-mappings">{["before", "after"].map((side) => {
+                              const sourceDraft = verificationDraft.measurementSources?.[metric.key]?.[side] || {};
+                              const preview = measurementSourcePreview.items.find((item) => item.key === metric.key && item.side === side);
+                              const chosenRecord = loadTestRecords.find((record) => record.id === sourceDraft.sourceRecordId) || null;
+                              const loadMetric = chosenRecord ? getLoadTestSourceMetric(chosenRecord, metric.key) : null;
+                              return <div className={`sim-remediation-source-mapping is-${preview?.state || "unlinked"}`} key={side}>
+                                <strong>{side === "before" ? "Before" : "After"} source</strong>
+                                <label><span>Origin type</span><select aria-label={`${metric.label} ${side} source type`} value={sourceDraft.sourceType || ""} disabled={!canEdit} onChange={(event) => setVerificationMeasurementSourceType(metric.key, side, event.target.value)}><option value="">Unlinked</option>{REMEDIATION_MEASUREMENT_SOURCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                                {sourceDraft.sourceType === "load-test-record" ? <label><span>Saved load-test record</span><select aria-label={`${metric.label} ${side} source load-test record`} value={sourceDraft.sourceRecordId || ""} disabled={!canEdit} onChange={(event) => changeVerificationMeasurementSource(metric.key, side, "sourceRecordId", event.target.value)}><option value="">Select record</option>{loadTestRecords.map((record) => <option key={record.id} value={record.id}>{record.name} · {record.testedAt} · {record.targetEnvironment}</option>)}</select></label> : null}
+                                {["report-field", "evidence-reference"].includes(sourceDraft.sourceType) && <>
+                                  <label><span>{sourceDraft.sourceType === "report-field" ? "Report name / reference" : "Evidence reference"}</span><input maxLength={1200} value={sourceDraft.evidenceReference || ""} disabled={!canEdit} placeholder={sourceDraft.sourceType === "report-field" ? "Performance report ID or name" : "URL, ticket, report, or artifact ID"} onChange={(event) => changeVerificationMeasurementSource(metric.key, side, "evidenceReference", event.target.value)} /></label>
+                                  <label><span>Source field path</span><input maxLength={240} value={sourceDraft.sourceField || ""} disabled={!canEdit} placeholder="metrics.p95LatencyMs" onChange={(event) => changeVerificationMeasurementSource(metric.key, side, "sourceField", event.target.value)} /></label>
+                                  <label><span>Numeric value in source</span><input type="number" min={metric.min} max={Number.isFinite(metric.max) ? metric.max : undefined} step="any" value={sourceDraft.sourceValue ?? ""} disabled={!canEdit} onChange={(event) => changeVerificationMeasurementSource(metric.key, side, "sourceValue", event.target.value)} /></label>
+                                </>}
+                                {sourceDraft.sourceType === "load-test-record" && <small>{chosenRecord ? loadMetric ? `Field ${loadMetric.fieldPath}${loadMetric.transformation ? ` · derived as ${loadMetric.transformation}` : ""} = ${loadMetric.value} ${metric.unit}; compare it with the measurement above.` : `Record does not include a usable source field for ${metric.label}.` : "Select a saved record to snapshot its actual source field and numeric value."}</small>}
+                                <small className={`sim-remediation-source-state is-${preview?.state || "unlinked"}`}>Mapping: {(preview?.state || "unlinked").replaceAll("-", " ").toUpperCase()} — {preview?.detail || "No source mapping selected."}</small>
+                              </div>;
+                            })}</div>
+                          </div>)}
+                          <p className={`sim-remediation-source-summary is-${measurementSourcePreview.status}`}><strong>Source traceability: {measurementSourcePreview.status.toUpperCase()}</strong> — {measurementSourcePreview.reason} Numeric acceptance results do not independently verify source authenticity.</p>
+                        </div>
+                        {effectiveness.measurementSourceEvaluation?.measurementCount > 0 && effectiveness.measurementSourceEvaluation.status !== "complete" && <p className="sim-remediation-source-warning">Latest numeric evidence cannot support reviewer confirmation until every supplied before/after value has a matching source field and value. Record a new run after correcting the mapping.</p>}
+                        <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => saveRemediationVerificationRun(finding.id)}>Record verification run</button>
+                        {canConfirmLatestRun && <div className="sim-remediation-confirmation">
+                          <strong>Passing run needs explicit reviewer confirmation</strong>
+                          <div className="sim-review-finding-fields">
+                            <label><span>Reviewer</span><input maxLength={120} value={verificationDraft.verifiedBy} disabled={!canEdit} placeholder="Reviewer confirming effectiveness" onChange={(event) => changeVerificationDraft("verifiedBy", event.target.value)} /></label>
+                            <label><span>Verification rationale</span><textarea maxLength={1200} rows={2} value={verificationDraft.verificationRationale} disabled={!canEdit} placeholder="Why does this run establish the remediation is effective?" onChange={(event) => changeVerificationDraft("verificationRationale", event.target.value)} /></label>
+                          </div>
+                          <button type="button" className="workbench-primary" disabled={!canEdit} onClick={() => confirmFindingRemediationVerification(finding.id, latestRun.id)}>Confirm remediation verified</button>
+                        </div>}
+                        {effectiveness.runs.length > 0 && <details className="sim-remediation-verification-history"><summary>Verification history ({effectiveness.runs.length} run{effectiveness.runs.length === 1 ? "" : "s"})</summary><ol>{effectiveness.runs.slice().reverse().map((run) => <li key={run.id}><strong>{run.outcome.toUpperCase()} · {run.runType}</strong><small>{run.recordedAt} · {run.recordedBy}</small><p>Before: {run.beforeState}</p><p>After: {run.afterState}</p><p>Summary: {run.summary}</p><p>Evidence: {run.evidence}</p>{Object.keys(run.acceptanceCriteriaSnapshot || {}).length > 0 && <p>Quantitative criteria: {run.acceptanceEvaluation.status} · {run.acceptanceEvaluation.passedCount} passed, {run.acceptanceEvaluation.failedCount} failed, {run.acceptanceEvaluation.unevaluatedCount} unevaluated.</p>}{Object.entries(run.measurements || {}).some(([, values]) => values.before !== null || values.after !== null) && <p>Measurements: {Object.entries(run.measurements).filter(([, values]) => values.before !== null || values.after !== null).map(([metric, values]) => `${metric} ${values.before ?? "n/a"} → ${values.after ?? "n/a"}`).join("; ")}</p>}{run.measurementSourceEvaluation && <p>Source traceability: {run.measurementSourceEvaluation.status} · {run.measurementSourceEvaluation.linkedCount} linked, {run.measurementSourceEvaluation.unlinkedCount} unlinked, {run.measurementSourceEvaluation.incompleteCount} incomplete, {run.measurementSourceEvaluation.mismatchCount} inconsistent.</p>}{(() => { const drift = evaluateRemediationMeasurementSourceDrift(run.measurementSources, loadTestRecords); return !["not-evaluated", "not-applicable"].includes(drift.status) ? <p>Current source drift: {drift.status} — {drift.reason}. Original snapshot remains unchanged.</p> : null; })()}{Object.entries(run.measurementSources || {}).flatMap(([metric, sides]) => ["before", "after"].filter((side) => sides[side]?.sourceType).map((side) => <p key={`${metric}-${side}`}>{metric} {side} source: {sides[side].sourceType}; {sides[side].sourceField || "field missing"}; value {sides[side].sourceValue ?? "n/a"}; reference {sides[side].evidenceReference || sides[side].sourceRecordId || "missing"}.</p>))}{run.reviewerVerifiedAt && <p>Reviewer-confirmed by {run.reviewerVerifiedBy} on {run.reviewerVerifiedAt}: {run.verificationRationale}</p>}{run.verificationSupersededAt && <p>Historical only; superseded {run.verificationSupersededAt}: {run.verificationSupersededReason}</p>}</li>)}</ol></details>}
+                      </section>;
+                    })()}
+                    <div className="sim-review-finding-fields">
+                      <label><span>Owner</span><input maxLength={120} value={draft.owner ?? finding.owner} disabled={!canEdit} placeholder="Person responsible" onChange={(event) => setReviewFindingDrafts((current) => ({ ...current, [key]: { ...(current[key] || finding), owner: event.target.value } }))} /></label>
+                      <label><span>Disposition</span><select value={draft.status ?? finding.status} disabled={!canEdit} onChange={(event) => setReviewFindingDrafts((current) => ({ ...current, [key]: { ...(current[key] || finding), status: event.target.value } }))}>{REVIEW_FINDING_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                      <label><span>Rationale</span><textarea maxLength={1600} rows={2} value={draft.rationale ?? finding.rationale} disabled={!canEdit} placeholder="Why is this accepted risk or considered resolved?" onChange={(event) => setReviewFindingDrafts((current) => ({ ...current, [key]: { ...(current[key] || finding), rationale: event.target.value } }))} /></label>
+                      <label><span>Supporting evidence / reference</span><textarea maxLength={1200} rows={2} value={draft.evidence ?? finding.evidence} disabled={!canEdit} placeholder={finding.freshEvidenceRequired ? "Required: fresh evidence from after this recurrence" : "Test run, ticket, log, report, or remediation reference"} onChange={(event) => setReviewFindingDrafts((current) => ({ ...current, [key]: { ...(current[key] || finding), evidence: event.target.value } }))} /></label>
+                    </div>
+                    <button type="button" className="workbench-secondary" disabled={!canEdit} onClick={() => saveTrackedReviewFinding(finding.id)}>Save finding</button>
+                    {finding.auditTrail.length > 0 && <details className="sim-review-finding-history"><summary>Finding audit trail ({finding.auditTrail.length})</summary>{finding.auditTrail.slice().reverse().map((event) => <p key={event.id}><span>{event.at}</span> — {event.message}</p>)}</details>}
+                  </article>;
+                })}
+              </div>}
+              <p className="sim-rollout-readiness-disclaimer">Finding dispositions are reviewer-maintained records. They do not independently verify evidence authenticity or grant production approval.</p>
+            </section>;
+          })()}
+          <div className="sim-decision-record-actions"><button type="button" className="workbench-primary" disabled={!canEdit} onClick={saveDecisionRecordDraft}>Save record changes</button><button type="button" className="workbench-secondary" onClick={() => downloadArchitectureDecisionRecord(selectedDecisionRecord, loadTestRecords)}>Export decision record (.md)</button><button type="button" className="workbench-secondary" onClick={() => {
+            try { downloadReleaseEvidenceBundle(selectedDecisionRecord, loadTestRecords); setDecisionRecordActionError(""); }
+            catch (error) { setDecisionRecordActionError(error?.message || "Could not build the release evidence bundle."); }
+          }}>Export release evidence bundle (.json)</button></div>
+          <p className="sim-rollout-readiness-disclaimer">The bundle includes the saved decision, simulation comparison, load-test records, validation gates, rollout attestations, readiness assessments and outstanding risks. Machine-derived checks, user-supplied measurements and manual attestations are labeled separately; external references are not independently verified.</p>
+          <div className="sim-decision-record-audit"><strong>Audit trail</strong>{(selectedDecisionRecord.auditTrail || []).slice().reverse().map((event) => <p key={event.id}><span>{event.at}</span> — {event.message}</p>)}</div>
+        </div>}
+        <small>Decision records are stored in the current document, capped at 50 records. Tracked release findings are saved with owners, dispositions, rationales, supporting references, and per-finding audit trails.</small>
+      </section>
+    </details>}
     {simulationHistory.length > 0 && <details className="sim-history-list">
       <summary><span>Saved experiment library</span><small>{simulationHistory.length} saved · latest 5 retained</small></summary>
       <div className="sim-history-library-controls">
@@ -1477,6 +2487,14 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
           <div className="sim-improvement-heading"><strong>TEST AN IMPROVEMENT</strong><small>Controlled one-variable experiment</small></div>
           <p>Test one hypothesis at a time under the same stressed scenario: add concurrency when capacity pressure is recorded, reduce mean service time when timing evidence supports it, or reduce PostgreSQL write-contention overhead when the run records writes with applied contention. These are synthetic what-if experiments, not guaranteed real-world fixes. Outage scenarios are excluded.</p>
           {capacityScenario && <p className="sim-capacity-target">Comparison target: <strong>{capacityScenario.label}</strong>. Each trial reruns this same scenario with the same seed, duration, model, and traffic multiplier.</p>}
+          {optimizationRecommendations.length > 0 && <div className="sim-optimization-recommendations" aria-label="Evidence-guided optimization recommendations">
+            <div className="workbench-section-heading"><span>RECOMMENDED NEXT EXPERIMENTS</span><span className="workbench-count">{optimizationRecommendations.length}</span></div>
+            <p>Ranked from this scenario's recorded synthetic component metrics and the model's eligible assumptions. These are hypotheses to test, not automatic production fixes.</p>
+            {optimizationRecommendations.map((recommendation) => <article className="sim-optimization-recommendation" key={recommendation.id}>
+              <div className="sim-optimization-recommendation-copy"><strong>{recommendation.rank}. {recommendation.label}</strong><small>{recommendation.reason}</small></div>
+              <button type="button" className="workbench-secondary" disabled={!canEdit || unsaved || staleModel || !capacityScenarioKey} onClick={() => runImprovementExperiment(recommendation.interventionKind, recommendation)}>Run experiment</button>
+            </article>)}
+          </div>}
           {capacityTraceTargetEntityId && <p className="sim-capacity-target">Capacity target from current evidence: <strong>{entitiesById.get(capacityTraceTargetEntityId)?.name || capacityTraceTargetEntityId}</strong>.</p>}
           {serviceTimeTraceTargetEntityId && <p className="sim-capacity-target">Service-time target from the selected trace: <strong>{entitiesById.get(serviceTimeTraceTargetEntityId)?.name || serviceTimeTraceTargetEntityId}</strong>. Recorded service time is at least as large as queue wait for this hop.</p>}
           <div className="sim-improvement-actions">
@@ -1518,6 +2536,15 @@ export default function SimulationExperimentPanel({ workbench, simulationProfile
             <ImprovementTimeSeriesComparison comparison={improvementResult.timeSeriesComparison} investigation={improvementResult.traceInvestigationSnapshot}/>
             <small>Original scenario → improved version of that same scenario. These are synthetic model outputs, not production measurements. The trial was added to Saved experiment history.</small>
           </div>}
+          {buildOptimizationPortfolio(optimizationPortfolioTrials).length > 0 && <section className="sim-optimization-portfolio" aria-label="Optimization portfolio and trade-off analysis">
+            <div className="workbench-section-heading"><span>OPTIMIZATION PORTFOLIO</span><span className="workbench-count">{optimizationPortfolioTrials.length}</span></div>
+            <p>Ranked across completed controlled trials in this panel session. The directional score equally averages available relative changes for successful throughput, p95 latency, dropped requests, and success rate. Positive is better; negative is worse. It is a comparison aid, not an SLO or production score.</p>
+            <div className="sim-comparison-table-wrap"><table className="sim-comparison-table"><thead><tr><th>Rank / trial</th><th>Trade-off score</th><th>Throughput</th><th>p95 latency</th><th>Dropped requests</th><th>Failure-rate proxy Δ</th><th>Outcome</th></tr></thead><tbody>
+              {buildOptimizationPortfolio(optimizationPortfolioTrials).map((trial) => <tr key={trial.id}><td><strong>#{trial.rank} {trial.label}</strong><small>{trial.scenarioLabel} · {trial.interventionKind}</small></td><td>{isFiniteNumber(trial.score) ? `${trial.score > 0 ? "+" : ""}${trial.score}%` : "—"}</td><td>{isFiniteNumber(trial.metrics.throughputDeltaPercent) ? `${trial.metrics.throughputDeltaPercent > 0 ? "+" : ""}${trial.metrics.throughputDeltaPercent}%` : "—"}</td><td>{isFiniteNumber(trial.metrics.p95LatencyDeltaPercent) ? `${trial.metrics.p95LatencyDeltaPercent > 0 ? "+" : ""}${trial.metrics.p95LatencyDeltaPercent}%` : "—"}</td><td>{isFiniteNumber(trial.metrics.droppedRequestsDeltaPercent) ? `${trial.metrics.droppedRequestsDeltaPercent > 0 ? "+" : ""}${trial.metrics.droppedRequestsDeltaPercent}%` : "—"}</td><td>{isFiniteNumber(trial.metrics.errorRateDeltaPercentagePoints) ? `${trial.metrics.errorRateDeltaPercentagePoints > 0 ? "+" : ""}${trial.metrics.errorRateDeltaPercentagePoints} pp` : "—"}</td><td>{trial.outcome}</td></tr>)}
+            </tbody></table></div>
+            <small>Failure-rate proxy is failed requests divided by the baseline offered-request count; it is not a validated service-level error-budget calculation. Missing metrics are shown as unavailable, not inferred.</small>
+            <button type="button" className="workbench-secondary" onClick={() => setOptimizationPortfolioTrials([])}>Clear portfolio</button>
+          </section>}
         </section>}
         {results.status === "partial" && <p className="sim-profile-warning">One or more scenarios were blocked. Completed scenarios remain available below.</p>}
         <div className="sim-run-tabs" role="tablist" aria-label="Simulation scenarios">

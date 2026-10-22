@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createReleasePlan, executeReleasePlan, mapOutcomesToSummaryEnv } from "../scripts/run-workbench-release-check.mjs";
+import { createReleasePlan, executeReleasePlan, invokeCommand, mapOutcomesToSummaryEnv, resolveCommandTimeoutMs } from "../scripts/run-workbench-release-check.mjs";
 import { createGateSummary } from "../scripts/write-workbench-ci-summary.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -148,4 +148,53 @@ test("local release gate verifies the packaged bundle and preserves a strict exi
   assert.ok(packageIndex >= 0 && verifyIndex > packageIndex, "bundle must be packaged before verification");
   assert.match(runner.slice(verifyIndex), /if \(verification\.exitCode !== 0\)[\s\S]*?process\.exitCode = 1/);
   assert.match(runner, /workbench-release-diagnostic-verification\.json/);
+});
+
+
+test("release commands have bounded default and stage-specific timeouts", () => {
+  const plan = Object.fromEntries(createReleasePlan().map((stage) => [stage.id, stage]));
+  assert.equal(resolveCommandTimeoutMs({}, {}), 180_000);
+  assert.equal(resolveCommandTimeoutMs({}, { WORKBENCH_RELEASE_COMMAND_TIMEOUT_MS: "45000" }), 45_000);
+  assert.equal(resolveCommandTimeoutMs({}, { WORKBENCH_RELEASE_COMMAND_TIMEOUT_MS: "not-a-number" }), 180_000);
+  assert.equal(resolveCommandTimeoutMs({ timeoutMs: 25_000 }, { WORKBENCH_RELEASE_COMMAND_TIMEOUT_MS: "45000" }), 25_000);
+  assert.equal(plan["registry-probe"].timeoutMs, 20_000);
+  assert.equal(plan.install.timeoutMs, 600_000);
+  assert.equal(plan["external-tools-install"].timeoutMs, 600_000);
+  assert.equal(plan["chromium-install"].timeoutMs, 600_000);
+  assert.equal(plan["browser-smoke"].timeoutMs, 180_000);
+});
+
+test("release command timeout is logged, terminates the command, and remains a gate failure", async () => {
+  const runner = await readFile(path.join(root, "scripts", "run-workbench-release-check.mjs"), "utf8");
+  assert.match(runner, /COMMAND TIMEOUT after \$\{timeoutMs\}ms/);
+  assert.match(runner, /child\.kill\("SIGTERM"\)/);
+  assert.match(runner, /child\.kill\("SIGKILL"\)/);
+  assert.match(runner, /exitCode: timedOut \? 124/);
+  const outcomes = await executeReleasePlan([
+    { id: "stalled-install", requires: [], commands: [{ label: "npm-ci" }] },
+    { id: "build", requires: ["stalled-install"], commands: [{ label: "build" }] },
+    { id: "independent-tests", requires: [], commands: [{ label: "tests" }] },
+  ], async (command) => ({ exitCode: command.label === "npm-ci" ? 124 : 0, timedOut: command.label === "npm-ci" }));
+  assert.deepEqual(outcomes, { "stalled-install": "failure", build: "skipped", "independent-tests": "success" });
+});
+
+
+test("a stalled child process is terminated and its timeout is recorded in the stage log", async () => {
+  const logDirectory = path.join(root, "artifacts", "ci-logs");
+  const logFile = "timeout-runner-test.log";
+  const logPath = path.join(logDirectory, logFile);
+  await mkdir(logDirectory, { recursive: true });
+  try {
+    const result = await invokeCommand({
+      command: process.execPath,
+      args: ["-e", "setTimeout(() => {}, 5000)"],
+    }, { logFile, timeoutMs: 25 });
+    assert.equal(result.timedOut, true);
+    assert.equal(result.exitCode, 124);
+    const log = await readFile(logPath, "utf8");
+    assert.match(log, /COMMAND TIMEOUT after 25ms/);
+    assert.match(log, /timedOut=true/);
+  } finally {
+    await rm(logPath, { force: true });
+  }
 });

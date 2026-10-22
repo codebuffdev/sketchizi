@@ -50,9 +50,11 @@ export function createReleasePlan(platform = process.platform) {
     "test:browser-index-fixture",
     "test:workbench-ci-summary",
     "test:workbench-ci-contract",
+    "test:workbench-ci-dispatch-helper",
     "test:workbench-local-release",
     "test:workbench-diagnostic-bundle",
     "test:workbench-diagnostic-verifier",
+    "test:workbench-diagnostic-import",
     "test:workbench-external-artifacts",
     "test:workbench-postgres-artifact-integration",
   ];
@@ -93,6 +95,7 @@ export function createReleasePlan(platform = process.platform) {
       id: "registry-probe",
       label: "npm registry connectivity diagnostic (non-blocking)",
       logFile: "npm-registry-probe.log",
+      timeoutMs: 20_000,
       blocking: false,
       commands: [npmRun("check:npm-registry")],
     },
@@ -100,6 +103,7 @@ export function createReleasePlan(platform = process.platform) {
       id: "install",
       label: "Clean dependency install (npm ci)",
       logFile: "npm-ci.log",
+      timeoutMs: 600_000,
       blocking: true,
       commands: [npm(["ci", "--no-audit", "--no-fund"])],
     },
@@ -142,6 +146,7 @@ export function createReleasePlan(platform = process.platform) {
       id: "external-tools-install",
       label: "Install pinned OpenAPI/SQL validators and Playwright",
       logFile: "external-tools-install.log",
+      timeoutMs: 600_000,
       blocking: true,
       commands: [npm(["install", "--no-save", "--no-package-lock", "--ignore-scripts", "@redocly/cli@2.64.1", "pgsql-parser@18.2.12", "playwright@1.64.1"])],
     },
@@ -170,6 +175,7 @@ export function createReleasePlan(platform = process.platform) {
       id: "chromium-install",
       label: "Install Chromium for rendered-browser smoke",
       logFile: "chromium-install.log",
+      timeoutMs: 600_000,
       blocking: true,
       commands: [npx(platform === "linux" ? ["playwright", "install", "--with-deps", "chromium"] : ["playwright", "install", "chromium"])],
     },
@@ -177,6 +183,7 @@ export function createReleasePlan(platform = process.platform) {
       id: "browser-smoke",
       label: "Rendered-browser persistence smoke",
       logFile: "browser-smoke.log",
+      timeoutMs: 180_000,
       blocking: true,
       commands: [npmRun("test:workbench-browser-e2e")],
     },
@@ -236,28 +243,61 @@ function formatCommand({ command, args = [] }) {
   }).join(" ");
 }
 
-async function invokeCommand(command, stage) {
+export function resolveCommandTimeoutMs(stage = {}, env = process.env) {
+  const stageTimeout = Number(stage.timeoutMs);
+  if (Number.isFinite(stageTimeout) && stageTimeout > 0) return stageTimeout;
+  const configured = Number(env.WORKBENCH_RELEASE_COMMAND_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured > 0 ? configured : 180_000;
+}
+
+export async function invokeCommand(command, stage) {
   const logPath = path.join(LOG_DIRECTORY, stage.logFile);
   const stream = createWriteStream(logPath, { flags: "a" });
-  const title = `\n[${new Date().toISOString()}] $ ${formatCommand(command)}\n`;
+  const timeoutMs = resolveCommandTimeoutMs(stage);
+  const title = `\n[${new Date().toISOString()}] $ ${formatCommand(command)}\n[command timeout=${timeoutMs}ms]\n`;
   stream.write(title);
-  console.log(`\n> ${formatCommand(command)}`);
+  console.log(`\n> ${formatCommand(command)} (timeout ${timeoutMs}ms)`);
 
   const spawnResult = await new Promise((resolve) => {
     let completed = false;
+    let timedOut = false;
+    let timeoutHandle;
+    let forceKillHandle;
+    let child;
     const complete = (value) => {
       if (completed) return;
       completed = true;
-      stream.write(`\n[exit code=${value.exitCode}; signal=${value.signal ?? "none"}]\n`);
+      clearTimeout(timeoutHandle);
+      clearTimeout(forceKillHandle);
+      stream.write(`\n[exit code=${value.exitCode}; signal=${value.signal ?? "none"}; timedOut=${value.timedOut === true}]\n`);
       resolve(value);
     };
-    const child = spawn(command.command, command.args ?? [], {
-      cwd: PROJECT_ROOT,
-      env: process.env,
-      shell: process.platform === "win32" && !path.isAbsolute(command.command),
-      windowsHide: true,
-      stdio: ["inherit", "pipe", "pipe"],
-    });
+    try {
+      child = spawn(command.command, command.args ?? [], {
+        cwd: PROJECT_ROOT,
+        env: process.env,
+        shell: process.platform === "win32" && !path.isAbsolute(command.command),
+        windowsHide: true,
+        stdio: ["inherit", "pipe", "pipe"],
+      });
+    } catch (error) {
+      stream.write(`\nSPAWN ERROR: ${error.stack || error.message}\n`);
+      complete({ exitCode: 1, error: error.message });
+      return;
+    }
+    timeoutHandle = setTimeout(() => {
+      if (completed) return;
+      timedOut = true;
+      stream.write(`\nCOMMAND TIMEOUT after ${timeoutMs}ms; sending SIGTERM\n`);
+      child.kill("SIGTERM");
+      forceKillHandle = setTimeout(() => {
+        if (!completed) {
+          stream.write("\nCOMMAND TIMEOUT grace period expired; sending SIGKILL\n");
+          child.kill("SIGKILL");
+        }
+      }, 5_000);
+    }, timeoutMs);
+    timeoutHandle.unref?.();
     child.stdout.on("data", (chunk) => {
       process.stdout.write(chunk);
       stream.write(chunk);
@@ -268,10 +308,10 @@ async function invokeCommand(command, stage) {
     });
     child.once("error", (error) => {
       stream.write(`\nSPAWN ERROR: ${error.stack || error.message}\n`);
-      complete({ exitCode: 1, error: error.message });
+      complete({ exitCode: 1, error: error.message, timedOut });
     });
     child.once("close", (code, signal) => {
-      complete({ exitCode: code ?? 1, signal });
+      complete({ exitCode: timedOut ? 124 : (code ?? 1), signal, timedOut });
     });
   });
 

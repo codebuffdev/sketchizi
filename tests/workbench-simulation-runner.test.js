@@ -177,6 +177,10 @@ test("traffic sweep returns ordered deterministic points with explicit synthetic
   assert.deepEqual(first.points.map((point) => point.multiplier), [1, 2, 3, 5]);
   assert.ok(first.points.every((point) => point.status === "completed"));
   assert.ok(first.points.every((point) => point.sloStatus === "pass"));
+  assert.ok(first.points.every((point) => point.sloBudget?.evaluated === true));
+  assert.ok(first.points.every((point) => Number.isFinite(point.sloBudget.latencyHeadroomMs)));
+  assert.ok(first.points.every((point) => Number.isFinite(point.sloBudget.errorBudgetRemainingPercent)));
+  assert.ok(first.points[0].sloBudget.errorBudgetStatus === "within-budget");
   assert.ok(first.points[1].metrics.offeredRequests > first.points[0].metrics.offeredRequests);
   assert.deepEqual(first.points.map((point) => point.result.result), second.points.map((point) => point.result.result));
   assert.equal(first.lastPassingMultiplier, 5);

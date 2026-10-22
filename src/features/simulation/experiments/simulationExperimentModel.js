@@ -543,6 +543,90 @@ export function getDatabaseIndexCandidates({ profile, workbench, scopeEntityIds,
 }
 
 /**
+ * Rank evidence-gated optimization hypotheses for a completed synthetic run.
+ * This recommends experiments, not production fixes: every candidate is backed
+ * by the current scenario's component metrics and existing model/profile data.
+ */
+export function recommendSimulationImprovements({ run, profile, workbench, scopeEntityIds } = {}) {
+  if (run?.result?.status !== "completed" || !run.result.result
+    || !profile?.profilesByEntityId || !workbench || !Array.isArray(workbench.entities)) return [];
+  const included = new Set(Array.isArray(scopeEntityIds) ? scopeEntityIds : Object.keys(profile.profilesByEntityId));
+  const entitiesById = new Map(workbench.entities.map((entity) => [entity.id, entity]));
+  const rows = getCapacityPressureRows(run);
+  const recommendations = [];
+  for (const row of rows) {
+    if (!included.has(row.entityId)) continue;
+    const entity = entitiesById.get(row.entityId);
+    const entry = profile.profilesByEntityId[row.entityId];
+    if (!entity || !entry) continue;
+    const runtimeKind = ["backend.rest-service", "data.postgresql-database", "integrations.external-api"].includes(entity.kind);
+    if (runtimeKind && Number.isFinite(entry.parameters?.concurrency)
+      && entry.parameters.concurrency >= 1 && entry.parameters.concurrency < 10000
+      && (row.hasPressure || (row.queueWaitP95Ms ?? 0) > 0)) {
+      const score = (row.maxDropped || 0) * 1000 + (row.maxFailed || 0) * 100
+        + Math.max(0, (row.peakUtilization || 0) - 0.8) * 100
+        + Math.max(0, row.queueWaitP95Ms || 0);
+      recommendations.push({
+        id: `capacity:${row.entityId}`, interventionKind: "capacity", entityId: row.entityId,
+        label: `Test higher concurrency at ${entity.name || entity.id}`,
+        reason: row.maxDropped > 0
+          ? `${row.maxDropped} request(s) were dropped at this component in the selected run.`
+          : `Observed utilization is ${((row.peakUtilization || 0) * 100).toFixed(1)}%${(row.queueWaitP95Ms || 0) > 0 ? ` with ${row.queueWaitP95Ms.toFixed(2)} ms p95 queue wait` : ""}.`,
+        evidence: { dropped: row.maxDropped, failed: row.maxFailed, utilization: row.peakUtilization, queueWaitP95Ms: row.queueWaitP95Ms },
+        score: 100000 + score,
+      });
+    }
+    if (runtimeKind && Number.isFinite(entry.parameters?.meanServiceMs) && entry.parameters.meanServiceMs > 0.1
+      && Number.isFinite(row.serviceTimeP95Ms) && row.serviceTimeP95Ms > 0
+      && (row.queueWaitP95Ms == null || row.serviceTimeP95Ms >= row.queueWaitP95Ms)) {
+      recommendations.push({
+        id: `service-time:${row.entityId}`, interventionKind: "service-time", entityId: row.entityId,
+        label: `Test lower service time at ${entity.name || entity.id}`,
+        reason: `Recorded p95 service time is ${row.serviceTimeP95Ms.toFixed(2)} ms and is at least as large as the recorded p95 queue wait.`,
+        evidence: { serviceTimeP95Ms: row.serviceTimeP95Ms, queueWaitP95Ms: row.queueWaitP95Ms },
+        score: 50000 + row.serviceTimeP95Ms,
+      });
+    }
+    const hasTypedWriteRelationship = (workbench.relations || []).some((relation) =>
+      relation?.kind === "writes" && relation.targetId === row.entityId && included.has(relation.sourceId));
+    if (entity.kind === "data.postgresql-database" && entry.kind === "relational-store"
+      && hasTypedWriteRelationship && Number.isFinite(entry.parameters?.writeContentionMs)
+      && entry.parameters.writeContentionMs > 0 && row.writeOperationsStarted > 0 && row.writeContentionMsTotal > 0) {
+      recommendations.push({
+        id: `write-contention:${row.entityId}`, interventionKind: "write-contention", entityId: row.entityId,
+        label: `Test lower write contention at ${entity.name || entity.id}`,
+        reason: `${row.writeOperationsStarted} write operation(s) recorded ${row.writeContentionMsTotal.toFixed(2)} ms of modeled contention overhead.`,
+        evidence: { writeOperationsStarted: row.writeOperationsStarted, writeContentionMsTotal: row.writeContentionMsTotal },
+        score: 75000 + row.writeContentionMsTotal,
+      });
+    }
+  }
+  for (const candidate of getDatabaseIndexCandidates({ profile, workbench, scopeEntityIds: [...included], componentRows: rows }).slice(0, 1)) {
+    recommendations.push({
+      id: `database-index:${candidate.entityId}:${candidate.tableEntityId}:${candidate.columnName}`,
+      interventionKind: "database-index", entityId: candidate.entityId,
+      tableEntityId: candidate.tableEntityId, tableName: candidate.tableName, columnName: candidate.columnName,
+      label: `Test an index hypothesis for ${candidate.tableName}.${candidate.columnName}`,
+      reason: `${candidate.evidence.readOperationsStarted} read operation(s) and ${candidate.evidence.serviceTimeP95Ms.toFixed(2)} ms p95 database service time were recorded. The column is an unindexed candidate in the model.`,
+      evidence: candidate.evidence,
+      score: 25000 + candidate.evidence.serviceTimeP95Ms,
+    });
+  }
+  // Keep the shortlist useful by showing the strongest evidence-backed option
+  // for each intervention family rather than filling it with near-duplicate
+  // capacity/service-time suggestions for the same scenario.
+  const bestByIntervention = new Map();
+  for (const item of recommendations) {
+    const previous = bestByIntervention.get(item.interventionKind);
+    if (!previous || item.score > previous.score || (item.score === previous.score && item.id.localeCompare(previous.id) < 0)) {
+      bestByIntervention.set(item.interventionKind, item);
+    }
+  }
+  return [...bestByIntervention.values()].sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, 4)
+    .map(({ score, ...item }, index) => ({ ...item, rank: index + 1 }));
+}
+
+/**
  * Prepare a synthetic proposed-index experiment for a selected PostgreSQL
  * table/column. It changes only the share of read operations assumed to benefit
  * from the proposed index. A fixed, explicitly visible speedup-factor assumption

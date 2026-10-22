@@ -1,15 +1,27 @@
-Sketchizi Workbench 0.46 — execute only the already-validated SQL bytes
+Sketchizi Workbench 1.01 — Handoff Receipt & Follow-up Reconciliation
 
-Current priority: complete one successful end-to-end release gate before expanding Workbench functionality.
+Implemented:
+  - Record a manual receipt attestation for a saved handoff note, with reviewer, status (received / received with follow-up / not received), timestamp, and optional note.
+  - Keep the handoff note's original author, text, creation timestamp, and point-in-time queue snapshot unchanged when receipt metadata is recorded.
+  - Compare saved bounded task references against the current cross-record queue and flag missing tasks, changed finding status, due date, assignee, task category, and tasks now resolved for carry-forward review.
+  - Show reconciliation counts and follow-up candidates in the Workbench UI.
+  - Include receipt attestations in decision-record Markdown and document-wide handoff Markdown exports.
+  - Validate receipt structure and reject claims that manual receipt metadata proves independent verification.
+  - Add tests for immutable snapshots and live-queue reconciliation.
 
-The PostgreSQL release-fixture validator now passes the exact SQL text that matched the generated fixture to psql over stdin (`--file -`). It no longer reopens the original SQL path after validation, closing the validation/execution file-replacement window. The SQL fixture restrictions and database-target opt-ins remain unchanged.
+Verification:
+  npm run test:simulation: 307 passed, 0 failed.
+  npm run test:workbench-ui: 32 passed, 0 failed.
+  npm run test:workbench-format: 22 passed, 0 failed.
+  npm run test:workbench-artifacts: 11 passed, 0 failed.
+  Focused handoff and release bundle reviewer tests: 16 passed, 0 failed.
+  JavaScript syntax checks passed.
+  Production Vite build and real-browser validation remain unverified because project dependencies and the Vite executable are not installed in this extracted workspace.
 
-Next action on a network-enabled Windows machine:
-  npm run verify:workbench-release
+Safeguards:
+  - Receipt is a manual attestation, not proof of external delivery, recipient acceptance, or independent evidence verification.
+  - Reconciliation compares only bounded references saved with the handoff snapshot; it does not represent the complete historical queue and must not be treated as a unique-task total.
+  - Reconciliation does not alter canonical finding disposition, evidence, rollout readiness, or deployment authorization.
 
-Inspect:
-  artifacts/workbench-release-gate-summary.md
-  artifacts/ci-logs/
-  artifacts/generated/
-
-The release gate must remain open until clean install, font assets, production build, regression suites, external OpenAPI/SQL checks, PostgreSQL DDL execution/catalog checks, and rendered Chromium smoke all pass. The integration tests in this ZIP use an injected psql runner and are not evidence of live database execution.
+Next increment:
+  Workbench 1.02 — Handoff Action Ledger & Closure Criteria. Add explicit carry-forward decisions for each reconciliation result, with a required owner and due date, immutable prior comparisons, and reviewer-visible closure criteria. Keep all actions as workflow metadata rather than evidence or deployment approval.

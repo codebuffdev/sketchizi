@@ -1,6 +1,7 @@
 import { buildSimulationProjection } from "./adapter/buildSimulationProjection.js";
 import { runSimulation, SIMULATION_ENGINE_VERSION } from "./engine/runSimulation.js";
 import { explainSimulationRun } from "./experiments/simulationExperimentModel.js";
+import { calculateSloBudgetMetrics } from "./experiments/sloBudgetAnalysis.js";
 
 /**
  * The single orchestration path used by the Workbench UI and automated tests.
@@ -58,6 +59,14 @@ export function runTrafficSweep({
     const meetsSlo = hasTargets && result.status === "completed"
       && Number.isFinite(p95LatencyMs) && Number.isFinite(failedRatePercent)
       && p95LatencyMs <= maxP95LatencyMs && failedRatePercent <= maxErrorRatePercent;
+    const sloStatus = !hasTargets ? "targets-not-set" : result.status !== "completed" ? "not-evaluated" : meetsSlo ? "pass" : "fail";
+    const sloBudget = hasTargets ? calculateSloBudgetMetrics({
+      status: result.status,
+      p95LatencyMs,
+      failedRatePercent,
+      maxP95LatencyMs,
+      maxErrorRatePercent,
+    }) : calculateSloBudgetMetrics({});
     return {
       multiplier,
       label: multiplier === 1 ? "Baseline (1×)" : `${multiplier}× traffic`,
@@ -66,7 +75,8 @@ export function runTrafficSweep({
       metrics: metrics || null,
       p95LatencyMs,
       failedRatePercent,
-      sloStatus: !hasTargets ? "targets-not-set" : result.status !== "completed" ? "not-evaluated" : meetsSlo ? "pass" : "fail",
+      sloStatus,
+      sloBudget,
     };
   });
   const evaluated = points.filter((point) => point.sloStatus === "pass" || point.sloStatus === "fail");

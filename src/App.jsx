@@ -513,6 +513,8 @@ function App() {
             onUpdateSimulationProfile={workbenchController.updateSimulationProfile}
             simulationHistory={workbenchController.workbench?.simulationHistory || []}
             onUpdateSimulationHistory={workbenchController.updateSimulationHistory}
+            onUpdateArchitectureDecisionRecords={workbenchController.updateArchitectureDecisionRecords}
+            onUpdatePolicyGovernance={workbenchController.updatePolicyGovernance}
             onRuntimeOverlayChange={setWorkbenchRuntimeOverlay}
             selectedEntity={workbenchController.selectedEntity}
             visibleEntityIds={workbenchController.visibleEntityIds}

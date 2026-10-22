@@ -241,3 +241,14 @@ test("typed relationships and their canvas connector references survive a save/r
     assert.ok(connectors.some((connector) => connector.relationId === relation.id && connector.kind === relation.kind));
   }
 });
+
+test("policy approval history persists inside the Workbench extension across Sketchizi serialization", () => {
+  const policyGovernance = {
+    policyHistory: [{ id: "policy-entry-v1", policy: { id: "release-policy", version: 1, overdueDays: 2, agingDays: 14, severities: ["error"], rolloutBlockersOnly: true }, changedAt: "2026-10-20T08:00:00.000Z", changedBy: "owner", rationale: "Initial policy." }],
+    approvalEvents: [{ id: "event-submit", policyEntryId: "policy-entry-v1", action: "submit", status: "pending_approval", actor: "owner", rationale: "Please review.", at: "2026-10-20T09:00:00.000Z" }],
+  };
+  const workbench = createWorkbenchExtension({ activeViewId: "system", entities: entityModel, relations: relationships, views, viewScenes: { apis: apiScene, data: dataScene }, policyGovernance });
+  const parsed = parseDrawing(serializeDrawing({ ...activeScene, format: "sketchizi", extensions: withWorkbenchExtension({}, workbench) }));
+  const restored = readWorkbenchDocument(parsed).workbench;
+  assert.deepEqual(restored.policyGovernance, policyGovernance);
+});

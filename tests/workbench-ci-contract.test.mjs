@@ -85,7 +85,7 @@ test("diagnostics are generated and uploaded even when an earlier gate fails", (
   assert.match(workflow.slice(summaryIndex, artifactIndex), /name: Package one downloadable release diagnostic bundle/);
   assert.match(workflow.slice(summaryIndex, artifactIndex), /node scripts\/package-workbench-diagnostic-bundle\.mjs/);
   assert.match(workflow.slice(summaryIndex, artifactIndex), /name: Verify packaged diagnostic bundle integrity/);
-  assert.match(workflow.slice(summaryIndex, artifactIndex), /name: Verify packaged diagnostic bundle integrity\s+if: always\(\)/);
+  assert.match(workflow.slice(summaryIndex, artifactIndex), /name: Verify packaged diagnostic bundle integrity\s+timeout-minutes: \d+\s+if: always\(\)/);
   assert.match(workflow.slice(summaryIndex, artifactIndex), /node scripts\/verify-workbench-diagnostic-bundle\.mjs artifacts\/workbench-release-diagnostic-bundle\.zip/);
   assert.match(workflow.slice(artifactIndex, productionIndex), /artifacts\/workbench-release-diagnostic-verification\.json/);
   assert.match(workflow.slice(artifactIndex, productionIndex), /name: workbench-release-gate-diagnostics/);
@@ -211,4 +211,36 @@ test("release gate continues independent diagnostics after earlier failures with
   assert.match(workflow, /if: \$\{\{ always\(\) && steps\.artifact-fixtures\.outcome == 'success' \}\}/);
   assert.match(workflow, /if: \$\{\{ always\(\) && steps\.chromium-install\.outcome == 'success' \}\}/);
   assert.match(workflow, /id: gate-summary[\s\S]*?if: always\(\)/);
+});
+
+test("CI release stages have explicit timeouts aligned with the local release runner", () => {
+  assert.match(workflow, /jobs:\s*\n  build-and-regression:[\s\S]*?timeout-minutes: 90/);
+  const expected = new Map([
+    ["Diagnose npm registry connectivity (non-blocking)", 1],
+    ["Install locked dependencies", 10],
+    ["Verify pinned Excalidraw package and self-hosted font assets", 3],
+    ["Build production bundle", 5],
+    ["Run application regression suites", 10],
+    ["Run Workbench regression suites", 15],
+    ["Generate representative OpenAPI and PostgreSQL artifacts", 3],
+    ["Install pinned external validators and Playwright", 10],
+    ["Validate generated OpenAPI 3.1 document", 3],
+    ["Parse generated PostgreSQL DDL", 3],
+    ["Apply generated DDL twice against PostgreSQL and assert catalog objects", 5],
+    ["Install Chromium for rendered-browser smoke test", 10],
+    ["Run rendered-browser persistence smoke test", 3],
+    ["Record dependency tree for diagnostics", 2],
+    ["Write release gate summary", 2],
+    ["Package one downloadable release diagnostic bundle", 2],
+    ["Verify packaged diagnostic bundle integrity", 2],
+    ["Upload CI diagnostics and browser report", 3],
+    ["Upload production bundle", 3],
+  ]);
+  for (const [name, minutes] of expected) {
+    const start = workflow.indexOf(`- name: ${name}`);
+    assert.ok(start >= 0, `missing CI stage ${name}`);
+    const next = workflow.indexOf("\n      - name:", start + 1);
+    const block = workflow.slice(start, next < 0 ? workflow.length : next);
+    assert.match(block, new RegExp(`timeout-minutes: ${minutes}(?:\\s|$)`), `${name} must have a ${minutes}-minute timeout`);
+  }
 });

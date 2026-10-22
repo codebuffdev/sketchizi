@@ -504,6 +504,36 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     }
   }, [canEdit, saveDocument, showToast, workbench]);
 
+  const updatePolicyGovernance = useCallback((policyGovernance) => {
+    if (!canEdit || !workbench) return;
+    try {
+      const next = {
+        ...structuredClone(workbench),
+        policyGovernance: {
+          policyHistory: structuredClone(policyGovernance?.policyHistory || []),
+          approvalEvents: structuredClone(policyGovernance?.approvalEvents || []),
+        },
+      };
+      saveDocument(next);
+      setInspectorError("");
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not save policy approval records: ${error.message}`, "error");
+    }
+  }, [canEdit, saveDocument, showToast, workbench]);
+
+  const updateArchitectureDecisionRecords = useCallback((records) => {
+    if (!canEdit || !workbench) return;
+    try {
+      const next = { ...structuredClone(workbench), decisionRecords: structuredClone(records) };
+      saveDocument(next);
+      setInspectorError("");
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not save architecture decision records: ${error.message}`, "error");
+    }
+  }, [canEdit, saveDocument, showToast, workbench]);
+
   const activeView = workbench?.views?.find((view) => view.id === workbench.activeViewId) || null;
-  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, visibleEntityIds, inspectorError, clearInspectorError: () => setInspectorError(""), updateEntity, createRelation, createRelationBetween, updateSimulationProfile, updateSimulationHistory, focusFinding, initialize, switchView, addComponent, createPoc, completePocArtifacts };
+  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, visibleEntityIds, inspectorError, clearInspectorError: () => setInspectorError(""), updateEntity, createRelation, createRelationBetween, updateSimulationProfile, updateSimulationHistory, updateArchitectureDecisionRecords, updatePolicyGovernance, focusFinding, initialize, switchView, addComponent, createPoc, completePocArtifacts };
 }

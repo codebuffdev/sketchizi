@@ -44,3 +44,12 @@ test("simulation experiment panels expose portable JSON evidence exports", () =>
   assert.match(panelSource, /downloadSimulationEvidence\("traffic-sweep"/);
   assert.match(panelSource, /createSimulationEvidenceReport/);
 });
+
+
+test("traffic sweep exposes latency headroom and error-budget remaining without hiding zero-target semantics", () => {
+  assert.match(panelSource, /p95 headroom/);
+  assert.match(panelSource, /Error budget remaining/);
+  assert.match(panelSource, /Zero budget exceeded/);
+  assert.match(panelSource, /negative values exceed the latency target/);
+  assert.match(panelSource, /without dividing by zero/);
+});

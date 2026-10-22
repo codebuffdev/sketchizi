@@ -28,14 +28,15 @@
     "test:font-assets": "node --test tests/font-assets.test.js",
     "test:font-family-defaults": "node --test tests/font-family-defaults.test.js",
     "test:file-format": "node --test tests/sketchizi-format.test.js",
-    "test:workbench-format": "node --test tests/sketchizi-format.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js tests/workbench-registry.test.js tests/workbench-model.test.js",
+    "test:workbench-format": "node --test tests/sketchizi-format.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js tests/workbench-registry.test.js tests/workbench-model.test.js tests/policy-approval-panel-integration.test.js",
     "test:workbench-artifacts": "node --test tests/workbench-artifacts.test.js",
-    "test:workbench-ui": "node --test tests/workbench-registry.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js tests/workbench-model.test.js tests/workbench-panel-layout.test.js tests/workbench-poc-ui.test.js",
+    "test:workbench-ui": "node --test tests/workbench-registry.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js tests/workbench-model.test.js tests/workbench-panel-layout.test.js tests/workbench-poc-ui.test.js tests/policy-approval-panel-integration.test.js",
     "test:workbench-validation": "node --test tests/workbench-validation.test.js tests/workbench-model.test.js tests/workbench-registry.test.js tests/workbench-document-prototype.test.js tests/workbench-persistence-lifecycle.test.js",
     "test:simulation-projection": "node --test tests/simulation-projection.test.js",
     "test:simulation-engine": "node --test tests/simulation-engine.test.js",
     "example:simulation": "node examples/simulation/client-api-postgres.mjs",
-    "test:simulation": "node --test tests/simulation-projection.test.js tests/simulation-engine.test.js tests/simulation-experiment-model.test.js tests/simulation-profile-persistence.test.js tests/infrastructure-profile.test.js tests/load-test-calibration.test.js tests/workbench-simulation-runner.test.js tests/traffic-sweep-ui.test.js tests/simulation-evidence-report.test.js tests/simulation-history.test.js tests/runtime-overlay-model.test.js tests/runtime-overlay-ui.test.js tests/request-trace-ui.test.js tests/trace-investigation.test.js tests/capacity-improvement-comparison.test.js tests/service-time-improvement.test.js tests/database-contention-improvement.test.js tests/database-index-improvement.test.js tests/simulation-evidence-comparison.test.js tests/simulation-evidence-comparison-ui.test.js tests/simulation-history-library-ui.test.js tests/workbench-experiment-workflow.test.js",
+    "test:architecture-decision-report": "node --test tests/architecture-decision-report.test.js tests/architecture-change-impact.test.js tests/optimization-portfolio.test.js",
+    "test:simulation": "node --test tests/escalation-policy-governance.test.js tests/escalation-policy-approval.test.js tests/remediation-handoff.test.js tests/remediation-work-queue-follow-up.test.js tests/remediation-work-queue-accountability.test.js tests/remediation-work-queue-metadata.test.js tests/remediation-work-queue.test.js tests/remediation-evidence-mapping.test.js tests/remediation-source-drift-resolution.test.js tests/remediation-acceptance-criteria.test.js tests/review-finding-tracking.test.js tests/release-evidence-bundle.test.js tests/release-evidence-bundle-review.test.js tests/architecture-decision-record.test.js tests/rollout-readiness.test.js tests/architecture-decision-report.test.js tests/simulation-projection.test.js tests/simulation-engine.test.js tests/simulation-experiment-model.test.js tests/simulation-profile-persistence.test.js tests/infrastructure-profile.test.js tests/load-test-calibration.test.js tests/workbench-simulation-runner.test.js tests/traffic-sweep-ui.test.js tests/slo-budget-analysis.test.js tests/simulation-optimization-recommendations.test.js tests/optimization-portfolio.test.js tests/architecture-change-impact.test.js tests/simulation-evidence-report.test.js tests/simulation-history.test.js tests/runtime-overlay-model.test.js tests/runtime-overlay-ui.test.js tests/request-trace-ui.test.js tests/trace-investigation.test.js tests/capacity-improvement-comparison.test.js tests/service-time-improvement.test.js tests/database-contention-improvement.test.js tests/database-index-improvement.test.js tests/simulation-evidence-comparison.test.js tests/simulation-evidence-comparison-ui.test.js tests/simulation-history-library-ui.test.js tests/workbench-experiment-workflow.test.js",
     "test:simulation-outcomes": "node --test tests/simulation-engine.test.js tests/simulation-experiment-model.test.js tests/simulation-diagnostic-presentation.test.js tests/simulation-history.test.js",
     "test:runtime-overlays": "node --test tests/runtime-overlay-model.test.js",
     "test:request-traces": "node --test tests/simulation-engine.test.js tests/simulation-history.test.js tests/request-trace-ui.test.js",
@@ -75,7 +76,25 @@
     "validate:workbench-generated-sql-postgres": "node scripts/validate-workbench-generated-sql-postgres.mjs",
     "test:workbench-browser-workflow": "node --test tests/workbench-experiment-workflow.test.js tests/workbench-browser-test-server.test.js tests/workbench-browser-runner.test.mjs",
     "test:workbench-diagnostic-verifier": "node --test tests/workbench-diagnostic-bundle-verifier.test.mjs",
-    "verify:workbench-diagnostic-bundle": "node scripts/verify-workbench-diagnostic-bundle.mjs"
+    "verify:workbench-diagnostic-bundle": "node scripts/verify-workbench-diagnostic-bundle.mjs",
+    "inspect:workbench-diagnostics": "node scripts/inspect-workbench-release-diagnostic-bundle.mjs",
+    "test:workbench-diagnostic-import": "node --test tests/workbench-diagnostic-bundle-import.test.mjs",
+    "test:workbench-ci-dispatch-helper": "node --test tests/workbench-ci-dispatch-helper.test.mjs",
+    "test:workbench-ci-helper": "node --test tests/workbench-ci-helper.test.mjs",
+    "test:workbench-ci-evidence-receipt": "node --test tests/workbench-ci-evidence-receipt.test.mjs tests/workbench-ci-evidence-receipt-verifier.test.mjs",
+    "verify:workbench-ci-evidence-receipt": "node scripts/verify-workbench-ci-evidence-receipt.mjs",
+    "test:slo-budget-analysis": "node --test tests/slo-budget-analysis.test.js",
+    "test:optimization-recommendations": "node --test tests/simulation-optimization-recommendations.test.js",
+    "test:optimization-portfolio": "node --test tests/optimization-portfolio.test.js tests/simulation-optimization-recommendations.test.js",
+    "test:architecture-change-impact": "node --test tests/architecture-change-impact.test.js",
+    "test:rollout-readiness": "node --test tests/rollout-readiness.test.js",
+    "test:release-evidence-bundle-review": "node --test tests/release-evidence-bundle-review.test.js tests/release-evidence-bundle.test.js",
+    "test:review-finding-tracking": "node --test tests/review-finding-tracking.test.js tests/release-evidence-bundle.test.js tests/release-evidence-bundle-review.test.js",
+    "test:remediation-effectiveness": "node --test tests/remediation-work-queue.test.js tests/remediation-evidence-mapping.test.js tests/remediation-source-drift-resolution.test.js tests/remediation-acceptance-criteria.test.js tests/review-finding-tracking.test.js tests/rollout-readiness.test.js tests/release-evidence-bundle.test.js tests/release-evidence-bundle-review.test.js",
+    "test:remediation-acceptance-criteria": "node --test tests/remediation-acceptance-criteria.test.js",
+    "test:remediation-evidence-mapping": "node --test tests/remediation-evidence-mapping.test.js",
+    "test:remediation-work-queue": "node --test tests/remediation-work-queue-accountability.test.js tests/remediation-work-queue.test.js tests/remediation-work-queue-metadata.test.js",
+    "test:policy-governance": "node --test tests/escalation-policy-governance.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
@@ -85,6 +104,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
+    "pgsql-parser": "^18.2.12",
     "vite": "^5.4.8"
   }
 }

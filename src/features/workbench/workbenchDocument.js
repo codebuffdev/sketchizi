@@ -67,6 +67,9 @@ function validateWorkbench(workbench) {
     }
   }
   if (!isRecord(workbench.viewScenes)) throw new TypeError("Workbench viewScenes must be an object.");
+  if (workbench.policyGovernance != null && (!isRecord(workbench.policyGovernance) || !Array.isArray(workbench.policyGovernance.policyHistory) || !Array.isArray(workbench.policyGovernance.approvalEvents))) {
+    throw new TypeError("Workbench policy governance must contain policyHistory and approvalEvents arrays.");
+  }
   for (const viewId of Object.keys(workbench.viewScenes)) {
     if (!viewIds.has(viewId)) throw new Error(`Layout exists for unknown view: ${viewId}.`);
     if (viewId === workbench.activeViewId) {
@@ -85,6 +88,7 @@ export function createWorkbenchExtension({
   relations = [],
   views = [],
   viewScenes = {},
+  policyGovernance = { policyHistory: [], approvalEvents: [] },
 } = {}) {
   const workbench = {
     schemaVersion: WORKBENCH_SCHEMA_VERSION,
@@ -94,6 +98,10 @@ export function createWorkbenchExtension({
     relations: structuredClone(relations),
     views: structuredClone(views),
     viewScenes: Object.fromEntries(Object.entries(viewScenes).map(([id, scene]) => [id, cloneScene(scene, `Layout for view ${id}`)])),
+    policyGovernance: {
+      policyHistory: Array.isArray(policyGovernance?.policyHistory) ? structuredClone(policyGovernance.policyHistory) : [],
+      approvalEvents: Array.isArray(policyGovernance?.approvalEvents) ? structuredClone(policyGovernance.approvalEvents) : [],
+    },
   };
   validateWorkbench(workbench);
   return workbench;

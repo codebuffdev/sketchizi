@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { WORKBENCH_COMPONENTS, WORKBENCH_RELATIONS, WORKBENCH_VIEWS } from "./workbenchRegistry.js";
 import { validateRelationEndpoints } from "./workbenchModel.js";
 import SimulationExperimentPanel from "../simulation/experiments/SimulationExperimentPanel.jsx";
+import PolicyApprovalPanel from "./PolicyApprovalPanel.jsx";
 import { validateWorkbench } from "./workbenchValidation.js";
 import { generateOpenApiArtifact, generateSqlArtifact } from "./workbenchArtifacts.js";
 
@@ -41,6 +42,8 @@ export default function WorkbenchPanel({
   onUpdateSimulationProfile,
   simulationHistory = [],
   onUpdateSimulationHistory,
+  onUpdateArchitectureDecisionRecords,
+  onUpdatePolicyGovernance,
   onRuntimeOverlayChange,
 }) {
   const [relationKind, setRelationKind] = useState("calls");
@@ -152,6 +155,7 @@ export default function WorkbenchPanel({
             <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Run</button>
             <button type="button" role="tab" aria-selected={activePanelTab === "components"} className={activePanelTab === "components" ? "active" : ""} onClick={() => changePanelTab("components")}><span aria-hidden="true">＋</span>Add</button>
             <button type="button" role="tab" aria-selected={activePanelTab === "inspect"} className={activePanelTab === "inspect" ? "active" : ""} onClick={() => changePanelTab("inspect")}><span aria-hidden="true">☷</span>Inspect</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "policy"} className={activePanelTab === "policy" ? "active" : ""} onClick={() => changePanelTab("policy")}><span aria-hidden="true">✓</span>Policy</button>
           </nav>
           <div hidden={activePanelTab !== "build"} className="workbench-task-pane" role="tabpanel" aria-label="Build and review">
           {workbench.entities.length === 0 && workbench.relations.length === 0 && (
@@ -263,6 +267,7 @@ export default function WorkbenchPanel({
             onUpdateEntity={onUpdateEntity}
             simulationHistory={simulationHistory}
             onUpdateSimulationHistory={onUpdateSimulationHistory}
+            onUpdateArchitectureDecisionRecords={onUpdateArchitectureDecisionRecords}
             onRuntimeOverlayChange={onRuntimeOverlayChange}
             onCreateTypedRelation={onCreateRelationBetween}
             onFocusEntity={(entityId) => onFocusFinding?.({ entityIds: [entityId] })}
@@ -302,6 +307,14 @@ export default function WorkbenchPanel({
             {filteredComponents.length === 0 && <div className="workbench-catalog-empty"><strong>No components found</strong><p>Try a different name or category.</p><button type="button" className="workbench-secondary" onClick={() => setComponentSearch("")}>Clear search</button></div>}
           </div>
 
+          </div>
+
+          <div hidden={activePanelTab !== "policy"} className="workbench-task-pane" role="tabpanel" aria-label="Policy approval">
+            <PolicyApprovalPanel
+              policyGovernance={workbench?.policyGovernance || { policyHistory: [], approvalEvents: [] }}
+              onUpdatePolicyGovernance={onUpdatePolicyGovernance}
+              canEdit={canEdit}
+            />
           </div>
 
           <div hidden={activePanelTab !== "inspect"} className="workbench-task-pane" role="tabpanel" aria-label="Inspect component">
