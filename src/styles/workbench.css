@@ -1948,3 +1948,112 @@
   .desktop-workspace-workbench-open.narrow-workspace-view-workbench > .workbench-panel { position: relative; inset: auto; max-width: none; border-radius: 0; box-shadow: none; }
   .desktop-workspace-workbench-open.narrow-workspace-view-inspector > .desktop-context-region { overflow: auto; }
 }
+
+/* Requirement-to-architecture studio: proposal is reviewable and never auto-applied. */
+.workbench-requirement-studio { min-width: 0; }
+.workbench-requirement-studio h2 { margin: 8px 0 5px; color: var(--ui-text, #303647); font-size: 14px; line-height: 1.35; }
+.theme-dark .workbench-requirement-studio h2 { color: #e7eaf2; }
+.workbench-requirement-label { display: block; margin: 10px 0 5px; font-size: 12px; font-weight: 650; }
+.workbench-requirement-studio textarea { display: block; width: 100%; min-width: 0; box-sizing: border-box; resize: vertical; border: 1px solid var(--ui-border, #424858); border-radius: 8px; padding: 10px 11px; background: var(--ui-input, #20242e); color: var(--ui-text, #e7eaf2); font: inherit; line-height: 1.45; }
+.workbench-requirement-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+.workbench-requirement-actions > span { color: var(--ui-muted, #8f98aa); font-size: 11px; }
+.workbench-requirement-proposal { display: grid; gap: 9px; margin-top: 14px; padding: 12px; border: 1px solid var(--ui-border, #424858); border-radius: 10px; }
+.workbench-proposal-list { display: grid; gap: 7px; }
+.workbench-proposal-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px; border-radius: 7px; background: var(--ui-subtle, rgba(128, 136, 154, .09)); }
+.workbench-proposal-item > div { display: grid; gap: 3px; min-width: 0; }
+.workbench-proposal-item strong { font-size: 12px; }
+.workbench-proposal-item span { color: var(--ui-muted, #9ba3b2); font-size: 11px; line-height: 1.4; }
+.workbench-proposal-item button { flex: 0 0 auto; }
+.workbench-proposal-assumptions { margin: 0; padding-left: 20px; color: var(--ui-muted, #9ba3b2); font-size: 12px; line-height: 1.5; }
+.workbench-inline-error { color: #d24d57; font-size: 12px; }
+
+
+/* Breakscale-inspired workspace pass: emphasize the working canvas and use restrained, functional surfaces. */
+.workbench-studio {
+  --studio-accent: #7c8cff;
+  --studio-accent-soft: color-mix(in srgb, var(--studio-accent) 13%, transparent);
+  border-radius: 10px;
+  border-color: color-mix(in srgb, var(--ui-border, #424858) 82%, transparent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 20%);
+  background: var(--ui-surface-solid, #171a22);
+}
+.workbench-studio .workbench-panel-header {
+  padding: 10px 12px;
+  min-height: 54px;
+  background: var(--ui-surface-solid, #171a22);
+}
+.workbench-studio .workbench-mark {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+  border-radius: 7px;
+  background: var(--studio-accent-soft);
+  color: var(--studio-accent);
+}
+.workbench-studio .workbench-panel-brand strong { font-size: 12px; letter-spacing: 0; }
+.workbench-studio .workbench-panel-brand span:not(.workbench-mark) { font-size: 10px; }
+.workbench-studio .workbench-task-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--ui-surface-solid, #171a22);
+  border-bottom: 1px solid var(--ui-border, #343947);
+  box-shadow: none;
+}
+.workbench-studio .workbench-task-tabs > button {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-muted, #9ba3b2);
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.workbench-studio .workbench-task-tabs > button > span { font-size: 13px; }
+.workbench-studio .workbench-task-tabs > button:hover { background: var(--studio-accent-soft); color: var(--ui-text, #eef0f7); }
+.workbench-studio .workbench-task-tabs > button.active,
+.workbench-studio .workbench-task-tabs > button[aria-selected="true"] {
+  border-color: color-mix(in srgb, var(--studio-accent) 45%, transparent);
+  background: var(--studio-accent-soft);
+  color: var(--ui-text, #eef0f7);
+}
+.workbench-studio .workbench-section { padding: 12px; border-color: var(--ui-border, #343947); }
+.workbench-studio .workbench-design-level-summary {
+  margin-top: 8px;
+  padding: 10px 11px;
+  border-radius: 7px;
+  background: var(--ui-surface-soft, #20242e);
+  box-shadow: none;
+}
+.workbench-studio .workbench-level-hint { padding: 0 2px; border: 0; font-size: 11px; }
+.workbench-studio .workbench-component { border-radius: 6px; padding: 7px; }
+.workbench-studio .workbench-component-symbol { border-radius: 6px; }
+.workbench-studio .workbench-component-group + .workbench-component-group { margin-top: 8px; }
+.workbench-studio .workbench-component-group-trigger { border-radius: 6px; }
+.workbench-studio .workbench-toggle,
+.workbench-studio .workbench-secondary { border-radius: 6px; }
+.workbench-studio .workbench-panel-footer { border-top: 1px solid var(--ui-border, #343947); }
+.workbench-studio .workbench-task-pane { min-width: 0; }
+.workbench-studio .sim-experiment-panel { gap: 10px; }
+.workbench-studio .sim-profile-summary,
+.workbench-studio .sim-profile-editor,
+.workbench-studio .sim-infrastructure-editor { border-radius: 7px; box-shadow: none; }
+@media (max-width: 700px) {
+  .workbench-studio .workbench-task-tabs { gap: 2px; padding-inline: 6px; }
+  .workbench-studio .workbench-task-tabs > button { flex-direction: column; gap: 2px; min-height: 42px; padding: 5px 2px; font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workbench-studio *, .workbench-studio *::before, .workbench-studio *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}

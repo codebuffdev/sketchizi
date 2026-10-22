@@ -129,8 +129,11 @@ export function buildSketchPersistenceRecord({ elements, appState, files, metada
     format,
     metadata: metadata && typeof metadata === "object" && !Array.isArray(metadata) ? structuredClone(metadata) : {},
     extensions: extensions && typeof extensions === "object" && !Array.isArray(extensions) ? structuredClone(extensions) : {},
-    elements: Array.isArray(elements) ? elements : [],
-    files: files && typeof files === "object" ? files : {},
+    elements: Array.isArray(elements) ? structuredClone(elements) : [],
+    // Snapshot mutable scene data before the asynchronous IndexedDB write begins.
+    // Otherwise a caller editing the live arrays/objects can change the payload
+    // after it has been prepared for persistence.
+    files: files && typeof files === "object" ? structuredClone(files) : {},
     appState: {
       viewBackgroundColor: appState?.viewBackgroundColor,
       scrollX: appState?.scrollX || 0,

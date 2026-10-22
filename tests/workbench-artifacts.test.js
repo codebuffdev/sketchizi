@@ -175,3 +175,29 @@ test("SQL generation rejects multiple database targets instead of emitting ambig
   assert.ok(generated.errors.some((item) => item.code === "sql.multiple-databases"));
   assert.equal(generated.text, "");
 });
+
+test("OpenAPI generation detects equivalent templated routes with different parameter names", () => {
+  const model = apiModel();
+  model.entities[2].properties.method = "GET";
+  model.entities[2].properties.path = "/accounts/{id}";
+  const generated = generateOpenApiArtifact(model);
+  assert.equal(generated.ok, false);
+  assert.equal(generated.text, "");
+  const duplicate = generated.errors.find((item) => item.code === "openapi.duplicate-route");
+  assert.ok(duplicate);
+  assert.deepEqual(new Set(duplicate.entityIds), new Set(["get-account", "create-account"]));
+});
+
+test("OpenAPI generation rejects required schema properties that are undeclared or duplicated", () => {
+  const missing = apiModel();
+  missing.entities[1].properties.responseSchema = JSON.stringify({ type: "object", properties: { id: { type: "string" } }, required: ["id", "email"] });
+  const missingResult = generateOpenApiArtifact(missing);
+  assert.ok(missingResult.errors.some((item) => item.code === "openapi.schema-required-property-missing"));
+  assert.equal(missingResult.text, "");
+
+  const duplicate = apiModel();
+  duplicate.entities[1].properties.responseSchema = JSON.stringify({ type: "object", properties: { id: { type: "string" } }, required: ["id", "id"] });
+  const duplicateResult = generateOpenApiArtifact(duplicate);
+  assert.ok(duplicateResult.errors.some((item) => item.code === "openapi.duplicate-schema-required"));
+  assert.equal(duplicateResult.text, "");
+});

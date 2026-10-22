@@ -57,3 +57,22 @@ test("unknown artifact scope fails closed rather than returning the full model",
   assert.equal(scoped.entities.length, 0);
   assert.equal(scoped.relations.length, 0);
 });
+
+test("LLD ownership rejects a missing or unsupported HLD parent", async () => {
+  const { validateImplementationOwnership } = await import("../src/features/workbench/workbenchModel.js");
+  const entities = [entity("service", "backend.rest-service"), entity("controller", "backend.rest-controller")];
+  assert.equal(validateImplementationOwnership(entities, "backend.rest-controller", "missing").valid, false);
+  assert.equal(validateImplementationOwnership(entities, "backend.rest-controller", "controller").valid, false);
+});
+
+test("LLD ownership rejects assigning HLD components as children", async () => {
+  const { validateImplementationOwnership } = await import("../src/features/workbench/workbenchModel.js");
+  const entities = [entity("service", "backend.rest-service"), entity("other-service", "backend.worker")];
+  assert.equal(validateImplementationOwnership(entities, "backend.rest-service", "service").valid, false);
+  assert.equal(validateImplementationOwnership(entities, "backend.rest-controller", "service").valid, true);
+});
+
+test("entity updates cannot persist a dangling implementation parent", () => {
+  const entities = [entity("service", "backend.rest-service"), entity("controller", "backend.rest-controller")];
+  assert.throws(() => updateWorkbenchEntity(entities, "controller", { properties: { implementationParentId: "deleted-service" } }), /implementation parent/i);
+});

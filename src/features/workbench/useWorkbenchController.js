@@ -7,7 +7,7 @@ import {
   withWorkbenchExtension,
 } from "./workbenchDocument.js";
 import { WORKBENCH_COMPONENTS, WORKBENCH_RELATIONS, WORKBENCH_VIEWS } from "./workbenchRegistry.js";
-import { createWorkbenchRelation, getComponentDefinition, validateRelationEndpoints, updateWorkbenchEntity } from "./workbenchModel.js";
+import { createWorkbenchRelation, getComponentDefinition, validateRelationAgainstModel, validateImplementationOwnership, updateWorkbenchEntity } from "./workbenchModel.js";
 import { attachWorkbenchRelationToArrow, findReusableVisualArrow } from "./typedRelationScene.js";
 import { addMissingReactRestPostgresPocArtifacts, buildReactRestPostgresArtifactScaffoldingSceneDescriptors, buildReactRestPostgresPocSceneDescriptors, createReactRestPostgresPoc } from "./workbenchPocTemplate.js";
 
@@ -295,7 +295,7 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     }
   }, [apiRef, busy, canEdit, documentMetadataRef, saveDocument, showToast, workbench]);
 
-  const addComponent = useCallback((componentKind) => {
+  const addComponent = useCallback((componentKind, options = {}) => {
     if (!canEdit || busy) return;
     const api = apiRef.current;
     if (!api) return;
@@ -311,7 +311,9 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
         next = createWorkbenchExtension({ activeViewId: "system", views, entities: [], relations: [], viewScenes, modelRevision: 0 });
       }
       const entityId = makeId("entity");
-      const entity = { id: entityId, kind: definition.kind, name: definition.label, properties: Object.fromEntries((definition.properties || []).map((property) => [property.key, property.defaultValue])), createdAt: new Date().toISOString() };
+      const ownership = validateImplementationOwnership(next.entities, definition.kind, options.parentHldId);
+      if (!ownership.valid) throw new Error(ownership.reason);
+      const entity = { id: entityId, kind: definition.kind, name: typeof options.name === "string" && options.name.trim() ? options.name.trim() : definition.label, properties: { ...Object.fromEntries((definition.properties || []).map((property) => [property.key, property.defaultValue])), ...(typeof options.parentHldId === "string" && options.parentHldId ? { implementationParentId: options.parentHldId } : {}) }, createdAt: new Date().toISOString() };
       const canvas = document.querySelector(".excalidraw");
       const rect = canvas?.getBoundingClientRect?.() || { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
       const appState = api.getAppState();
@@ -323,7 +325,7 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
       const groupId = makeId("workbench-group");
       const raw = [
         { type: "rectangle", x, y, width: 240, height: 96, strokeColor: definition.stroke, backgroundColor: definition.fill, fillStyle: "solid", strokeWidth: 2, roughness: 0, roundness: { type: 3 }, groupIds: [groupId], customData: { workbench: { entityId, viewId: next.activeViewId, role: "container" } } },
-        { type: "text", x: x + 16, y: y + 18, width: 208, text: definition.label, fontSize: 19, fontFamily: 1, strokeColor: "#20232a", groupIds: [groupId], customData: { workbench: { entityId, viewId: next.activeViewId, role: "label" } } },
+        { type: "text", x: x + 16, y: y + 18, width: 208, text: entity.name, fontSize: 19, fontFamily: 1, strokeColor: "#20232a", groupIds: [groupId], customData: { workbench: { entityId, viewId: next.activeViewId, role: "label" } } },
       ];
       const inserted = convertToExcalidrawElements(raw).map((element, index) => ({
         ...element,
@@ -390,10 +392,8 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
       const sourceEntity = workbench.entities.find((entity) => entity.id === sourceId);
       const targetEntity = workbench.entities.find((entity) => entity.id === targetId);
       if (!sourceEntity || !targetEntity) throw new Error("Choose two existing Workbench components before connecting them.");
-      const validation = validateRelationEndpoints(kind, sourceEntity, targetEntity);
+      const validation = validateRelationAgainstModel(kind, sourceEntity, targetEntity, workbench.entities, workbench.relations);
       if (!validation.valid) throw new Error(validation.reason);
-      const duplicate = workbench.relations.some((relation) => relation.kind === kind && relation.sourceId === sourceEntity.id && relation.targetId === targetEntity.id);
-      if (duplicate) throw new Error("This typed relationship already exists.");
       const api = apiRef.current;
       if (!api) throw new Error("The drawing canvas is not ready.");
       const scene = currentScene(api);

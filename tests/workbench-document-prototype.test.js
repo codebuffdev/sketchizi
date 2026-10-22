@@ -135,6 +135,14 @@ test("local autosave records preserve Workbench extensions, metadata, format, an
   assert.deepEqual(record.extensions["com.example.audit"], { keep: true });
   assert.deepEqual(record.files, files);
   assert.notEqual(record.extensions, extensions, "stored extension payload must not alias mutable document state");
+  assert.notEqual(record.elements, activeScene.elements, "stored elements must be a stable persistence snapshot");
+  assert.notEqual(record.files, files, "stored files must be a stable persistence snapshot");
+
+  // Mutations made after preparing the persistence record must not alter it.
+  activeScene.elements[0].customData = { mutatedAfterSnapshot: true };
+  files["image-1"].dataURL = "data:image/png;base64,CHANGED";
+  assert.equal(record.elements[0].customData?.mutatedAfterSnapshot, undefined);
+  assert.equal(record.files["image-1"].dataURL, "data:image/png;base64,AA==");
 });
 
 test("recent-file snapshots preserve Workbench extension and legacy records remain compatible", () => {

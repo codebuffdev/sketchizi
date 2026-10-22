@@ -65,8 +65,20 @@ function validateSchemaNode(schema, label, entityId, errors, depth = 0) {
     }
   }
   if (schema.items != null) validateSchemaNode(schema.items, `${label}.items`, entityId, errors, depth + 1);
-  if (schema.required != null && (!Array.isArray(schema.required) || !schema.required.every((item) => typeof item === "string"))) {
-    errors.push(error("openapi.invalid-schema-required", `${label}.required must be an array of property names.`, [entityId]));
+  if (schema.required != null) {
+    if (!Array.isArray(schema.required) || !schema.required.every((item) => typeof item === "string")) {
+      errors.push(error("openapi.invalid-schema-required", `${label}.required must be an array of property names.`, [entityId]));
+    } else {
+      if (new Set(schema.required).size !== schema.required.length) {
+        errors.push(error("openapi.duplicate-schema-required", `${label}.required must not repeat property names.`, [entityId]));
+      }
+      if (objectLike(schema.properties)) {
+        const missing = schema.required.filter((name) => !Object.hasOwn(schema.properties, name));
+        if (missing.length) {
+          errors.push(error("openapi.schema-required-property-missing", `${label}.required references properties not declared in properties: ${missing.join(", ")}.`, [entityId]));
+        }
+      }
+    }
   }
   if (schema.enum != null && !Array.isArray(schema.enum)) {
     errors.push(error("openapi.invalid-schema-enum", `${label}.enum must be an array.`, [entityId]));
@@ -195,6 +207,9 @@ export function generateOpenApiArtifact(workbench) {
   }
 
   const paths = {};
+  // OpenAPI treats templated paths with different parameter names as the same route shape.
+  // Keep the original path for output, but normalize parameter names for collision checks.
+  const normalizedRoutes = new Map();
   const operationIds = new Map();
   const ownersSeen = new Set();
   for (const endpoint of endpoints) {
@@ -227,11 +242,14 @@ export function generateOpenApiArtifact(workbench) {
     }
     operationIds.set(operationId, endpoint.id);
     if (!parsedPath) continue;
-    if (paths[parsedPath.path]?.[method]) {
-      const existing = paths[parsedPath.path][method].operationId;
-      errors.push(error("openapi.duplicate-route", `${method.toUpperCase()} ${parsedPath.path} is defined more than once (including operation '${existing}').`, [endpoint.id]));
+    const normalizedPath = parsedPath.path.replace(/{[^{}]+}/g, "{}");
+    const routeKey = `${method} ${normalizedPath}`;
+    if (normalizedRoutes.has(routeKey)) {
+      const existing = normalizedRoutes.get(routeKey);
+      errors.push(error("openapi.duplicate-route", `${method.toUpperCase()} ${parsedPath.path} conflicts with ${existing.path} (operation '${existing.operationId}'); templated path parameter names do not make routes distinct.`, [existing.entityId, endpoint.id]));
       continue;
     }
+    normalizedRoutes.set(routeKey, { path: parsedPath.path, operationId, entityId: endpoint.id });
     const requestSchema = readSchema(props.requestSchema, `${endpoint.name || endpoint.id} requestSchema`, endpoint.id, errors);
     const responseSchema = readSchema(props.responseSchema, `${endpoint.name || endpoint.id} responseSchema`, endpoint.id, errors);
     const parameters = parsedPath.params.map((name) => ({ name, in: "path", required: true, schema: { type: "string" } }));

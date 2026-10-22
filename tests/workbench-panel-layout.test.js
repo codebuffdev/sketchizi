@@ -158,7 +158,7 @@ test("Workbench layout preferences persist separately from the engineering model
   assert.match(panelSource, /WORKBENCH_LAYOUT_PREFERENCES_KEY = "sketchizi\.workbench\.layout\.v1"/);
   assert.match(panelSource, /readWorkbenchLayoutPreferences\(\)\.workspaceWidth/);
   assert.match(panelSource, /readWorkbenchLayoutPreferences\(\)\.resultsExpanded/);
-  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide \}\)/);
+  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId \}\)/);
   assert.match(panelSource, /localStorage\?\.setItem\(WORKBENCH_LAYOUT_PREFERENCES_KEY/);
   assert.match(panelSource, /Layout preferences are optional; storage failures must not block design work/);
 });
@@ -166,7 +166,7 @@ test("Workbench layout preferences persist separately from the engineering model
 
 test("Workbench can collapse to a compact canvas-reclaiming rail and persist that preference", () => {
   assert.match(panelSource, /panelCollapsed: value\?\.panelCollapsed === true/);
-  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide \}\)/);
+  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId \}\)/);
   assert.match(panelSource, /aria-label=\{panelCollapsed \? "Expand Workbench panel" : "Collapse Workbench panel"\}/);
   assert.match(panelSource, /workbench-panel-collapsed/);
   assert.match(styles, /\.workbench-panel-collapsed > :not\(\.workbench-panel-header\) \{ display: none !important; \}/);
@@ -187,7 +187,7 @@ test("Workbench dock side can switch left/right and persists as a layout prefere
   assert.match(panelSource, /dockSide: value\?\.dockSide === "right" \? "right" : "left"/);
   assert.match(panelSource, /setDockSide\(\(side\) => side === "left" \? "right" : "left"\)/);
   assert.match(panelSource, /workbench-panel-dock-\$\{dockSide\}/);
-  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide \}\)/);
+  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId \}\)/);
   assert.match(panelSource, /Move Workbench to right side/);
   assert.match(styles, /\.workbench-panel-dock-right \{ left: auto; right: 10px; \}/);
   assert.match(styles, /\.workbench-panel-collapsed \.workbench-dock-toggle \{ display: none; \}/);
@@ -235,4 +235,13 @@ test("narrow desktop exposes explicit Palette, Canvas, Engineering and Inspector
   assert.match(styles, /\.desktop-workspace-workbench-open\.narrow-workspace-view-canvas > \.desktop-canvas-region/);
   assert.match(styles, /\.desktop-workspace-workbench-open\.narrow-workspace-view-workbench > \.workbench-panel/);
   assert.match(styles, /\.desktop-workspace-workbench-open\.narrow-workspace-view-inspector > \.desktop-context-region/);
+});
+
+
+test("HLD-to-LLD drill-down selection persists independently from the engineering model", () => {
+  assert.match(panelSource, /lldParentId: typeof value\?\.lldParentId === "string" \? value\.lldParentId : ""/);
+  assert.match(panelSource, /useState\(\(\) => readWorkbenchLayoutPreferences\(\)\.lldParentId\)/);
+  assert.match(panelSource, /writeWorkbenchLayoutPreferences\(\{ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId \}\)/);
+  assert.match(panelSource, /\[workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId\]/);
+  assert.match(panelSource, /setLldParentId\(entity\.id\); onSwitchView\("lld"\)/);
 });

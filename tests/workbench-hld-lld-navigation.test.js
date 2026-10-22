@@ -12,11 +12,10 @@ test('HLD component offers a direct action to open its scoped LLD view', () => {
 });
 
 test('LLD navigator scopes to nearby typed relationships and can return to all LLD elements', () => {
-  assert.match(panel, /for \(let depth = 0; depth < 2; depth \+= 1\)/);
-  assert.match(panel, /frontier\.has\(relation\.sourceId\)/);
-  assert.match(panel, /frontier\.has\(relation\.targetId\)/);
+  assert.match(panel, /entity\.properties\?\.implementationParentId === parent\.id/);
   assert.match(panel, /Show all LLD components/);
-  assert.match(panel, /No connected LLD components found yet/);
+  assert.match(panel, /selected HLD parent no longer exists/);
+  assert.match(panel, /scoped LLD is hidden to avoid showing unrelated components/);
 });
 
 test('HLD-to-LLD navigation controls have separate accessible buttons and responsive styling hooks', () => {

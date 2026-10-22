@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { WORKBENCH_RELATIONS } from "../src/features/workbench/workbenchRegistry.js";
-import { createWorkbenchRelation, getComponentDefinition, updateWorkbenchEntity, validateRelationEndpoints } from "../src/features/workbench/workbenchModel.js";
+import { createWorkbenchRelation, getComponentDefinition, updateWorkbenchEntity, validateRelationAgainstModel, validateRelationEndpoints } from "../src/features/workbench/workbenchModel.js";
 
 const entity = (id, kind, name = id) => ({ id, kind, name, properties: {} });
 
@@ -42,4 +42,34 @@ test("entity inspector update only changes editable name and properties", () => 
 test("component registry includes editable schemas for the starter component catalog", () => {
   assert.ok(getComponentDefinition("backend.rest-service").properties.some((field) => field.key === "port"));
   assert.ok(getComponentDefinition("backend.api-endpoint").properties.some((field) => field.key === "method"));
+});
+
+
+test("model-level relationship validation rejects ambiguous component identities", () => {
+  const source = entity("ui", "frontend.react-app");
+  const target = entity("api", "backend.rest-service");
+  assert.deepEqual(validateRelationAgainstModel("calls", source, target, [source, target], []), { valid: true, reason: "" });
+
+  const duplicateSourceId = entity("ui", "frontend.react-app", "Another UI");
+  const ambiguous = validateRelationAgainstModel("calls", source, target, [source, duplicateSourceId, target], []);
+  assert.equal(ambiguous.valid, false);
+  assert.match(ambiguous.reason, /unique component IDs/);
+});
+
+test("model-level relationship validation rejects duplicate typed edges before mutation", () => {
+  const source = entity("ui", "frontend.react-app");
+  const target = entity("api", "backend.rest-service");
+  const existing = { id: "rel-1", kind: "calls", sourceId: source.id, targetId: target.id };
+  const result = validateRelationAgainstModel("calls", source, target, [source, target], [existing]);
+  assert.equal(result.valid, false);
+  assert.match(result.reason, /already exists/);
+});
+
+test("model-level relationship validation rejects stale endpoint definitions", () => {
+  const source = entity("ui", "frontend.react-app");
+  const target = entity("api", "backend.rest-service");
+  const staleTarget = entity("api", "data.postgresql-database");
+  const result = validateRelationAgainstModel("calls", source, target, [source, staleTarget], []);
+  assert.equal(result.valid, false);
+  assert.match(result.reason, /do not match/);
 });

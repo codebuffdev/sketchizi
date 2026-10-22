@@ -4,6 +4,8 @@ import { validateRelationEndpoints } from "./workbenchModel.js";
 import SimulationExperimentPanel from "../simulation/experiments/SimulationExperimentPanel.jsx";
 import PolicyApprovalPanel from "./PolicyApprovalPanel.jsx";
 import { validateWorkbench } from "./workbenchValidation.js";
+import { proposeArchitectureFromRequirement } from "./requirementArchitectureProposal.js";
+import { proposeLldBlueprint } from "./lldBlueprint.js";
 import { analyzeWorkbenchArtifactScope, generateOpenApiArtifact, generateSqlArtifact, scopeWorkbenchToService } from "./workbenchArtifacts.js";
 
 const WORKBENCH_LAYOUT_PREFERENCES_KEY = "sketchizi.workbench.layout.v1";
@@ -18,9 +20,10 @@ function readWorkbenchLayoutPreferences() {
       panelCollapsed: value?.panelCollapsed === true,
       modelNavigatorCollapsed: value?.modelNavigatorCollapsed === true,
       dockSide: value?.dockSide === "right" ? "right" : "left",
+      lldParentId: typeof value?.lldParentId === "string" ? value.lldParentId : "",
     };
   } catch {
-    return { workspaceWidth: "standard", resultsExpanded: false, panelCollapsed: false, modelNavigatorCollapsed: false, dockSide: "left" };
+    return { workspaceWidth: "standard", resultsExpanded: false, panelCollapsed: false, modelNavigatorCollapsed: false, dockSide: "left", lldParentId: "" };
   }
 }
 
@@ -84,14 +87,17 @@ export default function WorkbenchPanel({
   const [panelCollapsed, setPanelCollapsed] = useState(() => readWorkbenchLayoutPreferences().panelCollapsed);
   const [modelNavigatorCollapsed, setModelNavigatorCollapsed] = useState(() => readWorkbenchLayoutPreferences().modelNavigatorCollapsed);
   const [dockSide, setDockSide] = useState(() => readWorkbenchLayoutPreferences().dockSide);
+  const [lldParentId, setLldParentId] = useState(() => readWorkbenchLayoutPreferences().lldParentId);
   const [artifactServiceId, setArtifactServiceId] = useState("");
   const [componentSearch, setComponentSearch] = useState("");
   const [modelSearch, setModelSearch] = useState("");
-  const [lldParentId, setLldParentId] = useState("");
+  const [architectureRequirement, setArchitectureRequirement] = useState("");
+  const [architectureProposal, setArchitectureProposal] = useState(null);
+  const [lldBlueprint, setLldBlueprint] = useState(null);
   const [expandedComponentGroups, setExpandedComponentGroups] = useState({ Application: true, Data: true });
   useEffect(() => {
-    writeWorkbenchLayoutPreferences({ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide });
-  }, [workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide]);
+    writeWorkbenchLayoutPreferences({ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId });
+  }, [workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId]);
 
   useEffect(() => {
     const available = selectedEntity ? WORKBENCH_RELATIONS.filter((item) => item.sourceKinds.includes(selectedEntity.kind)) : [];
@@ -151,7 +157,7 @@ export default function WorkbenchPanel({
   };
 
   return (
-    <section className={`workbench-panel workbench-panel-dock-${dockSide}${workspaceWidth === "focus" ? " workbench-panel-focus" : ""}${panelCollapsed ? " workbench-panel-collapsed" : ""}`} aria-label="Engineering Workbench">
+    <section className={`workbench-panel workbench-studio workbench-studio-view-${activeViewId} workbench-studio-task-${activePanelTab} workbench-panel-dock-${dockSide}${workspaceWidth === "focus" ? " workbench-panel-focus" : ""}${panelCollapsed ? " workbench-panel-collapsed" : ""}`} aria-label="Engineering Workbench">
       <header className="workbench-panel-header">
         <div className="workbench-panel-brand">
           <span className="workbench-mark" aria-hidden="true">W</span>
@@ -226,7 +232,8 @@ export default function WorkbenchPanel({
                 const entities = workbench.entities.filter((entity) => {
                   const definition = WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind);
                   const matchesSearch = !normalized || `${entity.name || ""} ${entity.kind} ${definition?.label || ""}`.toLowerCase().includes(normalized);
-                  const matchesParentScope = activeViewId !== "lld" || !parent || (definition?.designLevel === "lld" && entity.properties?.implementationParentId === parent.id);
+                  const hasMissingParent = Boolean(lldParentId && !parent);
+                  const matchesParentScope = activeViewId !== "lld" || (hasMissingParent ? false : !parent || (definition?.designLevel === "lld" && entity.properties?.implementationParentId === parent.id));
                   return matchesSearch && matchesParentScope;
                 });
                 const groups = [
@@ -252,14 +259,17 @@ export default function WorkbenchPanel({
               })()}
               {workbench.entities.length === 0 && <p className="workbench-model-empty">No components yet. Add a system component to start the hierarchy.</p>}
               {workbench.entities.length > 0 && modelSearch.trim() && !workbench.entities.some((entity) => `${entity.name || ""} ${entity.kind} ${WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind)?.label || ""}`.toLowerCase().includes(modelSearch.trim().toLowerCase())) && <p className="workbench-model-empty">No matching components found.</p>}
-              {activeViewId === "lld" && lldParentId && groups.every((group) => group.entities.length === 0) && !normalized && <p className="workbench-model-empty">No implementation elements are assigned to this HLD component yet. Return to the full LLD list and set their Parent HLD component.</p>}
+              {activeViewId === "lld" && lldParentId && !workbench.entities.some((entity) => entity.id === lldParentId) && <div className="workbench-model-empty" role="alert">The selected HLD parent no longer exists. The scoped LLD is hidden to avoid showing unrelated components. <button type="button" className="workbench-secondary" onClick={() => setLldParentId("")}>Return to all LLD components</button></div>}
+              {activeViewId === "lld" && lldParentId && workbench.entities.some((entity) => entity.id === lldParentId) && groups.every((group) => group.entities.length === 0) && !normalized && <p className="workbench-model-empty">No implementation elements are assigned to this HLD component yet. Return to the full LLD list and set their Parent HLD component.</p>}
               </>}
             </section>
             {activeViewId === "lld" && lldParentId && workbench.entities.some((entity) => entity.id === lldParentId) && <div className="workbench-lld-parent-context"><span>IMPLEMENTING HLD COMPONENT</span><strong>{workbench.entities.find((entity) => entity.id === lldParentId)?.name || WORKBENCH_COMPONENTS.find((item) => item.kind === workbench.entities.find((entity) => entity.id === lldParentId)?.kind)?.label}</strong><p>Only low-level elements explicitly assigned to this component appear in this scoped view. Assign components using the Parent HLD control in the full LLD list.</p><button type="button" className="workbench-secondary" onClick={() => setLldParentId("")}>Show all LLD components</button></div>}
             {activeViewId === "lld" && <div className="workbench-lld-start-card">
               <div className="workbench-lld-start-heading"><span className="workbench-lld-start-icon" aria-hidden="true">{ }</span><div><strong>Design inside a service</strong><small>Build implementation details, not another system map.</small></div></div>
               <p>Add controllers, Java classes, interfaces, repositories, API contracts and domain entities. Use typed relationships to describe how they work together.</p>
-              <button type="button" className="workbench-primary" disabled={!canEdit || busy} onClick={() => changePanelTab("components")}>＋ Add a design element</button>
+              {lldParentId && workbench.entities.some((entity) => entity.id === lldParentId) && <button type="button" className="workbench-primary" disabled={!canEdit || busy} onClick={() => setLldBlueprint(proposeLldBlueprint(workbench.entities.find((entity) => entity.id === lldParentId)))}>Propose LLD blueprint</button>}
+              {lldBlueprint?.valid && lldBlueprint.parentId === lldParentId && <div className="workbench-requirement-proposal" aria-live="polite"><strong>Blueprint for {lldBlueprint.parentName}</strong><p className="workbench-note">{lldBlueprint.notice}</p><strong>Proposed implementation elements</strong><div className="workbench-proposal-list">{lldBlueprint.elements.map((item) => { const definition = WORKBENCH_COMPONENTS.find((candidate) => candidate.kind === item.kind); return <div className="workbench-proposal-item" key={item.kind}><div><strong>{item.name}</strong><span>{definition?.label || item.kind} · {item.responsibility}</span></div><button type="button" className="workbench-secondary" disabled={!canEdit || busy} onClick={() => onAddComponent?.(item.kind, { name: item.name, parentHldId: lldBlueprint.parentId })}>Add to this service</button></div>; })}</div><strong>Suggested relationships</strong><div className="workbench-proposal-list">{lldBlueprint.relationships.map((item) => { const source = workbench.entities.find((entity) => entity.name === item.source && entity.properties?.implementationParentId === lldBlueprint.parentId); const target = workbench.entities.find((entity) => entity.name === item.target && entity.properties?.implementationParentId === lldBlueprint.parentId); const endpointsReady = Boolean(source && target && visibleEntityIds.includes(source.id) && visibleEntityIds.includes(target.id)); const exists = Boolean(source && target && workbench.relations.some((relation) => relation.kind === item.kind && relation.sourceId === source.id && relation.targetId === target.id)); return <div className="workbench-proposal-item" key={`${item.source}-${item.target}`}><div><strong>{item.source} → {item.target}</strong><span>{item.kind}: {item.reason}</span>{!endpointsReady && <span>Add both proposed elements to this service and make them visible in the active LLD view before connecting them.</span>}</div><button type="button" className="workbench-secondary" disabled={!canEdit || busy || !endpointsReady || exists} onClick={() => onCreateRelationBetween?.({ sourceId: source.id, kind: item.kind, targetId: target.id })}>{exists ? "Connected" : "Create connection"}</button></div>; })}</div><strong>Decisions to resolve</strong><ul className="workbench-proposal-assumptions">{lldBlueprint.decisions.map((item) => <li key={item}>{item}</li>)}</ul><p className="workbench-note">Added blueprint elements are named and assigned to this HLD service automatically. Review and create the suggested typed relationships after both endpoints exist in the active LLD view.</p></div>}
+              <button type="button" className="workbench-secondary" disabled={!canEdit || busy} onClick={() => changePanelTab("components")}>＋ Add a design element manually</button>
               <button type="button" className="workbench-secondary workbench-lld-back-button" onClick={() => onSwitchView("system")}>← Return to system architecture</button>
             </div>}
           </div> : <div className="workbench-current-context" aria-live="polite">
@@ -291,6 +301,37 @@ export default function WorkbenchPanel({
 
 
           <div hidden={activePanelTab !== "build"} className="workbench-task-pane" role="tabpanel" aria-label="Design, review and artifacts">
+          {activeViewId === "system" && (
+            <section className="workbench-section workbench-requirement-studio" aria-label="Requirement to architecture studio">
+              <div className="workbench-section-heading"><span>REQUIREMENT-TO-ARCHITECTURE STUDIO</span><span className="workbench-count">BETA</span></div>
+              <h2>Start with the system you need to build</h2>
+              <p className="workbench-section-intro">Describe the product and its key behaviors. Sketchizi proposes a reviewable starter component set and calls out unresolved decisions before you add anything to the shared model.</p>
+              <label className="workbench-requirement-label" htmlFor="workbench-architecture-requirement">System requirement</label>
+              <textarea id="workbench-architecture-requirement" value={architectureRequirement} onChange={(event) => { setArchitectureRequirement(event.target.value); setArchitectureProposal(null); }} rows={3} maxLength={3000} placeholder="Example: An e-commerce system where customers place orders, payments are confirmed asynchronously, and order data is stored in PostgreSQL." disabled={!canEdit || busy} />
+              <div className="workbench-requirement-actions"><span>{architectureRequirement.length}/3000</span><button type="button" className="workbench-primary" disabled={!canEdit || busy || architectureRequirement.trim().length < 12} onClick={() => setArchitectureProposal(proposeArchitectureFromRequirement(architectureRequirement))}>Propose architecture</button></div>
+              {architectureProposal && !architectureProposal.valid && <p className="workbench-inline-error" role="alert">{architectureProposal.message}</p>}
+              {architectureProposal?.valid && <div className="workbench-requirement-proposal" aria-live="polite">
+                <strong>Proposed starting components</strong>
+                <p className="workbench-note">{architectureProposal.notice}</p>
+                <div className="workbench-proposal-list">{architectureProposal.components.map((component) => {
+                  const definition = WORKBENCH_COMPONENTS.find((item) => item.kind === component.kind);
+                  return <div className="workbench-proposal-item" key={`${component.kind}-${component.name}`}><div><strong>{component.name}</strong><span>{definition?.label || component.kind} · {component.reason}</span></div><button type="button" className="workbench-secondary" disabled={!canEdit || busy} onClick={() => onAddComponent?.(component.kind)} aria-label={`Add ${component.name} to the model`}>Add</button></div>;
+                })}</div>
+                <strong>Suggested typed relationships</strong>
+                <p className="workbench-note">These are review suggestions, not saved relationships. Add the endpoints first, then create and validate each typed relationship in the shared model.</p>
+                <div className="workbench-proposal-list">{(architectureProposal.relations || []).map((relation) => {
+                  const source = workbench.entities.find((entity) => entity.kind === relation.sourceKind);
+                  const target = workbench.entities.find((entity) => entity.kind === relation.targetKind);
+                  const alreadyConnected = source && target && workbench.relations.some((item) => item.sourceId === source.id && item.targetId === target.id && item.kind === relation.kind);
+                  const canConnect = source && target && source.id !== target.id && visibleEntityIds.includes(source.id) && visibleEntityIds.includes(target.id);
+                  return <div className="workbench-proposal-item" key={`${relation.source}-${relation.kind}-${relation.target}`}><div><strong>{relation.source} → {relation.target}</strong><span>{relation.kind} · {relation.reason}</span></div>{alreadyConnected ? <span className="workbench-count">Connected</span> : <button type="button" className="workbench-secondary" disabled={!canEdit || busy || !canConnect} title={!canConnect ? "Add both component types to the active view first." : `Create ${relation.kind} relationship`} onClick={() => onCreateRelationBetween?.({ sourceId: source.id, kind: relation.kind, targetId: target.id })}>{canConnect ? "Connect" : "Add endpoints first"}</button>}</div>;
+                })}</div>
+                <strong>Assumptions and open decisions</strong>
+                <ul className="workbench-proposal-assumptions">{architectureProposal.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul>
+                <p className="workbench-note">This first release adds selected components individually. Relationships, service boundaries, contracts, and data schemas must still be reviewed and connected in the shared model.</p>
+              </div>}
+            </section>
+          )}
           {activeViewId === "system" && workbench.entities.length === 0 && workbench.relations.length === 0 && (
             <section className="workbench-section workbench-poc-template" aria-label="Create a POC from a template">
               <div className="workbench-section-heading"><span>START WITH A POC</span><span className="workbench-count">1</span></div>
