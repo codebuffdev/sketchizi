@@ -137,6 +137,13 @@ export default function WorkbenchPanel({
       ) : (
         <>
           <div className="workbench-panel-scroll">
+          <nav className="workbench-task-tabs" role="tablist" aria-label="Workbench workflow">
+            <button type="button" role="tab" aria-selected={activePanelTab === "build"} className={activePanelTab === "build" ? "active" : ""} onClick={() => changePanelTab("build")}><span aria-hidden="true">◇</span>Design</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "components"} className={activePanelTab === "components" ? "active" : ""} onClick={() => changePanelTab("components")}><span aria-hidden="true">＋</span>Add</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "inspect"} className={activePanelTab === "inspect" ? "active" : ""} onClick={() => changePanelTab("inspect")}><span aria-hidden="true">☷</span>Properties</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "policy"} className={activePanelTab === "policy" ? "active" : ""} onClick={() => changePanelTab("policy")}><span aria-hidden="true">✓</span>Validate</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Explore</button>
+          </nav>
           <div className="workbench-section">
             <div className="workbench-section-heading"><span>DESIGN PERSPECTIVES</span><span className="workbench-count">{workbench.views.length}</span></div>
             <div className="workbench-view-list" role="tablist" aria-label="Workbench views">
@@ -191,13 +198,7 @@ export default function WorkbenchPanel({
             </section>
           )}
 
-          <nav className="workbench-task-tabs" role="tablist" aria-label="Workbench workspace">
-            <button type="button" role="tab" aria-selected={activePanelTab === "build"} className={activePanelTab === "build" ? "active" : ""} onClick={() => changePanelTab("build")}><span aria-hidden="true">◇</span>Design</button>
-            <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Simulate</button>
-            <button type="button" role="tab" aria-selected={activePanelTab === "components"} className={activePanelTab === "components" ? "active" : ""} onClick={() => changePanelTab("components")}><span aria-hidden="true">＋</span>Add elements</button>
-            <button type="button" role="tab" aria-selected={activePanelTab === "inspect"} className={activePanelTab === "inspect" ? "active" : ""} onClick={() => changePanelTab("inspect")}><span aria-hidden="true">☷</span>Properties</button>
-            <button type="button" role="tab" aria-selected={activePanelTab === "policy"} className={activePanelTab === "policy" ? "active" : ""} onClick={() => changePanelTab("policy")}><span aria-hidden="true">✓</span>Policy</button>
-          </nav>
+
           <div hidden={activePanelTab !== "build"} className="workbench-task-pane" role="tabpanel" aria-label="Design, review and artifacts">
           {activeViewId === "system" && workbench.entities.length === 0 && workbench.relations.length === 0 && (
             <section className="workbench-section workbench-poc-template" aria-label="Create a POC from a template">

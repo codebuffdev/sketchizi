@@ -1403,3 +1403,62 @@
   .workbench-panel { width: min(390px, calc(100% - 12px)); }
   .workbench-task-tabs > button { font-size: 9px; }
 }
+
+/* Workbench Phase 1 — hierarchy-first workspace layout. */
+.workbench-task-tabs {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--ui-border, #e5e8ef);
+  box-shadow: 0 2px 8px rgb(28 32 48 / 3%);
+}
+.workbench-task-tabs > button {
+  flex-direction: column;
+  gap: 4px;
+  min-height: 48px;
+  padding: 6px 2px;
+  font-size: 10px;
+  line-height: 1.15;
+}
+.workbench-task-tabs > button > span { font-size: 16px; }
+.workbench-section[aria-label=""] { padding-top: 10px; }
+.workbench-view-list {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 1px 5px;
+  scrollbar-width: thin;
+}
+.workbench-view {
+  flex: 0 0 auto;
+  min-height: 37px;
+  padding: 5px 9px;
+  gap: 6px;
+  border-radius: 8px;
+}
+.workbench-view-icon { width: 22px; height: 22px; flex-basis: 22px; font-size: 13px; }
+.workbench-view-copy strong { white-space: nowrap; font-size: 10px; }
+.workbench-view-context { margin-top: 5px; }
+.workbench-design-level-summary {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 7px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.workbench-design-level-summary .workbench-level-kicker { font-size: 8px; }
+.workbench-design-level-summary strong { font-size: 11px; }
+.workbench-design-level-summary small { flex-basis: 100%; font-size: 10px; }
+.workbench-level-hint { margin-top: 7px; font-size: 10px; }
+.workbench-lld-start-card { margin-top: 8px; padding: 10px; border: 1px solid var(--ui-border, #e1e5ee); border-radius: 10px; }
+.workbench-lld-start-card p { margin: 7px 0 9px; font-size: 10px; }
+.workbench-lld-start-card .workbench-primary,
+.workbench-lld-start-card .workbench-secondary { min-height: 34px; font-size: 11px; }
+@media (max-width: 380px) {
+  .workbench-task-tabs { padding-inline: 6px; gap: 2px; }
+  .workbench-task-tabs > button { font-size: 9px; }
+  .workbench-view { padding-inline: 7px; }
+}

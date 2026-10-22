@@ -39,10 +39,12 @@ test("simulation panel gives explicit guidance when typed request links are miss
 });
 
 test("Workbench task tabs separate build, run, add, and inspect so all tools are not stacked in one scroll", () => {
-  assert.match(panelSource, /aria-label="Workbench workspace"/);
+  assert.match(panelSource, /aria-label="Workbench workflow"/);
+  assert.match(panelSource, /Validate<\/button>/);
+  assert.match(panelSource, /Explore<\/button>/);
   for (const tab of ["build", "run", "components", "inspect"]) assert.match(panelSource, new RegExp(`activePanelTab === "${tab}"`));
-  assert.match(panelSource, /<div hidden=\{activePanelTab !== "build"\} className="workbench-task-pane" role="tabpanel" aria-label="Build and review"/);
-  assert.match(panelSource, /<div hidden=\{activePanelTab !== "run"\} className="workbench-task-pane" role="tabpanel" aria-label="Run and debug"/);
+  assert.match(panelSource, /<div hidden=\{activePanelTab !== "build"\} className="workbench-task-pane" role="tabpanel" aria-label="Design, review and artifacts"/);
+  assert.match(panelSource, /<div hidden=\{activePanelTab !== "run"\} className="workbench-task-pane" role="tabpanel" aria-label="Simulation and exploration"/);
   assert.match(panelSource, /<div hidden=\{activePanelTab !== "components"\} className="workbench-task-pane" role="tabpanel" aria-label="Add components"/);
   assert.match(panelSource, /<div hidden=\{activePanelTab !== "inspect"\} className="workbench-task-pane" role="tabpanel" aria-label="Inspect component"/);
   assert.doesNotMatch(panelSource, /activePanelTab === "run" && <div className="workbench-task-pane"/, "the Run pane should stay mounted so experiment results survive tab changes");
