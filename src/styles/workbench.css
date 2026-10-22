@@ -274,6 +274,9 @@
 .sim-profile-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .workbench-secondary { min-height: 29px; padding: 5px 8px; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 7px; background: var(--ui-surface-soft, #f7f8fc); color: var(--ui-text, #303647); font-size: 9px; font-weight: 700; cursor: pointer; }
 .workbench-secondary:disabled { opacity: .5; cursor: not-allowed; }
+.workbench-danger { min-height: 29px; padding: 5px 8px; border: 1px solid #e4a5a5; border-radius: 7px; background: #fff5f5; color: #a51d2d; font-size: 9px; font-weight: 700; cursor: pointer; }
+.workbench-danger:disabled { opacity: .5; cursor: not-allowed; }
+.theme-dark .workbench-danger { border-color: #70404a; background: #332329; color: #ffb7bf; }
 .theme-dark .workbench-secondary { border-color: #3a4050; background: #222631; color: #e7eaf2; }
 .sim-confirm-assumptions { display: flex; align-items: flex-start; gap: 7px; margin: 9px 0; color: var(--ui-text-muted, #727a8c); font-size: 9px; line-height: 1.45; }
 .sim-confirm-assumptions input { margin: 1px 0 0; }
@@ -1557,6 +1560,8 @@
 .workbench-model-group h3 span { font-weight: 600; letter-spacing: 0; }
 .workbench-model-entity { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 7px 6px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .workbench-model-entity:hover, .workbench-model-entity:focus-visible { border-color: var(--ui-border, #dfe3eb); background: var(--ui-surface-soft, #f6f7fb); outline: none; }
+.workbench-model-entity.is-selected { border-color: var(--studio-accent, #7665d8); background: var(--studio-accent-soft, #f0edff); box-shadow: inset 3px 0 0 var(--studio-accent, #7665d8); }
+.theme-dark .workbench-model-entity.is-selected { background: #292541; border-color: #7164c8; box-shadow: inset 3px 0 0 #a99cff; }
 .theme-dark .workbench-model-entity:hover, .theme-dark .workbench-model-entity:focus-visible { background: #222631; border-color: #3b4150; }
 .workbench-model-entity-mark { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 7px; background: #eeebff; color: #5b49b7; font-size: 14px; font-weight: 750; }
 .workbench-model-entity-mark.lld { background: #e5f4ef; color: #23755d; font-size: 11px; }
@@ -2057,3 +2062,195 @@
 @media (prefers-reduced-motion: reduce) {
   .workbench-studio *, .workbench-studio *::before, .workbench-studio *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+/* Phase 2: make design-level navigation and the model navigator behave like an engineering workspace. */
+.workbench-studio .workbench-workspace-path {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 7px 12px 3px;
+  color: var(--ui-text-muted, #969eae);
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+.workbench-studio .workbench-workspace-path strong { color: var(--ui-text, #edf0f7); font-weight: 650; }
+.workbench-studio .workbench-quick-views {
+  display: flex;
+  gap: 3px;
+  padding: 5px 9px 8px;
+  border-bottom: 1px solid var(--ui-border, #343947);
+  background: var(--ui-surface-solid, #171a22);
+}
+.workbench-studio .workbench-quick-views button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-muted, #9ba3b2);
+  font-size: 11px;
+  font-weight: 600;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+.workbench-studio .workbench-quick-views button:hover:not(:disabled) { background: var(--studio-accent-soft); color: var(--ui-text, #eef0f7); }
+.workbench-studio .workbench-quick-views button.active,
+.workbench-studio .workbench-quick-views button[aria-current="page"] {
+  color: var(--ui-text, #eef0f7);
+  border-color: color-mix(in srgb, var(--studio-accent) 42%, transparent);
+  background: var(--studio-accent-soft);
+}
+.workbench-studio .workbench-quick-views button:disabled { cursor: default; opacity: 1; }
+.workbench-studio .workbench-perspectives-section { display: grid; gap: 10px; align-content: start; }
+.workbench-studio .workbench-view-context { margin: 0; font-size: 10px; }
+.workbench-studio .workbench-design-level-summary {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 13px;
+  border: 1px solid var(--ui-border, #343947);
+  border-left: 3px solid var(--studio-accent);
+  background: var(--ui-surface-soft, #20242e);
+}
+.workbench-studio .workbench-design-level-summary strong { font-size: 14px; line-height: 1.3; }
+.workbench-studio .workbench-design-level-summary small { color: var(--ui-text-muted, #a3aaba); font-size: 11px; line-height: 1.45; }
+.workbench-studio .workbench-level-kicker { color: var(--studio-accent); font-size: 9px; font-weight: 750; letter-spacing: .1em; }
+.workbench-studio .workbench-model-navigator {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-border, #343947);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-surface-solid, #171a22) 72%, transparent);
+}
+.workbench-studio .workbench-model-navigator-toggle {
+  min-height: 38px;
+  padding: 9px 10px;
+  background: transparent;
+}
+.workbench-studio .workbench-model-navigator:not(.workbench-model-navigator-collapsed) .workbench-model-navigator-toggle { border-bottom: 1px solid var(--ui-border, #343947); }
+.workbench-studio .workbench-model-navigator > p { margin: 9px 10px; font-size: 10px; line-height: 1.45; }
+.workbench-studio .workbench-model-search-wrap { display: block; padding: 0 9px 8px; }
+.workbench-studio .workbench-model-search-wrap input { width: 100%; min-height: 32px; border-radius: 6px; font-size: 11px; }
+.workbench-studio .workbench-model-group { padding: 4px 7px 8px; }
+.workbench-studio .workbench-model-group h3 { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 4px; font-size: 9px; letter-spacing: .08em; }
+.workbench-studio .workbench-model-entity-row { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 2px; border-radius: 6px; }
+.workbench-studio .workbench-model-entity-row:hover { background: var(--studio-accent-soft); }
+.workbench-studio .workbench-model-entity { min-width: 0; min-height: 38px; border-radius: 5px; }
+.workbench-studio .workbench-model-entity-copy { min-width: 0; }
+.workbench-studio .workbench-model-entity-copy strong,
+.workbench-studio .workbench-model-entity-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workbench-studio .workbench-model-open-lld { flex: 0 0 auto; border-radius: 5px; font-size: 10px; }
+.workbench-studio .workbench-model-parent-select { min-width: 0; max-width: 116px; }
+.workbench-studio .workbench-model-parent-select select { width: 100%; min-width: 0; font-size: 10px; }
+.workbench-studio .workbench-panel-scroll { min-width: 0; }
+.workbench-studio-view-lld { --studio-accent: #a78bfa; }
+.workbench-studio-view-system { --studio-accent: #7c8cff; }
+.workbench-studio-view-apis { --studio-accent: #55b8aa; }
+.workbench-studio-view-data { --studio-accent: #e3b36a; }
+.workbench-studio-view-deployment { --studio-accent: #70a9df; }
+@media (max-width: 700px) {
+  .workbench-studio .workbench-workspace-path { padding-inline: 8px; }
+  .workbench-studio .workbench-quick-views { overflow-x: auto; }
+  .workbench-studio .workbench-quick-views button { flex: 0 0 auto; }
+  .workbench-studio .workbench-model-parent-select { max-width: 90px; }
+}
+
+/* Phase 3: canvas-first quick-add palette. Keep common actions close to the design context. */
+.workbench-quick-add { margin: 12px 0 14px; padding: 11px; border: 1px solid var(--ui-border, #e2e6ef); border-radius: 10px; background: var(--ui-surface, #fff); }
+.theme-dark .workbench-quick-add { border-color: #343947; background: #20232d; }
+.workbench-quick-add-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+.workbench-quick-add-heading > strong { color: var(--ui-text-muted, #737c8f); font-size: 10px; font-weight: 750; letter-spacing: .08em; }
+.workbench-quick-add-heading > button { border: 0; padding: 3px 0; background: transparent; color: var(--ui-accent, #6557d2); font: inherit; font-size: 11px; cursor: pointer; }
+.workbench-quick-add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.workbench-quick-add-item { display: flex; min-width: 0; align-items: center; gap: 6px; padding: 8px 7px; border: 1px solid var(--ui-border, #e2e6ef); border-radius: 7px; background: var(--ui-surface-soft, #f8f9fc); color: var(--ui-text, #303647); text-align: left; cursor: pointer; }
+.theme-dark .workbench-quick-add-item { border-color: #3b4050; background: #292d39; color: #e8ebf4; }
+.workbench-quick-add-item > span:first-child { display: grid; width: 22px; height: 22px; flex: 0 0 22px; place-items: center; border-radius: 5px; background: color-mix(in srgb, var(--ui-accent, #6557d2) 13%, transparent); color: var(--ui-accent, #6557d2); font-size: 11px; font-weight: 800; }
+.workbench-quick-add-item > strong { overflow: hidden; font-size: 10px; font-weight: 650; text-overflow: ellipsis; }
+.workbench-quick-add-plus { margin-left: auto; color: var(--ui-text-muted, #737c8f); font-size: 13px; }
+.workbench-quick-add-item:hover:not(:disabled) { border-color: var(--ui-accent, #6557d2); }
+.workbench-quick-add-item:focus-visible, .workbench-quick-add-heading > button:focus-visible { outline: 2px solid var(--ui-accent, #6557d2); outline-offset: 2px; }
+.workbench-quick-add-item:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 420px) { .workbench-quick-add-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+
+/* Phase 4: selection context bridges canvas selection and the inspector. */
+.workbench-selection-context { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 10px 0 14px; padding: 10px; border: 1px solid var(--ui-border, #e2e6ef); border-radius: 9px; background: var(--ui-surface-soft, #f8f9fc); }
+.theme-dark .workbench-selection-context { border-color: #3b4050; background: #252936; }
+.workbench-selection-context-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border: 1px solid color-mix(in srgb, var(--ui-accent, #6557d2) 24%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--ui-accent, #6557d2) 10%, transparent); color: var(--ui-accent, #6557d2); font-size: 14px; font-weight: 750; }
+.workbench-selection-context-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
+.workbench-selection-context-copy > span { color: var(--ui-text-muted, #737c8f); font-size: 9px; font-weight: 750; letter-spacing: .07em; }
+.workbench-selection-context-copy > strong { overflow: hidden; color: var(--ui-text, #303647); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.theme-dark .workbench-selection-context-copy > strong { color: #e8ebf4; }
+.workbench-selection-context-copy > small { overflow: hidden; color: var(--ui-text-muted, #737c8f); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.workbench-selection-context > button { flex: 0 0 auto; border: 0; padding: 5px 0 5px 5px; background: transparent; color: var(--ui-accent, #6557d2); font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+@media (max-width: 540px) { .workbench-selection-context { flex-wrap: wrap; } .workbench-selection-context > button { margin-left: 44px; } }
+
+/* Phase 5: make the quick-add palette searchable without expanding the full catalog. */
+.workbench-quick-add-search { display: block; margin: 0 0 9px; }
+.workbench-quick-add-search input { box-sizing: border-box; width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--ui-border, #e2e6ef); border-radius: 7px; background: var(--ui-surface-soft, #f8f9fc); color: var(--ui-text, #303647); font: inherit; font-size: 11px; }
+.theme-dark .workbench-quick-add-search input { border-color: #3b4050; background: #20232d; color: #e8ebf4; }
+.workbench-quick-add-search input:focus-visible { outline: 2px solid var(--ui-accent, #6557d2); outline-offset: 2px; }
+.workbench-quick-add-empty { margin: 2px 0 0; color: var(--ui-text-muted, #737c8f); font-size: 11px; line-height: 1.5; }
+
+/* Phase 9: selected-component actions stay grouped and usable in narrow docks. */
+.workbench-selection-context-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.workbench-selection-context-actions button { white-space: nowrap; }
+#workbench-create-relationship { scroll-margin-top: 18px; }
+#workbench-create-relationship:focus { outline: 2px solid var(--workbench-accent, #7c6ee6); outline-offset: 4px; border-radius: 3px; }
+
+
+/* Phase 10: make typed relationship creation legible before committing it. */
+.workbench-relation-preview {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--workbench-border, #d7dbe3);
+  border-radius: 8px;
+  background: var(--workbench-surface-muted, rgba(127, 136, 153, 0.07));
+  min-width: 0;
+}
+.workbench-relation-preview-label {
+  color: var(--workbench-text-muted, #737b8b);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+.workbench-relation-preview strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.workbench-relation-preview strong span { padding: 0 5px; color: var(--workbench-accent, #7163d8); }
+.workbench-relation-preview small { color: var(--workbench-text-muted, #737b8b); line-height: 1.45; }
+.workbench-relation-preview.is-valid { border-color: var(--workbench-success-border, #72b99b); }
+.workbench-relation-preview.is-invalid { border-color: var(--workbench-danger-border, #d88b8b); }
+
+/* Phase 12: make semantic connectors inspectable and traceable from the model. */
+.workbench-relation-inspector h3 { margin: 0; color: var(--ui-text, #303647); font-size: 14px; line-height: 1.35; }
+.workbench-relation-inspector-flow { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; padding: 11px; border: 1px solid var(--ui-border, #e2e6ee); border-radius: 9px; background: var(--ui-surface-soft, #f8f9fc); }
+.workbench-relation-inspector-flow span:first-child, .workbench-relation-inspector-flow span:last-child { min-width: 0; overflow-wrap: anywhere; font-size: 11px; font-weight: 650; }
+.workbench-relation-inspector-flow span:nth-child(2) { color: var(--ui-accent, #6c5ac8); font-weight: 800; }
+.workbench-relation-inspector-details { display: grid; gap: 8px; margin: 0; }
+.workbench-relation-inspector-details > div { display: grid; grid-template-columns: minmax(90px, .8fr) minmax(0, 1.2fr); gap: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--ui-border, #e8eaf0); }
+.workbench-relation-inspector-details dt { color: var(--ui-text-muted, #777f90); font-size: 10px; }
+.workbench-relation-inspector-details dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--ui-text, #303647); font-size: 10px; font-weight: 600; }
+.workbench-relation-inspector-details code { font-size: 9px; }
+.workbench-existing-relation-button { width: 100%; text-align: left; cursor: pointer; background: transparent; font: inherit; }
+.workbench-existing-relation-button:hover { border-color: var(--ui-accent, #6c5ac8); background: var(--ui-surface-soft, #f8f9fc); }
+.workbench-existing-relation-button:focus-visible { outline: 2px solid var(--ui-accent, #6c5ac8); outline-offset: 2px; }
+.theme-dark .workbench-relation-inspector h3, .theme-dark .workbench-relation-inspector-flow span:first-child, .theme-dark .workbench-relation-inspector-flow span:last-child, .theme-dark .workbench-relation-inspector-details dd { color: #e7eaf2; }
+.theme-dark .workbench-relation-inspector-flow { border-color: #343947; background: #1b1f28; }
+.theme-dark .workbench-relation-inspector-details > div { border-color: #343947; }
+.theme-dark .workbench-existing-relation-button:hover { background: #252936; }
+
+/* Phase 13: keep relationship editing grouped and clearly separated from inspection metadata. */
+.workbench-relation-edit-fields { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--ui-border, #e2e6ee); border-radius: 10px; background: var(--ui-surface-soft, #f8f9fc); }
+.workbench-relation-edit-fields > strong { color: var(--ui-text, #303647); font-size: 12px; }
+.workbench-relation-edit-fields .workbench-primary { width: 100%; }
+.theme-dark .workbench-relation-edit-fields { background: var(--ui-surface-soft, #242834); }
+.theme-dark .workbench-relation-edit-fields > strong { color: #e7eaf2; }

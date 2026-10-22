@@ -61,8 +61,12 @@ export default function WorkbenchPanel({
   onUpdateEntity,
   onCreateRelation,
   onCreateRelationBetween,
+  onUpdateRelation,
+  onDeleteRelation,
   onFocusFinding,
+  onFocusRelation,
   selectedEntity = null,
+  selectedRelation = null,
   visibleEntityIds = [],
   inspectorError = "",
   busy = false,
@@ -77,6 +81,9 @@ export default function WorkbenchPanel({
 }) {
   const [relationKind, setRelationKind] = useState("calls");
   const [relationTargetId, setRelationTargetId] = useState("");
+  const [editRelationKind, setEditRelationKind] = useState("");
+  const [editRelationSourceId, setEditRelationSourceId] = useState("");
+  const [editRelationTargetId, setEditRelationTargetId] = useState("");
   const [generatedArtifact, setGeneratedArtifact] = useState(null);
   const [showPocPreview, setShowPocPreview] = useState(false);
   const [activePanelTab, setActivePanelTab] = useState("build");
@@ -90,11 +97,13 @@ export default function WorkbenchPanel({
   const [lldParentId, setLldParentId] = useState(() => readWorkbenchLayoutPreferences().lldParentId);
   const [artifactServiceId, setArtifactServiceId] = useState("");
   const [componentSearch, setComponentSearch] = useState("");
+  const [quickAddSearch, setQuickAddSearch] = useState("");
   const [modelSearch, setModelSearch] = useState("");
   const [architectureRequirement, setArchitectureRequirement] = useState("");
   const [architectureProposal, setArchitectureProposal] = useState(null);
   const [lldBlueprint, setLldBlueprint] = useState(null);
   const [expandedComponentGroups, setExpandedComponentGroups] = useState({ Application: true, Data: true });
+  useEffect(() => { setEditRelationKind(selectedRelation?.kind || ""); setEditRelationSourceId(selectedRelation?.sourceId || ""); setEditRelationTargetId(selectedRelation?.targetId || ""); }, [selectedRelation?.id, selectedRelation?.kind, selectedRelation?.sourceId, selectedRelation?.targetId]);
   useEffect(() => {
     writeWorkbenchLayoutPreferences({ workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId });
   }, [workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId]);
@@ -215,12 +224,46 @@ export default function WorkbenchPanel({
           </nav>
           {activePanelTab === "build" ? <div className="workbench-section workbench-perspectives-section">
             <p className="workbench-note workbench-view-context" title="The engineering model is shared across views; each view has its own canvas layout.">Active view: {currentView?.label || "System"} · shared model</p>
+            {selectedEntity && <section className="workbench-selection-context" aria-label="Selected component context">
+              <div className="workbench-selection-context-mark" aria-hidden="true">{activeViewId === "lld" ? "{}" : "◇"}</div>
+              <div className="workbench-selection-context-copy">
+                <span>SELECTED COMPONENT</span>
+                <strong>{selectedEntity.name || WORKBENCH_COMPONENTS.find((item) => item.kind === selectedEntity.kind)?.label || "Untitled component"}</strong>
+                <small>{WORKBENCH_COMPONENTS.find((item) => item.kind === selectedEntity.kind)?.label || selectedEntity.kind}</small>
+              </div>
+              <div className="workbench-selection-context-actions">
+                <button type="button" onClick={() => changePanelTab("inspect")} aria-label={`Edit properties for ${selectedEntity.name || "selected component"}`}>Edit properties <span aria-hidden="true">↗</span></button>
+                <button type="button" onClick={() => changePanelTab("inspect", "workbench-create-relationship")} aria-label={`Create a relationship from ${selectedEntity.name || "selected component"}`}>Connect <span aria-hidden="true">↗</span></button>
+              </div>
+            </section>}
             <div className="workbench-design-level-summary">
               <span className="workbench-level-kicker">CURRENT DESIGN LEVEL</span>
               <strong>{activeViewId === "lld" ? "Low-level design" : activeViewId === "system" ? "High-level design" : currentView?.label || "Design view"}</strong>
               <small>{activeViewId === "lld" ? "Model classes, interfaces, controllers and repositories." : activeViewId === "system" ? "Model system boundaries, services and infrastructure." : `Design perspective: ${currentView?.label || "current view"}.`}</small>
             </div>
             {activeViewId === "system" && <p className="workbench-level-hint"><strong>HLD</strong> Define system boundaries and how major services communicate. Select a service to inspect its responsibilities.</p>}
+            <section className="workbench-quick-add" aria-label="Quick add architecture components">
+              <div className="workbench-quick-add-heading"><strong>QUICK ADD</strong><button type="button" onClick={() => changePanelTab("components")} aria-label="Open full component palette">All components <span aria-hidden="true">↗</span></button></div>
+              <label className="workbench-quick-add-search">
+                <span className="sr-only">Search quick-add components</span>
+                <input type="search" value={quickAddSearch} onChange={(event) => setQuickAddSearch(event.target.value)} placeholder={activeViewId === "lld" ? "Find a class or interface…" : "Find a service, database, queue…"} aria-label="Search quick-add components" />
+              </label>
+              <div className="workbench-quick-add-grid">
+                {(activeViewId === "lld"
+                  ? [{ kind: "backend.java-class", label: "Class", mark: "C" }, { kind: "backend.java-interface", label: "Interface", mark: "I" }, { kind: "backend.repository", label: "Repository", mark: "R" }]
+                  : [{ kind: "backend.rest-service", label: "Service", mark: "S" }, { kind: "data.postgresql-database", label: "Database", mark: "D" }, { kind: "messaging.queue", label: "Queue", mark: "Q" }]
+                ).filter((item) => WORKBENCH_COMPONENTS.some((definition) => definition.kind === item.kind && viewScopedComponents.some((visible) => visible.kind === item.kind)))
+                  .filter((item) => !quickAddSearch.trim() || `${item.label} ${item.kind}`.toLowerCase().includes(quickAddSearch.trim().toLowerCase()))
+                  .map((item) => (
+                    <button key={item.kind} type="button" className="workbench-quick-add-item" disabled={!canEdit || busy} onClick={() => { onAddComponent?.(item.kind); changePanelTab("inspect"); }} title={`Add ${item.label} and open its properties`} aria-label={`Add ${item.label} and open properties`}>
+                      <span aria-hidden="true">{item.mark}</span><strong>{item.label}</strong><span className="workbench-quick-add-plus" aria-hidden="true">＋</span>
+                    </button>
+                  ))}
+              </div>
+              {quickAddSearch.trim() && ![
+                ...(activeViewId === "lld" ? [{ kind: "backend.java-class", label: "Class" }, { kind: "backend.java-interface", label: "Interface" }, { kind: "backend.repository", label: "Repository" }] : [{ kind: "backend.rest-service", label: "Service" }, { kind: "data.postgresql-database", label: "Database" }, { kind: "messaging.queue", label: "Queue" }]),
+              ].some((item) => WORKBENCH_COMPONENTS.some((definition) => definition.kind === item.kind && viewScopedComponents.some((visible) => visible.kind === item.kind)) && `${item.label} ${item.kind}`.toLowerCase().includes(quickAddSearch.trim().toLowerCase())) && <p className="workbench-quick-add-empty">No quick-add components match “{quickAddSearch.trim()}”. Try another term or open all components.</p>}
+            </section>
             <section className={`workbench-model-navigator${modelNavigatorCollapsed ? " workbench-model-navigator-collapsed" : ""}`} aria-label="Engineering model navigator">
               <button type="button" className="workbench-section-heading workbench-model-navigator-toggle" aria-expanded={!modelNavigatorCollapsed} onClick={() => setModelNavigatorCollapsed((value) => !value)}><span>MODEL NAVIGATOR</span><span className="workbench-count">{workbench.entities.length}</span><span className="workbench-model-navigator-chevron" aria-hidden="true">{modelNavigatorCollapsed ? "＋" : "−"}</span></button>
               {!modelNavigatorCollapsed && <>
@@ -246,7 +289,7 @@ export default function WorkbenchPanel({
                     const definition = WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind);
                     const relationCount = workbench.relations.filter((relation) => relation.sourceId === entity.id || relation.targetId === entity.id).length;
                     return <div className="workbench-model-entity-row" key={entity.id}>
-                      <button type="button" className="workbench-model-entity" onClick={() => { onFocusFinding?.({ entityIds: [entity.id] }); changePanelTab("inspect"); }} title={`Focus ${entity.name || definition?.label || entity.kind} on the canvas`}>
+                      <button type="button" className={`workbench-model-entity${selectedEntity?.id === entity.id ? " is-selected" : ""}`} aria-pressed={selectedEntity?.id === entity.id} onClick={() => { onFocusFinding?.({ entityIds: [entity.id] }); changePanelTab("inspect"); }} title={`Focus ${entity.name || definition?.label || entity.kind} on the canvas`}>
                         <span className={`workbench-model-entity-mark ${group.id}`} aria-hidden="true">{group.id === "lld" ? "{}" : "◇"}</span>
                         <span className="workbench-model-entity-copy"><strong>{entity.name || definition?.label || entity.kind}</strong><small>{definition?.label || entity.kind}</small></span>
                         <span className="workbench-model-relation-count" title={`${relationCount} typed relationships`}>{relationCount}</span>
@@ -506,7 +549,36 @@ export default function WorkbenchPanel({
           <div hidden={activePanelTab !== "inspect"} className="workbench-task-pane" role="tabpanel" aria-label="Inspect component">
           <section id="workbench-inspector" className="workbench-section workbench-inspector" aria-label="Component inspector">
             <div className="workbench-section-heading"><span>INSPECTOR</span><span className="workbench-count">{selectedEntity ? "1" : "0"}</span></div>
-            {!selectedEntity ? (
+            {!selectedEntity && selectedRelation ? (() => {
+              const source = workbench.entities.find((entity) => entity.id === selectedRelation.sourceId);
+              const target = workbench.entities.find((entity) => entity.id === selectedRelation.targetId);
+              const relationDefinition = WORKBENCH_RELATIONS.find((item) => item.kind === selectedRelation.kind);
+              return <div className="workbench-inspector-body workbench-relation-inspector">
+                <div className="workbench-inspector-kind">TYPED RELATIONSHIP</div>
+                <h3>{relationDefinition?.label || selectedRelation.kind}</h3>
+                <div className="workbench-relation-inspector-flow">
+                  <span>{source?.name || "Missing source"}</span><span aria-hidden="true">→</span><span>{target?.name || "Missing target"}</span>
+                </div>
+                <dl className="workbench-relation-inspector-details">
+                  <div><dt>Relationship type</dt><dd>{selectedRelation.kind}</dd></div>
+                  <div><dt>Source component</dt><dd>{source?.name || selectedRelation.sourceId}</dd></div>
+                  <div><dt>Target component</dt><dd>{target?.name || selectedRelation.targetId}</dd></div>
+                  <div><dt>Semantic ID</dt><dd><code>{selectedRelation.id}</code></dd></div>
+                  <div><dt>Design view</dt><dd>{selectedRelation.viewId || "Current view"}</dd></div>
+                </dl>
+                {relationDefinition?.description && <p className="workbench-field-help">{relationDefinition.description}</p>}
+                <p className="workbench-note">This inspector is linked to the typed engineering model. The semantic relationship—not the arrow's color—is the source of truth.</p>
+                <div className="workbench-relation-edit-fields" aria-label="Edit relationship">
+                  <strong>Edit relationship</strong>
+                  <label className="workbench-field"><span>Relationship type</span><select value={editRelationKind} disabled={!canEdit} onChange={(event) => setEditRelationKind(event.target.value)}>{WORKBENCH_RELATIONS.map((item) => <option key={item.kind} value={item.kind}>{item.label}</option>)}</select></label>
+                  <label className="workbench-field"><span>Source component</span><select value={editRelationSourceId} disabled={!canEdit} onChange={(event) => setEditRelationSourceId(event.target.value)}>{workbench.entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name} · {WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind)?.label || entity.kind}</option>)}</select></label>
+                  <label className="workbench-field"><span>Target component</span><select value={editRelationTargetId} disabled={!canEdit} onChange={(event) => setEditRelationTargetId(event.target.value)}>{workbench.entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name} · {WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind)?.label || entity.kind}</option>)}</select></label>
+                  <button type="button" className="workbench-primary" disabled={!canEdit || busy || !editRelationKind || !editRelationSourceId || !editRelationTargetId || (editRelationKind === selectedRelation.kind && editRelationSourceId === selectedRelation.sourceId && editRelationTargetId === selectedRelation.targetId)} onClick={() => onUpdateRelation?.(selectedRelation.id, { kind: editRelationKind, sourceId: editRelationSourceId, targetId: editRelationTargetId })}>Save relationship changes</button>
+                </div>
+                <button type="button" className="workbench-secondary" onClick={() => source && onFocusRelation?.(selectedRelation.id)}>Focus connector on canvas</button>
+                <button type="button" className="workbench-danger" disabled={!canEdit || busy} onClick={() => { if (globalThis.confirm?.("Delete this typed relationship and its linked semantic connector? Unrelated arrows will be preserved.")) onDeleteRelation?.(selectedRelation.id); }}>Delete relationship</button>
+              </div>;
+            })() : !selectedEntity ? (
               <div className="workbench-inspector-empty">
                 <span className="workbench-inspector-empty-icon" aria-hidden="true">◇</span>
                 <strong>No component selected</strong>
@@ -520,7 +592,10 @@ export default function WorkbenchPanel({
               const activeRelation = WORKBENCH_RELATIONS.find((item) => item.kind === relationKind) || possibleRelations[0];
               const targets = workbench.entities.filter((entity) => visibleEntityIds.includes(entity.id) && entity.id !== selectedEntity.id && activeRelation?.targetKinds.includes(entity.kind));
               const target = targets.find((entity) => entity.id === relationTargetId);
-              const valid = target ? validateRelationEndpoints(activeRelation.kind, selectedEntity, target).valid : false;
+              const endpointValidation = target ? validateRelationEndpoints(activeRelation.kind, selectedEntity, target) : { valid: false, reason: "Choose a target component to preview this connection." };
+              const existingRelation = target ? workbench.relations.find((relation) => relation.kind === activeRelation?.kind && relation.sourceId === selectedEntity.id && relation.targetId === target.id) : null;
+              const valid = endpointValidation.valid && !existingRelation;
+              const relationBlockReason = existingRelation ? "This typed relationship already exists." : endpointValidation.reason;
               return <div className="workbench-inspector-body">
                 <div className="workbench-inspector-kind">{definition?.label || selectedEntity.kind}</div>
                 <label className="workbench-field"><span>Component name</span><input value={selectedEntity.name || ""} disabled={!canEdit} maxLength={120} onChange={(event) => onUpdateEntity?.(selectedEntity.id, { name: event.target.value })} /></label>
@@ -528,10 +603,15 @@ export default function WorkbenchPanel({
                   const value = selectedEntity.properties?.[property.key] ?? property.defaultValue ?? "";
                   return <label className={`workbench-field ${property.type === "json" ? "workbench-json-field" : ""}`} key={property.key}><span>{property.label}</span>{property.type === "select" ? <select value={value} disabled={!canEdit} onChange={(event) => onUpdateEntity?.(selectedEntity.id, { properties: { [property.key]: event.target.value } })}>{property.options.map((option) => <option key={option} value={option}>{option}</option>)}</select> : property.type === "json" ? <textarea rows={6} spellCheck={false} value={value} disabled={!canEdit} onChange={(event) => onUpdateEntity?.(selectedEntity.id, { properties: { [property.key]: event.target.value } })} aria-label={property.label} /> : <input type={property.type === "number" ? "number" : "text"} min={property.min} max={property.max} value={value} disabled={!canEdit} onChange={(event) => onUpdateEntity?.(selectedEntity.id, { properties: { [property.key]: property.type === "number" ? (event.target.value === "" ? "" : Number(event.target.value)) : event.target.value } })} />}</label>;
                 })}
-                <div className="workbench-relation-heading">Create relationship</div>
+                <div id="workbench-create-relationship" className="workbench-relation-heading" tabIndex={-1}>Create relationship</div>
                 <label className="workbench-field"><span>Relationship</span><select disabled={!canEdit || !possibleRelations.length} value={activeRelation?.kind || ""} onChange={(event) => { setRelationKind(event.target.value); setRelationTargetId(""); }}>{possibleRelations.map((item) => <option key={item.kind} value={item.kind}>{item.label}</option>)}</select></label>
                 <label className="workbench-field"><span>Target component</span><select disabled={!canEdit || !targets.length} value={relationTargetId} onChange={(event) => setRelationTargetId(event.target.value)}><option value="">Choose target…</option>{targets.map((entity) => <option key={entity.id} value={entity.id}>{entity.name} · {WORKBENCH_COMPONENTS.find((item) => item.kind === entity.kind)?.label || entity.kind}</option>)}</select></label>
                 {activeRelation && <p className="workbench-field-help">{activeRelation.description}</p>}
+                <div className={`workbench-relation-preview${target && valid ? " is-valid" : target ? " is-invalid" : ""}`} aria-live="polite">
+                  <span className="workbench-relation-preview-label">CONNECTION PREVIEW</span>
+                  <strong>{selectedEntity.name || "Source component"} <span aria-hidden="true">→</span> {target?.name || "Choose target"}</strong>
+                  <small>{target ? (valid ? `${activeRelation.label} · ready to create` : relationBlockReason) : "Choose a target to check endpoint compatibility before creating the connection."}</small>
+                </div>
                 <button type="button" className="workbench-primary workbench-create-relation" disabled={!canEdit || busy || !valid} onClick={() => onCreateRelation?.({ kind: activeRelation.kind, targetId: relationTargetId })}>Create typed relationship</button>
                 <div className="workbench-existing-relations">
                   <strong>Connected relationships</strong>
@@ -541,7 +621,7 @@ export default function WorkbenchPanel({
                       const source = workbench.entities.find((entity) => entity.id === relation.sourceId);
                       const target = workbench.entities.find((entity) => entity.id === relation.targetId);
                       const relationLabel = WORKBENCH_RELATIONS.find((item) => item.kind === relation.kind)?.label || relation.kind;
-                      return <div className="workbench-existing-relation" key={relation.id}><span>{source?.name || relation.sourceId}</span><small>{relationLabel}</small><span>{target?.name || relation.targetId}</span></div>;
+                      return <button type="button" className="workbench-existing-relation workbench-existing-relation-button" key={relation.id} onClick={() => onFocusRelation?.(relation.id)} aria-label={`Focus ${relationLabel} relationship from ${source?.name || relation.sourceId} to ${target?.name || relation.targetId} on canvas`}><span>{source?.name || relation.sourceId}</span><small>{relationLabel}</small><span>{target?.name || relation.targetId}</span></button>;
                     })}
                 </div>
                 {inspectorError && <p className="workbench-inspector-error" role="alert">{inspectorError}</p>}

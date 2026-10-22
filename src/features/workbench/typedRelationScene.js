@@ -1,4 +1,28 @@
 /** Helpers for promoting an existing Excalidraw arrow to a semantic Workbench relation. */
+
+// Keep connector color semantic and restrained: color is a quick visual cue,
+// while the persisted relation kind remains the source of truth.
+const RELATION_COLORS = Object.freeze({
+  calls: "#4778c7",
+  exposes: "#7957b5",
+  reads: "#26867b",
+  "contains-table": "#26867b",
+  writes: "#bd7b32",
+  publishes: "#a65a9e",
+  subscribes: "#a65a9e",
+  "deploys-to": "#64748b",
+  "authenticates-with": "#b45365",
+  implements: "#7957b5",
+  extends: "#7957b5",
+  uses: "#4778c7",
+  "maps-to": "#26867b",
+  handles: "#7957b5",
+  "depends-on": "#737b8c",
+});
+
+export function relationVisualStyle(kind) {
+  return { strokeColor: RELATION_COLORS[kind] || RELATION_COLORS["depends-on"], strokeWidth: 2, roughness: 0, endArrowhead: "arrow" };
+}
 function elementEndpoint(element, index) {
   const point = Array.isArray(element?.points) ? element.points[index] : null;
   if (!Array.isArray(point) || point.length < 2 || !Number.isFinite(element?.x) || !Number.isFinite(element?.y)) return null;
@@ -46,6 +70,7 @@ export function attachWorkbenchRelationToArrow(element, { relationId, viewId, ki
   if (!relationId || !viewId || !kind) throw new TypeError("relationId, viewId, and kind are required.");
   return {
     ...element,
+    ...relationVisualStyle(kind),
     customData: {
       ...(element.customData || {}),
       workbench: { ...(element.customData?.workbench || {}), relationId, viewId, role: "relation", kind },

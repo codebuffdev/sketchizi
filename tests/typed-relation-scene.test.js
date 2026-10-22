@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { attachWorkbenchRelationToArrow, findReusableVisualArrow } from "../src/features/workbench/typedRelationScene.js";
+import { attachWorkbenchRelationToArrow, findReusableVisualArrow, relationVisualStyle } from "../src/features/workbench/typedRelationScene.js";
 
 test("finds an existing bound visual arrow with the semantic direction and active view", () => {
   const elements = [
@@ -31,9 +31,26 @@ test("does not reuse an arrow from an inactive view", () => {
 test("attaches relation metadata without discarding arrow bindings or styles", () => {
   const arrow = { id: "a1", type: "arrow", strokeColor: "#fff", startBinding: { elementId: "source" }, endBinding: { elementId: "target" }, customData: { userData: "preserve" } };
   const result = attachWorkbenchRelationToArrow(arrow, { relationId: "r1", viewId: "system", kind: "calls" });
-  assert.equal(result.strokeColor, "#fff");
+  assert.equal(result.strokeColor, relationVisualStyle("calls").strokeColor);
   assert.deepEqual(result.startBinding, arrow.startBinding);
   assert.deepEqual(result.endBinding, arrow.endBinding);
   assert.equal(result.customData.userData, "preserve");
   assert.deepEqual(result.customData.workbench, { relationId: "r1", viewId: "system", role: "relation", kind: "calls" });
+});
+
+
+test("relation visual styles distinguish common connector semantics", () => {
+  assert.notEqual(relationVisualStyle("calls").strokeColor, relationVisualStyle("writes").strokeColor);
+  assert.notEqual(relationVisualStyle("reads").strokeColor, relationVisualStyle("authenticates-with").strokeColor);
+  assert.equal(relationVisualStyle("unknown-kind").strokeColor, relationVisualStyle("depends-on").strokeColor);
+  assert.equal(relationVisualStyle("calls").endArrowhead, "arrow");
+});
+
+test("promoting an existing arrow applies semantic styling and preserves user metadata", () => {
+  const arrow = { id: "a1", type: "arrow", strokeColor: "#fff", strokeWidth: 1, customData: { note: "keep" } };
+  const result = attachWorkbenchRelationToArrow(arrow, { relationId: "r1", viewId: "system", kind: "writes" });
+  assert.equal(result.strokeColor, relationVisualStyle("writes").strokeColor);
+  assert.equal(result.strokeWidth, 2);
+  assert.equal(result.customData.note, "keep");
+  assert.equal(result.customData.workbench.kind, "writes");
 });

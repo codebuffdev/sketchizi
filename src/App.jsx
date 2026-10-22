@@ -542,7 +542,10 @@ function App() {
             onUpdateEntity={workbenchController.updateEntity}
             onCreateRelation={workbenchController.createRelation}
             onCreateRelationBetween={workbenchController.createRelationBetween}
+            onUpdateRelation={workbenchController.updateRelation}
+            onDeleteRelation={workbenchController.deleteRelation}
             onFocusFinding={workbenchController.focusFinding}
+            onFocusRelation={workbenchController.focusRelation}
             simulationProfile={workbenchController.workbench?.simulationProfile || null}
             onUpdateSimulationProfile={workbenchController.updateSimulationProfile}
             simulationHistory={workbenchController.workbench?.simulationHistory || []}
@@ -551,6 +554,7 @@ function App() {
             onUpdatePolicyGovernance={workbenchController.updatePolicyGovernance}
             onRuntimeOverlayChange={setWorkbenchRuntimeOverlay}
             selectedEntity={workbenchController.selectedEntity}
+            selectedRelation={workbenchController.selectedRelation}
             visibleEntityIds={workbenchController.visibleEntityIds}
             inspectorError={workbenchController.inspectorError}
             busy={workbenchController.busy}

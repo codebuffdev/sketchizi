@@ -8,7 +8,8 @@ import {
 } from "./workbenchDocument.js";
 import { WORKBENCH_COMPONENTS, WORKBENCH_RELATIONS, WORKBENCH_VIEWS } from "./workbenchRegistry.js";
 import { createWorkbenchRelation, getComponentDefinition, validateRelationAgainstModel, validateImplementationOwnership, updateWorkbenchEntity } from "./workbenchModel.js";
-import { attachWorkbenchRelationToArrow, findReusableVisualArrow } from "./typedRelationScene.js";
+import { attachWorkbenchRelationToArrow, findReusableVisualArrow, relationVisualStyle } from "./typedRelationScene.js";
+import { findComponentPlacement } from "./componentPlacement.js";
 import { addMissingReactRestPostgresPocArtifacts, buildReactRestPostgresArtifactScaffoldingSceneDescriptors, buildReactRestPostgresPocSceneDescriptors, createReactRestPostgresPoc } from "./workbenchPocTemplate.js";
 
 function makeId(prefix) {
@@ -319,9 +320,9 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
       const appState = api.getAppState();
       const center = viewportCoordsToSceneCoords({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 }, appState);
       const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-      const offset = (next.entities.length % 6) * 34;
-      const x = center.x - 110 + offset;
-      const y = center.y - 48 + offset;
+      const placement = findComponentPlacement(center, existing, next.activeViewId);
+      const x = placement.x;
+      const y = placement.y;
       const groupId = makeId("workbench-group");
       const raw = [
         { type: "rectangle", x, y, width: 240, height: 96, strokeColor: definition.stroke, backgroundColor: definition.fill, fillStyle: "solid", strokeWidth: 2, roughness: 0, roundness: { type: 3 }, groupIds: [groupId], customData: { workbench: { entityId, viewId: next.activeViewId, role: "container" } } },
@@ -357,6 +358,12 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     .filter(Boolean))];
   const selectedEntity = selectedEntityIds.length === 1
     ? workbench?.entities?.find((entity) => entity.id === selectedEntityIds[0]) || null
+    : null;
+  const selectedRelationIds = [...new Set((selectedElements || [])
+    .map((element) => element?.customData?.workbench?.relationId)
+    .filter(Boolean))];
+  const selectedRelation = selectedRelationIds.length === 1
+    ? workbench?.relations?.find((relation) => relation.id === selectedRelationIds[0]) || null
     : null;
   const visibleEntityIds = [...new Set((apiRef.current?.getSceneElements?.() || [])
     .filter((element) => !element.isDeleted && element?.customData?.workbench?.role === "container" && element.customData.workbench.viewId === workbench?.activeViewId)
@@ -426,7 +433,7 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
         const rawArrow = {
           type: "arrow", x: Math.min(sx, tx), y: Math.min(sy, ty), width, height,
           points: [[dx < 0 ? width : 0, dy < 0 ? height : 0], [dx < 0 ? 0 : width, dy < 0 ? 0 : height]],
-          strokeWidth: 2, roughness: 0, endArrowhead: "arrow",
+          ...relationVisualStyle(kind),
           customData: { workbench: { relationId, viewId: workbench.activeViewId, role: "relation", kind } },
         };
         const arrow = convertToExcalidrawElements([rawArrow]).map((element) => ({
@@ -447,6 +454,81 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     }
   }, [apiRef, canEdit, saveDocument, showToast, workbench]);
 
+  const updateRelation = useCallback((relationId, patch) => {
+    if (!canEdit || !workbench || !relationId || !patch) return false;
+    try {
+      const current = workbench.relations.find((relation) => relation.id === relationId);
+      if (!current) throw new Error("The selected relationship no longer exists.");
+      const sourceId = patch.sourceId ?? current.sourceId;
+      const targetId = patch.targetId ?? current.targetId;
+      const kind = patch.kind ?? current.kind;
+      const sourceEntity = workbench.entities.find((entity) => entity.id === sourceId);
+      const targetEntity = workbench.entities.find((entity) => entity.id === targetId);
+      if (!sourceEntity || !targetEntity) throw new Error("Choose existing source and target components.");
+      const remainingRelations = workbench.relations.filter((relation) => relation.id !== relationId);
+      const validation = validateRelationAgainstModel(kind, sourceEntity, targetEntity, workbench.entities, remainingRelations);
+      if (!validation.valid) throw new Error(validation.reason);
+      const api = apiRef.current;
+      if (!api) throw new Error("The drawing canvas is not ready.");
+      const scene = currentScene(api);
+      const relationViewId = current.viewId || current.viewIds?.[0] || workbench.activeViewId;
+      const containers = new Map(scene.elements.filter((element) => !element.isDeleted).map((element) => [element.customData?.workbench?.entityId, element]).filter(([id, element]) => id && element.customData?.workbench?.role === "container" && element.customData.workbench.viewId === relationViewId));
+      const sourceShape = containers.get(sourceId);
+      const targetShape = containers.get(targetId);
+      if (!sourceShape || !targetShape) throw new Error("Both relationship endpoints must exist in the relationship's design view.");
+      const nextRelations = workbench.relations.map((relation) => relation.id === relationId
+        ? { ...relation, kind, sourceId, targetId }
+        : relation);
+      const elements = scene.elements.map((element) => {
+        if (element.isDeleted || element.customData?.workbench?.relationId !== relationId || element.type !== "arrow") return element;
+        return {
+          ...element,
+          ...relationVisualStyle(kind),
+          startBinding: { ...(element.startBinding || {}), elementId: sourceShape.id },
+          endBinding: { ...(element.endBinding || {}), elementId: targetShape.id },
+          customData: { ...(element.customData || {}), workbench: { ...(element.customData?.workbench || {}), relationId, viewId: relationViewId, role: "relation", kind } },
+        };
+      });
+      const next = { ...structuredClone(workbench), modelRevision: workbench.modelRevision + 1, relations: nextRelations };
+      api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      saveDocument(next, { ...scene, elements });
+      setInspectorError("");
+      showToast?.("Relationship updated.", "success");
+      return true;
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not update relationship: ${error.message}`, "error");
+      return false;
+    }
+  }, [apiRef, canEdit, saveDocument, showToast, workbench]);
+
+  const deleteRelation = useCallback((relationId) => {
+    if (!canEdit || !workbench || !relationId) return false;
+    try {
+      const relation = workbench.relations.find((item) => item.id === relationId);
+      if (!relation) throw new Error("The selected relationship no longer exists.");
+      const api = apiRef.current;
+      if (!api) throw new Error("The drawing canvas is not ready.");
+      const scene = currentScene(api);
+      // Only remove the connector explicitly owned by this semantic relationship.
+      // Unrelated user-drawn arrows are deliberately left untouched.
+      const elements = scene.elements.map((element) => {
+        if (element.isDeleted || element.customData?.workbench?.relationId !== relationId || element.customData?.workbench?.role !== "relation") return element;
+        return { ...element, isDeleted: true, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now() };
+      });
+      const next = { ...structuredClone(workbench), modelRevision: workbench.modelRevision + 1, relations: workbench.relations.filter((item) => item.id !== relationId) };
+      api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      saveDocument(next, { ...scene, elements });
+      setInspectorError("");
+      showToast?.("Relationship deleted.", "success");
+      return true;
+    } catch (error) {
+      setInspectorError(error.message);
+      showToast?.(`Could not delete relationship: ${error.message}`, "error");
+      return false;
+    }
+  }, [apiRef, canEdit, saveDocument, showToast, workbench]);
+
   const createRelation = useCallback(({ kind, targetId }) => {
     if (!selectedEntity) {
       setInspectorError("Select a Workbench component on the canvas before creating a relationship.");
@@ -454,6 +536,26 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
     }
     return createRelationBetween({ sourceId: selectedEntity.id, kind, targetId });
   }, [createRelationBetween, selectedEntity]);
+
+  const focusRelation = useCallback((relationId) => {
+    if (!workbench || !relationId) return false;
+    const relation = workbench.relations.find((item) => item.id === relationId);
+    if (!relation) return false;
+    const api = apiRef.current;
+    if (!api) return false;
+    const scene = currentScene(api);
+    const connector = scene.elements.find((element) => !element.isDeleted
+      && element.type === "arrow"
+      && element.customData?.workbench?.relationId === relationId);
+    if (!connector) {
+      showToast?.("The semantic relationship exists, but its visual connector is not present in the active view.", "info");
+      return false;
+    }
+    api.updateScene({ appState: { ...api.getAppState(), selectedElementIds: { [connector.id]: true }, selectedGroupIds: {}, selectedGroupForOperation: null } });
+    api.scrollToContent?.([connector], { fitToViewport: false, animate: true });
+    setIsOpen(true);
+    return true;
+  }, [apiRef, showToast, workbench]);
 
   const focusFinding = useCallback((finding) => {
     if (!workbench || !finding?.entityIds?.length) return;
@@ -540,5 +642,5 @@ export function useWorkbenchController({ apiRef, documentMetadataRef, sketchRead
   }, [canEdit, saveDocument, showToast, workbench]);
 
   const activeView = workbench?.views?.find((view) => view.id === workbench.activeViewId) || null;
-  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, visibleEntityIds, inspectorError, clearInspectorError: () => setInspectorError(""), updateEntity, createRelation, createRelationBetween, updateSimulationProfile, updateSimulationHistory, updateArchitectureDecisionRecords, updatePolicyGovernance, focusFinding, initialize, switchView, addComponent, createPoc, completePocArtifacts };
+  return { workbench, isOpen, setIsOpen, busy, activeView, selectedEntity, selectedRelation, visibleEntityIds, inspectorError, clearInspectorError: () => setInspectorError(""), updateEntity, updateRelation, deleteRelation, createRelation, createRelationBetween, updateSimulationProfile, updateSimulationHistory, updateArchitectureDecisionRecords, updatePolicyGovernance, focusFinding, focusRelation, initialize, switchView, addComponent, createPoc, completePocArtifacts };
 }

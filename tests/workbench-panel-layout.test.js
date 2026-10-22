@@ -245,3 +245,10 @@ test("HLD-to-LLD drill-down selection persists independently from the engineerin
   assert.match(panelSource, /\[workspaceWidth, resultsExpanded, panelCollapsed, modelNavigatorCollapsed, dockSide, lldParentId\]/);
   assert.match(panelSource, /setLldParentId\(entity\.id\); onSwitchView\("lld"\)/);
 });
+
+
+test("quick-add creates a component and immediately opens its contextual properties", () => {
+  assert.match(panelSource, /onAddComponent\?\.\(item\.kind\); changePanelTab\("inspect"\)/);
+  assert.match(panelSource, /aria-label={`Add \$\{item\.label\} and open properties`}/);
+  assert.match(panelSource, /aria-label="Component inspector"/);
+});
