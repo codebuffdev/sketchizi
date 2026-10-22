@@ -1324,3 +1324,82 @@
 .workbench-level-hint { margin: 8px 0 0; padding: 9px 10px; border: 1px solid var(--ui-border, #e5e8ef); border-radius: 9px; color: var(--ui-text-muted, #737b8b); font-size: 11px; line-height: 1.5; }
 .workbench-level-hint strong { display: inline-block; margin-right: 6px; color: var(--ui-text, #272b35); font-size: 10px; letter-spacing: .08em; }
 .theme-dark .workbench-level-hint strong { color: #f1f3f8; }
+
+/* Workbench redesign foundation: make design level and next action the primary navigation. */
+.workbench-panel { width: min(408px, calc(100% - 20px)); }
+.workbench-panel-header { padding: 15px 15px 14px; }
+.workbench-panel-brand strong { font-size: 13px; }
+.workbench-panel-brand span:not(.workbench-mark) { font-size: 11px; }
+.workbench-section { padding: 14px 14px 12px; }
+.workbench-view-list { gap: 7px; }
+.workbench-view { padding: 10px 8px; }
+.workbench-view-copy strong { font-size: 11px; }
+.workbench-design-level-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.workbench-design-level-switch button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 11px; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 10px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.workbench-design-level-switch button.active, .workbench-design-level-switch button[aria-pressed="true"] { border-color: #8271de; background: #f0edff; box-shadow: inset 0 0 0 1px rgb(130 113 222 / 12%); }
+.theme-dark .workbench-design-level-switch button.active, .theme-dark .workbench-design-level-switch button[aria-pressed="true"] { background: #292541; }
+.workbench-design-level-switch button:disabled { cursor: default; }
+.workbench-level-kicker { color: #7667c8; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
+.workbench-design-level-switch strong { font-size: 11px; line-height: 1.35; }
+.workbench-design-level-switch small { color: var(--ui-text-muted, #777f90); font-size: 9px; line-height: 1.4; }
+.workbench-lld-start-card { margin-top: 11px; padding: 12px; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 11px; background: linear-gradient(145deg, rgb(111 92 207 / 9%), transparent 75%); }
+.workbench-lld-start-heading { display: flex; align-items: center; gap: 9px; }
+.workbench-lld-start-heading > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.workbench-lld-start-heading strong { font-size: 12px; }
+.workbench-lld-start-heading small { color: var(--ui-text-muted, #777f90); font-size: 10px; line-height: 1.4; }
+.workbench-lld-start-icon { display: grid; flex: 0 0 32px; width: 32px; height: 32px; place-items: center; border: 1px solid #a99be9; border-radius: 9px; background: #f0edff; color: #5b49b7; font-weight: 800; }
+.theme-dark .workbench-lld-start-icon { background: #292541; color: #d4cdff; border-color: #5f51a0; }
+.workbench-lld-start-card p { margin: 10px 0; color: var(--ui-text-muted, #777f90); font-size: 10px; line-height: 1.55; }
+.workbench-lld-start-card .workbench-primary { min-height: 36px; }
+.workbench-lld-back-button { width: 100%; margin-top: 6px; }
+.workbench-workflow-strip { display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 10px 14px; border-bottom: 1px solid var(--ui-border, #e5e8ef); color: var(--ui-text-muted, #777f90); font-size: 9px; }
+.workbench-workflow-step { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.workbench-workflow-step b { display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: var(--ui-surface-soft, #f0f2f7); font-size: 9px; }
+.workbench-workflow-step.active { color: #6a57cb; font-weight: 800; }
+.workbench-workflow-step.active b { background: #eae6ff; color: #5744bd; }
+.theme-dark .workbench-workflow-strip { border-color: #343947; }
+.theme-dark .workbench-workflow-step b { background: #292e39; }
+.theme-dark .workbench-workflow-step.active b { background: #39305f; color: #d4cdff; }
+@media (max-width: 420px) {
+  .workbench-panel { width: min(100% - 12px, 390px); left: 6px; }
+  .workbench-design-level-switch { gap: 6px; }
+  .workbench-design-level-switch button { padding: 9px; }
+  .workbench-design-level-switch strong { font-size: 10px; }
+}
+
+/* Experience redesign 1.15: reduce competing navigation and make the workbench read as one workspace. */
+.workbench-panel {
+  width: min(390px, calc(100% - 20px));
+  font-size: 13px;
+  border-radius: 16px;
+}
+.workbench-panel-header { padding: 14px 15px; }
+.workbench-panel-brand strong { font-size: 13px; }
+.workbench-panel-brand span:not(.workbench-mark) { font-size: 11px; }
+.workbench-section { padding: 14px 14px 13px; }
+.workbench-view-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.workbench-view { min-height: 43px; padding: 9px; }
+.workbench-view-copy strong { font-size: 11px; }
+.workbench-view-context { font-size: 11px; }
+.workbench-design-level-summary {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  margin-top: 12px; padding: 12px 13px; border: 1px solid var(--ui-border, #dfe3eb);
+  border-radius: 11px; background: var(--ui-surface-soft, #f7f8fc);
+}
+.theme-dark .workbench-design-level-summary { background: #20232d; border-color: #383e4d; }
+.workbench-design-level-summary .workbench-level-kicker { color: #7767cc; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
+.workbench-design-level-summary strong { font-size: 13px; }
+.workbench-design-level-summary small { color: var(--ui-text-muted, #777f90); font-size: 11px; line-height: 1.4; }
+.workbench-level-hint { margin: 9px 0 0; padding: 0 2px; font-size: 11px; line-height: 1.5; }
+.workbench-lld-start-card { padding: 13px; }
+.workbench-lld-start-card p { font-size: 11px; }
+.workbench-task-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 9px 10px; gap: 3px; }
+.workbench-task-tabs > button { flex-direction: column; gap: 3px; min-height: 46px; padding: 5px 2px; font-size: 10px; line-height: 1.15; }
+.workbench-task-tabs > button > span { font-size: 15px; }
+.workbench-section-intro, .workbench-note { font-size: 11px; }
+.workbench-panel-footer { padding: 12px 15px; font-size: 11px; }
+.workbench-panel-footer p { font-size: 10px; }
+@media (max-width: 700px) {
+  .workbench-panel { width: min(390px, calc(100% - 12px)); }
+  .workbench-task-tabs > button { font-size: 9px; }
+}

@@ -138,7 +138,7 @@ export default function WorkbenchPanel({
         <>
           <div className="workbench-panel-scroll">
           <div className="workbench-section">
-            <div className="workbench-section-heading"><span>VIEWS</span><span className="workbench-count">{workbench.views.length}</span></div>
+            <div className="workbench-section-heading"><span>DESIGN PERSPECTIVES</span><span className="workbench-count">{workbench.views.length}</span></div>
             <div className="workbench-view-list" role="tablist" aria-label="Workbench views">
               {availableViews.map((view) => (
                 <button
@@ -157,8 +157,18 @@ export default function WorkbenchPanel({
               ))}
             </div>
             <p className="workbench-note workbench-view-context" title="The engineering model is shared across views; each view has its own canvas layout.">Active view: {currentView?.label || "System"} · shared model</p>
-            {activeViewId === "system" && <p className="workbench-level-hint"><strong>HLD</strong> System boundaries, services, data stores and infrastructure.</p>}
-            {activeViewId === "lld" && <p className="workbench-level-hint"><strong>LLD</strong> Classes, interfaces, controllers, repositories and domain entities. Add detailed elements here and connect them with typed relationships.</p>}
+            <div className="workbench-design-level-summary">
+              <span className="workbench-level-kicker">CURRENT DESIGN LEVEL</span>
+              <strong>{activeViewId === "lld" ? "Low-level design" : activeViewId === "system" ? "High-level design" : currentView?.label || "Design view"}</strong>
+              <small>{activeViewId === "lld" ? "Model classes, interfaces, controllers and repositories." : activeViewId === "system" ? "Model system boundaries, services and infrastructure." : `Design perspective: ${currentView?.label || "current view"}.`}</small>
+            </div>
+            {activeViewId === "system" && <p className="workbench-level-hint"><strong>HLD</strong> Define system boundaries and how major services communicate. Select a service to inspect its responsibilities.</p>}
+            {activeViewId === "lld" && <div className="workbench-lld-start-card">
+              <div className="workbench-lld-start-heading"><span className="workbench-lld-start-icon" aria-hidden="true">{ }</span><div><strong>Design inside a service</strong><small>Build implementation details, not another system map.</small></div></div>
+              <p>Add controllers, Java classes, interfaces, repositories, API contracts and domain entities. Use typed relationships to describe how they work together.</p>
+              <button type="button" className="workbench-primary" disabled={!canEdit || busy} onClick={() => changePanelTab("components")}>＋ Add a design element</button>
+              <button type="button" className="workbench-secondary workbench-lld-back-button" onClick={() => onSwitchView("system")}>← Return to system architecture</button>
+            </div>}
           </div>
 
 
@@ -182,14 +192,14 @@ export default function WorkbenchPanel({
           )}
 
           <nav className="workbench-task-tabs" role="tablist" aria-label="Workbench workspace">
-            <button type="button" role="tab" aria-selected={activePanelTab === "build"} className={activePanelTab === "build" ? "active" : ""} onClick={() => changePanelTab("build")}><span aria-hidden="true">◇</span>Build</button>
-            <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Run</button>
-            <button type="button" role="tab" aria-selected={activePanelTab === "components"} className={activePanelTab === "components" ? "active" : ""} onClick={() => changePanelTab("components")}><span aria-hidden="true">＋</span>Add</button>
-            <button type="button" role="tab" aria-selected={activePanelTab === "inspect"} className={activePanelTab === "inspect" ? "active" : ""} onClick={() => changePanelTab("inspect")}><span aria-hidden="true">☷</span>Inspect</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "build"} className={activePanelTab === "build" ? "active" : ""} onClick={() => changePanelTab("build")}><span aria-hidden="true">◇</span>Design</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "run"} className={activePanelTab === "run" ? "active" : ""} onClick={() => changePanelTab("run")}><span aria-hidden="true">▷</span>Simulate</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "components"} className={activePanelTab === "components" ? "active" : ""} onClick={() => changePanelTab("components")}><span aria-hidden="true">＋</span>Add elements</button>
+            <button type="button" role="tab" aria-selected={activePanelTab === "inspect"} className={activePanelTab === "inspect" ? "active" : ""} onClick={() => changePanelTab("inspect")}><span aria-hidden="true">☷</span>Properties</button>
             <button type="button" role="tab" aria-selected={activePanelTab === "policy"} className={activePanelTab === "policy" ? "active" : ""} onClick={() => changePanelTab("policy")}><span aria-hidden="true">✓</span>Policy</button>
           </nav>
-          <div hidden={activePanelTab !== "build"} className="workbench-task-pane" role="tabpanel" aria-label="Build and review">
-          {workbench.entities.length === 0 && workbench.relations.length === 0 && (
+          <div hidden={activePanelTab !== "build"} className="workbench-task-pane" role="tabpanel" aria-label="Design, review and artifacts">
+          {activeViewId === "system" && workbench.entities.length === 0 && workbench.relations.length === 0 && (
             <section className="workbench-section workbench-poc-template" aria-label="Create a POC from a template">
               <div className="workbench-section-heading"><span>START WITH A POC</span><span className="workbench-count">1</span></div>
               <h2>Web application with database</h2>
@@ -286,7 +296,7 @@ export default function WorkbenchPanel({
 
           </div>
 
-          <div hidden={activePanelTab !== "run"} className="workbench-task-pane" role="tabpanel" aria-label="Run and debug">
+          <div hidden={activePanelTab !== "run"} className="workbench-task-pane" role="tabpanel" aria-label="Simulation and exploration">
           <SimulationExperimentPanel
             workbench={workbench}
             visibleEntityIds={visibleEntityIds}
