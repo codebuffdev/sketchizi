@@ -1,0 +1,710 @@
+@import "./design-tokens.css";
+
+/* Sketchizi UI modernization — premium/minimal workspace layer.
+ * Presentation-only overrides: existing React state, canvas behavior, and
+ * panel interactions remain unchanged. */
+.app.theme-light .desktop-app-header {
+  border-bottom-color: var(--sk-ui-line);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 1px 0 rgb(31 36 55 / 2%);
+}
+
+.app.theme-light .desktop-workspace {
+  background: var(--sk-ui-page);
+}
+
+.app.theme-light .desktop-resources-region,
+.app.theme-light .desktop-context-region {
+  background: var(--sk-ui-panel);
+  border-color: var(--sk-ui-line);
+}
+
+.app.theme-light .desktop-resources-region {
+  box-shadow: 1px 0 0 rgb(31 36 55 / 1%);
+}
+
+.app.theme-light .desktop-context-region {
+  box-shadow: -1px 0 0 rgb(31 36 55 / 1%);
+}
+
+.app.theme-light .desktop-canvas-region {
+  background: #f7f8fc;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw {
+  --color-surface-low: #f7f8fc;
+}
+
+.app.theme-light .desktop-resources-region > .library-panel {
+  padding: 18px 15px 14px;
+  background: var(--sk-ui-panel);
+}
+
+.app.theme-light .desktop-resources-region .library-panel-header {
+  min-height: 46px;
+  padding: 0 2px 12px;
+  border-bottom-color: var(--sk-ui-line);
+}
+
+.app.theme-light .desktop-resources-region .library-panel-header .label,
+.app.theme-light .library-panel-header .label {
+  color: var(--sk-ui-ink);
+  font-size: 13px;
+  font-weight: 720;
+  letter-spacing: -.025em;
+}
+
+.app.theme-light .library-panel-subtitle {
+  color: var(--sk-ui-muted);
+  font-size: 11px;
+}
+
+.app.theme-light .desktop-resources-region .search {
+  height: 40px;
+  border: 1px solid var(--sk-ui-line-strong);
+  border-radius: var(--sk-radius-control);
+  background: var(--sk-color-surface-soft);
+  color: var(--sk-ui-ink);
+  font-size: 12px;
+  transition: border-color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard), background var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app.theme-light .desktop-resources-region .search:focus {
+  border-color: #a69cf0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(102 88 211 / 10%);
+}
+
+.app.theme-light .desktop-resources-region .quick-category,
+.app.theme-light .desktop-resources-region .category {
+  min-height: 36px;
+  border-radius: var(--sk-radius-control-sm);
+  color: var(--sk-color-text-secondary);
+  font-size: 11px;
+  transition: background var(--sk-motion-standard) var(--sk-ease-standard), color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app.theme-light .desktop-resources-region .quick-category:hover,
+.app.theme-light .desktop-resources-region .category:hover {
+  background: #f6f7fb;
+  color: var(--sk-ui-ink);
+}
+
+.app.theme-light .desktop-resources-region .quick-category.active,
+.app.theme-light .desktop-resources-region .category.active {
+  border-color: #e4dfff;
+  background: var(--sk-ui-accent-soft);
+  color: #5949c5;
+}
+
+.app.theme-light .desktop-resources-region .icon-card {
+  border: 1px solid #eceef4;
+  border-radius: var(--sk-radius-card-sm);
+  background: var(--sk-color-surface);
+  box-shadow: 0 1px 2px rgb(28 35 60 / 2%);
+  transition: transform var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app.theme-light .desktop-resources-region .icon-card:hover {
+  transform: translateY(-1px);
+  border-color: #d9d2ff;
+  box-shadow: var(--sk-shadow-card-hover);
+}
+
+.app.theme-light .desktop-context-region > .desktop-properties-host > .properties-panel,
+.app.theme-light .desktop-context-region > .desktop-validation-host > .architecture-validation-panel {
+  border-color: transparent;
+  border-radius: 0;
+  background: var(--sk-ui-panel);
+  box-shadow: none;
+}
+
+.app.theme-light .desktop-context-region .properties-header,
+.app.theme-light .desktop-context-region .architecture-validation-header {
+  border-bottom-color: var(--sk-ui-line);
+}
+
+.app.theme-light .desktop-context-region .properties-title,
+.app.theme-light .desktop-context-region .architecture-validation-title {
+  color: var(--sk-ui-ink);
+  letter-spacing: -.02em;
+}
+
+.app.theme-light .desktop-context-region .properties-section,
+.app.theme-light .desktop-context-region .architecture-validation-section {
+  border-bottom-color: var(--sk-ui-line);
+}
+
+.app.theme-light .desktop-context-region input:not([type="checkbox"]),
+.app.theme-light .desktop-context-region select,
+.app.theme-light .desktop-context-region textarea,
+.app.theme-light .properties-panel .property-number,
+.app.theme-light .properties-panel .property-row select {
+  border-color: var(--sk-ui-line-strong);
+  border-radius: var(--sk-radius-control);
+  background: var(--sk-color-surface-soft);
+  color: var(--sk-ui-ink);
+}
+
+.app.theme-light .desktop-context-region input:focus,
+.app.theme-light .desktop-context-region select:focus,
+.app.theme-light .desktop-context-region textarea:focus {
+  border-color: #a69cf0;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(102 88 211 / 10%);
+}
+
+.app.theme-light .desktop-app-header button,
+.app.theme-light .desktop-app-header .desktop-app-nav-button {
+  transition: background var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app.theme-light .desktop-app-header .design-studio-header-toggle,
+.app.theme-light .desktop-app-header .ai-ask-toggle,
+.app.theme-light .desktop-app-header .architecture-validation-toggle,
+.app.theme-light .desktop-app-header .community-reviews-toggle {
+  border-radius: var(--sk-radius-control-sm);
+}
+
+.app.theme-light .desktop-app-header .desktop-app-nav-button:hover,
+.app.theme-light .desktop-app-header .desktop-app-nav-button.active {
+  background: #f5f4fc;
+  color: var(--sk-ui-accent);
+}
+
+.app.theme-light .properties-toggle,
+.app.theme-light .desktop-app-library-toggle,
+.app.theme-light .desktop-app-menu-trigger {
+  border-color: var(--sk-ui-line);
+  border-radius: var(--sk-radius-control-sm);
+  background: #fff;
+  color: #596078;
+  box-shadow: 0 1px 2px rgb(31 36 55 / 3%);
+}
+
+.app.theme-light .properties-toggle:hover,
+.app.theme-light .properties-toggle.active,
+.app.theme-light .desktop-app-library-toggle:hover,
+.app.theme-light .desktop-app-library-toggle.active,
+.app.theme-light .desktop-app-menu-trigger:hover,
+.app.theme-light .desktop-app-menu-trigger.active {
+  border-color: #e0dafe;
+  background: var(--sk-ui-accent-soft);
+  color: var(--sk-ui-accent);
+}
+
+/* Dark mode keeps its existing palette but receives the same refined geometry. */
+.app.theme-dark .desktop-app-header,
+.app.theme-dark .desktop-resources-region,
+.app.theme-dark .desktop-context-region {
+  border-color: #2c3040;
+}
+
+.app.theme-dark .desktop-resources-region > .library-panel {
+  padding: 18px 15px 14px;
+}
+
+.app.theme-dark .desktop-resources-region .search,
+.app.theme-dark .desktop-context-region input:not([type="checkbox"]),
+.app.theme-dark .desktop-context-region select,
+.app.theme-dark .desktop-context-region textarea {
+  border-radius: var(--sk-radius-control);
+}
+
+.app.theme-dark .desktop-resources-region .icon-card {
+  border-radius: var(--sk-radius-card-sm);
+  transition: border-color var(--sk-motion-standard) var(--sk-ease-standard), background var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app.theme-dark .desktop-resources-region .icon-card:hover {
+  border-color: #6158a5;
+}
+
+@media (max-width: 1024px) {
+  .app.theme-light .desktop-resources-region > .library-panel {
+    padding: 15px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-header button,
+  .app .desktop-resources-region .icon-card,
+  .app .desktop-resources-region .quick-category,
+  .app .desktop-resources-region .category,
+  .app .desktop-resources-region .search {
+    transition: none !important;
+  }
+}
+
+/* UI Modernization 02 — canvas toolbar and top navigation.
+ * Presentation-only treatment; no native Excalidraw controls are hidden or replaced. */
+@media (min-width: 1025px) {
+  .app .desktop-app-header {
+    min-height: 58px;
+    height: 58px;
+    padding-inline: 16px;
+    gap: 0;
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 94%, var(--sk-ui-page, #f5f6fa));
+    border-bottom-color: var(--sk-ui-line, #e7e9f0);
+    box-shadow: 0 1px 0 rgb(32 36 56 / 2%);
+  }
+
+  .app .desktop-app-nav {
+    gap: 3px;
+    padding-right: 14px;
+    margin-right: 12px;
+    border-right-color: var(--sk-ui-line, #e7e9f0);
+  }
+
+  .app .desktop-app-nav-button {
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: var(--sk-radius-control-sm);
+    font-size: 12px;
+    font-weight: 560;
+    letter-spacing: 0;
+  }
+
+  .app .desktop-app-nav-button:hover,
+  .app .desktop-app-nav-button.active {
+    border-color: var(--sk-ui-line, #e7e9f0);
+    background: var(--sk-ui-panel-soft, #fafbfe);
+    color: var(--sk-ui-ink, #202438);
+    box-shadow: 0 1px 2px rgb(32 36 56 / 4%);
+  }
+
+  .app .desktop-app-dropdown {
+    top: calc(100% + 8px);
+    width: 260px;
+    padding: 7px;
+    border: 1px solid var(--sk-ui-line, #e7e9f0);
+    border-radius: var(--sk-radius-card);
+    box-shadow: 0 18px 48px rgb(28 31 51 / 13%), 0 2px 8px rgb(28 31 51 / 5%);
+  }
+
+  .app .desktop-app-dropdown button {
+    min-height: 38px;
+    padding: 9px 11px;
+    border-radius: var(--sk-radius-sm);
+    font-size: 12px;
+  }
+
+  .app .desktop-app-header-panel-actions {
+    gap: 7px;
+    padding-inline: 12px;
+    border-right-color: var(--sk-ui-line, #e7e9f0);
+  }
+
+  .app .desktop-app-header-panel-actions .properties-toggle,
+  .app .desktop-app-header-panel-actions .architecture-validation-toggle,
+  .app .desktop-app-header-panel-actions .design-studio-header-toggle,
+  .app .desktop-app-header-panel-actions .ai-ask-toggle,
+  .app .desktop-app-header-panel-actions .community-reviews-toggle {
+    min-height: 34px;
+    height: 34px;
+    padding-inline: 11px;
+    border: 1px solid var(--sk-ui-line, #e7e9f0);
+    border-radius: var(--sk-radius-control-sm);
+    background: var(--sk-ui-panel, #fff);
+    color: var(--sk-ui-muted, #737b91);
+    box-shadow: 0 1px 2px rgb(32 36 56 / 3%);
+    font-size: 11px;
+    font-weight: 600;
+    transition: background-color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
+  }
+
+  .app .desktop-app-header-panel-actions .properties-toggle:hover,
+  .app .desktop-app-header-panel-actions .properties-toggle.active,
+  .app .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
+  .app .desktop-app-header-panel-actions .architecture-validation-toggle.active,
+  .app .desktop-app-header-panel-actions .design-studio-header-toggle:hover,
+  .app .desktop-app-header-panel-actions .design-studio-header-toggle.active,
+  .app .desktop-app-header-panel-actions .ai-ask-toggle:hover,
+  .app .desktop-app-header-panel-actions .ai-ask-toggle.active,
+  .app .desktop-app-header-panel-actions .community-reviews-toggle:hover,
+  .app .desktop-app-header-panel-actions .community-reviews-toggle.active {
+    border-color: #ded8fb;
+    background: var(--sk-ui-accent-soft, #f0edff);
+    color: var(--sk-ui-accent, #6658d3);
+    box-shadow: 0 1px 3px rgb(102 88 211 / 7%);
+  }
+
+  .app .desktop-app-search-button {
+    width: 190px;
+    min-width: 190px;
+    height: 36px;
+    min-height: 36px;
+    padding-inline: 11px;
+    border-color: var(--sk-ui-line, #e7e9f0);
+    border-radius: var(--sk-radius-control);
+    background: var(--sk-ui-panel, #fff);
+    box-shadow: 0 1px 2px rgb(32 36 56 / 3%);
+    font-size: 12px;
+  }
+
+  .app .desktop-app-search-button:hover {
+    border-color: #d9d2fa;
+    background: #fcfbff;
+    color: var(--sk-ui-ink, #202438);
+  }
+
+  .app .desktop-app-search-shortcut {
+    padding: 4px 6px;
+    border-color: var(--sk-ui-line, #e7e9f0);
+    border-radius: 6px;
+    background: var(--sk-ui-panel-soft, #fafbfe);
+    font-size: 10px;
+  }
+
+  .app .desktop-app-start-collaboration-button {
+    min-height: 35px;
+    margin-left: 9px;
+    padding: 8px 12px;
+    border: 1px solid var(--sk-ui-accent, #6658d3);
+    border-radius: var(--sk-radius-control);
+    background: var(--sk-ui-accent, #6658d3);
+    box-shadow: 0 2px 5px rgb(102 88 211 / 13%);
+    font-size: 11px;
+    font-weight: 650;
+    transition: background-color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
+  }
+
+  .app .desktop-app-start-collaboration-button:hover {
+    border-color: #594ac4;
+    background: #594ac4;
+    box-shadow: 0 3px 8px rgb(102 88 211 / 20%);
+    transform: none;
+  }
+
+  /* Native canvas toolbar: float it like a lightweight tool palette. */
+  .app .desktop-canvas-region .excalidraw .Island.App-toolbar {
+    border: 1px solid var(--sk-ui-line, #e7e9f0);
+    border-radius: var(--sk-radius-card);
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 96%, transparent);
+    box-shadow: 0 10px 30px rgb(30 34 55 / 9%), 0 2px 5px rgb(30 34 55 / 4%);
+    backdrop-filter: blur(14px);
+  }
+
+  .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button {
+    border-radius: var(--sk-radius-control-sm);
+    transition: background-color var(--sk-motion-fast) var(--sk-ease-standard), color var(--sk-motion-fast) var(--sk-ease-standard), box-shadow var(--sk-motion-fast) var(--sk-ease-standard);
+  }
+
+  .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+  .app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover {
+    background: var(--sk-ui-accent-soft, #f0edff);
+    color: var(--sk-ui-accent, #6658d3);
+  }
+
+  .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+  .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+    background: var(--sk-ui-accent-soft, #f0edff);
+    color: var(--sk-ui-accent, #6658d3);
+    box-shadow: inset 0 0 0 1px rgb(102 88 211 / 13%);
+  }
+
+  .app .desktop-canvas-region .excalidraw .App-menu_top .dropdown-menu-button {
+    border-radius: var(--sk-radius-control-sm);
+  }
+}
+
+.app.theme-dark .desktop-app-header {
+  background: color-mix(in srgb, var(--ui-surface-solid, #20222d) 94%, #11131b);
+  border-bottom-color: #2c3040;
+}
+
+.app.theme-dark .desktop-app-nav-button:hover,
+.app.theme-dark .desktop-app-nav-button.active {
+  border-color: #383b4d;
+  background: #292c3a;
+  color: #f1f2f8;
+  box-shadow: none;
+}
+
+.app.theme-dark .desktop-app-dropdown {
+  border-color: #383b4d;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 30%);
+}
+
+.app.theme-dark .desktop-app-header-panel-actions .properties-toggle,
+.app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle,
+.app.theme-dark .desktop-app-header-panel-actions .design-studio-header-toggle,
+.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle,
+.app.theme-dark .desktop-app-header-panel-actions .community-reviews-toggle,
+.app.theme-dark .desktop-app-search-button {
+  border-color: #383b4d;
+  background: #242735;
+  color: #c3c7d7;
+  box-shadow: none;
+}
+
+.app.theme-dark .desktop-app-header-panel-actions .properties-toggle:hover,
+.app.theme-dark .desktop-app-header-panel-actions .properties-toggle.active,
+.app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
+.app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle.active,
+.app.theme-dark .desktop-app-header-panel-actions .design-studio-header-toggle:hover,
+.app.theme-dark .desktop-app-header-panel-actions .design-studio-header-toggle.active,
+.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle:hover,
+.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle.active,
+.app.theme-dark .desktop-app-header-panel-actions .community-reviews-toggle:hover,
+.app.theme-dark .desktop-app-header-panel-actions .community-reviews-toggle.active {
+  border-color: #514a80;
+  background: #302b48;
+  color: #c9c0ff;
+}
+
+.app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar {
+  border-color: #36394a;
+  background: rgb(32 34 45 / 94%);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 25%), 0 2px 5px rgb(0 0 0 / 16%);
+}
+
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover,
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  background: #302b48;
+  color: #c9c0ff;
+}
+
+@media (max-width: 1024px) {
+  .app .desktop-app-header .desktop-app-search-button {
+    border-radius: var(--sk-radius-control);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-nav-button,
+  .app .desktop-app-header-panel-actions button,
+  .app .desktop-app-search-button,
+  .app .desktop-app-start-collaboration-button,
+  .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button {
+    transition: none !important;
+  }
+}
+
+/* UI Modernization 04 — cohesive dialogs, menus, forms, and feedback. */
+.app :is(.design-dialog-backdrop, .design-confirm-backdrop, .design-recommendation-confirm-backdrop, .auth-dialog-backdrop, .collaboration-confirm-backdrop, .collaboration-backdrop) {
+  background: rgb(15 18 32 / 48%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  padding: 20px;
+}
+
+.app :is(.design-dialog, .design-confirm-dialog, .design-recommendation-confirm, .auth-dialog, .collaboration-confirm-dialog, .collaboration-dialog, .shortcut-dialog) {
+  border: 1px solid var(--ui-border, #e4e7ef);
+  border-radius: var(--sk-radius-dialog);
+  box-shadow: 0 24px 72px rgb(16 20 40 / 22%), 0 3px 10px rgb(16 20 40 / 5%);
+  overflow: hidden;
+}
+
+.app.theme-light :is(.design-dialog, .design-confirm-dialog, .design-recommendation-confirm, .auth-dialog, .collaboration-confirm-dialog, .collaboration-dialog, .shortcut-dialog) {
+  background: #fff;
+  color: #25283b;
+}
+
+.app.theme-dark :is(.design-dialog, .design-confirm-dialog, .design-recommendation-confirm, .auth-dialog, .collaboration-confirm-dialog, .collaboration-dialog, .shortcut-dialog) {
+  background: #171b28;
+  border-color: #30364a;
+  color: #edf0fa;
+  box-shadow: 0 24px 72px rgb(0 0 0 / 38%);
+}
+
+.app :is(.design-dialog-header, .collaboration-dialog-header) {
+  padding: 18px 20px;
+  gap: 12px;
+  border-bottom: 1px solid var(--ui-border-soft, #eceef4);
+}
+
+.app :is(.design-dialog-eyebrow, .auth-dialog-footnote) {
+  letter-spacing: .045em;
+}
+
+.app :is(.design-dialog-close, .auth-dialog-close, .mobile-panel-close) {
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: var(--sk-radius-control-sm);
+  transition: background-color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), color var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app :is(.design-dialog-close, .auth-dialog-close):hover {
+  background: var(--ui-hover, #f5f6fb);
+}
+
+.app :is(.design-dialog-footer, .design-confirm-actions, .design-recommendation-confirm-actions) {
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--ui-border-soft, #eceef4);
+}
+
+.app :is(.design-dialog, .design-confirm-dialog, .design-recommendation-confirm, .auth-dialog, .collaboration-confirm-dialog, .collaboration-dialog) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea, .design-diagnostic-select) {
+  min-height: 38px;
+  max-width: 100%;
+  border: 1px solid var(--ui-border, #dfe3ed);
+  border-radius: var(--sk-radius-control-sm);
+  padding: 9px 11px;
+  background: var(--ui-surface-soft, #fafbfe);
+  color: var(--ui-text-strong, #25283b);
+  transition: border-color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard), background-color var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app :is(.design-dialog, .design-confirm-dialog, .design-recommendation-confirm, .auth-dialog, .collaboration-confirm-dialog, .collaboration-dialog) :is(input, select, textarea):focus-visible {
+  outline: 0;
+  border-color: #8a7be7;
+  box-shadow: 0 0 0 3px rgb(102 88 211 / 14%);
+}
+
+.app :is(.desktop-app-dropdown, .auth-account-menu, .library-collections-menu, .sketchizi-more-tools-menu, .collaboration-details-popover, .collaboration-participant-popover) {
+  border: 1px solid var(--ui-border, #e2e5ee);
+  border-radius: var(--sk-radius-card);
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-strong, #25283b);
+  box-shadow: 0 14px 38px rgb(20 25 48 / 13%), 0 2px 5px rgb(20 25 48 / 4%);
+  padding: 6px;
+}
+
+.app :is(.desktop-app-dropdown, .auth-account-menu, .library-collections-menu, .sketchizi-more-tools-menu) button {
+  min-height: 36px;
+  border-radius: var(--sk-radius-sm);
+  transition: background-color var(--sk-motion-fast) var(--sk-ease-standard), color var(--sk-motion-fast) var(--sk-ease-standard);
+}
+
+.app :is(.desktop-app-dropdown, .auth-account-menu, .library-collections-menu, .sketchizi-more-tools-menu) button:hover {
+  background: var(--ui-hover, #f5f6fb);
+  color: var(--ui-text-strong, #25283b);
+}
+
+.app :is(.community-form-card, .design-form-field) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-radius: var(--sk-radius-control-sm);
+  transition: border-color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app :is(.community-form-card, .design-form-field) :is(input, select, textarea):focus-visible {
+  outline: 0;
+  border-color: #8a7be7;
+  box-shadow: 0 0 0 3px rgb(102 88 211 / 12%);
+}
+
+.app :is(.community-notice, .auth-dialog-notice, .collaboration-draft-notice) {
+  border-radius: var(--sk-radius-control);
+  line-height: 1.5;
+}
+
+.app :is(button, [role="button"], a):focus-visible {
+  outline: 2px solid #8a7be7;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .app :is(.design-dialog-backdrop, .design-confirm-backdrop, .design-recommendation-confirm-backdrop, .auth-dialog-backdrop, .collaboration-confirm-backdrop, .collaboration-backdrop) {
+    padding: 12px;
+    align-items: center;
+  }
+
+  .app :is(.design-dialog, .design-confirm-dialog, .design-recommendation-confirm, .auth-dialog, .collaboration-confirm-dialog, .collaboration-dialog, .shortcut-dialog) {
+    width: min(100%, 560px);
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+    border-radius: var(--sk-radius-card);
+  }
+
+  .app :is(.design-dialog-header, .collaboration-dialog-header) {
+    padding: 15px 16px;
+  }
+
+  .app :is(.design-dialog-footer, .design-confirm-actions, .design-recommendation-confirm-actions) {
+    padding: 13px 16px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app :is(.design-dialog-close, .auth-dialog-close, .community-form-card input, .community-form-card select, .community-form-card textarea) {
+    transition: none !important;
+  }
+}
+
+/* UI modernization 05 — feedback, progress, and empty states. */
+.app :is(.community-notice, .auth-dialog-notice, .collaboration-draft-notice,
+  .collaboration-permission-banner, .collaboration-permission-success,
+  .collaboration-permission-denied, .collaboration-recovery-banner,
+  .architecture-review-filter-status) {
+  border: 1px solid var(--ui-border, #e2e5ee);
+  border-radius: var(--sk-radius-card-sm);
+  box-shadow: 0 2px 8px rgb(25 30 55 / 3%);
+}
+
+.app :is(.collaboration-header-status, .collaboration-connection-state,
+  .architecture-review-filter-status) {
+  font-size: 12px;
+  font-weight: 550;
+  letter-spacing: .01em;
+}
+
+.app :is(.collaboration-header-spinner, .collaboration-join-progress) {
+  accent-color: var(--ui-accent, #6658d3);
+}
+
+.app .collaboration-header-spinner {
+  border-radius: 50%;
+  border-color: var(--ui-border-strong, #d9ddea);
+  border-top-color: var(--ui-accent, #6658d3);
+}
+
+.app :is(.architecture-review-empty, .collaboration-chat-empty,
+  .collaboration-recovery-empty, .sketchizi-command-empty) {
+  border: 1px dashed var(--ui-border, #e2e5ee);
+  border-radius: var(--sk-radius-card);
+  background: var(--ui-surface-soft, #fafbfe);
+  color: var(--ui-text-muted, #737b91);
+  padding: 24px 18px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.app :is(.architecture-review-empty, .collaboration-chat-empty,
+  .collaboration-recovery-empty, .sketchizi-command-empty) :is(h2, h3, strong) {
+  color: var(--ui-text-strong, #25283b);
+  font-weight: 650;
+  letter-spacing: -.015em;
+}
+
+.app :is(.architecture-review-progress, .collaboration-recovery-progress,
+  .collaboration-join-progress) {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.app :is(.collaboration-permission-success, .collaboration-permission-denied,
+  .collaboration-header-status.failed, .collaboration-recovery-banner.is-ended) {
+  padding: 10px 12px;
+  line-height: 1.45;
+}
+
+.app :is(.collaboration-permission-success, .collaboration-header-status:not(.failed)) {
+  transition: background-color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard);
+}
+
+.app.theme-dark :is(.community-notice, .auth-dialog-notice,
+  .collaboration-draft-notice, .collaboration-permission-banner,
+  .collaboration-permission-success, .collaboration-permission-denied,
+  .collaboration-recovery-banner, .architecture-review-filter-status,
+  .architecture-review-empty, .collaboration-chat-empty,
+  .collaboration-recovery-empty, .sketchizi-command-empty) {
+  box-shadow: 0 2px 10px rgb(0 0 0 / 10%);
+}
+
+@media (max-width: 640px) {
+  .app :is(.architecture-review-empty, .collaboration-chat-empty,
+    .collaboration-recovery-empty, .sketchizi-command-empty) {
+    padding: 20px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app :is(.collaboration-permission-success, .collaboration-header-status) {
+    transition: none !important;
+  }
+}

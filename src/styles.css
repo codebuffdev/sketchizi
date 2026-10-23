@@ -496,3 +496,67 @@
 .app.theme-dark .desktop-canvas-region > .canvas {
   background-color: #111722 !important;
 }
+@import "./styles/ui-modernization.css";
+@import "./styles/ui-modernization-responsive.css";
+
+/* UI Modernization 07 — keyboard accessibility and interaction polish.
+   Keep this layer intentionally conservative: it changes presentation only. */
+.app :is(button, [role="button"], a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--focus-ring, #7c3aed) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 2px var(--focus-ring-contrast, #ffffff) !important;
+  border-radius: max(var(--control-radius, 8px), 3px);
+}
+
+.app.theme-dark {
+  --focus-ring: #c4b5fd;
+  --focus-ring-contrast: #171923;
+}
+
+.app.theme-light {
+  --focus-ring: #6d28d9;
+  --focus-ring-contrast: #ffffff;
+}
+
+.app :is(button, [role="button"], input, select, textarea):disabled,
+.app :is(button, [role="button"])[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.app ::selection {
+  background: rgb(124 58 237 / 24%);
+}
+
+@media (forced-colors: active) {
+  .app :is(button, [role="button"], a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 3px !important;
+    box-shadow: none !important;
+  }
+
+  .app :is(button, [role="button"]):disabled,
+  .app :is(button, [role="button"])[aria-disabled="true"] {
+    color: GrayText !important;
+    border-color: GrayText !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app *,
+  .app *::before,
+  .app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .app :is(button, [role="button"], .icon-button, .toolbar-button) {
+    min-width: max(40px, var(--touch-target-min, 40px));
+    min-height: max(40px, var(--touch-target-min, 40px));
+  }
+}

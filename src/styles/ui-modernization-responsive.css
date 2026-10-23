@@ -1,0 +1,121 @@
+/* UI Modernization 06 — responsive editor ergonomics.
+   Presentation-only refinements; existing panel toggles and canvas behavior remain authoritative. */
+.app,
+.app .desktop-canvas-region,
+.app .desktop-resources-region,
+.app .desktop-properties-region {
+  min-width: 0;
+  min-height: 0;
+}
+
+.app :is(.desktop-app-header, .desktop-app-header-actions, .desktop-app-nav,
+  .desktop-app-header-account-zone, .desktop-app-header-panel-actions) {
+  min-width: 0;
+}
+
+.app :is(.library-panel, .properties-panel, .architecture-validation-panel,
+  .collaboration-chat-panel, .collaboration-recovery-panel) {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  max-width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px));
+}
+
+.app :is(.library-panel, .properties-panel, .architecture-validation-panel) :is(input, select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.app :is(.library-panel, .properties-panel, .architecture-validation-panel) :is(button, [role="button"]) {
+  touch-action: manipulation;
+}
+
+/* Laptop and small desktop: let navigation compress instead of pushing the
+   canvas off-screen. Text labels may truncate, while controls remain available. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  .app .desktop-app-header {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+
+  .app .desktop-app-nav {
+    gap: 2px;
+  }
+
+  .app .desktop-app-nav-item,
+  .app .desktop-app-header-actions > button {
+    min-width: 34px;
+  }
+
+  .app .desktop-app-start-collaboration-label,
+  .app .desktop-app-search-label {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Tablet and phone: keep floating panels within the visual viewport and
+   preserve usable touch targets without changing how panels are opened. */
+@media (max-width: 760px) {
+  .app .desktop-app-header {
+    gap: 6px;
+    padding-inline: max(8px, var(--safe-left, 0px));
+  }
+
+  .app :is(.desktop-app-header-actions, .desktop-app-header-panel-actions) {
+    gap: 6px;
+  }
+
+  .app :is(.desktop-app-header-actions button, .desktop-app-nav-item,
+    .library-toggle, .properties-toggle, .mobile-panel-close) {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  .app :is(.library-panel, .properties-panel, .architecture-validation-panel,
+    .collaboration-chat-panel, .collaboration-recovery-panel) {
+    max-height: calc(100dvh - 16px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app :is(.library-panel, .properties-panel, .architecture-validation-panel) :is(input, select, textarea) {
+    font-size: 16px;
+  }
+
+  .app .desktop-canvas-region {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .app :is(.library-panel, .properties-panel, .architecture-validation-panel,
+    .collaboration-chat-panel, .collaboration-recovery-panel) {
+    border-radius: 14px;
+  }
+
+  .app :is(.desktop-app-header-actions, .desktop-app-nav) {
+    gap: 4px;
+  }
+
+  .app .desktop-app-search-shortcut {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  .app :is(.library-panel, .properties-panel, .architecture-validation-panel,
+    .collaboration-chat-panel, .collaboration-recovery-panel) {
+    max-height: calc(100dvh - 12px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app :is(.library-panel, .properties-panel, .architecture-validation-panel,
+    .collaboration-chat-panel, .collaboration-recovery-panel) {
+    scroll-behavior: auto !important;
+  }
+}

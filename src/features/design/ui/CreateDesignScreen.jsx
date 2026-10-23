@@ -88,15 +88,17 @@ export default function CreateDesignScreen({ onCreate, onClose, isDarkTheme = fa
       </section>
 
       <section className="design-studio-catalog" aria-label="Design templates">
-        <div className="design-studio-catalog-heading"><div><h2>Explore starting points</h2><p>Choose a category, then select a template.</p></div><label className="design-studio-search"><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search templates" aria-label="Search templates" /></label></div>
+        <div className="design-studio-catalog-heading"><div><h2>Explore starting points</h2><p>Choose a category, then select a template.</p></div><label className="design-studio-search"><span className="design-studio-search-icon" aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search templates" aria-label="Search templates" />{search && <button type="button" className="design-studio-search-clear" onClick={() => setSearch("")} aria-label="Clear template search">×</button>}</label></div>
         <div className="design-studio-category-tabs" role="tablist" aria-label="Template categories">
           {CATEGORIES.map((item) => <button type="button" role="tab" aria-selected={category === item.id} className={category === item.id ? "active" : ""} key={item.id} onClick={() => setCategory(item.id)}>{item.label}</button>)}
         </div>
 
+        <div className="design-studio-results-meta" aria-live="polite"><span>{visibleTemplates.length} {visibleTemplates.length === 1 ? "template" : "templates"}</span>{search.trim() && <span>Matching “{search.trim()}”</span>}</div>
+
         {category === "aws" && !templates.some((template) => template.domain === "cloud-infrastructure" || template.id.startsWith("aws.")) ? (
           <div className="design-studio-empty-category"><span className="design-studio-empty-icon" aria-hidden="true">☁</span><h3>AWS architecture starters are next</h3><p>The catalog foundation is ready. AWS-specific starters will be added after this creation workflow is integrated and verified.</p></div>
         ) : visibleTemplates.length === 0 ? (
-          <div className="design-studio-empty-category"><h3>No matching templates</h3><p>Try another search or choose a different category.</p></div>
+          <div className="design-studio-empty-category"><h3>No matching templates</h3><p>Try another search or choose a different category.</p>{(search || category !== "all") && <button type="button" className="design-studio-empty-reset" onClick={() => { setSearch(""); setCategory("all"); }}>Clear filters</button>}</div>
         ) : (
           <div className="design-studio-template-grid">
             {visibleTemplates.map((template) => <button type="button" key={template.id} className={`design-studio-template-card${selectedId === template.id ? " selected" : ""}`} onClick={() => { setSelectedId(template.id); setName(template.name); setRuleMode(template.ruleMode || "guided"); setIncludeCache(false); }} aria-pressed={selectedId === template.id}>

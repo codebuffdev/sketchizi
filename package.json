@@ -69,7 +69,14 @@
     "test:release-readiness": "node --test tests/release-readiness.test.js",
     "test:deployment-verification": "node --test tests/deployment-verification.test.js",
     "check:deployed-staging": "node scripts/verify-deployment.mjs",
-    "test:browser-acceptance-contract": "node --test tests/browser-acceptance.test.js"
+    "test:browser-acceptance-contract": "node --test tests/browser-acceptance.test.js",
+    "test:system-design-implementation-plan": "node --test tests/system-design-implementation-planner.test.js",
+    "test:ui-modernization": "node --test tests/ui-modernization-contract.test.js tests/ui-modernization-toolbar.test.js tests/ui-modernization-creation-gallery.test.js tests/ui-modernization-dialogs.test.js tests/ui-modernization-feedback.test.js tests/ui-modernization-responsive.test.js tests/ui-modernization-design-tokens.test.js tests/ui-modernization-visual-audit.test.js",
+    "test:ui-modernization-creation": "node --test tests/ui-modernization-creation-gallery.test.js",
+    "test:ui-modernization-feedback": "node --test tests/ui-modernization-feedback.test.js",
+    "test:ui-modernization-responsive": "node --test tests/ui-modernization-responsive.test.js",
+    "test:ui-design-tokens": "node --test tests/ui-modernization-design-tokens.test.js",
+    "audit:ui-visual": "node scripts/ui-visual-audit.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
