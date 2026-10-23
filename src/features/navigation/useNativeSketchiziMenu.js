@@ -486,18 +486,56 @@ export function useNativeSketchiziMenu({
         const overlay = document.createElement("div");
         overlay.dataset.sketchiziRepositoryPicker = "true";
         overlay.className = "sketchizi-repository-picker-backdrop";
-        overlay.innerHTML = `<section class="sketchizi-repository-picker" role="dialog" aria-modal="true" aria-labelledby="sketchizi-repository-picker-title"><header><strong id="sketchizi-repository-picker-title">${mode === "clone" ? "Clone repository" : "Open repository"}</strong><button type="button" data-repository-picker-close aria-label="Close">×</button></header><p class="sketchizi-repository-picker-hint">Choose a GitHub repository to continue.</p><label class="sketchizi-repository-picker-search"><span class="sketchizi-repository-picker-search-icon" aria-hidden="true">⌕</span><input type="search" data-repository-picker-search aria-label="Search repositories" placeholder="Search repositories by name…" autocomplete="off" spellcheck="false" /></label><div class="sketchizi-repository-picker-list" data-repository-picker-list role="list"><span>Loading repositories…</span></div><p class="sketchizi-repository-picker-message" data-repository-picker-message role="status"></p></section>`;
+        overlay.innerHTML = `<section class="sketchizi-repository-picker" role="dialog" aria-modal="true" aria-labelledby="sketchizi-repository-picker-title" aria-describedby="sketchizi-repository-picker-hint"><header><strong id="sketchizi-repository-picker-title">${mode === "clone" ? "Clone repository" : "Open repository"}</strong><button type="button" data-repository-picker-close aria-label="Close">×</button></header><p id="sketchizi-repository-picker-hint" class="sketchizi-repository-picker-hint">Choose a GitHub repository to continue.</p><label class="sketchizi-repository-picker-search"><span class="sketchizi-repository-picker-search-icon" aria-hidden="true">⌕</span><input type="search" data-repository-picker-search aria-label="Search repositories" placeholder="Search repositories by name…" autocomplete="off" spellcheck="false" /></label><div class="sketchizi-repository-picker-list" data-repository-picker-list role="list" aria-busy="true"><span>Loading repositories…</span></div><p class="sketchizi-repository-picker-message" data-repository-picker-message role="status" aria-live="polite" aria-atomic="true"></p></section>`;
+        const opener = document.activeElement;
         document.body.append(overlay);
-        const close = () => overlay.remove();
-        overlay.addEventListener("click", (event) => { if (event.target === overlay || event.target.closest("[data-repository-picker-close]")) close(); });
+        let closed = false;
+        const close = () => {
+          if (closed) return;
+          closed = true;
+          overlay.remove();
+          // Return keyboard users to the control that opened the dialog. The
+          // menu may have been rebuilt while the dialog was open, so restore
+          // focus only when the original control is still available.
+          if (opener instanceof HTMLElement && opener.isConnected && !opener.disabled) opener.focus();
+        };
+        overlay.addEventListener("click", (event) => {
+          if (event.target === overlay || event.target.closest("[data-repository-picker-close]")) close();
+        });
+        overlay.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            close();
+            return;
+          }
+          if (event.key !== "Tab") return;
+          const focusable = [...overlay.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')]
+            .filter((node) => !node.hidden && node.getAttribute("aria-hidden") !== "true");
+          if (!focusable.length) {
+            event.preventDefault();
+            return;
+          }
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && (document.activeElement === first || !overlay.contains(document.activeElement))) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && (document.activeElement === last || !overlay.contains(document.activeElement))) {
+            event.preventDefault();
+            first.focus();
+          }
+        });
         const list = overlay.querySelector("[data-repository-picker-list]");
         const message = overlay.querySelector("[data-repository-picker-message]");
         const search = overlay.querySelector("[data-repository-picker-search]");
+        search?.focus();
         try {
           const response = await fetch("/api/github/repositories", { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
           const payload = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(payload.error || "Could not load repositories.");
           const repositories = Array.isArray(payload.repositories) ? payload.repositories : [];
+          list.setAttribute("aria-busy", "false");
           if (!repositories.length) { list.textContent = "No repositories found for this GitHub account."; search.disabled = true; return; }
           const repositoryItems = repositories.map((repo) => {
             const button = document.createElement("button");
@@ -533,6 +571,7 @@ export function useNativeSketchiziMenu({
           search.addEventListener("input", renderFilteredRepositories);
           renderFilteredRepositories();
         } catch (error) {
+          list.setAttribute("aria-busy", "false");
           list.textContent = error.message || "Could not load GitHub repositories.";
           search.disabled = true;
         }
