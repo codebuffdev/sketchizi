@@ -1,1 +1,0 @@
-Next milestone after 1.25: add source traceability to generated artifacts so OpenAPI operations and SQL tables can identify the source endpoint/table/entity IDs and model revision. Keep previews non-deploying, preserve whole-model generation as the default, and never infer ownership for unassigned elements.
