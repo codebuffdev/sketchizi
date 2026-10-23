@@ -14,7 +14,6 @@ export default function SketchiziCanvas({
 }) {
   const canvasRootRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
-  const [discoveryHintDismissed, setDiscoveryHintDismissed] = useState(false);
   const handleSceneChange = useCallback((elements, appState, files) => {
     setCanvasRevision((revision) => revision + 1);
     handleChange?.(elements, appState, files);
@@ -249,16 +248,6 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {!viewModeEnabled && isCanvasEmpty && !discoveryHintDismissed && (
-        <aside className="sketchizi-discovery-hint" aria-label="Getting started">
-          <div className="sketchizi-discovery-hint-icon" aria-hidden="true">✦</div>
-          <div className="sketchizi-discovery-hint-copy">
-            <strong>Start with an idea</strong>
-            <span>Choose a tool from the dock to draw. Press <kbd>?</kbd> for keyboard shortcuts.</span>
-          </div>
-          <button type="button" onClick={() => setDiscoveryHintDismissed(true)} aria-label="Dismiss getting started hint" title="Dismiss hint">×</button>
-        </aside>
-      )}
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />

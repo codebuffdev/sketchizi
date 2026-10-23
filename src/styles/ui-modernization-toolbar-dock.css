@@ -435,3 +435,60 @@
   opacity: 1 !important;
   flex-shrink: 0 !important;
 }
+
+
+/* UI Modernization 16 — vertical edge dock: reflow Excalidraw's internal tool groups,
+   not just the outer Island. Some Excalidraw versions wrap buttons in horizontal rows. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"]) {
+  position: fixed !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 78px !important;
+  min-width: 78px !important;
+  max-width: 78px !important;
+  height: auto !important;
+  max-height: calc(100dvh - 16px) !important;
+  overflow: visible !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  width: 62px !important;
+  min-width: 62px !important;
+  max-width: 62px !important;
+  height: auto !important;
+  max-height: calc(100dvh - 16px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  flex-wrap: nowrap !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > div:not(.sketchizi-dock-grip),
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > fieldset,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > ul {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon__icon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] button:not(.sketchizi-dock-grip) {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+}
