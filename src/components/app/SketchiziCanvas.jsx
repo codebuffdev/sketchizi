@@ -308,15 +308,12 @@ export default function SketchiziCanvas({
             if (item && !item.disabled) item.click();
           }, 0);
         });
-        // Keep quick-access controls inside the visible dock area. The native
-        // toolbar can end with a separator, and appending after it can push the
-        // second custom tool outside the clipped toolbar viewport.
-        const trailingSeparator = [...toolbar.children].reverse().find((child) => child.classList.contains("sketchizi-dock-separator"));
-        if (trailingSeparator) {
-          toolbar.insertBefore(button, trailingSeparator);
-        } else {
-          toolbar.appendChild(button);
-        }
+        // Place both quick tools in the dock's trailing quick-access area.
+        // Keep them after the final native separator so the second tool cannot
+        // be hidden inside the native toolbar's clipped tool-group region.
+        button.style.flex = "0 0 42px";
+        button.style.position = "relative";
+        toolbar.appendChild(button);
       });
     };
     const schedule = () => {
