@@ -560,3 +560,4 @@
     min-height: max(40px, var(--touch-target-min, 40px));
   }
 }
+@import "./styles/ui-modernization-toolbar-dock.css";

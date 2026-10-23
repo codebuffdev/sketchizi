@@ -1,0 +1,137 @@
+/* UI Modernization 12 — intentional canvas toolbar dock.
+   Presentation only: all native Excalidraw buttons, shortcuts and handlers remain untouched. */
+.app .desktop-canvas-region .excalidraw .App-toolbar-container,
+.app .excalidraw .App-toolbar-container {
+  padding: 0 !important;
+}
+
+.app .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app .excalidraw .Island.App-toolbar {
+  --sk-toolbar-ink: #e7e9f2;
+  --sk-toolbar-muted: #a8adbd;
+  --sk-toolbar-surface: #1b1e27;
+  --sk-toolbar-border: #353a49;
+  --sk-toolbar-hover: #2a2e3b;
+  --sk-toolbar-active: #6558d3;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 62px;
+  padding: 8px 12px !important;
+  border: 1px solid var(--sk-toolbar-border) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, #232631 0%, var(--sk-toolbar-surface) 100%) !important;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 28%), 0 2px 6px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 5%) !important;
+  color: var(--sk-toolbar-ink);
+  backdrop-filter: blur(22px) saturate(135%);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon,
+.app .excalidraw .App-toolbar .ToolIcon {
+  margin: 0 !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button,
+.app .excalidraw .App-toolbar .ToolIcon__icon,
+.app .excalidraw .App-toolbar .dropdown-menu-button {
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover,
+.app .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .excalidraw .App-toolbar .dropdown-menu-button:hover {
+  border-color: #454b60 !important;
+  background: var(--sk-toolbar-hover, #2a2e3b) !important;
+  color: #fff !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #8075ec !important;
+  background: linear-gradient(145deg, #7669e8, #5b50bc) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgb(101 88 211 / 34%), inset 0 1px 0 rgb(255 255 255 / 18%) !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:focus-visible,
+.app .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .excalidraw .App-toolbar .dropdown-menu-button:focus-visible {
+  outline: 2px solid #b9b2ff !important;
+  outline-offset: 2px !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__keybinding,
+.app .excalidraw .App-toolbar .ToolIcon__keybinding {
+  color: #858b9e;
+  opacity: .9;
+}
+
+.app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app.theme-dark .excalidraw .Island.App-toolbar {
+  border-color: #353a49 !important;
+  background: linear-gradient(180deg, #232631 0%, #191c24 100%) !important;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app.theme-light .excalidraw .Island.App-toolbar {
+  --sk-toolbar-ink: #222638;
+  --sk-toolbar-muted: #626b7d;
+  --sk-toolbar-surface: #fff;
+  --sk-toolbar-border: #dce1eb;
+  --sk-toolbar-hover: #f0efff;
+  border-color: #dce1eb !important;
+  background: linear-gradient(180deg, #fff 0%, #f8f9fc 100%) !important;
+  box-shadow: 0 16px 38px rgb(24 32 56 / 13%), 0 2px 6px rgb(24 32 56 / 7%), inset 0 1px 0 #fff !important;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  color: #fff !important;
+}
+
+@media (max-width: 700px) {
+  .app .desktop-canvas-region .excalidraw .Island.App-toolbar,
+  .app .excalidraw .Island.App-toolbar {
+    min-height: 54px;
+    gap: 3px;
+    padding: 6px 8px !important;
+    border-radius: 15px !important;
+  }
+
+  .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button,
+  .app .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .excalidraw .App-toolbar .dropdown-menu-button {
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .excalidraw .App-toolbar .dropdown-menu-button {
+    transition: none !important;
+  }
+}

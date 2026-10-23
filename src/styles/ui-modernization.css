@@ -708,3 +708,134 @@
     transition: none !important;
   }
 }
+
+/* UI Modernization 11 — visible dark-workspace refinement.
+ * The previous pass concentrated on light-theme selectors; these rules give
+ * the dark theme the same intentional hierarchy without changing behavior. */
+.app.theme-dark {
+  --sk-ui-page: #0b0f14;
+  --sk-ui-panel: #111720;
+  --sk-ui-panel-soft: #171f2b;
+  --sk-ui-line: #263244;
+  --sk-ui-line-strong: #344258;
+  --sk-ui-ink: #edf2fb;
+  --sk-ui-muted: #9aa9bd;
+  --sk-ui-accent: #a99cff;
+  --sk-ui-accent-soft: rgb(137 117 255 / 17%);
+  --ui-bg: #0b0f14;
+  --ui-surface: #111720;
+  --ui-surface-solid: #111720;
+  --ui-surface-soft: #171f2b;
+  --ui-border: #263244;
+  --ui-border-soft: #202b3b;
+  --ui-text: #cbd5e3;
+  --ui-text-strong: #f2f5fb;
+  --ui-text-muted: #9aa9bd;
+  --ui-text-faint: #7d8ca2;
+  --ui-hover: #1b2635;
+}
+
+.app.theme-dark .desktop-app-header {
+  min-height: 58px;
+  padding-inline: 18px;
+  border-bottom: 1px solid #293548;
+  background: #10151d;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 2%), 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.app.theme-dark .desktop-app-header button,
+.app.theme-dark .desktop-app-header [role="button"] {
+  border-radius: 10px;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.app.theme-dark .desktop-app-header button:hover,
+.app.theme-dark .desktop-app-header [role="button"]:hover {
+  border-color: #46536b;
+  background-color: #202a39;
+}
+
+.app.theme-dark .desktop-workspace {
+  background: #0b0f14;
+}
+
+.app.theme-dark .desktop-resources-region,
+.app.theme-dark .desktop-context-region {
+  border-color: #263244;
+  background: #111720;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
+}
+
+.app.theme-dark .desktop-resources-region > .library-panel,
+.app.theme-dark .desktop-context-region > .desktop-properties-host > .properties-panel,
+.app.theme-dark .desktop-context-region > .desktop-validation-host > .architecture-validation-panel {
+  background: #111720;
+  color: #e8edf6;
+}
+
+.app.theme-dark .desktop-resources-region .search,
+.app.theme-dark .desktop-context-region input,
+.app.theme-dark .desktop-context-region select,
+.app.theme-dark .desktop-context-region textarea {
+  min-height: 40px;
+  border: 1px solid #344258;
+  border-radius: 10px;
+  background: #171f2b;
+  color: #edf2fb;
+}
+
+.app.theme-dark .desktop-resources-region .search:focus,
+.app.theme-dark .desktop-context-region input:focus,
+.app.theme-dark .desktop-context-region select:focus,
+.app.theme-dark .desktop-context-region textarea:focus {
+  border-color: #a99cff;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgb(169 156 255 / 18%);
+}
+
+.app.theme-dark .desktop-resources-region .icon-card,
+.app.theme-dark .desktop-resources-region .category,
+.app.theme-dark .desktop-resources-region .quick-category {
+  border-color: #293548;
+  border-radius: 11px;
+  background: #151d28;
+}
+
+.app.theme-dark .desktop-resources-region .icon-card:hover,
+.app.theme-dark .desktop-resources-region .category:hover,
+.app.theme-dark .desktop-resources-region .quick-category:hover {
+  border-color: #6558a8;
+  background: #1d2636;
+}
+
+.app.theme-dark .desktop-resources-region .category.active,
+.app.theme-dark .desktop-resources-region .quick-category.active {
+  border-color: #8273df;
+  background: rgb(137 117 255 / 17%);
+  color: #c4baff;
+}
+
+.app.theme-dark .desktop-canvas-region {
+  background-color: #0b0f14;
+  background-image: radial-gradient(circle at 1px 1px, rgb(142 157 183 / 9%) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.app.theme-dark .desktop-canvas-region .excalidraw {
+  --color-surface-low: #0b0f14;
+}
+
+.app.theme-dark :is(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid #b7aaff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1024px) {
+  .app.theme-dark .desktop-app-header { min-height: 54px; padding-inline: 10px; }
+  .app.theme-dark .desktop-canvas-region { background-size: 20px 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app.theme-dark .desktop-app-header button,
+  .app.theme-dark .desktop-app-header [role="button"] { transition: none; }
+}
