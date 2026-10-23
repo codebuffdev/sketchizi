@@ -193,12 +193,16 @@ export function analyzeArchitectureGraph(elements = []) {
       }
 
       if (!RESOURCE_METADATA[provider].relationshipTypes.includes(relationship.relationshipType)) {
-        diagnostics.push(diagnostic(
-          DIAGNOSTIC_CODES.INVALID_RELATIONSHIP_TYPE,
-          "Relationship type is not supported.",
-          { relationshipId: relationship.relationshipId, relationshipType: relationship.relationshipType },
-        ));
-        continue;
+        if (provider !== PROVIDERS.KUBERNETES) {
+          diagnostics.push(diagnostic(
+            DIAGNOSTIC_CODES.INVALID_RELATIONSHIP_TYPE,
+            "Relationship type is not supported.",
+            { relationshipId: relationship.relationshipId, relationshipType: relationship.relationshipType },
+          ));
+          continue;
+        }
+        // Preserve unsupported Kubernetes relationship types in the derived graph
+        // so provider-specific rules can offer endpoint-aware correction guidance.
       }
 
       const graphRelationship = relationshipForGraph(relationship, provider);

@@ -57,6 +57,23 @@ function makeNode({ role, label, type = "rectangle", x, y, width = 180, height =
   return { shape, text };
 }
 
+function makeBoundary({ role, label, x, y, width, height }) {
+  const node = makeNode({ role, label, x, y, width, height });
+  node.shape.strokeColor = "#6b8fb5";
+  node.shape.strokeStyle = "dashed";
+  node.shape.strokeWidth = 1;
+  node.shape.backgroundColor = "transparent";
+  node.text.x = x + 12;
+  node.text.y = y + 8;
+  node.text.width = width - 24;
+  node.text.height = 24;
+  node.text.fontSize = 18;
+  node.text.textAlign = "left";
+  node.text.verticalAlign = "top";
+  node.text.baseline = 18;
+  return node;
+}
+
 function makeArrow(source, target, sourceRole, targetRole) {
   const arrowId = id("connector");
   const startX = source.x + source.width;
@@ -80,13 +97,52 @@ function makeArrow(source, target, sourceRole, targetRole) {
   return arrow;
 }
 
-export function createStarterElements(kind) {
+export function createStarterElements(kind, options = {}) {
   let nodes;
-  if (kind === "system-architecture") {
+  let backgroundNodes = [];
+  let connectionNodes = null;
+  if (kind === "aws-three-tier-webapp") {
+    nodes = [
+      makeNode({ role: "client", label: "Web / Mobile Clients", type: "rectangle", x: 90, y: 270, width: 190, height: 92 }),
+      makeNode({ role: "load-balancer", label: "Application Load Balancer", type: "rectangle", x: 370, y: 270, width: 220, height: 92 }),
+      makeNode({ role: "compute", label: "EC2 Auto Scaling Tier", type: "rectangle", x: 680, y: 270, width: 220, height: 92 }),
+      makeNode({ role: "database", label: "Amazon RDS", type: "rectangle", x: 990, y: 270, width: 190, height: 92 }),
+    ];
+  } else if (kind === "aws-serverless-api") {
+    nodes = [
+      makeNode({ role: "api-gateway", label: "Amazon API Gateway", type: "rectangle", x: 150, y: 270, width: 220, height: 92 }),
+      makeNode({ role: "lambda", label: "AWS Lambda", type: "rectangle", x: 500, y: 270, width: 210, height: 92 }),
+      makeNode({ role: "dynamodb", label: "Amazon DynamoDB", type: "rectangle", x: 850, y: 270, width: 220, height: 92 }),
+    ];
+  } else if (kind === "aws-event-driven-processing") {
+    nodes = [
+      makeNode({ role: "eventbridge", label: "Amazon EventBridge", type: "rectangle", x: 70, y: 270, width: 210, height: 92 }),
+      makeNode({ role: "sqs", label: "Amazon SQS Queue", type: "rectangle", x: 365, y: 270, width: 210, height: 92 }),
+      makeNode({ role: "lambda", label: "AWS Lambda Worker", type: "rectangle", x: 660, y: 270, width: 210, height: 92 }),
+      makeNode({ role: "dynamodb", label: "Amazon DynamoDB", type: "rectangle", x: 955, y: 270, width: 210, height: 92 }),
+    ];
+  } else if (kind === "aws-vpc-networking") {
+    // Boundary shapes are deliberately not part of the connector chain. They
+    // communicate network scope while the arrows represent the traffic path.
+    backgroundNodes = [
+      makeBoundary({ role: "vpc-boundary", label: "Amazon VPC", x: 230, y: 125, width: 1030, height: 365 }),
+      makeBoundary({ role: "public-subnet", label: "Public Subnet", x: 430, y: 180, width: 300, height: 270 }),
+      makeBoundary({ role: "private-subnet", label: "Private Subnet", x: 750, y: 180, width: 480, height: 270 }),
+    ];
+    nodes = [
+      makeNode({ role: "client", label: "Internet Clients", x: 20, y: 275, width: 175, height: 86 }),
+      makeNode({ role: "internet-gateway", label: "Internet Gateway", x: 245, y: 275, width: 175, height: 86 }),
+      makeNode({ role: "load-balancer", label: "Application Load Balancer", x: 475, y: 275, width: 205, height: 86 }),
+      makeNode({ role: "compute", label: "EC2 Instances", x: 790, y: 275, width: 175, height: 86 }),
+      makeNode({ role: "database", label: "Amazon RDS", x: 1020, y: 365, width: 175, height: 86 }),
+    ];
+    connectionNodes = nodes;
+  } else if (kind === "system-architecture") {
     nodes = [
       makeNode({ role: "client", label: "Client", type: "rectangle", x: 120, y: 260 }),
-      makeNode({ role: "service", label: "API Service", type: "rectangle", x: 470, y: 260 }),
-      makeNode({ role: "database", label: "Database", type: "rectangle", x: 820, y: 260 }),
+      makeNode({ role: "service", label: "API Service", type: "rectangle", x: options.includeCache ? 390 : 470, y: 260 }),
+      ...(options.includeCache ? [makeNode({ role: "cache", label: "Cache", type: "rectangle", x: 660, y: 260 })] : []),
+      makeNode({ role: "database", label: "Database", type: "rectangle", x: options.includeCache ? 930 : 820, y: 260 }),
     ];
   } else if (kind === "process-flow") {
     nodes = [
@@ -114,11 +170,13 @@ export function createStarterElements(kind) {
     ];
   } else return [];
 
-  const shapes = nodes.map((node) => node.shape);
-  const texts = nodes.map((node) => node.text);
+  const allNodes = [...backgroundNodes, ...nodes];
+  const shapes = allNodes.map((node) => node.shape);
+  const texts = allNodes.map((node) => node.text);
+  const arrowNodes = connectionNodes || nodes;
   const arrows = [];
-  for (let index = 0; index < nodes.length - 1; index += 1) {
-    arrows.push(makeArrow(nodes[index].shape, nodes[index + 1].shape, nodes[index].shape.customData.design.role, nodes[index + 1].shape.customData.design.role));
+  for (let index = 0; index < arrowNodes.length - 1; index += 1) {
+    arrows.push(makeArrow(arrowNodes[index].shape, arrowNodes[index + 1].shape, arrowNodes[index].shape.customData.design.role, arrowNodes[index + 1].shape.customData.design.role));
   }
   return [...shapes, ...arrows, ...texts];
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createDesignProfile, readDesignProfile, withDesignProfile } from "../src/features/design/model/designDocument.js";
-import { getDesignTemplate, listDesignTemplates, createTemplateElements } from "../src/features/design/templates/templateRegistry.js";
+import { getDesignTemplate, listDesignTemplates, createProfileForTemplate, createTemplateElements } from "../src/features/design/templates/templateRegistry.js";
 import { validateDesignTemplate } from "../src/features/design/validation/templateValidator.js";
 import { parseDrawing, serializeDrawing } from "../src/fileSystem.js";
 
@@ -21,6 +21,44 @@ test("built-in templates have unique IDs and expose template metadata", () => {
   assert.equal(new Set(templates.map((template) => template.id)).size, templates.length);
   assert.equal(getDesignTemplate("system-design.general").domain, "software-architecture");
   assert.equal(getDesignTemplate("flow.process-basic").requiredRoles.includes("start"), true);
+});
+
+test("AWS three-tier starter includes ordered roles and bound connectors", () => {
+  const template = getDesignTemplate("aws.webapp.three-tier");
+  assert.equal(template.domain, "cloud-infrastructure");
+  assert.equal(template.version, 1);
+  const elements = createTemplateElements(template.id);
+  const roles = elements
+    .filter((element) => element.type !== "text" && element.type !== "arrow")
+    .map((element) => element.customData?.design?.role);
+  assert.deepEqual(roles, ["client", "load-balancer", "compute", "database"]);
+  const arrows = elements.filter((element) => element.type === "arrow");
+  assert.equal(arrows.length, 3);
+  assert.ok(arrows.every((arrow) => arrow.startBinding?.elementId && arrow.endBinding?.elementId));
+  const profile = createProfileForTemplate(template.id, { name: "Production Web App", ruleMode: "guided" });
+  assert.equal(profile.templateId, template.id);
+  assert.equal(profile.domain, "cloud-infrastructure");
+  assert.deepEqual(validateDesignTemplate(elements, profile), []);
+});
+
+test("AWS event-driven processing starter has the expected services and bound event path", () => {
+  const template = getDesignTemplate("aws.event-driven.processing");
+  assert.ok(template);
+  assert.equal(template.domain, "cloud-infrastructure");
+  assert.equal(template.version, 1);
+  const elements = createTemplateElements(template.id);
+  const nodes = elements.filter((element) => element.type !== "text" && element.type !== "arrow");
+  assert.deepEqual(nodes.map((element) => element.customData?.design?.role), ["eventbridge", "sqs", "lambda", "dynamodb"]);
+  const arrows = elements.filter((element) => element.type === "arrow");
+  assert.equal(arrows.length, 3);
+  const idToRole = new Map(nodes.map((element) => [element.id, element.customData.design.role]));
+  assert.deepEqual(arrows.map((arrow) => [idToRole.get(arrow.startBinding?.elementId), idToRole.get(arrow.endBinding?.elementId)]), [
+    ["eventbridge", "sqs"], ["sqs", "lambda"], ["lambda", "dynamodb"],
+  ]);
+  assert.ok(arrows.every((arrow) => arrow.startBinding?.elementId && arrow.endBinding?.elementId));
+  const profile = createProfileForTemplate(template.id, { name: "Order Event Pipeline", ruleMode: "guided" });
+  assert.deepEqual(validateDesignTemplate(elements, profile), []);
+  assert.equal(profile.templateId, template.id);
 });
 
 test("system architecture starter scene includes client, service, database, and bound connectors", () => {
@@ -457,4 +495,69 @@ test("strict enforcement helper remains conservative about existing connectors",
   const diagnostics = validateDesignTemplate(existing, profile);
   assert.ok(Array.isArray(diagnostics));
   assert.ok(!diagnostics.some((item) => item.code === "existing-connector-rejected"));
+});
+
+test("system architecture optional cache configuration creates a bound cache layer and persists its profile option", async () => {
+  const { createProfileForTemplate, getTemplateRulesForProfile } = await import("../src/features/design/templates/templateRegistry.js");
+  const profile = createProfileForTemplate("system-design.general", { name: "Cached API", ruleMode: "strict", templateOptions: { includeCache: true } });
+  const elements = createTemplateElements("system-design.general", { includeCache: true });
+  const roles = elements.filter((element) => ["rectangle", "ellipse", "diamond"].includes(element.type)).map((element) => element.customData?.design?.role).filter(Boolean);
+  assert.deepEqual(roles, ["client", "service", "cache", "database"]);
+  const rules = getTemplateRulesForProfile(getDesignTemplate("system-design.general"), profile);
+  assert.deepEqual(rules.requiredRoles, ["client", "service", "database", "cache"]);
+  assert.deepEqual(rules.allowedRelationships, [["client", "service"], ["service", "cache"], ["cache", "database"]]);
+  assert.deepEqual(validateDesignTemplate(elements, profile), []);
+  const extensions = withDesignProfile({}, profile);
+  const serialized = serializeDrawing({ format: "sketchizi", elements, appState: {}, files: {}, extensions });
+  const parsed = parseDrawing(serialized);
+  assert.equal(readDesignProfile(parsed.extensions).templateOptions.includeCache, true);
+});
+
+test("system architecture without optional cache retains the default three-tier starter", () => {
+  const profile = createDesignProfile({ domain: "software-architecture", creationMode: "template", templateId: "system-design.general" });
+  const elements = createTemplateElements("system-design.general");
+  const roles = elements.filter((element) => ["rectangle", "ellipse", "diamond"].includes(element.type)).map((element) => element.customData?.design?.role).filter(Boolean);
+  assert.deepEqual(roles, ["client", "service", "database"]);
+  assert.deepEqual(validateDesignTemplate(elements, profile), []);
+});
+
+
+test("AWS serverless API starter contains API Gateway, Lambda, DynamoDB and bound connectors", () => {
+  const template = getDesignTemplate("aws.serverless.api");
+  assert.ok(template);
+  assert.equal(template.domain, "cloud-infrastructure");
+  assert.equal(template.version, 1);
+  const elements = createTemplateElements(template.id);
+  const roles = elements.filter((element) => element.type !== "text" && element.type !== "arrow").map((element) => element.customData?.design?.role);
+  assert.deepEqual(roles, ["api-gateway", "lambda", "dynamodb"]);
+  const arrows = elements.filter((element) => element.type === "arrow");
+  assert.equal(arrows.length, 2);
+  assert.ok(arrows.every((arrow) => arrow.startBinding?.elementId && arrow.endBinding?.elementId));
+  const profile = createProfileForTemplate(template.id, { name: "Orders API", ruleMode: "guided" });
+  assert.equal(profile.templateId, template.id);
+  assert.deepEqual(validateDesignTemplate(elements, profile), []);
+});
+
+
+test("AWS VPC networking starter includes network boundaries and a bound traffic path", () => {
+  const template = getDesignTemplate("aws.vpc.networking");
+  assert.ok(template);
+  assert.equal(template.domain, "cloud-infrastructure");
+  assert.equal(template.version, 1);
+  const elements = createTemplateElements(template.id);
+  const shapes = elements.filter((element) => ["rectangle", "ellipse", "diamond", "polygon", "frame"].includes(element.type));
+  const roles = shapes.map((element) => element.customData?.design?.role);
+  for (const role of ["vpc-boundary", "public-subnet", "private-subnet", "client", "internet-gateway", "load-balancer", "compute", "database"]) {
+    assert.ok(roles.includes(role), `missing role ${role}`);
+  }
+  const trafficNodes = shapes.filter((element) => ["client", "internet-gateway", "load-balancer", "compute", "database"].includes(element.customData?.design?.role));
+  const arrows = elements.filter((element) => element.type === "arrow");
+  assert.equal(arrows.length, 4);
+  const idToRole = new Map(trafficNodes.map((element) => [element.id, element.customData.design.role]));
+  assert.deepEqual(arrows.map((arrow) => [idToRole.get(arrow.startBinding?.elementId), idToRole.get(arrow.endBinding?.elementId)]), [
+    ["client", "internet-gateway"], ["internet-gateway", "load-balancer"], ["load-balancer", "compute"], ["compute", "database"],
+  ]);
+  assert.ok(arrows.every((arrow) => arrow.startBinding?.elementId && arrow.endBinding?.elementId));
+  const profile = createProfileForTemplate(template.id, { name: "VPC Network", ruleMode: "guided" });
+  assert.deepEqual(validateDesignTemplate(elements, profile), []);
 });

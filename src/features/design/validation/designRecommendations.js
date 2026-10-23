@@ -1,4 +1,4 @@
-import { getDesignTemplate } from "../templates/templateRegistry.js";
+import { getDesignTemplate, getTemplateRulesForProfile } from "../templates/templateRegistry.js";
 import { inferDesignRole } from "./templateValidator.js";
 
 function resolveBoundShape(elementId, elements) {
@@ -13,6 +13,7 @@ export function recommendDesignNextSteps(elements = [], profile = null, diagnost
   const template = getDesignTemplate(profile.templateId);
   if (!template) return [];
 
+  const templateRules = getTemplateRulesForProfile(template, profile);
   const liveElements = elements.filter((element) => element && !element.isDeleted);
   const shapes = liveElements.filter((element) =>
     ["rectangle", "ellipse", "diamond", "polygon", "image", "frame"].includes(element.type)
@@ -30,7 +31,7 @@ export function recommendDesignNextSteps(elements = [], profile = null, diagnost
   const recommendations = [];
   const missingDiagnostics = diagnostics.filter((item) => item.code === "template.required-role");
   const remainingMissing = new Map();
-  for (const role of template.requiredRoles || []) {
+  for (const role of templateRules.requiredRoles) {
     const count = remainingMissing.has(role) ? remainingMissing.get(role) + 1 : 1;
     remainingMissing.set(role, count);
   }
@@ -61,7 +62,7 @@ export function recommendDesignNextSteps(elements = [], profile = null, diagnost
     }
   }
 
-  for (const [from, to] of template.allowedRelationships || []) {
+  for (const [from, to] of templateRules.allowedRelationships) {
     if (!(roleElements.get(from)?.length) || !(roleElements.get(to)?.length)) continue;
     const sourceElementIds = (roleElements.get(from) || []).map((element) => element.id);
     const targetElementIds = (roleElements.get(to) || []).map((element) => element.id);

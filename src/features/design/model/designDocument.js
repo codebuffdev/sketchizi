@@ -19,6 +19,7 @@ export function createDesignProfile({
   templateId = null,
   templateVersion = null,
   ruleMode = "guided",
+  templateOptions = {},
 } = {}) {
   return {
     schemaVersion: DESIGN_SCHEMA_VERSION,
@@ -28,6 +29,7 @@ export function createDesignProfile({
     templateId: typeof templateId === "string" && templateId ? templateId : null,
     templateVersion: Number.isInteger(templateVersion) ? templateVersion : null,
     ruleMode: ruleMode === "strict" ? "strict" : "guided",
+    templateOptions: { includeCache: templateOptions?.includeCache === true },
   };
 }
 

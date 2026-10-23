@@ -1,3 +1,8 @@
+import {
+  getCompatibleKubernetesRelationshipTypes,
+  isKubernetesRelationshipTypeCompatible,
+} from "./kubernetesRelationshipSemantics.js";
+
 export const KUBERNETES_RELATIONSHIP_TYPES = [
   "connects-to",
   "contains",
@@ -144,4 +149,43 @@ export function updateKubernetesRelationshipMetadata(elements, relationshipId, p
   });
 
   return { elements: nextElements, changed };
+}
+
+
+/**
+ * Explain whether a connector's selected Kubernetes relationship type is
+ * compatible with the live resource types at its bound endpoints.
+ *
+ * If either endpoint is missing or is not an intelligent Kubernetes resource,
+ * return a safe indeterminate result instead of guessing from stale metadata.
+ */
+export function getKubernetesRelationshipGuidance(connector, elements) {
+  const scene = Array.isArray(elements) ? elements : [];
+  const elementsById = new Map(scene.map((element) => [element.id, element]));
+  const sourceElementId = connector?.startBinding?.elementId;
+  const targetElementId = connector?.endBinding?.elementId;
+  const sourceElement = sourceElementId ? elementsById.get(sourceElementId) : null;
+  const targetElement = targetElementId ? elementsById.get(targetElementId) : null;
+  const sourceResource = !sourceElement?.isDeleted ? sourceElement?.customData?.kubernetesResource : null;
+  const targetResource = !targetElement?.isDeleted ? targetElement?.customData?.kubernetesResource : null;
+  const sourceResourceType = typeof sourceResource?.resourceType === "string" ? sourceResource.resourceType : null;
+  const targetResourceType = typeof targetResource?.resourceType === "string" ? targetResource.resourceType : null;
+
+  if (!sourceResourceType || !targetResourceType) {
+    return {
+      sourceResourceType,
+      targetResourceType,
+      compatibleRelationshipTypes: [],
+      isCompatible: null,
+    };
+  }
+
+  const compatibleRelationshipTypes = getCompatibleKubernetesRelationshipTypes(sourceResourceType, targetResourceType);
+  const relationshipType = connector?.customData?.kubernetesRelationship?.relationshipType;
+  return {
+    sourceResourceType,
+    targetResourceType,
+    compatibleRelationshipTypes,
+    isCompatible: isKubernetesRelationshipTypeCompatible(relationshipType, sourceResourceType, targetResourceType),
+  };
 }

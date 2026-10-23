@@ -1,4 +1,4 @@
-import { getDesignTemplate } from "../templates/templateRegistry.js";
+import { getDesignTemplate, getTemplateRulesForProfile } from "../templates/templateRegistry.js";
 
 function getElementLabel(element, elements) {
   if (typeof element?.text === "string" && element.text.trim()) return element.text.trim();
@@ -63,7 +63,8 @@ export function validateDesignTemplate(elements = [], profile = null) {
   const diagnostics = [];
   const severity = profile.ruleMode === "strict" ? "error" : "warning";
 
-  const required = [...(template.requiredRoles || [])];
+  const templateRules = getTemplateRulesForProfile(template, profile);
+  const required = [...templateRules.requiredRoles];
   const available = roles.map((item) => item.role);
   for (const role of required) {
     const index = available.indexOf(role);
@@ -79,13 +80,13 @@ export function validateDesignTemplate(elements = [], profile = null) {
     }
     const sourceRole = inferDesignRole(source, liveElements);
     const targetRole = inferDesignRole(target, liveElements);
-    if (sourceRole && targetRole && template.allowedRelationships?.length) {
-      const allowed = template.allowedRelationships.some(([from, to]) => from === sourceRole && to === targetRole);
+    if (sourceRole && targetRole && templateRules.allowedRelationships?.length) {
+      const allowed = templateRules.allowedRelationships.some(([from, to]) => from === sourceRole && to === targetRole);
       if (!allowed) {
-        const allowedTargets = [...new Set((template.allowedRelationships || [])
+        const allowedTargets = [...new Set((templateRules.allowedRelationships || [])
           .filter(([from]) => from === sourceRole)
           .map(([, to]) => to))];
-        const allowedSources = [...new Set((template.allowedRelationships || [])
+        const allowedSources = [...new Set((templateRules.allowedRelationships || [])
           .filter(([, to]) => to === targetRole)
           .map(([from]) => from))];
         const suggestions = [];
@@ -98,7 +99,7 @@ export function validateDesignTemplate(elements = [], profile = null) {
           elementId: connector.id,
           sourceRole,
           targetRole,
-          allowedRelationships: (template.allowedRelationships || []).map(([from, to]) => ({ from, to })),
+          allowedRelationships: (templateRules.allowedRelationships || []).map(([from, to]) => ({ from, to })),
           suggestions,
           message: `The connection from '${sourceRole}' to '${targetRole}' is not listed in the ${template.name} template rules.`,
         });

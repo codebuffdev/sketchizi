@@ -1,0 +1,51 @@
+name: Sketchizi Production Verification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sketchizi-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Tests and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify package-lock consistency
+        run: npm run check:package-lock-consistency
+
+      - name: Verify build prerequisites
+        run: npm run check:build-prerequisites
+
+      - name: Run automated regression suite
+        run: npm run test:all
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Upload production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sketchizi-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

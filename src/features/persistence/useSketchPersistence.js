@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   clearEmergencyBackup,
   loadEmergencyBackup,
@@ -53,7 +53,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     };
   }, []);
 
-  const persistSketchNow = (payload) => {
+  const persistSketchNow = useCallback((payload) => {
     if (!payload) return Promise.resolve(false);
     const durablePayload = withDocumentMetadata(payload, documentMetadataRef?.current || {});
     saveRequestRef.current = saveRequestRef.current
@@ -76,9 +76,9 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
         return false;
       });
     return saveRequestRef.current;
-  };
+  }, [documentMetadataRef]);
 
-  const queueSketchSave = (elements, appState) => {
+  const queueSketchSave = useCallback((elements, appState) => {
     if (!sketchReady || !apiRef.current) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
@@ -90,9 +90,9 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
         format: documentMetadataRef?.current?.format || "excalidraw",
       });
     }, 350);
-  };
+  }, [apiRef, persistSketchNow, sketchReady]);
 
-  const retryLocalSave = () => {
+  const retryLocalSave = useCallback(() => {
     const api = apiRef.current;
     if (!api) return;
     persistSketchNow({
@@ -103,9 +103,9 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
       extensions: documentMetadataRef?.current?.extensions || {},
       format: documentMetadataRef?.current?.format || "excalidraw",
     });
-  };
+  }, [apiRef, documentMetadataRef, persistSketchNow]);
 
-  const downloadRecoveryBackup = () => {
+  const downloadRecoveryBackup = useCallback(() => {
     const api = apiRef.current;
     if (!api) return;
     const metadata = documentMetadataRef?.current || {};
@@ -128,7 +128,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-  };
+  }, [apiRef, documentMetadataRef]);
 
   return {
     savedSketch,

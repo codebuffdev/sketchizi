@@ -16,6 +16,54 @@ export const BUILT_IN_TEMPLATES = Object.freeze([
     initialElements: [],
   },
   {
+    id: "aws.webapp.three-tier",
+    version: 1,
+    name: "Three-Tier AWS Web Application",
+    domain: "cloud-infrastructure",
+    category: "AWS Architecture",
+    description: "A starter AWS web application with an entry layer, compute tier, and relational data tier. This is a design starter, not a deployable infrastructure definition.",
+    creationMode: "template",
+    requiredRoles: ["client", "load-balancer", "compute", "database"],
+    allowedRelationships: [["client", "load-balancer"], ["load-balancer", "compute"], ["compute", "database"]],
+    initialElements: "aws-three-tier-webapp",
+  },
+  {
+    id: "aws.serverless.api",
+    version: 1,
+    name: "Serverless API",
+    domain: "cloud-infrastructure",
+    category: "AWS Architecture",
+    description: "A serverless API starter using API Gateway, AWS Lambda, and DynamoDB. This is a design starter, not a deployable infrastructure definition.",
+    creationMode: "template",
+    requiredRoles: ["api-gateway", "lambda", "dynamodb"],
+    allowedRelationships: [["api-gateway", "lambda"], ["lambda", "dynamodb"]],
+    initialElements: "aws-serverless-api",
+  },
+  {
+    id: "aws.event-driven.processing",
+    version: 1,
+    name: "Event-Driven AWS Processing",
+    domain: "cloud-infrastructure",
+    category: "AWS Architecture",
+    description: "An event-driven processing starter using EventBridge, SQS, Lambda, and DynamoDB. This is a design starter, not a deployable infrastructure definition.",
+    creationMode: "template",
+    requiredRoles: ["eventbridge", "sqs", "lambda", "dynamodb"],
+    allowedRelationships: [["eventbridge", "sqs"], ["sqs", "lambda"], ["lambda", "dynamodb"]],
+    initialElements: "aws-event-driven-processing",
+  },
+  {
+    id: "aws.vpc.networking",
+    version: 1,
+    name: "AWS VPC and Networking",
+    domain: "cloud-infrastructure",
+    category: "AWS Architecture",
+    description: "A network-focused AWS starter showing a VPC, public and private subnet boundaries, an internet gateway, load balancer, compute tier, and private database tier. This is a design starter, not a deployable infrastructure definition.",
+    creationMode: "template",
+    requiredRoles: ["client", "internet-gateway", "load-balancer", "compute", "database"],
+    allowedRelationships: [["client", "internet-gateway"], ["internet-gateway", "load-balancer"], ["load-balancer", "compute"], ["compute", "database"]],
+    initialElements: "aws-vpc-networking",
+  },
+  {
     id: "system-design.general",
     version: 1,
     name: "System architecture",
@@ -88,7 +136,7 @@ export function getDesignTemplate(templateId) {
     || null;
 }
 
-export function createProfileForTemplate(templateId, { name, ruleMode = "guided" } = {}) {
+export function createProfileForTemplate(templateId, { name, ruleMode = "guided", templateOptions = {} } = {}) {
   const template = getDesignTemplate(templateId);
   if (!template) throw new Error(`Unknown design template: ${String(templateId)}`);
   return createDesignProfile({
@@ -98,13 +146,25 @@ export function createProfileForTemplate(templateId, { name, ruleMode = "guided"
     templateId: template.id,
     templateVersion: template.version,
     ruleMode,
+    templateOptions,
   });
 }
 
-export function createTemplateElements(templateId) {
+export function getTemplateRulesForProfile(template, profile = null) {
+  if (!template) return { requiredRoles: [], allowedRelationships: [] };
+  if (template.id === "system-design.general" && profile?.templateOptions?.includeCache === true) {
+    return {
+      requiredRoles: [...(template.requiredRoles || []), "cache"],
+      allowedRelationships: [["client", "service"], ["service", "cache"], ["cache", "database"]],
+    };
+  }
+  return { requiredRoles: [...(template.requiredRoles || [])], allowedRelationships: [...(template.allowedRelationships || [])] };
+}
+
+export function createTemplateElements(templateId, options = {}) {
   const personal = listPersonalTemplates().find((template) => template.id === templateId);
   if (personal) return cloneTemplateElements(personal);
   const template = getDesignTemplate(templateId);
   if (!template || !template.initialElements || Array.isArray(template.initialElements)) return [];
-  return createStarterElements(template.initialElements);
+  return createStarterElements(template.initialElements, options);
 }

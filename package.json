@@ -33,7 +33,19 @@
     "check:npm-registry": "node scripts/probe-npm-registry.mjs",
     "test:npm-registry-probe": "node --test tests/npm-registry-probe.test.mjs",
     "check:package-lock-consistency": "node scripts/check-package-lock-consistency.mjs",
-    "test:package-lock-consistency": "node --test tests/package-lock-consistency.test.mjs"
+    "test:package-lock-consistency": "node --test tests/package-lock-consistency.test.mjs",
+    "test:design-catalog": "node --test tests/design-framework.test.js tests/personal-template-store.test.js tests/template-catalog.test.js",
+    "test:all": "node --import ./tests/register-sync-test-loader.mjs --test tests/*.test.js",
+    "test:kubernetes-relationships": "node --import ./tests/register-sync-test-loader.mjs --test tests/kubernetes-relationships.test.js",
+    "test:kubernetes-corrections": "node --test tests/kubernetes-diagnostic-fixes.test.js tests/kubernetes-relationships.test.js tests/kubernetes-validation-guidance.test.js",
+    "test:kubernetes-resource-validation": "node --import ./tests/register-sync-test-loader.mjs --test tests/kubernetes-resource-validation.test.js",
+    "test:kubernetes-completeness": "node --import ./tests/register-sync-test-loader.mjs --test tests/kubernetes-architecture-completeness.test.js tests/kubernetes-deployment-readiness.test.js",
+    "test:review-dashboard": "node --import ./tests/register-sync-test-loader.mjs --test tests/kubernetes-deployment-review-ui.test.js tests/kubernetes-deployment-review-comparison.test.js tests/kubernetes-deployment-review-comparison-export.test.js tests/kubernetes-deployment-review-export.test.js tests/kubernetes-deployment-review-history.test.js tests/kubernetes-remediation-checklist.test.js tests/kubernetes-executive-review-report.test.js",
+    "test:review-integration": "node --import ./tests/register-sync-test-loader.mjs --test tests/kubernetes-deployment-review-integration.test.js tests/kubernetes-deployment-review-ui.test.js tests/kubernetes-deployment-review-comparison.test.js tests/kubernetes-deployment-review-comparison-export.test.js tests/kubernetes-deployment-review-export.test.js tests/kubernetes-deployment-review-history.test.js tests/kubernetes-remediation-checklist.test.js tests/kubernetes-executive-review-report.test.js",
+    "test:build-readiness": "node --test tests/entry-page-build-readiness.test.js tests/font-assets.test.js tests/excalidraw-font-preflight.test.js",
+    "check:build-prerequisites": "node scripts/check-build-prerequisites.mjs",
+    "test:build-prerequisites": "node --test tests/build-prerequisites.test.js",
+    "test:production-workflow": "node --test tests/production-build-workflow.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

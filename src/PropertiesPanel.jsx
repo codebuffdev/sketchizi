@@ -6,7 +6,7 @@ export default function PropertiesPanel({
   networkingResource = null, networkingResourceDefinition = null, updateNetworkingResource = () => {},
   architectureRelationship = null, architectureRelationshipTypes = [], updateArchitectureRelationshipType = () => {},
   awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
-  kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {},
+  kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {}, kubernetesRelationshipGuidance = null,
   readOnly = false, authorship = {}, participants = [],
 }) {
   return (
@@ -70,6 +70,22 @@ export default function PropertiesPanel({
             {kubernetesRelationshipTypes.map((type) => <option key={type} value={type}>{type}</option>)}
           </select>
         </div>
+        {kubernetesRelationshipGuidance && (
+          <div className="kubernetes-relationship-guidance" aria-live="polite">
+            {kubernetesRelationshipGuidance.isCompatible === true && (
+              <p>Relationship is compatible: {kubernetesRelationshipGuidance.sourceResourceType} → {kubernetesRelationshipGuidance.targetResourceType}.</p>
+            )}
+            {kubernetesRelationshipGuidance.isCompatible === false && (
+              <p role="status">This relationship may not match the endpoint resource types.</p>
+            )}
+            {kubernetesRelationshipGuidance.compatibleRelationshipTypes?.length > 0 && (
+              <p>Suggested types: {kubernetesRelationshipGuidance.compatibleRelationshipTypes.join(", ")}</p>
+            )}
+            {kubernetesRelationshipGuidance.isCompatible === null && (
+              <p>Bind this connector to two Kubernetes resources to check relationship compatibility.</p>
+            )}
+          </div>
+        )}
       </div>
     )}
 
