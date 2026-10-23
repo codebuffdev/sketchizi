@@ -47,7 +47,16 @@
     "test:build-prerequisites": "node --test tests/build-prerequisites.test.js",
     "test:production-workflow": "node --test tests/production-build-workflow.test.js",
     "test:browser-smoke-contract": "node --test tests/browser-smoke-workflow.test.js",
-    "test:design-studio-creation": "node --test tests/design-studio-creation-flow.test.js tests/design-framework.test.js tests/template-catalog.test.js"
+    "test:design-studio-creation": "node --test tests/design-studio-creation-flow.test.js tests/design-framework.test.js tests/template-catalog.test.js",
+    "test:system-design-intelligence": "node --test tests/system-design-intelligence.test.js",
+    "test:system-design-review": "node --test tests/system-design-review-dashboard.test.js tests/system-design-intelligence.test.js",
+    "test:system-design-quality": "node --test tests/system-design-quality.test.js tests/system-design-intelligence.test.js tests/system-design-review-dashboard.test.js",
+    "test:system-design-comparison": "node --test tests/system-design-comparison.test.js",
+    "test:system-design-comparison-ui": "node --test tests/system-design-comparison-ui.test.js tests/system-design-comparison.test.js",
+    "test:system-design-visual-diff": "node --test tests/system-design-visual-diff.test.js",
+    "test:system-design-decisions": "node --test tests/system-design-decision-records.test.js",
+    "test:system-design-report": "node --test tests/system-design-review-report.test.js",
+    "test:system-design-review-workflow": "node --test tests/system-design-review-workflow.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

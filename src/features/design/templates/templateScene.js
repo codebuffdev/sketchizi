@@ -144,6 +144,47 @@ export function createStarterElements(kind, options = {}) {
       ...(options.includeCache ? [makeNode({ role: "cache", label: "Cache", type: "rectangle", x: 660, y: 260 })] : []),
       makeNode({ role: "database", label: "Database", type: "rectangle", x: options.includeCache ? 930 : 820, y: 260 }),
     ];
+  } else if (kind === "system-scalable-webapp") {
+    nodes = [
+      makeNode({ role: "client", label: "Web / Mobile Clients", x: 30, y: 255, width: 170 }),
+      makeNode({ role: "cdn", label: "CDN / Edge", x: 250, y: 255, width: 170 }),
+      makeNode({ role: "load-balancer", label: "Load Balancer", x: 470, y: 255, width: 170 }),
+      makeNode({ role: "service", label: "Stateless API", x: 690, y: 255, width: 170 }),
+      makeNode({ role: "cache", label: "Distributed Cache", x: 910, y: 165, width: 175 }),
+      makeNode({ role: "database", label: "Primary Database", x: 910, y: 355, width: 175 }),
+    ];
+    connectionNodes = [nodes[0], nodes[1], nodes[2], nodes[3], nodes[5]];
+    // Cache is connected explicitly after the linear request path is assembled below.
+  } else if (kind === "system-url-shortener") {
+    nodes = [
+      makeNode({ role: "client", label: "Browser / Client", x: 40, y: 270, width: 175 }),
+      makeNode({ role: "api", label: "Redirect / Create API", x: 275, y: 270, width: 190 }),
+      makeNode({ role: "key-service", label: "Short Code Service", x: 525, y: 270, width: 190 }),
+      makeNode({ role: "cache", label: "Hot URL Cache", x: 775, y: 165, width: 175 }),
+      makeNode({ role: "database", label: "URL Mapping Store", x: 775, y: 365, width: 175 }),
+    ];
+    connectionNodes = [nodes[0], nodes[1], nodes[2], nodes[4]];
+  } else if (kind === "system-media-processing") {
+    nodes = [
+      makeNode({ role: "client", label: "Uploader / Client", x: 25, y: 260, width: 175 }),
+      makeNode({ role: "api", label: "Upload API", x: 245, y: 260, width: 170 }),
+      makeNode({ role: "object-storage", label: "Object Storage", x: 470, y: 145, width: 175 }),
+      makeNode({ role: "queue", label: "Work Queue", x: 470, y: 365, width: 175 }),
+      makeNode({ role: "worker", label: "Media Workers", x: 710, y: 365, width: 175 }),
+      makeNode({ role: "metadata-store", label: "Metadata Database", x: 950, y: 365, width: 185 }),
+    ];
+    connectionNodes = [nodes[0], nodes[1], nodes[3], nodes[4], nodes[5]];
+  } else if (kind === "system-microservices") {
+    nodes = [
+      makeNode({ role: "client", label: "Clients", x: 20, y: 270, width: 150 }),
+      makeNode({ role: "gateway", label: "API Gateway", x: 215, y: 270, width: 165 }),
+      makeNode({ role: "user-service", label: "User Service", x: 435, y: 145, width: 170 }),
+      makeNode({ role: "order-service", label: "Order Service", x: 435, y: 395, width: 170 }),
+      makeNode({ role: "user-database", label: "User Database", x: 690, y: 145, width: 170 }),
+      makeNode({ role: "order-database", label: "Order Database", x: 690, y: 395, width: 170 }),
+      makeNode({ role: "event-broker", label: "Event Broker", x: 930, y: 395, width: 170 }),
+    ];
+    connectionNodes = [nodes[0], nodes[1], nodes[3], nodes[5], nodes[6]];
   } else if (kind === "process-flow") {
     nodes = [
       makeNode({ role: "start", label: "Start", type: "ellipse", x: 120, y: 260 }),
@@ -177,6 +218,19 @@ export function createStarterElements(kind, options = {}) {
   const arrows = [];
   for (let index = 0; index < arrowNodes.length - 1; index += 1) {
     arrows.push(makeArrow(arrowNodes[index].shape, arrowNodes[index + 1].shape, arrowNodes[index].shape.customData.design.role, arrowNodes[index + 1].shape.customData.design.role));
+  }
+  const addConnection = (sourceRole, targetRole) => {
+    const source = nodes.find((node) => node.shape.customData.design.role === sourceRole);
+    const target = nodes.find((node) => node.shape.customData.design.role === targetRole);
+    if (source && target) arrows.push(makeArrow(source.shape, target.shape, sourceRole, targetRole));
+  };
+  if (kind === "system-scalable-webapp") addConnection("service", "cache");
+  if (kind === "system-url-shortener") addConnection("api", "cache");
+  if (kind === "system-media-processing") addConnection("api", "object-storage");
+  if (kind === "system-microservices") {
+    addConnection("gateway", "user-service");
+    addConnection("user-service", "user-database");
+    addConnection("order-service", "order-database");
   }
   return [...shapes, ...arrows, ...texts];
 }

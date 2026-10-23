@@ -29,6 +29,12 @@ import {
   renderKubernetesExecutiveReviewMarkdown,
 } from "../../features/architecture/kubernetesExecutiveReviewReport.js";
 import "../../styles/architecture-validation.css";
+import SystemDesignReviewDashboard from "../../features/architecture/SystemDesignReviewDashboard.jsx";
+import { compareSystemDesignArchitectures } from "../../features/architecture/systemDesignComparison.js";
+import { diffSystemDesignGraphs } from "../../features/architecture/systemDesignVisualDiff.js";
+import { loadDecisionRecords, saveDecisionRecords, normalizeDecisionRecord, buildDecisionRecordExport } from "../../features/architecture/systemDesignDecisionRecords.js";
+import { buildSystemDesignReviewReport, renderSystemDesignReviewReportMarkdown } from "../../features/architecture/systemDesignReviewReport.js";
+import { createReviewSession, updateReviewSession, finalizeReviewSession, loadReviewSession, saveReviewSession, renderReviewSessionMarkdown } from "../../features/architecture/systemDesignReviewWorkflow.js";
 
 const storage = () => {
   try { return typeof window !== "undefined" ? window.localStorage : null; } catch { return null; }
@@ -78,7 +84,7 @@ function DiagnosticGroup({ title, diagnostics, onSelectDiagnostic, onApplyKubern
   );
 }
 
-export default function ArchitectureValidationPanel({ validation, onClose, onSelectDiagnostic, onApplyKubernetesSuggestion, canApplyCorrections = false }) {
+export default function ArchitectureValidationPanel({ validation, sceneElements = [], onClose, onSelectDiagnostic, onApplyKubernetesSuggestion, canApplyCorrections = false }) {
   const errors = validation?.errors || [];
   const warnings = validation?.warnings || [];
   const info = validation?.info || [];
@@ -104,6 +110,15 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
   const [remediationQuery, setRemediationQuery] = useState("");
   const [remediationMessage, setRemediationMessage] = useState("");
   const [dashboardMessage, setDashboardMessage] = useState("");
+  const [comparisonDesignName, setComparisonDesignName] = useState("Alternative design");
+  const [comparisonDesignJson, setComparisonDesignJson] = useState("{\n  \"nodes\": [],\n  \"edges\": []\n}");
+  const [systemComparison, setSystemComparison] = useState(null);
+  const [systemComparisonError, setSystemComparisonError] = useState("");
+  const [decisionRecords, setDecisionRecords] = useState(() => loadDecisionRecords(storage()));
+  const [adrDraft, setAdrDraft] = useState({ title: "", status: "proposed", context: "", decision: "", consequences: "", alternatives: "", linkedComponentIds: "" });
+  const [adrMessage, setAdrMessage] = useState("");
+  const [workflowSession, setWorkflowSession] = useState(() => loadReviewSession(storage()));
+  const [workflowMessage, setWorkflowMessage] = useState("");
   const prefersReducedMotion = useMemo(() => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } }, []);
 
   useEffect(() => {
@@ -233,9 +248,84 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
   };
   const resetFiltersAvailable = hasActiveReviewViewFilters;
   const hasFilteredFindings = (findingFilter !== "all" || resourceFilter !== "all") && visibleDiagnostics.length === 0;
+  const currentSystemDesignGraph = useMemo(() => {
+    const nodes = sceneElements.filter((item) => item && !item.isDeleted && !["arrow", "line"].includes(item.type)).map((item) => ({ id: item.id, name: item.text || item.customData?.systemDesign?.name || item.type, type: item.customData?.systemDesign?.type || item.type, role: item.customData?.systemDesign?.role || item.customData?.architecture?.role, replicas: item.customData?.systemDesign?.replicas, availabilityZones: item.customData?.systemDesign?.availabilityZones }));
+    const edges = sceneElements.filter((item) => item && !item.isDeleted && ["arrow", "line"].includes(item.type)).map((item) => ({ id: item.id, sourceId: item.startBinding?.elementId || item.customData?.systemDesign?.sourceId, targetId: item.endBinding?.elementId || item.customData?.systemDesign?.targetId, type: item.customData?.systemDesign?.relationshipType || item.type })).filter((item) => item.sourceId && item.targetId);
+    return { nodes, edges };
+  }, [sceneElements]);
+  const loadSavedDesignForComparison = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const raw = JSON.parse(await file.text());
+      const scene = raw?.type === "sketchizi" ? raw.diagram : raw;
+      const elements = Array.isArray(scene?.elements) ? scene.elements : Array.isArray(raw?.elements) ? raw.elements : null;
+      let graph;
+      if (elements) {
+        const active = elements.filter((item) => item && !item.isDeleted);
+        const nodes = active.filter((item) => !["arrow", "line"].includes(item.type)).map((item) => ({ id: String(item.id), name: item.text || item.customData?.systemDesign?.name || item.customData?.architecture?.name || item.type, type: item.customData?.systemDesign?.type || item.customData?.architecture?.type || item.type, role: item.customData?.systemDesign?.role || item.customData?.architecture?.role, replicas: item.customData?.systemDesign?.replicas, availabilityZones: item.customData?.systemDesign?.availabilityZones }));
+        const edges = active.filter((item) => ["arrow", "line"].includes(item.type)).map((item) => ({ id: String(item.id), sourceId: item.startBinding?.elementId || item.customData?.systemDesign?.sourceId, targetId: item.endBinding?.elementId || item.customData?.systemDesign?.targetId, type: item.customData?.systemDesign?.relationshipType || item.type })).filter((item) => item.sourceId && item.targetId);
+        graph = { nodes, edges };
+      } else if (Array.isArray(raw?.nodes) && Array.isArray(raw?.edges)) graph = raw;
+      else throw new Error("Choose a valid .sketchizi, .excalidraw, or graph JSON file.");
+      setComparisonDesignName(String(raw?.metadata?.title || file.name.replace(/\.(sketchizi|excalidraw|json)$/i, "")).slice(0, 80));
+      setComparisonDesignJson(JSON.stringify(graph, null, 2));
+      setSystemComparison(null); setSystemComparisonError("");
+    } catch (error) { setSystemComparisonError(error instanceof Error ? error.message : "Could not read this design file."); }
+    event.target.value = "";
+  };
+  const runSystemDesignComparison = () => {
+    try {
+      const parsed = JSON.parse(comparisonDesignJson);
+      if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) throw new Error("Provide a JSON object with nodes and edges arrays.");
+      setSystemComparison({ ...compareSystemDesignArchitectures(currentSystemDesignGraph, parsed), visualDiff: diffSystemDesignGraphs(currentSystemDesignGraph, parsed) });
+      setSystemComparisonError("");
+    } catch (error) { setSystemComparison(null); setSystemComparisonError(error instanceof Error ? error.message : "Could not compare designs."); }
+  };
+  const persistWorkflowSession = (next) => {
+    try { const saved = saveReviewSession(next, storage()); setWorkflowSession(saved); setWorkflowMessage(`Review ${saved.status.replace("_", " ")} and saved locally.`); }
+    catch (error) { setWorkflowMessage(error instanceof Error ? error.message : "Could not save review session."); }
+  };
+  const startWorkflowReview = () => persistWorkflowSession(createReviewSession({ title: "Sketchizi Architecture Review", graph: currentSystemDesignGraph, diagnostics: allDiagnostics, decisions: decisionRecords, remediation: remediationTasks }));
+  const refreshWorkflowSnapshot = () => {
+    if (!workflowSession) return;
+    try { persistWorkflowSession(updateReviewSession(workflowSession, { snapshot: { nodes: currentSystemDesignGraph.nodes, edges: currentSystemDesignGraph.edges }, findings: allDiagnostics.map((item, index) => ({ id: String(item?.diagnosticId || item?.code || `finding-${index}`), severity: item?.severity || "info", code: item?.code || "UNKNOWN", message: item?.message || item?.title || "Finding", status: "open", note: "" })), decisions: decisionRecords.map((item) => ({ id: String(item.id), title: item.title, status: item.status })), remediation: remediationTasks.map((item) => ({ id: String(item.id), title: item.message || item.title || "Remediation task", status: item.status === "completed" ? "completed" : "pending" }) })); }
+    catch (error) { setWorkflowMessage(error instanceof Error ? error.message : "Could not refresh review."); }
+  };
 
   return <section className="architecture-validation-panel" aria-label="Architecture Validation">
     <header className="architecture-validation-header"><div><div className="architecture-validation-title">Architecture Validation</div><div className="architecture-validation-subtitle">Current canvas diagnostics</div></div><button type="button" className="architecture-validation-close" onClick={onClose} aria-label="Close architecture validation">×</button></header>
+    <SystemDesignReviewDashboard elements={sceneElements} onSelectComponent={(elementId) => onSelectDiagnostic?.({ elementId, resourceId: elementId, code: "SYSTEM_DESIGN_REVIEW" })} />
+    <section className="architecture-review-section system-design-comparison-ui" aria-label="Compare system designs">
+      <h2>Compare system designs</h2>
+      <p>Compare the current canvas with another design supplied as a graph JSON document. The comparison is heuristic and does not measure runtime performance or cost.</p>
+      <label>Alternative design name <input value={comparisonDesignName} onChange={(event) => setComparisonDesignName(event.target.value)} maxLength={80} /></label>
+      <label>Load saved design (.sketchizi / .excalidraw / graph JSON) <input type="file" accept=".sketchizi,.excalidraw,.json,application/json" onChange={loadSavedDesignForComparison} /></label>
+      <label>Alternative design graph JSON <textarea value={comparisonDesignJson} onChange={(event) => setComparisonDesignJson(event.target.value)} rows={7} spellCheck={false} /></label>
+      <button type="button" onClick={runSystemDesignComparison}>Compare with current canvas</button>
+      {systemComparisonError && <p role="alert" className="architecture-review-filter-status">{systemComparisonError}</p>}
+      {systemComparison && <div className="system-design-comparison-results" aria-live="polite">
+        <div className="architecture-review-dashboard-grid"><article className="architecture-review-dashboard-card"><h3>Current canvas</h3><strong>{systemComparison.left.score}/100</strong><p>{systemComparison.left.grade}</p></article><article className="architecture-review-dashboard-card"><h3>{comparisonDesignName || "Alternative design"}</h3><strong>{systemComparison.right.score}/100</strong><p>{systemComparison.right.grade}</p></article><article className="architecture-review-dashboard-card"><h3>Score difference</h3><strong>{systemComparison.scoreDelta > 0 ? "+" : ""}{systemComparison.scoreDelta}</strong><p>{systemComparison.winner === "tie" ? "Scores are tied" : systemComparison.winner === "right" ? "Alternative scores higher" : "Current canvas scores higher"}</p></article></div>
+        <table><thead><tr><th>Metric</th><th>Current</th><th>Alternative</th><th>Difference</th></tr></thead><tbody>{systemComparison.metrics.map((metric) => <tr key={metric.label}><th>{metric.label}</th><td>{metric.left}</td><td>{metric.right}</td><td>{metric.delta > 0 ? "+" : ""}{metric.delta}</td></tr>)}</tbody></table>
+        <section className="system-design-visual-diff" aria-label="Visual architecture differences"><h3>What changed</h3><div className="architecture-review-dashboard-grid">{[{ key: "addedComponents", label: "Components added" }, { key: "removedComponents", label: "Components removed" }, { key: "changedComponents", label: "Components changed" }, { key: "addedConnections", label: "Connections added" }, { key: "removedConnections", label: "Connections removed" }].map((item) => <article className="architecture-review-dashboard-card" key={item.key}><h4>{item.label}</h4><strong>{systemComparison.visualDiff.counts[item.key]}</strong></article>)}</div>{systemComparison.visualDiff.counts.addedComponents > 0 && <div><h4>Added components</h4><ul>{systemComparison.visualDiff.addedComponents.map((item) => <li key={item.id}>{item.name} <small>({item.id})</small></li>)}</ul></div>}{systemComparison.visualDiff.counts.removedComponents > 0 && <div><h4>Removed components</h4><ul>{systemComparison.visualDiff.removedComponents.map((item) => <li key={item.id}>{item.name} <small>({item.id})</small></li>)}</ul></div>}{systemComparison.visualDiff.counts.changedComponents > 0 && <div><h4>Changed components</h4><ul>{systemComparison.visualDiff.changedComponents.map((item) => <li key={item.id}>{item.name}: {item.fields.join(", ")}</li>)}</ul></div>}{(systemComparison.visualDiff.counts.addedConnections > 0 || systemComparison.visualDiff.counts.removedConnections > 0) && <div><h4>Connection changes</h4><ul>{systemComparison.visualDiff.addedConnections.map((item, index) => <li key={`added-${index}`}>Added: {item.sourceId} → {item.targetId} ({item.type})</li>)}{systemComparison.visualDiff.removedConnections.map((item, index) => <li key={`removed-${index}`}>Removed: {item.sourceId} → {item.targetId} ({item.type})</li>)}</ul></div>}<p>{systemComparison.visualDiff.note}</p></section><p>{systemComparison.caveat}</p><button type="button" onClick={() => downloadText("sketchizi-system-design-comparison.json", JSON.stringify({ alternativeName: comparisonDesignName, ...systemComparison }, null, 2), "application/json")}>Export comparison report (JSON)</button>
+      </div>}
+    </section>
+    <section className="architecture-review-section system-design-adr" aria-label="Architecture decision records">
+      <h2>Architecture decision records</h2>
+      <p>Record why a design choice was made, what alternatives were considered, and the expected consequences. Records are stored in this browser only.</p>
+      <form onSubmit={(event) => { event.preventDefault(); try { const record = normalizeDecisionRecord({ ...adrDraft, linkedComponentIds: adrDraft.linkedComponentIds.split(",").map((id) => id.trim()).filter(Boolean) }); const next = [record, ...decisionRecords.filter((item) => item.id !== record.id)].slice(0, 100); if (!saveDecisionRecords(storage(), next)) throw new Error("Could not save records in browser storage."); setDecisionRecords(next); setAdrDraft({ title: "", status: "proposed", context: "", decision: "", consequences: "", alternatives: "", linkedComponentIds: "" }); setAdrMessage("Decision record saved."); } catch (error) { setAdrMessage(error instanceof Error ? error.message : "Could not save decision record."); } }}>
+        <label>Decision title <input required maxLength={160} value={adrDraft.title} onChange={(event) => setAdrDraft({ ...adrDraft, title: event.target.value })} placeholder="e.g. Use a queue for media processing" /></label>
+        <label>Status <select value={adrDraft.status} onChange={(event) => setAdrDraft({ ...adrDraft, status: event.target.value })}><option value="proposed">Proposed</option><option value="accepted">Accepted</option><option value="rejected">Rejected</option><option value="superseded">Superseded</option></select></label>
+        <label>Context and problem <textarea rows={3} maxLength={4000} value={adrDraft.context} onChange={(event) => setAdrDraft({ ...adrDraft, context: event.target.value })} /></label>
+        <label>Decision <textarea rows={3} maxLength={4000} value={adrDraft.decision} onChange={(event) => setAdrDraft({ ...adrDraft, decision: event.target.value })} /></label>
+        <label>Consequences and trade-offs <textarea rows={3} maxLength={4000} value={adrDraft.consequences} onChange={(event) => setAdrDraft({ ...adrDraft, consequences: event.target.value })} /></label>
+        <label>Alternatives considered <textarea rows={2} maxLength={4000} value={adrDraft.alternatives} onChange={(event) => setAdrDraft({ ...adrDraft, alternatives: event.target.value })} /></label>
+        <label>Related component IDs (comma-separated) <input value={adrDraft.linkedComponentIds} onChange={(event) => setAdrDraft({ ...adrDraft, linkedComponentIds: event.target.value })} placeholder="api-service, queue" /></label>
+        <button type="submit">Save decision record</button> <button type="button" onClick={() => downloadText("sketchizi-architecture-decisions.json", JSON.stringify(buildDecisionRecordExport(decisionRecords), null, 2), "application/json")}>Export ADRs (JSON)</button>
+      </form>
+      {adrMessage && <p role="status" aria-live="polite">{adrMessage}</p>}
+      <div className="system-design-adr__list">{decisionRecords.length ? decisionRecords.map((record) => <article key={record.id} className="architecture-review-dashboard-card"><div className="system-design-adr__title"><h3>{record.title}</h3><span>{record.status}</span></div>{record.context && <p><strong>Context:</strong> {record.context}</p>}{record.decision && <p><strong>Decision:</strong> {record.decision}</p>}{record.consequences && <p><strong>Consequences:</strong> {record.consequences}</p>}{record.alternatives && <p><strong>Alternatives:</strong> {record.alternatives}</p>}{record.linkedComponentIds.length > 0 && <p><strong>Related components:</strong> {record.linkedComponentIds.join(", ")}</p>}<button type="button" onClick={() => { setAdrDraft({ title: record.title, status: record.status, context: record.context, decision: record.decision, consequences: record.consequences, alternatives: record.alternatives, linkedComponentIds: record.linkedComponentIds.join(", ") }); setAdrMessage("Record copied into the editor. Save to create an updated record."); }}>Edit copy</button><button type="button" onClick={() => { const next = decisionRecords.filter((item) => item.id !== record.id); saveDecisionRecords(storage(), next); setDecisionRecords(next); setAdrMessage("Decision record deleted."); }}>Delete</button></article>) : <p>No decision records yet.</p>}</div>
+    </section>
     <section id="architecture-review-dashboard-panel" className="architecture-review-dashboard" aria-label="Deployment review dashboard">
       <h2>Deployment review dashboard</h2>
       <div className="architecture-review-dashboard-grid">
@@ -267,6 +357,6 @@ export default function ArchitectureValidationPanel({ validation, onClose, onSel
 
     <section id="architecture-remediation-checklist-panel" className="architecture-review-section"><h2>Remediation checklist</h2><p>Track follow-up tasks manually. Completing a task does not modify the diagram or cluster.</p><button type="button" onClick={refreshRemediationTasks}>Refresh tasks from findings</button> <button type="button" onClick={() => exportChecklist("markdown")}>Export checklist as Markdown</button> <button type="button" onClick={() => exportChecklist("json")}>Export checklist as JSON</button><p role="status" aria-live="polite">{remediationMessage}</p><div className="architecture-review-active-filters" aria-label="Active remediation filters">{(remediationFilter !== "all" || remediationQuery) && <button type="button" onClick={resetRemediationFilters}>Clear task filters</button>}</div><div className="architecture-review-comparison-filters"><label>Task status <select value={remediationFilter} onChange={(event) => setRemediationFilter(event.target.value)}><option value="all">All tasks</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="resolved">Finding resolved</option><option value="active">Finding active</option><option value="pending-errors">Pending errors only</option></select></label><label>Search tasks <input value={remediationQuery} onChange={(event) => setRemediationQuery(event.target.value)} /></label><button type="button" className="architecture-review-reset-filters" onClick={clearRemediationFilters}>Reset task filters</button></div><div className="architecture-review-progress" role="progressbar" aria-label={`Remediation checklist: ${remediationSummary.progressPercent}% complete`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={remediationSummary.progressPercent} aria-valuetext={`${remediationSummary.progressPercent}% complete`}><span style={{ width: `${remediationSummary.progressPercent}%` }} /></div><p>{remediationSummary.completed} of {remediationSummary.total} tasks complete · {remediationSummary.pendingResolved} pending tasks for resolved findings</p>{visibleTasks.length ? <ul className="architecture-remediation-task-list">{visibleTasks.map((task) => <li key={task.id}><label><input type="checkbox" checked={task.status === "completed"} aria-label={`Mark remediation task ${task.code || "Finding"}`} onChange={() => toggleRemediationTask(task)} /> <strong>{task.code || "Finding"}</strong> — {task.message}</label><p>{task.findingPresent === false ? "Finding resolved" : "Finding active"}{task.remediation ? ` · ${task.remediation}` : ""}</p></li>)}</ul> : <div className="architecture-review-empty">No tasks match the current filters. <button type="button" onClick={clearRemediationFilters}>Reset task filters</button></div>}</section>
 
-    <section className="architecture-review-section"><h2>Executive review report</h2><p>Combined review metrics, snapshot changes and priority actions.</p><button type="button" onClick={() => downloadExecutiveReviewReport("markdown")}>Export executive report as Markdown</button> <button type="button" onClick={() => downloadExecutiveReviewReport("json")}>Export executive report as JSON</button></section>
+    <section className="architecture-review-section system-design-review-report"><h2>Architecture review report</h2><p>Export a shareable summary combining the current diagram structure, review findings, optional comparison, and local architecture decision records.</p><button type="button" onClick={() => { const report = buildSystemDesignReviewReport({ title: "Sketchizi Architecture Review", graph: currentSystemDesignGraph, comparison: systemComparison, diagnostics: allDiagnostics, decisionRecords }); downloadText("sketchizi-architecture-review.md", renderSystemDesignReviewReportMarkdown(report), "text/markdown"); }}>Export complete review (Markdown)</button> <button type="button" onClick={() => { const report = buildSystemDesignReviewReport({ title: "Sketchizi Architecture Review", graph: currentSystemDesignGraph, comparison: systemComparison, diagnostics: allDiagnostics, decisionRecords }); downloadText("sketchizi-architecture-review.json", JSON.stringify(report, null, 2), "application/json"); }}>Export complete review (JSON)</button><p>Reports contain advisory findings and heuristic comparisons; they are not a production-readiness certification.</p></section><section className="architecture-review-section system-design-review-workflow" aria-label="Architecture review workflow"><h2>Architecture review workflow</h2><p>Run a review lifecycle from draft through active review to a read-only finalized snapshot. Sessions are stored locally in this browser.</p>{workflowSession ? <><div className="architecture-review-workflow-summary"><strong>{workflowSession.title}</strong><span>Status: {workflowSession.status.replace("_", " ")}</span><span>{workflowSession.findings.length} findings · {workflowSession.decisions.length} decisions · {workflowSession.remediation.length} remediation tasks</span><span>{workflowSession.finalizedAt ? `Finalized ${workflowSession.finalizedAt}` : `Updated ${workflowSession.updatedAt}`}</span></div><label>Review notes <textarea value={workflowSession.notes} disabled={workflowSession.status === "finalized"} onChange={(event) => { try { setWorkflowSession(updateReviewSession(workflowSession, { notes: event.target.value })); } catch {} }} /></label><div className="architecture-review-workflow-actions"><button type="button" onClick={refreshWorkflowSnapshot} disabled={workflowSession.status === "finalized"}>Refresh snapshot from current diagram</button><button type="button" onClick={() => persistWorkflowSession(workflowSession)} disabled={workflowSession.status === "finalized"}>Save review</button><button type="button" onClick={() => { try { persistWorkflowSession(finalizeReviewSession(workflowSession)); } catch (error) { setWorkflowMessage(error.message); } }} disabled={workflowSession.status === "finalized"}>Finalize review</button><button type="button" onClick={() => downloadText("sketchizi-review-workflow.md", renderReviewSessionMarkdown(workflowSession), "text/markdown")}>Export review snapshot</button><button type="button" onClick={startWorkflowReview}>Start new review</button></div></> : <button type="button" onClick={startWorkflowReview}>Start architecture review</button>}<p role="status" aria-live="polite">{workflowMessage}</p><p>Finalized sessions are read-only. This workflow is a review record, not an infrastructure deployment or production-readiness certification.</p></section><section className="architecture-review-section"><h2>Executive review report</h2><p>Combined review metrics, snapshot changes and priority actions.</p><button type="button" onClick={() => downloadExecutiveReviewReport("markdown")}>Export executive report as Markdown</button> <button type="button" onClick={() => downloadExecutiveReviewReport("json")}>Export executive report as JSON</button></section>
   </section>;
 }

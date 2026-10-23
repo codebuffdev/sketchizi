@@ -28,6 +28,10 @@ export function previewLayoutForTemplate(template) {
   if (id === "aws.serverless.api") return { kind: "cloud", nodes: ["API Gateway", "Lambda", "DynamoDB"] };
   if (id === "aws.event-driven.processing") return { kind: "event-cloud", nodes: ["EventBridge", "SQS", "Lambda", "DynamoDB"] };
   if (id === "aws.vpc.networking") return { kind: "network-cloud", nodes: ["Internet Gateway", "Load Balancer", "EC2", "RDS"], boundaries: ["VPC", "Public Subnet", "Private Subnet"] };
+  if (id === "system-design.scalable-webapp") return { kind: "system", nodes: ["Clients", "CDN", "Load Balancer", "API", "Cache", "Database"] };
+  if (id === "system-design.url-shortener") return { kind: "system", nodes: ["Client", "API", "Short Code", "Cache", "URL Store"] };
+  if (id === "system-design.media-processing") return { kind: "event", nodes: ["Upload API", "Object Storage", "Queue", "Workers", "Metadata DB"] };
+  if (id === "system-design.microservices") return { kind: "layered", nodes: ["API Gateway", "User Service", "Order Service", "Separate Databases"] };
   if (id.includes("event-driven")) return { kind: "event", nodes: ["Producer", "Broker", "Consumer"] };
   if (id.includes("layered")) return { kind: "layered", nodes: ["Presentation", "Application", "Domain", "Infrastructure"] };
   if (id.includes("database") || template?.domain === "database") return { kind: "data", nodes: ["Entity A", "Entity B"] };

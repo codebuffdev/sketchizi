@@ -604,6 +604,7 @@ function App() {
             <div className={`desktop-validation-host ${architectureValidationOpen ? "is-open" : "is-closed"}`}>
               <ArchitectureValidationPanel
                 validation={architectureValidation}
+                sceneElements={apiRef.current?.getSceneElements?.() || []}
                 onClose={() => closePanel("architecture-validation")}
                 onSelectDiagnostic={selectArchitectureDiagnostic}
                 onApplyKubernetesSuggestion={applyKubernetesSuggestion}

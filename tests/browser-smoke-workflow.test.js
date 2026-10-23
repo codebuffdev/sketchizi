@@ -12,8 +12,15 @@ test("production workflow installs Chromium and runs the browser smoke after bui
   assert.match(workflow, /node scripts\/browser-smoke\.mjs/);
 });
 
-test("browser smoke covers template selection, configuration, and canvas handoff", () => {
+test("browser smoke covers configured AWS template creation and editor handoff", () => {
   for (const pattern of [/What are you designing\?/, /AWS architecture/, /Three-Tier AWS Web Application/, /Configure first/, /AWS region/, /Environment/, /Use template/, /\.excalidraw/]) {
     assert.match(script, pattern);
   }
+});
+
+test("browser smoke covers blank canvas and narrow viewport overflow", () => {
+  assert.match(script, /Start blank/);
+  assert.match(script, /width: 390, height: 844/);
+  assert.match(script, /scrollWidth >/);
+  assert.match(script, /horizontal overflow/);
 });
