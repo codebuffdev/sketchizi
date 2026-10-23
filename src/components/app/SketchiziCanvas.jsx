@@ -14,6 +14,7 @@ export default function SketchiziCanvas({
 }) {
   const canvasRootRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [discoveryHintDismissed, setDiscoveryHintDismissed] = useState(false);
   const handleSceneChange = useCallback((elements, appState, files) => {
     setCanvasRevision((revision) => revision + 1);
     handleChange?.(elements, appState, files);
@@ -80,8 +81,17 @@ export default function SketchiziCanvas({
           dock.style.setProperty("max-width", "max-content", "important");
           dock.style.setProperty("overflow", "visible", "important");
           dock.style.setProperty("transform", "none", "important");
-          const left = Math.min(Math.max(8, window.innerWidth - rect.width - 8), Math.max(8, rect.left + delta[0]));
-          const top = Math.min(Math.max(8, window.innerHeight - rect.height - 8), Math.max(8, rect.top + delta[1]));
+          const proposedLeft = rect.left + delta[0];
+          const dockElement = root.querySelector(".App-toolbar");
+          const edgeThreshold = 28;
+          const side = proposedLeft <= edgeThreshold ? "left"
+            : proposedLeft + rect.width >= window.innerWidth - edgeThreshold ? "right" : null;
+          if (dockElement) dockElement.dataset.sketchiziOrientation = side ? "vertical" : "horizontal";
+          const width = dock.offsetWidth;
+          const left = side === "left" ? 8 : side === "right"
+            ? Math.max(8, window.innerWidth - width - 8)
+            : Math.min(Math.max(8, window.innerWidth - width - 8), Math.max(8, proposedLeft));
+          const top = Math.min(Math.max(8, window.innerHeight - dock.offsetHeight - 8), Math.max(8, rect.top + delta[1]));
           dock.style.setProperty("left", `${left}px`, "important");
           dock.style.setProperty("top", `${top}px`, "important");
           dock.style.setProperty("right", "auto", "important");
@@ -104,10 +114,26 @@ export default function SketchiziCanvas({
           container.style.setProperty("bottom", "auto", "important");
           container.style.setProperty("transform", "none", "important");
           const move = (moveEvent) => {
-            const maxLeft = Math.max(8, window.innerWidth - container.offsetWidth - 8);
-            const maxTop = Math.max(8, window.innerHeight - container.offsetHeight - 8);
-            const left = Math.min(maxLeft, Math.max(8, initialLeft + moveEvent.clientX - startX));
-            const top = Math.min(maxTop, Math.max(8, initialTop + moveEvent.clientY - startY));
+            const proposedLeft = initialLeft + moveEvent.clientX - startX;
+            const proposedTop = initialTop + moveEvent.clientY - startY;
+            const edgeThreshold = 28;
+            const dock = root.querySelector(".App-toolbar");
+            const dockRight = proposedLeft + container.offsetWidth;
+            const verticalSide = proposedLeft <= edgeThreshold
+              ? "left"
+              : dockRight >= window.innerWidth - edgeThreshold ? "right" : null;
+
+            // Dock vertically only while the user places it against a screen edge.
+            // Returning it away from the edge restores the horizontal toolbar.
+            if (dock) dock.dataset.sketchiziOrientation = verticalSide ? "vertical" : "horizontal";
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
+            const maxLeft = Math.max(8, window.innerWidth - width - 8);
+            const maxTop = Math.max(8, window.innerHeight - height - 8);
+            const left = verticalSide === "left" ? 8 : verticalSide === "right"
+              ? Math.max(8, window.innerWidth - width - 8)
+              : Math.min(maxLeft, Math.max(8, proposedLeft));
+            const top = Math.min(maxTop, Math.max(8, proposedTop));
             container.style.setProperty("left", `${left}px`, "important");
             container.style.setProperty("top", `${top}px`, "important");
           };
@@ -196,6 +222,8 @@ export default function SketchiziCanvas({
   const clearRemoteCursor = () => {
     updateCollaborationCursor?.(null);
   };
+  const visibleSceneElements = apiRef?.current?.getSceneElements?.() || savedSketch?.elements || [];
+  const isCanvasEmpty = visibleSceneElements.every((element) => element?.isDeleted || element?.deleted);
 
   return (
     <main ref={canvasRootRef} className={viewModeEnabled ? "canvas viewer-mode" : "canvas"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
@@ -221,6 +249,16 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
+      {!viewModeEnabled && isCanvasEmpty && !discoveryHintDismissed && (
+        <aside className="sketchizi-discovery-hint" aria-label="Getting started">
+          <div className="sketchizi-discovery-hint-icon" aria-hidden="true">✦</div>
+          <div className="sketchizi-discovery-hint-copy">
+            <strong>Start with an idea</strong>
+            <span>Choose a tool from the dock to draw. Press <kbd>?</kbd> for keyboard shortcuts.</span>
+          </div>
+          <button type="button" onClick={() => setDiscoveryHintDismissed(true)} aria-label="Dismiss getting started hint" title="Dismiss hint">×</button>
+        </aside>
+      )}
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />

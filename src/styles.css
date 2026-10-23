@@ -17,6 +17,8 @@
 @import "./styles/header-redesign.css";
 @import "./styles/collaboration-redesign.css";
 @import "./styles/responsive-menu.css";
+@import "./styles/ui-modernization.css";
+@import "./styles/ui-modernization-responsive.css";
 @import "./styles/ui-modernization-toolbar-dock.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
@@ -497,8 +499,6 @@
 .app.theme-dark .desktop-canvas-region > .canvas {
   background-color: #111722 !important;
 }
-@import "./styles/ui-modernization.css";
-@import "./styles/ui-modernization-responsive.css";
 
 /* UI Modernization 07 — keyboard accessibility and interaction polish.
    Keep this layer intentionally conservative: it changes presentation only. */
