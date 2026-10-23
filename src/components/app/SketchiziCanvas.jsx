@@ -308,7 +308,15 @@ export default function SketchiziCanvas({
             if (item && !item.disabled) item.click();
           }, 0);
         });
-        toolbar.appendChild(button);
+        // Keep quick-access controls inside the visible dock area. The native
+        // toolbar can end with a separator, and appending after it can push the
+        // second custom tool outside the clipped toolbar viewport.
+        const trailingSeparator = [...toolbar.children].reverse().find((child) => child.classList.contains("sketchizi-dock-separator"));
+        if (trailingSeparator) {
+          toolbar.insertBefore(button, trailingSeparator);
+        } else {
+          toolbar.appendChild(button);
+        }
       });
     };
     const schedule = () => {
