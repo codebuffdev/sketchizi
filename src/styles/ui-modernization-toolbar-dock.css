@@ -135,3 +135,110 @@
     transition: none !important;
   }
 }
+
+/* Native-toolbar dock refinements: the inserted grip is the only drag target. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] {
+  gap: 5px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip {
+  display: inline-flex;
+  flex: 0 0 18px;
+  width: 18px;
+  min-width: 18px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  margin: 0 3px 0 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #7f879b;
+  cursor: grab;
+  touch-action: none;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip:hover {
+  background: rgb(127 135 155 / 13%);
+  color: #c9cde0;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip:active {
+  cursor: grabbing;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip span {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 5px 0 0 currentColor;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-separator {
+  display: inline-block;
+  flex: 0 0 1px;
+  align-self: stretch;
+  width: 1px;
+  min-height: 24px;
+  margin: 0 4px;
+  background: rgb(143 151 173 / 24%);
+}
+
+.app.theme-light .excalidraw .App-toolbar .sketchizi-dock-grip {
+  color: #8b92a3;
+}
+
+.app.theme-light .excalidraw .App-toolbar .sketchizi-dock-grip:hover {
+  color: #555e72;
+  background: #eef0f7;
+}
+
+.app.theme-light .excalidraw .App-toolbar .sketchizi-dock-separator {
+  background: #dfe3ec;
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar .sketchizi-dock-grip {
+    display: none;
+  }
+
+  .app .excalidraw .App-toolbar .sketchizi-dock-separator {
+    margin-inline: 2px;
+  }
+}
+
+
+/* UI Modernization 14 — resilient dock positioning and mobile reachability. */
+.app .excalidraw .App-toolbar .sketchizi-dock-grip:focus-visible {
+  outline: 2px solid #b9b2ff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar-container {
+    width: min(calc(100vw - 16px), max-content) !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+    box-sizing: border-box;
+    max-width: calc(100vw - 16px) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    flex-wrap: nowrap !important;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]::-webkit-scrollbar {
+    display: none;
+  }
+}
