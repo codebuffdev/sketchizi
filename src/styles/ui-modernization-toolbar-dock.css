@@ -244,3 +244,59 @@
     display: none;
   }
 }
+
+/* UI Modernization 16 — hard reset native button chrome on the compact grip.
+   Excalidraw/global button rules otherwise leave a tall outlined button even
+   when the grip's own background and border are declared transparent. */
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  flex: 0 0 8px !important;
+  width: 8px !important;
+  min-width: 8px !important;
+  max-width: 8px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  padding: 0 !important;
+  margin: 0 1px 0 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #777f92 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: visible !important;
+}
+
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip span {
+  display: block !important;
+  width: 2px !important;
+  min-width: 2px !important;
+  height: 2px !important;
+  min-height: 2px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  box-shadow: 4px 0 0 currentColor !important;
+}
+
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip:hover {
+  background: rgb(127 135 155 / 10%) !important;
+  color: #c9cde0 !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar button.sketchizi-dock-grip {
+  color: #8b92a3 !important;
+}
+
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip:focus-visible {
+  outline: 2px solid #b9b2ff !important;
+  outline-offset: 2px !important;
+}
