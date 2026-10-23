@@ -484,3 +484,44 @@
   .app .excalidraw .App-toolbar .dropdown-menu-button,
   .sketchizi-toolbar-tooltip { transition: none !important; }
 }
+
+
+/* Sketchizi quick-access tools: Bucket Fill and Draw to Shape. */
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0;
+  background: transparent;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  font: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool:hover,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool:hover,
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible {
+  border-color: #454b60;
+  background: var(--sk-toolbar-hover, #2a2e3b);
+  color: #fff;
+  outline: none;
+}
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible {
+  box-shadow: 0 0 0 2px #8b80ff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool,
+  .app .excalidraw .App-toolbar .sketchizi-dock-quick-tool {
+    transition: none;
+  }
+}

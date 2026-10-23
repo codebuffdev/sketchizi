@@ -277,6 +277,39 @@ export default function SketchiziCanvas({
         separator.setAttribute("aria-hidden", "true");
         toolbar.insertBefore(separator, anchor);
       });
+
+      // Expose the two frequently used Sketchizi tools directly in the dock.
+      // Activation delegates to the existing More Tools actions so their native
+      // application handlers and keyboard shortcuts remain the source of truth.
+      const quickTools = [
+        { id: "bucketfill", label: "Bucket fill", icon: "◒", shortcut: "B" },
+        { id: "autoshape", label: "Draw to shape", icon: "◌", shortcut: "⇧X" },
+      ];
+      quickTools.forEach(({ id, label, icon, shortcut }) => {
+        if (toolbar.querySelector(`[data-sketchizi-quick-tool="${id}"]`)) return;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "sketchizi-dock-quick-tool";
+        button.dataset.sketchiziQuickTool = id;
+        button.dataset.sketchiziTooltip = `${label} (${shortcut})`;
+        button.setAttribute("aria-label", label);
+        button.innerHTML = `<span aria-hidden="true">${icon}</span>`;
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const trigger = document.querySelector(".sketchizi-more-tools-trigger");
+          if (!trigger) return;
+          const menu = trigger.closest(".sketchizi-more-tools");
+          const menuOpen = menu?.classList.contains("open");
+          if (!menuOpen) trigger.click();
+          window.setTimeout(() => {
+            const item = [...document.querySelectorAll(".sketchizi-more-tools-menu [role='menuitem']")]
+              .find((candidate) => candidate.textContent.replace(/\\s+/g, " ").trim().includes(label));
+            if (item && !item.disabled) item.click();
+          }, 0);
+        });
+        toolbar.appendChild(button);
+      });
     };
     const schedule = () => {
       cancelAnimationFrame(frame);
