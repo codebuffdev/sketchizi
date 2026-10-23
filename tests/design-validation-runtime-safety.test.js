@@ -33,5 +33,7 @@ test("canvas persistence callbacks keep stable identities and declare dependenci
 test("design profile normalization remains defensive for unknown metadata", () => {
   assert.match(profileSource, /DESIGN_SCHEMA_VERSION = 1/);
   assert.match(profileSource, /if \(!value \|\| typeof value !== "object" \|\| Array\.isArray\(value\)\) return null/);
-  assert.match(profileSource, /templateOptions: \{ includeCache: templateOptions\?\.includeCache === true \}/);
+  assert.match(profileSource, /includeCache: templateOptions\?\.includeCache === true/);
+  assert.match(profileSource, /region: typeof templateOptions\?\.region === "string"/);
+  assert.match(profileSource, /environment: typeof templateOptions\?\.environment === "string"/);
 });

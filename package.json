@@ -45,7 +45,9 @@
     "test:build-readiness": "node --test tests/entry-page-build-readiness.test.js tests/font-assets.test.js tests/excalidraw-font-preflight.test.js",
     "check:build-prerequisites": "node scripts/check-build-prerequisites.mjs",
     "test:build-prerequisites": "node --test tests/build-prerequisites.test.js",
-    "test:production-workflow": "node --test tests/production-build-workflow.test.js"
+    "test:production-workflow": "node --test tests/production-build-workflow.test.js",
+    "test:browser-smoke-contract": "node --test tests/browser-smoke-workflow.test.js",
+    "test:design-studio-creation": "node --test tests/design-studio-creation-flow.test.js tests/design-framework.test.js tests/template-catalog.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

@@ -635,3 +635,11 @@
 .design-studio-config-option { grid-column: 1 / -1; }
 .design-studio-config-option > span:last-child { display: flex; align-items: center; gap: 8px; font-weight: 500; }
 .design-studio-config-option input[type="checkbox"] { width: auto; min-width: auto; accent-color: var(--ui-accent, #4f6bed); }
+
+.design-studio-config-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--design-studio-muted, #9aabc1);
+  font-size: 12px;
+  line-height: 1.45;
+}

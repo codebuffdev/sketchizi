@@ -42,6 +42,18 @@ jobs:
       - name: Build production application
         run: npm run build
 
+      - name: Install temporary browser-test tooling
+        run: npm install --no-save --no-package-lock playwright
+
+      - name: Install Chromium for browser smoke test
+        run: npx playwright install --with-deps chromium
+
+      - name: Start production preview
+        run: npm run preview -- --host 127.0.0.1 > /tmp/sketchizi-preview.log 2>&1 &
+
+      - name: Run template creation browser smoke test
+        run: node scripts/browser-smoke.mjs
+
       - name: Upload production build
         uses: actions/upload-artifact@v4
         with:

@@ -29,7 +29,11 @@ export function createDesignProfile({
     templateId: typeof templateId === "string" && templateId ? templateId : null,
     templateVersion: Number.isInteger(templateVersion) ? templateVersion : null,
     ruleMode: ruleMode === "strict" ? "strict" : "guided",
-    templateOptions: { includeCache: templateOptions?.includeCache === true },
+    templateOptions: {
+      includeCache: templateOptions?.includeCache === true,
+      region: typeof templateOptions?.region === "string" ? templateOptions.region.trim().slice(0, 40) : "",
+      environment: typeof templateOptions?.environment === "string" ? templateOptions.environment.trim().slice(0, 40) : "",
+    },
   };
 }
 

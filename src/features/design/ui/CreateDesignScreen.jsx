@@ -36,6 +36,8 @@ export default function CreateDesignScreen({ onCreate, onClose, isDarkTheme = fa
   const [name, setName] = useState("System architecture");
   const [ruleMode, setRuleMode] = useState("guided");
   const [includeCache, setIncludeCache] = useState(false);
+  const [awsRegion, setAwsRegion] = useState("us-east-1");
+  const [environment, setEnvironment] = useState("production");
   const visibleTemplates = useMemo(() => filterDesignTemplates(templates, { category, query: search }), [templates, category, search]);
   const selectedTemplate = visibleTemplates.find((template) => template.id === selectedId) || null;
 
@@ -58,7 +60,11 @@ export default function CreateDesignScreen({ onCreate, onClose, isDarkTheme = fa
       name: configure ? name.trim() || selectedTemplate.name : selectedTemplate.name,
       domain: selectedTemplate.domain,
       ruleMode: configure ? ruleMode : (selectedTemplate.ruleMode || "guided"),
-      templateOptions: { includeCache: configure && selectedTemplate.id === "system-design.general" && includeCache },
+      templateOptions: {
+        includeCache: configure && selectedTemplate.id === "system-design.general" && includeCache,
+        region: configure && selectedTemplate.domain === "cloud-infrastructure" ? awsRegion : "",
+        environment: configure && selectedTemplate.domain === "cloud-infrastructure" ? environment : "",
+      },
     });
   };
 
@@ -106,7 +112,16 @@ export default function CreateDesignScreen({ onCreate, onClose, isDarkTheme = fa
         <section className="design-studio-selection-bar" aria-label="Selected template actions">
           <div className="design-studio-selection-summary"><strong>{selectedTemplate.name}</strong><span>{selectedTemplate.description}</span></div>
           <label className="design-studio-configure-toggle"><input type="checkbox" checked={configure} onChange={(event) => setConfigure(event.target.checked)} /><span>Configure first</span></label>
-          {configure && <div className="design-studio-config-fields"><label>Design name<input value={name} maxLength={120} onChange={(event) => setName(event.target.value)} /></label><label>Validation mode<select value={ruleMode} onChange={(event) => setRuleMode(event.target.value)}><option value="guided">Guided — suggestions and warnings</option><option value="strict">Strict — violations are errors</option></select></label>{selectedTemplate.id === "system-design.general" && <label className="design-studio-config-option"><span>Optional components</span><span><input type="checkbox" checked={includeCache} onChange={(event) => setIncludeCache(event.target.checked)} /> Include a cache between the API service and database</span></label>}</div>}
+          {configure && <div className="design-studio-config-fields">
+            <label>Design name<input value={name} maxLength={120} onChange={(event) => setName(event.target.value)} /></label>
+            <label>Validation mode<select value={ruleMode} onChange={(event) => setRuleMode(event.target.value)}><option value="guided">Guided — suggestions and warnings</option><option value="strict">Strict — violations are errors</option></select></label>
+            {selectedTemplate.domain === "cloud-infrastructure" && <>
+              <label>AWS region<select value={awsRegion} onChange={(event) => setAwsRegion(event.target.value)}><option value="us-east-1">US East (N. Virginia) — us-east-1</option><option value="us-east-2">US East (Ohio) — us-east-2</option><option value="us-west-2">US West (Oregon) — us-west-2</option><option value="eu-west-1">Europe (Ireland) — eu-west-1</option><option value="ap-south-1">Asia Pacific (Mumbai) — ap-south-1</option></select></label>
+              <label>Environment<select value={environment} onChange={(event) => setEnvironment(event.target.value)}><option value="development">Development</option><option value="staging">Staging</option><option value="production">Production</option></select></label>
+              <p className="design-studio-config-note">These values are saved with the design profile as planning metadata. They do not provision AWS resources.</p>
+            </>}
+            {selectedTemplate.id === "system-design.general" && <label className="design-studio-config-option"><span>Optional components</span><span><input type="checkbox" checked={includeCache} onChange={(event) => setIncludeCache(event.target.checked)} /> Include a cache between the API service and database</span></label>}
+          </div>}
           <button type="button" className="design-studio-primary-action" onClick={startSelected}>Use template <span aria-hidden="true">→</span></button>
         </section>
       )}
