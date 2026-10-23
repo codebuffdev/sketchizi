@@ -51,8 +51,45 @@ jobs:
       - name: Start production preview
         run: npm run preview -- --host 127.0.0.1 > /tmp/sketchizi-preview.log 2>&1 &
 
+      - name: Wait for production preview readiness
+        shell: bash
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              echo "Production preview is responding."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Production preview did not become ready in 60 seconds."
+          cat /tmp/sketchizi-preview.log || true
+          exit 1
+
       - name: Run template creation browser smoke test
         run: node scripts/browser-smoke.mjs
+
+      - name: Write CI verification summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Sketchizi production verification"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Ref: \`${GITHUB_REF_NAME}\`"
+            echo "- Node: \`$(node --version)\`"
+            echo "- npm: \`$(npm --version)\`"
+            echo "- Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "- The job status is authoritative; a summary alone does not imply success."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload preview logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sketchizi-production-verification-logs
+          path: /tmp/sketchizi-preview.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload production build
         uses: actions/upload-artifact@v4

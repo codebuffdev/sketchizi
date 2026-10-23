@@ -45,3 +45,20 @@ test("workflow uses read-only repository permissions and a bounded job duration"
   assert.match(source, /permissions:\s*\n\s+contents:\s*read/);
   assert.match(source, /timeout-minutes:\s*20/);
 });
+
+test("workflow waits for the production preview before browser testing", async () => {
+  const source = await workflow();
+  const start = source.indexOf("Start production preview");
+  const wait = source.indexOf("Wait for production preview readiness");
+  const smoke = source.indexOf("Run template creation browser smoke test");
+  assert.ok(start >= 0 && wait > start && smoke > wait);
+  assert.match(source, /curl --fail --silent http:\/\/127\.0\.0\.1:4173\//);
+});
+
+test("workflow emits a CI summary and preserves preview logs after failures", async () => {
+  const source = await workflow();
+  assert.match(source, /Write CI verification summary/);
+  assert.match(source, /GITHUB_STEP_SUMMARY/);
+  assert.match(source, /Upload preview logs on failure/);
+  assert.match(source, /if: failure\(\)/);
+});

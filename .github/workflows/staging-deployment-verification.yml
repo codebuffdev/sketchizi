@@ -1,0 +1,53 @@
+name: Sketchizi Staging Deployment Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_url:
+        description: Deployed staging or preview URL (HTTPS recommended)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sketchizi-staging-verification
+  cancel-in-progress: false
+
+jobs:
+  verify-deployment:
+    name: Verify deployed application
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify deployed root and asset availability
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_url }}
+        run: node scripts/verify-deployment.mjs
+      - name: Install temporary browser acceptance tooling
+        run: npm install --no-save --no-package-lock playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser acceptance journey
+        env:
+          SKETCHIZI_BASE_URL: ${{ inputs.staging_url }}
+          BROWSER_ACCEPTANCE_SCREENSHOT: /tmp/sketchizi-browser-acceptance.png
+        run: node scripts/browser-acceptance.mjs
+      - name: Record acceptance contract tests
+        if: always()
+        run: node --test tests/deployment-verification.test.js tests/browser-acceptance.test.js
+      - name: Upload browser screenshot on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sketchizi-staging-browser-failure
+          path: /tmp/sketchizi-browser-acceptance.png
+          if-no-files-found: ignore
+          retention-days: 7

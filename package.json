@@ -58,7 +58,18 @@
     "test:system-design-report": "node --test tests/system-design-review-report.test.js",
     "test:system-design-review-workflow": "node --test tests/system-design-review-workflow.test.js",
     "test:system-design-review-history": "node --test tests/system-design-review-history.test.js tests/system-design-review-workflow.test.js",
-    "test:system-design-review-collaboration": "node --test tests/system-design-review-collaboration.test.js"
+    "test:system-design-review-collaboration": "node --test tests/system-design-review-collaboration.test.js",
+    "test:system-design-review-remote-store": "node --test tests/system-design-review-remote-store.test.js",
+    "test:system-design-review-realtime": "node --test tests/system-design-review-remote-store.test.js tests/system-design-review-remote-ui-contract.test.js",
+    "test:review-conflicts": "node --test tests/system-design-review-conflict-resolution.test.js",
+    "test:shared-review-integration-contract": "node --test tests/shared-review-integration-harness.test.js",
+    "test:shared-review-integration": "node scripts/test-shared-review-integration.mjs",
+    "check:release-readiness": "node scripts/release-readiness.mjs",
+    "check:release-readiness-strict": "node scripts/release-readiness.mjs --strict",
+    "test:release-readiness": "node --test tests/release-readiness.test.js",
+    "test:deployment-verification": "node --test tests/deployment-verification.test.js",
+    "check:deployed-staging": "node scripts/verify-deployment.mjs",
+    "test:browser-acceptance-contract": "node --test tests/browser-acceptance.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
