@@ -402,3 +402,36 @@
 .app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] .dropdown-menu-button {
   flex-shrink: 0;
 }
+
+/* UI Modernization 15 — let the vertical dock's parent grow with the toolbar.
+   The native container otherwise retains the horizontal dock's compact box and
+   clips every tool beyond the first row when the toolbar is rotated. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"]) {
+  display: block !important;
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: 78px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 16px) !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  box-sizing: border-box !important;
+  display: flex !important;
+  width: 62px !important;
+  min-width: 62px !important;
+  max-width: 62px !important;
+  height: max-content !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 16px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > * {
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex-shrink: 0 !important;
+}
