@@ -9,7 +9,6 @@ import {
 } from "../../persistence";
 import { logger } from "../../logging/logger";
 import { serializeDrawing } from "../../fileSystem.js";
-import { WORKBENCH_EXTENSION_KEY } from "../workbench/workbenchDocument.js";
 
 export function useSketchPersistence({ apiRef, documentMetadataRef }) {
   const [savedSketch, setSavedSketch] = useState(null);
@@ -111,9 +110,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     if (!api) return;
     const metadata = documentMetadataRef?.current || {};
     const extensions = metadata.extensions || {};
-    const format = metadata.format === "sketchizi" || extensions[WORKBENCH_EXTENSION_KEY]
-      ? "sketchizi"
-      : "excalidraw";
+    const format = metadata.format === "sketchizi" ? "sketchizi" : "excalidraw";
     const text = serializeDrawing({
       format,
       metadata: metadata.metadata || {},

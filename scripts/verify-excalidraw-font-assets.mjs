@@ -115,7 +115,7 @@ export function renderFontPreflight(report) {
 async function main() {
   const report = await inspectExcalidrawFontAssets();
   console.log(renderFontPreflight(report));
-  console.log(`WORKBENCH_EXCALIDRAW_FONT_PREFLIGHT_JSON=${JSON.stringify(report)}`);
+  console.log(`EXCALIDRAW_FONT_PREFLIGHT_JSON=${JSON.stringify(report)}`);
   if (report.status !== "passed") process.exitCode = 1;
 }
 

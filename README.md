@@ -60,18 +60,6 @@ Open the local development URL shown by Vite.
 npm run build
 ```
 
-### Full Local Release Check
-
-On Windows, macOS, or Linux, run the same release-gate stages used by GitHub Actions:
-
-```bash
-npm run verify:workbench-release
-```
-
-The runner records each command's output in `artifacts/ci-logs/` and writes JSON and Markdown summaries under `artifacts/`. It stops after the first blocking failure; the npm registry connectivity probe is diagnostic and does not replace `npm ci`. The full check needs registry access and may download Playwright/Chromium. A failed or skipped stage is never reported as passed.
-
-The release gate also applies the generated PostgreSQL DDL twice and checks the resulting schema, table, constraints, index, column types, and nullability. This stage mutates the target by creating a schema, table, constraint, and index, so it is fail-closed by default. For a local run, point `WORKBENCH_POSTGRES_URL` to a **disposable test database** where the current user can create a schema, and explicitly opt in with `WORKBENCH_POSTGRES_ALLOW_SCHEMA_MUTATION=true`. The default is `postgresql://workbench:workbench@127.0.0.1:5432/workbench`. Non-loopback hosts additionally require `WORKBENCH_POSTGRES_ALLOW_REMOTE=true`; protected database names such as `prod`, `production`, and `live` are rejected. These guardrails are not a substitute for using a disposable test database. Never point this verification stage at production. GitHub Actions sets the opt-in only for its own temporary PostgreSQL 17 service.
-
 ### Preview Production Build
 
 ```bash
@@ -326,37 +314,7 @@ The optional Google Sign-In foundation and Spring Boot authentication service ar
 
 
 
-## Engineering Workbench (experimental)
-
-The Engineering Workbench is an experimental layer over the Excalidraw canvas. It stores typed components and relationships in the `.sketchizi` Workbench extension while ordinary shapes and `.excalidraw` diagrams remain supported.
-
-The prototype includes System, APIs, Data, and Deployment views; semantic validation; synthetic request-path experiments; and the first artifact-generation workflow.
-
-- **Create POC:** the React + REST + PostgreSQL template creates the three runtime components, their typed request/data relationships, a starter `GET /api/items` endpoint exposed by the REST service, and an `items` PostgreSQL table. API and table entities are contract/schema metadata, not additional simulated runtime nodes.
-- **OpenAPI 3.1 JSON:** generate a reviewable API contract from endpoint components connected to exactly one REST service using `Exposes API`. The starter POC is preconfigured to generate its first OpenAPI preview without manually adding an endpoint.
-- **PostgreSQL DDL:** generate SQL from table components connected to a PostgreSQL database using `Contains table`. The starter POC includes an `items` table with a primary key and example columns.
-- **Existing POCs:** older documents created by the three-component template can use **POC WORKFLOW → Add starter API + table** to add the missing endpoint and table without recreating their existing diagram or runtime model.
-
-Generation is a reviewable preview, not deployment. Invalid ownership, duplicate routes, malformed schema JSON, unsafe identifiers, or unsupported SQL types block the download. A preview becomes stale after a semantic model revision and must be regenerated. The current SQL slice supports one database target. It emits only explicitly modeled index DDL; it does not infer foreign keys, indexes from query patterns, migrations, deployment settings, or runtime behavior.
-
-See [`docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md`](docs/WORKBENCH_ARTIFACT_GENERATION_0.15_REPORT.md) and [`docs/WORKBENCH_POC_ARTIFACT_STARTER_0.16.1_REPORT.md`](docs/WORKBENCH_POC_ARTIFACT_STARTER_0.16.1_REPORT.md). Focused checks can be run with `npm run test:workbench-poc` and `npm run test:workbench-artifacts`; the broader prototype test suite can be run with `node --import ./tests/register-sync-test-loader.mjs --test tests/*.test.js`.
-
 ### Collaboration creation troubleshooting
 
 The Node collaboration service emits structured JSON logs for WebSocket upgrade requests, accepted connections, `join` messages, host authorization rejection reasons, room creation, join acknowledgement, and close codes/reasons. Search the Render collaboration-service logs for `Collaboration host authorization rejected` to distinguish missing configuration from a signature or room-claim mismatch. Never paste `COLLAB_HOST_TOKEN_SECRET` or any host token into logs or support messages. The same `COLLAB_HOST_TOKEN_SECRET` (at least 32 UTF-8 bytes) must be configured independently in both the Spring Boot auth service and Node collaboration service.
 
-
-## Workbench controlled improvement experiments (0.22)
-
-The Experiments panel now supports two separate one-variable hypotheses: increase a runtime component's concurrency when queue/capacity evidence supports it, or reduce a component's modeled mean service time when event-derived service-time evidence is available. Both trials rerun the same selected non-outage load scenario, compare actual aggregate and matched time-series outputs, save intervention metadata in experiment history, and leave the canonical model and base profile unchanged. These are synthetic what-if experiments, not claims that a real system will improve by the same amount.
-
-Run the focused tests with `npm run test:service-time-improvement` and the broader simulation suite with `npm run test:simulation`.
-
-
-## Workbench query / index hypothesis (0.24)
-
-The PostgreSQL experiment panel now includes an evidence-gated synthetic index hypothesis. It requires read-operation evidence on a typed `Reads from` request path and an explicitly selected eligible table column. The experiment changes only the assumed fraction of reads benefiting from a hypothetical index; a fixed, displayed speedup factor is applied by the deterministic simulator. It does **not** parse SQL, run a PostgreSQL planner, infer which column a query uses, or model index write-maintenance overhead.
-
-A trial displays proposed `CREATE INDEX` SQL but does not change the semantic schema automatically. The user can explicitly add the candidate to the table's modeled index list; this increments the model revision, invalidates old results/previews as appropriate, and allows the SQL generator to emit the new DDL. The SQL generator validates index identifiers, methods, names and column references.
-
-See [`docs/WORKBENCH_QUERY_INDEX_HYPOTHESIS_0.24_REPORT.md`](docs/WORKBENCH_QUERY_INDEX_HYPOTHESIS_0.24_REPORT.md). Focused verification: `npm run test:database-index-improvement`; simulation verification: `npm run test:simulation`. Build and real-browser UI verification remain required before treating this as fully release-verified.

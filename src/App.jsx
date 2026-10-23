@@ -40,26 +40,14 @@ import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, updateKuberne
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
-import WorkbenchPanel from "./features/workbench/WorkbenchPanel.jsx";
-import { useWorkbenchController } from "./features/workbench/useWorkbenchController.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
-import "./styles/workbench.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
-  const [workbenchRuntimeOverlay, setWorkbenchRuntimeOverlay] = useState(null);
-  const [narrowWorkspaceView, setNarrowWorkspaceView] = useState(() => {
-    try {
-      const savedView = window.localStorage.getItem("sketchizi.workbench.narrowWorkspaceView");
-      return ["palette", "canvas", "workbench", "inspector"].includes(savedView) ? savedView : "workbench";
-    } catch {
-      return "workbench";
-    }
-  });
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
@@ -114,13 +102,6 @@ function App() {
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("sketchizi.workbench.narrowWorkspaceView", narrowWorkspaceView);
-    } catch {
-      // Workspace presentation preferences are optional when storage is unavailable.
-    }
-  }, [narrowWorkspaceView]);
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   useEffect(() => {
@@ -171,10 +152,6 @@ function App() {
   }, [collaborationRole, collaborationRoom, collaborationStatus, setCollaborationMode, setCollaborationOpen]);
 
   const collaborationCanEdit = (!collaborationRoom && !collaborationEndedSession) || collaborationEndedSession?.returned === true || (Boolean(collaborationRoom) && collaborationStatus === "connected" && collaborationHostRecovery?.state !== "recovering" && (collaborationPermission === "host" || collaborationPermission === "editor"));
-  const workbenchController = useWorkbenchController({
-    apiRef, documentMetadataRef, sketchReady, savedSketch, selectedElements, canEdit: collaborationCanEdit,
-    persistSketchNow, showToast,
-  });
   const moreTools = useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit: collaborationCanEdit });
   const { anchor: moreToolsAnchor, position: positionMoreToolsButton, activate: activateMoreTool } = moreTools;
   const iconInsertion = useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit: collaborationCanEdit });
@@ -411,21 +388,6 @@ function App() {
           <span>Reviews</span>
         </button>
 
-        {collaborationCanEdit && (
-          <button
-            type="button"
-            className={workbenchController.isOpen ? "workbench-toggle active" : "workbench-toggle"}
-            onClick={() => {
-              if (!workbenchController.workbench) workbenchController.initialize();
-              else workbenchController.setIsOpen((open) => !open);
-            }}
-            title="Design and inspect a shared engineering model"
-            aria-label="Engineering Workbench"
-            aria-expanded={workbenchController.isOpen}
-          >
-            <span aria-hidden="true">◈</span><span>Workbench</span>
-          </button>
-        )}
 
         <button
           type="button"
@@ -465,10 +427,7 @@ function App() {
 
       </DesktopAppHeader>
 
-      <div className={`desktop-workspace ${workbenchController.isOpen ? "desktop-workspace-workbench-open" : "desktop-workspace-workbench-closed"} narrow-workspace-view-${narrowWorkspaceView} ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
-        {workbenchController.isOpen && <nav className="narrow-workspace-switcher" aria-label="Workspace panels">
-          {[ ["palette", "Palette"], ["canvas", "Canvas"], ["workbench", "Engineering"], ["inspector", "Inspector"] ].map(([id, label]) => <button key={id} type="button" aria-pressed={narrowWorkspaceView === id} onClick={() => setNarrowWorkspaceView(id)}>{label}</button>)}
-        </nav>}
+      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
         <aside className={`desktop-resources-region ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
           {collaborationCanEdit && (
             <IconLibraryPanel
@@ -496,9 +455,6 @@ function App() {
             isDarkTheme={isDarkTheme}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
-            workbench={workbenchController.workbench}
-            runtimeOverlay={workbenchRuntimeOverlay}
-            onFocusRuntimeEntity={(entityId) => workbenchController.focusFinding({ entityIds: [entityId] })}
             handleDrop={handleDrop}
             minimapOpen={minimapOpen}
             minimapScene={minimapScene}
@@ -530,36 +486,6 @@ function App() {
 
         </section>
 
-          <WorkbenchPanel
-            workbench={workbenchController.workbench}
-            isOpen={workbenchController.isOpen}
-            onClose={() => workbenchController.setIsOpen(false)}
-            onInitialize={workbenchController.initialize}
-            onCreatePoc={workbenchController.createPoc}
-            onCompletePocArtifacts={workbenchController.completePocArtifacts}
-            onSwitchView={workbenchController.switchView}
-            onAddComponent={workbenchController.addComponent}
-            onUpdateEntity={workbenchController.updateEntity}
-            onCreateRelation={workbenchController.createRelation}
-            onCreateRelationBetween={workbenchController.createRelationBetween}
-            onUpdateRelation={workbenchController.updateRelation}
-            onDeleteRelation={workbenchController.deleteRelation}
-            onFocusFinding={workbenchController.focusFinding}
-            onFocusRelation={workbenchController.focusRelation}
-            simulationProfile={workbenchController.workbench?.simulationProfile || null}
-            onUpdateSimulationProfile={workbenchController.updateSimulationProfile}
-            simulationHistory={workbenchController.workbench?.simulationHistory || []}
-            onUpdateSimulationHistory={workbenchController.updateSimulationHistory}
-            onUpdateArchitectureDecisionRecords={workbenchController.updateArchitectureDecisionRecords}
-            onUpdatePolicyGovernance={workbenchController.updatePolicyGovernance}
-            onRuntimeOverlayChange={setWorkbenchRuntimeOverlay}
-            selectedEntity={workbenchController.selectedEntity}
-            selectedRelation={workbenchController.selectedRelation}
-            visibleEntityIds={workbenchController.visibleEntityIds}
-            inspectorError={workbenchController.inspectorError}
-            busy={workbenchController.busy}
-            canEdit={collaborationCanEdit}
-          />
 
         <aside
           className={`desktop-context-region ${propertiesOpen ? "properties-state-open" : "properties-state-closed"} ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}

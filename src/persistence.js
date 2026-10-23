@@ -121,7 +121,7 @@ export function withDocumentMetadata(payload, documentMetadata = {}) {
 }
 
 /** Build the record stored for the active autosaved document. Keep extension data
- * verbatim so Workbench state and unrelated vendor extensions survive reloads. */
+ * verbatim so Sketchizi metadata and unrelated vendor extensions survive reloads. */
 export function buildSketchPersistenceRecord({ elements, appState, files, metadata = {}, extensions = {}, format = "excalidraw" } = {}) {
   return {
     id: DOCUMENT_ID,

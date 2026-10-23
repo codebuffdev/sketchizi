@@ -78,14 +78,11 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     return file;
   };
 
-  const hasWorkbenchDocument = () => Boolean(documentMetadataRef.current?.extensions?.["com.sketchizi.workbench"]);
-  const workbenchSafeName = (name) => `${String(name || "Untitled drawing").replace(/\.(?:excalidraw|sketchizi)$/i, "") || "Untitled drawing"}.sketchizi`;
-
   const currentSceneText = (nameOrFormat = currentFileRef.current?.name || "excalidraw") => {
     const api = apiRef.current;
     if (!api) return null;
     return serializeDrawing({
-      format: hasWorkbenchDocument() ? "sketchizi" : getDrawingFormat(nameOrFormat),
+      format: getDrawingFormat(nameOrFormat),
       metadata: documentMetadataRef.current.metadata,
       extensions: documentMetadataRef.current.extensions,
       elements: api.getSceneElementsIncludingDeleted?.() || api.getSceneElements(),
@@ -302,7 +299,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     if (!apiRef.current) return;
     try {
       const defaultSuggested = currentFileRef.current?.name || `drawing-${new Date().toISOString().slice(0, 10)}.sketchizi`;
-      const suggested = hasWorkbenchDocument() ? workbenchSafeName(defaultSuggested) : defaultSuggested;
+      const suggested = defaultSuggested;
       if (!currentFileRef.current?.handle && currentFolderRef.current?.handle) {
         if (!(await ensureHandlePermission(currentFolderRef.current.handle, "readwrite"))) {
           showToast("Folder permission was denied", "error");
@@ -310,10 +307,6 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         }
         if (getFileSystemSupport().save) {
           const handle = await pickDrawingToSave(suggested, currentFolderRef.current.handle);
-          if (hasWorkbenchDocument() && /\.excalidraw$/i.test(handle.name || "")) {
-            showToast("Choose a .sketchizi filename to preserve Workbench data.", "error");
-            return;
-          }
           await writeDrawingToHandle(handle, currentSceneText(handle.name));
           await registerFile(handle, handle.name);
           await refreshCurrentFolderFiles().catch(() => {});
@@ -329,10 +322,6 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         let startIn = currentFolderRef.current?.handle || null;
         if (startIn && !(await ensureHandlePermission(startIn, "readwrite"))) startIn = null;
         const handle = await pickDrawingToSave(suggested, startIn);
-        if (hasWorkbenchDocument() && /\.excalidraw$/i.test(handle.name || "")) {
-          showToast("Choose a .sketchizi filename to preserve Workbench data.", "error");
-          return;
-        }
         await writeDrawingToHandle(handle, currentSceneText(handle.name));
         await registerFile(handle, handle.name);
         if (currentFolderRef.current?.handle) refreshCurrentFolderFiles().catch(() => {});
@@ -343,10 +332,6 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         // browser's download UI. Ask the user for the filename in Sketchizi so
         // that the name persisted for currentFile/Recent files is authoritative.
         let name = chooseFallbackSaveName(suggested);
-        if (hasWorkbenchDocument() && /\.excalidraw$/i.test(name)) {
-          name = workbenchSafeName(name);
-          showToast("Saved as .sketchizi to preserve Workbench data.");
-        }
         downloadDrawing(name, currentSceneText(name));
         const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const record = await saveRecentSketch({
@@ -376,12 +361,6 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // SAVE CURRENT DRAWING: overwrite the associated file, or behave like Save to...
   const saveCurrentDrawing = async () => {
     const file = currentFileRef.current;
-    // A Workbench envelope must not be silently written into a .excalidraw file.
-    // Require Save As so the selected filename communicates the actual format.
-    if (hasWorkbenchDocument() && /\.excalidraw$/i.test(file?.name || file?.handle?.name || "")) {
-      showToast("Workbench data requires the .sketchizi format. Choose a .sketchizi filename.");
-      return saveDrawingAs();
-    }
     if (!file?.handle) {
       // Never saved (or no handle in this browser): Save to... flow.
       return saveDrawingAs();
