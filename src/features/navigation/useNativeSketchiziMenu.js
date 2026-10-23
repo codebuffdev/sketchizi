@@ -182,7 +182,7 @@ export function useNativeSketchiziMenu({
           const recentSection = document.createElement("div");
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
-          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh current folder" aria-label="Refresh current folder">↻</button></div><div class="sketchizi-folder-refresh-status" data-folder-refresh-status role="status" aria-live="polite"></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder><span aria-hidden="true">▱</span> Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file><span aria-hidden="true">▤</span> New file</button><details class="sketchizi-recent-dropdown"><summary><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown"><summary><span>Recent folders</span><span class="sketchizi-recent-count" data-recent-folders-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button></details>`;
+          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Workspace</div><section class="sketchizi-file-menu-group" aria-label="Current folder"><div class="sketchizi-file-menu-group-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh current folder" aria-label="Refresh current folder">↻</button></div><div class="sketchizi-folder-refresh-status" data-folder-refresh-status role="status" aria-live="polite"></div><div class="sketchizi-folder-file-list" data-current-folder-files></div></section><div class="sketchizi-file-menu-actions" role="group" aria-label="File actions"><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder><span aria-hidden="true">▱</span> Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file><span aria-hidden="true">▤</span> New file</button></div><div class="sketchizi-file-menu-announcement" data-file-menu-announcement role="status" aria-live="polite" aria-atomic="true"></div><section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><div class="sketchizi-file-menu-group-title">Quick access</div><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-files-panel"><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-folders-panel"><span>Recent folders</span><span class="sketchizi-recent-count" data-recent-folders-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-folders-panel" class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button></details></section>`;
           customBlock.append(recentSection);
           const gitSection = document.createElement("section");
           gitSection.className = "sketchizi-native-settings-section sketchizi-git-repository-section";
@@ -331,6 +331,37 @@ export function useNativeSketchiziMenu({
         }
       });
 
+      const announceFileMenuStatus = (message) => {
+        const status = recentMenu?.querySelector("[data-file-menu-announcement]");
+        if (status) status.textContent = message;
+      };
+      // Centralize the transient busy state so every file-opening surface gets
+      // identical cleanup, including unexpected rejected promises.
+      const runFileMenuOperation = (button, operation, label) => {
+        if (!button || button.disabled || button.dataset.opening === "true") return;
+        button.disabled = true;
+        button.setAttribute("aria-busy", "true");
+        button.dataset.opening = "true";
+        announceFileMenuStatus(`Opening ${label}…`);
+        Promise.resolve().then(operation).catch((error) => {
+          // Native file and folder pickers reject with AbortError when the user
+          // dismisses them. Treat that as a normal cancellation, not a failure.
+          const cancelled = error?.name === "AbortError" || error?.kind === "cancelled";
+          announceFileMenuStatus(cancelled
+            ? `Opening ${label} was cancelled.`
+            : `Could not finish opening ${label}. Check the error message and try again.`);
+        }).finally(() => {
+          button.disabled = false;
+          button.removeAttribute("aria-busy");
+          delete button.dataset.opening;
+          // Do not overwrite useful error/cancellation feedback with a success
+          // claim: file actions own their detailed toast and may handle errors internally.
+          const announcement = recentMenu?.querySelector("[data-file-menu-announcement]")?.textContent || "";
+          if (recentMenu?.isConnected && !announcement.startsWith("Could not finish") && !announcement.startsWith(`Opening ${label} was cancelled.`)) {
+            announceFileMenuStatus(`Open request ended for ${label}.`);
+          }
+        });
+      };
       const folderFilesList = recentMenu?.querySelector("[data-current-folder-files]");
       if (folderFilesList) {
         const signature = JSON.stringify(currentFolderFiles.map((item) => item.name));
@@ -344,7 +375,7 @@ export function useNativeSketchiziMenu({
           const button = event.target.closest?.("[data-current-folder-file]");
           if (!button) return;
           const match = currentFolderFiles.find((item) => item.name === button.dataset.currentFolderFile);
-          if (match) fileActionsRef.current.openDrawingFromCurrentFolder?.(match);
+          if (match) runFileMenuOperation(button, () => fileActionsRef.current.openDrawingFromCurrentFolder?.(match), match.name);
         });
       }
 
@@ -371,12 +402,25 @@ export function useNativeSketchiziMenu({
         }
         bind(recentList, "bound", (event) => {
           const remove = event.target.closest?.("[data-remove-recent-file]");
-          if (remove) { fileActionsRef.current.removeRecentFile?.(remove.dataset.removeRecentFile); return; }
+          if (remove) {
+            const item = recentFiles.find((entry) => entry.id === remove.dataset.removeRecentFile);
+            fileActionsRef.current.removeRecentFile?.(remove.dataset.removeRecentFile);
+            announceFileMenuStatus(item ? `Removed ${item.name} from Recent files.` : "Removed item from Recent files.");
+            recentMenu?.querySelector("[data-clear-recent-files]")?.focus();
+            return;
+          }
           const button = event.target.closest?.("[data-recent-id]");
-          if (button) fileActionsRef.current.openRecentFile?.(button.dataset.recentId);
+          if (button && !button.disabled) {
+            const item = recentFiles.find((entry) => entry.id === button.dataset.recentId);
+            runFileMenuOperation(button, () => fileActionsRef.current.openRecentFile?.(button.dataset.recentId), item?.name || "recent drawing");
+          }
         });
       }
-      bind(recentMenu?.querySelector("[data-clear-recent-files]"), "bound", () => fileActionsRef.current.clearRecentFiles?.());
+      bind(recentMenu?.querySelector("[data-clear-recent-files]"), "bound", () => {
+        const count = recentFiles.length;
+        fileActionsRef.current.clearRecentFiles?.();
+        announceFileMenuStatus(count ? `Cleared ${count} ${count === 1 ? "file" : "files"} from Recent files.` : "Recent files is already empty.");
+      });
 
       const folderList = recentMenu?.querySelector("[data-recent-folder-list]");
       if (folderList) {
@@ -396,12 +440,25 @@ export function useNativeSketchiziMenu({
         }
         bind(folderList, "bound", (event) => {
           const remove = event.target.closest?.("[data-remove-recent-folder]");
-          if (remove) { fileActionsRef.current.removeRecentFolder?.(remove.dataset.removeRecentFolder); return; }
+          if (remove) {
+            const item = recentFolders.find((entry) => entry.id === remove.dataset.removeRecentFolder);
+            fileActionsRef.current.removeRecentFolder?.(remove.dataset.removeRecentFolder);
+            announceFileMenuStatus(item ? `Removed ${item.name} from Recent folders.` : "Removed folder from Recent folders.");
+            recentMenu?.querySelector("[data-clear-recent-folders]")?.focus();
+            return;
+          }
           const button = event.target.closest?.("[data-recent-folder-id]");
-          if (button) fileActionsRef.current.openRecentFolder?.(button.dataset.recentFolderId);
+          if (button && !button.disabled) {
+            const item = recentFolders.find((entry) => entry.id === button.dataset.recentFolderId);
+            runFileMenuOperation(button, () => fileActionsRef.current.openRecentFolder?.(button.dataset.recentFolderId), item?.name || "recent folder");
+          }
         });
       }
-      bind(recentMenu?.querySelector("[data-clear-recent-folders]"), "bound", () => fileActionsRef.current.clearRecentFolders?.());
+      bind(recentMenu?.querySelector("[data-clear-recent-folders]"), "bound", () => {
+        const count = recentFolders.length;
+        fileActionsRef.current.clearRecentFolders?.();
+        announceFileMenuStatus(count ? `Cleared ${count} ${count === 1 ? "folder" : "folders"} from Recent folders.` : "Recent folders is already empty.");
+      });
 
       const repoSection = document.querySelector("[data-sketchizi-custom-menu-block] .sketchizi-git-repository-section");
       const repoStatus = repoSection?.querySelector("[data-sketchizi-repo-status]");

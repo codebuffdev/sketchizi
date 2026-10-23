@@ -682,3 +682,15 @@ html[data-sketchizi-theme="dark"] .sketchizi-recent-row[data-recent-availability
 @media (max-width: 520px) {
   .sketchizi-recent-folder-meta .sketchizi-recent-folder-activity { flex-basis: 100%; text-align: left; }
 }
+
+
+/* Phase 28: communicate in-progress file actions and prevent repeat activation. */
+.sketchizi-recent-item[aria-busy="true"],
+.sketchizi-folder-file[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.72;
+}
+.sketchizi-recent-item:disabled,
+.sketchizi-folder-file:disabled {
+  pointer-events: none;
+}
