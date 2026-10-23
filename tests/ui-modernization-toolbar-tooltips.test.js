@@ -7,7 +7,9 @@ const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx',
 test('toolbar hover labels use native accessible names and available shortcut hints', () => {
   assert.match(canvas, /button\.getAttribute\("aria-label"\) \|\| button\.getAttribute\("title"\)/);
   assert.match(canvas, /querySelector\("\.ToolIcon__keybinding"\)/);
-  assert.match(canvas, /button\.title = tooltip/);
+  assert.match(canvas, /button\.dataset\.sketchiziTooltip = tooltip/);
+  assert.match(canvas, /button\.removeAttribute\("title"\)/);
+  assert.match(canvas, /if \(!button\.getAttribute\("aria-label"\)\) button\.setAttribute\("aria-label", accessibleName\)/);
 });
 
 test('toolbar enhancement preserves native controls and does not recreate or reorder tools', () => {

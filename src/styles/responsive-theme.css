@@ -854,3 +854,14 @@ html[data-sketchizi-theme="dark"] .diagramly-native-theme-options button.selecte
     height: 42px;
   }
 }
+
+/* UI Modernization 24 — Recent Folders access and refresh states. */
+html[data-sketchizi-theme="dark"] .sketchizi-recent-folder-meta .sketchizi-recent-folder-type {
+  border-color: var(--ui-border-soft, #343846);
+}
+html[data-sketchizi-theme="dark"] .sketchizi-recent-row[data-recent-folder-availability="missing"] .sketchizi-recent-folder-status,
+html[data-sketchizi-theme="dark"] .sketchizi-recent-row[data-recent-folder-availability="permission"] .sketchizi-recent-folder-status {
+  color: #f4c77a;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-folder-refresh-status[data-state="success"] { color: #7bd69e; }
+html[data-sketchizi-theme="dark"] .sketchizi-folder-refresh-status[data-state="error"] { color: #f4c77a; }

@@ -745,7 +745,7 @@
 
 .app.theme-dark .desktop-app-header button,
 .app.theme-dark .desktop-app-header [role="button"] {
-  border-radius: 10px;
+  border-radius: var(--sk-radius-control);
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
 }
 
@@ -779,7 +779,7 @@
 .app.theme-dark .desktop-context-region textarea {
   min-height: 40px;
   border: 1px solid #344258;
-  border-radius: 10px;
+  border-radius: var(--sk-radius-control);
   background: #171f2b;
   color: #edf2fb;
 }
@@ -797,7 +797,7 @@
 .app.theme-dark .desktop-resources-region .category,
 .app.theme-dark .desktop-resources-region .quick-category {
   border-color: #293548;
-  border-radius: 11px;
+  border-radius: var(--sk-radius-card-sm);
   background: #151d28;
 }
 

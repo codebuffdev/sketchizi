@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction, restoreElements } from "@excalidraw/excalidraw";
 import {
   deleteDirectoryHandle, deleteFileHandle, deleteRecentSketch, clearEmergencyBackup, clearSketch,
@@ -13,6 +13,20 @@ import {
   pickDrawingToOpen, pickDrawingToSave, pickDrawingViaInput, readDrawingFromHandle,
   serializeDrawing, writeDrawingToHandle, ensureHandlePermission, getDrawingFormat,
 } from "../../fileSystem";
+
+function getLiveSceneSignature(elements) {
+  const serialized = JSON.stringify((Array.isArray(elements) ? elements : []).filter((element) => element && !element.isDeleted));
+  // A compact two-lane non-cryptographic hash keeps the persisted baseline small
+  // even for large scenes; it is only used for UI dirty-state comparison.
+  let first = 2166136261;
+  let second = 5381;
+  for (let index = 0; index < serialized.length; index += 1) {
+    const code = serialized.charCodeAt(index);
+    first = Math.imul(first ^ code, 16777619);
+    second = Math.imul(second, 33) ^ code;
+  }
+  return `${(first >>> 0).toString(16).padStart(8, "0")}${(second >>> 0).toString(16).padStart(8, "0")}`;
+}
 
 export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, documentMetadataRef, lastSelectionSignature, startCollaboration }) {
   const [currentFolder, setCurrentFolderState] = useState(null);
@@ -31,25 +45,79 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     if (!folder?.handle) { setCurrentFolderFiles([]); return []; }
     if (!(await ensureHandlePermission(folder.handle, "read"))) {
       setCurrentFolderFiles([]);
-      throw new Error("Folder permission was denied");
+      // recentState is initialized below before this callback can be invoked.
+      recentState.updateRecentFolderStatus?.(folder.id, "permission");
+      const error = new Error("Folder permission was denied");
+      error.name = "NotAllowedError";
+      throw error;
     }
-    const files = await listDrawingFiles(folder.handle);
-    setCurrentFolderFiles(files);
-    return files;
+    try {
+      const files = await listDrawingFiles(folder.handle);
+      setCurrentFolderFiles(files);
+      recentState.updateRecentFolderStatus?.(folder.id, "available");
+      return files;
+    } catch (error) {
+      // Do not leave a stale file listing visible after the selected folder
+      // becomes inaccessible or its permission is revoked.
+      setCurrentFolderFiles([]);
+      const normalized = normalizeFsError(error, "Unable to read the selected folder");
+      if (normalized.kind === "permission") recentState.updateRecentFolderStatus?.(folder.id, "permission");
+      else if (normalized.kind === "not-found") recentState.updateRecentFolderStatus?.(folder.id, "missing");
+      throw error;
+    }
   };
   // Current file association: null (unsaved/new) or { id, name, handle|null }.
   // `handle` is a FileSystemFileHandle where the browser supports it; without
   // one (Firefox/Safari fallback) saves download a copy instead.
   const [currentFile, setCurrentFileState] = useState(null);
   const currentFileRef = useRef(null);
+  const currentFileSceneSignatureRef = useRef(null);
+  const documentDirtyRef = useRef(false);
+  const [documentDirty, setDocumentDirty] = useState(false);
+  const updateDocumentDirty = useCallback((value) => {
+    const nextValue = Boolean(value);
+    documentDirtyRef.current = nextValue;
+    setDocumentDirty((current) => current === nextValue ? current : nextValue);
+  }, []);
+  const markCurrentDocumentChanged = useCallback((elements) => {
+    if (!currentFileRef.current) {
+      updateDocumentDirty(false);
+      return;
+    }
+    const signature = getLiveSceneSignature(elements);
+    if (currentFileSceneSignatureRef.current == null) {
+      // Older sessions may not have a stored baseline yet. Establish one on
+      // first observation rather than falsely flagging every restored file as dirty.
+      currentFileSceneSignatureRef.current = signature;
+      try { localStorage.setItem("sketchizi-current-file-scene-signature", signature); } catch {}
+      updateDocumentDirty(false);
+      return;
+    }
+    updateDocumentDirty(signature !== currentFileSceneSignatureRef.current);
+  }, [updateDocumentDirty]);
   const recentState = useRecentFiles({ currentFileRef, currentFolderRef });
-  const { recentFiles, setRecentFiles, recentFolders, setRecentFolders, rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, forgetRecentFolder, clearRecentFolders } = recentState;
-  const setCurrentFile = (file) => {
+  const { recentFiles, setRecentFiles, recentFolders, setRecentFolders, rememberRecentFile, updateRecentFileStatus, forgetRecentFile, clearRecentFiles, rememberRecentFolder, markRecentFolderOpened, updateRecentFolderStatus, forgetRecentFolder, clearRecentFolders } = recentState;
+  const setCurrentFile = (file, baselineSignature = undefined) => {
     currentFileRef.current = file;
+    const api = apiRef.current;
+    const currentSignature = getLiveSceneSignature(api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []);
+    currentFileSceneSignatureRef.current = file
+      ? (typeof baselineSignature === "string" ? baselineSignature : currentSignature)
+      : null;
+    updateDocumentDirty(Boolean(file && currentSignature !== currentFileSceneSignatureRef.current));
     setCurrentFileState(file);
     try {
       if (file?.id) localStorage.setItem("sketchizi-current-file-id", file.id);
       else localStorage.removeItem("sketchizi-current-file-id");
+      if (file) {
+        localStorage.setItem("sketchizi-current-file-meta", JSON.stringify({ name: file.name || "Untitled drawing", handleBacked: Boolean(file.handle), fallback: Boolean(file.fallback) }));
+        if (typeof currentFileSceneSignatureRef.current === "string") {
+          localStorage.setItem("sketchizi-current-file-scene-signature", currentFileSceneSignatureRef.current);
+        }
+      } else {
+        localStorage.removeItem("sketchizi-current-file-meta");
+        localStorage.removeItem("sketchizi-current-file-scene-signature");
+      }
     } catch {}
   };
   const fileActionsRef = useRef({});
@@ -63,7 +131,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     return null;
   };
 
-  const registerFile = async (handle, name) => {
+  const registerFile = async (handle, name, baselineSignature = undefined, lastOpenedAt = undefined) => {
     const id = (await findRecentIdForHandle(handle))
       || `file-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const handleStored = await saveFileHandle(id, handle);
@@ -71,10 +139,10 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     // the picker. The suggestedName is only a default shown before selection.
     const actualName = handle?.name || name || "Untitled drawing";
     const file = { id, name: actualName, handle };
-    setCurrentFile(file);
+    setCurrentFile(file, baselineSignature);
     // Only list it in Recent files if the handle really was persisted;
     // otherwise the entry could never be reopened.
-    if (handleStored) rememberRecentFile({ id, name: actualName, handle, savedAt: Date.now(), kind: "file" });
+    if (handleStored) rememberRecentFile({ id, name: actualName, handle, savedAt: Date.now(), lastOpenedAt, availability: "available", kind: "file" });
     return file;
   };
 
@@ -111,6 +179,24 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     const record = { elements, files: drawing.files, appState: drawing.appState };
     setSavedSketch(record);
     queueSketchSave(elements, { ...api.getAppState(), ...drawing.appState });
+    return getLiveSceneSignature(elements);
+  };
+
+  const confirmCanvasReplacement = (actionLabel) => {
+    const api = apiRef.current;
+    const liveElements = (api?.getSceneElements?.() || []).filter((element) => element && !element.isDeleted);
+    if (liveElements.length === 0) return true;
+
+    const currentFile = currentFileRef.current;
+    const isDirty = Boolean(currentFile && documentDirtyRef.current);
+    if (currentFile && !isDirty) return true;
+
+    const title = currentFile?.name || "Untitled drawing";
+    const reason = isDirty
+      ? `Changes to “${title}” have not been saved back to that file.`
+      : `“${title}” is currently a browser-local canvas without an associated file.`;
+    const recovery = "Continuing may replace the current browser-local autosave. Cancel and save/export the drawing or download a recovery backup to keep an extra copy.";
+    return window.confirm(`${reason}\n\n${recovery}\n\nContinue to ${actionLabel}?`);
   };
 
   const handleFileError = (error, fallback) => {
@@ -167,27 +253,29 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     try {
       const handle = await loadDirectoryHandle(id);
       if (!handle) {
+        updateRecentFolderStatus(id, "missing");
         showToast("Unable to open this folder. It may have been moved or permission was revoked.", "error");
         return;
       }
       const permission = await ensureHandlePermission(handle, "readwrite");
       if (!permission) {
-        showToast("Folder permission was denied", "error");
+        updateRecentFolderStatus(id, "permission");
+        showToast("Folder permission was denied. Reopen the folder to grant access.", "error");
         return;
       }
       const entry = recentFolders.find((item) => item.id === id);
-      const updated = { id, name: entry?.name || handle.name || "Folder", openedAt: Date.now() };
+      const updated = { id, name: entry?.name || handle.name || "Folder", openedAt: entry?.openedAt || Date.now(), handle };
       const folder = { ...updated, handle };
       setCurrentFolder(folder);
       await refreshCurrentFolderFiles(folder);
-      setRecentFolders((current) => {
-        const next = [updated, ...current.filter((item) => item.id !== id)].slice(0, 5);
-        try { localStorage.setItem("sketchizi-recent-folders", JSON.stringify(next)); } catch {}
-        return next;
-      });
+      markRecentFolderOpened(id);
+      updateRecentFolderStatus(id, "available");
       logger.info("Recent folder opened", { category: "file", folderName: updated.name });
       showToast(`Folder selected: ${updated.name}`);
     } catch (error) {
+      const normalized = normalizeFsError(error, "Unable to open folder");
+      if (normalized.kind === "permission") updateRecentFolderStatus(id, "permission");
+      else if (normalized.kind === "not-found") updateRecentFolderStatus(id, "missing");
       handleFileError(error, "Unable to open folder");
     }
   };
@@ -200,15 +288,17 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       if (getFileSystemSupport().open) {
         const handle = await pickDrawingToOpen();
         const { name, text } = await readDrawingFromHandle(handle);
-        loadDrawingIntoCanvas(text);
-        await registerFile(handle, name);
+        if (!confirmCanvasReplacement(`open “${name}”`)) return;
+        const loadedSignature = loadDrawingIntoCanvas(text);
+        await registerFile(handle, name, loadedSignature, Date.now());
         logger.info("Document opened", { category: "file", fileName: name, source: "browser-file-input" });
         showToast(`Opened ${name}`);
       } else {
         const { name, text } = await pickDrawingViaInput();
-        loadDrawingIntoCanvas(text);
+        if (!confirmCanvasReplacement(`open “${name}”`)) return;
+        const loadedSignature = loadDrawingIntoCanvas(text);
         // No handle in this browser: keep a local copy so Recent files works.
-        setCurrentFile({ id: null, name, handle: null });
+        setCurrentFile({ id: null, name, handle: null }, loadedSignature);
         const record = await saveRecentSketch({
           id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name,
@@ -219,7 +309,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
           appState: apiRef.current.getAppState(),
           files: apiRef.current.getFiles?.() || {},
         }).catch(() => null);
-        if (record) rememberRecentFile({ ...record, kind: "snapshot" });
+        if (record) rememberRecentFile({ ...record, lastOpenedAt: Date.now(), availability: "available", kind: "snapshot" });
         showToast(`Opened ${name}`);
       }
     } catch (error) {
@@ -231,8 +321,10 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     closeNativeMenu();
     try {
       if (fileEntry?.file) {
-        loadDrawingIntoCanvas(await fileEntry.file.text());
-        setCurrentFile({ id: null, name: fileEntry.file.name, handle: null });
+        const text = await fileEntry.file.text();
+        if (!confirmCanvasReplacement(`open “${fileEntry.file.name}”`)) return;
+        const loadedSignature = loadDrawingIntoCanvas(text);
+        setCurrentFile({ id: null, name: fileEntry.file.name, handle: null }, loadedSignature);
         const record = await saveRecentSketch({
           id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name: fileEntry.file.name,
@@ -243,7 +335,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
           appState: apiRef.current?.getAppState?.() || {},
           files: apiRef.current?.getFiles?.() || {},
         }).catch(() => null);
-        if (record) rememberRecentFile({ ...record, kind: "snapshot" });
+        if (record) rememberRecentFile({ ...record, lastOpenedAt: Date.now(), availability: "available", kind: "snapshot" });
         logger.info("Document opened", { category: "file", fileName: fileEntry.file.name, source: "folder" });
         showToast(`Opened ${fileEntry.file.name}`);
         return;
@@ -251,8 +343,9 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       const fileHandle = fileEntry?.handle || fileEntry;
       if (!(await ensureHandlePermission(fileHandle, "read"))) { showToast("File permission was denied", "error"); return; }
       const { name, text } = await readDrawingFromHandle(fileHandle);
-      loadDrawingIntoCanvas(text);
-      await registerFile(fileHandle, name);
+      if (!confirmCanvasReplacement(`open “${name}”`)) return;
+      const loadedSignature = loadDrawingIntoCanvas(text);
+      await registerFile(fileHandle, name, loadedSignature, Date.now());
       logger.info("Document opened", { category: "file", fileName: name, source: "folder-handle" });
       showToast(`Opened ${name}`);
     } catch (error) { handleFileError(error, "Unable to open drawing"); }
@@ -270,6 +363,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     closeNativeMenu();
     const api = apiRef.current;
     if (!api) return;
+    if (!confirmCanvasReplacement("create a new drawing")) return;
     if (saveTimerRef.current) {
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
@@ -307,8 +401,9 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         }
         if (getFileSystemSupport().save) {
           const handle = await pickDrawingToSave(suggested, currentFolderRef.current.handle);
+          const saveSignature = getLiveSceneSignature(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
           await writeDrawingToHandle(handle, currentSceneText(handle.name));
-          await registerFile(handle, handle.name);
+          await registerFile(handle, handle.name, saveSignature);
           await refreshCurrentFolderFiles().catch(() => {});
           logger.info("Document saved", { category: "file", fileName: handle.name, operation: "saveAs" });
           showToast(`Saved as ${handle.name}`);
@@ -322,8 +417,9 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         let startIn = currentFolderRef.current?.handle || null;
         if (startIn && !(await ensureHandlePermission(startIn, "readwrite"))) startIn = null;
         const handle = await pickDrawingToSave(suggested, startIn);
+        const saveSignature = getLiveSceneSignature(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
         await writeDrawingToHandle(handle, currentSceneText(handle.name));
-        await registerFile(handle, handle.name);
+        await registerFile(handle, handle.name, saveSignature);
         if (currentFolderRef.current?.handle) refreshCurrentFolderFiles().catch(() => {});
         logger.info("Document saved", { category: "file", fileName: handle.name, operation: "saveAs" });
         showToast(`Saved as ${handle.name}`);
@@ -332,6 +428,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         // browser's download UI. Ask the user for the filename in Sketchizi so
         // that the name persisted for currentFile/Recent files is authoritative.
         let name = chooseFallbackSaveName(suggested);
+        const saveSignature = getLiveSceneSignature(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
         downloadDrawing(name, currentSceneText(name));
         const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const record = await saveRecentSketch({
@@ -345,10 +442,10 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
           files: apiRef.current.getFiles?.() || {},
         }).catch(() => null);
         if (record) {
-          setCurrentFile({ id: snapshotId, name: record.name, handle: null, fallback: true });
-          rememberRecentFile({ ...record, kind: "snapshot" });
+          setCurrentFile({ id: snapshotId, name: record.name, handle: null, fallback: true }, saveSignature);
+          rememberRecentFile({ ...record, lastOpenedAt: Date.now(), availability: "available", kind: "snapshot" });
         } else {
-          setCurrentFile({ id: snapshotId, name, handle: null, fallback: true });
+          setCurrentFile({ id: snapshotId, name, handle: null, fallback: true }, saveSignature);
         }
         logger.info("Document saved", { category: "file", fileName: name, operation: "download-fallback" });
         showToast(`Downloaded ${name}`);
@@ -372,9 +469,14 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         showToast("File permission was denied", "error");
         return;
       }
+      const saveSignature = getLiveSceneSignature(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
       await writeDrawingToHandle(file.handle, currentSceneText(file.name));
       const actualName = file.handle?.name || file.name || "Untitled drawing";
-      if (file.name !== actualName) setCurrentFile({ ...file, name: actualName });
+      currentFileSceneSignatureRef.current = saveSignature;
+      try { localStorage.setItem("sketchizi-current-file-scene-signature", saveSignature); } catch {}
+      const currentSignature = getLiveSceneSignature(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
+      updateDocumentDirty(currentSignature !== saveSignature);
+      if (file.name !== actualName) setCurrentFile({ ...file, name: actualName }, saveSignature);
       rememberRecentFile({ id: file.id, name: actualName, handle: file.handle, savedAt: Date.now(), kind: "file" });
       if (currentFolderRef.current?.handle) refreshCurrentFolderFiles().catch(() => {});
       logger.info("Document saved", { category: "file", fileName: actualName, operation: "save" });
@@ -402,18 +504,21 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       if (entry?.kind === "file") {
         const handle = await loadFileHandle(id);
         if (!handle) {
+          updateRecentFileStatus(id, "missing");
           showToast("Unable to open this file. It may have been moved, deleted, or permission was revoked.", "error");
           return;
         }
         if (!(await ensureHandlePermission(handle, "readwrite"))) {
-          showToast("File permission was denied", "error");
+          updateRecentFileStatus(id, "permission");
+          showToast("File permission was denied. Select this recent file again to retry access.", "error");
           return;
         }
         const { name, text } = await readDrawingFromHandle(handle);
-        loadDrawingIntoCanvas(text);
+        if (!confirmCanvasReplacement(`open “${name}”`)) return;
+        const loadedSignature = loadDrawingIntoCanvas(text);
         const actualName = handle?.name || name;
-        setCurrentFile({ id, name: actualName, handle });
-        rememberRecentFile({ id, name: actualName, handle, savedAt: Date.now(), kind: "file" });
+        setCurrentFile({ id, name: actualName, handle }, loadedSignature);
+        rememberRecentFile({ id, name: actualName, handle, savedAt: Date.now(), lastOpenedAt: Date.now(), availability: "available", kind: "file" });
         logger.info("Recent document opened", { category: "file", fileName: name, source: "recent-file" });
         showToast(`Opened ${name}`);
         return;
@@ -422,19 +527,24 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       // Snapshot entry (fallback browsers / entries created before 1.6.3).
       const record = await loadRecentSketch(id).catch(() => null);
       if (!record) {
-        forgetRecentFile(id);
-        showToast("This drawing is no longer available", "error");
+        updateRecentFileStatus(id, "missing");
+        showToast("This drawing is no longer available. You can remove it from Recent files or try again later.", "error");
         return;
       }
-      loadDrawingIntoCanvas(serializeDrawing({ elements: record.elements || [], appState: record.appState, files: record.files, format: record.format || getDrawingFormat(record.name), metadata: record.metadata, extensions: record.extensions }));
-      setCurrentFile({ id: null, name: record.name, handle: null });
-      rememberRecentFile({ ...record, kind: "snapshot" });
+      if (!confirmCanvasReplacement(`open “${record.name}”`)) return;
+      const loadedSignature = loadDrawingIntoCanvas(serializeDrawing({ elements: record.elements || [], appState: record.appState, files: record.files, format: record.format || getDrawingFormat(record.name), metadata: record.metadata, extensions: record.extensions }));
+      setCurrentFile({ id: null, name: record.name, handle: null }, loadedSignature);
+      rememberRecentFile({ ...record, lastOpenedAt: Date.now(), availability: "available", kind: "snapshot" });
       logger.info("Recent snapshot opened", { category: "file", fileName: record.name, source: "recent-snapshot" });
       showToast(`Opened ${record.name}`);
     } catch (error) {
       const err = normalizeFsError(error, "Unable to open drawing");
       if (err.kind === "not-found") {
-        showToast("Unable to open this file. It may have been moved, deleted, or permission was revoked.", "error");
+        updateRecentFileStatus(id, "missing");
+        showToast("Unable to open this file. It may have been moved or deleted.", "error");
+      } else if (err.kind === "permission") {
+        updateRecentFileStatus(id, "permission");
+        handleFileError(error, "Unable to open drawing");
       } else {
         handleFileError(error, "Unable to open drawing");
       }
@@ -472,16 +582,41 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     let cancelled = false;
     let fileId = null;
     let folderId = null;
+    let savedFileMeta = null;
+    let savedSceneSignature = null;
     try {
       fileId = localStorage.getItem("sketchizi-current-file-id");
       folderId = localStorage.getItem("sketchizi-current-folder-id");
+      savedFileMeta = JSON.parse(localStorage.getItem("sketchizi-current-file-meta") || "null");
+      savedSceneSignature = localStorage.getItem("sketchizi-current-file-scene-signature");
     } catch {}
     if (fileId) {
       loadFileHandle(fileId).then((handle) => {
-        if (cancelled || !handle || currentFileRef.current) return;
-        currentFileRef.current = { id: fileId, name: handle.name, handle };
+        if (cancelled || currentFileRef.current) return;
+        if (handle) {
+          currentFileRef.current = { id: fileId, name: handle.name || savedFileMeta?.name || "Untitled drawing", handle };
+        } else if (savedFileMeta?.name) {
+          currentFileRef.current = { id: null, name: savedFileMeta.name, handle: null, fallback: Boolean(savedFileMeta.fallback) };
+          try {
+            localStorage.removeItem("sketchizi-current-file-id");
+            localStorage.setItem("sketchizi-current-file-meta", JSON.stringify({ name: savedFileMeta.name, handleBacked: false, fallback: Boolean(savedFileMeta.fallback) }));
+          } catch {}
+        } else {
+          return;
+        }
+        currentFileSceneSignatureRef.current = savedSceneSignature;
         setCurrentFileState(currentFileRef.current);
+        if (apiRef.current) {
+          const liveSignature = getLiveSceneSignature(apiRef.current.getSceneElementsIncludingDeleted?.() || apiRef.current.getSceneElements?.() || []);
+          if (currentFileSceneSignatureRef.current == null) currentFileSceneSignatureRef.current = liveSignature;
+          try { localStorage.setItem("sketchizi-current-file-scene-signature", currentFileSceneSignatureRef.current); } catch {}
+          updateDocumentDirty(liveSignature !== currentFileSceneSignatureRef.current);
+        }
       });
+    } else if (savedFileMeta?.name && !currentFileRef.current) {
+      currentFileRef.current = { id: null, name: savedFileMeta.name, handle: null, fallback: Boolean(savedFileMeta.fallback) };
+      currentFileSceneSignatureRef.current = savedSceneSignature;
+      setCurrentFileState(currentFileRef.current);
     }
     if (folderId) {
       loadDirectoryHandle(folderId).then((handle) => {
@@ -500,12 +635,12 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // they use the file-handle based implementation above.
 
   // Keep stable entry points for the DOM-injected menu and global listeners.
-  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
+  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, updateRecentFileStatus, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, updateRecentFolderStatus, markRecentFolderOpened, refreshCurrentFolderFiles, getCurrentFolder: () => currentFolderRef.current, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
   return {
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,
-    currentFile, currentFileRef, setCurrentFile, fileActionsRef,
-    rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, forgetRecentFolder, clearRecentFolders,
+    currentFile, currentFileRef, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef,
+    rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, markRecentFolderOpened, updateRecentFolderStatus, forgetRecentFolder, clearRecentFolders,
     handleFileError, currentSceneText, loadDrawingIntoCanvas, openFolderFromDisk, openRecentFolder, openDrawingFromDisk,
     openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, saveDrawingAs, saveCurrentDrawing, openRecentFile,
   };

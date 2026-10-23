@@ -20,7 +20,7 @@ export function useExcalidrawScene({
   apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel,
   lastSelectionSignature, setSelectedCount, setSelectedElements, setSelectedConnector,
   updateMinimap, queueSketchSave, collaborationRemoteUpdateRef,
-  collaborationRef, gridEnabled, gridSize, canEdit = true, onArchitectureSceneChange = () => {},
+  collaborationRef, canEdit = true, onArchitectureSceneChange = () => {}, onDocumentSceneChange = () => {},
 }) {
   const architectureFrameRef = useRef(null);
   const latestArchitectureElementsRef = useRef(null);
@@ -82,6 +82,7 @@ export function useExcalidrawScene({
         ? measureSyncDiagnostic("client.kubernetesRelationshipSync", { elementCount: awsRelationshipSync.elements?.length || 0 }, () => syncKubernetesRelationshipMetadata(awsRelationshipSync.elements))
         : { elements: awsRelationshipSync.elements, changed: false };
       const effectiveElements = kubernetesRelationshipSync.elements;
+      onDocumentSceneChange(effectiveElements);
       const relationshipSyncChanged = awsRelationshipSync.changed || kubernetesRelationshipSync.changed;
       scheduleArchitectureSceneChange(effectiveElements);
       if (relationshipSyncChanged) {
@@ -120,15 +121,6 @@ export function useExcalidrawScene({
           fileCount: Object.keys(files).length,
         }, () => collaborationRef.current?.broadcastLocalChange(effectiveElements, files, appState));
       }
-      if (gridEnabled && appState.gridModeEnabled !== true) {
-        // Update only the grid fields. Spreading a stale onChange appState here
-        // can roll back currentItemFontFamily immediately after font selection.
-        apiRef.current?.updateScene({
-          appState: { gridModeEnabled: true, gridSize, gridStep: gridSize },
-          captureUpdate: CaptureUpdateAction.NEVER,
-        });
-      }
-
       // currentItemFontFamily is Excalidraw's default for new text, separate
       // from the fontFamily on the currently selected text element. Capture a
       // pick while the popup is open and preserve it across subsequent changes.
@@ -184,5 +176,5 @@ export function useExcalidrawScene({
         });
       }
     }
-  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, gridEnabled, gridSize, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, setActivePanel, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap]);
+  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, setActivePanel, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap, onDocumentSceneChange]);
 }

@@ -15,7 +15,7 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     if (!api || !canEdit) return;
     const safeSize = Math.max(5, Math.min(100, Number(size) || 20));
     setGridSize(safeSize); setGridEnabled(enabled);
-    api.updateScene({ appState: { ...api.getAppState(), gridModeEnabled: enabled, gridSize: safeSize, gridStep: safeSize }, captureUpdate: CaptureUpdateAction.NEVER });
+    api.updateScene({ appState: { gridModeEnabled: false, gridSize: safeSize, gridStep: safeSize }, captureUpdate: CaptureUpdateAction.NEVER });
   }, [apiRef, canEdit, gridSize, setGridEnabled, setGridSize]);
   const toggleGrid = useCallback(() => setGrid(!gridEnabled, gridSize), [gridEnabled, gridSize, setGrid]);
   const activateArrowTool = useCallback(() => { if (!apiRef.current || !canEdit) return; apiRef.current.setActiveTool({ type: "arrow" }); setConnectionMode(true); }, [apiRef, setConnectionMode]);

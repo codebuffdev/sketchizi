@@ -56,6 +56,7 @@ function App() {
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
+  const [gridVisible, setGridVisible] = useState(false);
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -125,7 +126,7 @@ function App() {
 
   const documentMetadataRef = useRef({ metadata: {}, extensions: {}, format: "excalidraw" });
   const persistence = useSketchPersistence({ apiRef, documentMetadataRef });
-  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
 
   const createDesignFromStudio = useCallback(({ templateId, name, ruleMode = "guided", templateOptions = {} }) => {
     const api = apiRef.current;
@@ -168,7 +169,12 @@ function App() {
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, documentMetadataRef,
     lastSelectionSignature, startCollaboration,
   });
-  const { recentFiles, recentFolders, currentFolder, currentFolderFiles, fileActionsRef, refreshCurrentFolderFiles, handleFileError } = fileManager;
+  const { recentFiles, recentFolders, currentFolder, currentFolderFiles, currentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef, refreshCurrentFolderFiles, handleFileError } = fileManager;
+
+  useEffect(() => {
+    if (!apiReady || !currentFile) return;
+    markCurrentDocumentChanged(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
+  }, [apiReady, currentFile, markCurrentDocumentChanged]);
 
   const closeExportDialog = useCallback(() => {
     const api = apiRef.current;
@@ -199,6 +205,7 @@ function App() {
 
   const canvasTools = useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit: collaborationCanEdit });
   const { toggleGrid, activateArrowTool, activateSelectionTool, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected, hasTextSelection, hasArrowSelection, hasShapeSelection } = canvasTools;
+  const toggleCanvasGrid = useCallback(() => setGridVisible((visible) => !visible), []);
   const selectedAwsResource = getSelectedAwsResource(selectedElements);
   const selectedAwsResourceDefinition = getAwsResourceDefinitionById(selectedAwsResource?.definitionId);
   const selectedKubernetesResource = getSelectedKubernetesResource(selectedElements);
@@ -337,7 +344,7 @@ function App() {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
   }, [closePanel, collaborationCanEdit, libraryOpen]);
   const preferences = useSketchiziPreferences({
-    apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid,
+    apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, toggleCanvasGrid,
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
@@ -349,6 +356,8 @@ function App() {
     setThemeMode,
     gridEnabled,
     toggleGrid,
+    gridVisible,
+    toggleCanvasGrid,
     setMinimapOpen,
     fitDiagram: preferences.fitDiagram,
     activateMoreTool,
@@ -365,8 +374,9 @@ function App() {
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
-    collaborationRemoteUpdateRef, collaborationRef, gridEnabled, gridSize, canEdit: collaborationCanEdit,
+    collaborationRemoteUpdateRef, collaborationRef, canEdit: collaborationCanEdit,
     onArchitectureSceneChange: updateArchitectureValidation,
+    onDocumentSceneChange: markCurrentDocumentChanged,
   });
   // Reconcile against the live Excalidraw API after its onChange/theme cycle.
   // Never apply a color from the callback's appState argument: that snapshot can
@@ -410,6 +420,12 @@ function App() {
         dismissCollaborationCreationFailure={collaboration.dismissCollaborationCreationFailure}
         setThemeMode={setThemeMode}
         isDarkTheme={isDarkTheme}
+        saveStatus={saveStatus}
+        currentDocumentName={currentFile?.name || "Untitled drawing"}
+        currentDocumentDirty={documentDirty}
+        currentDocumentFileBacked={Boolean(currentFile?.handle)}
+        onSaveNow={retryLocalSave}
+        onDownloadRecoveryBackup={downloadRecoveryBackup}
         libraryToggle={collaborationCanEdit ? (
           <button
             className={libraryOpen ? "library-toggle desktop-app-library-toggle active" : "library-toggle desktop-app-library-toggle"}
@@ -558,7 +574,14 @@ function App() {
             collaborationSelfId={collaborationClientId}
             updateCollaborationCursor={updateCollaborationCursor}
             onViewportChange={markLocalViewportNavigation}
+            selectedElements={selectedElements}
+            applyToSelected={applyToSelected}
+            onOpenProperties={() => openPanel("properties")}
+            canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
+            gridVisible={gridVisible}
+            gridSize={gridSize}
+            gridSnappingEnabled={gridEnabled}
           />
 
 

@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { getRecentFileActivityLabel, getRecentFileAvailability, getRecentFileOriginLabel, getRecentFileTypeLabel } from "../files/recentFilePresentation.js";
+import { getRecentFolderActivityLabel, getRecentFolderAvailability, getRecentFolderTypeLabel } from "../files/recentFolderPresentation.js";
 
 export function useNativeSketchiziMenu({
   apiRef,
@@ -180,7 +182,7 @@ export function useNativeSketchiziMenu({
           const recentSection = document.createElement("div");
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
-          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh current folder" aria-label="Refresh current folder">↻</button></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder><span aria-hidden="true">▱</span> Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file><span aria-hidden="true">▤</span> New file</button><details class="sketchizi-recent-dropdown"><summary><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown"><summary><span>Recent folders</span><span class="sketchizi-recent-count" data-recent-folders-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button></details>`;
+          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Current folder</div><div class="sketchizi-current-folder" data-current-folder></div><div class="sketchizi-folder-files-heading"><span class="sketchizi-folder-files-title">Files in folder</span><button type="button" class="sketchizi-folder-refresh" data-refresh-current-folder title="Refresh current folder" aria-label="Refresh current folder">↻</button></div><div class="sketchizi-folder-refresh-status" data-folder-refresh-status role="status" aria-live="polite"></div><div class="sketchizi-folder-file-list" data-current-folder-files></div><button type="button" class="sketchizi-folder-action" data-sketchizi-open-folder><span aria-hidden="true">▱</span> Open folder</button><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file><span aria-hidden="true">▤</span> New file</button><details class="sketchizi-recent-dropdown"><summary><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown"><summary><span>Recent folders</span><span class="sketchizi-recent-count" data-recent-folders-count></span><span aria-hidden="true">⌄</span></summary><div class="sketchizi-recent-folder-list" data-recent-folder-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-folders>Clear recent folders</button></details>`;
           customBlock.append(recentSection);
           const gitSection = document.createElement("section");
           gitSection.className = "sketchizi-native-settings-section sketchizi-git-repository-section";
@@ -266,10 +268,68 @@ export function useNativeSketchiziMenu({
       if (currentFolderNode) {
         currentFolderNode.textContent = currentFolder?.name ? `Folder: ${currentFolder.name}` : "No folder selected";
         currentFolderNode.title = currentFolder?.name || "No folder selected";
+        currentFolderNode.dataset.access = currentFolder?.handle ? "linked" : currentFolder?.fallback ? "read-only" : "none";
       }
       const closeFolderButton = recentMenu?.querySelector("[data-sketchizi-close-folder]");
       if (closeFolderButton) closeFolderButton.style.display = currentFolder ? "block" : "none";
-      bind(recentMenu?.querySelector("[data-refresh-current-folder]"), "bound", () => refreshCurrentFolderFiles().catch((error) => handleFileError(error, "Unable to read the selected folder")));
+      const refreshButton = recentMenu?.querySelector("[data-refresh-current-folder]");
+      const refreshStatus = recentMenu?.querySelector("[data-folder-refresh-status]");
+      if (refreshButton) {
+        refreshButton.disabled = !currentFolder?.handle || refreshButton.dataset.refreshing === "true";
+        refreshButton.setAttribute("aria-disabled", String(!currentFolder?.handle));
+        refreshButton.title = currentFolder?.handle ? "Refresh current folder" : "Select a linked folder to refresh";
+      }
+      if (refreshStatus) {
+        const folderKey = currentFolder?.id || "none";
+        if (refreshStatus.dataset.folderKey !== folderKey) {
+          refreshStatus.dataset.folderKey = folderKey;
+          refreshStatus.dataset.state = "neutral";
+          refreshStatus.textContent = !currentFolder
+            ? "Select a folder to browse its drawings."
+            : currentFolder.handle
+              ? "Ready to refresh this folder."
+              : "This folder selection is read-only; refresh is unavailable.";
+        }
+      }
+      bind(refreshButton, "bound", async () => {
+        const button = recentMenu?.querySelector("[data-refresh-current-folder]");
+        const status = recentMenu?.querySelector("[data-folder-refresh-status]");
+        const activeFolder = fileActionsRef.current.getCurrentFolder?.();
+        if (!button || button.disabled || button.dataset.refreshing === "true" || !activeFolder?.handle) return;
+        button.dataset.refreshing = "true";
+        button.disabled = true;
+        button.setAttribute("aria-busy", "true");
+        if (status) { status.dataset.state = "loading"; status.textContent = "Refreshing folder…"; }
+        try {
+          const files = await fileActionsRef.current.refreshCurrentFolderFiles?.();
+          const count = Array.isArray(files) ? files.length : 0;
+          const time = new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+          if (status) {
+            status.dataset.state = "success";
+            status.textContent = count ? `Updated ${count} ${count === 1 ? "drawing" : "drawings"} · ${time}` : `Refreshed · no supported drawings · ${time}`;
+          }
+          fileActionsRef.current.updateRecentFolderStatus?.(activeFolder.id, "available");
+        } catch (error) {
+          const permissionError = error?.kind === "permission" || error?.name === "NotAllowedError" || error?.name === "SecurityError" || /permission|denied/i.test(error?.message || "");
+          const missingError = error?.kind === "not-found" || error?.name === "NotFoundError";
+          if (status) {
+            status.dataset.state = "error";
+            status.textContent = permissionError
+              ? "Permission needed — reopen the folder to allow access."
+              : missingError
+                ? "Folder unavailable — reopen the folder to reconnect."
+                : "Refresh failed. Check access and try again.";
+          }
+          if (activeFolder?.id && permissionError) fileActionsRef.current.updateRecentFolderStatus?.(activeFolder.id, "permission");
+          else if (activeFolder?.id && missingError) fileActionsRef.current.updateRecentFolderStatus?.(activeFolder.id, "missing");
+          handleFileError(error, "Unable to read the selected folder");
+        } finally {
+          button.dataset.refreshing = "false";
+          button.removeAttribute("aria-busy");
+          button.disabled = !fileActionsRef.current.getCurrentFolder?.()?.handle || button.dataset.refreshing === "true";
+          button.setAttribute("aria-disabled", String(button.disabled));
+        }
+      });
 
       const folderFilesList = recentMenu?.querySelector("[data-current-folder-files]");
       if (folderFilesList) {
@@ -294,12 +354,20 @@ export function useNativeSketchiziMenu({
       if (recentFoldersCount) recentFoldersCount.textContent = `${recentFolders.length} ${recentFolders.length === 1 ? "folder" : "folders"}`;
       const recentList = recentMenu?.querySelector("[data-recent-list]");
       if (recentList) {
-        const signature = JSON.stringify(recentFiles.map((item) => [item.id, item.name, item.savedAt, item.kind]));
+        const signature = JSON.stringify(recentFiles.map((item) => [item.id, item.name, item.savedAt, item.lastOpenedAt, item.kind, item.availability]));
         if (recentList.dataset.signature !== signature) {
           recentList.dataset.signature = signature;
           recentList.innerHTML = recentFiles.length
-            ? recentFiles.map((item) => `<div class="sketchizi-recent-row"><button type="button" class="sketchizi-recent-item" data-recent-id="${escapeHtml(item.id)}" title="${escapeHtml(new Date(item.savedAt).toLocaleString())}"><span>${escapeHtml(item.name)}</span><small>${new Date(item.savedAt).toLocaleDateString()}</small></button><button type="button" class="sketchizi-recent-remove" data-remove-recent-file="${escapeHtml(item.id)}" aria-label="Remove ${escapeHtml(item.name)} from Recent files" title="Remove from Recent files">×</button></div>`).join("")
-            : `<div class="sketchizi-recent-empty">No recent files</div>`;
+            ? recentFiles.map((item) => {
+                const typeLabel = getRecentFileTypeLabel(item);
+                const originLabel = getRecentFileOriginLabel(item);
+                const activityLabel = getRecentFileActivityLabel(item);
+                const status = getRecentFileAvailability(item);
+                const title = [typeLabel, originLabel, activityLabel, status?.message].filter(Boolean).join(" · ");
+                const rowStatus = item.availability || "available";
+                return `<div class="sketchizi-recent-row" data-recent-availability="${escapeHtml(rowStatus)}"><button type="button" class="sketchizi-recent-item" data-recent-id="${escapeHtml(item.id)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(`${item.name}, ${typeLabel}, ${originLabel}, ${activityLabel}${status ? `, ${status.label}` : ""}`)}"><span class="sketchizi-recent-name">${escapeHtml(item.name)}</span><span class="sketchizi-recent-meta"><small class="sketchizi-recent-type">${escapeHtml(typeLabel)}</small><small class="sketchizi-recent-origin">${escapeHtml(originLabel)}</small><small class="sketchizi-recent-activity">${escapeHtml(activityLabel)}</small>${status ? `<small class="sketchizi-recent-status" role="status">${escapeHtml(status.label)}</small>` : ""}</span></button><button type="button" class="sketchizi-recent-remove" data-remove-recent-file="${escapeHtml(item.id)}" aria-label="Remove ${escapeHtml(item.name)} from Recent files" title="Remove from Recent files">×</button></div>`;
+              }).join("")
+            : `<div class="sketchizi-recent-empty">No recent files yet. Open or save a drawing to see it here.</div>`;
         }
         bind(recentList, "bound", (event) => {
           const remove = event.target.closest?.("[data-remove-recent-file]");
@@ -312,12 +380,19 @@ export function useNativeSketchiziMenu({
 
       const folderList = recentMenu?.querySelector("[data-recent-folder-list]");
       if (folderList) {
-        const signature = JSON.stringify(recentFolders.map((item) => [item.id, item.name, item.openedAt]));
+        const signature = JSON.stringify(recentFolders.map((item) => [item.id, item.name, item.openedAt, item.lastCheckedAt, item.availability, item.kind, item.fallback]));
         if (folderList.dataset.signature !== signature) {
           folderList.dataset.signature = signature;
           folderList.innerHTML = recentFolders.length
-            ? recentFolders.map((item) => `<div class="sketchizi-recent-row"><button type="button" class="sketchizi-recent-item" data-recent-folder-id="${escapeHtml(item.id)}" title="${escapeHtml(new Date(item.openedAt).toLocaleString())}"><span>📁 ${escapeHtml(item.name)}</span></button><button type="button" class="sketchizi-recent-remove" data-remove-recent-folder="${escapeHtml(item.id)}" aria-label="Remove ${escapeHtml(item.name)} from Recent folders" title="Remove from Recent folders">×</button></div>`).join("")
-            : `<div class="sketchizi-recent-empty">No recent folders</div>`;
+            ? recentFolders.map((item) => {
+                const typeLabel = getRecentFolderTypeLabel(item);
+                const activityLabel = getRecentFolderActivityLabel(item);
+                const availability = getRecentFolderAvailability(item);
+                const rowStatus = item.availability || (item.fallback ? "read-only" : "available");
+                const title = [typeLabel, activityLabel, availability?.message].filter(Boolean).join(" · ");
+                return `<div class="sketchizi-recent-row" data-recent-folder-availability="${escapeHtml(rowStatus)}"><button type="button" class="sketchizi-recent-item" data-recent-folder-id="${escapeHtml(item.id)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(`${item.name}, ${typeLabel}, ${activityLabel}${availability ? `, ${availability.label}` : ""}`)}"><span class="sketchizi-recent-folder-name">📁 ${escapeHtml(item.name)}</span><span class="sketchizi-recent-folder-meta"><small class="sketchizi-recent-folder-type">${escapeHtml(typeLabel)}</small><small class="sketchizi-recent-folder-activity">${escapeHtml(activityLabel)}</small>${availability ? `<small class="sketchizi-recent-folder-status" role="status">${escapeHtml(availability.label)}</small>` : ""}</span></button><button type="button" class="sketchizi-recent-remove" data-remove-recent-folder="${escapeHtml(item.id)}" aria-label="Remove ${escapeHtml(item.name)} from Recent folders" title="Remove from Recent folders">×</button></div>`;
+              }).join("")
+            : `<div class="sketchizi-recent-empty">No recent folders yet. Open a folder to keep it here for quick access.</div>`;
         }
         bind(folderList, "bound", (event) => {
           const remove = event.target.closest?.("[data-remove-recent-folder]");

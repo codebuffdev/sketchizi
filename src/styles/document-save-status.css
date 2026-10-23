@@ -1,0 +1,365 @@
+/* Compact, persistent indication of local autosave state with explicit recovery actions. */
+.desktop-app-save-status-wrap {
+  position: relative;
+  z-index: 40;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 0 8px 0 6px;
+}
+
+.desktop-app-save-status-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  max-width: 150px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text-muted, #777b8a);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease;
+}
+
+.desktop-app-save-status-trigger:hover,
+.desktop-app-save-status-trigger[aria-expanded="true"] {
+  border-color: var(--ui-border, #e0e2eb);
+  background: var(--ui-hover, #f5f5fa);
+  color: var(--ui-text-strong, #292b38);
+}
+
+.desktop-app-save-status-trigger:focus-visible,
+.desktop-app-save-status-actions button:focus-visible {
+  outline: 2px solid var(--ui-accent, #7463e8);
+  outline-offset: 2px;
+}
+
+.desktop-app-save-status-dot {
+  display: block;
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9296a4;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.desktop-app-save-status-trigger.is-saved .desktop-app-save-status-dot,
+.desktop-app-save-status-summary.is-saved::before { background: #22a06b; }
+.desktop-app-save-status-trigger.is-pending .desktop-app-save-status-dot,
+.desktop-app-save-status-trigger.is-saving .desktop-app-save-status-dot,
+.desktop-app-save-status-summary.is-pending::before,
+.desktop-app-save-status-summary.is-saving::before { background: #c58a20; }
+.desktop-app-save-status-trigger.is-error .desktop-app-save-status-dot,
+.desktop-app-save-status-summary.is-error::before { background: #d34b4b; }
+.desktop-app-save-status-trigger.is-ready .desktop-app-save-status-dot,
+.desktop-app-save-status-trigger.is-restoring .desktop-app-save-status-dot { background: #8b8d9b; }
+
+.desktop-app-save-status-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desktop-app-save-status-chevron {
+  color: var(--ui-text-muted, #9295a3);
+  font-size: 10px;
+}
+
+.desktop-app-save-status-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  width: min(330px, calc(100vw - 24px));
+  padding: 14px;
+  border: 1px solid var(--ui-border, #e0e2eb);
+  border-radius: 12px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #333847);
+  box-shadow: 0 18px 48px rgba(14, 18, 36, .2);
+  white-space: normal;
+}
+
+.desktop-app-save-status-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.desktop-app-save-status-heading > strong {
+  color: var(--ui-text-strong, #202333);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.desktop-app-save-status-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ui-text-muted, #7d8190);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.desktop-app-save-status-summary::before {
+  content: "";
+  display: inline-block;
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8b8d9b;
+}
+
+.desktop-app-save-status-popover p {
+  margin: 0 0 10px;
+  color: var(--ui-text-muted, #767a89);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.desktop-app-save-status-last-saved {
+  display: grid;
+  gap: 3px;
+  margin: 10px 0;
+  padding: 9px 10px;
+  border: 1px solid var(--ui-border-soft, #eaebf1);
+  border-radius: 8px;
+  background: var(--ui-surface-soft, #f8f8fb);
+}
+
+.desktop-app-save-status-last-saved span {
+  color: var(--ui-text-muted, #818593);
+  font-size: 10px;
+}
+
+.desktop-app-save-status-last-saved strong {
+  color: var(--ui-text-strong, #333746);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.desktop-app-save-status-popover .desktop-app-save-status-error {
+  color: #bd3434;
+  overflow-wrap: anywhere;
+}
+
+.desktop-app-save-status-popover .desktop-app-save-status-recovery-note {
+  padding: 8px 9px;
+  border: 1px solid rgba(197, 138, 32, .3);
+  border-radius: 8px;
+  background: rgba(197, 138, 32, .08);
+}
+
+.desktop-app-save-status-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 12px 0 10px;
+}
+
+.desktop-app-save-status-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--ui-accent, #7463e8);
+  border-radius: 8px;
+  background: var(--ui-accent, #7463e8);
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.desktop-app-save-status-actions button:hover { filter: brightness(.97); }
+.desktop-app-save-status-actions button.secondary {
+  border-color: var(--ui-border, #dfe1e9);
+  background: var(--ui-surface-soft, #f8f8fb);
+  color: var(--ui-text, #353846);
+}
+
+.desktop-app-save-status-popover .desktop-app-save-status-footnote {
+  margin: 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--ui-border-soft, #eaebf1);
+  font-size: 10px;
+}
+
+.app.theme-dark .desktop-app-save-status-trigger { color: var(--ui-text-muted, #a3a8b8); }
+.app.theme-dark .desktop-app-save-status-trigger:hover,
+.app.theme-dark .desktop-app-save-status-trigger[aria-expanded="true"] {
+  border-color: var(--ui-border, #3e4354);
+  background: var(--ui-hover, #272b39);
+  color: var(--ui-text-strong, #f0f1f8);
+}
+.app.theme-dark .desktop-app-save-status-popover {
+  border-color: var(--ui-border, #3e4354);
+  background: var(--ui-surface-solid, #20232e);
+  color: var(--ui-text, #e3e5ee);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .42);
+}
+.app.theme-dark .desktop-app-save-status-heading > strong,
+.app.theme-dark .desktop-app-save-status-last-saved strong { color: var(--ui-text-strong, #f0f1f8); }
+.app.theme-dark .desktop-app-save-status-last-saved { border-color: var(--ui-border-soft, #343847); background: var(--ui-surface-soft, #262a36); }
+.app.theme-dark .desktop-app-save-status-actions button.secondary { border-color: var(--ui-border, #424758); background: var(--ui-surface-soft, #292d3a); color: var(--ui-text, #e4e6ef); }
+
+@media (max-width: 1280px) and (min-width: 1025px) {
+  .desktop-app-save-status-wrap { margin-left: 2px; margin-right: 4px; }
+  .desktop-app-save-status-trigger { gap: 4px; padding-inline: 5px; }
+  .desktop-app-save-status-label { max-width: 44px; }
+}
+
+@media (max-width: 1024px) {
+  .desktop-app-save-status-wrap { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-app-save-status-trigger { transition: none; }
+}
+
+/* Phase 22 — current document identity and file-backed edit status. */
+.desktop-app-document-identity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 1 218px;
+  min-width: 92px;
+  max-width: 218px;
+  margin: 0 12px;
+  padding: 5px 9px;
+  border: 1px solid var(--ui-border-soft, #e9e7f2);
+  border-radius: 9px;
+  background: var(--ui-surface-soft, #f8f8fc);
+  color: var(--ui-text, #353746);
+  line-height: 1.15;
+}
+
+.desktop-app-document-identity-icon {
+  flex: 0 0 auto;
+  color: var(--ui-text-muted, #82869a);
+}
+
+.desktop-app-document-identity-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.desktop-app-document-identity-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-strong, #282a38);
+  font-size: 10.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-app-document-identity-state {
+  display: block;
+  overflow: hidden;
+  color: var(--ui-text-muted, #85889a);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-app-document-identity-dirty-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, .12);
+}
+
+.desktop-app-document-identity.is-dirty {
+  border-color: rgba(217, 119, 6, .35);
+  background: color-mix(in srgb, #d97706 5%, var(--ui-surface-solid, #fff));
+}
+
+.desktop-app-document-identity.is-dirty .desktop-app-document-identity-icon,
+.desktop-app-document-identity.is-dirty .desktop-app-document-identity-state {
+  color: #b45309;
+}
+
+.app.theme-dark .desktop-app-document-identity {
+  border-color: var(--ui-border, #343644);
+  background: var(--ui-surface-soft, #20212a);
+  color: var(--ui-text, #e5e7ef);
+}
+
+.app.theme-dark .desktop-app-document-identity-name {
+  color: var(--ui-text-strong, #f0f1f7);
+}
+
+.app.theme-dark .desktop-app-document-identity-state {
+  color: var(--ui-text-muted, #a1a4b4);
+}
+
+.app.theme-dark .desktop-app-document-identity.is-dirty {
+  border-color: rgba(245, 158, 11, .42);
+  background: color-mix(in srgb, #d97706 10%, var(--ui-surface-solid, #191a22));
+}
+
+.app.theme-dark .desktop-app-document-identity.is-dirty .desktop-app-document-identity-icon,
+.app.theme-dark .desktop-app-document-identity.is-dirty .desktop-app-document-identity-state {
+  color: #fbbf24;
+}
+
+@media (max-width: 1280px) and (min-width: 1025px) {
+  .desktop-app-document-identity {
+    flex-basis: 150px;
+    max-width: 150px;
+    margin-inline: 8px;
+  }
+
+  .desktop-app-document-identity-state {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .desktop-app-document-identity {
+    flex: 0 1 150px;
+    max-width: 150px;
+    min-width: 76px;
+    margin: 0 6px;
+    padding: 5px 7px;
+  }
+
+  .desktop-app-document-identity-state {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .desktop-app-document-identity {
+    flex-basis: 112px;
+    max-width: 112px;
+    min-width: 60px;
+  }
+
+  .desktop-app-document-identity-name {
+    font-size: 9.5px;
+  }
+
+  .desktop-app-document-identity-icon {
+    width: 14px;
+    height: 14px;
+  }
+}

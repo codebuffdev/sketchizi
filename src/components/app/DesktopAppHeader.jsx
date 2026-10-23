@@ -23,6 +23,7 @@ const MENU_DEFINITIONS = [
       "view.fit-canvas",
       "view.toggle-minimap",
       "view.toggle-theme",
+      "view.toggle-canvas-grid",
       "view.toggle-grid",
     ],
   },
@@ -73,9 +74,16 @@ export default function DesktopAppHeader({
   libraryToggle,
   setThemeMode,
   isDarkTheme,
+  saveStatus = { state: "ready", lastSavedAt: null },
+  currentDocumentName = "Untitled drawing",
+  currentDocumentDirty = false,
+  currentDocumentFileBacked = false,
+  onSaveNow,
+  onDownloadRecoveryBackup,
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
+  const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
   nativeMenuOpenLatestRef.current = nativeMenuOpen;
@@ -113,6 +121,24 @@ export default function DesktopAppHeader({
     };
   }, [openMenu]);
 
+  useEffect(() => {
+    if (!saveDetailsOpen) return undefined;
+    const close = (event) => {
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest(".desktop-app-save-status-wrap")) return;
+      setSaveDetailsOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setSaveDetailsOpen(false);
+    };
+    document.addEventListener("pointerdown", close, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [saveDetailsOpen]);
+
   const commandMap = useMemo(() => new Map(commands.map((command) => [command.id, command])), [commands]);
 
   const executeCommand = (command) => {
@@ -120,6 +146,20 @@ export default function DesktopAppHeader({
     setOpenMenu(null);
     command.execute?.();
   };
+
+  const saveState = saveStatus?.state || "ready";
+  const saveStateLabels = {
+    restoring: "Restoring…",
+    ready: "Autosave ready",
+    pending: "Unsaved changes",
+    saving: "Saving…",
+    saved: "Saved locally",
+    error: "Save issue",
+  };
+  const saveStateLabel = saveStateLabels[saveState] || "Local save status";
+  const lastSavedLabel = saveStatus?.lastSavedAt
+    ? new Date(saveStatus.lastSavedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+    : "No successful local save yet";
 
   return (
     <header className="desktop-app-header">
@@ -193,6 +233,24 @@ export default function DesktopAppHeader({
         })}
       </nav>
 
+      <div
+        className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
+        title={`${currentDocumentName}${currentDocumentDirty ? " — changes not saved to file" : currentDocumentFileBacked ? " — linked file" : " — browser-local canvas"}`}
+        aria-label={`Current document: ${currentDocumentName}. ${currentDocumentDirty ? "Changes not saved to file." : currentDocumentFileBacked ? "Connected to a file." : "Browser-local canvas."}`}
+      >
+        <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 3.75h8l4 4v12.5H6z" />
+          <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
+        </svg>
+        <span className="desktop-app-document-identity-copy">
+          <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
+          <span className="desktop-app-document-identity-state">
+            {currentDocumentDirty ? "Changes not saved to file" : currentDocumentFileBacked ? "Linked file" : "Local canvas"}
+          </span>
+        </span>
+        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+      </div>
+
       <div className="desktop-app-header-panel-actions">{children}</div>
 
       {collaborationCreationState === "creating" && (
@@ -215,6 +273,42 @@ export default function DesktopAppHeader({
       <div className="desktop-app-header-account-zone">
         <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
         <AuthenticationControl />
+      </div>
+
+      <div className="desktop-app-save-status-wrap">
+        <button
+          type="button"
+          className={`desktop-app-save-status-trigger is-${saveState}`}
+          aria-label={`Local document save status: ${saveStateLabel}. Open save and recovery options.`}
+          aria-haspopup="dialog"
+          aria-expanded={saveDetailsOpen}
+          title={`${saveStateLabel}. Click for save and recovery options.`}
+          onClick={() => { setOpenMenu(null); setSaveDetailsOpen((open) => !open); }}
+        >
+          <span className="desktop-app-save-status-dot" aria-hidden="true" />
+          <span className="desktop-app-save-status-label" role="status" aria-live="polite">{saveStateLabel}</span>
+          <span className="desktop-app-save-status-chevron" aria-hidden="true">⌄</span>
+        </button>
+        {saveDetailsOpen && (
+          <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
+            <div className="desktop-app-save-status-heading">
+              <strong>Local save &amp; recovery</strong>
+              <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
+            </div>
+            <p>Sketchizi autosaves this canvas in this browser on this device.</p>
+            <div className="desktop-app-save-status-last-saved">
+              <span>Last successful local save</span>
+              <strong>{lastSavedLabel}</strong>
+            </div>
+            {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
+            {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
+            <div className="desktop-app-save-status-actions">
+              <button type="button" onClick={() => { onSaveNow?.(); }}>Save now</button>
+              <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
+            </div>
+            <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
+          </section>
+        )}
       </div>
 
       {!collaborationActive && (
