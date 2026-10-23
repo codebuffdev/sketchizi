@@ -143,21 +143,22 @@
 
 .app .excalidraw .App-toolbar .sketchizi-dock-grip {
   display: inline-flex;
-  flex: 0 0 18px;
-  width: 18px;
-  min-width: 18px;
-  height: 34px;
-  min-height: 34px;
+  flex: 0 0 12px;
+  width: 12px;
+  min-width: 12px;
+  height: 24px;
+  min-height: 24px;
   padding: 0;
-  margin: 0 3px 0 0;
+  margin: 0 1px 0 0;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 3px;
   border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: #7f879b;
+  border-radius: 4px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #777f92;
   cursor: grab;
   touch-action: none;
 }
@@ -173,11 +174,12 @@
 
 .app .excalidraw .App-toolbar .sketchizi-dock-grip span {
   display: block;
-  width: 3px;
-  height: 3px;
+  width: 2px;
+  height: 2px;
+  flex: 0 0 2px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 5px 0 0 currentColor;
+  box-shadow: 4px 0 0 currentColor;
 }
 
 .app .excalidraw .App-toolbar .sketchizi-dock-separator {
