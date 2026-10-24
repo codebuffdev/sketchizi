@@ -258,8 +258,9 @@ test("readiness remediation prioritizes errors before warnings and informational
       api: {
         image: "example/api:latest",
         privileged: true,
-        depends_on: ["missing-service"],
+        depends_on: ["database"],
       },
+      database: { image: "postgres:17", depends_on: ["api"] },
     },
   });
   assert.ok(result.prioritizedFindings.length >= 3);
@@ -267,4 +268,17 @@ test("readiness remediation prioritizes errors before warnings and informational
   assert.equal(result.prioritizedFindings[0].priority, "P1");
   assert.ok(result.prioritizedFindings.some((finding) => finding.priority === "P2"));
   assert.ok(result.prioritizedFindings.every((finding) => finding.priorityLabel && finding.remediation));
+});
+
+test("exports a Markdown preflight report with score, findings, and scope limitations", async () => {
+  const { exportComposeReadinessReport } = await import("../src/features/docker-compose/composeDocumentService.js");
+  const report = exportComposeReadinessReport({
+    name: "shop",
+    services: { web: { image: "nginx:latest", ports: ["8080:80"] }, database: { image: "postgres:17" } },
+  });
+  assert.match(report, /Docker Compose Preflight Report — shop/);
+  assert.match(report, /Readiness score: \\d+\\/100/);
+  assert.match(report, /Suggested startup order/);
+  assert.match(report, /COMPOSE_MUTABLE_IMAGE_TAG/);
+  assert.match(report, /does not run Docker Compose/);
 });

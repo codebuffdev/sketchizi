@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
-import { analyzeComposeReadiness, validateComposeDocument } from "../composeDocumentService.js";
+import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
 import "./docker-compose-studio.css";
 
 function emptyService() {
@@ -136,6 +136,18 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     setNotice("compose.yaml exported.");
   };
 
+  const downloadPreflightReport = () => {
+    const report = exportComposeReadinessReport(composeDocument);
+    const blob = new Blob([report], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = (projectName.trim() || "compose") + "-preflight-report.md";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setNotice("Preflight report exported. It records static checks only; no deployment was run.");
+  };
+
   return (
     <div className="docker-studio-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="docker-studio" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
@@ -155,6 +167,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
             <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" className="docker-studio-file-input" style={{ display: "none" }} onChange={importYaml} aria-label="Import Compose YAML" />
             <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
             <button type="button" className="docker-studio-secondary" onClick={() => onCreateDiagram?.(composeDocument)}>Open as diagram</button>
+            <button type="button" className="docker-studio-secondary" onClick={downloadPreflightReport}>Export preflight report</button>
             <button type="button" className="docker-studio-secondary" onClick={addService}>＋ Add service</button>
             <button type="button" className="docker-studio-primary" onClick={downloadYaml}>Export compose.yaml</button>
           </div>
