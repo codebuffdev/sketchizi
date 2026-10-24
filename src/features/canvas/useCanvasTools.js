@@ -83,7 +83,7 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
           const recolorPaint = (value) => {
             if (!value) return value;
             const trimmed = value.trim();
-            if (/^(none|transparent|inherit|initial|unset)$/i.test(trimmed) || /^url\\(/i.test(trimmed)) return value;
+            if (/^(none|transparent|inherit|initial|unset)$/i.test(trimmed) || /^url\(/i.test(trimmed)) return value;
             return patch.strokeColor;
           };
 
