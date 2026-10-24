@@ -29,7 +29,12 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
     if (lastButton instanceof HTMLElement && !lastButton.dataset.sketchiziMoreToolsHidden) {
       lastButton.dataset.sketchiziMoreToolsHidden = "true";
       lastButton.dataset.sketchiziOriginalVisibility = lastButton.style.visibility || "";
-      lastButton.style.visibility = "hidden"; lastButton.style.pointerEvents = "none";
+      lastButton.dataset.sketchiziOriginalDisplay = lastButton.style.display || "";
+      // Remove the native trigger from layout as well as interaction; visibility:hidden
+      // leaves an empty button-sized gap in the dock.
+      lastButton.style.display = "none";
+      lastButton.style.visibility = "hidden";
+      lastButton.style.pointerEvents = "none";
     }
   }, [findAnchor]);
   const activate = useCallback((tool) => {
@@ -48,8 +53,12 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
   useEffect(() => {
     const restore = () => document.querySelectorAll(".excalidraw .App-toolbar button[data-sketchizi-more-tools-hidden=\"true\"]").forEach((node) => {
       if (!(node instanceof HTMLElement)) return;
-      node.style.visibility = node.dataset.sketchiziOriginalVisibility || ""; node.style.pointerEvents = "";
-      delete node.dataset.sketchiziMoreToolsHidden; delete node.dataset.sketchiziOriginalVisibility;
+      node.style.visibility = node.dataset.sketchiziOriginalVisibility || "";
+      node.style.display = node.dataset.sketchiziOriginalDisplay || "";
+      node.style.pointerEvents = "";
+      delete node.dataset.sketchiziMoreToolsHidden;
+      delete node.dataset.sketchiziOriginalVisibility;
+      delete node.dataset.sketchiziOriginalDisplay;
     });
     if (!canEdit) {
       restore();
