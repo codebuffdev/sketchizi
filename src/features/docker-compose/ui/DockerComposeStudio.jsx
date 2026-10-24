@@ -258,7 +258,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       "STDOUT:", runnerResult.stdout || "(empty)",
       "",
       "STDERR:", runnerResult.stderr || "(empty)",
-    ].join("\\n");
+    ].join("\n");
     try {
       await navigator.clipboard.writeText(report);
       setNotice("Diagnostic report copied to clipboard.");
