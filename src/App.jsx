@@ -394,7 +394,7 @@ function App() {
     });
   }, [apiRef, handleExcalidrawChange]);
 
-  const createComposeDiagram = useCallback((composeDocument) => {
+  const createComposeDiagram = useCallback(async (composeDocument) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit) return;
     const services = Object.entries(composeDocument.services || {});
@@ -478,8 +478,61 @@ function App() {
       });
     });
 
+    const iconForService = (service) => {
+      const image = String(service.image || service.build?.context || "").toLowerCase();
+      if (image.includes("nginx")) return "/icons/web-server.svg";
+      if (image.includes("node")) return "/icons/node.svg";
+      if (image.includes("postgres")) return "/icons/postgres.svg";
+      if (image.includes("redis")) return "/icons/redis.svg";
+      if (image.includes("mysql")) return "/icons/mysql.svg";
+      if (image.includes("mariadb")) return "/icons/mariadb.svg";
+      if (image.includes("mongo")) return "/icons/mongodb.svg";
+      if (image.includes("rabbitmq")) return "/icons/queue.svg";
+      if (image.includes("traefik") || image.includes("haproxy") || image.includes("envoy")) return "/icons/proxy.svg";
+      if (image.includes("prometheus") || image.includes("grafana")) return "/icons/monitoring.svg";
+      if (image.includes("docker")) return "/icons/docker.svg";
+      return "/icons/container.svg";
+    };
+    const iconAssets = new Map();
+    await Promise.all(services.map(async ([, service]) => {
+      const path = iconForService(service);
+      if (iconAssets.has(path)) return;
+      try {
+        const response = await fetch(path);
+        if (!response.ok) return;
+        const svgText = await response.text();
+        iconAssets.set(path, {
+          fileId: "compose-icon-" + path.split("/").pop(),
+          dataURL: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText)
+        });
+      } catch {
+        // The diagram can still be generated if an optional icon fails to load.
+      }
+    }));
+    if (iconAssets.size && typeof api.addFiles === "function") {
+      api.addFiles(Array.from(iconAssets.values()).map((asset) => ({
+        id: asset.fileId,
+        dataURL: asset.dataURL,
+        mimeType: "image/svg+xml",
+        created: Date.now()
+      })));
+    }
+
     services.forEach(([name, service]) => {
       const { x, y } = positions.get(name);
+      const iconAsset = iconAssets.get(iconForService(service));
+      if (iconAsset) {
+        skeleton.push({
+          type: "image",
+          x: x + cardWidth - 58,
+          y: y + 12,
+          width: 42,
+          height: 42,
+          fileId: iconAsset.fileId,
+          status: "saved",
+          scale: [1, 1]
+        });
+      }
       const ports = (service.ports || []).map((port) => typeof port === "string" ? port : [port.published, port.target].filter(Boolean).join(":")).filter(Boolean);
       const environment = service.environment
         ? (Array.isArray(service.environment) ? service.environment.map((entry) => typeof entry === "string" ? entry.split("=")[0] : Object.keys(entry || {})[0]) : Object.keys(service.environment))
