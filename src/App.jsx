@@ -402,52 +402,141 @@ function App() {
       showToast("Add at least one service before creating a diagram.", "error");
       return;
     }
-    const nodeWidth = 250;
-    const nodeHeight = 118;
-    const gapX = 100;
-    const gapY = 82;
-    const columns = Math.max(1, Math.ceil(Math.sqrt(services.length)));
+
+    // Create a readable architecture overview: project boundary, service cards,
+    // dependency connectors, and explicit shared-resource nodes.
+    const cardWidth = 300;
+    const cardHeight = 178;
+    const gapX = 110;
+    const gapY = 110;
+    const columns = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(services.length))));
+    const rows = Math.ceil(services.length / columns);
+    const left = 180;
+    const top = 210;
     const positions = new Map();
     const skeleton = [];
-    services.forEach(([name, service], index) => {
-      const x = 100 + (index % columns) * (nodeWidth + gapX);
-      const y = 100 + Math.floor(index / columns) * (nodeHeight + gapY);
-      positions.set(name, { x, y });
-      const details = [
-        name,
-        service.image || (service.build?.context ? `build: ${service.build.context}` : "Image not specified"),
-        ...(service.ports || []).map((port) => `Port: ${typeof port === "string" ? port : port.target || ""}`),
-        ...(service.networks ? [`Networks: ${(Array.isArray(service.networks) ? service.networks : Object.keys(service.networks)).join(", ")}`] : [])
-      ].slice(0, 4).join("\n");
-      skeleton.push({
-        type: "rectangle", x, y, width: nodeWidth, height: nodeHeight,
-        strokeColor: "#7c3aed", backgroundColor: "#ede9fe", fillStyle: "solid",
-        label: { text: details, fontSize: 16, textAlign: "center", verticalAlign: "middle" }
-      });
+    const projectName = composeDocument.name || "Docker Compose project";
+    const volumeNames = Object.keys(composeDocument.volumes || {});
+    const networkNames = Object.keys(composeDocument.networks || {});
+
+    const maxServiceX = left + Math.max(0, columns - 1) * (cardWidth + gapX);
+    const maxServiceY = top + Math.max(0, rows - 1) * (cardHeight + gapY);
+    const resourceTop = maxServiceY + cardHeight + 155;
+    const resourceCount = volumeNames.length + networkNames.length;
+    const resourceWidth = 230;
+    const resourceHeight = 86;
+    const resourceGap = 34;
+    const resourceTotalWidth = resourceCount ? resourceCount * resourceWidth + (resourceCount - 1) * resourceGap : 0;
+    const projectWidth = Math.max(maxServiceX - left + cardWidth + 120, resourceTotalWidth + 120);
+    const projectHeight = resourceCount
+      ? resourceTop - top + resourceHeight + 95
+      : maxServiceY - top + cardHeight + 100;
+
+    // The background is first so all generated elements remain visually inside it.
+    skeleton.push({
+      type: "rectangle",
+      x: left - 60,
+      y: top - 120,
+      width: projectWidth,
+      height: projectHeight,
+      strokeColor: "#64748b",
+      backgroundColor: "transparent",
+      fillStyle: "solid",
+      strokeStyle: "dashed",
+      label: { text: `COMPOSE PROJECT  ·  ${projectName}`, fontSize: 22, textAlign: "left", verticalAlign: "top" }
     });
+
+    services.forEach(([name, service], index) => {
+      const x = left + (index % columns) * (cardWidth + gapX);
+      const y = top + Math.floor(index / columns) * (cardHeight + gapY);
+      positions.set(name, { x, y });
+    });
+
+    // Dependency connectors are emitted before cards so they never cross card text.
     services.forEach(([name, service]) => {
       const from = positions.get(name);
       const dependencies = Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {});
       dependencies.forEach((dependency) => {
         const to = positions.get(dependency);
         if (!to) return;
-        const startX = from.x + nodeWidth / 2;
-        const startY = from.y + nodeHeight / 2;
-        const endX = to.x + nodeWidth / 2;
-        const endY = to.y + nodeHeight / 2;
+        const startX = from.x + cardWidth / 2;
+        const startY = from.y + cardHeight / 2;
+        const endX = to.x + cardWidth / 2;
+        const endY = to.y + cardHeight / 2;
         skeleton.push({
-          type: "arrow", x: startX, y: startY,
-          width: endX - startX, height: endY - startY,
+          type: "arrow",
+          x: startX,
+          y: startY,
+          width: endX - startX,
+          height: endY - startY,
           points: [[0, 0], [endX - startX, endY - startY]],
-          strokeColor: "#64748b", endArrowhead: "arrow"
+          strokeColor: "#64748b",
+          strokeWidth: 2,
+          endArrowhead: "arrow",
+          label: { text: "depends on", fontSize: 13 }
         });
       });
     });
+
+    services.forEach(([name, service]) => {
+      const { x, y } = positions.get(name);
+      const ports = (service.ports || []).map((port) => typeof port === "string" ? port : [port.published, port.target].filter(Boolean).join(":")).filter(Boolean);
+      const environment = service.environment
+        ? (Array.isArray(service.environment) ? service.environment.map((entry) => typeof entry === "string" ? entry.split("=")[0] : Object.keys(entry || {})[0]) : Object.keys(service.environment))
+        : [];
+      const dependencies = Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {});
+      const details = [
+        service.image ? `Image  ·  ${service.image}` : service.build?.context ? `Build  ·  ${service.build.context}` : "Image not specified",
+        ports.length ? `Ports  ·  ${ports.slice(0, 3).join(", ")}` : "",
+        dependencies.length ? `Depends on  ·  ${dependencies.join(", ")}` : "",
+        environment.length ? `Environment  ·  ${environment.slice(0, 3).join(", ")}` : "",
+        service.restart ? `Restart  ·  ${service.restart}` : ""
+      ].filter(Boolean);
+      skeleton.push({
+        type: "rectangle",
+        x,
+        y,
+        width: cardWidth,
+        height: cardHeight,
+        strokeColor: "#7c3aed",
+        backgroundColor: "#f5f3ff",
+        fillStyle: "solid",
+        strokeWidth: 2,
+        roundness: { type: 3 },
+        label: {
+          text: `CONTAINER  ·  ${name.toUpperCase()}\n\n${details.join("\n")}`,
+          fontSize: 16,
+          textAlign: "left",
+          verticalAlign: "middle"
+        }
+      });
+    });
+
+    const resources = [
+      ...volumeNames.map((name) => ({ name, kind: "VOLUME", color: "#0f766e", background: "#ccfbf1" })),
+      ...networkNames.map((name) => ({ name, kind: "NETWORK", color: "#0369a1", background: "#e0f2fe" }))
+    ];
+    resources.forEach((resource, index) => {
+      const x = left + index * (resourceWidth + resourceGap);
+      skeleton.push({
+        type: resource.kind === "VOLUME" ? "ellipse" : "diamond",
+        x,
+        y: resourceTop,
+        width: resourceWidth,
+        height: resourceHeight,
+        strokeColor: resource.color,
+        backgroundColor: resource.background,
+        fillStyle: "solid",
+        strokeWidth: 2,
+        label: { text: `${resource.kind}\n${resource.name}`, fontSize: 16, textAlign: "center", verticalAlign: "middle" }
+      });
+    });
+
     const elements = convertToExcalidrawElements(skeleton);
     api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     api.scrollToContent?.(elements, { fitToContent: true, animate: true });
     setDockerStudioOpen(false);
-    showToast("Compose diagram created on the canvas.");
+    showToast("Compose architecture diagram created. Select any element to edit it.");
   }, [collaborationCanEdit, showToast]);
 
   if (!sketchReady) {
