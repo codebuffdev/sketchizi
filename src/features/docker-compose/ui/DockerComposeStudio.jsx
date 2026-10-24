@@ -35,6 +35,24 @@ function getContainerAttention(container) {
   return null;
 }
 
+function getRecoveryGuidance(errorCode, action, serviceName) {
+  const target = serviceName ? ` for service “${serviceName}”` : "";
+  const guidance = {
+    DOCKER_CLI_MISSING: { title: "Docker CLI unavailable", steps: ["Install or repair Docker Desktop.", "Ensure the docker CLI is available on PATH.", "Run Check runner again."], risk: "No Compose lifecycle action was confirmed.", action: "health", actionLabel: "Check runner" },
+    DOCKER_DAEMON_UNAVAILABLE: { title: "Docker engine unavailable", steps: ["Open Docker Desktop and wait until the engine reports ready.", "Run Check runner to verify daemon access.", "Retry only after the connection check succeeds."], risk: "Do not repeat Start or Stop until the engine state is checked.", action: "health", actionLabel: "Check Docker connection" },
+    PORT_CONFLICT: { title: "Published port is already in use", steps: ["Identify the process or container currently using the host port.", "Change the host-side port mapping for the affected service.", "Run Validate, then retry when the conflict is resolved."], risk: "Do not stop unrelated containers without identifying their owner.", action: "validate", actionLabel: "Validate Compose file" },
+    IMAGE_ACCESS_DENIED: { title: "Image registry access denied", steps: ["Verify the image name and tag for this service.", "Confirm registry authentication and image pull permissions.", "Retry after access has been verified."], risk: "Never include registry passwords or access tokens in diagnostic reports.", action: "logs", actionLabel: "View service logs" },
+    DOCKERFILE_MISSING: { title: "Dockerfile or build context not found", steps: ["Confirm the build context is the directory containing the Dockerfile.", "Check the Dockerfile name and relative path.", "Run Validate before starting services again."], risk: "No files will be deleted or changed automatically.", action: "validate", actionLabel: "Validate Compose file" },
+    COMPOSE_CONFIG_INVALID: { title: "Compose configuration is invalid", steps: ["Read the first validation error in the command output.", "Correct the named service field or YAML structure.", "Re-run Validate before Start."], risk: "Start is not recommended until validation passes.", action: "validate", actionLabel: "Revalidate Compose file" },
+    COMMAND_TIMEOUT: { title: "Command timed out; final state may be uncertain", steps: ["Run Status or Refresh status to observe current containers.", "Inspect targeted service logs if a container is unhealthy or stopped.", "Retry a lifecycle command only after confirming the actual state."], risk: "A timeout does not prove Start or Stop failed; repeating immediately can compound the problem.", action: "ps", actionLabel: "Check runtime status" },
+    DOCKER_DISK_FULL: { title: "Docker storage is full", steps: ["Review Docker Desktop disk usage.", "Remove only resources confirmed safe to discard.", "Avoid broad prune or volume deletion commands until data impact is understood."], risk: "Pruning and volume removal can permanently delete data.", action: "ps", actionLabel: "Check runtime status" },
+    COMPOSE_COMMAND_FAILED: { title: "Compose command failed", steps: ["Read the first actionable error in stderr.", "Inspect affected service logs when the service is known.", "Correct the reported configuration, build, or runtime issue before retrying."], risk: "No automatic restart or cleanup will be performed.", action: "logs", actionLabel: "Inspect recent logs" },
+  };
+  const selected = guidance[errorCode];
+  if (!selected) return null;
+  return { ...selected, scope: `Recommended next steps${target} · original action: ${action || "unknown"}` };
+}
+
 function summarizeContainers(containers) {
   return containers.reduce((summary, container) => {
     const kind = getContainerState(container).kind;
@@ -246,7 +264,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     const report = [
       "Sketchizi Docker Compose diagnostic report",
       `Project: ${projectName}`,
-      `Action: ${runnerResult.action || "unknown"}`,
+      `Action: ${runnerResult.action || runnerResult.lifecycleAction || "unknown"}`,
       `Service: ${runnerResult.serviceName || "all services"}`,
       `Outcome: ${runnerResult.success ? "success" : runnerResult.outcomeUnknown || runnerResult.timedOut ? "uncertain" : "failed"}`,
       `Error code: ${runnerResult.errorCode || "none"}`,
@@ -467,16 +485,21 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 {runnerResult.refreshWarning && <div className="docker-studio-actionable-diagnostic"><span>STATUS REFRESH FAILED</span><p>{runnerResult.refreshWarning} Use Status or Refresh status to retry without repeating the lifecycle action.</p></div>}
                 {runnerResult.error && <p>{runnerResult.error}</p>}
                 {runnerResult.message && <p>{runnerResult.message}</p>}
-                {!runnerResult.success && runnerResult.errorCode && <div className="docker-studio-actionable-diagnostic">
-                  <span>{runnerResult.errorCode.replaceAll("_", " ")}</span>
-                  <p>{runnerResult.hint || "Review the command output and correct the reported issue before retrying."}</p>
-                  <div className="docker-studio-recovery-actions">
-                    {runnerResult.errorCode === "COMPOSE_CONFIG_INVALID" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("validate")}>Revalidate Compose file</button>}
-                    {["DOCKER_DAEMON_UNAVAILABLE", "COMMAND_TIMEOUT"].includes(runnerResult.errorCode) && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={checkRunnerHealth}>Check Docker connection</button>}
-                    {["PORT_CONFLICT", "IMAGE_ACCESS_DENIED", "DOCKERFILE_MISSING", "COMPOSE_COMMAND_FAILED"].includes(runnerResult.errorCode) && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs")}>Inspect recent logs</button>}
-                    {(runnerResult.timedOut || runnerResult.outcomeUnknown) && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Check runtime status</button>}
-                  </div>
-                </div>}
+                {!runnerResult.success && runnerResult.errorCode && (() => {
+                  const recovery = getRecoveryGuidance(runnerResult.errorCode, runnerResult.action, runnerResult.serviceName);
+                  if (!recovery) return <div className="docker-studio-actionable-diagnostic"><span>UNCLASSIFIED ERROR</span><p>{runnerResult.hint || "Review the command output and correct the reported issue before retrying."} No automatic recovery was attempted.</p></div>;
+                  return <section className="docker-studio-recovery-guidance" aria-label="Recovery guidance">
+                    <div className="docker-studio-recovery-heading"><span>RECOVERY GUIDANCE</span><strong>{recovery.title}</strong><small>{recovery.scope}</small></div>
+                    <ol>{recovery.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+                    <p className="docker-studio-recovery-risk"><strong>Safety note:</strong> {recovery.risk}</p>
+                    <div className="docker-studio-recovery-actions">
+                      {recovery.action === "health" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={checkRunnerHealth}>{recovery.actionLabel}</button>}
+                      {recovery.action === "validate" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("validate")}>{recovery.actionLabel}</button>}
+                      {recovery.action === "ps" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>{recovery.actionLabel}</button>}
+                      {recovery.action === "logs" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs", runnerResult.serviceName)}>{recovery.actionLabel}</button>}
+                    </div>
+                  </section>;
+                })()}
                 {["ps", "stats"].includes(runnerResult.action) && runnerResult.success && parseComposeStatus(runnerResult.stdout).length > 0 && <>{runnerResult.action === "ps" && (() => { const summary = summarizeContainers(parseComposeStatus(runnerResult.stdout)); return <div className="docker-studio-container-summary" aria-label="Container state summary">{[["Total", summary.total, "total"], ["Healthy", summary.healthy, "healthy"], ["Running", summary.running, "running"], ["Starting", summary.starting, "starting"], ["Unhealthy", summary.unhealthy, "unhealthy"], ["Stopped", summary.stopped, "stopped"]].map(([label, count, kind]) => <div key={label} className={"docker-studio-container-summary-item " + kind}><span>{label}</span><strong>{count}</strong></div>)}</div>; })()}{runnerResult.action === "ps" && (() => { const attention = parseComposeStatus(runnerResult.stdout).map((container) => ({ container, state: getContainerState(container), advice: getContainerAttention(container) })).filter((item) => item.advice); return attention.length > 0 ? <section className="docker-studio-health-events" aria-label="Containers needing attention"><div className="docker-studio-health-events-heading"><strong>Needs attention</strong><span>{attention.length} container{attention.length === 1 ? "" : "s"}</span></div><ul>{attention.map(({container,state,advice}, index) => <li key={container.ID || container.Id || container.Name || index}><div><strong>{container.Name || container.Service || container.ID || container.Id || "Container"}</strong><span className={"docker-studio-container-state " + state.kind}>{state.label}</span></div><b>{advice.title}</b><p>{advice.detail}</p><button type="button" className="docker-studio-secondary docker-studio-inspect-logs" disabled={runnerBusy || !(container.Service || services.some((service) => service.name === container.Name))} onClick={() => runComposeAction("logs", container.Service || container.Name)}>View service logs</button></li>)}</ul></section> : null; })()}<div className="docker-studio-status-table-wrap"><table className="docker-studio-status-table"><thead><tr><th>Container</th>{runnerResult.action === "ps" ? <><th>State</th><th>Health</th><th>Ports</th></> : <><th>CPU</th><th>Memory usage / limit</th><th>Memory %</th><th>Network I/O</th><th>Block I/O</th><th>PIDs</th></>}</tr></thead><tbody>{parseComposeStatus(runnerResult.stdout).map((container, index) => { const state = getContainerState(container); return <tr key={container.ID || container.Id || container.Name || container.Container || index}><td><strong>{container.Name || container.Service || container.ID || container.Id || container.Container || "Container"}</strong><small>{container.Image || ""}</small></td>{runnerResult.action === "ps" ? <><td><span className={"docker-studio-container-state " + state.kind}>{state.label}</span></td><td>{container.Health || container.HealthStatus || "—"}</td><td>{container.Ports || "—"}</td></> : <><td>{container.CPUPerc || container.CPU || container.CPUPercentage || "—"}</td><td>{container.MemUsage || container.MemoryUsage || "—"}</td><td>{container.MemPerc || container.MemoryPercent || "—"}</td><td>{container.NetIO || container.NetworkIO || "—"}</td><td>{container.BlockIO || "—"}</td><td>{container.PIDs || container.Pids || "—"}</td></>}</tr>; })}</tbody></table></div></>}{runnerResult.lifecycleOutput && <><strong>Lifecycle output · {runnerResult.lifecycleAction === "up" ? "Start" : "Stop"}</strong><pre>{runnerResult.lifecycleOutput}</pre></>}{runnerResult.action === "logs" && runnerResult.serviceName && <strong>Service logs · {runnerResult.serviceName}</strong>}{(!runnerResult.success || runnerResult.timedOut || runnerResult.outcomeUnknown) && <button type="button" className="docker-studio-secondary docker-studio-copy-diagnostics" disabled={runnerBusy} onClick={copyDiagnosticReport}>Copy diagnostic report</button>}{(runnerResult.stdout || runnerResult.stderr) && <pre>{[runnerResult.stdout && "STDOUT:\n" + runnerResult.stdout, runnerResult.stderr && "STDERR:\n" + runnerResult.stderr].filter(Boolean).join("\n\n")}</pre>}
               </section>}
               <div className={validation.valid && readiness.ready ? "docker-studio-preflight-status valid" : "docker-studio-preflight-status invalid"}>
