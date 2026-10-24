@@ -283,12 +283,11 @@ test("exports a Markdown preflight report with score, findings, and scope limita
   assert.match(report, /does not run Docker Compose/);
 });
 
-test("Compose Studio exposes an explicit execution preflight before any local commands", async () => {
+test("Compose Studio exports a static preflight report without requiring local Docker execution", async () => {
   const { readFile } = await import("node:fs/promises");
   const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(ui, /Deployment preflight/);
-  assert.match(ui, /docker compose -f compose\.yaml config --quiet/);
-  assert.match(ui, /docker compose -f compose\.yaml up --detach --build/);
-  assert.match(ui, /Commands run through the local loopback runner on this machine/);
-  assert.match(ui, /disabled={!executionAcknowledged}/);
+  assert.match(ui, /Export preflight report/);
+  assert.match(ui, /Export compose\.yaml/);
+  assert.match(ui, /Open as diagram/);
+  assert.doesNotMatch(ui, /Execution Preflight|Deployment preflight|docker compose -f compose\.yaml up|Local runner URL/);
 });
