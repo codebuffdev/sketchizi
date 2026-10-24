@@ -289,6 +289,6 @@ test("Compose Studio exposes an explicit execution preflight before any local co
   assert.match(ui, /Deployment preflight/);
   assert.match(ui, /docker compose -f compose\.yaml config --quiet/);
   assert.match(ui, /docker compose -f compose\.yaml up --detach --build/);
-  assert.match(ui, /Sketchizi does not execute Docker commands from this screen/);
+  assert.match(ui, /Commands run through the local loopback runner on this machine/);
   assert.match(ui, /disabled={!executionAcknowledged}/);
 });
