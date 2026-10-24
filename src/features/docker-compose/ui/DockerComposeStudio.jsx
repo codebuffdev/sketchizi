@@ -32,7 +32,8 @@ function toDocument(name, services, volumeNames, networkNames) {
     normalized[service.name.trim()] = definition;
   }
   const volumes = Object.fromEntries(parseLines(volumeNames).map((name) => [name, {}]));
-  const networks = Object.fromEntries(parseLines(networkNames).map((name) => [name, {}]));\n  return { name: name.trim(), services: normalized, volumes, networks };
+  const networks = Object.fromEntries(parseLines(networkNames).map((name) => [name, {}]));
+  return { name: name.trim(), services: normalized, volumes, networks };
 }
 
 export default function DockerComposeStudio({ onClose }) {
