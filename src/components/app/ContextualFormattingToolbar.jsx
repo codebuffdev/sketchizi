@@ -79,6 +79,7 @@ export default function ContextualFormattingToolbar({
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+  const onlyTextSelection = liveSelection.every((element) => element.type === "text");
   const currentStroke = first?.strokeColor?.toLowerCase();
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
@@ -93,7 +94,22 @@ export default function ContextualFormattingToolbar({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
-      {!hasImageSelection && <div className="contextual-formatting-group" role="group" aria-label="Stroke color">
+      {onlyTextSelection && <div className="contextual-formatting-group" role="group" aria-label="Text color">
+        {STROKE_COLORS.map(([color, label]) => (
+          <button
+            key={color}
+            type="button"
+            className={`contextual-color-swatch${currentStroke === color ? " is-selected" : ""}`}
+            style={{ "--swatch-color": color }}
+            aria-label={`Text color ${label}`}
+            aria-pressed={currentStroke === color}
+            title={`Text color: ${label}`}
+            onClick={() => applyToSelected({ strokeColor: color })}
+          />
+        ))}
+      </div>}
+
+      {!hasImageSelection && !onlyTextSelection && <div className="contextual-formatting-group" role="group" aria-label="Stroke color">
         {STROKE_COLORS.map(([color, label]) => (
           <button
             key={color}
