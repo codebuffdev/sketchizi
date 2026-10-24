@@ -110,7 +110,21 @@ export default function DockerComposeStudio({ onClose }) {
       setNotice("Fix the validation errors before exporting.");
       return;
     }
-    const output = sourceDocument ? { ...sourceDocument, ...composeDocument, services: Object.fromEntries(Object.entries(composeDocument.services).map(([name, service]) => [name, { ...(sourceDocument.services?.[name] || {}), ...service }])) } : composeDocument;
+    const output = sourceDocument ? {
+      ...sourceDocument,
+      ...composeDocument,
+      volumes: Object.fromEntries(Object.keys(composeDocument.volumes).map((name) => [name, sourceDocument.volumes?.[name] ?? {}])),
+      networks: Object.fromEntries(Object.keys(composeDocument.networks).map((name) => [name, sourceDocument.networks?.[name] ?? {}])),
+      services: Object.fromEntries(Object.entries(composeDocument.services).map(([name, service]) => {
+        const original = { ...(sourceDocument.services?.[name] || {}) };
+        // These fields are represented by the editor. Remove their imported values first
+        // so clearing a field in the UI also clears it from the exported document.
+        for (const key of ["image", "build", "ports", "environment", "depends_on", "volumes", "networks", "healthcheck", "restart"]) {
+          delete original[key];
+        }
+        return [name, { ...original, ...service }];
+      }))
+    } : composeDocument;
     const blob = new Blob([stringify(output)], { type: "text/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -137,7 +151,7 @@ export default function DockerComposeStudio({ onClose }) {
         <div className="docker-studio-project-row">
           <label>Project name<input value={projectName} onChange={(event) => setProjectName(event.target.value)} /></label>
           <div className="docker-studio-header-actions">
-            <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" className="docker-studio-file-input" onChange={importYaml} aria-label="Import Compose YAML" />
+            <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" className="docker-studio-file-input" style={{ display: "none" }} onChange={importYaml} aria-label="Import Compose YAML" />
             <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
             <button type="button" className="docker-studio-secondary" onClick={addService}>＋ Add service</button>
             <button type="button" className="docker-studio-primary" onClick={downloadYaml}>Export compose.yaml</button>
