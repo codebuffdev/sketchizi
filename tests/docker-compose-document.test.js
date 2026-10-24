@@ -73,3 +73,35 @@ test("preserves build context, mounted volumes, networks, and health checks in e
   assert.match(yaml, /interval: "30s"/);
   assert.match(yaml, /retries: 3/);
 });
+
+test("validates undefined secrets and configs referenced by services", () => {
+  const result = validateComposeDocument({
+    services: {
+      api: { image: "example/api:1", secrets: ["missing-secret"], configs: ["missing-config"] },
+    },
+  });
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_UNKNOWN_SECRET"));
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_UNKNOWN_CONFIG"));
+});
+
+test("validates invalid host ports and malformed healthcheck definitions", () => {
+  const result = validateComposeDocument({
+    services: {
+      api: { image: "example/api:1", ports: ["8080:80", "70000:81"], healthcheck: { test: 42 } },
+    },
+  });
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_HOST_PORT_OUT_OF_RANGE"));
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_INVALID_HEALTHCHECK_TEST"));
+});
+
+test("preserves top-level secrets and configs during export", () => {
+  const yaml = exportComposeYaml({
+    services: { api: { image: "example/api:1", secrets: ["api_key"], configs: ["app_config"] } },
+    secrets: { api_key: { external: true } },
+    configs: { app_config: { file: "./app.conf" } },
+  });
+  assert.match(yaml, /secrets:/);
+  assert.match(yaml, /api_key:/);
+  assert.match(yaml, /configs:/);
+  assert.match(yaml, /app_config:/);
+});
