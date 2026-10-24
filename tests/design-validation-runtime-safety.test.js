@@ -23,9 +23,9 @@ test("Design Studio handoff guards editor readiness and confirms replacing a non
 });
 
 test("canvas persistence callbacks keep stable identities and declare dependencies", () => {
-  assert.match(persistenceSource, /const persistSketchNow = useCallback\(\(payload\) => \{/);
+  assert.match(persistenceSource, /const persistSketchNow = useCallback\(\(payload, revision = saveRevisionRef\.current\) => \{/);
   assert.match(persistenceSource, /\}, \[documentMetadataRef\]\);\s*\n\s*const queueSketchSave = useCallback/);
-  assert.match(persistenceSource, /\}, \[apiRef, persistSketchNow, sketchReady\]\);\s*\n\s*const retryLocalSave = useCallback/);
+  assert.match(persistenceSource, /\}, \[apiRef, documentMetadataRef, persistSketchNow, sketchReady\]\);\s*\n\s*const retryLocalSave = useCallback/);
   assert.match(persistenceSource, /\}, \[apiRef, documentMetadataRef, persistSketchNow\]\);\s*\n\s*const downloadRecoveryBackup = useCallback/);
   assert.match(persistenceSource, /\}, \[apiRef, documentMetadataRef\]\);/);
 });
