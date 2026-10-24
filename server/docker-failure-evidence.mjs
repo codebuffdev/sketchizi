@@ -15,8 +15,16 @@ function hasServiceBoundary(line, serviceName) {
   return false;
 }
 
-export function extractDockerFailureEvidence(stderr = "", stdout = "", serviceNames = []) {
-  const names = Array.isArray(serviceNames) ? serviceNames.map(String) : Object.keys(serviceNames || {});
+function getDependencies(serviceDefinition) {
+  const declared = serviceDefinition && serviceDefinition.depends_on;
+  if (Array.isArray(declared)) return declared.filter((name) => typeof name === "string");
+  if (declared && typeof declared === "object") return Object.keys(declared);
+  return [];
+}
+
+export function extractDockerFailureEvidence(stderr = "", stdout = "", services = []) {
+  const definitions = Array.isArray(services) ? null : (services && typeof services === "object" ? services : null);
+  const names = definitions ? Object.keys(definitions) : (Array.isArray(services) ? services.map(String) : []);
   const lines = (String(stderr) + "\n" + String(stdout)).split(/\r?\n/).map(cleanLine).filter(Boolean);
   if (lines.length === 0) return null;
   const keywords = ["error", "failed", "failure", "denied", "unhealthy", "not found", "cannot", "unable", "conflict", "invalid", "timeout"];
@@ -24,8 +32,18 @@ export function extractDockerFailureEvidence(stderr = "", stdout = "", serviceNa
   const normalized = relevant.toLowerCase();
   const matches = names.filter((name) => hasServiceBoundary(normalized, name.toLowerCase()));
   const dependencyContext = ["depend", "dependency", "depends on", "depends_on"].some((word) => normalized.includes(word));
-  if (dependencyContext && matches.length > 1) {
-    return { serviceName: matches[matches.length - 1], dependentServiceName: matches[0], line: relevant, confidence: "dependency-context", relation: "upstream-dependency" };
+  if (dependencyContext && matches.length > 1 && definitions) {
+    const edges = [];
+    for (const dependent of matches) {
+      for (const upstream of getDependencies(definitions[dependent])) {
+        if (matches.includes(upstream)) edges.push({ dependent, upstream });
+      }
+    }
+    if (edges.length === 1) {
+      const { dependent, upstream } = edges[0];
+      return { serviceName: upstream, dependentServiceName: dependent, line: relevant, confidence: "dependency-context", relation: "upstream-dependency" };
+    }
+    return { line: relevant, confidence: "ambiguous", candidateServices: matches.slice(0, 5), relation: "ambiguous" };
   }
   if (matches.length === 1) return { serviceName: matches[0], line: relevant, confidence: "service-match", relation: "direct" };
   if (matches.length > 1) return { line: relevant, confidence: "ambiguous", candidateServices: matches.slice(0, 5), relation: "ambiguous" };

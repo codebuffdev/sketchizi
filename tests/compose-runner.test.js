@@ -174,7 +174,7 @@ test("Studio offers a copyable diagnostic report for failed or uncertain Compose
 
 test("Compose runner attaches conservative service-level failure evidence", async () => {
   const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
-  assert.match(source, /extractDockerFailureEvidence\(result\.stderr, result\.stdout, Object\.keys\(parsed\.services\)\)/);
+  assert.match(source, /extractDockerFailureEvidence\(result\.stderr, result\.stdout, parsed\.services\)/);
   const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
   assert.match(ui, /runnerResult\.failureEvidence/);
   assert.match(ui, /does not confirm root cause or perform recovery/);
@@ -187,4 +187,9 @@ test("Studio distinguishes direct, dependency-context, and ambiguous failure evi
   assert.match(source, /Ambiguous service attribution/);
   assert.match(source, /Dependent service:/);
   assert.match(source, /Possible services:/);
+});
+
+test("Compose runner passes declared service definitions to dependency-aware failure attribution", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /extractDockerFailureEvidence\(result\.stderr, result\.stdout, parsed\.services\)/);
 });

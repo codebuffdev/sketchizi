@@ -170,8 +170,7 @@ const server = createServer(async (request, response) => {
       message: result.exitCode === 0 ? "Docker Compose command completed." : result.timedOut ? "Docker Compose command timed out. Its final state may be unknown; check Status before retrying." : "Docker Compose command failed.",
       ...(result.timedOut ? { timedOut: true } : {}),
       ...(result.exitCode === 0 ? {} : classifyDockerFailure(result.exitCode, result.stdout, result.stderr)),
-      ...(result.exitCode === 0 ? {} : { failureEvidence: extractDockerFailureEvidence(result.stderr, result.stdout, Object.keys(parsed.services)) }),
-      ...(result.exitCode === 0 ? {} : { failureEvidence: extractDockerFailureEvidence(result.stderr, result.stdout, Object.keys(parsed.services)) }),
+      ...(result.exitCode === 0 ? {} : { failureEvidence: extractDockerFailureEvidence(result.stderr, result.stdout, parsed.services) }),
     }, origin);
   } catch (error) {
     send(response, error.status || 500, { error: error.message || "Compose runner failed." }, origin);
