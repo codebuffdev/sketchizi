@@ -39,7 +39,9 @@ function toDocument(name, services, volumeNames, networkNames) {
 export default function DockerComposeStudio({ onClose }) {
   const [projectName, setProjectName] = useState("my-compose-project");
   const [services, setServices] = useState([{ name: "web", ...emptyService() }]);
-  const [selectedId, setSelectedId] = useState("web");\n  const [volumeNames, setVolumeNames] = useState("");\n  const [networkNames, setNetworkNames] = useState("");
+  const [selectedId, setSelectedId] = useState("web");
+  const [volumeNames, setVolumeNames] = useState("");
+  const [networkNames, setNetworkNames] = useState("");
   const [notice, setNotice] = useState("");
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
@@ -159,8 +161,8 @@ export default function DockerComposeStudio({ onClose }) {
         </section>
 
         <section className="docker-studio-resources" aria-label="Shared volumes and networks">
-          <label>Named volumes <span>One volume name per line</span><textarea value={volumeNames} onChange={(event) => setVolumeNames(event.target.value)} placeholder={"database-data\\nuploads"} rows={2} /></label>
-          <label>Networks <span>One network name per line</span><textarea value={networkNames} onChange={(event) => setNetworkNames(event.target.value)} placeholder={"frontend\\nbackend"} rows={2} /></label>
+          <label>Named volumes <span>One volume name per line</span><textarea value={volumeNames} onChange={(event) => setVolumeNames(event.target.value)} placeholder={"database-data\nuploads"} rows={2} /></label>
+          <label>Networks <span>One network name per line</span><textarea value={networkNames} onChange={(event) => setNetworkNames(event.target.value)} placeholder={"frontend\nbackend"} rows={2} /></label>
         </section>
 
         <div className="docker-studio-workspace">
@@ -185,9 +187,9 @@ export default function DockerComposeStudio({ onClose }) {
                   <label>Published ports <span>One mapping per line</span><textarea value={selected.portsText} onChange={(event) => updateSelected({ portsText: event.target.value })} placeholder={"8080:80\n8443:443"} rows={3} /></label>
                   <label>Environment variables <span>KEY=value, one per line</span><textarea value={selected.environmentText} onChange={(event) => updateSelected({ environmentText: event.target.value })} placeholder={"NODE_ENV=production\nPORT=3000"} rows={3} /></label>
                   <label>Depends on <span>Service names, one per line</span><textarea value={selected.dependsText} onChange={(event) => updateSelected({ dependsText: event.target.value })} placeholder="database" rows={2} /></label>
-                  <label>Mounted volumes <span>source:target, one per line</span><textarea value={selected.volumesText} onChange={(event) => updateSelected({ volumesText: event.target.value })} placeholder={"database-data:/var/lib/data\\n./config:/app/config:ro"} rows={3} /></label>
-                  <label>Networks <span>Declared network names, one per line</span><textarea value={selected.networksText} onChange={(event) => updateSelected({ networksText: event.target.value })} placeholder={"frontend\\nbackend"} rows={2} /></label>
-                  <label>Health check <span>Command, interval, retries (one per line)</span><textarea value={selected.healthcheckText} onChange={(event) => updateSelected({ healthcheckText: event.target.value })} placeholder={"curl -f http://localhost/health || exit 1\\n30s\\n3"} rows={3} /></label>
+                  <label>Mounted volumes <span>source:target, one per line</span><textarea value={selected.volumesText} onChange={(event) => updateSelected({ volumesText: event.target.value })} placeholder={"database-data:/var/lib/data\n./config:/app/config:ro"} rows={3} /></label>
+                  <label>Networks <span>Declared network names, one per line</span><textarea value={selected.networksText} onChange={(event) => updateSelected({ networksText: event.target.value })} placeholder={"frontend\nbackend"} rows={2} /></label>
+                  <label>Health check <span>Command, interval, retries (one per line)</span><textarea value={selected.healthcheckText} onChange={(event) => updateSelected({ healthcheckText: event.target.value })} placeholder={"curl -f http://localhost/health || exit 1\n30s\n3"} rows={3} /></label>
                   <label>Restart policy<select value={selected.restart} onChange={(event) => updateSelected({ restart: event.target.value })}><option value="unless-stopped">unless-stopped</option><option value="always">always</option><option value="on-failure">on-failure</option><option value="no">no</option></select></label>
                 </div>
               </>
