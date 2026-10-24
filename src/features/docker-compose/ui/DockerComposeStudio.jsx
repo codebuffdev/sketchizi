@@ -210,8 +210,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
         }
       }
     } catch (error) {
-      setRunnerResult({ success: false, error: error instanceof Error ? error.message : "Could not connect to the local Compose runner." });
-      setNotice("Could not reach the local Compose runner. Confirm it is running and the origin is allowed.");
+      setRunnerResult({ success: false, outcomeUnknown: true, error: error instanceof Error ? error.message : "The request outcome could not be confirmed." });
+      setNotice("The request outcome could not be confirmed. Check Status before retrying a lifecycle action.");
     } finally { setRunnerBusy(false); }
   };
 
@@ -409,7 +409,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 {runnerHealth.message && <p>{runnerHealth.message}</p>}
               </section>}
               {runnerResult && <section className={runnerResult.success ? "docker-studio-runner-result success" : "docker-studio-runner-result failure"} aria-live="polite">
-                <strong>{runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
+                <strong>{runnerResult.timedOut || runnerResult.outcomeUnknown ? "Outcome uncertain" : runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
+                {(runnerResult.timedOut || runnerResult.outcomeUnknown) && <div className="docker-studio-actionable-diagnostic"><span>CHECK BEFORE RETRYING</span><p>The runner could not confirm the final result. Use Status or Refresh status to inspect the project before repeating Start or Stop.</p></div>}
                 {runnerResult.lifecycleAction && <p>Lifecycle action <strong>{runnerResult.lifecycleAction === "up" ? "Start" : "Stop"}</strong> completed with exit code {runnerResult.lifecycleExitCode}. The table below shows the refreshed container state.</p>}
                 {runnerResult.refreshWarning && <div className="docker-studio-actionable-diagnostic"><span>STATUS REFRESH FAILED</span><p>{runnerResult.refreshWarning} Use Status or Refresh status to retry without repeating the lifecycle action.</p></div>}
                 {runnerResult.error && <p>{runnerResult.error}</p>}

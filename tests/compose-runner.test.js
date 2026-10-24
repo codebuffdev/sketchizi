@@ -114,3 +114,13 @@ test("Compose runner marks timeout outcomes as uncertain and advises checking st
   assert.match(source, /For start\/stop actions, the final Docker state may be uncertain/);
   assert.match(source, /action-specific time limit/);
 });
+
+test("Studio exposes lifecycle output and treats unconfirmed requests as uncertain outcomes", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /runnerResult\.lifecycleOutput/);
+  assert.match(source, /Lifecycle output/);
+  assert.match(source, /runnerResult\.outcomeUnknown/);
+  assert.match(source, /Outcome uncertain/);
+  assert.match(source, /Check Status before retrying a lifecycle action/);
+  assert.match(source, /CHECK BEFORE RETRYING/);
+});
