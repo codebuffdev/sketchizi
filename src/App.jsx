@@ -264,7 +264,7 @@ function App() {
     }
     api.updateScene({ elements: result.elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     showToast(`Relationship updated to ${relationshipType}. Run validation again to verify the design.`);
-  }, [collaborationCanEdit, showToast]);
+  }, [collaborationCanEdit, showToast, eraserCatalog, networkingIcons]);
 
   const selectArchitectureDiagnostic = useCallback((diagnostic) => {
     const api = apiRef.current;
@@ -508,7 +508,39 @@ function App() {
       });
     });
 
-    const iconForService = (service) => {
+    // Prefer recognizable artwork from Sketchizi's own icon catalogs. The
+    // bundled service icons remain a fallback for services without a catalog match.
+    const libraryIcons = [...eraserCatalog, ...awsIcons, ...kubernetesIcons, ...networkingIcons, ...umlIcons, ...mindMapIcons];
+    const iconTermsForService = (name, service) => {
+      const value = `${name} ${service.image || ""} ${service.build?.context || ""}`.toLowerCase();
+      if (/postgres|postgresql/.test(value)) return ["postgres", "postgresql", "database", "sql"];
+      if (/mysql|mariadb/.test(value)) return ["mysql", "mariadb", "database", "sql"];
+      if (/mongo/.test(value)) return ["mongodb", "mongo", "document database"];
+      if (/redis/.test(value)) return ["redis", "cache", "in-memory database"];
+      if (/rabbitmq|kafka|queue|messaging/.test(value)) return ["rabbitmq", "message queue", "messaging", "kafka"];
+      if (/prometheus|grafana|loki|monitor|observability/.test(value)) return ["prometheus", "grafana", "monitoring", "observability", "logging"];
+      if (/traefik|nginx|haproxy|envoy|proxy|gateway|ingress/.test(value)) return ["nginx", "proxy", "load balancer", "gateway", "web server"];
+      if (/node|frontend|web|ui/.test(value)) return ["node.js", "web application", "frontend", "web server", "application"];
+      if (/docker|container/.test(value)) return ["docker", "container"];
+      return [name.toLowerCase(), "server", "application", "container"];
+    };
+    const findLibraryIcon = (name, service) => {
+      const terms = iconTermsForService(name, service);
+      let best = null;
+      let bestScore = 0;
+      for (const icon of libraryIcons) {
+        if (!icon?.src || typeof icon.src !== "string") continue;
+        const haystack = [icon.name, icon.id, icon.category, icon.subtitle, ...(icon.tags || []), ...(icon.searchAliases || [])].filter(Boolean).join(" ").toLowerCase();
+        let score = 0;
+        for (const term of terms) {
+          if (haystack === term) score += 12;
+          else if (haystack.includes(term)) score += term.length > 5 ? 5 : 2;
+        }
+        if (score > bestScore) { best = icon; bestScore = score; }
+      }
+      return bestScore ? best : null;
+    };
+    const fallbackIconForService = (service) => {
       const image = String(service.image || service.build?.context || "").toLowerCase();
       if (image.includes("nginx")) return "/icons/web-server.svg";
       if (image.includes("node")) return "/icons/node.svg";
@@ -523,17 +555,32 @@ function App() {
       if (image.includes("docker")) return "/icons/docker.svg";
       return "/icons/container.svg";
     };
+    const serviceIconSources = new Map(services.map(([name, service]) => {
+      const libraryIcon = findLibraryIcon(name, service);
+      return [name, libraryIcon?.src || fallbackIconForService(service)];
+    }));
     const iconAssets = new Map();
-    await Promise.all(services.map(async ([, service]) => {
-      const path = iconForService(service);
-      if (iconAssets.has(path)) return;
+    await Promise.all(services.map(async ([name]) => {
+      const source = serviceIconSources.get(name);
+      if (iconAssets.has(source)) return;
       try {
-        const response = await fetch(path);
+        if (source.startsWith("data:image/")) {
+          iconAssets.set(source, { fileId: `compose-icon-${iconAssets.size}`, dataURL: source, mimeType: source.slice(5, source.indexOf(";")) || "image/svg+xml" });
+          return;
+        }
+        const response = await fetch(source);
         if (!response.ok) return;
-        const svgText = await response.text();
-        iconAssets.set(path, {
-          fileId: "compose-icon-" + path.split("/").pop(),
-          dataURL: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText)
+        const blob = await response.blob();
+        const dataURL = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        iconAssets.set(source, {
+          fileId: "compose-icon-" + iconAssets.size,
+          dataURL,
+          mimeType: blob.type || "image/svg+xml"
         });
       } catch {
         // The diagram can still be generated if an optional icon fails to load.
@@ -543,14 +590,14 @@ function App() {
       api.addFiles(Array.from(iconAssets.values()).map((asset) => ({
         id: asset.fileId,
         dataURL: asset.dataURL,
-        mimeType: "image/svg+xml",
+        mimeType: asset.mimeType || "image/svg+xml",
         created: Date.now()
       })));
     }
 
     services.forEach(([name, service]) => {
       const { x, y } = positions.get(name);
-      const iconAsset = iconAssets.get(iconForService(service));
+      const iconAsset = iconAssets.get(serviceIconSources.get(name));
       const ports = (service.ports || []).map((port) => typeof port === "string" ? port : [port.published, port.target].filter(Boolean).join(":")).filter(Boolean);
       const environment = service.environment
         ? (Array.isArray(service.environment) ? service.environment.map((entry) => typeof entry === "string" ? entry.split("=")[0] : Object.keys(entry || {})[0]) : Object.keys(service.environment))
