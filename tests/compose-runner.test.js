@@ -134,3 +134,11 @@ test("Studio tracks the ten most recent Compose operations with duration and out
   assert.match(source, /operation\.outcome/);
   assert.match(source, /operation\.detail/);
 });
+
+test("Studio explains actionable follow-up for unhealthy, stopped, starting, and unknown containers", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /function getContainerAttention\(container\)/);
+  for (const text of ["Health check failing", "Container stopped", "Still starting", "State not recognized", "Needs attention"]) assert.ok(source.includes(text), "missing health event: " + text);
+  assert.match(source, /docker-studio-health-events/);
+  assert.match(source, /getContainerAttention\(container\)/);
+});
