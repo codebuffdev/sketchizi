@@ -75,3 +75,22 @@ test("Studio summarizes container health and distinguishes runtime states", asyn
   assert.ok(source.includes("docker-studio-container-summary"));
   assert.ok(source.includes("container.HealthStatus"));
 });
+
+
+test("Compose runner classifies common failures and returns actionable remediation hints", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  for (const code of ["DOCKER_CLI_MISSING", "COMMAND_TIMEOUT", "DOCKER_DAEMON_UNAVAILABLE", "PORT_CONFLICT", "IMAGE_ACCESS_DENIED", "DOCKERFILE_MISSING", "COMPOSE_CONFIG_INVALID", "DOCKER_DISK_FULL", "COMPOSE_COMMAND_FAILED"]) {
+    assert.ok(source.includes(code), "missing diagnostic classification: " + code);
+  }
+  assert.match(source, /classifyDockerFailure\(result\.exitCode, result\.stdout, result\.stderr\)/);
+  assert.match(source, /hint: "Start Docker Desktop/);
+  assert.match(source, /hint: "Another process may be using the published port/);
+});
+
+test("Studio renders stable error codes and remediation hints alongside raw command output", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /docker-studio-actionable-diagnostic/);
+  assert.match(source, /runnerResult\.errorCode/);
+  assert.match(source, /runnerResult\.hint/);
+  assert.match(source, /runnerResult\.stdout/);
+});

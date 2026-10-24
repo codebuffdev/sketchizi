@@ -41,6 +41,35 @@ function appendBounded(current, chunk) {
   return next.length > 200_000 ? next.slice(-200_000) : next;
 }
 
+function classifyDockerFailure(exitCode, stdout, stderr) {
+  const output = (stderr + "\\n" + stdout).toLowerCase();
+  if (exitCode === 127 || /docker cli was not found|enoent/.test(output)) {
+    return { errorCode: "DOCKER_CLI_MISSING", hint: "Install Docker Desktop, start it, and ensure the docker CLI is available on PATH." };
+  }
+  if (exitCode === 124 || /timed out after 120 seconds/.test(output)) {
+    return { errorCode: "COMMAND_TIMEOUT", hint: "The command exceeded 120 seconds. Check image builds, network access, and Docker daemon load, then retry." };
+  }
+  if (/cannot connect to the docker daemon|daemon is not running|is the docker daemon running|error during connect/.test(output)) {
+    return { errorCode: "DOCKER_DAEMON_UNAVAILABLE", hint: "Start Docker Desktop and wait until its engine is ready, then use Check runner." };
+  }
+  if (/port is already allocated|address already in use|bind:.*address/.test(output)) {
+    return { errorCode: "PORT_CONFLICT", hint: "Another process may be using the published port. Change the host-side port in the Compose service and retry." };
+  }
+  if (/pull access denied|authentication required|unauthorized|denied: requested access/.test(output)) {
+    return { errorCode: "IMAGE_ACCESS_DENIED", hint: "Check the image name, registry credentials, and whether your account can access the image." };
+  }
+  if (/no such file or directory.*dockerfile|failed to read dockerfile|dockerfile.*not found/.test(output)) {
+    return { errorCode: "DOCKERFILE_MISSING", hint: "Verify the build context and Dockerfile path for the affected service." };
+  }
+  if (/additional property .* is not allowed|validating .* additional properties|services\\..* must be/.test(output)) {
+    return { errorCode: "COMPOSE_CONFIG_INVALID", hint: "Review the Compose service fields and run Validate before starting the project." };
+  }
+  if (/no space left on device/.test(output)) {
+    return { errorCode: "DOCKER_DISK_FULL", hint: "Free disk space used by Docker images, containers, or build cache, then retry." };
+  }
+  return { errorCode: "COMPOSE_COMMAND_FAILED", hint: "Inspect the command output below. Fix the reported Compose, build, registry, or runtime issue and retry." };
+}
+
 function runDocker(args, cwd) {
   return new Promise((resolve) => {
     let stdout = "", stderr = "", settled = false;
@@ -125,6 +154,7 @@ const server = createServer(async (request, response) => {
       stdout: result.stdout.slice(-200_000),
       stderr: result.stderr.slice(-200_000),
       message: result.exitCode === 0 ? "Docker Compose command completed." : "Docker Compose command failed.",
+      ...(result.exitCode === 0 ? {} : classifyDockerFailure(result.exitCode, result.stdout, result.stderr)),
     }, origin);
   } catch (error) {
     send(response, error.status || 500, { error: error.message || "Compose runner failed." }, origin);
