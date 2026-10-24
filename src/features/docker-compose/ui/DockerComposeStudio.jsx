@@ -51,6 +51,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [runnerUrl, setRunnerUrl] = useState("http://127.0.0.1:8788");
   const [runnerBusy, setRunnerBusy] = useState(false);
   const [runnerResult, setRunnerResult] = useState(null);
+  const [runnerHealth, setRunnerHealth] = useState(null);
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
   const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
@@ -122,6 +123,24 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       return [name, { ...original, ...service }];
     }))
   } : composeDocument;
+
+  const checkRunnerHealth = async () => {
+    if (runnerBusy) return;
+    setRunnerBusy(true);
+    setRunnerHealth({ checking: true });
+    try {
+      const base = runnerUrl.trim().replace(/\/+$/, "");
+      if (!base) throw new Error("Enter the local runner URL.");
+      const response = await fetch(base + "/health");
+      if (!response.ok) throw new Error("Runner health endpoint returned HTTP " + response.status + ".");
+      const result = await response.json();
+      setRunnerHealth({ ...result, reachable: true });
+      setNotice(result.docker?.available ? "Local runner and Docker daemon are ready." : "Local runner is reachable, but Docker needs attention.");
+    } catch (error) {
+      setRunnerHealth({ reachable: false, message: error instanceof Error ? error.message : "Could not reach the local runner." });
+      setNotice("Runner check failed. Start the runner and verify its allowed origin.");
+    } finally { setRunnerBusy(false); }
+  };
 
   const runComposeAction = async (action) => {
     if (runnerBusy) return;
@@ -324,12 +343,18 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <input value={runnerUrl} onChange={(event) => setRunnerUrl(event.target.value)} placeholder="http://127.0.0.1:8788" />
               </label>
               <div className="docker-studio-lifecycle-controls">
+                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={checkRunnerHealth}>Check runner</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("validate")}>Validate</button>
                 <button type="button" className="docker-studio-primary" disabled={runnerBusy || !executionAcknowledged} onClick={() => runComposeAction("up")}>{runnerBusy ? "Running…" : "Start services"}</button>
                 <button type="button" className="docker-studio-danger" disabled={runnerBusy} onClick={() => runComposeAction("down")}>Stop services</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Status</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs")}>Logs</button>
               </div>
+              {runnerHealth && <section className={"docker-studio-runner-result " + (runnerHealth.checking || runnerHealth.docker?.available ? "success" : "failure")} aria-live="polite">
+                <strong>{runnerHealth.checking ? "Checking local runner…" : runnerHealth.reachable ? "Local runner reachable" : "Local runner unavailable"}</strong>
+                {runnerHealth.docker && <p>{runnerHealth.docker.available ? "Docker daemon available" + (runnerHealth.docker.serverVersion ? " · server " + runnerHealth.docker.serverVersion : "") : runnerHealth.docker.message}</p>}
+                {runnerHealth.message && <p>{runnerHealth.message}</p>}
+              </section>}
               {runnerResult && <section className={runnerResult.success ? "docker-studio-runner-result success" : "docker-studio-runner-result failure"} aria-live="polite">
                 <strong>{runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
                 {runnerResult.error && <p>{runnerResult.error}</p>}

@@ -29,3 +29,18 @@ test("Compose runner persists each project's Compose file so lifecycle actions s
   assert.match(source, /writeFile\(join\(projectDirectory, "compose\.yaml"\)/);
   assert.doesNotMatch(source, /mkdtemp|rm\(temporaryDirectory/);
 });
+
+test("Compose runner health check distinguishes Docker CLI and daemon availability", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /spawn\("docker", \["info", "--format"/);
+  assert.match(source, /Docker CLI was not found/);
+  assert.match(source, /Docker daemon is unavailable/);
+  assert.match(source, /serverVersion/);
+});
+
+test("Studio exposes an explicit runner connectivity check and reports Docker health", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /checkRunnerHealth/);
+  assert.match(source, /Check runner/);
+  assert.match(source, /Docker daemon available/);
+});

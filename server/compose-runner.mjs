@@ -67,7 +67,19 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (request.method === "GET" && request.url === "/health") {
-    send(response, 200, { ok: true, service: "sketchizi-compose-runner", host: HOST, actions: [...ACTIONS] }, origin);
+    const docker = await new Promise((resolve) => {
+      let settled = false;
+      const child = spawn("docker", ["info", "--format", "{{.ServerVersion}}"], { shell: false, windowsHide: true, env: { ...process.env, DOCKER_CLI_HINTS: "false" } });
+      let stdout = "";
+      let stderr = "";
+      const finish = (result) => { if (settled) return; settled = true; clearTimeout(timer); resolve(result); };
+      const timer = setTimeout(() => { child.kill("SIGTERM"); finish({ available: false, message: "Docker daemon did not respond within 8 seconds. Start Docker Desktop and retry." }); }, 8000);
+      child.stdout.on("data", (chunk) => { stdout += chunk.toString(); });
+      child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
+      child.on("error", (error) => finish({ available: false, message: error.code === "ENOENT" ? "Docker CLI was not found. Install Docker Desktop and ensure docker is on PATH." : error.message }));
+      child.on("close", (code) => finish(code === 0 ? { available: true, serverVersion: stdout.trim() } : { available: false, message: stderr.trim() || "Docker daemon is unavailable. Start Docker Desktop and retry." }));
+    });
+    send(response, 200, { ok: true, service: "sketchizi-compose-runner", host: HOST, actions: [...ACTIONS], docker }, origin);
     return;
   }
   if (request.method !== "POST" || request.url !== "/api/compose") {
