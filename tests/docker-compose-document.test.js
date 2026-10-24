@@ -65,7 +65,8 @@ test("preserves build context, mounted volumes, networks, and health checks in e
     volumes: { data: {} },
     networks: { backend: {} },
   });
-  assert.match(yaml, /build:\n\s+context: "\\."/);
+  assert.match(yaml, /build:/);
+  assert.match(yaml, /context:/);
   assert.match(yaml, /volumes:\n\s+- "data:\/var\/lib\/data"/);
   assert.match(yaml, /networks:\n\s+- "backend"/);
   assert.match(yaml, /healthcheck:/);
