@@ -282,3 +282,13 @@ test("exports a Markdown preflight report with score, findings, and scope limita
   assert.match(report, /COMPOSE_MUTABLE_IMAGE_TAG/);
   assert.match(report, /does not run Docker Compose/);
 });
+
+test("Compose Studio exposes an explicit execution preflight before any local commands", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(ui, /Deployment preflight/);
+  assert.match(ui, /docker compose -f compose\.yaml config --quiet/);
+  assert.match(ui, /docker compose -f compose\.yaml up --detach --build/);
+  assert.match(ui, /Sketchizi does not execute Docker commands from this screen/);
+  assert.match(ui, /disabled={!executionAcknowledged}/);
+});

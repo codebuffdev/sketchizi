@@ -46,6 +46,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [sourceDocument, setSourceDocument] = useState(null);
   const fileInputRef = useRef(null);
   const [notice, setNotice] = useState("");
+  const [showExecutionPreflight, setShowExecutionPreflight] = useState(false);
+  const [executionAcknowledged, setExecutionAcknowledged] = useState(false);
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
   const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
@@ -168,6 +170,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
             <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
             <button type="button" className="docker-studio-secondary" onClick={() => onCreateDiagram?.(composeDocument)}>Open as diagram</button>
             <button type="button" className="docker-studio-secondary" onClick={downloadPreflightReport}>Export preflight report</button>
+            <button type="button" className="docker-studio-secondary" onClick={() => { setExecutionAcknowledged(false); setShowExecutionPreflight(true); }}>Deployment preflight</button>
             <button type="button" className="docker-studio-secondary" onClick={addService}>＋ Add service</button>
             <button type="button" className="docker-studio-primary" onClick={downloadYaml}>Export compose.yaml</button>
           </div>
@@ -286,7 +289,47 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
             {notice && <p className="docker-studio-notice" role="status">{notice}</p>}
           </aside>
         </div>
-        <footer className="docker-studio-footer"><span>Phase 1 · Docker Compose Studio</span><span>Visual editing and initial validation</span></footer>
+                {showExecutionPreflight && (
+          <div className="docker-studio-dialog-backdrop" role="presentation">
+            <section className="docker-studio-execution-dialog" role="dialog" aria-modal="true" aria-labelledby="docker-studio-execution-title">
+              <div className="docker-studio-editor-heading">
+                <div><span className="docker-studio-eyebrow">PHASE 2 · EXECUTION PREFLIGHT</span><h2 id="docker-studio-execution-title">Review before running Compose</h2></div>
+                <button type="button" className="docker-studio-secondary" onClick={() => setShowExecutionPreflight(false)} aria-label="Close deployment preflight">Close</button>
+              </div>
+              <p>This prepares a local execution checklist. Sketchizi does not execute Docker commands from this screen.</p>
+              <div className={validation.valid && readiness.ready ? "docker-studio-preflight-status valid" : "docker-studio-preflight-status invalid"}>
+                <strong>{validation.valid && readiness.ready ? "Static checks found no blocking errors" : "Review issues before deployment"}</strong>
+                <span>{validation.findings.length} validation findings · {readiness.severityCounts.error} readiness errors · {readiness.severityCounts.warning} warnings</span>
+              </div>
+              {validation.findings.length > 0 && <ul>{validation.findings.map((finding, index) => <li key={finding.code + finding.path + index}>{finding.message} <small>({finding.path})</small></li>)}</ul>}
+              {readiness.prioritizedFindings.filter((finding) => finding.severity === "error").map((finding, index) => <p key={finding.code + finding.path + index} className="docker-studio-preflight-error">{finding.message} — {finding.remediation}</p>)}
+              <ol>
+                <li>Export the current model as <code>compose.yaml</code>.</li>
+                <li>Open a terminal in the directory containing that file.</li>
+                <li>Review the configuration, environment variables, exposed ports, volumes, and secrets.</li>
+                <li>Run the validation command first; only continue if it succeeds.</li>
+              </ol>
+              <label className="docker-studio-execution-acknowledgement">
+                <input type="checkbox" checked={executionAcknowledged} onChange={(event) => setExecutionAcknowledged(event.target.checked)} />
+                <span>I understand these commands run on my machine and may create or modify containers, networks, and volumes.</span>
+              </label>
+              {executionAcknowledged && (
+                <div className="docker-studio-command-preview">
+                  <strong>1. Validate configuration</strong>
+                  <code>docker compose -f compose.yaml config --quiet</code>
+                  <strong>2. Start services (run only after validation succeeds)</strong>
+                  <code>docker compose -f compose.yaml up --detach --build</code>
+                  <button type="button" className="docker-studio-secondary" onClick={() => { navigator.clipboard?.writeText("docker compose -f compose.yaml config --quiet\ndocker compose -f compose.yaml up --detach --build").then(() => setNotice("Compose command plan copied."), () => setNotice("Clipboard access unavailable. Select and copy the commands manually.")); }}>Copy command plan</button>
+                </div>
+              )}
+              <div className="docker-studio-dialog-actions">
+                <button type="button" className="docker-studio-secondary" onClick={() => setShowExecutionPreflight(false)}>Cancel</button>
+                <button type="button" className="docker-studio-primary" onClick={() => { setShowExecutionPreflight(false); setNotice("Preflight reviewed. Export compose.yaml and run the reviewed commands in your local terminal; Sketchizi has not started containers."); }} disabled={!executionAcknowledged}>Acknowledge and continue</button>
+              </div>
+            </section>
+          </div>
+        )}
+<footer className="docker-studio-footer"><span>Phase 1 · Docker Compose Studio</span><span>Visual editing and initial validation</span></footer>
       </section>
     </div>
   );
