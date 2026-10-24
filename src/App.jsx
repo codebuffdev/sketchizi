@@ -405,12 +405,39 @@ function App() {
 
     // Create a readable architecture overview: project boundary, service cards,
     // dependency connectors, and explicit shared-resource nodes.
-    const cardWidth = 390;
-    const cardHeight = 250;
-    const gapX = 90;
-    const gapY = 90;
-    const columns = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(services.length))));
-    const rows = Math.ceil(services.length / columns);
+    const cardWidth = 440;
+    const cardHeight = 300;
+    const gapX = 140;
+    const gapY = 100;
+    const dependenciesOf = (service) => Array.isArray(service.depends_on)
+      ? service.depends_on
+      : Object.keys(service.depends_on || {});
+    const serviceNames = new Set(services.map(([name]) => name));
+    const levels = new Map();
+    const resolving = new Set();
+    const getLevel = (name) => {
+      if (levels.has(name)) return levels.get(name);
+      if (resolving.has(name)) return 0; // Break dependency cycles safely.
+      resolving.add(name);
+      const service = composeDocument.services[name] || {};
+      const dependencyLevels = dependenciesOf(service)
+        .filter((dependency) => serviceNames.has(dependency))
+        .map((dependency) => getLevel(dependency) + 1);
+      resolving.delete(name);
+      const level = dependencyLevels.length ? Math.max(...dependencyLevels) : 0;
+      levels.set(name, level);
+      return level;
+    };
+    services.forEach(([name]) => getLevel(name));
+    const layerGroups = new Map();
+    services.forEach(([name]) => {
+      const level = levels.get(name) || 0;
+      if (!layerGroups.has(level)) layerGroups.set(level, []);
+      layerGroups.get(level).push(name);
+    });
+    const layerKeys = [...layerGroups.keys()].sort((a, b) => a - b);
+    const columns = layerKeys.length;
+    const rows = Math.max(1, ...[...layerGroups.values()].map((group) => group.length));
     const left = 180;
     const top = 210;
     const positions = new Map();
@@ -421,7 +448,7 @@ function App() {
 
     const maxServiceX = left + Math.max(0, columns - 1) * (cardWidth + gapX);
     const maxServiceY = top + Math.max(0, rows - 1) * (cardHeight + gapY);
-    const resourceTop = maxServiceY + cardHeight + 180;
+    const resourceTop = maxServiceY + cardHeight + 200;
     const resourceCount = volumeNames.length + networkNames.length;
     const resourceWidth = 230;
     const resourceHeight = 86;
@@ -446,10 +473,13 @@ function App() {
       label: { text: `▦  COMPOSE PROJECT  ·  ${projectName}`, fontSize: 22, textAlign: "left", verticalAlign: "top" }
     });
 
-    services.forEach(([name, service], index) => {
-      const x = left + (index % columns) * (cardWidth + gapX);
-      const y = top + Math.floor(index / columns) * (cardHeight + gapY);
-      positions.set(name, { x, y });
+    layerKeys.forEach((level, columnIndex) => {
+      const names = layerGroups.get(level);
+      names.forEach((name, rowIndex) => {
+        const x = left + columnIndex * (cardWidth + gapX);
+        const y = top + rowIndex * (cardHeight + gapY);
+        positions.set(name, { x, y });
+      });
     });
 
     // Dependency connectors are emitted before cards so they never cross card text.
