@@ -64,6 +64,24 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
           if (document.querySelector("parsererror")) continue;
           const svg = document.documentElement;
           const nodes = [svg, ...svg.querySelectorAll("*")];
+          const viewBox = (svg.getAttribute("viewBox") || "")
+            .trim()
+            .split(/[\s,]+/)
+            .map(Number);
+          const [viewX, viewY, viewWidth, viewHeight] = viewBox;
+          const isCanvasBackground = (node) => {
+            if (node.tagName.toLowerCase() !== "rect") return false;
+            const x = Number(node.getAttribute("x") || 0);
+            const y = Number(node.getAttribute("y") || 0);
+            const width = Number(node.getAttribute("width"));
+            const height = Number(node.getAttribute("height"));
+            return Number.isFinite(viewWidth) && Number.isFinite(viewHeight) &&
+              width >= viewWidth * 0.95 && height >= viewHeight * 0.95 &&
+              x <= viewX + viewWidth * 0.05 && y <= viewY + viewHeight * 0.05;
+          };
+          // Full-canvas rectangles are often intentional icon backgrounds.
+          // Recoloring them hides the actual glyph and creates a solid block.
+          const backgroundNodes = new Set(nodes.filter(isCanvasBackground));
           let changedPaint = false;
           const shouldReplacePaint = (value) =>
             Boolean(value) &&
@@ -73,6 +91,7 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
           // Recolor explicit SVG presentation attributes without turning filled
           // artwork into outlines. Preserve none/transparent and gradient refs.
           for (const node of nodes) {
+            if (backgroundNodes.has(node)) continue;
             for (const attribute of ["fill", "stroke", "stop-color", "flood-color", "color"]) {
               const value = node.getAttribute(attribute);
               if (shouldReplacePaint(value) || /^currentColor$/i.test(value || "")) {
@@ -99,6 +118,10 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
           // Rewrite those declarations too, while retaining fills, strokes,
           // masks, gradients, and the original icon geometry.
           for (const styleNode of svg.querySelectorAll("style")) {
+            // Styles can target the full-canvas background rectangle too. If
+            // present, avoid broad stylesheet rewriting and only recolor
+            // explicit paint attributes on non-background artwork.
+            if (backgroundNodes.size) continue;
             const css = styleNode.textContent || "";
             const recoloredCss = css.replace(
               /(fill|stroke|stop-color|flood-color|color)\s*:\s*([^;}]+)/gi,
