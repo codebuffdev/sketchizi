@@ -45,6 +45,7 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     const sceneElements = api.getSceneElements();
     const iconImages = selected.filter((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
     const recoloredFiles = [];
+    const recoloredFileIds = new Map();
     if (patch.strokeColor && iconImages.length) {
       const currentFiles = api.getFiles?.() || {};
       for (const element of iconImages) {
@@ -100,9 +101,11 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
             }
           }
           const recolored = new XMLSerializer().serializeToString(svg);
+          const recoloredFileId = `icon-recolored-${element.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          recoloredFileIds.set(element.id, recoloredFileId);
           recoloredFiles.push({
             ...file,
-            id: element.fileId,
+            id: recoloredFileId,
             dataURL: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(recolored)}`,
             mimeType: "image/svg+xml",
             lastRetrieved: Date.now(),
@@ -112,11 +115,20 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
         }
       }
     }
-    const updatedElements = sceneElements.map((element) => ids.has(element.id) ? { ...element, ...patch, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now } : element);
-    // Excalidraw's updateScene does not reliably replace cached image files.
-    // Update the image cache through addFiles before refreshing the selected
-    // elements, keeping each existing file ID so the image elements resolve
-    // to the recolored SVG rather than the original cached artwork.
+    const updatedElements = sceneElements.map((element) => {
+      if (!ids.has(element.id)) return element;
+      const recoloredFileId = recoloredFileIds.get(element.id);
+      return {
+        ...element,
+        ...patch,
+        ...(recoloredFileId ? { fileId: recoloredFileId } : {}),
+        version: element.version + 1,
+        versionNonce: Math.floor(Math.random() * 2147483647),
+        updated: now,
+      };
+    });
+    // Excalidraw caches image assets by file ID. Use a fresh ID for recolored
+    // artwork so the renderer cannot keep displaying the original cached SVG.
     if (recoloredFiles.length) api.addFiles(recoloredFiles);
     api.updateScene({ elements: updatedElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   }, [apiRef, canEdit, getSelectedElements]);
