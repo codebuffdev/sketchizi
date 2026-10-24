@@ -111,7 +111,7 @@ const server = createServer(async (request, response) => {
       down: ["down"],
       ps: ["ps", "--all", "--format", "json"],
       logs: ["logs", "--no-color", "--tail", "200"],
-      stats: ["stats", "--no-stream"],
+      stats: ["stats", "--no-stream", "--format", "json"],
     };
     const result = await runDocker([...baseArgs, ...actionArgs[action]], projectDirectory);
     send(response, result.exitCode === 0 ? 200 : 422, {

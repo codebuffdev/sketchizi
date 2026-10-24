@@ -21,7 +21,7 @@ test("Compose runner validates project names and Compose services before executi
   assert.match(source, /actionArgs/);
   assert.match(source, /validate: \["config", "--quiet"\]/);
   assert.match(source, /up: \["up", "--detach", "--build"\]/);
-  assert.match(source, /stats: \["stats", "--no-stream"\]/);
+  assert.match(source, /stats: \["stats", "--no-stream", "--format", "json"\]/);
   assert.match(source, /ps: \["ps", "--all", "--format", "json"\]/);
 });
 
