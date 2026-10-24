@@ -22,10 +22,17 @@ function toDocument(name, services, volumeNames, networkNames) {
     if (environment.length) definition.environment = environment;
     const depends = parseLines(service.dependsText);
     if (depends.length) definition.depends_on = depends;
+    const volumesForService = parseLines(service.volumesText);
+    if (volumesForService.length) definition.volumes = volumesForService;
+    const networksForService = parseLines(service.networksText);
+    if (networksForService.length) definition.networks = networksForService;
+    const healthcheck = parseLines(service.healthcheckText);
+    if (healthcheck.length) definition.healthcheck = { test: ["CMD-SHELL", healthcheck[0]], ...(healthcheck[1] ? { interval: healthcheck[1] } : {}), ...(healthcheck[2] ? { retries: Number(healthcheck[2]) || healthcheck[2] } : {}) };
     if (service.restart) definition.restart = service.restart;
     normalized[service.name.trim()] = definition;
   }
-  const volumes = Object.fromEntries(parseLines(volumeNames).map((name) => [name, {}]));\n  const networks = Object.fromEntries(parseLines(networkNames).map((name) => [name, {}]));\n  return { name: name.trim(), services: normalized, volumes, networks };
+  const volumes = Object.fromEntries(parseLines(volumeNames).map((name) => [name, {}]));
+  const networks = Object.fromEntries(parseLines(networkNames).map((name) => [name, {}]));\n  return { name: name.trim(), services: normalized, volumes, networks };
 }
 
 export default function DockerComposeStudio({ onClose }) {
