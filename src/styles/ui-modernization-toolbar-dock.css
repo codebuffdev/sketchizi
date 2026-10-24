@@ -537,8 +537,8 @@
   align-items: center;
   justify-content: center;
   gap: 0;
-  width: 42px;
-  min-width: 42px;
+  width: max-content;
+  min-width: max-content;
   min-height: 42px;
   margin: 0;
   padding: 0;

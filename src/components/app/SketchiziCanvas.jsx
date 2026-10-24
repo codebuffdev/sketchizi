@@ -288,22 +288,33 @@ export default function SketchiziCanvas({
         quickGroup.setAttribute("role", "group");
         quickGroup.setAttribute("aria-label", "Quick tools");
       }
-      // Place the custom control immediately after the native eraser (or the
-      // last native tool if labels differ), not beside the flex spacer. This
-      // avoids a large blank gap and keeps the control with the default tools.
-      const nativeButtons = [...toolbar.children].filter((node) =>
+      // Find the native eraser even when Excalidraw nests its tool button.
+      // Keep custom tools before the trailing native menu button because
+      // useMoreTools hides that native button; custom controls must stay clickable.
+      const directToolbarChildren = [...toolbar.children].filter((node) =>
         !node.classList.contains("sketchizi-dock-quick-tools") &&
         !node.classList.contains("sketchizi-dock-separator") &&
+        !node.classList.contains("sketchizi-dock-grip") &&
         !node.classList.contains("App-toolbar__spacer") &&
         !node.classList.contains("toolbar__spacer") &&
         node.getAttribute("data-toolbar-spacer") !== "true"
       );
-      const eraser = nativeButtons.find((node) => /eraser/i.test(
-        `${node.getAttribute("aria-label") || ""} ${node.getAttribute("title") || ""} ${node.textContent || ""}`
-      ));
-      if (eraser?.parentElement === toolbar) {
-        if (eraser.nextElementSibling !== quickGroup) toolbar.insertBefore(quickGroup, eraser.nextElementSibling);
-      } else if (quickGroup.parentElement !== toolbar) {
+      const eraserButton = [...toolbar.querySelectorAll("button, [role='button']")].find((node) =>
+        !node.closest(".sketchizi-dock-quick-tools") &&
+        /eraser/i.test((node.getAttribute("aria-label") || "") + " " +
+          (node.getAttribute("title") || "") + " " + (node.dataset.testid || ""))
+      );
+      const directChildFor = (node) => {
+        let current = node;
+        while (current && current.parentElement !== toolbar) current = current.parentElement;
+        return current && current.parentElement === toolbar ? current : null;
+      };
+      const eraser = directChildFor(eraserButton);
+      const trailingNativeButton = directToolbarChildren.at(-1);
+      const insertionPoint = eraser ? eraser.nextElementSibling : trailingNativeButton;
+      if (insertionPoint && insertionPoint !== quickGroup) {
+        toolbar.insertBefore(quickGroup, insertionPoint);
+      } else if (!quickGroup.parentElement) {
         toolbar.appendChild(quickGroup);
       }
 

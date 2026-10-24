@@ -22,7 +22,10 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
     const rect = trigger.getBoundingClientRect(); const width = 44;
     setAnchor({ left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)), top: rect.bottom + 8 });
     const toolbar = document.querySelector(".excalidraw .App-toolbar");
-    const lastButton = toolbar instanceof HTMLElement ? Array.from(toolbar.querySelectorAll("button")).at(-1) : null;
+    const nativeButtons = toolbar instanceof HTMLElement
+      ? Array.from(toolbar.querySelectorAll("button")).filter((button) => !button.closest(".sketchizi-dock-quick-tools"))
+      : [];
+    const lastButton = nativeButtons.at(-1) || null;
     if (lastButton instanceof HTMLElement && !lastButton.dataset.sketchiziMoreToolsHidden) {
       lastButton.dataset.sketchiziMoreToolsHidden = "true";
       lastButton.dataset.sketchiziOriginalVisibility = lastButton.style.visibility || "";
