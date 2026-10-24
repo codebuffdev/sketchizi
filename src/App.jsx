@@ -566,19 +566,9 @@ function App() {
       }
     });
 
-    const resources = [
-      ...volumeNames.map((name) => ({ name, kind: "VOLUME", color: "#0f766e", background: "#ccfbf1" })),
-      ...networkNames.map((name) => ({ name, kind: "NETWORK", color: "#0369a1", background: "#e0f2fe" }))
-    ];
-    const resourcePositions = new Map();
-    resources.forEach((resource, index) => {
-      resourcePositions.set(resource.name, {
-        x: left + index * (resourceWidth + resourceGap),
-        y: resourceTop,
-        kind: resource.kind
-      });
-    });
-    // Connect each service to named volumes and networks it actually declares.
+    // Keep resource relationships legible: show volume mounts and network
+    // membership as compact badges inside each service card instead of long
+    // cross-canvas connector lines. Keep resource definitions as a small legend.
     services.forEach(([serviceName, service]) => {
       const servicePosition = positions.get(serviceName);
       const declaredVolumes = (service.volumes || []).map((mount) => {
@@ -586,43 +576,64 @@ function App() {
         return mount?.source || "";
       }).filter(Boolean);
       const declaredNetworks = Array.isArray(service.networks) ? service.networks : Object.keys(service.networks || {});
-      [...declaredVolumes.map((name) => ({ name, kind: "VOLUME" })),
-       ...declaredNetworks.map((name) => ({ name, kind: "NETWORK" }))].forEach(({ name, kind }) => {
-        const resourcePosition = resourcePositions.get(name);
-        if (!resourcePosition || resourcePosition.kind !== kind) return;
-        const startX = servicePosition.x + cardWidth / 2;
-        const startY = servicePosition.y + cardHeight;
-        const endX = resourcePosition.x + resourceWidth / 2;
-        const endY = resourcePosition.y;
+      const badges = [
+        ...declaredVolumes.map((name) => ({ text: `● ${name}`, kind: "VOLUME" })),
+        ...declaredNetworks.map((name) => ({ text: `◇ ${name}`, kind: "NETWORK" }))
+      ];
+      if (!badges.length) return;
+      const maxBadgesPerRow = 2;
+      const badgeWidth = 128;
+      const badgeHeight = 26;
+      badges.forEach((badge, index) => {
+        const column = index % maxBadgesPerRow;
+        const row = Math.floor(index / maxBadgesPerRow);
+        const badgeX = servicePosition.x + 14 + column * (badgeWidth + 8);
+        const badgeY = servicePosition.y + cardHeight - 38 - row * (badgeHeight + 5);
         skeleton.push({
-          type: "arrow",
-          x: startX,
-          y: startY,
-          width: endX - startX,
-          height: endY - startY,
-          points: [[0, 0], [endX - startX, endY - startY]],
-          strokeColor: kind === "VOLUME" ? "#0f766e" : "#0369a1",
-          strokeWidth: 2,
-          endArrowhead: "arrow",
-          label: { text: kind === "VOLUME" ? "mounts" : "connected", fontSize: 12 }
+          type: "rectangle",
+          x: badgeX,
+          y: badgeY,
+          width: badgeWidth,
+          height: badgeHeight,
+          strokeColor: badge.kind === "VOLUME" ? "#0f766e" : "#0369a1",
+          backgroundColor: badge.kind === "VOLUME" ? "#ccfbf1" : "#e0f2fe",
+          fillStyle: "solid",
+          strokeWidth: 1,
+          roundness: { type: 3 },
+          label: { text: badge.text, fontSize: 11, textAlign: "center", verticalAlign: "middle" }
         });
       });
     });
-    resources.forEach((resource, index) => {
-      const x = left + index * (resourceWidth + resourceGap);
-      skeleton.push({
-        type: resource.kind === "VOLUME" ? "ellipse" : "diamond",
-        x,
-        y: resourceTop,
-        width: resourceWidth,
-        height: resourceHeight,
-        strokeColor: resource.color,
-        backgroundColor: resource.background,
-        fillStyle: "solid",
-        strokeWidth: 2,
-        label: { text: `${resource.kind === "VOLUME" ? "◉" : "⌘"}  ${resource.kind}\n${resource.name}`, fontSize: 16, textAlign: "center", verticalAlign: "middle" }
+
+    const resources = [
+      ...volumeNames.map((name) => ({ name, kind: "VOLUME", color: "#0f766e", background: "#ccfbf1" })),
+      ...networkNames.map((name) => ({ name, kind: "NETWORK", color: "#0369a1", background: "#e0f2fe" }))
+    ];
+    if (resources.length) {
+      const legendY = resourceTop;
+      const legendWidth = 230;
+      const legendHeight = 56;
+      const legendGap = 20;
+      const legendColumns = Math.min(4, resources.length);
+      const legendRows = Math.ceil(resources.length / legendColumns);
+      resources.forEach((resource, index) => {
+        const column = index % legendColumns;
+        const row = Math.floor(index / legendColumns);
+        skeleton.push({
+          type: "rectangle",
+          x: left + column * (legendWidth + legendGap),
+          y: legendY + row * (legendHeight + 12),
+          width: legendWidth,
+          height: legendHeight,
+          strokeColor: resource.color,
+          backgroundColor: resource.background,
+          fillStyle: "solid",
+          strokeWidth: 1,
+          roundness: { type: 3 },
+          label: { text: `${resource.kind === "VOLUME" ? "● STORAGE" : "◇ NETWORK"}\n${resource.name}`, fontSize: 13, textAlign: "center", verticalAlign: "middle" }
+        });
       });
-    });
+    }
 
     const elements = convertToExcalidrawElements(skeleton);
     api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
