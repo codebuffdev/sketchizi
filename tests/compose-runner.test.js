@@ -21,6 +21,7 @@ test("Compose runner validates project names and Compose services before executi
   assert.match(source, /actionArgs/);
   assert.match(source, /validate: \["config", "--quiet"\]/);
   assert.match(source, /up: \["up", "--detach", "--build"\]/);
+  assert.match(source, /stats: \["stats", "--no-stream"\]/);
 });
 
 test("Compose runner persists each project's Compose file so lifecycle actions share the same configuration path", async () => {
@@ -42,6 +43,8 @@ test("Studio exposes an explicit runner connectivity check and reports Docker he
   const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
   assert.match(source, /checkRunnerHealth/);
   assert.match(source, /Check runner/);
+  assert.match(source, /runComposeAction\("stats"\)/);
+  assert.match(source, /Resource usage/);
   assert.match(source, /Docker daemon available/);
 });
 

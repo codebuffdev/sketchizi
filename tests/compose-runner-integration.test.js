@@ -48,7 +48,7 @@ test("local runner executes the full Compose lifecycle against one persistent pr
   assert.equal(health.docker.available, true);
   assert.equal(health.docker.serverVersion, "27.0.3");
   const composeYaml = "services:\n  web:\n    image: nginx:alpine\n";
-  const actions = ["validate", "up", "ps", "logs", "down"];
+  const actions = ["validate", "up", "ps", "logs", "stats", "down"];
   for (const action of actions) {
     const response = await fetch(base + "/api/compose", {
       method: "POST",
@@ -72,5 +72,6 @@ test("local runner executes the full Compose lifecycle against one persistent pr
   assert.match(calls[1], /up --detach --build/);
   assert.match(calls[2], /ps --all/);
   assert.match(calls[3], /logs --no-color --tail 200/);
-  assert.match(calls[4], /down/);
+  assert.match(calls[4], /stats --no-stream/);
+  assert.match(calls[5], /down/);
 });

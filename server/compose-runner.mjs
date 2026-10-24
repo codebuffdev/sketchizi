@@ -15,7 +15,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:5173",
   ...(process.env.COMPOSE_RUNNER_ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).filter(Boolean),
 ]);
-const ACTIONS = new Set(["validate", "up", "down", "ps", "logs"]);
+const ACTIONS = new Set(["validate", "up", "down", "ps", "logs", "stats"]);
 
 function send(response, status, payload, origin) {
   response.writeHead(status, {
@@ -111,6 +111,7 @@ const server = createServer(async (request, response) => {
       down: ["down"],
       ps: ["ps", "--all"],
       logs: ["logs", "--no-color", "--tail", "200"],
+      stats: ["stats", "--no-stream"],
     };
     const result = await runDocker([...baseArgs, ...actionArgs[action]], projectDirectory);
     send(response, result.exitCode === 0 ? 200 : 422, {

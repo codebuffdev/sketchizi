@@ -349,6 +349,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <button type="button" className="docker-studio-danger" disabled={runnerBusy} onClick={() => runComposeAction("down")}>Stop services</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Status</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs")}>Logs</button>
+                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("stats")}>Resource usage</button>
               </div>
               {runnerHealth && <section className={"docker-studio-runner-result " + (runnerHealth.checking || runnerHealth.docker?.available ? "success" : "failure")} aria-live="polite">
                 <strong>{runnerHealth.checking ? "Checking local runner…" : runnerHealth.reachable ? "Local runner reachable" : "Local runner unavailable"}</strong>
