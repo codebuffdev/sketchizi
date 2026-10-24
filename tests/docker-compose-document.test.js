@@ -138,3 +138,25 @@ test("readiness analysis flags host environment substitutions without defaults",
   assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_HOST_VARIABLE_REVIEW" && finding.message.includes("WEB_PORT")));
   assert.equal(result.findings.some((finding) => finding.message.includes("IMAGE_TAG")), false);
 });
+
+test("readiness analysis warns when service_healthy has no dependency healthcheck", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      api: { image: "example/api:1", depends_on: { database: { condition: "service_healthy" } } },
+      database: { image: "postgres:17" },
+    },
+  });
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_DEPENDENCY_HEALTHCHECK_MISSING"));
+  assert.equal(result.startupOrder[0], "database");
+});
+
+test("readiness analysis accepts service_healthy when dependency defines a healthcheck", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      api: { image: "example/api:1", depends_on: { database: { condition: "service_healthy" } } },
+      database: { image: "postgres:17", healthcheck: { test: ["CMD", "pg_isready"] } },
+    },
+  });
+  assert.equal(result.findings.some((finding) => finding.code === "COMPOSE_DEPENDENCY_HEALTHCHECK_MISSING"), false);
+  assert.equal(result.ready, true);
+});

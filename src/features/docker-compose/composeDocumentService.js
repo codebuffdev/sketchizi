@@ -202,6 +202,31 @@ export function analyzeComposeReadiness(input) {
     `services.${cycle[0]}.depends_on`,
     "Break the cycle so services can start in dependency order."
   ));
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service) || !isRecord(service.depends_on)) continue;
+    for (const [dependencyName, dependencyOptions] of Object.entries(service.depends_on)) {
+      if (!isRecord(dependencyOptions) || !dependencyOptions.condition) continue;
+      const condition = dependencyOptions.condition;
+      if (!["service_started", "service_healthy", "service_completed_successfully"].includes(condition)) {
+        findings.push(diagnostic(
+          "COMPOSE_INVALID_DEPENDENCY_CONDITION", "error",
+          `Service "${serviceName}" uses unsupported dependency condition "${condition}".`,
+          `services.${serviceName}.depends_on.${dependencyName}.condition`,
+          "Use service_started, service_healthy, or service_completed_successfully."
+        ));
+      } else if (condition === "service_healthy" && Object.hasOwn(services, dependencyName)) {
+        const dependency = services[dependencyName];
+        if (!isRecord(dependency?.healthcheck) || !dependency.healthcheck.test) {
+          findings.push(diagnostic(
+            "COMPOSE_DEPENDENCY_HEALTHCHECK_MISSING", "warning",
+            `Service "${serviceName}" waits for "${dependencyName}" to become healthy, but that service has no healthcheck test.`,
+            `services.${dependencyName}.healthcheck`,
+            "Add a healthcheck test to the dependency or change the condition to service_started."
+          ));
+        }
+      }
+    }
+  }
   const hostVariables = new Set();
   const scan = (value) => {
     if (typeof value === "string") {
