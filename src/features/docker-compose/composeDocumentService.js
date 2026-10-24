@@ -227,6 +227,79 @@ export function analyzeComposeReadiness(input) {
       }
     }
   }
+  const mutableImageTags = [];
+  const privilegedServices = [];
+  const hostNetworkServices = [];
+  const publishedPorts = [];
+  const missingResourceLimits = [];
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service)) continue;
+    if (typeof service.image === "string" && service.image.trim()) {
+      const image = service.image.trim();
+      const lastSlash = image.lastIndexOf("/");
+      const lastColon = image.lastIndexOf(":");
+      const hasTag = lastColon > lastSlash;
+      if (!hasTag || image.slice(lastColon + 1) === "latest") {
+        mutableImageTags.push({ serviceName, image });
+      }
+    }
+    if (service.privileged === true) privilegedServices.push(serviceName);
+    const networkMode = service.network_mode;
+    if (networkMode === "host") hostNetworkServices.push(serviceName);
+    if (Array.isArray(service.ports)) {
+      for (const [index, port] of service.ports.entries()) {
+        const published = typeof port === "string"
+          ? (port.includes(":") ? port.split(":").at(-2) : "")
+          : port?.published == null ? "" : String(port.published);
+        if (published) publishedPorts.push({ serviceName, index, published });
+      }
+    }
+    const deployResources = service.deploy?.resources;
+    const limits = isRecord(deployResources) ? deployResources.limits : null;
+    if (!isRecord(limits) || (limits.cpus == null && limits.memory == null)) {
+      missingResourceLimits.push(serviceName);
+    }
+  }
+  for (const { serviceName, image } of mutableImageTags) {
+    findings.push(diagnostic(
+      "COMPOSE_MUTABLE_IMAGE_TAG", "warning",
+      `Service "${serviceName}" uses image "${image}" without a pinned version tag.`,
+      `services.${serviceName}.image`,
+      "Pin a specific image version or digest for repeatable deployments."
+    ));
+  }
+  for (const serviceName of privilegedServices) {
+    findings.push(diagnostic(
+      "COMPOSE_PRIVILEGED_CONTAINER", "warning",
+      `Service "${serviceName}" runs as a privileged container.`,
+      `services.${serviceName}.privileged`,
+      "Remove privileged mode unless the workload explicitly requires host-level capabilities."
+    ));
+  }
+  for (const serviceName of hostNetworkServices) {
+    findings.push(diagnostic(
+      "COMPOSE_HOST_NETWORK", "warning",
+      `Service "${serviceName}" shares the host network namespace.`,
+      `services.${serviceName}.network_mode`,
+      "Use an isolated Compose network unless host networking is a deliberate requirement."
+    ));
+  }
+  for (const { serviceName, index, published } of publishedPorts) {
+    findings.push(diagnostic(
+      "COMPOSE_PUBLISHED_PORT", "warning",
+      `Service "${serviceName}" publishes host port "${published}", which may expose the service beyond the Compose network.`,
+      `services.${serviceName}.ports[${index}]`,
+      "Confirm the host binding and firewall rules; bind to 127.0.0.1 when access should remain local."
+    ));
+  }
+  for (const serviceName of missingResourceLimits) {
+    findings.push(diagnostic(
+      "COMPOSE_RESOURCE_LIMITS_MISSING", "info",
+      `Service "${serviceName}" does not define CPU or memory limits under deploy.resources.limits.`,
+      `services.${serviceName}.deploy.resources.limits`,
+      "Consider explicit CPU and memory limits for predictable resource usage in supported deployment environments."
+    ));
+  }
   const requiredEnvironmentVariables = new Set();
   const inlineSecretAssignments = [];
   const secretNamePattern = /(PASSWORD|PASSWD|TOKEN|SECRET|API_KEY|PRIVATE_KEY|ACCESS_KEY)/i;

@@ -194,3 +194,41 @@ test("readiness analysis validates env_file shape", () => {
   });
   assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_INVALID_ENV_FILE"));
 });
+
+
+test("readiness analysis warns about mutable image tags but accepts pinned versions", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      latest: { image: "nginx:latest" },
+      unpinned: { image: "redis" },
+      pinned: { image: "postgres:17.2" },
+      registry: { image: "registry.example:5000/team/api:v2" },
+    },
+  });
+  const mutable = result.findings.filter((finding) => finding.code === "COMPOSE_MUTABLE_IMAGE_TAG");
+  assert.equal(mutable.length, 2);
+  assert.ok(mutable.some((finding) => finding.message.includes("nginx:latest")));
+  assert.ok(mutable.some((finding) => finding.message.includes("redis")));
+});
+
+test("readiness analysis flags privileged and host-network containers", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      api: { image: "example/api:1", privileged: true, network_mode: "host" },
+    },
+  });
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_PRIVILEGED_CONTAINER"));
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_HOST_NETWORK"));
+});
+
+test("readiness analysis identifies published ports and missing resource limits", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      web: { image: "nginx:1.27", ports: ["8080:80"] },
+      worker: { image: "worker:2", deploy: { resources: { limits: { memory: "512M" } } } },
+    },
+  });
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_PUBLISHED_PORT"));
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_RESOURCE_LIMITS_MISSING" && finding.message.includes("web")));
+  assert.equal(result.findings.some((finding) => finding.code === "COMPOSE_RESOURCE_LIMITS_MISSING" && finding.message.includes("worker")), false);
+});
