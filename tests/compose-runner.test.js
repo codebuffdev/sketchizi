@@ -179,3 +179,12 @@ test("Compose runner attaches conservative service-level failure evidence", asyn
   assert.match(ui, /runnerResult\.failureEvidence/);
   assert.match(ui, /does not confirm root cause or perform recovery/);
 });
+
+
+test("Studio distinguishes direct, dependency-context, and ambiguous failure evidence", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /Likely failing dependency/);
+  assert.match(source, /Ambiguous service attribution/);
+  assert.match(source, /Dependent service:/);
+  assert.match(source, /Possible services:/);
+});

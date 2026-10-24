@@ -171,6 +171,7 @@ const server = createServer(async (request, response) => {
       ...(result.timedOut ? { timedOut: true } : {}),
       ...(result.exitCode === 0 ? {} : classifyDockerFailure(result.exitCode, result.stdout, result.stderr)),
       ...(result.exitCode === 0 ? {} : { failureEvidence: extractDockerFailureEvidence(result.stderr, result.stdout, Object.keys(parsed.services)) }),
+      ...(result.exitCode === 0 ? {} : { failureEvidence: extractDockerFailureEvidence(result.stderr, result.stdout, Object.keys(parsed.services)) }),
     }, origin);
   } catch (error) {
     send(response, error.status || 500, { error: error.message || "Compose runner failed." }, origin);
