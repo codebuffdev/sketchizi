@@ -278,9 +278,9 @@ export default function SketchiziCanvas({
         toolbar.insertBefore(separator, anchor);
       });
 
-      // Keep the two quick tools in a dedicated, visible group. Reconcile the
-      // group on every toolbar mutation because Excalidraw may rebuild toolbar
-      // descendants; merely checking once can leave a registered tool missing.
+      // Keep Bucket Fill as the only custom quick tool in the native dock.
+      // Reconcile the group on toolbar mutations because Excalidraw may rebuild
+      // descendants; direct activation must not open the More Tools menu.
       let quickGroup = toolbar.querySelector(":scope > .sketchizi-dock-quick-tools");
       if (!quickGroup) {
         quickGroup = document.createElement("div");
@@ -288,22 +288,27 @@ export default function SketchiziCanvas({
         quickGroup.setAttribute("role", "group");
         quickGroup.setAttribute("aria-label", "Quick tools");
       }
-      const trailingSpacer = [...toolbar.children].find((child) =>
-        child !== quickGroup && (
-          child.classList.contains("App-toolbar__spacer") ||
-          child.classList.contains("toolbar__spacer") ||
-          child.getAttribute("data-toolbar-spacer") === "true"
-        ),
+      // Place the custom control immediately after the native eraser (or the
+      // last native tool if labels differ), not beside the flex spacer. This
+      // avoids a large blank gap and keeps the control with the default tools.
+      const nativeButtons = [...toolbar.children].filter((node) =>
+        !node.classList.contains("sketchizi-dock-quick-tools") &&
+        !node.classList.contains("sketchizi-dock-separator") &&
+        !node.classList.contains("App-toolbar__spacer") &&
+        !node.classList.contains("toolbar__spacer") &&
+        node.getAttribute("data-toolbar-spacer") !== "true"
       );
-      if (trailingSpacer && quickGroup.nextElementSibling !== trailingSpacer) {
-        toolbar.insertBefore(quickGroup, trailingSpacer);
-      } else if (!trailingSpacer && quickGroup.parentElement !== toolbar) {
+      const eraser = nativeButtons.find((node) => /eraser/i.test(
+        `${node.getAttribute("aria-label") || ""} ${node.getAttribute("title") || ""} ${node.textContent || ""}`
+      ));
+      if (eraser?.parentElement === toolbar) {
+        if (eraser.nextElementSibling !== quickGroup) toolbar.insertBefore(quickGroup, eraser.nextElementSibling);
+      } else if (quickGroup.parentElement !== toolbar) {
         toolbar.appendChild(quickGroup);
       }
 
       const quickTools = [
         { id: "bucketfill", label: "Bucket Fill", icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17a8.5 8.5 0 0 1-17 0Z" fill="currentColor" stroke="none"/></svg>', shortcut: "B" },
-        { id: "autoshape", label: "Draw to Shape", icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 15.5c1.7-4.8 3.4-7.1 5.1-5.8"/><path d="M9.5 12h3.2"/><path d="M11 10.3 12.7 12 11 13.7"/><path d="M16 7h5v10h-5z"/></svg>', shortcut: "⇧X" },
       ];
       quickTools.forEach(({ id, label, icon, shortcut }) => {
         let button = quickGroup.querySelector(`[data-sketchizi-quick-tool="${id}"]`);
@@ -335,11 +340,9 @@ export default function SketchiziCanvas({
         // the toolbar; only move nodes when they are not already in order.
         if (button.parentElement !== quickGroup) quickGroup.appendChild(button);
       });
-      const orderedButtons = quickTools.map(({ id }) =>
-        quickGroup.querySelector(`[data-sketchizi-quick-tool="${id}"]`),
-      );
-      orderedButtons.forEach((button, index) => {
-        if (button && quickGroup.children[index] !== button) quickGroup.insertBefore(button, quickGroup.children[index] || null);
+      const activeIds = new Set(quickTools.map(({ id }) => id));
+      quickGroup.querySelectorAll("[data-sketchizi-quick-tool]").forEach((button) => {
+        if (!activeIds.has(button.dataset.sketchiziQuickTool)) button.remove();
       });
     };
     const schedule = () => {

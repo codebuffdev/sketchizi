@@ -486,7 +486,7 @@
 }
 
 
-/* Sketchizi quick-access tools: Bucket Fill and Draw to Shape. */
+/* Sketchizi quick-access tool: Bucket Fill. */
 .app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool,
 .app .excalidraw .App-toolbar .sketchizi-dock-quick-tool {
   width: 42px;
@@ -528,7 +528,7 @@
   }
 }
 
-/* Quick tools occupy a single stable dock group so neither control is clipped. */
+/* Bucket Fill occupies a compact dock group beside native drawing tools. */
 .app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tools,
 .app .excalidraw .App-toolbar .sketchizi-dock-quick-tools {
   display: inline-flex !important;
@@ -536,9 +536,9 @@
   flex-shrink: 0 !important;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  width: max-content;
-  min-width: max-content;
+  gap: 0;
+  width: 42px;
+  min-width: 42px;
   min-height: 42px;
   margin: 0;
   padding: 0;
