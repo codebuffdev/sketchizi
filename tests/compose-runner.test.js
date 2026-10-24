@@ -11,7 +11,8 @@ test("Compose runner binds only to loopback and uses a fixed Docker Compose acti
   assert.match(source, /MAX_BODY_BYTES = 2 \* 1024 \* 1024/);
   assert.match(source, /ACTION_TIMEOUT_MS = \{ validate: 20_000, ps: 15_000, stats: 15_000, logs: 15_000, down: 60_000, up: 120_000 \}/);
   assert.match(source, /DEFAULT_COMMAND_TIMEOUT_MS = 120_000/);
-  assert.match(source, /const commandArgs = \[\.\.\.actionArgs\[action\], \.\.\.\(action === "logs" && serviceName \? \[serviceName\] : \[\]\)\]/);\n  assert.match(source, /runDocker\(\[\.\.\.baseArgs, \.\.\.commandArgs\], projectDirectory, ACTION_TIMEOUT_MS\[action\]\)/);
+  assert.match(source, /const commandArgs = \[\.\.\.actionArgs\[action\], \.\.\.\(action === "logs" && serviceName \? \[serviceName\] : \[\]\)\]/);
+  assert.match(source, /runDocker\(\[\.\.\.baseArgs, \.\.\.commandArgs\], projectDirectory, ACTION_TIMEOUT_MS\[action\]\)/);
   assert.match(source, /parseDocument\(body\.composeYaml, \{ uniqueKeys: true \}\)/);
   assert.match(source, /ALLOWED_ORIGINS\.has\(origin\)/);
 });
