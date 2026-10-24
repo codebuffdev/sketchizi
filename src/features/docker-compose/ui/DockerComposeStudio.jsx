@@ -33,8 +33,8 @@ export default function DockerComposeStudio({ onClose }) {
   const [selectedId, setSelectedId] = useState("web");
   const [notice, setNotice] = useState("");
   const selected = services.find((service) => service.name === selectedId) || services[0];
-  const document = useMemo(() => toDocument(projectName, services), [projectName, services]);
-  const validation = useMemo(() => validateComposeDocument(document), [document]);
+  const composeDocument = useMemo(() => toDocument(projectName, services), [projectName, services]);
+  const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
 
   const updateSelected = (patch) => {
     if (!selected) return;
@@ -66,7 +66,7 @@ export default function DockerComposeStudio({ onClose }) {
       setNotice("Fix the validation errors before exporting.");
       return;
     }
-    const blob = new Blob([exportComposeYaml(document)], { type: "text/yaml;charset=utf-8" });
+    const blob = new Blob([exportComposeYaml(composeDocument)], { type: "text/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
