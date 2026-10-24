@@ -64,37 +64,25 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
           if (document.querySelector("parsererror")) continue;
           const svg = document.documentElement;
           const nodes = [svg, ...svg.querySelectorAll("*")];
-          const viewBox = (svg.getAttribute("viewBox") || "")
-            .trim()
-            .split(/[\s,]+/)
-            .map(Number);
-          const [viewX, viewY, viewWidth, viewHeight] = viewBox;
-          const isCanvasBackground = (node) => {
-            if (node.tagName.toLowerCase() !== "rect") return false;
-            const x = Number(node.getAttribute("x") || 0);
-            const y = Number(node.getAttribute("y") || 0);
-            const width = Number(node.getAttribute("width"));
-            const height = Number(node.getAttribute("height"));
-            return Number.isFinite(viewWidth) && Number.isFinite(viewHeight) &&
-              width >= viewWidth * 0.95 && height >= viewHeight * 0.95 &&
-              x <= viewX + viewWidth * 0.05 && y <= viewY + viewHeight * 0.05;
-          };
-          // Full-canvas rectangles are often intentional icon backgrounds.
-          // Recoloring them hides the actual glyph and creates a solid block.
-          const backgroundNodes = new Set(nodes.filter(isCanvasBackground));
           let changedPaint = false;
-          const shouldReplacePaint = (value) =>
-            Boolean(value) &&
-            !/^(none|transparent|inherit|initial|unset)$/i.test(value.trim()) &&
-            !/^url\(/i.test(value.trim());
 
-          // Recolor explicit SVG presentation attributes without turning filled
-          // artwork into outlines. Preserve none/transparent and gradient refs.
+          // Recolor only paint values that represent actual artwork. Avoid
+          // rewriting CSS classes and global color declarations: those can
+          // unintentionally recolor backgrounds or collapse multi-part icons.
+          const recolorPaint = (value) => {
+            if (!value) return value;
+            const trimmed = value.trim();
+            if (/^(none|transparent|inherit|initial|unset)$/i.test(trimmed) || /^url\(/i.test(trimmed)) return value;
+            return patch.strokeColor;
+          };
+
           for (const node of nodes) {
-            if (backgroundNodes.has(node)) continue;
-            for (const attribute of ["fill", "stroke", "stop-color", "flood-color", "color"]) {
+            for (const attribute of ["fill", "stroke", "stop-color", "flood-color"]) {
               const value = node.getAttribute(attribute);
-              if (shouldReplacePaint(value) || /^currentColor$/i.test(value || "")) {
+              if (value && recolorPaint(value) !== value) {
+                node.setAttribute(attribute, patch.strokeColor);
+                changedPaint = true;
+              } else if (/^currentColor$/i.test(value || "")) {
                 node.setAttribute(attribute, patch.strokeColor);
                 changedPaint = true;
               }
@@ -103,9 +91,10 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
             const style = node.getAttribute("style");
             if (style) {
               const recoloredStyle = style.replace(
-                /(^|;\s*)(fill|stroke|stop-color|flood-color|color)\s*:\s*([^;]+)/gi,
+                /(^|;\s*)(fill|stroke|stop-color|flood-color)\s*:\s*([^;]+)/gi,
                 (match, prefix, property, value) => {
-                  if (!shouldReplacePaint(value) && !/^currentColor$/i.test(value.trim())) return match;
+                  const next = recolorPaint(value);
+                  if (next === value && !/^currentColor$/i.test(value.trim())) return match;
                   changedPaint = true;
                   return `${prefix}${property}:${patch.strokeColor}`;
                 },
@@ -114,28 +103,9 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
             }
           }
 
-          // SVG libraries often define their colors in embedded CSS classes.
-          // Rewrite those declarations too, while retaining fills, strokes,
-          // masks, gradients, and the original icon geometry.
-          for (const styleNode of svg.querySelectorAll("style")) {
-            // Styles can target the full-canvas background rectangle too. If
-            // present, avoid broad stylesheet rewriting and only recolor
-            // explicit paint attributes on non-background artwork.
-            if (backgroundNodes.size) continue;
-            const css = styleNode.textContent || "";
-            const recoloredCss = css.replace(
-              /(fill|stroke|stop-color|flood-color|color)\s*:\s*([^;}]+)/gi,
-              (match, property, value) => {
-                if (!shouldReplacePaint(value) && !/^currentColor$/i.test(value.trim())) return match;
-                changedPaint = true;
-                return `${property}:${patch.strokeColor}`;
-              },
-            );
-            if (recoloredCss !== css) styleNode.textContent = recoloredCss;
-          }
-
-          // If the SVG uses an unsupported paint mechanism, leave its artwork
-          // intact rather than producing a solid block or a broken outline.
+          // Deliberately do not rewrite embedded <style> rules globally.
+          // Icons relying exclusively on class-based CSS are left unchanged
+          // rather than risking destructive blanket recoloring.
           if (!changedPaint) continue;
           const recolored = new XMLSerializer().serializeToString(svg);
           const recoloredFileId = `icon-recolored-${element.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
