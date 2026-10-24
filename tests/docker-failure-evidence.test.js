@@ -62,3 +62,30 @@ test("failure evidence handles empty output and bounds evidence lines", () => {
   const evidence = extractDockerFailureEvidence("x".repeat(300), "", {});
   assert.equal(evidence.line.length, 240);
 });
+
+import { getServiceFailureRemediation } from "../server/docker-failure-evidence.mjs";
+
+test("remediation identifies private image pull failures without claiming recovery", () => {
+  const result = getServiceFailureRemediation({ serviceName: "api", confidence: "service-match", line: "api pull access denied" }, { api: { image: "private/api:latest" } }, "pull access denied", "");
+  assert.equal(result.basis, "image-pull-error");
+  assert.match(result.detail, /registry permissions/);
+});
+
+test("remediation uses service build paths for Dockerfile errors", () => {
+  const result = getServiceFailureRemediation({ serviceName: "api", confidence: "service-match", line: "failed to read dockerfile" }, { api: { build: { context: "./api", dockerfile: "Dockerfile.prod" } } }, "failed to read dockerfile", "");
+  assert.equal(result.basis, "dockerfile-path-error");
+  assert.match(result.detail, /\\.\\/api/);
+  assert.match(result.detail, /Dockerfile\\.prod/);
+});
+
+test("remediation identifies published ports when a port conflict occurs", () => {
+  const result = getServiceFailureRemediation({ serviceName: "web", confidence: "service-match", line: "port is already allocated" }, { web: { ports: ["8080:80"] } }, "port is already allocated", "");
+  assert.equal(result.basis, "port-conflict");
+  assert.match(result.detail, /8080:80/);
+});
+
+test("ambiguous service evidence does not recommend a specific service as root cause", () => {
+  const result = getServiceFailureRemediation({ confidence: "ambiguous", candidateServices: ["api", "db"], line: "api and db failed" }, { api: {}, db: {} }, "", "");
+  assert.equal(result.basis, "ambiguous-evidence");
+  assert.match(result.detail, /multiple possible services/);
+});

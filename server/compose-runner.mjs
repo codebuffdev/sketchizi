@@ -4,7 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseDocument } from "yaml";
-import { extractDockerFailureEvidence } from "./docker-failure-evidence.mjs";
+import { extractDockerFailureEvidence, getServiceFailureRemediation } from "./docker-failure-evidence.mjs";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.COMPOSE_RUNNER_PORT || 8788);
@@ -171,6 +171,7 @@ const server = createServer(async (request, response) => {
       ...(result.timedOut ? { timedOut: true } : {}),
       ...(result.exitCode === 0 ? {} : classifyDockerFailure(result.exitCode, result.stdout, result.stderr)),
       ...(result.exitCode === 0 ? {} : { failureEvidence: extractDockerFailureEvidence(result.stderr, result.stdout, parsed.services) }),
+      ...(result.exitCode === 0 ? {} : { failureRemediation: getServiceFailureRemediation(extractDockerFailureEvidence(result.stderr, result.stdout, parsed.services), parsed.services, result.stderr, result.stdout) }),
     }, origin);
   } catch (error) {
     send(response, error.status || 500, { error: error.message || "Compose runner failed." }, origin);

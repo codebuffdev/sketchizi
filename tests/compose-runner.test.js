@@ -193,3 +193,9 @@ test("Compose runner passes declared service definitions to dependency-aware fai
   const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
   assert.match(source, /extractDockerFailureEvidence\(result\.stderr, result\.stdout, parsed\.services\)/);
 });
+
+test("Compose runner attaches service-specific remediation guidance to failures", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /getServiceFailureRemediation\(/);
+  assert.match(source, /failureRemediation:/);
+});
