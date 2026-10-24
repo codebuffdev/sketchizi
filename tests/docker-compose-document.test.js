@@ -277,7 +277,7 @@ test("exports a Markdown preflight report with score, findings, and scope limita
     services: { web: { image: "nginx:latest", ports: ["8080:80"] }, database: { image: "postgres:17" } },
   });
   assert.match(report, /Docker Compose Preflight Report — shop/);
-  assert.match(report, /Readiness score: \\d+\\/100/);
+  assert.match(report, /Readiness score: \d+\/100/);
   assert.match(report, /Suggested startup order/);
   assert.match(report, /COMPOSE_MUTABLE_IMAGE_TAG/);
   assert.match(report, /does not run Docker Compose/);
