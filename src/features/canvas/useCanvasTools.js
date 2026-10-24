@@ -65,41 +65,55 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
           const svg = document.documentElement;
           const nodes = [svg, ...svg.querySelectorAll("*")];
           let changedPaint = false;
-          const replacePaint = (value) => {
-            if (!value || /^(none|transparent|inherit)$/i.test(value.trim()) || /^url\(/i.test(value.trim())) return value;
-            return patch.strokeColor;
-          };
+          const shouldReplacePaint = (value) =>
+            Boolean(value) &&
+            !/^(none|transparent|inherit|initial|unset)$/i.test(value.trim()) &&
+            !/^url\(/i.test(value.trim());
+
+          // Recolor explicit SVG presentation attributes without turning filled
+          // artwork into outlines. Preserve none/transparent and gradient refs.
           for (const node of nodes) {
-            for (const attribute of ["fill", "stroke"]) {
+            for (const attribute of ["fill", "stroke", "stop-color", "flood-color", "color"]) {
               const value = node.getAttribute(attribute);
-              if (value && replacePaint(value) !== value) {
-                node.setAttribute(attribute, patch.strokeColor);
-                changedPaint = true;
-              } else if (/^currentColor$/i.test(value || "")) {
+              if (shouldReplacePaint(value) || /^currentColor$/i.test(value || "")) {
                 node.setAttribute(attribute, patch.strokeColor);
                 changedPaint = true;
               }
             }
+
             const style = node.getAttribute("style");
             if (style) {
-              const recoloredStyle = style.replace(/(fill|stroke)\s*:\s*([^;]+)/gi, (match, property, value) => {
-                if (/^(none|transparent|inherit)$/i.test(value.trim()) || /^url\(/i.test(value.trim())) return match;
-                changedPaint = true;
-                return `${property}:${patch.strokeColor}`;
-              });
+              const recoloredStyle = style.replace(
+                /(^|;\s*)(fill|stroke|stop-color|flood-color|color)\s*:\s*([^;]+)/gi,
+                (match, prefix, property, value) => {
+                  if (!shouldReplacePaint(value) && !/^currentColor$/i.test(value.trim())) return match;
+                  changedPaint = true;
+                  return `${prefix}${property}:${patch.strokeColor}`;
+                },
+              );
               if (recoloredStyle !== style) node.setAttribute("style", recoloredStyle);
             }
           }
-          // Some icon sets rely on inherited paint or currentColor rather than
-          // explicit fill/stroke attributes on every path.
-          if (!changedPaint) {
-            for (const node of nodes) {
-              if (node.tagName.toLowerCase() === "svg" || ["path", "circle", "ellipse", "rect", "polygon", "polyline", "line"].includes(node.tagName.toLowerCase())) {
-                node.setAttribute("fill", "none");
-                node.setAttribute("stroke", patch.strokeColor);
-              }
-            }
+
+          // SVG libraries often define their colors in embedded CSS classes.
+          // Rewrite those declarations too, while retaining fills, strokes,
+          // masks, gradients, and the original icon geometry.
+          for (const styleNode of svg.querySelectorAll("style")) {
+            const css = styleNode.textContent || "";
+            const recoloredCss = css.replace(
+              /(fill|stroke|stop-color|flood-color|color)\s*:\s*([^;}]+)/gi,
+              (match, property, value) => {
+                if (!shouldReplacePaint(value) && !/^currentColor$/i.test(value.trim())) return match;
+                changedPaint = true;
+                return `${property}:${patch.strokeColor}`;
+              },
+            );
+            if (recoloredCss !== css) styleNode.textContent = recoloredCss;
           }
+
+          // If the SVG uses an unsupported paint mechanism, leave its artwork
+          // intact rather than producing a solid block or a broken outline.
+          if (!changedPaint) continue;
           const recolored = new XMLSerializer().serializeToString(svg);
           const recoloredFileId = `icon-recolored-${element.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
           recoloredFileIds.set(element.id, recoloredFileId);
