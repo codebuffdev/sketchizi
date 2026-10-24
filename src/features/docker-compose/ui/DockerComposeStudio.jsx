@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
-import { getComposeRecoveryGuidance } from "../recoveryGuidance.js";
 import "./docker-compose-studio.css";
 
 function emptyService() {
@@ -84,13 +83,6 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [sourceDocument, setSourceDocument] = useState(null);
   const fileInputRef = useRef(null);
   const [notice, setNotice] = useState("");
-  const [showExecutionPreflight, setShowExecutionPreflight] = useState(false);
-  const [executionAcknowledged, setExecutionAcknowledged] = useState(false);
-  const [runnerUrl, setRunnerUrl] = useState("http://127.0.0.1:8788");
-  const [runnerBusy, setRunnerBusy] = useState(false);
-  const [runnerResult, setRunnerResult] = useState(null);
-  const [operationHistory, setOperationHistory] = useState([]);
-  const [runnerHealth, setRunnerHealth] = useState(null);
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
   const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
@@ -163,112 +155,6 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     }))
   } : composeDocument;
 
-  const checkRunnerHealth = async () => {
-    if (runnerBusy) return;
-    setRunnerBusy(true);
-    setRunnerHealth({ checking: true });
-    try {
-      const base = runnerUrl.trim().replace(/\/+$/, "");
-      if (!base) throw new Error("Enter the local runner URL.");
-      const response = await fetch(base + "/health");
-      if (!response.ok) throw new Error("Runner health endpoint returned HTTP " + response.status + ".");
-      const result = await response.json();
-      setRunnerHealth({ ...result, reachable: true });
-      setNotice(result.docker?.available ? "Local runner and Docker daemon are ready." : "Local runner is reachable, but Docker needs attention.");
-    } catch (error) {
-      setRunnerHealth({ reachable: false, message: error instanceof Error ? error.message : "Could not reach the local runner." });
-      setNotice("Runner check failed. Start the runner and verify its allowed origin.");
-    } finally { setRunnerBusy(false); }
-  };
-
-  const runComposeAction = async (action, serviceName) => {
-    if (runnerBusy) return;
-    if (action === "up" && (!executionAcknowledged || !window.confirm("Start containers for this Compose project on your machine?"))) return;
-    if (action === "down" && !window.confirm("Stop and remove this Compose project's containers and default network? Named volumes are preserved unless configured otherwise.")) return;
-    const startedAt = Date.now();
-    let operationOutcome = "Outcome uncertain";
-    let operationDetail = "";
-    setRunnerBusy(true);
-    setRunnerResult(null);
-    try {
-      const base = runnerUrl.trim().replace(/\/+$/, "");
-      const response = await fetch(base + "/api/compose", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action, projectName, composeYaml: stringify(getExportDocument()), ...(serviceName ? { serviceName } : {}) }),
-      });
-      const result = await response.json();
-      operationOutcome = result.timedOut ? "Timed out · outcome uncertain" : result.success ? "Succeeded" : "Failed";
-      operationDetail = serviceName ? `${serviceName}: ${result.errorCode || result.message || ""}` : result.errorCode || result.message || "";
-      setRunnerResult({ ...result, httpStatus: response.status });
-      setNotice(result.message || result.error || "Compose runner returned a response.");
-
-      // Refresh runtime state after lifecycle changes so the displayed status
-      // reflects the resulting project rather than the previous snapshot.
-      if (response.ok && result.success && ["up", "down"].includes(action)) {
-        try {
-          const statusResponse = await fetch(base + "/api/compose", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ action: "ps", projectName, composeYaml: stringify(getExportDocument()) }),
-          });
-          const statusResult = await statusResponse.json();
-          if (!statusResponse.ok || !statusResult.success) {
-            operationOutcome = "Succeeded · status refresh failed";
-            operationDetail = statusResult.error || statusResult.stderr || "Status refresh failed";
-            setRunnerResult({ ...result, httpStatus: response.status, refreshWarning: statusResult.error || statusResult.stderr || "The lifecycle command succeeded, but status refresh failed." });
-            setNotice(action === "up" ? "Start completed, but runtime status could not be refreshed." : "Stop completed, but runtime status could not be refreshed.");
-          } else {
-            operationOutcome = "Succeeded · status refreshed";
-            operationDetail = "Runtime status refreshed";
-            setRunnerResult({ ...statusResult, lifecycleAction: action, lifecycleExitCode: result.exitCode, lifecycleOutput: result.stdout, httpStatus: statusResponse.status, message: (result.message || "Compose lifecycle command completed.") + " Runtime status refreshed." });
-            setNotice(action === "up" ? "Start completed; runtime status refreshed." : "Stop completed; runtime status refreshed.");
-          }
-        } catch (refreshError) {
-          operationOutcome = "Succeeded · status refresh failed";
-          operationDetail = refreshError instanceof Error ? refreshError.message : "Runtime status refresh failed";
-          setRunnerResult({ ...result, httpStatus: response.status, refreshWarning: refreshError instanceof Error ? refreshError.message : "Runtime status refresh failed." });
-          setNotice("Lifecycle command completed, but runtime status refresh failed.");
-        }
-      }
-    } catch (error) {
-      operationOutcome = "Outcome uncertain";
-      operationDetail = error instanceof Error ? error.message : "The request outcome could not be confirmed";
-      setRunnerResult({ success: false, outcomeUnknown: true, error: error instanceof Error ? error.message : "The request outcome could not be confirmed." });
-      setNotice("The request outcome could not be confirmed. Check Status before retrying a lifecycle action.");
-    } finally {
-      setOperationHistory((current) => [{ id: startedAt, action, timestamp: new Date(startedAt).toISOString(), durationMs: Date.now() - startedAt, outcome: operationOutcome, detail: operationDetail }, ...current].slice(0, 10));
-      setRunnerBusy(false);
-    }
-  };
-
-  const copyDiagnosticReport = async () => {
-    if (!runnerResult) return;
-    const report = [
-      "Sketchizi Docker Compose diagnostic report",
-      `Project: ${projectName}`,
-      `Action: ${runnerResult.action || runnerResult.lifecycleAction || "unknown"}`,
-      `Service: ${runnerResult.serviceName || "all services"}`,
-      `Outcome: ${runnerResult.success ? "success" : runnerResult.outcomeUnknown || runnerResult.timedOut ? "uncertain" : "failed"}`,
-      `Error code: ${runnerResult.errorCode || "none"}`,
-      `Hint: ${runnerResult.hint || "none"}`,
-      `Failure evidence: ${runnerResult.failureEvidence ? JSON.stringify(runnerResult.failureEvidence) : "none"}`,
-      `Configuration diagnostics: ${Array.isArray(runnerResult.configurationDiagnostics) ? JSON.stringify(runnerResult.configurationDiagnostics) : "none"}`,
-      `Message: ${runnerResult.message || runnerResult.error || "none"}`,
-      `HTTP status: ${runnerResult.httpStatus ?? "unknown"}`,
-      "",
-      "STDOUT:", runnerResult.stdout || "(empty)",
-      "",
-      "STDERR:", runnerResult.stderr || "(empty)",
-    ].join("\n");
-    try {
-      await navigator.clipboard.writeText(report);
-      setNotice("Diagnostic report copied to clipboard.");
-    } catch {
-      setNotice("Clipboard access was unavailable. Select and copy the command output manually.");
-    }
-  };
-
   const downloadYaml = () => {
     if (!validation.valid) {
       setNotice("Fix the validation errors before exporting.");
@@ -317,7 +203,6 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
             <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
             <button type="button" className="docker-studio-secondary" onClick={() => onCreateDiagram?.(composeDocument)}>Open as diagram</button>
             <button type="button" className="docker-studio-secondary" onClick={downloadPreflightReport}>Export preflight report</button>
-            <button type="button" className="docker-studio-secondary" onClick={() => { setExecutionAcknowledged(false); setShowExecutionPreflight(true); }}>Deployment preflight</button>
             <button type="button" className="docker-studio-secondary" onClick={addService}>＋ Add service</button>
             <button type="button" className="docker-studio-primary" onClick={downloadYaml}>Export compose.yaml</button>
           </div>
@@ -436,111 +321,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
             {notice && <p className="docker-studio-notice" role="status">{notice}</p>}
           </aside>
         </div>
-                {showExecutionPreflight && (
-          <div className="docker-studio-dialog-backdrop" role="presentation">
-            <section className="docker-studio-execution-dialog" role="dialog" aria-modal="true" aria-labelledby="docker-studio-execution-title">
-              <div className="docker-studio-editor-heading">
-                <div><span className="docker-studio-eyebrow">PHASE 2 · EXECUTION PREFLIGHT</span><h2 id="docker-studio-execution-title">Review before running Compose</h2></div>
-                <button type="button" className="docker-studio-secondary" onClick={() => setShowExecutionPreflight(false)} aria-label="Close deployment preflight">Close</button>
-              </div>
-              <p>Commands run through the local loopback runner on this machine. Check runner health first; Start and Stop require explicit confirmation.</p>
-              <label className="docker-studio-runner-url">Local runner URL
-                <input value={runnerUrl} onChange={(event) => setRunnerUrl(event.target.value)} placeholder="http://127.0.0.1:8788" />
-              </label>
-              <div className="docker-studio-lifecycle-controls">
-                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={checkRunnerHealth}>Check runner</button>
-                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("validate")}>Validate</button>
-                <button type="button" className="docker-studio-primary" disabled={runnerBusy || !executionAcknowledged} onClick={() => runComposeAction("up")}>{runnerBusy ? "Running…" : "Start services"}</button>
-                <button type="button" className="docker-studio-danger" disabled={runnerBusy} onClick={() => runComposeAction("down")}>Stop services</button>
-                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Status</button>
-                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Refresh status</button>
-                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs")}>Logs</button>
-                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("stats")}>Resource usage</button>
-              </div>
-              {runnerHealth && <section className={"docker-studio-runner-result " + (runnerHealth.checking || runnerHealth.docker?.available ? "success" : "failure")} aria-live="polite">
-                <strong>{runnerHealth.checking ? "Checking local runner…" : runnerHealth.reachable ? "Local runner reachable" : "Local runner unavailable"}</strong>
-                {runnerHealth.docker && <p>{runnerHealth.docker.available ? "Docker daemon available" + (runnerHealth.docker.serverVersion ? " · server " + runnerHealth.docker.serverVersion : "") : runnerHealth.docker.message}</p>}
-                {runnerHealth.message && <p>{runnerHealth.message}</p>}
-              </section>}
-              {operationHistory.length > 0 && <section className="docker-studio-operation-history" aria-label="Recent Compose operations"><div className="docker-studio-history-heading"><strong>Recent operations</strong><span>Last {operationHistory.length} · this session</span></div><ol>{operationHistory.map((operation) => <li key={operation.id}><div className="docker-studio-history-main"><strong>{({validate:"Validate",up:"Start services",down:"Stop services",ps:"Refresh status",logs:"View logs",stats:"Resource usage"})[operation.action] || operation.action}</strong><span className={operation.outcome.startsWith("Succeeded") ? "success" : operation.outcome === "Failed" ? "failure" : "uncertain"}>{operation.outcome}</span></div><div className="docker-studio-history-meta"><time dateTime={operation.timestamp}>{new Date(operation.timestamp).toLocaleTimeString()}</time><span>{(operation.durationMs / 1000).toFixed(1)} s</span></div>{operation.detail && <small>{operation.detail}</small>}</li>)}</ol></section>}
-              {runnerResult && <section className={runnerResult.success ? "docker-studio-runner-result success" : "docker-studio-runner-result failure"} aria-live="polite">
-                <strong>{runnerResult.timedOut || runnerResult.outcomeUnknown ? "Outcome uncertain" : runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
-                {(runnerResult.timedOut || runnerResult.outcomeUnknown) && <div className="docker-studio-actionable-diagnostic"><span>CHECK BEFORE RETRYING</span><p>The runner could not confirm the final result. Use Status or Refresh status to inspect the project before repeating Start or Stop.</p></div>}
-                {runnerResult.lifecycleAction && <p>Lifecycle action <strong>{runnerResult.lifecycleAction === "up" ? "Start" : "Stop"}</strong> completed with exit code {runnerResult.lifecycleExitCode}. The table below shows the refreshed container state.</p>}
-                {runnerResult.refreshWarning && <div className="docker-studio-actionable-diagnostic"><span>STATUS REFRESH FAILED</span><p>{runnerResult.refreshWarning} Use Status or Refresh status to retry without repeating the lifecycle action.</p></div>}
-                {runnerResult.error && <p>{runnerResult.error}</p>}
-                {runnerResult.message && <p>{runnerResult.message}</p>}
-                {Array.isArray(runnerResult.configurationDiagnostics) && runnerResult.configurationDiagnostics.length > 0 && (
-                  <section className="docker-studio-config-diagnostics" aria-label="Compose dependency validation diagnostics">
-                    <div className="docker-studio-config-diagnostics-heading">
-                      <strong>Configuration validation failed</strong>
-                      <span>{runnerResult.configurationDiagnostics.length} {runnerResult.configurationDiagnostics.length === 1 ? "finding" : "findings"}</span>
-                    </div>
-                    <p>Docker was not started. Correct these dependency configuration issues and run Validate again.</p>
-                    <ol>
-                      {runnerResult.configurationDiagnostics.map((diagnostic, index) => (
-                        <li key={diagnostic.code + ":" + (diagnostic.serviceName || "") + ":" + (diagnostic.dependencyName || "") + ":" + index}>
-                          <span>{diagnostic.code.replaceAll("_", " ")}</span>
-                          <strong>{diagnostic.serviceName ? `Service: ${diagnostic.serviceName}` : "Compose configuration"}</strong>
-                          {diagnostic.dependencyName && <small>Dependency: {diagnostic.dependencyName}</small>}
-                          <p>{diagnostic.message}</p>
-                          {Array.isArray(diagnostic.services) && <small>Cycle path: {diagnostic.services.join(" → ")}</small>}
-                        </li>
-                      ))}
-                    </ol>
-                  </section>
-                )}
-                {runnerResult.failureEvidence && <section className="docker-studio-failure-evidence" aria-label="Service failure evidence"><div><strong>{runnerResult.failureEvidence.serviceName ? (runnerResult.failureEvidence.relation === "upstream-dependency" ? "Likely failing dependency: " : "Likely affected service: ") + runnerResult.failureEvidence.serviceName : runnerResult.failureEvidence.candidateServices ? "Ambiguous service attribution" : "Failure evidence from command output"}</strong><span>{runnerResult.failureEvidence.confidence === "dependency-context" ? "Dependency context" : runnerResult.failureEvidence.confidence === "service-match" ? "Direct service match" : runnerResult.failureEvidence.confidence === "ambiguous" ? "Ambiguous" : "Output only"}</span></div><p>{runnerResult.failureEvidence.line}</p>{runnerResult.failureEvidence.dependentServiceName && <small>Dependent service: {runnerResult.failureEvidence.dependentServiceName}. The dependency attribution is inferred from this output line.</small>}{runnerResult.failureEvidence.candidateServices && <small>Possible services: {runnerResult.failureEvidence.candidateServices.join(", ")}.</small>}{runnerResult.failureRemediation && <div className="docker-studio-remediation"><strong>{runnerResult.failureRemediation.title}</strong><p>{runnerResult.failureRemediation.detail}</p></div>}<small>Evidence-based hint only; this does not confirm root cause or perform recovery.</small></section>}
-                {!runnerResult.success && runnerResult.errorCode && (() => {
-                  const recovery = getComposeRecoveryGuidance(runnerResult.errorCode, runnerResult.action, runnerResult.serviceName);
-                  if (!recovery) return <div className="docker-studio-actionable-diagnostic"><span>UNCLASSIFIED ERROR</span><p>{runnerResult.hint || "Review the command output and correct the reported issue before retrying."} No automatic recovery was attempted.</p></div>;
-                  return <section className="docker-studio-recovery-guidance" aria-label="Recovery guidance">
-                    <div className="docker-studio-recovery-heading"><span>RECOVERY GUIDANCE</span><strong>{recovery.title}</strong><small>{recovery.scope}</small></div>
-                    <ol>{recovery.steps.map((step) => <li key={step}>{step}</li>)}</ol>
-                    <p className="docker-studio-recovery-risk"><strong>Safety note:</strong> {recovery.risk}</p>
-                    <div className="docker-studio-recovery-actions">
-                      {recovery.action === "health" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={checkRunnerHealth}>{recovery.actionLabel}</button>}
-                      {recovery.action === "validate" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("validate")}>{recovery.actionLabel}</button>}
-                      {recovery.action === "ps" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>{recovery.actionLabel}</button>}
-                      {recovery.action === "logs" && <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs", runnerResult.serviceName)}>{recovery.actionLabel}</button>}
-                    </div>
-                  </section>;
-                })()}
-                {["ps", "stats"].includes(runnerResult.action) && runnerResult.success && parseComposeStatus(runnerResult.stdout).length > 0 && <>{runnerResult.action === "ps" && (() => { const summary = summarizeContainers(parseComposeStatus(runnerResult.stdout)); return <div className="docker-studio-container-summary" aria-label="Container state summary">{[["Total", summary.total, "total"], ["Healthy", summary.healthy, "healthy"], ["Running", summary.running, "running"], ["Starting", summary.starting, "starting"], ["Unhealthy", summary.unhealthy, "unhealthy"], ["Stopped", summary.stopped, "stopped"]].map(([label, count, kind]) => <div key={label} className={"docker-studio-container-summary-item " + kind}><span>{label}</span><strong>{count}</strong></div>)}</div>; })()}{runnerResult.action === "ps" && (() => { const attention = parseComposeStatus(runnerResult.stdout).map((container) => ({ container, state: getContainerState(container), advice: getContainerAttention(container) })).filter((item) => item.advice); return attention.length > 0 ? <section className="docker-studio-health-events" aria-label="Containers needing attention"><div className="docker-studio-health-events-heading"><strong>Needs attention</strong><span>{attention.length} container{attention.length === 1 ? "" : "s"}</span></div><ul>{attention.map(({container,state,advice}, index) => <li key={container.ID || container.Id || container.Name || index}><div><strong>{container.Name || container.Service || container.ID || container.Id || "Container"}</strong><span className={"docker-studio-container-state " + state.kind}>{state.label}</span></div><b>{advice.title}</b><p>{advice.detail}</p><button type="button" className="docker-studio-secondary docker-studio-inspect-logs" disabled={runnerBusy || !(container.Service || services.some((service) => service.name === container.Name))} onClick={() => runComposeAction("logs", container.Service || container.Name)}>View service logs</button></li>)}</ul></section> : null; })()}<div className="docker-studio-status-table-wrap"><table className="docker-studio-status-table"><thead><tr><th>Container</th>{runnerResult.action === "ps" ? <><th>State</th><th>Health</th><th>Ports</th></> : <><th>CPU</th><th>Memory usage / limit</th><th>Memory %</th><th>Network I/O</th><th>Block I/O</th><th>PIDs</th></>}</tr></thead><tbody>{parseComposeStatus(runnerResult.stdout).map((container, index) => { const state = getContainerState(container); return <tr key={container.ID || container.Id || container.Name || container.Container || index}><td><strong>{container.Name || container.Service || container.ID || container.Id || container.Container || "Container"}</strong><small>{container.Image || ""}</small></td>{runnerResult.action === "ps" ? <><td><span className={"docker-studio-container-state " + state.kind}>{state.label}</span></td><td>{container.Health || container.HealthStatus || "—"}</td><td>{container.Ports || "—"}</td></> : <><td>{container.CPUPerc || container.CPU || container.CPUPercentage || "—"}</td><td>{container.MemUsage || container.MemoryUsage || "—"}</td><td>{container.MemPerc || container.MemoryPercent || "—"}</td><td>{container.NetIO || container.NetworkIO || "—"}</td><td>{container.BlockIO || "—"}</td><td>{container.PIDs || container.Pids || "—"}</td></>}</tr>; })}</tbody></table></div></>}{runnerResult.lifecycleOutput && <><strong>Lifecycle output · {runnerResult.lifecycleAction === "up" ? "Start" : "Stop"}</strong><pre>{runnerResult.lifecycleOutput}</pre></>}{runnerResult.action === "logs" && runnerResult.serviceName && <strong>Service logs · {runnerResult.serviceName}</strong>}{(!runnerResult.success || runnerResult.timedOut || runnerResult.outcomeUnknown) && <button type="button" className="docker-studio-secondary docker-studio-copy-diagnostics" disabled={runnerBusy} onClick={copyDiagnosticReport}>Copy diagnostic report</button>}{(runnerResult.stdout || runnerResult.stderr) && <pre>{[runnerResult.stdout && "STDOUT:\n" + runnerResult.stdout, runnerResult.stderr && "STDERR:\n" + runnerResult.stderr].filter(Boolean).join("\n\n")}</pre>}
-              </section>}
-              <div className={validation.valid && readiness.ready ? "docker-studio-preflight-status valid" : "docker-studio-preflight-status invalid"}>
-                <strong>{validation.valid && readiness.ready ? "Static checks found no blocking errors" : "Review issues before deployment"}</strong>
-                <span>{validation.findings.length} validation findings · {readiness.severityCounts.error} readiness errors · {readiness.severityCounts.warning} warnings</span>
-              </div>
-              {validation.findings.length > 0 && <ul>{validation.findings.map((finding, index) => <li key={finding.code + finding.path + index}>{finding.message} <small>({finding.path})</small></li>)}</ul>}
-              {readiness.prioritizedFindings.filter((finding) => finding.severity === "error").map((finding, index) => <p key={finding.code + finding.path + index} className="docker-studio-preflight-error">{finding.message} — {finding.remediation}</p>)}
-              <ol>
-                <li>Export the current model as <code>compose.yaml</code>.</li>
-                <li>Open a terminal in the directory containing that file.</li>
-                <li>Review the configuration, environment variables, exposed ports, volumes, and secrets.</li>
-                <li>Run the validation command first; only continue if it succeeds.</li>
-              </ol>
-              <label className="docker-studio-execution-acknowledgement">
-                <input type="checkbox" checked={executionAcknowledged} onChange={(event) => setExecutionAcknowledged(event.target.checked)} />
-                <span>I understand these commands run on my machine and may create or modify containers, networks, and volumes.</span>
-              </label>
-              {executionAcknowledged && (
-                <div className="docker-studio-command-preview">
-                  <strong>1. Validate configuration</strong>
-                  <code>docker compose -f compose.yaml config --quiet</code>
-                  <strong>2. Start services (run only after validation succeeds)</strong>
-                  <code>docker compose -f compose.yaml up --detach --build</code>
-                  <button type="button" className="docker-studio-secondary" onClick={() => { navigator.clipboard?.writeText("docker compose -f compose.yaml config --quiet\ndocker compose -f compose.yaml up --detach --build").then(() => setNotice("Compose command plan copied."), () => setNotice("Clipboard access unavailable. Select and copy the commands manually.")); }}>Copy command plan</button>
-                </div>
-              )}
-              <div className="docker-studio-dialog-actions">
-                <button type="button" className="docker-studio-secondary" onClick={() => setShowExecutionPreflight(false)}>Cancel</button>
-                <button type="button" className="docker-studio-primary" onClick={() => { setShowExecutionPreflight(false); setNotice("Preflight reviewed. Export compose.yaml and run the reviewed commands in your local terminal; Sketchizi has not started containers."); }} disabled={!executionAcknowledged}>Acknowledge and continue</button>
-              </div>
-            </section>
-          </div>
-        )}
-<footer className="docker-studio-footer"><span>Phase 1 · Docker Compose Studio</span><span>Visual editing and initial validation</span></footer>
+        <footer className="docker-studio-footer"><span>Docker Compose Studio</span><span>Visual design, validation, and export</span></footer>
       </section>
     </div>
   );
