@@ -278,15 +278,22 @@ export default function SketchiziCanvas({
         toolbar.insertBefore(separator, anchor);
       });
 
-      // Expose the two frequently used Sketchizi tools directly in the dock.
-      // Activation delegates to the existing More Tools actions so their native
-      // application handlers and keyboard shortcuts remain the source of truth.
+      // Expose quick tools as one non-shrinking group. A single wrapper avoids
+      // native toolbar flex/overflow rules hiding the second injected button.
+      let quickGroup = toolbar.querySelector(":scope > .sketchizi-dock-quick-tools");
+      if (!quickGroup) {
+        quickGroup = document.createElement("span");
+        quickGroup.className = "sketchizi-dock-quick-tools";
+        quickGroup.setAttribute("role", "group");
+        quickGroup.setAttribute("aria-label", "Quick tools");
+        toolbar.appendChild(quickGroup);
+      }
       const quickTools = [
         { id: "bucketfill", label: "Bucket fill", icon: "◒", shortcut: "B" },
         { id: "autoshape", label: "Draw to shape", icon: "◌", shortcut: "⇧X" },
       ];
       quickTools.forEach(({ id, label, icon, shortcut }) => {
-        if (toolbar.querySelector(`[data-sketchizi-quick-tool="${id}"]`)) return;
+        if (quickGroup.querySelector(`[data-sketchizi-quick-tool="${id}"]`)) return;
         const button = document.createElement("button");
         button.type = "button";
         button.className = "sketchizi-dock-quick-tool";
@@ -297,23 +304,11 @@ export default function SketchiziCanvas({
         button.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
-          const trigger = document.querySelector(".sketchizi-more-tools-trigger");
-          if (!trigger) return;
-          const menu = trigger.closest(".sketchizi-more-tools");
-          const menuOpen = menu?.classList.contains("open");
-          if (!menuOpen) trigger.click();
-          window.setTimeout(() => {
-            const item = [...document.querySelectorAll(".sketchizi-more-tools-menu [role='menuitem']")]
-              .find((candidate) => candidate.textContent.replace(/\\s+/g, " ").trim().includes(label));
-            if (item && !item.disabled) item.click();
-          }, 0);
+          // Invoke the existing React tool action directly; do not open More Tools
+          // just to find and click its menu item (which caused a visible flash).
+          window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
         });
-        // Place both quick tools in the dock's trailing quick-access area.
-        // Keep them after the final native separator so the second tool cannot
-        // be hidden inside the native toolbar's clipped tool-group region.
-        button.style.flex = "0 0 42px";
-        button.style.position = "relative";
-        toolbar.appendChild(button);
+        quickGroup.appendChild(button);
       });
     };
     const schedule = () => {

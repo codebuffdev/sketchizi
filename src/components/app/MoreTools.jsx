@@ -1,4 +1,15 @@
+import { useEffect } from "react";
+
 export default function MoreTools({ open, anchor, position, activateTool, toggle, canEdit = true, placement = "canvas" }) {
+  useEffect(() => {
+    const handleQuickTool = (event) => {
+      const tool = event.detail?.tool;
+      if (!canEdit || !["bucketfill", "autoshape"].includes(tool)) return;
+      activateTool(tool);
+    };
+    window.addEventListener("sketchizi:activate-tool", handleQuickTool);
+    return () => window.removeEventListener("sketchizi:activate-tool", handleQuickTool);
+  }, [activateTool, canEdit]);
   const items = [
     ["image", "▧", "Insert image", "9"], ["frame", "⌗", "Frame tool", "F"], ["embeddable", "◇", "Web Embed", ""],
     ["autoshape", "◌", "Draw to shape", "⇧X"], ["laser", "✧", "Laser pointer", "K"], ["bucketfill", "◒", "Bucket fill", "B"], ["lasso", "◌", "Lasso selection", ""],

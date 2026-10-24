@@ -527,3 +527,19 @@
     transition: none;
   }
 }
+
+/* Quick tools occupy a single stable dock group so neither control is clipped. */
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tools,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tools {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: max-content;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--sk-toolbar-border, #343949);
+  overflow: visible;
+}
