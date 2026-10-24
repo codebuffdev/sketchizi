@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 test("Compose runner binds only to loopback and uses a fixed Docker Compose action allowlist", async () => {
   const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
   assert.match(source, /const HOST = "127\.0\.0\.1"/);
-  assert.match(source, /const ACTIONS = new Set\(\["validate", "up", "down", "ps", "logs"\]\)/);
+  assert.match(source, /const ACTIONS = new Set\\(\\["validate", "up", "down", "ps", "logs", "stats"\\]\\)/);
   assert.match(source, /spawn\("docker", \["compose", \.\.\.args\]/);
   assert.match(source, /shell: false/);
   assert.match(source, /MAX_BODY_BYTES = 2 \* 1024 \* 1024/);
