@@ -104,7 +104,21 @@
 
 /* One-click service log inspection from health alerts */
 .docker-studio-inspect-logs{margin-top:10px;min-height:30px;padding:6px 10px;font-size:11px}
-\n/* Copyable diagnostic report action */\n.docker-studio-copy-diagnostics{margin:8px 0;font-size:11px}\n
+
+/* Copyable diagnostic report action */
+.docker-studio-copy-diagnostics{margin:8px 0;font-size:11px}
+
 /* Contextual, non-destructive recovery actions */
 .docker-studio-recovery-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
 .docker-studio-recovery-actions button{font-size:11px;min-height:30px}
+
+/* Structured, service-aware non-destructive recovery guidance */
+.docker-studio-recovery-guidance{margin:10px 0;padding:13px;border:1px solid #655332;border-radius:10px;background:#211d16;color:#eadfca}
+.docker-studio-recovery-heading{display:flex;flex-direction:column;gap:5px}
+.docker-studio-recovery-heading span{font-size:10px;font-weight:800;letter-spacing:.08em;color:#e8be6b}
+.docker-studio-recovery-heading strong{font-size:13px;color:#fff1d1}
+.docker-studio-recovery-heading small{font-size:10px;color:#c4b48f;overflow-wrap:anywhere}
+.docker-studio-recovery-guidance ol{margin:10px 0 0;padding-left:20px}
+.docker-studio-recovery-guidance li{margin:5px 0;font-size:11px;line-height:1.5}
+.docker-studio-recovery-risk{margin:10px 0 0;font-size:11px;line-height:1.5;color:#e7d4aa}
+.docker-studio-recovery-risk strong{color:#f5ca78}
