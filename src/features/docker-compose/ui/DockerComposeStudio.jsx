@@ -224,8 +224,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
         </section>
 
         <section className="docker-studio-resources" aria-label="Shared volumes and networks">
-          <label>Named volumes <span>One volume name per line</span><textarea value={volumeNames} onChange={(event) => setVolumeNames(event.target.value)} placeholder={"database-data\nuploads"} rows={2} /></label>
-          <label>Networks <span>One network name per line</span><textarea value={networkNames} onChange={(event) => setNetworkNames(event.target.value)} placeholder={"frontend\nbackend"} rows={2} /></label>
+          <label>Named volumes <span>One volume name per line</span><textarea className="docker-studio-resource-list" value={volumeNames} onChange={(event) => setVolumeNames(event.target.value)} placeholder={"database-data\nuploads"} rows={2} /></label>
+          <label>Networks <span>One network name per line</span><textarea className="docker-studio-resource-list" value={networkNames} onChange={(event) => setNetworkNames(event.target.value)} placeholder={"frontend\nbackend"} rows={2} /></label>
         </section>
 
         <div className="docker-studio-workspace">
