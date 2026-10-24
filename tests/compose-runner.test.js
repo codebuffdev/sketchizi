@@ -199,3 +199,13 @@ test("Compose runner attaches service-specific remediation guidance to failures"
   assert.match(source, /getServiceFailureRemediation\(/);
   assert.match(source, /failureRemediation:/);
 });
+
+
+test("Compose runner validates dependency references and cycles before validate or up execution", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /validateComposeDependencies\(parsed\.services\)/);
+  assert.match(source, /action === "validate" \|\| action === "up"/);
+  assert.match(source, /COMPOSE_DEPENDENCY_INVALID/);
+  assert.match(source, /configurationDiagnostics: dependencyValidation\.diagnostics/);
+  assert.ok(source.indexOf("validateComposeDependencies(parsed.services)") < source.indexOf('await writeFile(join(projectDirectory, "compose.yaml")'));
+});

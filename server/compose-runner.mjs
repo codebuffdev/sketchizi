@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseDocument } from "yaml";
 import { extractDockerFailureEvidence, getServiceFailureRemediation } from "./docker-failure-evidence.mjs";
+import { validateComposeDependencies } from "./compose-dependency-validation.mjs";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.COMPOSE_RUNNER_PORT || 8788);
@@ -137,6 +138,18 @@ const server = createServer(async (request, response) => {
     }
     const projectName = typeof body.projectName === "string" ? body.projectName.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 48) : "";
     if (!projectName) throw Object.assign(new Error("projectName must contain letters, numbers, underscores, or hyphens."), { status: 400 });
+    if (action === "validate" || action === "up") {
+      const dependencyValidation = validateComposeDependencies(parsed.services);
+      if (!dependencyValidation.valid) {
+        send(response, 422, {
+          action, projectName, success: false,
+          errorCode: "COMPOSE_DEPENDENCY_INVALID",
+          message: "Compose dependency validation failed. Fix the service-linked diagnostics before validating or starting this project.",
+          configurationDiagnostics: dependencyValidation.diagnostics,
+        }, origin);
+        return;
+      }
+    }
     projectDirectory = join(tmpdir(), "sketchizi-compose-projects", projectName);
     await mkdir(projectDirectory, { recursive: true, mode: 0o700 });
     await writeFile(join(projectDirectory, "compose.yaml"), body.composeYaml, { encoding: "utf8", mode: 0o600 });
