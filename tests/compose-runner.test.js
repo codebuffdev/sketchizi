@@ -44,3 +44,11 @@ test("Studio exposes an explicit runner connectivity check and reports Docker he
   assert.match(source, /Check runner/);
   assert.match(source, /Docker daemon available/);
 });
+
+test("Studio accurately explains that lifecycle actions execute through the local runner", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /Commands run through the local loopback runner on this machine/);
+  assert.doesNotMatch(source, /Sketchizi does not execute Docker commands from this screen/);
+  assert.match(source, /Start containers for this Compose project on your machine/);
+  assert.match(source, /Stop and remove this Compose project/);
+});

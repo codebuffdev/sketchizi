@@ -338,7 +338,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <div><span className="docker-studio-eyebrow">PHASE 2 · EXECUTION PREFLIGHT</span><h2 id="docker-studio-execution-title">Review before running Compose</h2></div>
                 <button type="button" className="docker-studio-secondary" onClick={() => setShowExecutionPreflight(false)} aria-label="Close deployment preflight">Close</button>
               </div>
-              <p>This prepares a local execution checklist. Sketchizi does not execute Docker commands from this screen.</p>
+              <p>Commands run through the local loopback runner on this machine. Check runner health first; Start and Stop require explicit confirmation.</p>
               <label className="docker-studio-runner-url">Local runner URL
                 <input value={runnerUrl} onChange={(event) => setRunnerUrl(event.target.value)} placeholder="http://127.0.0.1:8788" />
               </label>
