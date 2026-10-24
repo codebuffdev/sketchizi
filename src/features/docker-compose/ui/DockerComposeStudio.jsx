@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { exportComposeYaml, validateComposeDocument } from "../../features/docker-compose/composeDocumentService.js";
+import { exportComposeYaml, validateComposeDocument } from "../composeDocumentService.js";
 import "./docker-compose-studio.css";
 
 function emptyService() {
