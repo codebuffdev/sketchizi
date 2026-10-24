@@ -7,43 +7,6 @@ function emptyService() {
   return { image: "", buildContext: "", portsText: "", environmentText: "", dependsText: "", volumesText: "", networksText: "", healthcheckText: "", restart: "unless-stopped" };
 }
 
-function parseComposeStatus(output) {
-  if (!output?.trim()) return [];
-  try {
-    const parsed = JSON.parse(output);
-    return (Array.isArray(parsed) ? parsed : [parsed]).filter((item) => item && typeof item === "object");
-  } catch {
-    return output.split("\n").map((line) => { try { return JSON.parse(line); } catch { return null; } }).filter((item) => item && typeof item === "object");
-  }
-}
-function getContainerState(container) {
-  const raw = String(container.State || container.Status || "").toLowerCase();
-  const health = String(container.Health || container.HealthStatus || "").toLowerCase();
-  if (health.includes("unhealthy") || raw.includes("unhealthy")) return { label: "Unhealthy", kind: "unhealthy" };
-  if (health.includes("starting") || raw.includes("starting") || raw.includes("created") || raw.includes("restarting")) return { label: "Starting", kind: "starting" };
-  if (health.includes("healthy")) return { label: "Healthy", kind: "healthy" };
-  if (raw.includes("running") || raw === "up") return { label: "Running", kind: "running" };
-  if (raw.includes("exited") || raw.includes("stopped") || raw.includes("dead") || raw.includes("removing")) return { label: "Stopped", kind: "stopped" };
-  return { label: raw ? raw.replace(/^./, (letter) => letter.toUpperCase()) : "Unknown", kind: "unknown" };
-}
-function getContainerAttention(container) {
-  const state = getContainerState(container);
-  if (state.kind === "unhealthy") return { title: "Health check failing", detail: "Inspect this service’s logs and healthcheck command; verify its dependencies and readiness endpoint." };
-  if (state.kind === "stopped") return { title: "Container stopped", detail: "Review the exit code and recent logs. Check the service command, required environment variables, and dependency availability." };
-  if (state.kind === "starting") return { title: "Still starting", detail: "Allow the startup window to finish, then refresh status. If it remains here, inspect logs and healthcheck timing." };
-  if (state.kind === "unknown") return { title: "State not recognized", detail: "Refresh status and inspect the raw Docker status output to confirm the current container state." };
-  return null;
-}
-
-function summarizeContainers(containers) {
-  return containers.reduce((summary, container) => {
-    const kind = getContainerState(container).kind;
-    summary[kind] = (summary[kind] || 0) + 1;
-    summary.total += 1;
-    return summary;
-  }, { total: 0, healthy: 0, running: 0, starting: 0, unhealthy: 0, stopped: 0, unknown: 0 });
-}
-
 function parseLines(value) {
   return value.split("\n").map((line) => line.trim()).filter(Boolean);
 }
