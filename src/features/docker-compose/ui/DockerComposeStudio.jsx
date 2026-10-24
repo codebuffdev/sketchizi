@@ -37,7 +37,7 @@ function toDocument(name, services, volumeNames, networkNames) {
   return { name: name.trim(), services: normalized, volumes, networks };
 }
 
-export default function DockerComposeStudio({ onClose }) {
+export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [projectName, setProjectName] = useState("my-compose-project");
   const [services, setServices] = useState([{ name: "web", ...emptyService() }]);
   const [selectedId, setSelectedId] = useState("web");
@@ -153,6 +153,7 @@ export default function DockerComposeStudio({ onClose }) {
           <div className="docker-studio-header-actions">
             <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" className="docker-studio-file-input" style={{ display: "none" }} onChange={importYaml} aria-label="Import Compose YAML" />
             <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
+            <button type="button" className="docker-studio-secondary" onClick={() => onCreateDiagram?.(composeDocument)}>Open as diagram</button>
             <button type="button" className="docker-studio-secondary" onClick={addService}>＋ Add service</button>
             <button type="button" className="docker-studio-primary" onClick={downloadYaml}>Export compose.yaml</button>
           </div>
