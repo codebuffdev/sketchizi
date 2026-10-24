@@ -363,5 +363,33 @@ export function analyzeComposeReadiness(input) {
       "Define it in the shell environment or project .env file, or provide a default in the ${VAR:-default} form."
     ));
   }
-  return { startupOrder: cycles.length ? [] : startupOrder, cycles, findings, ready: cycles.length === 0 };
+  const severityCounts = findings.reduce((counts, finding) => {
+    counts[finding.severity] = (counts[finding.severity] || 0) + 1;
+    return counts;
+  }, { error: 0, warning: 0, info: 0 });
+  const readinessScore = Math.max(0, 100 -
+    severityCounts.error * 20 -
+    severityCounts.warning * 8 -
+    severityCounts.info * 2);
+  const readinessGrade = readinessScore >= 90 ? "Excellent"
+    : readinessScore >= 75 ? "Good"
+      : readinessScore >= 50 ? "Needs attention"
+        : "High risk";
+  const findingsByCategory = {
+    security: findings.filter((finding) => /SECRET|PRIVILEGED|HOST_NETWORK|PUBLISHED_PORT/.test(finding.code)),
+    reliability: findings.filter((finding) => /CYCLE|DEPENDENCY|HEALTHCHECK|MUTABLE_IMAGE_TAG/.test(finding.code)),
+    configuration: findings.filter((finding) => /ENVIRONMENT|ENV_FILE|VARIABLE|CONDITION/.test(finding.code)),
+    resources: findings.filter((finding) => /RESOURCE_LIMITS/.test(finding.code)),
+    other: findings.filter((finding) => !/SECRET|PRIVILEGED|HOST_NETWORK|PUBLISHED_PORT|CYCLE|DEPENDENCY|HEALTHCHECK|MUTABLE_IMAGE_TAG|ENVIRONMENT|ENV_FILE|VARIABLE|CONDITION|RESOURCE_LIMITS/.test(finding.code)),
+  };
+  return {
+    startupOrder: cycles.length ? [] : startupOrder,
+    cycles,
+    findings,
+    ready: cycles.length === 0 && severityCounts.error === 0,
+    readinessScore,
+    readinessGrade,
+    severityCounts,
+    findingsByCategory,
+  };
 }

@@ -232,3 +232,21 @@ test("readiness analysis identifies published ports and missing resource limits"
   assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_RESOURCE_LIMITS_MISSING" && finding.message.includes("web")));
   assert.equal(result.findings.some((finding) => finding.code === "COMPOSE_RESOURCE_LIMITS_MISSING" && finding.message.includes("worker")), false);
 });
+
+
+test("readiness analysis returns a score, grade, severity counts, and categorized findings", () => {
+  const clean = analyzeComposeReadiness({
+    services: { api: { image: "example/api:1", deploy: { resources: { limits: { memory: "512M" } } } } },
+  });
+  assert.equal(clean.readinessScore, 100);
+  assert.equal(clean.readinessGrade, "Excellent");
+  assert.deepEqual(clean.severityCounts, { error: 0, warning: 0, info: 0 });
+  assert.ok(Array.isArray(clean.findingsByCategory.security));
+
+  const risky = analyzeComposeReadiness({
+    services: { api: { image: "example/api:latest", privileged: true, ports: ["8080:80"] } },
+  });
+  assert.ok(risky.readinessScore < clean.readinessScore);
+  assert.ok(risky.severityCounts.warning >= 3);
+  assert.ok(risky.findingsByCategory.security.length >= 2);
+});

@@ -252,6 +252,10 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
             <div className="docker-studio-section-heading"><span>Validation</span><span className={validation.valid && readiness.ready ? "docker-studio-status valid" : "docker-studio-status invalid"}>{validation.valid && readiness.ready ? "Ready" : "Issues"}</span></div>
             <section className="docker-studio-readiness" aria-label="Startup readiness">
               <div className="docker-studio-section-heading"><span>Run readiness</span><span className={readiness.ready ? "docker-studio-status valid" : "docker-studio-status invalid"}>{readiness.ready ? "Ready to review" : "Action needed"}</span></div>
+              <div className="docker-studio-readiness-score" aria-label={`Readiness score ${readiness.readinessScore} out of 100`}>
+                <strong>{readiness.readinessScore}/100</strong><span>{readiness.readinessGrade}</span>
+                <small>{readiness.severityCounts.error} errors · {readiness.severityCounts.warning} warnings · {readiness.severityCounts.info} recommendations</small>
+              </div>
               {readiness.startupOrder.length > 0 && <p><strong>Suggested startup order</strong><br />{readiness.startupOrder.join(" → ")}</p>}
               {readiness.findings.length > 0 ? readiness.findings.map((finding, index) => <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></div>) : <p>No dependency cycles detected. Review external environment variables before starting.</p>}
             </section>
