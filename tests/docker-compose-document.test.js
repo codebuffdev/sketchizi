@@ -258,6 +258,7 @@ test("readiness remediation prioritizes errors before warnings and informational
       api: {
         image: "example/api:latest",
         privileged: true,
+        env_file: { invalid: true },
         depends_on: ["missing-service"],
       },
     },
