@@ -555,10 +555,10 @@ function App() {
       if (iconAsset) {
         skeleton.push({
           type: "image",
-          x: x + cardWidth - 66,
+          x: x + cardWidth - 88,
           y: y + 14,
-          width: 50,
-          height: 50,
+          width: 72,
+          height: 72,
           fileId: iconAsset.fileId,
           status: "saved",
           scale: [1, 1]
