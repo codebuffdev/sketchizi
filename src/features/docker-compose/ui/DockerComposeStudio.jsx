@@ -253,6 +253,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       `Error code: ${runnerResult.errorCode || "none"}`,
       `Hint: ${runnerResult.hint || "none"}`,
       `Failure evidence: ${runnerResult.failureEvidence ? JSON.stringify(runnerResult.failureEvidence) : "none"}`,
+      `Configuration diagnostics: ${Array.isArray(runnerResult.configurationDiagnostics) ? JSON.stringify(runnerResult.configurationDiagnostics) : "none"}`,
       `Message: ${runnerResult.message || runnerResult.error || "none"}`,
       `HTTP status: ${runnerResult.httpStatus ?? "unknown"}`,
       "",
@@ -469,6 +470,26 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 {runnerResult.refreshWarning && <div className="docker-studio-actionable-diagnostic"><span>STATUS REFRESH FAILED</span><p>{runnerResult.refreshWarning} Use Status or Refresh status to retry without repeating the lifecycle action.</p></div>}
                 {runnerResult.error && <p>{runnerResult.error}</p>}
                 {runnerResult.message && <p>{runnerResult.message}</p>}
+                {Array.isArray(runnerResult.configurationDiagnostics) && runnerResult.configurationDiagnostics.length > 0 && (
+                  <section className="docker-studio-config-diagnostics" aria-label="Compose dependency validation diagnostics">
+                    <div className="docker-studio-config-diagnostics-heading">
+                      <strong>Configuration validation failed</strong>
+                      <span>{runnerResult.configurationDiagnostics.length} {runnerResult.configurationDiagnostics.length === 1 ? "finding" : "findings"}</span>
+                    </div>
+                    <p>Docker was not started. Correct these dependency configuration issues and run Validate again.</p>
+                    <ol>
+                      {runnerResult.configurationDiagnostics.map((diagnostic, index) => (
+                        <li key={diagnostic.code + ":" + (diagnostic.serviceName || "") + ":" + (diagnostic.dependencyName || "") + ":" + index}>
+                          <span>{diagnostic.code.replaceAll("_", " ")}</span>
+                          <strong>{diagnostic.serviceName ? `Service: ${diagnostic.serviceName}` : "Compose configuration"}</strong>
+                          {diagnostic.dependencyName && <small>Dependency: {diagnostic.dependencyName}</small>}
+                          <p>{diagnostic.message}</p>
+                          {Array.isArray(diagnostic.services) && <small>Cycle path: {diagnostic.services.join(" → ")}</small>}
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
+                )}
                 {runnerResult.failureEvidence && <section className="docker-studio-failure-evidence" aria-label="Service failure evidence"><div><strong>{runnerResult.failureEvidence.serviceName ? (runnerResult.failureEvidence.relation === "upstream-dependency" ? "Likely failing dependency: " : "Likely affected service: ") + runnerResult.failureEvidence.serviceName : runnerResult.failureEvidence.candidateServices ? "Ambiguous service attribution" : "Failure evidence from command output"}</strong><span>{runnerResult.failureEvidence.confidence === "dependency-context" ? "Dependency context" : runnerResult.failureEvidence.confidence === "service-match" ? "Direct service match" : runnerResult.failureEvidence.confidence === "ambiguous" ? "Ambiguous" : "Output only"}</span></div><p>{runnerResult.failureEvidence.line}</p>{runnerResult.failureEvidence.dependentServiceName && <small>Dependent service: {runnerResult.failureEvidence.dependentServiceName}. The dependency attribution is inferred from this output line.</small>}{runnerResult.failureEvidence.candidateServices && <small>Possible services: {runnerResult.failureEvidence.candidateServices.join(", ")}.</small>}{runnerResult.failureRemediation && <div className="docker-studio-remediation"><strong>{runnerResult.failureRemediation.title}</strong><p>{runnerResult.failureRemediation.detail}</p></div>}<small>Evidence-based hint only; this does not confirm root cause or perform recovery.</small></section>}
                 {!runnerResult.success && runnerResult.errorCode && (() => {
                   const recovery = getComposeRecoveryGuidance(runnerResult.errorCode, runnerResult.action, runnerResult.serviceName);

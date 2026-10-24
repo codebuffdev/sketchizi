@@ -209,3 +209,15 @@ test("Compose runner validates dependency references and cycles before validate 
   assert.match(source, /configurationDiagnostics: dependencyValidation\.diagnostics/);
   assert.ok(source.indexOf("validateComposeDependencies(parsed.services)") < source.indexOf('await writeFile(join(projectDirectory, "compose.yaml")'));
 });
+
+
+test("Studio renders structured service-linked Compose dependency validation diagnostics", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /runnerResult\.configurationDiagnostics/);
+  assert.match(source, /Compose dependency validation diagnostics/);
+  assert.match(source, /Configuration validation failed/);
+  assert.match(source, /diagnostic\.serviceName/);
+  assert.match(source, /diagnostic\.dependencyName/);
+  assert.match(source, /diagnostic\.services\.join/);
+  assert.match(source, /Configuration diagnostics:/);
+});

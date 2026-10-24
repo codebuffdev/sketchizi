@@ -132,3 +132,17 @@
 .docker-studio-remediation{margin:9px 0;padding:10px;border:1px solid #5a4d32;border-radius:8px;background:#211d16}
 .docker-studio-remediation strong{display:block;font-size:11px;color:#f5ca78}
 .docker-studio-remediation p{margin:5px 0 0;font-size:11px;line-height:1.5;color:#eadfca;overflow-wrap:anywhere}
+
+
+/* Structured dependency and Compose configuration diagnostics */
+.docker-studio-config-diagnostics{margin:12px 0;padding:13px;border:1px solid #854651;border-radius:10px;background:#24171e;color:#f1dce0}
+.docker-studio-config-diagnostics-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.docker-studio-config-diagnostics-heading strong{font-size:12px;color:#ffb0b9}
+.docker-studio-config-diagnostics-heading span{flex:none;padding:4px 7px;border:1px solid #71404b;border-radius:20px;color:#f3c0c7;font-size:10px}
+.docker-studio-config-diagnostics>p{margin:8px 0;color:#d8bfc5;font-size:11px;line-height:1.5}
+.docker-studio-config-diagnostics ol{list-style:none;margin:0;padding:0}
+.docker-studio-config-diagnostics li{padding:10px 0;border-top:1px solid #49303a}
+.docker-studio-config-diagnostics li>span{display:inline-block;margin-bottom:5px;color:#f5ca78;font-size:9px;font-weight:800;letter-spacing:.05em}
+.docker-studio-config-diagnostics li>strong,.docker-studio-config-diagnostics li>small{display:block;font-size:11px;overflow-wrap:anywhere}
+.docker-studio-config-diagnostics li>small{margin-top:4px;color:#c6aeb4;font-size:10px}
+.docker-studio-config-diagnostics li>p{margin:5px 0 0;color:#f1dce0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
