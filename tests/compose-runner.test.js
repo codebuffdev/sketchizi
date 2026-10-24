@@ -43,24 +43,7 @@ test("Compose runner health check distinguishes Docker CLI and daemon availabili
   assert.match(source, /serverVersion/);
 });
 
-test("Studio exposes an explicit runner connectivity check and reports Docker health", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /checkRunnerHealth/);
-  assert.match(source, /Check runner/);
-  assert.match(source, /runComposeAction\("stats"\)/);
-  assert.match(source, /Resource usage/);
-  assert.match(source, /parseComposeStatus/);
-  assert.match(source, /docker-studio-status-table/);
-  assert.match(source, /Docker daemon available/);
-});
 
-test("Studio accurately explains that lifecycle actions execute through the local runner", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /Commands run through the local loopback runner on this machine/);
-  assert.doesNotMatch(source, /Sketchizi does not execute Docker commands from this screen/);
-  assert.match(source, /Start containers for this Compose project on your machine/);
-  assert.match(source, /Stop and remove this Compose project/);
-});
 
 test("Compose runner bounds captured output without killing diagnostics", async () => {
   const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
@@ -71,13 +54,6 @@ test("Compose runner bounds captured output without killing diagnostics", async 
   assert.ok(!source.includes("stdout.length > 200_000) child.kill"));
 });
 
-test("Studio summarizes container health and distinguishes runtime states", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  for (const state of ["Healthy", "Running", "Starting", "Unhealthy", "Stopped", "Unknown"]) assert.ok(source.includes(state), "missing state: " + state);
-  assert.ok(source.includes("function summarizeContainers(containers)"));
-  assert.ok(source.includes("docker-studio-container-summary"));
-  assert.ok(source.includes("container.HealthStatus"));
-});
 
 
 test("Compose runner classifies common failures and returns actionable remediation hints", async () => {
@@ -90,23 +66,8 @@ test("Compose runner classifies common failures and returns actionable remediati
   assert.match(source, /hint: "Another process may be using the published port/);
 });
 
-test("Studio renders stable error codes and remediation hints alongside raw command output", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /docker-studio-actionable-diagnostic/);
-  assert.match(source, /runnerResult\.errorCode/);
-  assert.match(source, /runnerResult\.hint/);
-  assert.match(source, /runnerResult\.stdout/);
-});
 
 
-test("Studio refreshes runtime status after successful start and stop without repeating lifecycle actions", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /Runtime status refreshed/);
-  assert.match(source, /refreshWarning/);
-  assert.match(source, /action: "ps", projectName, composeYaml: stringify\(getExportDocument\(\)\)/);
-  assert.match(source, /Refresh status/);
-  assert.match(source, /Use Status or Refresh status to retry without repeating the lifecycle action/);
-});
 
 test("Compose runner marks timeout outcomes as uncertain and advises checking status before retrying", async () => {
   const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
@@ -116,33 +77,8 @@ test("Compose runner marks timeout outcomes as uncertain and advises checking st
   assert.match(source, /action-specific time limit/);
 });
 
-test("Studio exposes lifecycle output and treats unconfirmed requests as uncertain outcomes", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /runnerResult\.lifecycleOutput/);
-  assert.match(source, /Lifecycle output/);
-  assert.match(source, /runnerResult\.outcomeUnknown/);
-  assert.match(source, /Outcome uncertain/);
-  assert.match(source, /Check Status before retrying a lifecycle action/);
-  assert.match(source, /CHECK BEFORE RETRYING/);
-});
 
-test("Studio tracks the ten most recent Compose operations with duration and outcome", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /const \[operationHistory, setOperationHistory\] = useState\(\[\]\)/);
-  assert.match(source, /durationMs: Date\.now\(\) - startedAt/);
-  assert.match(source, /\.slice\(0, 10\)/);
-  assert.match(source, /Recent operations/);
-  assert.match(source, /operation\.outcome/);
-  assert.match(source, /operation\.detail/);
-});
 
-test("Studio explains actionable follow-up for unhealthy, stopped, starting, and unknown containers", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /function getContainerAttention\(container\)/);
-  for (const text of ["Health check failing", "Container stopped", "Still starting", "State not recognized", "Needs attention"]) assert.ok(source.includes(text), "missing health event: " + text);
-  assert.match(source, /docker-studio-health-events/);
-  assert.match(source, /getContainerAttention\(container\)/);
-});
 
 
 test("Compose runner scopes log requests to a declared service and rejects invalid service targets", async () => {
@@ -154,40 +90,12 @@ test("Compose runner scopes log requests to a declared service and rejects inval
   assert.match(source, /serviceName \? \{ serviceName \} : \{\}/);
 });
 
-test("Studio provides direct service log inspection from container attention events", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /runComposeAction\("logs", container\.Service \|\| container\.Name\)/);
-  assert.match(source, /View service logs/);
-  assert.match(source, /Service logs · \{runnerResult\.serviceName\}/);
-});
 
 
-test("Studio offers a copyable diagnostic report for failed or uncertain Compose commands", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /const copyDiagnosticReport = async \(\) =>/);
-  assert.match(source, /navigator\.clipboard\.writeText\(report\)/);
-  assert.match(source, /Copy diagnostic report/);
-  assert.match(source, /STDOUT:/);
-  assert.match(source, /STDERR:/);
-});
 
 
-test("Compose runner attaches conservative service-level failure evidence", async () => {
-  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
-  assert.match(source, /extractDockerFailureEvidence\(result\.stderr, result\.stdout, parsed\.services\)/);
-  const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(ui, /runnerResult\.failureEvidence/);
-  assert.match(ui, /does not confirm root cause or perform recovery/);
-});
 
 
-test("Studio distinguishes direct, dependency-context, and ambiguous failure evidence", async () => {
-  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /Likely failing dependency/);
-  assert.match(source, /Ambiguous service attribution/);
-  assert.match(source, /Dependent service:/);
-  assert.match(source, /Possible services:/);
-});
 
 test("Compose runner passes declared service definitions to dependency-aware failure attribution", async () => {
   const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
@@ -211,13 +119,12 @@ test("Compose runner validates dependency references and cycles before validate 
 });
 
 
-test("Studio renders structured service-linked Compose dependency validation diagnostics", async () => {
+
+test("Compose Studio stays focused on design-time import, validation, diagramming, and export", async () => {
   const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(source, /runnerResult\.configurationDiagnostics/);
-  assert.match(source, /Compose dependency validation diagnostics/);
-  assert.match(source, /Configuration validation failed/);
-  assert.match(source, /diagnostic\.serviceName/);
-  assert.match(source, /diagnostic\.dependencyName/);
-  assert.match(source, /diagnostic\.services\.join/);
-  assert.match(source, /Configuration diagnostics:/);
+  assert.match(source, /Import YAML/);
+  assert.match(source, /Open as diagram/);
+  assert.match(source, /Export compose\.yaml/);
+  assert.match(source, /downloadPreflightReport/);
+  assert.doesNotMatch(source, /Execution Preflight|Deployment preflight|Start services|Stop services|Local runner URL|runnerUrl/);
 });
