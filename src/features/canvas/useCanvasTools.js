@@ -42,7 +42,40 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     const api = apiRef.current; if (!api) return;
     const selected = getSelectedElements(); if (!selected.length) return;
     const ids = new Set(selected.map((element) => element.id)); const now = Date.now();
-    api.updateScene({ elements: api.getSceneElements().map((element) => ids.has(element.id) ? { ...element, ...patch, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now } : element), captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    const sceneElements = api.getSceneElements();
+    const iconImages = selected.filter((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+    let files;
+    if (patch.strokeColor && iconImages.length) {
+      const currentFiles = api.getFiles?.() || {};
+      files = { ...currentFiles };
+      for (const element of iconImages) {
+        const file = files[element.fileId];
+        if (!file?.dataURL || !/^data:image\/svg\+xml/i.test(file.dataURL)) continue;
+        try {
+          const comma = file.dataURL.indexOf(",");
+          const svgText = decodeURIComponent(file.dataURL.slice(comma + 1));
+          const parser = new DOMParser();
+          const document = parser.parseFromString(svgText, "image/svg+xml");
+          if (document.querySelector("parsererror")) continue;
+          const svg = document.documentElement;
+          const nodes = [svg, ...svg.querySelectorAll("*")];
+          for (const node of nodes) {
+            const fill = node.getAttribute("fill");
+            const stroke = node.getAttribute("stroke");
+            if (fill && fill.toLowerCase() !== "none" && fill.toLowerCase() !== "transparent" && !fill.startsWith("url(")) node.setAttribute("fill", patch.strokeColor);
+            if (stroke && stroke.toLowerCase() !== "none" && stroke.toLowerCase() !== "transparent" && !stroke.startsWith("url(")) node.setAttribute("stroke", patch.strokeColor);
+            const style = node.getAttribute("style");
+            if (style) node.setAttribute("style", style.replace(/(fill|stroke)\s*:\s*(?!none\b|transparent\b)[^;]+/gi, (_match, property) => `${property}:${patch.strokeColor}`));
+          }
+          const recolored = new XMLSerializer().serializeToString(svg);
+          files[element.fileId] = { ...file, dataURL: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(recolored)}` };
+        } catch {
+          // Unsupported or malformed SVGs retain their original artwork.
+        }
+      }
+    }
+    const updatedElements = sceneElements.map((element) => ids.has(element.id) ? { ...element, ...patch, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now } : element);
+    api.updateScene({ elements: updatedElements, ...(files ? { files } : {}), captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   }, [apiRef, canEdit, getSelectedElements]);
   const applyToSelectedArrow = useCallback((patch) => {
     if (!canEdit) return;
