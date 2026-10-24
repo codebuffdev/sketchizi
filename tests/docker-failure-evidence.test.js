@@ -74,8 +74,8 @@ test("remediation identifies private image pull failures without claiming recove
 test("remediation uses service build paths for Dockerfile errors", () => {
   const result = getServiceFailureRemediation({ serviceName: "api", confidence: "service-match", line: "failed to read dockerfile" }, { api: { build: { context: "./api", dockerfile: "Dockerfile.prod" } } }, "failed to read dockerfile", "");
   assert.equal(result.basis, "dockerfile-path-error");
-  assert.match(result.detail, /\\.\\/api/);
-  assert.match(result.detail, /Dockerfile\\.prod/);
+  assert.ok(result.detail.includes("./api"));
+  assert.ok(result.detail.includes("Dockerfile.prod"));
 });
 
 test("remediation identifies published ports when a port conflict occurs", () => {
