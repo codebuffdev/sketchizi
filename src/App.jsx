@@ -565,7 +565,7 @@ function App() {
       if (iconAssets.has(source)) return;
       try {
         if (source.startsWith("data:image/")) {
-          iconAssets.set(source, { fileId: `compose-icon-${iconAssets.size}`, dataURL: source, mimeType: source.slice(5, source.indexOf(";")) || "image/svg+xml" });
+          iconAssets.set(source, { fileId: `compose-icon-${iconAssets.size}`, dataURL: source, mimeType: source.match(/^data:([^;,]+)/)?.[1] || "image/svg+xml" });
           return;
         }
         const response = await fetch(source);
