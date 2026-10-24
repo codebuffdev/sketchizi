@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
-import { exportComposeYaml, validateComposeDocument } from "../composeDocumentService.js";
+import { validateComposeDocument } from "../composeDocumentService.js";
 import "./docker-compose-studio.css";
 
 function emptyService() {
@@ -137,6 +137,8 @@ export default function DockerComposeStudio({ onClose }) {
         <div className="docker-studio-project-row">
           <label>Project name<input value={projectName} onChange={(event) => setProjectName(event.target.value)} /></label>
           <div className="docker-studio-header-actions">
+            <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" className="docker-studio-file-input" onChange={importYaml} aria-label="Import Compose YAML" />
+            <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
             <button type="button" className="docker-studio-secondary" onClick={addService}>＋ Add service</button>
             <button type="button" className="docker-studio-primary" onClick={downloadYaml}>Export compose.yaml</button>
           </div>
