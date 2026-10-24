@@ -54,12 +54,9 @@ test("service context is included in recovery scope and guidance does not permit
   assert.match(guidance.risk, /Do not stop unrelated containers/);
 });
 
-test("Studio renders recovery guidance and diagnostic reports use newline-separated fields", async () => {
+test("Compose Studio excludes runtime recovery UI while retaining static configuration reports", async () => {
   const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(ui, /getComposeRecoveryGuidance\(runnerResult\.errorCode/);
-  assert.match(ui, /aria-label="Recovery guidance"/);
-  assert.match(ui, /RECOVERY GUIDANCE/);
-  assert.match(ui, /Safety note:/);
-  assert.match(ui, /\.join\("\\n"\);/);
-  assert.match(ui, /Copy diagnostic report/);
+  assert.match(ui, /downloadPreflightReport/);
+  assert.match(ui, /exportComposeReadinessReport/);
+  assert.doesNotMatch(ui, /getComposeRecoveryGuidance|Copy diagnostic report|Start services|Stop services|runnerResult/);
 });
