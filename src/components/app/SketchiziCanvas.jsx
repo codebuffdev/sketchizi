@@ -288,13 +288,22 @@ export default function SketchiziCanvas({
         quickGroup.setAttribute("role", "group");
         quickGroup.setAttribute("aria-label", "Quick tools");
       }
-      if (quickGroup.parentElement !== toolbar || toolbar.lastElementChild !== quickGroup) {
+      const trailingSpacer = [...toolbar.children].find((child) =>
+        child !== quickGroup && (
+          child.classList.contains("App-toolbar__spacer") ||
+          child.classList.contains("toolbar__spacer") ||
+          child.getAttribute("data-toolbar-spacer") === "true"
+        ),
+      );
+      if (trailingSpacer && quickGroup.nextElementSibling !== trailingSpacer) {
+        toolbar.insertBefore(quickGroup, trailingSpacer);
+      } else if (!trailingSpacer && quickGroup.parentElement !== toolbar) {
         toolbar.appendChild(quickGroup);
       }
 
       const quickTools = [
-        { id: "bucketfill", label: "Bucket Fill", icon: "◒", shortcut: "B" },
-        { id: "autoshape", label: "Draw to Shape", icon: "◌", shortcut: "⇧X" },
+        { id: "bucketfill", label: "Bucket Fill", icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17a8.5 8.5 0 0 1-17 0Z" fill="currentColor" stroke="none"/></svg>', shortcut: "B" },
+        { id: "autoshape", label: "Draw to Shape", icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17c2-8 5-11 8-10s4 6 8 2"/><path d="M5 5h4M5 5v4M19 15v4h-4"/></svg>', shortcut: "⇧X" },
       ];
       quickTools.forEach(({ id, label, icon, shortcut }) => {
         let button = quickGroup.querySelector(`[data-sketchizi-quick-tool="${id}"]`);
