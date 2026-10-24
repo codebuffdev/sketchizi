@@ -252,6 +252,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       `Outcome: ${runnerResult.success ? "success" : runnerResult.outcomeUnknown || runnerResult.timedOut ? "uncertain" : "failed"}`,
       `Error code: ${runnerResult.errorCode || "none"}`,
       `Hint: ${runnerResult.hint || "none"}`,
+      `Failure evidence: ${runnerResult.failureEvidence ? JSON.stringify(runnerResult.failureEvidence) : "none"}`,
       `Message: ${runnerResult.message || runnerResult.error || "none"}`,
       `HTTP status: ${runnerResult.httpStatus ?? "unknown"}`,
       "",
@@ -468,6 +469,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 {runnerResult.refreshWarning && <div className="docker-studio-actionable-diagnostic"><span>STATUS REFRESH FAILED</span><p>{runnerResult.refreshWarning} Use Status or Refresh status to retry without repeating the lifecycle action.</p></div>}
                 {runnerResult.error && <p>{runnerResult.error}</p>}
                 {runnerResult.message && <p>{runnerResult.message}</p>}
+                {runnerResult.failureEvidence && <section className="docker-studio-failure-evidence" aria-label="Service failure evidence"><div><strong>{runnerResult.failureEvidence.serviceName ? "Likely affected service: " + runnerResult.failureEvidence.serviceName : "Failure evidence from command output"}</strong><span>{runnerResult.failureEvidence.confidence === "service-match" ? "Service match" : "Output only"}</span></div><p>{runnerResult.failureEvidence.line}</p><small>Evidence-based hint only; this does not confirm root cause or perform recovery.</small></section>}
                 {!runnerResult.success && runnerResult.errorCode && (() => {
                   const recovery = getComposeRecoveryGuidance(runnerResult.errorCode, runnerResult.action, runnerResult.serviceName);
                   if (!recovery) return <div className="docker-studio-actionable-diagnostic"><span>UNCLASSIFIED ERROR</span><p>{runnerResult.hint || "Review the command output and correct the reported issue before retrying."} No automatic recovery was attempted.</p></div>;

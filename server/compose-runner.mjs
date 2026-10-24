@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseDocument } from "yaml";
+import { extractDockerFailureEvidence } from "./docker-failure-evidence.mjs";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.COMPOSE_RUNNER_PORT || 8788);
@@ -169,6 +170,7 @@ const server = createServer(async (request, response) => {
       message: result.exitCode === 0 ? "Docker Compose command completed." : result.timedOut ? "Docker Compose command timed out. Its final state may be unknown; check Status before retrying." : "Docker Compose command failed.",
       ...(result.timedOut ? { timedOut: true } : {}),
       ...(result.exitCode === 0 ? {} : classifyDockerFailure(result.exitCode, result.stdout, result.stderr)),
+      ...(result.exitCode === 0 ? {} : { failureEvidence: extractDockerFailureEvidence(result.stderr, result.stdout, Object.keys(parsed.services)) }),
     }, origin);
   } catch (error) {
     send(response, error.status || 500, { error: error.message || "Compose runner failed." }, origin);

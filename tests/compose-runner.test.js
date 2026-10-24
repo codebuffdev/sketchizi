@@ -170,3 +170,12 @@ test("Studio offers a copyable diagnostic report for failed or uncertain Compose
   assert.match(source, /STDOUT:/);
   assert.match(source, /STDERR:/);
 });
+
+
+test("Compose runner attaches conservative service-level failure evidence", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /extractDockerFailureEvidence\(result\.stderr, result\.stdout, Object\.keys\(parsed\.services\)\)/);
+  const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(ui, /runnerResult\.failureEvidence/);
+  assert.match(ui, /does not confirm root cause or perform recovery/);
+});
