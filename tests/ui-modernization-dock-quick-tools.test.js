@@ -8,9 +8,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const component = readFileSync(path.join(root, "src/components/app/SketchiziCanvas.jsx"), "utf8");
 const styles = readFileSync(path.join(root, "src/styles/ui-modernization-toolbar-dock.css"), "utf8");
 
-test("quick dock keeps only Bucket Fill in one persistent group", () => {
+test("quick dock keeps Bucket Fill and Draw to Shape in one persistent group", () => {
   assert.match(component, /id: "bucketfill", label: "Bucket Fill"/);
-  assert.doesNotMatch(component, /id: "autoshape", label: "Draw to Shape"/);
+  assert.match(component, /id: "autoshape", label: "Draw to Shape"/);
   assert.match(component, /eraser\.nextElementSibling !== quickGroup/);
   assert.match(component, /data-sketchizi-quick-tool="\$\{id\}"/);
   assert.match(component, /quickGroup\.appendChild\(button\)/);
