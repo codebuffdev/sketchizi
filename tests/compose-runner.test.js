@@ -94,3 +94,13 @@ test("Studio renders stable error codes and remediation hints alongside raw comm
   assert.match(source, /runnerResult\.hint/);
   assert.match(source, /runnerResult\.stdout/);
 });
+
+
+test("Studio refreshes runtime status after successful start and stop without repeating lifecycle actions", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /Runtime status refreshed/);
+  assert.match(source, /refreshWarning/);
+  assert.match(source, /action: "ps", projectName, composeYaml: stringify\(getExportDocument\(\)\)/);
+  assert.match(source, /Refresh status/);
+  assert.match(source, /Use Status or Refresh status to retry without repeating the lifecycle action/);
+});

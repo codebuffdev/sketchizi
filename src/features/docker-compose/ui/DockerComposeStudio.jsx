@@ -186,6 +186,29 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       const result = await response.json();
       setRunnerResult({ ...result, httpStatus: response.status });
       setNotice(result.message || result.error || "Compose runner returned a response.");
+
+      // Refresh runtime state after lifecycle changes so the displayed status
+      // reflects the resulting project rather than the previous snapshot.
+      if (response.ok && result.success && ["up", "down"].includes(action)) {
+        try {
+          const statusResponse = await fetch(base + "/api/compose", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ action: "ps", projectName, composeYaml: stringify(getExportDocument()) }),
+          });
+          const statusResult = await statusResponse.json();
+          if (!statusResponse.ok || !statusResult.success) {
+            setRunnerResult({ ...result, httpStatus: response.status, refreshWarning: statusResult.error || statusResult.stderr || "The lifecycle command succeeded, but status refresh failed." });
+            setNotice(action === "up" ? "Start completed, but runtime status could not be refreshed." : "Stop completed, but runtime status could not be refreshed.");
+          } else {
+            setRunnerResult({ ...statusResult, lifecycleAction: action, lifecycleExitCode: result.exitCode, lifecycleOutput: result.stdout, httpStatus: statusResponse.status, message: (result.message || "Compose lifecycle command completed.") + " Runtime status refreshed." });
+            setNotice(action === "up" ? "Start completed; runtime status refreshed." : "Stop completed; runtime status refreshed.");
+          }
+        } catch (refreshError) {
+          setRunnerResult({ ...result, httpStatus: response.status, refreshWarning: refreshError instanceof Error ? refreshError.message : "Runtime status refresh failed." });
+          setNotice("Lifecycle command completed, but runtime status refresh failed.");
+        }
+      }
     } catch (error) {
       setRunnerResult({ success: false, error: error instanceof Error ? error.message : "Could not connect to the local Compose runner." });
       setNotice("Could not reach the local Compose runner. Confirm it is running and the origin is allowed.");
@@ -376,6 +399,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <button type="button" className="docker-studio-primary" disabled={runnerBusy || !executionAcknowledged} onClick={() => runComposeAction("up")}>{runnerBusy ? "Running…" : "Start services"}</button>
                 <button type="button" className="docker-studio-danger" disabled={runnerBusy} onClick={() => runComposeAction("down")}>Stop services</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Status</button>
+                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Refresh status</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs")}>Logs</button>
                 <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("stats")}>Resource usage</button>
               </div>
@@ -386,6 +410,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
               </section>}
               {runnerResult && <section className={runnerResult.success ? "docker-studio-runner-result success" : "docker-studio-runner-result failure"} aria-live="polite">
                 <strong>{runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
+                {runnerResult.lifecycleAction && <p>Lifecycle action <strong>{runnerResult.lifecycleAction === "up" ? "Start" : "Stop"}</strong> completed with exit code {runnerResult.lifecycleExitCode}. The table below shows the refreshed container state.</p>}
+                {runnerResult.refreshWarning && <div className="docker-studio-actionable-diagnostic"><span>STATUS REFRESH FAILED</span><p>{runnerResult.refreshWarning} Use Status or Refresh status to retry without repeating the lifecycle action.</p></div>}
                 {runnerResult.error && <p>{runnerResult.error}</p>}
                 {runnerResult.message && <p>{runnerResult.message}</p>}
                 {!runnerResult.success && runnerResult.errorCode && <div className="docker-studio-actionable-diagnostic">
