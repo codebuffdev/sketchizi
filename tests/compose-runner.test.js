@@ -11,7 +11,7 @@ test("Compose runner binds only to loopback and uses a fixed Docker Compose acti
   assert.match(source, /MAX_BODY_BYTES = 2 \* 1024 \* 1024/);
   assert.match(source, /ACTION_TIMEOUT_MS = \{ validate: 20_000, ps: 15_000, stats: 15_000, logs: 15_000, down: 60_000, up: 120_000 \}/);
   assert.match(source, /DEFAULT_COMMAND_TIMEOUT_MS = 120_000/);
-  assert.match(source, /runDocker\(\[\.\.\.baseArgs, \.\.\.actionArgs\[action\]\], projectDirectory, ACTION_TIMEOUT_MS\[action\]\)/);
+  assert.match(source, /const commandArgs = \[\.\.\.actionArgs\[action\], \.\.\.\(action === "logs" && serviceName \? \[serviceName\] : \[\]\)\]/);\n  assert.match(source, /runDocker\(\[\.\.\.baseArgs, \.\.\.commandArgs\], projectDirectory, ACTION_TIMEOUT_MS\[action\]\)/);
   assert.match(source, /parseDocument\(body\.composeYaml, \{ uniqueKeys: true \}\)/);
   assert.match(source, /ALLOWED_ORIGINS\.has\(origin\)/);
 });
@@ -158,4 +158,14 @@ test("Studio provides direct service log inspection from container attention eve
   assert.match(source, /runComposeAction\("logs", container\.Service \|\| container\.Name\)/);
   assert.match(source, /View service logs/);
   assert.match(source, /Service logs · \{runnerResult\.serviceName\}/);
+});
+
+
+test("Studio offers a copyable diagnostic report for failed or uncertain Compose commands", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /const copyDiagnosticReport = async \(\) =>/);
+  assert.match(source, /navigator\.clipboard\.writeText\(report\)/);
+  assert.match(source, /Copy diagnostic report/);
+  assert.match(source, /STDOUT:/);
+  assert.match(source, /STDERR:/);
 });
