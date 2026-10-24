@@ -48,6 +48,9 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [notice, setNotice] = useState("");
   const [showExecutionPreflight, setShowExecutionPreflight] = useState(false);
   const [executionAcknowledged, setExecutionAcknowledged] = useState(false);
+  const [runnerUrl, setRunnerUrl] = useState("http://127.0.0.1:8788");
+  const [runnerBusy, setRunnerBusy] = useState(false);
+  const [runnerResult, setRunnerResult] = useState(null);
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
   const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
@@ -108,26 +111,46 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     }
   };
 
+  const getExportDocument = () => sourceDocument ? {
+    ...sourceDocument,
+    ...composeDocument,
+    volumes: Object.fromEntries(Object.keys(composeDocument.volumes).map((name) => [name, sourceDocument.volumes?.[name] ?? {}])),
+    networks: Object.fromEntries(Object.keys(composeDocument.networks).map((name) => [name, sourceDocument.networks?.[name] ?? {}])),
+    services: Object.fromEntries(Object.entries(composeDocument.services).map(([name, service]) => {
+      const original = { ...(sourceDocument.services?.[name] || {}) };
+      for (const key of ["image", "build", "ports", "environment", "depends_on", "volumes", "networks", "healthcheck", "restart"]) delete original[key];
+      return [name, { ...original, ...service }];
+    }))
+  } : composeDocument;
+
+  const runComposeAction = async (action) => {
+    if (runnerBusy) return;
+    if (action === "up" && (!executionAcknowledged || !window.confirm("Start containers for this Compose project on your machine?"))) return;
+    if (action === "down" && !window.confirm("Stop and remove this Compose project's containers and default network? Named volumes are preserved unless configured otherwise.")) return;
+    setRunnerBusy(true);
+    setRunnerResult(null);
+    try {
+      const base = runnerUrl.trim().replace(/\/+$/, "");
+      const response = await fetch(base + "/api/compose", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, projectName, composeYaml: stringify(getExportDocument()) }),
+      });
+      const result = await response.json();
+      setRunnerResult({ ...result, httpStatus: response.status });
+      setNotice(result.message || result.error || "Compose runner returned a response.");
+    } catch (error) {
+      setRunnerResult({ success: false, error: error instanceof Error ? error.message : "Could not connect to the local Compose runner." });
+      setNotice("Could not reach the local Compose runner. Confirm it is running and the origin is allowed.");
+    } finally { setRunnerBusy(false); }
+  };
+
   const downloadYaml = () => {
     if (!validation.valid) {
       setNotice("Fix the validation errors before exporting.");
       return;
     }
-    const output = sourceDocument ? {
-      ...sourceDocument,
-      ...composeDocument,
-      volumes: Object.fromEntries(Object.keys(composeDocument.volumes).map((name) => [name, sourceDocument.volumes?.[name] ?? {}])),
-      networks: Object.fromEntries(Object.keys(composeDocument.networks).map((name) => [name, sourceDocument.networks?.[name] ?? {}])),
-      services: Object.fromEntries(Object.entries(composeDocument.services).map(([name, service]) => {
-        const original = { ...(sourceDocument.services?.[name] || {}) };
-        // These fields are represented by the editor. Remove their imported values first
-        // so clearing a field in the UI also clears it from the exported document.
-        for (const key of ["image", "build", "ports", "environment", "depends_on", "volumes", "networks", "healthcheck", "restart"]) {
-          delete original[key];
-        }
-        return [name, { ...original, ...service }];
-      }))
-    } : composeDocument;
+    const output = getExportDocument();
     const blob = new Blob([stringify(output)], { type: "text/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -297,6 +320,22 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <button type="button" className="docker-studio-secondary" onClick={() => setShowExecutionPreflight(false)} aria-label="Close deployment preflight">Close</button>
               </div>
               <p>This prepares a local execution checklist. Sketchizi does not execute Docker commands from this screen.</p>
+              <label className="docker-studio-runner-url">Local runner URL
+                <input value={runnerUrl} onChange={(event) => setRunnerUrl(event.target.value)} placeholder="http://127.0.0.1:8788" />
+              </label>
+              <div className="docker-studio-lifecycle-controls">
+                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("validate")}>Validate</button>
+                <button type="button" className="docker-studio-primary" disabled={runnerBusy || !executionAcknowledged} onClick={() => runComposeAction("up")}>{runnerBusy ? "Running…" : "Start services"}</button>
+                <button type="button" className="docker-studio-danger" disabled={runnerBusy} onClick={() => runComposeAction("down")}>Stop services</button>
+                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("ps")}>Status</button>
+                <button type="button" className="docker-studio-secondary" disabled={runnerBusy} onClick={() => runComposeAction("logs")}>Logs</button>
+              </div>
+              {runnerResult && <section className={runnerResult.success ? "docker-studio-runner-result success" : "docker-studio-runner-result failure"} aria-live="polite">
+                <strong>{runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
+                {runnerResult.error && <p>{runnerResult.error}</p>}
+                {runnerResult.message && <p>{runnerResult.message}</p>}
+                {(runnerResult.stdout || runnerResult.stderr) && <pre>{[runnerResult.stdout && "STDOUT:\n" + runnerResult.stdout, runnerResult.stderr && "STDERR:\n" + runnerResult.stderr].filter(Boolean).join("\n\n")}</pre>}
+              </section>}
               <div className={validation.valid && readiness.ready ? "docker-studio-preflight-status valid" : "docker-studio-preflight-status invalid"}>
                 <strong>{validation.valid && readiness.ready ? "Static checks found no blocking errors" : "Review issues before deployment"}</strong>
                 <span>{validation.findings.length} validation findings · {readiness.severityCounts.error} readiness errors · {readiness.severityCounts.warning} warnings</span>

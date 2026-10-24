@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseDocument } from "yaml";
@@ -75,7 +75,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  let temporaryDirectory;
+  let projectDirectory;
   try {
     const body = await readJson(request);
     const action = body.action;
@@ -89,9 +89,10 @@ const server = createServer(async (request, response) => {
     }
     const projectName = typeof body.projectName === "string" ? body.projectName.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 48) : "";
     if (!projectName) throw Object.assign(new Error("projectName must contain letters, numbers, underscores, or hyphens."), { status: 400 });
-    temporaryDirectory = await mkdtemp(join(tmpdir(), "sketchizi-compose-"));
-    await writeFile(join(temporaryDirectory, "compose.yaml"), body.composeYaml, { encoding: "utf8", mode: 0o600 });
-    const baseArgs = ["--project-directory", temporaryDirectory, "-p", projectName, "-f", join(temporaryDirectory, "compose.yaml")];
+    projectDirectory = join(tmpdir(), "sketchizi-compose-projects", projectName);
+    await mkdir(projectDirectory, { recursive: true, mode: 0o700 });
+    await writeFile(join(projectDirectory, "compose.yaml"), body.composeYaml, { encoding: "utf8", mode: 0o600 });
+    const baseArgs = ["--project-directory", projectDirectory, "-p", projectName, "-f", join(projectDirectory, "compose.yaml")];
     const actionArgs = {
       validate: ["config", "--quiet"],
       up: ["up", "--detach", "--build"],
@@ -99,7 +100,7 @@ const server = createServer(async (request, response) => {
       ps: ["ps", "--all"],
       logs: ["logs", "--no-color", "--tail", "200"],
     };
-    const result = await runDocker([...baseArgs, ...actionArgs[action]], temporaryDirectory);
+    const result = await runDocker([...baseArgs, ...actionArgs[action]], projectDirectory);
     send(response, result.exitCode === 0 ? 200 : 422, {
       action, projectName, exitCode: result.exitCode,
       success: result.exitCode === 0,
@@ -109,9 +110,7 @@ const server = createServer(async (request, response) => {
     }, origin);
   } catch (error) {
     send(response, error.status || 500, { error: error.message || "Compose runner failed." }, origin);
-  } finally {
-    if (temporaryDirectory) await rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
-  }
+  } finally {}
 });
 
 server.listen(PORT, HOST, () => {

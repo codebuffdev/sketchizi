@@ -22,3 +22,10 @@ test("Compose runner validates project names and Compose services before executi
   assert.match(source, /validate: \["config", "--quiet"\]/);
   assert.match(source, /up: \["up", "--detach", "--build"\]/);
 });
+
+test("Compose runner persists each project's Compose file so lifecycle actions share the same configuration path", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /sketchizi-compose-projects/);
+  assert.match(source, /writeFile\(join\(projectDirectory, "compose\.yaml"\)/);
+  assert.doesNotMatch(source, /mkdtemp|rm\(temporaryDirectory/);
+});

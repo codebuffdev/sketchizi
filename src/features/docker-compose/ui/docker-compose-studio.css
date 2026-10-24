@@ -75,3 +75,10 @@
 .docker-studio-command-preview code{display:block;padding:10px;overflow-wrap:anywhere;border-radius:7px;background:#080d16;color:#a9d8ff;font-size:12px}
 .docker-studio-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 @media(max-width:650px){.docker-studio-execution-dialog{padding:16px}.docker-studio-dialog-actions{flex-wrap:wrap}}
+
+.docker-studio-runner-url{display:flex;flex-direction:column;gap:7px;margin:14px 0;color:#c5cee0;font-size:12px;font-weight:700}
+.docker-studio-lifecycle-controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.docker-studio-runner-result{margin:12px 0;padding:12px;border:1px solid #35415a;border-radius:10px;background:#0d1420}
+.docker-studio-runner-result.success{border-color:#2d6654}.docker-studio-runner-result.failure{border-color:#71404b}
+.docker-studio-runner-result strong{font-size:12px}.docker-studio-runner-result p{font-size:12px;overflow-wrap:anywhere}
+.docker-studio-runner-result pre{max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border-radius:8px;background:#070b12;color:#c7d8ee;font-size:11px;line-height:1.5}
