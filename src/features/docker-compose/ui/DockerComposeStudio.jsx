@@ -79,6 +79,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [runnerUrl, setRunnerUrl] = useState("http://127.0.0.1:8788");
   const [runnerBusy, setRunnerBusy] = useState(false);
   const [runnerResult, setRunnerResult] = useState(null);
+  const [operationHistory, setOperationHistory] = useState([]);
   const [runnerHealth, setRunnerHealth] = useState(null);
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
@@ -174,6 +175,9 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     if (runnerBusy) return;
     if (action === "up" && (!executionAcknowledged || !window.confirm("Start containers for this Compose project on your machine?"))) return;
     if (action === "down" && !window.confirm("Stop and remove this Compose project's containers and default network? Named volumes are preserved unless configured otherwise.")) return;
+    const startedAt = Date.now();
+    let operationOutcome = "Outcome uncertain";
+    let operationDetail = "";
     setRunnerBusy(true);
     setRunnerResult(null);
     try {
@@ -184,6 +188,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
         body: JSON.stringify({ action, projectName, composeYaml: stringify(getExportDocument()) }),
       });
       const result = await response.json();
+      operationOutcome = result.timedOut ? "Timed out · outcome uncertain" : result.success ? "Succeeded" : "Failed";
+      operationDetail = result.errorCode || result.message || "";
       setRunnerResult({ ...result, httpStatus: response.status });
       setNotice(result.message || result.error || "Compose runner returned a response.");
 
@@ -198,21 +204,32 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
           });
           const statusResult = await statusResponse.json();
           if (!statusResponse.ok || !statusResult.success) {
+            operationOutcome = "Succeeded · status refresh failed";
+            operationDetail = statusResult.error || statusResult.stderr || "Status refresh failed";
             setRunnerResult({ ...result, httpStatus: response.status, refreshWarning: statusResult.error || statusResult.stderr || "The lifecycle command succeeded, but status refresh failed." });
             setNotice(action === "up" ? "Start completed, but runtime status could not be refreshed." : "Stop completed, but runtime status could not be refreshed.");
           } else {
+            operationOutcome = "Succeeded · status refreshed";
+            operationDetail = "Runtime status refreshed";
             setRunnerResult({ ...statusResult, lifecycleAction: action, lifecycleExitCode: result.exitCode, lifecycleOutput: result.stdout, httpStatus: statusResponse.status, message: (result.message || "Compose lifecycle command completed.") + " Runtime status refreshed." });
             setNotice(action === "up" ? "Start completed; runtime status refreshed." : "Stop completed; runtime status refreshed.");
           }
         } catch (refreshError) {
+          operationOutcome = "Succeeded · status refresh failed";
+          operationDetail = refreshError instanceof Error ? refreshError.message : "Runtime status refresh failed";
           setRunnerResult({ ...result, httpStatus: response.status, refreshWarning: refreshError instanceof Error ? refreshError.message : "Runtime status refresh failed." });
           setNotice("Lifecycle command completed, but runtime status refresh failed.");
         }
       }
     } catch (error) {
+      operationOutcome = "Outcome uncertain";
+      operationDetail = error instanceof Error ? error.message : "The request outcome could not be confirmed";
       setRunnerResult({ success: false, outcomeUnknown: true, error: error instanceof Error ? error.message : "The request outcome could not be confirmed." });
       setNotice("The request outcome could not be confirmed. Check Status before retrying a lifecycle action.");
-    } finally { setRunnerBusy(false); }
+    } finally {
+      setOperationHistory((current) => [{ id: startedAt, action, timestamp: new Date(startedAt).toISOString(), durationMs: Date.now() - startedAt, outcome: operationOutcome, detail: operationDetail }, ...current].slice(0, 10));
+      setRunnerBusy(false);
+    }
   };
 
   const downloadYaml = () => {
@@ -408,6 +425,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 {runnerHealth.docker && <p>{runnerHealth.docker.available ? "Docker daemon available" + (runnerHealth.docker.serverVersion ? " · server " + runnerHealth.docker.serverVersion : "") : runnerHealth.docker.message}</p>}
                 {runnerHealth.message && <p>{runnerHealth.message}</p>}
               </section>}
+              {operationHistory.length > 0 && <section className="docker-studio-operation-history" aria-label="Recent Compose operations"><div className="docker-studio-history-heading"><strong>Recent operations</strong><span>Last {operationHistory.length} · this session</span></div><ol>{operationHistory.map((operation) => <li key={operation.id}><div className="docker-studio-history-main"><strong>{({validate:"Validate",up:"Start services",down:"Stop services",ps:"Refresh status",logs:"View logs",stats:"Resource usage"})[operation.action] || operation.action}</strong><span className={operation.outcome.startsWith("Succeeded") ? "success" : operation.outcome === "Failed" ? "failure" : "uncertain"}>{operation.outcome}</span></div><div className="docker-studio-history-meta"><time dateTime={operation.timestamp}>{new Date(operation.timestamp).toLocaleTimeString()}</time><span>{(operation.durationMs / 1000).toFixed(1)} s</span></div>{operation.detail && <small>{operation.detail}</small>}</li>)}</ol></section>}
               {runnerResult && <section className={runnerResult.success ? "docker-studio-runner-result success" : "docker-studio-runner-result failure"} aria-live="polite">
                 <strong>{runnerResult.timedOut || runnerResult.outcomeUnknown ? "Outcome uncertain" : runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
                 {(runnerResult.timedOut || runnerResult.outcomeUnknown) && <div className="docker-studio-actionable-diagnostic"><span>CHECK BEFORE RETRYING</span><p>The runner could not confirm the final result. Use Status or Refresh status to inspect the project before repeating Start or Stop.</p></div>}

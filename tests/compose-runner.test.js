@@ -124,3 +124,13 @@ test("Studio exposes lifecycle output and treats unconfirmed requests as uncerta
   assert.match(source, /Check Status before retrying a lifecycle action/);
   assert.match(source, /CHECK BEFORE RETRYING/);
 });
+
+test("Studio tracks the ten most recent Compose operations with duration and outcome", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /const \[operationHistory, setOperationHistory\] = useState\(\[\]\)/);
+  assert.match(source, /durationMs: Date\.now\(\) - startedAt/);
+  assert.match(source, /\.slice\(0, 10\)/);
+  assert.match(source, /Recent operations/);
+  assert.match(source, /operation\.outcome/);
+  assert.match(source, /operation\.detail/);
+});
