@@ -3,18 +3,19 @@ import { exportComposeYaml, validateComposeDocument } from "../composeDocumentSe
 import "./docker-compose-studio.css";
 
 function emptyService() {
-  return { image: "", portsText: "", environmentText: "", dependsText: "", restart: "unless-stopped" };
+  return { image: "", buildContext: "", portsText: "", environmentText: "", dependsText: "", volumesText: "", networksText: "", healthcheckText: "", restart: "unless-stopped" };
 }
 
 function parseLines(value) {
   return value.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
-function toDocument(name, services) {
+function toDocument(name, services, volumeNames, networkNames) {
   const normalized = {};
   for (const service of services) {
     const definition = {};
     if (service.image.trim()) definition.image = service.image.trim();
+    if (service.buildContext.trim()) definition.build = { context: service.buildContext.trim() };
     const ports = parseLines(service.portsText);
     if (ports.length) definition.ports = ports;
     const environment = parseLines(service.environmentText);
@@ -24,16 +25,16 @@ function toDocument(name, services) {
     if (service.restart) definition.restart = service.restart;
     normalized[service.name.trim()] = definition;
   }
-  return { name: name.trim(), services: normalized };
+  const volumes = Object.fromEntries(parseLines(volumeNames).map((name) => [name, {}]));\n  const networks = Object.fromEntries(parseLines(networkNames).map((name) => [name, {}]));\n  return { name: name.trim(), services: normalized, volumes, networks };
 }
 
 export default function DockerComposeStudio({ onClose }) {
   const [projectName, setProjectName] = useState("my-compose-project");
   const [services, setServices] = useState([{ name: "web", ...emptyService() }]);
-  const [selectedId, setSelectedId] = useState("web");
+  const [selectedId, setSelectedId] = useState("web");\n  const [volumeNames, setVolumeNames] = useState("");\n  const [networkNames, setNetworkNames] = useState("");
   const [notice, setNotice] = useState("");
   const selected = services.find((service) => service.name === selectedId) || services[0];
-  const composeDocument = useMemo(() => toDocument(projectName, services), [projectName, services]);
+  const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
   const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
 
   const updateSelected = (patch) => {
@@ -149,6 +150,11 @@ export default function DockerComposeStudio({ onClose }) {
           ) : <p className="docker-studio-topology-empty">Add a service to see the topology.</p>}
         </section>
 
+        <section className="docker-studio-resources" aria-label="Shared volumes and networks">
+          <label>Named volumes <span>One volume name per line</span><textarea value={volumeNames} onChange={(event) => setVolumeNames(event.target.value)} placeholder={"database-data\\nuploads"} rows={2} /></label>
+          <label>Networks <span>One network name per line</span><textarea value={networkNames} onChange={(event) => setNetworkNames(event.target.value)} placeholder={"frontend\\nbackend"} rows={2} /></label>
+        </section>
+
         <div className="docker-studio-workspace">
           <aside className="docker-studio-service-list" aria-label="Services">
             <div className="docker-studio-section-heading"><span>Services</span><span>{services.length}</span></div>
@@ -167,9 +173,13 @@ export default function DockerComposeStudio({ onClose }) {
                 <div className="docker-studio-fields">
                   <label>Service name<input value={selected.name} onChange={(event) => renameSelected(event.target.value)} /></label>
                   <label>Container image<input value={selected.image} onChange={(event) => updateSelected({ image: event.target.value })} placeholder="e.g. nginx:alpine" /></label>
+                  <label>Build context <span>Directory containing a Dockerfile</span><input value={selected.buildContext} onChange={(event) => updateSelected({ buildContext: event.target.value })} placeholder="." /></label>
                   <label>Published ports <span>One mapping per line</span><textarea value={selected.portsText} onChange={(event) => updateSelected({ portsText: event.target.value })} placeholder={"8080:80\n8443:443"} rows={3} /></label>
                   <label>Environment variables <span>KEY=value, one per line</span><textarea value={selected.environmentText} onChange={(event) => updateSelected({ environmentText: event.target.value })} placeholder={"NODE_ENV=production\nPORT=3000"} rows={3} /></label>
                   <label>Depends on <span>Service names, one per line</span><textarea value={selected.dependsText} onChange={(event) => updateSelected({ dependsText: event.target.value })} placeholder="database" rows={2} /></label>
+                  <label>Mounted volumes <span>source:target, one per line</span><textarea value={selected.volumesText} onChange={(event) => updateSelected({ volumesText: event.target.value })} placeholder={"database-data:/var/lib/data\\n./config:/app/config:ro"} rows={3} /></label>
+                  <label>Networks <span>Declared network names, one per line</span><textarea value={selected.networksText} onChange={(event) => updateSelected({ networksText: event.target.value })} placeholder={"frontend\\nbackend"} rows={2} /></label>
+                  <label>Health check <span>Command, interval, retries (one per line)</span><textarea value={selected.healthcheckText} onChange={(event) => updateSelected({ healthcheckText: event.target.value })} placeholder={"curl -f http://localhost/health || exit 1\\n30s\\n3"} rows={3} /></label>
                   <label>Restart policy<select value={selected.restart} onChange={(event) => updateSelected({ restart: event.target.value })}><option value="unless-stopped">unless-stopped</option><option value="always">always</option><option value="on-failure">on-failure</option><option value="no">no</option></select></label>
                 </div>
               </>

@@ -50,3 +50,25 @@ test("exports a deterministic Compose YAML document with quoted scalar values", 
   assert.match(yaml, /ports:\n\s+- "8080:80"/);
   assert.match(yaml, /volumes:\n\s+data: \{\}/);
 });
+
+test("preserves build context, mounted volumes, networks, and health checks in exported YAML", () => {
+  const yaml = exportComposeYaml({
+    name: "web-stack",
+    services: {
+      api: {
+        build: { context: "." },
+        volumes: ["data:/var/lib/data"],
+        networks: ["backend"],
+        healthcheck: { test: ["CMD-SHELL", "curl -f http://localhost/health"], interval: "30s", retries: 3 },
+      },
+    },
+    volumes: { data: {} },
+    networks: { backend: {} },
+  });
+  assert.match(yaml, /build:\\n\\s+context: "\\."/);
+  assert.match(yaml, /volumes:\\n\\s+- "data:\/var\/lib\/data"/);
+  assert.match(yaml, /networks:\\n\\s+- "backend"/);
+  assert.match(yaml, /healthcheck:/);
+  assert.match(yaml, /interval: "30s"/);
+  assert.match(yaml, /retries: 3/);
+});
