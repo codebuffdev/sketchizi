@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { parseDocument, stringify } from "yaml";
 import { exportComposeYaml, validateComposeDocument } from "../composeDocumentService.js";
 import "./docker-compose-studio.css";
 
@@ -42,6 +43,8 @@ export default function DockerComposeStudio({ onClose }) {
   const [selectedId, setSelectedId] = useState("web");
   const [volumeNames, setVolumeNames] = useState("");
   const [networkNames, setNetworkNames] = useState("");
+  const [sourceDocument, setSourceDocument] = useState(null);
+  const fileInputRef = useRef(null);
   const [notice, setNotice] = useState("");
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
@@ -72,12 +75,43 @@ export default function DockerComposeStudio({ onClose }) {
     setSelectedId(next[0]?.name || "");
     setNotice("");
   };
+  const importYaml = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseDocument(text, { uniqueKeys: true });
+      if (parsed.errors.length) throw new Error(parsed.errors[0].message);
+      const imported = parsed.toJS();
+      if (!imported || typeof imported !== "object" || Array.isArray(imported) || !imported.services || typeof imported.services !== "object" || Array.isArray(imported.services)) throw new Error("The file must contain a Compose document with a services mapping.");
+      const importedServices = Object.entries(imported.services).map(([name, definition]) => {
+        const service = definition && typeof definition === "object" && !Array.isArray(definition) ? definition : {};
+        const build = typeof service.build === "string" ? service.build : service.build?.context || "";
+        const environment = Array.isArray(service.environment) ? service.environment : Object.entries(service.environment || {}).map(([key, value]) => `${key}=${value ?? ""}`);
+        const health = service.healthcheck || {};
+        const healthCommand = Array.isArray(health.test) ? health.test.slice(1).join(" ") : "";
+        return { name, ...emptyService(), image: typeof service.image === "string" ? service.image : "", buildContext: build, portsText: (service.ports || []).map((value) => typeof value === "object" ? [value.host_ip, value.published, value.target].filter(Boolean).join(":") : String(value)).join("\n"), environmentText: environment.join("\n"), dependsText: (Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {})).join("\n"), volumesText: (service.volumes || []).map((value) => typeof value === "string" ? value : [value.source, value.target, value.read_only ? "ro" : ""].filter(Boolean).join(":")).join("\n"), networksText: (Array.isArray(service.networks) ? service.networks : Object.keys(service.networks || {})).join("\n"), healthcheckText: [healthCommand, health.interval, health.retries].filter((value) => value !== undefined && value !== "").join("\n"), restart: service.restart || "unless-stopped" };
+      });
+      setProjectName(typeof imported.name === "string" ? imported.name : file.name.replace(/\.(ya?ml)$/i, ""));
+      setServices(importedServices);
+      setSelectedId(importedServices[0]?.name || "");
+      setVolumeNames(Object.keys(imported.volumes || {}).join("\n"));
+      setNetworkNames(Object.keys(imported.networks || {}).join("\n"));
+      setSourceDocument(imported);
+      setNotice(`Imported ${file.name}. Unsupported fields will be retained on export.`);
+    } catch (error) {
+      setNotice(`Import failed: ${error instanceof Error ? error.message : "Invalid Compose YAML"}`);
+    }
+  };
+
   const downloadYaml = () => {
     if (!validation.valid) {
       setNotice("Fix the validation errors before exporting.");
       return;
     }
-    const blob = new Blob([exportComposeYaml(composeDocument)], { type: "text/yaml;charset=utf-8" });
+    const output = sourceDocument ? { ...sourceDocument, ...composeDocument, services: Object.fromEntries(Object.entries(composeDocument.services).map(([name, service]) => [name, { ...(sourceDocument.services?.[name] || {}), ...service }])) } : composeDocument;
+    const blob = new Blob([stringify(output)], { type: "text/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
