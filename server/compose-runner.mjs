@@ -8,7 +8,8 @@ import { parseDocument } from "yaml";
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.COMPOSE_RUNNER_PORT || 8788);
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
-const COMMAND_TIMEOUT_MS = 120_000;
+const ACTION_TIMEOUT_MS = { validate: 20_000, ps: 15_000, stats: 15_000, logs: 15_000, down: 60_000, up: 120_000 };
+const DEFAULT_COMMAND_TIMEOUT_MS = 120_000;
 const ALLOWED_ORIGINS = new Set([
   "https://sketchizi.pages.dev",
   "http://localhost:5173",
@@ -46,8 +47,8 @@ function classifyDockerFailure(exitCode, stdout, stderr) {
   if (exitCode === 127 || /docker cli was not found|enoent/.test(output)) {
     return { errorCode: "DOCKER_CLI_MISSING", hint: "Install Docker Desktop, start it, and ensure the docker CLI is available on PATH." };
   }
-  if (exitCode === 124 || /timed out after 120 seconds/.test(output)) {
-    return { errorCode: "COMMAND_TIMEOUT", hint: "The command exceeded 120 seconds. Check image builds, network access, and Docker daemon load, then retry." };
+  if (exitCode === 124 || /command timed out after/.test(output)) {
+    return { errorCode: "COMMAND_TIMEOUT", hint: "The command exceeded its action-specific time limit. For start/stop actions, the final Docker state may be uncertain: use Status or Refresh status before retrying to avoid repeating a lifecycle action." };
   }
   if (/cannot connect to the docker daemon|daemon is not running|is the docker daemon running|error during connect/.test(output)) {
     return { errorCode: "DOCKER_DAEMON_UNAVAILABLE", hint: "Start Docker Desktop and wait until its engine is ready, then use Check runner." };
@@ -70,12 +71,12 @@ function classifyDockerFailure(exitCode, stdout, stderr) {
   return { errorCode: "COMPOSE_COMMAND_FAILED", hint: "Inspect the command output below. Fix the reported Compose, build, registry, or runtime issue and retry." };
 }
 
-function runDocker(args, cwd) {
+function runDocker(args, cwd, timeoutMs = DEFAULT_COMMAND_TIMEOUT_MS) {
   return new Promise((resolve) => {
     let stdout = "", stderr = "", settled = false;
     const child = spawn("docker", ["compose", ...args], { cwd, shell: false, windowsHide: true, env: { ...process.env, DOCKER_CLI_HINTS: "false" } });
     const finish = (result) => { if (settled) return; settled = true; clearTimeout(timer); resolve(result); };
-    const timer = setTimeout(() => { child.kill("SIGTERM"); finish({ exitCode: 124, stdout, stderr: stderr + "\nCommand timed out after 120 seconds." }); }, COMMAND_TIMEOUT_MS);
+    const timer = setTimeout(() => { child.kill("SIGTERM"); finish({ exitCode: 124, timedOut: true, stdout, stderr: stderr + "\nCommand timed out after " + Math.round(timeoutMs / 1000) + " seconds." }); }, timeoutMs);
     child.stdout.on("data", (chunk) => { stdout = appendBounded(stdout, chunk); });
     child.stderr.on("data", (chunk) => { stderr = appendBounded(stderr, chunk); });
     child.on("error", (error) => finish({ exitCode: 127, stdout, stderr: error.code === "ENOENT" ? "Docker CLI was not found. Install Docker Desktop and ensure docker is on PATH." : error.message }));
@@ -147,13 +148,14 @@ const server = createServer(async (request, response) => {
       logs: ["logs", "--no-color", "--tail", "200"],
       stats: ["stats", "--no-stream", "--format", "json"],
     };
-    const result = await runDocker([...baseArgs, ...actionArgs[action]], projectDirectory);
+    const result = await runDocker([...baseArgs, ...actionArgs[action]], projectDirectory, ACTION_TIMEOUT_MS[action]);
     send(response, result.exitCode === 0 ? 200 : 422, {
       action, projectName, exitCode: result.exitCode,
       success: result.exitCode === 0,
       stdout: result.stdout.slice(-200_000),
       stderr: result.stderr.slice(-200_000),
-      message: result.exitCode === 0 ? "Docker Compose command completed." : "Docker Compose command failed.",
+      message: result.exitCode === 0 ? "Docker Compose command completed." : result.timedOut ? "Docker Compose command timed out. Its final state may be unknown; check Status before retrying." : "Docker Compose command failed.",
+      ...(result.timedOut ? { timedOut: true } : {}),
       ...(result.exitCode === 0 ? {} : classifyDockerFailure(result.exitCode, result.stdout, result.stderr)),
     }, origin);
   } catch (error) {

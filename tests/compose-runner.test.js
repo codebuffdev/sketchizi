@@ -9,7 +9,9 @@ test("Compose runner binds only to loopback and uses a fixed Docker Compose acti
   assert.match(source, /spawn\("docker", \["compose", \.\.\.args\]/);
   assert.match(source, /shell: false/);
   assert.match(source, /MAX_BODY_BYTES = 2 \* 1024 \* 1024/);
-  assert.match(source, /COMMAND_TIMEOUT_MS = 120_000/);
+  assert.match(source, /ACTION_TIMEOUT_MS = \{ validate: 20_000, ps: 15_000, stats: 15_000, logs: 15_000, down: 60_000, up: 120_000 \}/);
+  assert.match(source, /DEFAULT_COMMAND_TIMEOUT_MS = 120_000/);
+  assert.match(source, /runDocker\(\[\.\.\.baseArgs, \.\.\.actionArgs\[action\]\], projectDirectory, ACTION_TIMEOUT_MS\[action\]\)/);
   assert.match(source, /parseDocument\(body\.composeYaml, \{ uniqueKeys: true \}\)/);
   assert.match(source, /ALLOWED_ORIGINS\.has\(origin\)/);
 });
@@ -103,4 +105,12 @@ test("Studio refreshes runtime status after successful start and stop without re
   assert.match(source, /action: "ps", projectName, composeYaml: stringify\(getExportDocument\(\)\)/);
   assert.match(source, /Refresh status/);
   assert.match(source, /Use Status or Refresh status to retry without repeating the lifecycle action/);
+});
+
+test("Compose runner marks timeout outcomes as uncertain and advises checking status before retrying", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /timedOut: true/);
+  assert.match(source, /final state may be unknown; check Status before retrying/);
+  assert.match(source, /For start\/stop actions, the final Docker state may be uncertain/);
+  assert.match(source, /action-specific time limit/);
 });
