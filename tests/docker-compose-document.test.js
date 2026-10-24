@@ -258,9 +258,8 @@ test("readiness remediation prioritizes errors before warnings and informational
       api: {
         image: "example/api:latest",
         privileged: true,
-        depends_on: ["database"],
+        depends_on: ["missing-service"],
       },
-      database: { image: "postgres:17", depends_on: ["api"] },
     },
   });
   assert.ok(result.prioritizedFindings.length >= 3);
