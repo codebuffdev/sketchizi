@@ -140,6 +140,17 @@ const server = createServer(async (request, response) => {
     await mkdir(projectDirectory, { recursive: true, mode: 0o700 });
     await writeFile(join(projectDirectory, "compose.yaml"), body.composeYaml, { encoding: "utf8", mode: 0o600 });
     const baseArgs = ["--project-directory", projectDirectory, "-p", projectName, "-f", join(projectDirectory, "compose.yaml")];
+    let serviceName;
+    if (body.serviceName !== undefined) {
+      if (action !== "logs") throw Object.assign(new Error("serviceName is supported only for the logs action."), { status: 400 });
+      if (typeof body.serviceName !== "string" || !/^[a-zA-Z0-9_.-]{1,63}$/.test(body.serviceName)) {
+        throw Object.assign(new Error("serviceName must be a valid Compose service name."), { status: 400 });
+      }
+      if (!Object.hasOwn(parsed.services, body.serviceName)) {
+        throw Object.assign(new Error("The requested service does not exist in this Compose document."), { status: 400 });
+      }
+      serviceName = body.serviceName;
+    }
     const actionArgs = {
       validate: ["config", "--quiet"],
       up: ["up", "--detach", "--build"],
@@ -148,9 +159,10 @@ const server = createServer(async (request, response) => {
       logs: ["logs", "--no-color", "--tail", "200"],
       stats: ["stats", "--no-stream", "--format", "json"],
     };
-    const result = await runDocker([...baseArgs, ...actionArgs[action]], projectDirectory, ACTION_TIMEOUT_MS[action]);
+    const commandArgs = [...actionArgs[action], ...(action === "logs" && serviceName ? [serviceName] : [])];
+    const result = await runDocker([...baseArgs, ...commandArgs], projectDirectory, ACTION_TIMEOUT_MS[action]);
     send(response, result.exitCode === 0 ? 200 : 422, {
-      action, projectName, exitCode: result.exitCode,
+      action, projectName, ...(serviceName ? { serviceName } : {}), exitCode: result.exitCode,
       success: result.exitCode === 0,
       stdout: result.stdout.slice(-200_000),
       stderr: result.stderr.slice(-200_000),

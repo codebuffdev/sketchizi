@@ -142,3 +142,20 @@ test("Studio explains actionable follow-up for unhealthy, stopped, starting, and
   assert.match(source, /docker-studio-health-events/);
   assert.match(source, /getContainerAttention\(container\)/);
 });
+
+
+test("Compose runner scopes log requests to a declared service and rejects invalid service targets", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.match(source, /serviceName is supported only for the logs action/);
+  assert.match(source, /valid Compose service name/);
+  assert.match(source, /Object\.hasOwn\(parsed\.services, body\.serviceName\)/);
+  assert.match(source, /action === "logs" && serviceName \? \[serviceName\] : \[\]/);
+  assert.match(source, /serviceName \? \{ serviceName \} : \{\}/);
+});
+
+test("Studio provides direct service log inspection from container attention events", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  assert.match(source, /runComposeAction\("logs", container\.Service \|\| container\.Name\)/);
+  assert.match(source, /View service logs/);
+  assert.match(source, /Service logs · \{runnerResult\.serviceName\}/);
+});

@@ -101,3 +101,6 @@
 
 /* Actionable container health events */
 .docker-studio-health-events{margin:12px 0;padding:12px;border:1px solid #71404b;border-radius:10px;background:#20151b}.docker-studio-health-events-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px}.docker-studio-health-events-heading strong{font-size:12px;color:#ffb0b9}.docker-studio-health-events-heading span{font-size:10px;color:#d9a0a8}.docker-studio-health-events ul{list-style:none;margin:0;padding:0}.docker-studio-health-events li{padding:10px 0;border-top:1px solid #49303a}.docker-studio-health-events li>div{display:flex;align-items:center;justify-content:space-between;gap:10px}.docker-studio-health-events li>div strong{font-size:11px;overflow-wrap:anywhere;color:#e7ebf5}.docker-studio-health-events li>b{display:block;margin-top:8px;font-size:11px;color:#f5ca78}.docker-studio-health-events li>p{margin:4px 0 0;font-size:11px;line-height:1.5;color:#d6c5cc}
+
+/* One-click service log inspection from health alerts */
+.docker-studio-inspect-logs{margin-top:10px;min-height:30px;padding:6px 10px;font-size:11px}

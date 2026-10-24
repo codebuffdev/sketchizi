@@ -60,8 +60,22 @@ test("local runner executes the full Compose lifecycle against one persistent pr
     assert.equal(result.success, true, action + " should succeed");
     assert.equal(result.action, action);
   }
+  const scopedLogsResponse = await fetch(base + "/api/compose", {
+    method: "POST",
+    headers: { Origin: origin, "content-type": "application/json" },
+    body: JSON.stringify({ action: "logs", projectName: "integration-project", composeYaml, serviceName: "web" })
+  });
+  const scopedLogsResult = await scopedLogsResponse.json();
+  assert.equal(scopedLogsResponse.status, 200);
+  assert.equal(scopedLogsResult.serviceName, "web");
+  const invalidServiceResponse = await fetch(base + "/api/compose", {
+    method: "POST",
+    headers: { Origin: origin, "content-type": "application/json" },
+    body: JSON.stringify({ action: "logs", projectName: "integration-project", composeYaml, serviceName: "missing-service" })
+  });
+  assert.equal(invalidServiceResponse.status, 400);
   const calls = (await readFile(logPath, "utf8")).trim().split("\n");
-  assert.equal(calls.length, actions.length);
+  assert.equal(calls.length, actions.length + 1);
   for (const call of calls) {
     assert.match(call, /--project-directory/);
     assert.match(call, /sketchizi-compose-projects\/integration-project/);
@@ -74,4 +88,5 @@ test("local runner executes the full Compose lifecycle against one persistent pr
   assert.match(calls[3], /logs --no-color --tail 200/);
   assert.match(calls[4], /stats --no-stream --format json/);
   assert.match(calls[5], /down/);
+  assert.match(calls[6], /logs --no-color --tail 200 web/);
 });
