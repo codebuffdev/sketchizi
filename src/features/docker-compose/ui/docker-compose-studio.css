@@ -34,25 +34,29 @@
 .docker-studio-topology-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
 .docker-studio-topology-heading h2{margin:3px 0 0;font-size:14px;color:#e7ebf5}
 .docker-studio-topology-count{padding:5px 9px;border:1px solid #30394d;border-radius:20px;color:#aab7ce;font-size:10px}
-.docker-studio-topology-canvas{display:flex;align-items:stretch;gap:12px;max-height:220px;overflow:auto;padding:2px 1px 6px}
-.docker-studio-topology-nodes{display:flex;align-items:stretch;gap:10px;flex:none;min-height:0}
-.docker-studio-topology-node{display:grid;grid-template-columns:34px minmax(110px,1fr);align-content:start;align-items:center;gap:7px 10px;min-width:205px;max-width:255px;padding:11px;border:1px solid #35415a;border-radius:12px;background:#171f2d;color:#e7ebf5;text-align:left;transition:border-color .15s,background .15s,box-shadow .15s}
+.docker-studio-topology-services{max-width:100%;overflow-x:auto;overflow-y:hidden;padding:2px 1px 8px;scrollbar-width:thin;scrollbar-color:#475569 transparent}
+.docker-studio-topology-nodes{display:flex;align-items:stretch;gap:8px;width:max-content;min-height:0}
+.docker-studio-topology-node{display:grid;grid-template-columns:28px minmax(100px,1fr);align-content:start;align-items:center;gap:6px 8px;min-width:180px;max-width:220px;padding:9px;border:1px solid #35415a;border-radius:10px;background:#171f2d;color:#e7ebf5;text-align:left;transition:border-color .15s,background .15s,box-shadow .15s}
 .docker-studio-topology-node:hover{border-color:#7c5bd3;background:#1d2637}
 .docker-studio-topology-node.selected{border-color:#8b5cf6;background:#29213e;box-shadow:0 0 0 1px #8b5cf644}
-.docker-studio-topology-node-icon{display:grid;place-items:center;grid-row:span 2;width:34px;height:34px;border:1px solid #4b3c77;border-radius:9px;background:#28203e;color:#c5aaff;font-size:18px}
+.docker-studio-topology-node-icon{display:grid;place-items:center;grid-row:span 2;width:28px;height:28px;border:1px solid #4b3c77;border-radius:8px;background:#28203e;color:#c5aaff;font-size:15px}
 .docker-studio-topology-node-copy{display:block;min-width:0}
 .docker-studio-topology-node-copy strong,.docker-studio-topology-node-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.docker-studio-topology-node-copy strong{font-size:12px}
-.docker-studio-topology-node-copy small{margin-top:4px;color:#9aa8bf;font-size:10px}
+.docker-studio-topology-node-copy strong{font-size:11px}
+.docker-studio-topology-node-copy small{margin-top:3px;color:#9aa8bf;font-size:9px}
 .docker-studio-topology-node-copy .docker-studio-topology-port{color:#81c9ee}
-.docker-studio-topology-node-meta{grid-column:1/-1;padding-top:7px;border-top:1px solid #30394d;color:#aab7ce;font-size:10px;overflow-wrap:anywhere}
-.docker-studio-topology-edges{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:max-content;padding:0 8px 0 2px}
-.docker-studio-topology-edge{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid #34485b;border-radius:8px;background:#142331;color:#b5d9ed;font-size:10px}
-.docker-studio-topology-edge span{color:#8b5cf6;font-size:17px}
-.docker-studio-topology-edge small{color:#8da0b7}
+.docker-studio-dependency-section{margin-top:8px;padding:9px 10px 10px;border:1px solid #29364b;border-radius:10px;background:#0e1623}
+.docker-studio-dependency-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.docker-studio-dependency-heading h3{margin:0;color:#cbd5e1;font-size:11px;font-weight:750}
+.docker-studio-dependency-heading span{color:#8795ad;font-size:10px}
+.docker-studio-topology-edges{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;max-height:104px;overflow-y:auto;overflow-x:hidden;padding:1px 4px 1px 1px;scrollbar-width:thin;scrollbar-color:#475569 transparent}
+.docker-studio-topology-edge{display:flex;align-items:center;gap:6px;min-width:0;padding:7px 8px;border:1px solid #34485b;border-radius:7px;background:#142331;color:#b5d9ed;font-size:10px}
+.docker-studio-topology-edge strong{overflow-wrap:anywhere}
+.docker-studio-topology-edge span{flex:none;color:#8b5cf6;font-size:15px}
+.docker-studio-topology-edge small{margin-left:auto;color:#8da0b7;white-space:nowrap}
 .docker-studio-topology-edge.missing{border-color:#71404b;background:#2a1b26;color:#ffb0b9}
 .docker-studio-topology-empty{margin:0;color:#9ca8be;font-size:12px}
-@media(max-width:650px){.docker-studio-topology{padding:12px}.docker-studio-topology-node{min-width:180px}.docker-studio-topology-canvas{gap:8px;max-height:170px}}
+@media(max-width:650px){.docker-studio-topology{padding:12px}.docker-studio-topology-node{min-width:165px;max-width:190px}.docker-studio-topology-edges{grid-template-columns:1fr;max-height:140px}}
 
 .docker-studio-resources{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px 24px;border-bottom:1px solid #273144;background:#121a27;flex:none}
 .docker-studio-resources label{display:flex;flex-direction:column;gap:6px;color:#c5cee0;font-size:11px;font-weight:750}
