@@ -49,14 +49,14 @@
 .docker-studio-dependency-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .docker-studio-dependency-heading h3{margin:0;color:#cbd5e1;font-size:11px;font-weight:750}
 .docker-studio-dependency-heading span{color:#8795ad;font-size:10px}
-.docker-studio-topology-edges{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;max-height:104px;overflow-y:auto;overflow-x:hidden;padding:1px 4px 1px 1px;scrollbar-width:thin;scrollbar-color:#475569 transparent}
+.docker-studio-topology-edges{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,minmax(0,auto));grid-auto-columns:minmax(230px,260px);align-content:start;gap:6px;max-width:100%;max-height:104px;overflow-x:auto;overflow-y:hidden;padding:1px 4px 8px 1px;scrollbar-width:thin;scrollbar-color:#475569 transparent}
 .docker-studio-topology-edge{display:flex;align-items:center;gap:6px;min-width:0;padding:7px 8px;border:1px solid #34485b;border-radius:7px;background:#142331;color:#b5d9ed;font-size:10px}
 .docker-studio-topology-edge strong{overflow-wrap:anywhere}
 .docker-studio-topology-edge span{flex:none;color:#8b5cf6;font-size:15px}
 .docker-studio-topology-edge small{margin-left:auto;color:#8da0b7;white-space:nowrap}
 .docker-studio-topology-edge.missing{border-color:#71404b;background:#2a1b26;color:#ffb0b9}
 .docker-studio-topology-empty{margin:0;color:#9ca8be;font-size:12px}
-@media(max-width:650px){.docker-studio-topology{padding:12px}.docker-studio-topology-node{min-width:165px;max-width:190px}.docker-studio-topology-edges{grid-template-columns:1fr;max-height:140px}}
+@media(max-width:650px){.docker-studio-topology{padding:12px}.docker-studio-topology-node{min-width:165px;max-width:190px}.docker-studio-topology-edges{grid-template-rows:repeat(2,minmax(0,auto));grid-auto-columns:minmax(210px,230px);max-height:112px}}
 
 .docker-studio-resources{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px 24px;border-bottom:1px solid #273144;background:#121a27;flex:none}
 .docker-studio-resources label{display:flex;flex-direction:column;gap:6px;color:#c5cee0;font-size:11px;font-weight:750}
