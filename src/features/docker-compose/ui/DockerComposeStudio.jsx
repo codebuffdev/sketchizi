@@ -208,7 +208,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <section className="docker-studio-dependency-section" aria-label="Dependency connections">
                   <div className="docker-studio-dependency-heading">
                     <h3>Dependency connections</h3>
-                    <span>{services.reduce((count, service) => count + parseLines(service.dependsText).length, 0)} connections</span>
+                    <span className="docker-studio-dependency-count">{services.reduce((count, service) => count + parseLines(service.dependsText).length, 0)} connections</span>
+                    <span className="docker-studio-scroll-hint">Scroll horizontally to see more <span aria-hidden="true">→</span></span>
                   </div>
                   <div className="docker-studio-topology-edges">
                     {services.flatMap((service) => parseLines(service.dependsText).map((dependency) => {
