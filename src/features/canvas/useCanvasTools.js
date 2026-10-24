@@ -48,7 +48,7 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     if (patch.strokeColor && iconImages.length) {
       const currentFiles = api.getFiles?.() || {};
       for (const element of iconImages) {
-        const file = files[element.fileId];
+        const file = currentFiles[element.fileId];
         if (!file?.dataURL || !/^data:image\/svg\+xml/i.test(file.dataURL)) continue;
         try {
           const comma = file.dataURL.indexOf(",");
