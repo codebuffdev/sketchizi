@@ -58,3 +58,20 @@ test("Studio accurately explains that lifecycle actions execute through the loca
   assert.match(source, /Start containers for this Compose project on your machine/);
   assert.match(source, /Stop and remove this Compose project/);
 });
+
+test("Compose runner bounds captured output without killing diagnostics", async () => {
+  const source = await readFile(new URL("../server/compose-runner.mjs", import.meta.url), "utf8");
+  assert.ok(source.includes("function appendBounded(current, chunk)"));
+  assert.ok(source.includes("next.slice(-200_000)"));
+  assert.ok(source.includes("stdout = appendBounded(stdout, chunk)"));
+  assert.ok(source.includes("stderr = appendBounded(stderr, chunk)"));
+  assert.ok(!source.includes("stdout.length > 200_000) child.kill"));
+});
+
+test("Studio summarizes container health and distinguishes runtime states", async () => {
+  const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
+  for (const state of ["Healthy", "Running", "Starting", "Unhealthy", "Stopped", "Unknown"]) assert.ok(source.includes(state), "missing state: " + state);
+  assert.ok(source.includes("function summarizeContainers(containers)"));
+  assert.ok(source.includes("docker-studio-container-summary"));
+  assert.ok(source.includes("container.HealthStatus"));
+});

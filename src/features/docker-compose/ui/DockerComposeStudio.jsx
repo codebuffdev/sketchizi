@@ -16,6 +16,25 @@ function parseComposeStatus(output) {
     return output.split("\n").map((line) => { try { return JSON.parse(line); } catch { return null; } }).filter((item) => item && typeof item === "object");
   }
 }
+function getContainerState(container) {
+  const raw = String(container.State || container.Status || "").toLowerCase();
+  const health = String(container.Health || container.HealthStatus || "").toLowerCase();
+  if (health.includes("unhealthy") || raw.includes("unhealthy")) return { label: "Unhealthy", kind: "unhealthy" };
+  if (health.includes("starting") || raw.includes("starting") || raw.includes("created") || raw.includes("restarting")) return { label: "Starting", kind: "starting" };
+  if (health.includes("healthy")) return { label: "Healthy", kind: "healthy" };
+  if (raw.includes("running") || raw === "up") return { label: "Running", kind: "running" };
+  if (raw.includes("exited") || raw.includes("stopped") || raw.includes("dead") || raw.includes("removing")) return { label: "Stopped", kind: "stopped" };
+  return { label: raw ? raw.replace(/^./, (letter) => letter.toUpperCase()) : "Unknown", kind: "unknown" };
+}
+function summarizeContainers(containers) {
+  return containers.reduce((summary, container) => {
+    const kind = getContainerState(container).kind;
+    summary[kind] = (summary[kind] || 0) + 1;
+    summary.total += 1;
+    return summary;
+  }, { total: 0, healthy: 0, running: 0, starting: 0, unhealthy: 0, stopped: 0, unknown: 0 });
+}
+
 function parseLines(value) {
   return value.split("\n").map((line) => line.trim()).filter(Boolean);
 }
@@ -369,7 +388,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <strong>{runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
                 {runnerResult.error && <p>{runnerResult.error}</p>}
                 {runnerResult.message && <p>{runnerResult.message}</p>}
-                {["ps", "stats"].includes(runnerResult.action) && runnerResult.success && parseComposeStatus(runnerResult.stdout).length > 0 && <div className="docker-studio-status-table-wrap"><table className="docker-studio-status-table"><thead><tr><th>Container</th>{runnerResult.action === "ps" ? <><th>State</th><th>Health</th><th>Ports</th></> : <><th>CPU</th><th>Memory usage / limit</th><th>Memory %</th><th>Network I/O</th><th>Block I/O</th><th>PIDs</th></>}</tr></thead><tbody>{parseComposeStatus(runnerResult.stdout).map((container, index) => <tr key={container.ID || container.Id || container.Name || container.Container || index}><td><strong>{container.Name || container.Service || container.ID || container.Id || container.Container || "Container"}</strong><small>{container.Image || ""}</small></td>{runnerResult.action === "ps" ? <><td><span className={"docker-studio-container-state " + (/running|up/i.test(container.State || container.Status || "") ? "running" : "stopped")}>{container.State || container.Status || "Unknown"}</span></td><td>{container.Health || "—"}</td><td>{container.Ports || "—"}</td></> : <><td>{container.CPUPerc || container.CPU || container.CPUPercentage || "—"}</td><td>{container.MemUsage || container.MemoryUsage || "—"}</td><td>{container.MemPerc || container.MemoryPercent || "—"}</td><td>{container.NetIO || container.NetworkIO || "—"}</td><td>{container.BlockIO || "—"}</td><td>{container.PIDs || container.Pids || "—"}</td></>}</tr>)}</tbody></table></div>}{(runnerResult.stdout || runnerResult.stderr) && <pre>{[runnerResult.stdout && "STDOUT:\n" + runnerResult.stdout, runnerResult.stderr && "STDERR:\n" + runnerResult.stderr].filter(Boolean).join("\n\n")}</pre>}
+                {["ps", "stats"].includes(runnerResult.action) && runnerResult.success && parseComposeStatus(runnerResult.stdout).length > 0 && <>{runnerResult.action === "ps" && (() => { const summary = summarizeContainers(parseComposeStatus(runnerResult.stdout)); return <div className="docker-studio-container-summary" aria-label="Container state summary">{[["Total", summary.total, "total"], ["Healthy", summary.healthy, "healthy"], ["Running", summary.running, "running"], ["Starting", summary.starting, "starting"], ["Unhealthy", summary.unhealthy, "unhealthy"], ["Stopped", summary.stopped, "stopped"]].map(([label, count, kind]) => <div key={label} className={"docker-studio-container-summary-item " + kind}><span>{label}</span><strong>{count}</strong></div>)}</div>; })()}<div className="docker-studio-status-table-wrap"><table className="docker-studio-status-table"><thead><tr><th>Container</th>{runnerResult.action === "ps" ? <><th>State</th><th>Health</th><th>Ports</th></> : <><th>CPU</th><th>Memory usage / limit</th><th>Memory %</th><th>Network I/O</th><th>Block I/O</th><th>PIDs</th></>}</tr></thead><tbody>{parseComposeStatus(runnerResult.stdout).map((container, index) => { const state = getContainerState(container); return <tr key={container.ID || container.Id || container.Name || container.Container || index}><td><strong>{container.Name || container.Service || container.ID || container.Id || container.Container || "Container"}</strong><small>{container.Image || ""}</small></td>{runnerResult.action === "ps" ? <><td><span className={"docker-studio-container-state " + state.kind}>{state.label}</span></td><td>{container.Health || container.HealthStatus || "—"}</td><td>{container.Ports || "—"}</td></> : <><td>{container.CPUPerc || container.CPU || container.CPUPercentage || "—"}</td><td>{container.MemUsage || container.MemoryUsage || "—"}</td><td>{container.MemPerc || container.MemoryPercent || "—"}</td><td>{container.NetIO || container.NetworkIO || "—"}</td><td>{container.BlockIO || "—"}</td><td>{container.PIDs || container.Pids || "—"}</td></>}</tr>; })}</tbody></table></div></>}{(runnerResult.stdout || runnerResult.stderr) && <pre>{[runnerResult.stdout && "STDOUT:\n" + runnerResult.stdout, runnerResult.stderr && "STDERR:\n" + runnerResult.stderr].filter(Boolean).join("\n\n")}</pre>}
               </section>}
               <div className={validation.valid && readiness.ready ? "docker-studio-preflight-status valid" : "docker-studio-preflight-status invalid"}>
                 <strong>{validation.valid && readiness.ready ? "Static checks found no blocking errors" : "Review issues before deployment"}</strong>

@@ -36,14 +36,19 @@ async function readJson(request) {
   try { return JSON.parse(body); } catch { throw Object.assign(new Error("Request body must be valid JSON."), { status: 400 }); }
 }
 
+function appendBounded(current, chunk) {
+  const next = current + chunk.toString();
+  return next.length > 200_000 ? next.slice(-200_000) : next;
+}
+
 function runDocker(args, cwd) {
   return new Promise((resolve) => {
     let stdout = "", stderr = "", settled = false;
     const child = spawn("docker", ["compose", ...args], { cwd, shell: false, windowsHide: true, env: { ...process.env, DOCKER_CLI_HINTS: "false" } });
     const finish = (result) => { if (settled) return; settled = true; clearTimeout(timer); resolve(result); };
     const timer = setTimeout(() => { child.kill("SIGTERM"); finish({ exitCode: 124, stdout, stderr: stderr + "\nCommand timed out after 120 seconds." }); }, COMMAND_TIMEOUT_MS);
-    child.stdout.on("data", (chunk) => { stdout += chunk.toString(); if (stdout.length > 200_000) child.kill("SIGTERM"); });
-    child.stderr.on("data", (chunk) => { stderr += chunk.toString(); if (stderr.length > 200_000) child.kill("SIGTERM"); });
+    child.stdout.on("data", (chunk) => { stdout = appendBounded(stdout, chunk); });
+    child.stderr.on("data", (chunk) => { stderr = appendBounded(stderr, chunk); });
     child.on("error", (error) => finish({ exitCode: 127, stdout, stderr: error.code === "ENOENT" ? "Docker CLI was not found. Install Docker Desktop and ensure docker is on PATH." : error.message }));
     child.on("close", (code) => finish({ exitCode: code ?? 1, stdout, stderr }));
   });
