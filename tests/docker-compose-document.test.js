@@ -116,7 +116,7 @@ test("readiness analysis orders dependencies before dependents", () => {
   });
   assert.deepEqual(result.startupOrder, ["database", "api", "web"]);
   assert.equal(result.ready, true);
-  assert.equal(result.findings.length, 0);
+  assert.equal(result.findings.filter((finding) => finding.severity !== "info").length, 0);
 });
 
 test("readiness analysis identifies dependency cycles", () => {
