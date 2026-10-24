@@ -42,7 +42,7 @@ function appendBounded(current, chunk) {
 }
 
 function classifyDockerFailure(exitCode, stdout, stderr) {
-  const output = (stderr + "\\n" + stdout).toLowerCase();
+  const output = (stderr + "\n" + stdout).toLowerCase();
   if (exitCode === 127 || /docker cli was not found|enoent/.test(output)) {
     return { errorCode: "DOCKER_CLI_MISSING", hint: "Install Docker Desktop, start it, and ensure the docker CLI is available on PATH." };
   }
