@@ -7,6 +7,15 @@ function emptyService() {
   return { image: "", buildContext: "", portsText: "", environmentText: "", dependsText: "", volumesText: "", networksText: "", healthcheckText: "", restart: "unless-stopped" };
 }
 
+function parseComposeStatus(output) {
+  if (!output?.trim()) return [];
+  try {
+    const parsed = JSON.parse(output);
+    return (Array.isArray(parsed) ? parsed : [parsed]).filter((item) => item && typeof item === "object");
+  } catch {
+    return output.split("\n").map((line) => { try { return JSON.parse(line); } catch { return null; } }).filter((item) => item && typeof item === "object");
+  }
+}
 function parseLines(value) {
   return value.split("\n").map((line) => line.trim()).filter(Boolean);
 }
@@ -360,7 +369,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <strong>{runnerResult.success ? "Command succeeded" : "Command failed"}{Number.isInteger(runnerResult.exitCode) ? " · exit code " + runnerResult.exitCode : ""}</strong>
                 {runnerResult.error && <p>{runnerResult.error}</p>}
                 {runnerResult.message && <p>{runnerResult.message}</p>}
-                {(runnerResult.stdout || runnerResult.stderr) && <pre>{[runnerResult.stdout && "STDOUT:\n" + runnerResult.stdout, runnerResult.stderr && "STDERR:\n" + runnerResult.stderr].filter(Boolean).join("\n\n")}</pre>}
+                {runnerResult.action === "ps" && runnerResult.success && parseComposeStatus(runnerResult.stdout).length > 0 && <div className="docker-studio-status-table-wrap"><table className="docker-studio-status-table"><thead><tr><th>Container</th><th>State</th><th>Health</th><th>Ports</th></tr></thead><tbody>{parseComposeStatus(runnerResult.stdout).map((container, index) => <tr key={container.ID || container.Id || container.Name || index}><td><strong>{container.Name || container.Service || container.ID || container.Id || "Container"}</strong><small>{container.Image || ""}</small></td><td><span className={"docker-studio-container-state " + (/running|up/i.test(container.State || container.Status || "") ? "running" : "stopped")}>{container.State || container.Status || "Unknown"}</span></td><td>{container.Health || "—"}</td><td>{container.Ports || "—"}</td></tr>)}</tbody></table></div>}{(runnerResult.stdout || runnerResult.stderr) && <pre>{[runnerResult.stdout && "STDOUT:\n" + runnerResult.stdout, runnerResult.stderr && "STDERR:\n" + runnerResult.stderr].filter(Boolean).join("\n\n")}</pre>}
               </section>}
               <div className={validation.valid && readiness.ready ? "docker-studio-preflight-status valid" : "docker-studio-preflight-status invalid"}>
                 <strong>{validation.valid && readiness.ready ? "Static checks found no blocking errors" : "Review issues before deployment"}</strong>

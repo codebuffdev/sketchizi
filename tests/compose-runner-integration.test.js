@@ -70,7 +70,7 @@ test("local runner executes the full Compose lifecycle against one persistent pr
   }
   assert.match(calls[0], /config --quiet/);
   assert.match(calls[1], /up --detach --build/);
-  assert.match(calls[2], /ps --all/);
+  assert.match(calls[2], /ps --all --format json/);
   assert.match(calls[3], /logs --no-color --tail 200/);
   assert.match(calls[4], /stats --no-stream/);
   assert.match(calls[5], /down/);

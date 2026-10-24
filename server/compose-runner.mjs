@@ -91,7 +91,7 @@ const server = createServer(async (request, response) => {
   try {
     const body = await readJson(request);
     const action = body.action;
-    if (!ACTIONS.has(action)) throw Object.assign(new Error("Unsupported action. Use validate, up, down, ps, or logs."), { status: 400 });
+    if (!ACTIONS.has(action)) throw Object.assign(new Error("Unsupported action. Use validate, up, down, ps, logs, or stats."), { status: 400 });
     if (typeof body.composeYaml !== "string" || !body.composeYaml.trim()) throw Object.assign(new Error("composeYaml must contain the Compose YAML text."), { status: 400 });
     const document = parseDocument(body.composeYaml, { uniqueKeys: true });
     if (document.errors.length) throw Object.assign(new Error("Invalid YAML: " + document.errors[0].message), { status: 400 });
@@ -109,7 +109,7 @@ const server = createServer(async (request, response) => {
       validate: ["config", "--quiet"],
       up: ["up", "--detach", "--build"],
       down: ["down"],
-      ps: ["ps", "--all"],
+      ps: ["ps", "--all", "--format", "json"],
       logs: ["logs", "--no-color", "--tail", "200"],
       stats: ["stats", "--no-stream"],
     };

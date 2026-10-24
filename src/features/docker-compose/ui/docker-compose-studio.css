@@ -84,3 +84,6 @@
 .docker-studio-runner-result pre{max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border-radius:8px;background:#070b12;color:#c7d8ee;font-size:11px;line-height:1.5}
 
 .docker-studio-runner-url input{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #35415a;border-radius:8px;background:#0b1220;color:#e7ebf5;font:inherit}
+
+/* Structured Compose container status */
+.docker-studio-status-table-wrap{max-width:100%;overflow:auto;margin:12px 0;border:1px solid #30394d;border-radius:9px}.docker-studio-status-table{width:100%;border-collapse:collapse;font-size:11px;text-align:left}.docker-studio-status-table th,.docker-studio-status-table td{padding:9px 10px;border-bottom:1px solid #273144;vertical-align:top}.docker-studio-status-table th{background:#151e2c;color:#9eabc1;font-size:10px;text-transform:uppercase;letter-spacing:.04em}.docker-studio-status-table td strong,.docker-studio-status-table td small{display:block;min-width:80px;overflow-wrap:anywhere}.docker-studio-status-table td small{margin-top:4px;color:#8795ad;font-size:10px}.docker-studio-container-state{display:inline-block;padding:4px 7px;border-radius:20px;background:#42252c;color:#ffb0b9}.docker-studio-container-state.running{background:#15372d;color:#69dfb1}
