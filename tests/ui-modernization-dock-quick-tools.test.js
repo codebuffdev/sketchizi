@@ -18,7 +18,8 @@ test("quick dock keeps Bucket Fill and Draw to Shape in one persistent group", (
   assert.match(component, /data-sketchizi-quick-tool="\$\{id\}"/);
   assert.match(component, /quickGroup\.appendChild\(button\)/);
   assert.match(component, /activeIds = new Set\(quickTools\.map/);
-  assert.match(component, /quickGroup\.querySelectorAll/);\n  assert.match(navigation, /filter\(\(button\) => !button\.closest\("\.sketchizi-dock-quick-tools"\)\)/);
+  assert.match(component, /quickGroup\.querySelectorAll/);
+  assert.match(navigation, /filter\(\(button\) => !button\.closest\("\.sketchizi-dock-quick-tools"\)\)/);
 });
 
 test("quick dock controls are explicitly non-shrinking and visible", () => {
