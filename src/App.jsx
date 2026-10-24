@@ -405,10 +405,10 @@ function App() {
 
     // Create a readable architecture overview: project boundary, service cards,
     // dependency connectors, and explicit shared-resource nodes.
-    const cardWidth = 440;
-    const cardHeight = 300;
-    const gapX = 140;
-    const gapY = 100;
+    const cardWidth = 360;
+    const cardHeight = 240;
+    const gapX = 100;
+    const gapY = 72;
     const dependenciesOf = (service) => Array.isArray(service.depends_on)
       ? service.depends_on
       : Object.keys(service.depends_on || {});
@@ -470,7 +470,7 @@ function App() {
       backgroundColor: "transparent",
       fillStyle: "solid",
       strokeStyle: "dashed",
-      label: { text: `▦  COMPOSE PROJECT  ·  ${projectName}`, fontSize: 22, textAlign: "left", verticalAlign: "top" }
+      label: { text: `▦  COMPOSE PROJECT  ·  ${projectName}`, fontSize: 18, textAlign: "left", verticalAlign: "top" }
     });
 
     layerKeys.forEach((level, columnIndex) => {
@@ -576,7 +576,7 @@ function App() {
         roundness: { type: 3 },
         label: {
           text: `▣  CONTAINER  ·  ${name.toUpperCase()}\n\n${details.join("\n")}`,
-          fontSize: 16,
+          fontSize: 13,
           textAlign: "left",
           verticalAlign: "middle"
         }
@@ -585,10 +585,10 @@ function App() {
       if (iconAsset) {
         skeleton.push({
           type: "image",
-          x: x + cardWidth - 88,
-          y: y + 14,
-          width: 72,
-          height: 72,
+          x: x + cardWidth - 66,
+          y: y + 12,
+          width: 54,
+          height: 54,
           fileId: iconAsset.fileId,
           status: "saved",
           scale: [1, 1]
@@ -612,13 +612,13 @@ function App() {
       ];
       if (!badges.length) return;
       const maxBadgesPerRow = 2;
-      const badgeWidth = 170;
-      const badgeHeight = 30;
+      const badgeWidth = 138;
+      const badgeHeight = 25;
       badges.forEach((badge, index) => {
         const column = index % maxBadgesPerRow;
         const row = Math.floor(index / maxBadgesPerRow);
         const badgeX = servicePosition.x + 14 + column * (badgeWidth + 8);
-        const badgeY = servicePosition.y + cardHeight - 40 - row * (badgeHeight + 5);
+        const badgeY = servicePosition.y + cardHeight - 32 - row * (badgeHeight + 4);
         skeleton.push({
           type: "rectangle",
           x: badgeX,
