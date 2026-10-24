@@ -97,6 +97,58 @@ export default function DockerComposeStudio({ onClose }) {
           </div>
         </div>
 
+        <section className="docker-studio-topology" aria-label="Visual service topology">
+          <div className="docker-studio-topology-heading">
+            <div>
+              <span className="docker-studio-eyebrow">LIVE TOPOLOGY</span>
+              <h2>Service connections</h2>
+            </div>
+            <span className="docker-studio-topology-count">{services.length} {services.length === 1 ? "service" : "services"}</span>
+          </div>
+          {services.length ? (
+            <div className="docker-studio-topology-canvas">
+              <div className="docker-studio-topology-nodes">
+                {services.map((service) => {
+                  const dependencies = parseLines(service.dependsText);
+                  const isSelected = selected?.name === service.name;
+                  return (
+                    <button
+                      key={service.name}
+                      type="button"
+                      className={isSelected ? "docker-studio-topology-node selected" : "docker-studio-topology-node"}
+                      onClick={() => setSelectedId(service.name)}
+                      aria-pressed={isSelected}
+                    >
+                      <span className="docker-studio-topology-node-icon" aria-hidden="true">▣</span>
+                      <span className="docker-studio-topology-node-copy">
+                        <strong>{service.name}</strong>
+                        <small>{service.image || "Image not configured"}</small>
+                        {service.portsText.trim() && <small className="docker-studio-topology-port">Ports: {parseLines(service.portsText).join(", ")}</small>}
+                      </span>
+                      <span className="docker-studio-topology-node-meta">{dependencies.length ? `Depends on ${dependencies.join(", ")}` : "No dependencies"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {services.some((service) => parseLines(service.dependsText).length > 0) && (
+                <div className="docker-studio-topology-edges" aria-label="Dependency connections">
+                  {services.flatMap((service) => parseLines(service.dependsText).map((dependency) => {
+                    const exists = services.some((candidate) => candidate.name === dependency);
+                    return (
+                      <div key={`${service.name}-depends-${dependency}`} className={exists ? "docker-studio-topology-edge" : "docker-studio-topology-edge missing"}>
+                        <strong>{service.name}</strong>
+                        <span aria-hidden="true">⟶</span>
+                        <strong>{dependency}</strong>
+                        <small>{exists ? "depends on" : "missing service"}</small>
+                      </div>
+                    );
+                  }))}
+                </div>
+              )}
+            </div>
+          ) : <p className="docker-studio-topology-empty">Add a service to see the topology.</p>}
+        </section>
+
         <div className="docker-studio-workspace">
           <aside className="docker-studio-service-list" aria-label="Services">
             <div className="docker-studio-section-heading"><span>Services</span><span>{services.length}</span></div>
