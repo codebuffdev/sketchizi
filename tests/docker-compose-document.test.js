@@ -250,3 +250,21 @@ test("readiness analysis returns a score, grade, severity counts, and categorize
   assert.ok(risky.severityCounts.warning >= 3);
   assert.ok(risky.findingsByCategory.security.length >= 2);
 });
+
+
+test("readiness remediation prioritizes errors before warnings and informational guidance", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      api: {
+        image: "example/api:latest",
+        privileged: true,
+        depends_on: ["missing-service"],
+      },
+    },
+  });
+  assert.ok(result.prioritizedFindings.length >= 3);
+  assert.equal(result.prioritizedFindings[0].severity, "error");
+  assert.equal(result.prioritizedFindings[0].priority, "P1");
+  assert.ok(result.prioritizedFindings.some((finding) => finding.priority === "P2"));
+  assert.ok(result.prioritizedFindings.every((finding) => finding.priorityLabel && finding.remediation));
+});

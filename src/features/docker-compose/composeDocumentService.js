@@ -382,10 +382,24 @@ export function analyzeComposeReadiness(input) {
     resources: findings.filter((finding) => /RESOURCE_LIMITS/.test(finding.code)),
     other: findings.filter((finding) => !/SECRET|PRIVILEGED|HOST_NETWORK|PUBLISHED_PORT|CYCLE|DEPENDENCY|HEALTHCHECK|MUTABLE_IMAGE_TAG|ENVIRONMENT|ENV_FILE|VARIABLE|CONDITION|RESOURCE_LIMITS/.test(finding.code)),
   };
+  const severityRank = { error: 0, warning: 1, info: 2 };
+  const prioritizedFindings = findings
+    .map((finding) => ({
+      ...finding,
+      priority: finding.severity === "error" ? "P1" : finding.severity === "warning" ? "P2" : "P3",
+      priorityLabel: finding.severity === "error" ? "Fix before proceeding"
+        : finding.severity === "warning" ? "Review before deployment" : "Recommended improvement",
+    }))
+    .sort((left, right) =>
+      (severityRank[left.severity] ?? 3) - (severityRank[right.severity] ?? 3) ||
+      left.path.localeCompare(right.path) ||
+      left.code.localeCompare(right.code)
+    );
   return {
     startupOrder: cycles.length ? [] : startupOrder,
     cycles,
     findings,
+    prioritizedFindings,
     ready: cycles.length === 0 && severityCounts.error === 0,
     readinessScore,
     readinessGrade,

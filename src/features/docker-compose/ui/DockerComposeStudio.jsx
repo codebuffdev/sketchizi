@@ -257,7 +257,17 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
                 <small>{readiness.severityCounts.error} errors · {readiness.severityCounts.warning} warnings · {readiness.severityCounts.info} recommendations</small>
               </div>
               {readiness.startupOrder.length > 0 && <p><strong>Suggested startup order</strong><br />{readiness.startupOrder.join(" → ")}</p>}
-              {readiness.findings.length > 0 ? readiness.findings.map((finding, index) => <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></div>) : <p>No dependency cycles detected. Review external environment variables before starting.</p>}
+              {readiness.prioritizedFindings.length > 0 ? (
+                <>
+                  <p className="docker-studio-remediation-intro">Recommended fixes are ordered by severity. Address blocking errors first, then review warnings.</p>
+                  {readiness.prioritizedFindings.map((finding, index) => (
+                    <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}>
+                      <div className="docker-studio-remediation-priority"><strong>{finding.priority}</strong><span>{finding.priorityLabel}</span></div>
+                      <strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p>
+                    </div>
+                  ))}
+                </>
+              ) : <p>No dependency cycles or readiness findings detected. Review external environment variables before starting.</p>}
             </section>
             {validation.findings.length ? validation.findings.map((finding, index) => <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></div>) : <div className="docker-studio-empty-check"><span aria-hidden="true">✓</span><strong>No issues found</strong><p>Your current Compose model passes the initial checks.</p></div>}
             {notice && <p className="docker-studio-notice" role="status">{notice}</p>}
