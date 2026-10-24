@@ -278,37 +278,59 @@ export default function SketchiziCanvas({
         toolbar.insertBefore(separator, anchor);
       });
 
-      // Expose quick tools as one non-shrinking group. A single wrapper avoids
-      // native toolbar flex/overflow rules hiding the second injected button.
+      // Keep the two quick tools in a dedicated, visible group. Reconcile the
+      // group on every toolbar mutation because Excalidraw may rebuild toolbar
+      // descendants; merely checking once can leave a registered tool missing.
       let quickGroup = toolbar.querySelector(":scope > .sketchizi-dock-quick-tools");
       if (!quickGroup) {
-        quickGroup = document.createElement("span");
+        quickGroup = document.createElement("div");
         quickGroup.className = "sketchizi-dock-quick-tools";
         quickGroup.setAttribute("role", "group");
         quickGroup.setAttribute("aria-label", "Quick tools");
+      }
+      if (quickGroup.parentElement !== toolbar || toolbar.lastElementChild !== quickGroup) {
         toolbar.appendChild(quickGroup);
       }
+
       const quickTools = [
-        { id: "bucketfill", label: "Bucket fill", icon: "◒", shortcut: "B" },
-        { id: "autoshape", label: "Draw to shape", icon: "◌", shortcut: "⇧X" },
+        { id: "bucketfill", label: "Bucket Fill", icon: "◒", shortcut: "B" },
+        { id: "autoshape", label: "Draw to Shape", icon: "◌", shortcut: "⇧X" },
       ];
       quickTools.forEach(({ id, label, icon, shortcut }) => {
-        if (quickGroup.querySelector(`[data-sketchizi-quick-tool="${id}"]`)) return;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "sketchizi-dock-quick-tool";
-        button.dataset.sketchiziQuickTool = id;
+        let button = quickGroup.querySelector(`[data-sketchizi-quick-tool="${id}"]`);
+        if (!button) {
+          button = document.createElement("button");
+          button.type = "button";
+          button.className = "sketchizi-dock-quick-tool";
+          button.dataset.sketchiziQuickTool = id;
+          button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
+          });
+        }
         button.dataset.sketchiziTooltip = `${label} (${shortcut})`;
         button.setAttribute("aria-label", label);
+        button.setAttribute("title", `${label} (${shortcut})`);
+        button.removeAttribute("hidden");
+        button.disabled = false;
+        button.style.display = "inline-flex";
+        button.style.visibility = "visible";
+        button.style.opacity = "1";
+        button.style.flex = "0 0 42px";
+        button.style.width = "42px";
+        button.style.minWidth = "42px";
+        button.style.height = "42px";
         button.innerHTML = `<span aria-hidden="true">${icon}</span>`;
-        button.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          // Invoke the existing React tool action directly; do not open More Tools
-          // just to find and click its menu item (which caused a visible flash).
-          window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
-        });
-        quickGroup.appendChild(button);
+        // appendChild also restores the intended order when Excalidraw mutates
+        // the toolbar; only move nodes when they are not already in order.
+        if (button.parentElement !== quickGroup) quickGroup.appendChild(button);
+      });
+      const orderedButtons = quickTools.map(({ id }) =>
+        quickGroup.querySelector(`[data-sketchizi-quick-tool="${id}"]`),
+      );
+      orderedButtons.forEach((button, index) => {
+        if (button && quickGroup.children[index] !== button) quickGroup.insertBefore(button, quickGroup.children[index] || null);
       });
     };
     const schedule = () => {
