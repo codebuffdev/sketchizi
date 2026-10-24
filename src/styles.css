@@ -662,3 +662,9 @@
   .app .contextual-formatting-group { gap: 2px; padding: 0 3px; }
   .app .contextual-color-swatch { width: 17px; min-width: 17px; height: 17px; min-height: 17px; }
 }
+
+
+/* Docker Compose Studio entry point */
+.docker-compose-studio-toggle{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border:1px solid #4a347a;border-radius:9px;background:linear-gradient(135deg,#2a2043,#1a1f2c);color:#d8c7ff;font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.docker-compose-studio-toggle:hover{background:#38275c;border-color:#8b5cf6;transform:translateY(-1px)}
+.docker-compose-studio-toggle span:first-child{font-size:15px}

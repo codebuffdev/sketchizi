@@ -28,6 +28,7 @@ import { useCommandPalette } from "./features/navigation/useCommandPalette";
 import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
 import CreateDesignScreen from "./features/design/ui/CreateDesignScreen.jsx";
+import DockerComposeStudio from "./features/docker-compose/ui/DockerComposeStudio.jsx";
 import { createProfileForTemplate, createTemplateElements } from "./features/design/templates/templateRegistry.js";
 import { withDesignProfile } from "./features/design/model/designDocument.js";
 import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
@@ -54,6 +55,7 @@ function App() {
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
+  const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridVisible, setGridVisible] = useState(false);
@@ -485,6 +487,17 @@ function App() {
 
         <button
           type="button"
+          className="docker-compose-studio-toggle"
+          onClick={() => setDockerStudioOpen(true)}
+          title="Design Docker Compose applications"
+          aria-label="Open Docker Compose Studio"
+        >
+          <span aria-hidden="true">▦</span>
+          <span>Docker Studio</span>
+        </button>
+
+        <button
+          type="button"
           className="community-reviews-toggle"
           onClick={() => { window.location.href = "/reviews"; }}
           title="Read Sketchizi reviews and share feedback"
@@ -705,6 +718,7 @@ function App() {
           </div>
         </div>
       )}
+      {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} />}
       {designStudioOpen && (
         <CreateDesignScreen
           isDarkTheme={isDarkTheme}
