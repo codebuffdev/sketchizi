@@ -443,7 +443,7 @@ function App() {
       backgroundColor: "transparent",
       fillStyle: "solid",
       strokeStyle: "dashed",
-      label: { text: `COMPOSE PROJECT  ·  ${projectName}`, fontSize: 22, textAlign: "left", verticalAlign: "top" }
+      label: { text: `▦  COMPOSE PROJECT  ·  ${projectName}`, fontSize: 22, textAlign: "left", verticalAlign: "top" }
     });
 
     services.forEach(([name, service], index) => {
@@ -487,10 +487,10 @@ function App() {
       const dependencies = Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {});
       const details = [
         service.image ? `Image  ·  ${service.image}` : service.build?.context ? `Build  ·  ${service.build.context}` : "Image not specified",
-        ports.length ? `Ports  ·  ${ports.slice(0, 3).join(", ")}` : "",
-        dependencies.length ? `Depends on  ·  ${dependencies.join(", ")}` : "",
-        environment.length ? `Environment  ·  ${environment.slice(0, 3).join(", ")}` : "",
-        service.restart ? `Restart  ·  ${service.restart}` : ""
+        ports.length ? `↔  Ports  ·  ${ports.slice(0, 3).join(", ")}` : "",
+        dependencies.length ? `⇢  Depends on  ·  ${dependencies.join(", ")}` : "",
+        environment.length ? `⚙  Environment  ·  ${environment.slice(0, 3).join(", ")}` : "",
+        service.restart ? `↻  Restart  ·  ${service.restart}` : ""
       ].filter(Boolean);
       skeleton.push({
         type: "rectangle",
@@ -504,8 +504,8 @@ function App() {
         strokeWidth: 2,
         roundness: { type: 3 },
         label: {
-          text: `CONTAINER  ·  ${name.toUpperCase()}\n\n${details.join("\n")}`,
-          fontSize: 16,
+          text: `▣  CONTAINER  ·  ${name.toUpperCase()}\n\n${details.join("\n")}`,
+          fontSize: 14,
           textAlign: "left",
           verticalAlign: "middle"
         }
@@ -528,7 +528,7 @@ function App() {
         backgroundColor: resource.background,
         fillStyle: "solid",
         strokeWidth: 2,
-        label: { text: `${resource.kind}\n${resource.name}`, fontSize: 16, textAlign: "center", verticalAlign: "middle" }
+        label: { text: `${resource.kind === "VOLUME" ? "◉" : "⌘"}  ${resource.kind}\n${resource.name}`, fontSize: 16, textAlign: "center", verticalAlign: "middle" }
       });
     });
 
