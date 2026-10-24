@@ -521,18 +521,6 @@ function App() {
     services.forEach(([name, service]) => {
       const { x, y } = positions.get(name);
       const iconAsset = iconAssets.get(iconForService(service));
-      if (iconAsset) {
-        skeleton.push({
-          type: "image",
-          x: x + cardWidth - 58,
-          y: y + 12,
-          width: 42,
-          height: 42,
-          fileId: iconAsset.fileId,
-          status: "saved",
-          scale: [1, 1]
-        });
-      }
       const ports = (service.ports || []).map((port) => typeof port === "string" ? port : [port.published, port.target].filter(Boolean).join(":")).filter(Boolean);
       const environment = service.environment
         ? (Array.isArray(service.environment) ? service.environment.map((entry) => typeof entry === "string" ? entry.split("=")[0] : Object.keys(entry || {})[0]) : Object.keys(service.environment))
@@ -563,12 +551,63 @@ function App() {
           verticalAlign: "middle"
         }
       });
+      // Add the image after its card so it is rendered above the card background.
+      if (iconAsset) {
+        skeleton.push({
+          type: "image",
+          x: x + cardWidth - 58,
+          y: y + 12,
+          width: 42,
+          height: 42,
+          fileId: iconAsset.fileId,
+          status: "saved",
+          scale: [1, 1]
+        });
+      }
     });
 
     const resources = [
       ...volumeNames.map((name) => ({ name, kind: "VOLUME", color: "#0f766e", background: "#ccfbf1" })),
       ...networkNames.map((name) => ({ name, kind: "NETWORK", color: "#0369a1", background: "#e0f2fe" }))
     ];
+    const resourcePositions = new Map();
+    resources.forEach((resource, index) => {
+      resourcePositions.set(resource.name, {
+        x: left + index * (resourceWidth + resourceGap),
+        y: resourceTop,
+        kind: resource.kind
+      });
+    });
+    // Connect each service to named volumes and networks it actually declares.
+    services.forEach(([serviceName, service]) => {
+      const servicePosition = positions.get(serviceName);
+      const declaredVolumes = (service.volumes || []).map((mount) => {
+        if (typeof mount === "string") return mount.split(":")[0];
+        return mount?.source || "";
+      }).filter(Boolean);
+      const declaredNetworks = Array.isArray(service.networks) ? service.networks : Object.keys(service.networks || {});
+      [...declaredVolumes.map((name) => ({ name, kind: "VOLUME" })),
+       ...declaredNetworks.map((name) => ({ name, kind: "NETWORK" }))].forEach(({ name, kind }) => {
+        const resourcePosition = resourcePositions.get(name);
+        if (!resourcePosition || resourcePosition.kind !== kind) return;
+        const startX = servicePosition.x + cardWidth / 2;
+        const startY = servicePosition.y + cardHeight;
+        const endX = resourcePosition.x + resourceWidth / 2;
+        const endY = resourcePosition.y;
+        skeleton.push({
+          type: "arrow",
+          x: startX,
+          y: startY,
+          width: endX - startX,
+          height: endY - startY,
+          points: [[0, 0], [endX - startX, endY - startY]],
+          strokeColor: kind === "VOLUME" ? "#0f766e" : "#0369a1",
+          strokeWidth: 2,
+          endArrowhead: "arrow",
+          label: { text: kind === "VOLUME" ? "mounts" : "connected", fontSize: 12 }
+        });
+      });
+    });
     resources.forEach((resource, index) => {
       const x = left + index * (resourceWidth + resourceGap);
       skeleton.push({
