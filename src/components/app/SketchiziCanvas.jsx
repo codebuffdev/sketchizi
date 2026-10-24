@@ -329,9 +329,21 @@ export default function SketchiziCanvas({
           button.type = "button";
           button.className = "sketchizi-dock-quick-tool";
           button.dataset.sketchiziQuickTool = id;
+          // Activate on pointerdown so Excalidraw's toolbar focus/selection
+          // updates cannot race the browser's later click event. Keep keyboard
+          // activation on click for Enter/Space.
+          let pointerActivationAt = 0;
+          button.addEventListener("pointerdown", (event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            pointerActivationAt = Date.now();
+            window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
+          });
           button.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
+            if (Date.now() - pointerActivationAt < 700) return;
             window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
           });
         }

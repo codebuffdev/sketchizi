@@ -32,6 +32,6 @@ test("quick dock controls are explicitly non-shrinking and visible", () => {
 });
 
 test("quick tools activate directly without clicking More Tools", () => {
-  assert.match(component, /new CustomEvent\("sketchizi:activate-tool", \{ detail: \{ tool: id \} \}\)/);
+  assert.match(component, /button\.addEventListener\("pointerdown"/);\n  assert.match(component, /button\.addEventListener\("click"/);\n  assert.match(component, /pointerActivationAt < 700/);\n  assert.match(component, /new CustomEvent\("sketchizi:activate-tool", \{ detail: \{ tool: id \} \}\)/);
   assert.doesNotMatch(component, /querySelector\([^\n]*more-tools-menu[^\n]*\)[\s\S]{0,200}\.click\(/);
 });
