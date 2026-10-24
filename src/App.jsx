@@ -394,20 +394,6 @@ function App() {
     });
   }, [apiRef, handleExcalidrawChange]);
 
-  if (!sketchReady) {
-    return (
-      <div className={isDarkTheme ? "app theme-dark" : "app theme-light"}>
-        <div className="sketch-restore-screen" aria-live="polite">
-          <div className="sketch-restore-card">
-            <div className="sketch-restore-mark"><img src="/sketchizi-logo.svg" alt="Sketchizi" /></div>
-            <div className="sketch-restore-title">Sketchizi</div>
-            <div className="sketch-restore-text">Restoring your sketch…</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const createComposeDiagram = useCallback((composeDocument) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit) return;
@@ -463,6 +449,21 @@ function App() {
     setDockerStudioOpen(false);
     showToast("Compose diagram created on the canvas.");
   }, [collaborationCanEdit, showToast]);
+
+  if (!sketchReady) {
+    return (
+      <div className={isDarkTheme ? "app theme-dark" : "app theme-light"}>
+        <div className="sketch-restore-screen" aria-live="polite">
+          <div className="sketch-restore-card">
+            <div className="sketch-restore-mark"><img src="/sketchizi-logo.svg" alt="Sketchizi" /></div>
+            <div className="sketch-restore-title">Sketchizi</div>
+            <div className="sketch-restore-text">Restoring your sketch…</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
