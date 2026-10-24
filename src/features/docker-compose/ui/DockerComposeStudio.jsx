@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
-import { validateComposeDocument } from "../composeDocumentService.js";
+import { analyzeComposeReadiness, validateComposeDocument } from "../composeDocumentService.js";
 import "./docker-compose-studio.css";
 
 function emptyService() {
@@ -49,6 +49,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const selected = services.find((service) => service.name === selectedId) || services[0];
   const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
   const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
+  const readiness = useMemo(() => analyzeComposeReadiness(composeDocument), [composeDocument]);
 
   const updateSelected = (patch) => {
     if (!selected) return;
@@ -248,7 +249,12 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
           </div>
 
           <aside className="docker-studio-validation">
-            <div className="docker-studio-section-heading"><span>Validation</span><span className={validation.valid ? "docker-studio-status valid" : "docker-studio-status invalid"}>{validation.valid ? "Ready" : "Issues"}</span></div>
+            <div className="docker-studio-section-heading"><span>Validation</span><span className={validation.valid && readiness.ready ? "docker-studio-status valid" : "docker-studio-status invalid"}>{validation.valid && readiness.ready ? "Ready" : "Issues"}</span></div>
+            <section className="docker-studio-readiness" aria-label="Startup readiness">
+              <div className="docker-studio-section-heading"><span>Run readiness</span><span className={readiness.ready ? "docker-studio-status valid" : "docker-studio-status invalid"}>{readiness.ready ? "Ready to review" : "Action needed"}</span></div>
+              {readiness.startupOrder.length > 0 && <p><strong>Suggested startup order</strong><br />{readiness.startupOrder.join(" → ")}</p>}
+              {readiness.findings.length > 0 ? readiness.findings.map((finding, index) => <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></div>) : <p>No dependency cycles detected. Review external environment variables before starting.</p>}
+            </section>
             {validation.findings.length ? validation.findings.map((finding, index) => <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></div>) : <div className="docker-studio-empty-check"><span aria-hidden="true">✓</span><strong>No issues found</strong><p>Your current Compose model passes the initial checks.</p></div>}
             {notice && <p className="docker-studio-notice" role="status">{notice}</p>}
           </aside>

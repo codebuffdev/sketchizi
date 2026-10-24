@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createComposeDocument, validateComposeDocument, exportComposeYaml } from "../src/features/docker-compose/composeDocumentService.js";
+import { analyzeComposeReadiness, createComposeDocument, validateComposeDocument, exportComposeYaml } from "../src/features/docker-compose/composeDocumentService.js";
 
 test("creates a normalized Compose document without mutating its input", () => {
   const source = { name: "shop", services: { api: { image: "node:22" } } };
@@ -104,4 +104,37 @@ test("preserves top-level secrets and configs during export", () => {
   assert.match(yaml, /api_key:/);
   assert.match(yaml, /configs:/);
   assert.match(yaml, /app_config:/);
+});
+
+test("readiness analysis orders dependencies before dependents", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      web: { image: "nginx:alpine", depends_on: ["api"] },
+      api: { image: "node:22", depends_on: ["database"] },
+      database: { image: "postgres:17" },
+    },
+  });
+  assert.deepEqual(result.startupOrder, ["database", "api", "web"]);
+  assert.equal(result.ready, true);
+  assert.equal(result.findings.length, 0);
+});
+
+test("readiness analysis identifies dependency cycles", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      api: { image: "example/api:1", depends_on: ["database"] },
+      database: { image: "postgres:17", depends_on: ["api"] },
+    },
+  });
+  assert.equal(result.ready, false);
+  assert.deepEqual(result.startupOrder, []);
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_DEPENDENCY_CYCLE"));
+});
+
+test("readiness analysis flags host environment substitutions without defaults", () => {
+  const result = analyzeComposeReadiness({
+    services: { web: { image: "nginx:${IMAGE_TAG:-latest}", ports: ["${WEB_PORT}:80"] } },
+  });
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_HOST_VARIABLE_REVIEW" && finding.message.includes("WEB_PORT")));
+  assert.equal(result.findings.some((finding) => finding.message.includes("IMAGE_TAG")), false);
 });
