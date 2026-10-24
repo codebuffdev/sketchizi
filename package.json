@@ -77,7 +77,9 @@
     "test:ui-modernization-responsive": "node --test tests/ui-modernization-responsive.test.js",
     "test:ui-design-tokens": "node --test tests/ui-modernization-design-tokens.test.js",
     "audit:ui-visual": "node scripts/ui-visual-audit.mjs",
-    "test:docker-compose": "node --test tests/docker-compose-document.test.js"
+    "test:docker-compose": "node --test tests/docker-compose-document.test.js",
+    "compose-runner": "node server/compose-runner.mjs",
+    "test:compose-runner": "node --test tests/compose-runner.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
