@@ -53,19 +53,52 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
         if (!file?.dataURL || !/^data:image\/svg\+xml/i.test(file.dataURL)) continue;
         try {
           const comma = file.dataURL.indexOf(",");
-          const svgText = decodeURIComponent(file.dataURL.slice(comma + 1));
+          if (comma < 0) continue;
+          const metadata = file.dataURL.slice(0, comma);
+          const payload = file.dataURL.slice(comma + 1);
+          const svgText = /;base64/i.test(metadata)
+            ? atob(payload)
+            : decodeURIComponent(payload);
           const parser = new DOMParser();
           const document = parser.parseFromString(svgText, "image/svg+xml");
           if (document.querySelector("parsererror")) continue;
           const svg = document.documentElement;
           const nodes = [svg, ...svg.querySelectorAll("*")];
+          let changedPaint = false;
+          const replacePaint = (value) => {
+            if (!value || /^(none|transparent|inherit)$/i.test(value.trim()) || /^url\(/i.test(value.trim())) return value;
+            return patch.strokeColor;
+          };
           for (const node of nodes) {
-            const fill = node.getAttribute("fill");
-            const stroke = node.getAttribute("stroke");
-            if (fill && fill.toLowerCase() !== "none" && fill.toLowerCase() !== "transparent" && !fill.startsWith("url(")) node.setAttribute("fill", patch.strokeColor);
-            if (stroke && stroke.toLowerCase() !== "none" && stroke.toLowerCase() !== "transparent" && !stroke.startsWith("url(")) node.setAttribute("stroke", patch.strokeColor);
+            for (const attribute of ["fill", "stroke"]) {
+              const value = node.getAttribute(attribute);
+              if (value && replacePaint(value) !== value) {
+                node.setAttribute(attribute, patch.strokeColor);
+                changedPaint = true;
+              } else if (/^currentColor$/i.test(value || "")) {
+                node.setAttribute(attribute, patch.strokeColor);
+                changedPaint = true;
+              }
+            }
             const style = node.getAttribute("style");
-            if (style) node.setAttribute("style", style.replace(/(fill|stroke)\s*:\s*(?!none\b|transparent\b)[^;]+/gi, (_match, property) => `${property}:${patch.strokeColor}`));
+            if (style) {
+              const recoloredStyle = style.replace(/(fill|stroke)\s*:\s*([^;]+)/gi, (match, property, value) => {
+                if (/^(none|transparent|inherit)$/i.test(value.trim()) || /^url\(/i.test(value.trim())) return match;
+                changedPaint = true;
+                return `${property}:${patch.strokeColor}`;
+              });
+              if (recoloredStyle !== style) node.setAttribute("style", recoloredStyle);
+            }
+          }
+          // Some icon sets rely on inherited paint or currentColor rather than
+          // explicit fill/stroke attributes on every path.
+          if (!changedPaint) {
+            for (const node of nodes) {
+              if (node.tagName.toLowerCase() === "svg" || ["path", "circle", "ellipse", "rect", "polygon", "polyline", "line"].includes(node.tagName.toLowerCase())) {
+                node.setAttribute("fill", "none");
+                node.setAttribute("stroke", patch.strokeColor);
+              }
+            }
           }
           const recolored = new XMLSerializer().serializeToString(svg);
           files[element.fileId] = { ...file, dataURL: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(recolored)}` };
