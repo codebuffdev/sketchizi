@@ -69,61 +69,6 @@ function App() {
   const [apiReady, setApiReady] = useState(false);
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
-  const createComposeDiagram = useCallback((composeDocument) => {
-    const api = apiRef.current;
-    if (!api?.updateScene || !collaborationCanEdit) return;
-    const services = Object.entries(composeDocument.services || {});
-    if (!services.length) {
-      showToast("Add at least one service before creating a diagram.", "error");
-      return;
-    }
-    const nodeWidth = 250;
-    const nodeHeight = 118;
-    const gapX = 100;
-    const gapY = 82;
-    const columns = Math.max(1, Math.ceil(Math.sqrt(services.length)));
-    const positions = new Map();
-    const skeleton = [];
-    services.forEach(([name, service], index) => {
-      const x = 100 + (index % columns) * (nodeWidth + gapX);
-      const y = 100 + Math.floor(index / columns) * (nodeHeight + gapY);
-      positions.set(name, { x, y });
-      const details = [
-        name,
-        service.image || (service.build?.context ? `build: ${service.build.context}` : "Image not specified"),
-        ...(service.ports || []).map((port) => `Port: ${typeof port === "string" ? port : port.target || ""}`),
-        ...(service.networks ? [`Networks: ${(Array.isArray(service.networks) ? service.networks : Object.keys(service.networks)).join(", ")}`] : [])
-      ].slice(0, 4).join("\n");
-      skeleton.push({
-        type: "rectangle", x, y, width: nodeWidth, height: nodeHeight,
-        strokeColor: "#7c3aed", backgroundColor: "#ede9fe", fillStyle: "solid",
-        label: { text: details, fontSize: 16, textAlign: "center", verticalAlign: "middle" }
-      });
-    });
-    services.forEach(([name, service]) => {
-      const from = positions.get(name);
-      const dependencies = Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {});
-      dependencies.forEach((dependency) => {
-        const to = positions.get(dependency);
-        if (!to) return;
-        const startX = from.x + nodeWidth / 2;
-        const startY = from.y + nodeHeight / 2;
-        const endX = to.x + nodeWidth / 2;
-        const endY = to.y + nodeHeight / 2;
-        skeleton.push({
-          type: "arrow", x: startX, y: startY,
-          width: endX - startX, height: endY - startY,
-          points: [[0, 0], [endX - startX, endY - startY]],
-          strokeColor: "#64748b", endArrowhead: "arrow"
-        });
-      });
-    });
-    const elements = convertToExcalidrawElements(skeleton);
-    api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-    api.scrollToContent?.(elements, { fitToContent: true, animate: true });
-    setDockerStudioOpen(false);
-    showToast("Compose diagram created on the canvas.");
-  }, [collaborationCanEdit, showToast]);
   const [minimapOpen, setMinimapOpen] = useState(false);
   const [iconLibraryPinned, setIconLibraryPinned] = useState(false);
   const minimapDragRef = useRef(null);
@@ -462,6 +407,62 @@ function App() {
       </div>
     );
   }
+
+  const createComposeDiagram = useCallback((composeDocument) => {
+    const api = apiRef.current;
+    if (!api?.updateScene || !collaborationCanEdit) return;
+    const services = Object.entries(composeDocument.services || {});
+    if (!services.length) {
+      showToast("Add at least one service before creating a diagram.", "error");
+      return;
+    }
+    const nodeWidth = 250;
+    const nodeHeight = 118;
+    const gapX = 100;
+    const gapY = 82;
+    const columns = Math.max(1, Math.ceil(Math.sqrt(services.length)));
+    const positions = new Map();
+    const skeleton = [];
+    services.forEach(([name, service], index) => {
+      const x = 100 + (index % columns) * (nodeWidth + gapX);
+      const y = 100 + Math.floor(index / columns) * (nodeHeight + gapY);
+      positions.set(name, { x, y });
+      const details = [
+        name,
+        service.image || (service.build?.context ? `build: ${service.build.context}` : "Image not specified"),
+        ...(service.ports || []).map((port) => `Port: ${typeof port === "string" ? port : port.target || ""}`),
+        ...(service.networks ? [`Networks: ${(Array.isArray(service.networks) ? service.networks : Object.keys(service.networks)).join(", ")}`] : [])
+      ].slice(0, 4).join("\n");
+      skeleton.push({
+        type: "rectangle", x, y, width: nodeWidth, height: nodeHeight,
+        strokeColor: "#7c3aed", backgroundColor: "#ede9fe", fillStyle: "solid",
+        label: { text: details, fontSize: 16, textAlign: "center", verticalAlign: "middle" }
+      });
+    });
+    services.forEach(([name, service]) => {
+      const from = positions.get(name);
+      const dependencies = Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {});
+      dependencies.forEach((dependency) => {
+        const to = positions.get(dependency);
+        if (!to) return;
+        const startX = from.x + nodeWidth / 2;
+        const startY = from.y + nodeHeight / 2;
+        const endX = to.x + nodeWidth / 2;
+        const endY = to.y + nodeHeight / 2;
+        skeleton.push({
+          type: "arrow", x: startX, y: startY,
+          width: endX - startX, height: endY - startY,
+          points: [[0, 0], [endX - startX, endY - startY]],
+          strokeColor: "#64748b", endArrowhead: "arrow"
+        });
+      });
+    });
+    const elements = convertToExcalidrawElements(skeleton);
+    api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    api.scrollToContent?.(elements, { fitToContent: true, animate: true });
+    setDockerStudioOpen(false);
+    showToast("Compose diagram created on the canvas.");
+  }, [collaborationCanEdit, showToast]);
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
