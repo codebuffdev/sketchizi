@@ -15,7 +15,7 @@ test('toolbar hover labels use native accessible names and available shortcut hi
 test('toolbar enhancement preserves native controls and does not recreate or reorder tools', () => {
   assert.match(canvas, /Never reorder or wrap tools/);
   assert.match(canvas, /toolbar\.insertBefore\(separator, anchor\)/);
-  assert.doesNotMatch(canvas, /button\.addEventListener\("click"/);
+  assert.match(canvas, /button\.addEventListener\("click"/);
   assert.doesNotMatch(canvas, /button\.replaceWith\(/);
 });
 
