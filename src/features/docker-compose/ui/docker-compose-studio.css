@@ -105,3 +105,6 @@
 /* One-click service log inspection from health alerts */
 .docker-studio-inspect-logs{margin-top:10px;min-height:30px;padding:6px 10px;font-size:11px}
 \n/* Copyable diagnostic report action */\n.docker-studio-copy-diagnostics{margin:8px 0;font-size:11px}\n
+/* Contextual, non-destructive recovery actions */
+.docker-studio-recovery-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.docker-studio-recovery-actions button{font-size:11px;min-height:30px}
