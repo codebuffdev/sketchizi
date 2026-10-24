@@ -227,6 +227,50 @@ export function analyzeComposeReadiness(input) {
       }
     }
   }
+  const requiredEnvironmentVariables = new Set();
+  const inlineSecretAssignments = [];
+  const secretNamePattern = /(PASSWORD|PASSWD|TOKEN|SECRET|API_KEY|PRIVATE_KEY|ACCESS_KEY)/i;
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service)) continue;
+    const environment = service.environment;
+    const entries = Array.isArray(environment)
+      ? environment.map((entry) => typeof entry === "string" ? entry.split(/=(.*)/s, 2) : [])
+      : isRecord(environment) ? Object.entries(environment) : [];
+    for (const [key, value] of entries) {
+      if (typeof key !== "string" || !key.trim()) continue;
+      const variableName = key.trim();
+      if (value === undefined || value === null || value === "") {
+        requiredEnvironmentVariables.add(variableName);
+      } else if (secretNamePattern.test(variableName) && typeof value === "string" &&
+        value.trim() && !/^\$\{?[A-Za-z_][A-Za-z0-9_]*(?::[-?].*)?\}?$/.test(value.trim())) {
+        inlineSecretAssignments.push({ serviceName, variableName });
+      }
+    }
+    if (service.env_file != null && !(Array.isArray(service.env_file) || typeof service.env_file === "string")) {
+      findings.push(diagnostic(
+        "COMPOSE_INVALID_ENV_FILE", "error",
+        `Service "${serviceName}" has an invalid env_file definition.`,
+        `services.${serviceName}.env_file`,
+        "Use a path string or a list of env-file paths."
+      ));
+    }
+  }
+  for (const variable of [...requiredEnvironmentVariables].sort()) {
+    findings.push(diagnostic(
+      "COMPOSE_REQUIRED_ENVIRONMENT_VARIABLE", "warning",
+      `Environment variable ${variable} is referenced without an assigned value and must be supplied at runtime.`,
+      "services",
+      "Provide the value in the shell environment, a project .env file, or an env_file."
+    ));
+  }
+  for (const { serviceName, variableName } of inlineSecretAssignments) {
+    findings.push(diagnostic(
+      "COMPOSE_INLINE_SECRET", "warning",
+      `Service "${serviceName}" sets secret-like variable "${variableName}" directly in the Compose document.`,
+      `services.${serviceName}.environment.${variableName}`,
+      "Prefer a Compose secret or an environment variable supplied outside the committed Compose file."
+    ));
+  }
   const hostVariables = new Set();
   const scan = (value) => {
     if (typeof value === "string") {

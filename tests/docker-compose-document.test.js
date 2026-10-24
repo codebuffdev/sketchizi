@@ -160,3 +160,37 @@ test("readiness analysis accepts service_healthy when dependency defines a healt
   assert.equal(result.findings.some((finding) => finding.code === "COMPOSE_DEPENDENCY_HEALTHCHECK_MISSING"), false);
   assert.equal(result.ready, true);
 });
+
+
+test("readiness analysis warns about required environment variables without values", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      api: { image: "example/api:1", environment: ["DATABASE_URL", "LOG_LEVEL=info"] },
+    },
+  });
+  assert.ok(result.findings.some((finding) =>
+    finding.code === "COMPOSE_REQUIRED_ENVIRONMENT_VARIABLE" && finding.message.includes("DATABASE_URL")
+  ));
+  assert.equal(result.findings.some((finding) => finding.message.includes("LOG_LEVEL")), false);
+});
+
+test("readiness analysis warns about inline secret-like environment values", () => {
+  const result = analyzeComposeReadiness({
+    services: {
+      api: { image: "example/api:1", environment: { API_TOKEN: "hard-coded-token", DB_PASSWORD: "${DB_PASSWORD}" } },
+    },
+  });
+  assert.ok(result.findings.some((finding) =>
+    finding.code === "COMPOSE_INLINE_SECRET" && finding.message.includes("API_TOKEN")
+  ));
+  assert.equal(result.findings.some((finding) =>
+    finding.code === "COMPOSE_INLINE_SECRET" && finding.message.includes("DB_PASSWORD")
+  ), false);
+});
+
+test("readiness analysis validates env_file shape", () => {
+  const result = analyzeComposeReadiness({
+    services: { api: { image: "example/api:1", env_file: { path: ".env" } } },
+  });
+  assert.ok(result.findings.some((finding) => finding.code === "COMPOSE_INVALID_ENV_FILE"));
+});
