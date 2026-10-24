@@ -78,6 +78,7 @@ export default function ContextualFormattingToolbar({
 
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
+  const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const currentStroke = first?.strokeColor?.toLowerCase();
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
@@ -92,7 +93,7 @@ export default function ContextualFormattingToolbar({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="contextual-formatting-group" role="group" aria-label="Stroke color">
+      {!hasImageSelection && <div className="contextual-formatting-group" role="group" aria-label="Stroke color">
         {STROKE_COLORS.map(([color, label]) => (
           <button
             key={color}
@@ -105,9 +106,9 @@ export default function ContextualFormattingToolbar({
             onClick={() => applyToSelected({ strokeColor: color })}
           />
         ))}
-      </div>
+      </div>}
 
-      {showFill && (
+      {showFill && !hasImageSelection && (
         <div className="contextual-formatting-group" role="group" aria-label="Fill color">
           {FILL_COLORS.map(([color, label]) => (
             <button
@@ -126,7 +127,7 @@ export default function ContextualFormattingToolbar({
         </div>
       )}
 
-      {showStrokeWidth && (
+      {showStrokeWidth && !hasImageSelection && (
         <div className="contextual-formatting-group contextual-line-width" role="group" aria-label="Stroke width">
           {[1, 2, 4].map((width) => (
             <button
