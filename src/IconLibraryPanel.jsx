@@ -209,7 +209,7 @@ export default function IconLibraryPanel({
         {activeSource === "eraser" && !search.trim() && eraserSyncError && <div className="library-inline-status" role="status">{eraserSyncError}</div>}
         {activeSource === "eraser" && <div className="library-color-picker" role="group" aria-label="Essential icon color">
           <span className="library-color-picker-label">Icon color</span>
-          <div className="library-color-swatches">{essentialColors.map((color) => <button key={color.value} type="button" className={`library-color-swatch${selectedEssentialColor === color.value ? " active" : ""}`} style={{ "--swatch-color": color.value }} onClick={() => setSelectedEssentialColor(color.value)} aria-label={`${color.label} icon color`} aria-pressed={selectedEssentialColor === color.value} title={color.label}><span /></button>)}</div>
+          <div className="library-color-swatches">{essentialColors.map((color) => <button key={color.value} type="button" className={`library-color-swatch${selectedEssentialColor === color.value ? " active" : ""}`} style={{ "--swatch-color": color.value }} onClick={() => setSelectedEssentialColor(color.value)} aria-label={`${color.label} icon color`} aria-pressed={selectedEssentialColor === color.value} title={color.label}><span /></button>)}</div><label className="library-custom-color-label" title="Choose a custom icon color"><input type="color" value={selectedEssentialColor} onChange={(event) => setSelectedEssentialColor(event.target.value)} aria-label="Custom icon color" /><span>Custom</span></label>
           <span className="library-color-picker-value">{essentialColors.find((color) => color.value === selectedEssentialColor)?.label || "Custom"}</span>
         </div>}
 
