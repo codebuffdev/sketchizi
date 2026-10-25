@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import "./kubernetes-studio.css";
+import { buildKubernetesArchitecturePlan } from "./kubernetesArchitecturePlanner.js";
 
 const STARTER_ARCHITECTURES = [
   { id: "web-app", name: "Web application", description: "Ingress, Service, Deployment, Pods, ConfigMap, and Secret.", resources: ["k8s:ingress", "k8s:service", "k8s:deployment", "k8s:pod", "k8s:configmap", "k8s:secret"] },
-  { id: "stateful-app", name: "Stateful application", description: "Service, StatefulSet, Pods, and persistent storage.", resources: ["k8s:service", "k8s:statefulset", "k8s:pod", "k8s:persistent-volume-claim", "k8s:persistent-volume"] },
+  { id: "stateful-app", name: "Stateful application", description: "Namespace, Service, StatefulSet, Pod, and Node.", resources: ["k8s:namespace", "k8s:service", "k8s:statefulset", "k8s:pod", "k8s:node"] },
   { id: "cluster-basics", name: "Cluster basics", description: "Namespace, Nodes, API Server, Scheduler, and etcd.", resources: ["k8s:namespace", "k8s:node", "k8s:api-server", "k8s:scheduler", "k8s:etcd"] },
 ];
 
@@ -12,6 +13,7 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
   const [category, setCategory] = useState("All resources");
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeTab, setActiveTab] = useState("resources");
+  const architecturePlan = useMemo(() => buildKubernetesArchitecturePlan(selectedIcons), [selectedIcons]);
   const [busy, setBusy] = useState(false);
   const filteredIcons = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -50,6 +52,7 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
           <div className="k8s-studio-tabs" role="tablist" aria-label="K8s Studio sections">
             <button type="button" role="tab" aria-selected={activeTab === "resources"} className={activeTab === "resources" ? "active" : ""} onClick={() => setActiveTab("resources")}>Resource catalog</button>
             <button type="button" role="tab" aria-selected={activeTab === "starters"} className={activeTab === "starters" ? "active" : ""} onClick={() => setActiveTab("starters")}>Starter architectures</button>
+            <button type="button" role="tab" aria-selected={activeTab === "review"} className={activeTab === "review" ? "active" : ""} onClick={() => setActiveTab("review")}>Architecture review</button>
           </div>
           <div className="k8s-studio-selection-count">{selectedIds.length} selected</div>
         </div>
@@ -82,7 +85,7 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
               <button type="button" className="k8s-studio-secondary" onClick={() => setSelectedIds([])} disabled={!selectedIds.length}>Clear selection</button>
             </aside>
           </div>
-        ) : (
+        ) : activeTab === "starters" ? (
           <div className="k8s-studio-starters">
             <div className="k8s-studio-catalog-intro"><div><h2>Start with a pattern</h2><p>Choose a useful baseline, then adjust the resource selection before adding it to your canvas.</p></div></div>
             <div className="k8s-studio-starter-grid">
@@ -92,6 +95,18 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
                 <button type="button" className="k8s-studio-secondary" onClick={() => loadStarter(starter)}>Use this starter</button>
               </article>)}
             </div>
+          </div>
+        ) : (
+          <div className="k8s-studio-review">
+            <div className="k8s-studio-catalog-intro"><div><h2>Architecture review</h2><p>Review semantic connections that can be inferred before adding resources. Only supported intelligent resource types are included.</p></div></div>
+            <div className="k8s-studio-review-summary">
+              <div><strong>{architecturePlan.resources.length}</strong><span>selected resources</span></div>
+              <div><strong>{architecturePlan.relationships.length}</strong><span>proposed relationships</span></div>
+              <div><strong>{architecturePlan.diagnostics.filter((item) => item.severity === "warning").length}</strong><span>review warnings</span></div>
+            </div>
+            {architecturePlan.relationships.length ? <section className="k8s-studio-review-list"><h3>Proposed connections</h3><ul>{architecturePlan.relationships.map((relationship) => <li key={relationship.sourceIndex + "-" + relationship.targetIndex + "-" + relationship.relationshipType}><strong>{relationship.sourceName}</strong><span>{relationship.relationshipType}</span><strong>{relationship.targetName}</strong></li>)}</ul></section> : <p className="k8s-studio-selection-empty">Select supported resource types such as Namespace, Deployment, Service, Pod, or Node to preview relationships.</p>}
+            {architecturePlan.diagnostics.length > 0 && <section className="k8s-studio-review-list"><h3>Notes</h3><ul>{architecturePlan.diagnostics.map((item, index) => <li className="k8s-studio-review-note" key={item.code + "-" + index}><span>{item.severity === "warning" ? "Review" : "Info"}</span><p>{item.message}</p></li>)}</ul></section>}
+            <p className="k8s-studio-review-disclaimer">This is a pre-insertion plan, not a live validation result. Review the canvas after insertion.</p>
           </div>
         )}
         <footer className="k8s-studio-footer">
