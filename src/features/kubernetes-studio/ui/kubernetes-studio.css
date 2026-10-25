@@ -30,3 +30,9 @@
 .k8s-yaml-editor-status{display:flex;justify-content:space-between;gap:8px;margin-top:6px;color:#7e90aa;font-size:10px}
 .k8s-yaml-editor-status span:first-child{color:#91bdff;font-weight:750}
 @media(max-width:760px){.k8s-yaml-completions{top:40px;left:12px;width:calc(100% - 24px)}.k8s-yaml-editor-status{flex-wrap:wrap}.k8s-yaml-completion{gap:6px}.k8s-yaml-completion span{font-size:9px}}
+
+.k8s-yaml-editor-shell .k8s-yaml-highlight{position:absolute;z-index:0;inset:1px;box-sizing:border-box;margin:0;padding:16px;border:0;overflow:hidden;white-space:pre;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;color:#d8e6fa;pointer-events:none}
+.k8s-yaml-editor-shell.has-content textarea{background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent;caret-color:#f0f6ff;position:relative;z-index:1}
+.k8s-yaml-editor-shell.has-content textarea::selection{background:#467ac866;-webkit-text-fill-color:transparent}
+.k8s-yaml-highlight .yaml-token-key{color:#83baff}.k8s-yaml-highlight .yaml-token-punctuation{color:#a4b4ca}.k8s-yaml-highlight .yaml-token-value{color:#d6e6fa}.k8s-yaml-highlight .yaml-token-string{color:#b8e5a4}.k8s-yaml-highlight .yaml-token-number{color:#e8bd86}.k8s-yaml-highlight .yaml-token-literal{color:#d4a6ff}.k8s-yaml-highlight .yaml-token-type{color:#f3cc8a}.k8s-yaml-highlight .yaml-token-comment{color:#71839b;font-style:italic}
+.k8s-yaml-highlight .yaml-highlight-line{display:block;min-height:1.65em}
