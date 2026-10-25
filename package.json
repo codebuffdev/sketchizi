@@ -80,7 +80,7 @@
     "test:docker-compose": "node --test tests/docker-compose-document.test.js",
     "compose-runner": "node server/compose-runner.mjs",
     "test:compose-runner": "node --test tests/compose-runner.test.js",
-    "test:k8s-studio": "node --test tests/kubernetes-studio.test.js tests/kubernetes-catalog.test.js"
+    "test:k8s-studio": "node --test tests/kubernetes-studio.test.js tests/kubernetes-catalog.test.js tests/kubernetes-architecture-planner.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
