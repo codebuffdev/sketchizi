@@ -223,7 +223,7 @@
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 4px;
     width: 100%;
     min-width: 0;
@@ -259,20 +259,34 @@
 
   html body .app .desktop-canvas-region .excalidraw .App-toolbar-container {
     position: fixed !important;
-    top: 112px !important;
+    top: 50% !important;
     left: auto !important;
     right: 10px !important;
-    bottom: 42px !important;
+    bottom: auto !important;
     width: 54px !important;
     min-width: 54px !important;
     max-width: 54px !important;
-    height: auto !important;
-    max-height: calc(100vh - 154px) !important;
+    height: max-content !important;
+    max-height: calc(100vh - 150px) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    transform: none !important;
+    transform: translateY(-50%) !important;
     z-index: 120 !important;
     box-sizing: border-box !important;
+  }
+
+  html body .app .desktop-canvas-region .excalidraw .App-toolbar-container .App-toolbar {
+    height: max-content !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .app .desktop-canvas-region .excalidraw .App-toolbar-container .App-toolbar > *,
+  html body .app .desktop-canvas-region .excalidraw .App-toolbar-container button,
+  html body .app .desktop-canvas-region .excalidraw .App-toolbar-container [role="button"] {
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   html body .app .desktop-canvas-region .excalidraw .App-toolbar-container .App-toolbar {
