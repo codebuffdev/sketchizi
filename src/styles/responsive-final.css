@@ -209,7 +209,7 @@
    application header, including the wrapped feature-action row. */
 @media (min-width: 761px) and (max-width: 1119px) {
   html body .app .desktop-canvas-region .excalidraw .App-toolbar-container {
-    top: 172px !important;
+    top: 122px !important;
     left: 10px !important;
     right: auto !important;
     transform: none !important;
