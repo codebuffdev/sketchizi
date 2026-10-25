@@ -40,6 +40,17 @@ export default function IconLibraryPanel({
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("cards");
   const [cardLayout, setCardLayout] = useState("two-column");
+  const [selectedEssentialColor, setSelectedEssentialColor] = useState("#7c5cff");
+  const essentialColors = [
+    { value: "#1f2937", label: "Graphite" },
+    { value: "#64748b", label: "Slate" },
+    { value: "#2563eb", label: "Blue" },
+    { value: "#0d9488", label: "Teal" },
+    { value: "#16a34a", label: "Green" },
+    { value: "#e59a22", label: "Amber" },
+    { value: "#e05252", label: "Red" },
+    { value: "#7c5cff", label: "Violet" },
+  ];
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || "[]");
@@ -134,6 +145,7 @@ export default function IconLibraryPanel({
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
+  const withSelectedEssentialColor = (icon) => activeSource === "eraser" ? { ...icon, tintColor: selectedEssentialColor } : icon;
   const activeChip = activeSource;
   const sourceTabs = [
     { id: "all", label: "All" },
@@ -195,6 +207,11 @@ export default function IconLibraryPanel({
         {(activeSource === "aws" && !search.trim()) && <div className="library-subcategory-row"><label htmlFor="aws-icon-subcategory">AWS category</label><select id="aws-icon-subcategory" value={activeAwsCategory} onChange={(event) => { setActiveAwsCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">All AWS categories</option>{awsCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>}
         {(activeSource === "kubernetes" && !search.trim()) && <div className="library-subcategory-row"><label htmlFor="kubernetes-icon-subcategory">Kubernetes category</label><select id="kubernetes-icon-subcategory" value={activeKubernetesCategory} onChange={(event) => { setActiveKubernetesCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">All Kubernetes categories</option>{kubernetesCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>}
         {activeSource === "eraser" && !search.trim() && eraserSyncError && <div className="library-inline-status" role="status">{eraserSyncError}</div>}
+        {activeSource === "eraser" && <div className="library-color-picker" role="group" aria-label="Essential icon color">
+          <span className="library-color-picker-label">Icon color</span>
+          <div className="library-color-swatches">{essentialColors.map((color) => <button key={color.value} type="button" className={`library-color-swatch${selectedEssentialColor === color.value ? " active" : ""}`} style={{ "--swatch-color": color.value }} onClick={() => setSelectedEssentialColor(color.value)} aria-label={`${color.label} icon color`} aria-pressed={selectedEssentialColor === color.value} title={color.label}><span /></button>)}</div>
+          <span className="library-color-picker-value">{essentialColors.find((color) => color.value === selectedEssentialColor)?.label || "Custom"}</span>
+        </div>}
 
         <section className="icons library-results" aria-label="Icon results">
           <div className="section-heading library-results-heading">
@@ -216,12 +233,12 @@ export default function IconLibraryPanel({
           }}>
             {shownIcons.map((icon) => {
               const favorite = isFavorite(icon);
-              return <div key={`${icon.category || icon.source}-${icon.id}`} role="button" tabIndex={0} className={`icon-card library-icon-card ${draggingIcon?.icon?.id === icon.id ? "is-drag-source" : ""} ${favorite ? "has-favorite" : ""}`} onClick={() => handleIconClick(icon)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); handleIconClick(icon); } }} onPointerDown={(event) => handleIconPointerDown(event, icon)} onMouseDown={(event) => handleIconMouseDown(event, icon)} onDragStart={(event) => handleDragStart(event, icon)} title={`Insert ${icon.name} into the canvas`} aria-label={`Insert ${icon.name} into the canvas`}>
+              return <div key={`${icon.category || icon.source}-${icon.id}`} role="button" tabIndex={0} className={`icon-card library-icon-card ${draggingIcon?.icon?.id === icon.id ? "is-drag-source" : ""} ${favorite ? "has-favorite" : ""}`} onClick={() => handleIconClick(withSelectedEssentialColor(icon))} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); handleIconClick(withSelectedEssentialColor(icon)); } }} onPointerDown={(event) => handleIconPointerDown(event, withSelectedEssentialColor(icon))} onMouseDown={(event) => handleIconMouseDown(event, withSelectedEssentialColor(icon))} onDragStart={(event) => handleDragStart(event, withSelectedEssentialColor(icon))} title={`Insert ${icon.name} into the canvas`} aria-label={`Insert ${icon.name} into the canvas`}>
                 <span className="icon-preview library-icon-preview"><img src={icon.src} alt="" draggable={false} /></span>
                 <span className="library-icon-card-content"><span className="icon-name">{icon.name}</span><span className="icon-subtitle">{getIconSubtitle(icon)}</span><span className="library-icon-tags">{iconTags(icon).map((tag) => <span key={tag} className="library-icon-tag">{tag}</span>)}</span></span>
                 <span className="library-icon-card-actions">
                   <span className={favorite ? "favorite-button active" : "favorite-button"} role="button" tabIndex={0} title={favorite ? "Remove from favorites" : "Add to favorites"} aria-label={favorite ? "Remove from favorites" : "Add to favorites"} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleFavorite(icon); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleFavorite(icon); } }}>{favorite ? "★" : "☆"}</span>
-                  <span className="library-add-icon" role="button" tabIndex={0} title={`Insert ${icon.name}`} aria-label={`Insert ${icon.name}`} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleIconClick(icon); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); handleIconClick(icon); } }}>+</span>
+                  <span className="library-add-icon" role="button" tabIndex={0} title={`Insert ${icon.name}`} aria-label={`Insert ${icon.name}`} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleIconClick(withSelectedEssentialColor(icon)); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); handleIconClick(withSelectedEssentialColor(icon)); } }}>+</span>
                 </span>
               </div>;
             })}
