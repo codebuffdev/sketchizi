@@ -83,10 +83,23 @@ export default function DesktopAppHeader({
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
+  const [availableWidth, setAvailableWidth] = useState(0);
+  const headerRef = useRef(null);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
   nativeMenuOpenLatestRef.current = nativeMenuOpen;
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      setAvailableWidth((current) => current === width ? current : width);
+    });
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     // Window capture runs before document-level outside-click handlers inside
@@ -162,7 +175,7 @@ export default function DesktopAppHeader({
     : "No successful local save yet";
 
   return (
-    <header className="desktop-app-header">
+    <header ref={headerRef} className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}`}>
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
