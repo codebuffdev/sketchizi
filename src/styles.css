@@ -691,7 +691,15 @@
 @media(max-width:1100px){.devops-studio-toggle{padding:0 8px}.devops-studio-toggle span:nth-child(2){display:none}.devops-studio-dropdown{min-width:160px}}
 
 
-/* Keep command search as a compact icon-only toolbar action. */
-.desktop-app-search-button{width:38px;min-width:38px;justify-content:center;gap:0;padding:0}
-.desktop-app-search-button .desktop-app-search-label,
-.desktop-app-search-button .desktop-app-search-shortcut{display:none!important}
+/* Compact DevOps and search controls; menu choices retain readable labels. */
+.devops-studio-toggle{width:36px;min-width:36px;max-width:36px;height:34px;padding:0;justify-content:center;gap:0}
+.devops-studio-toggle .devops-studio-brand-icon{display:block;width:17px;height:17px;flex:0 0 17px}
+.devops-studio-toggle .devops-studio-chevron{display:none}
+.devops-studio-dropdown .devops-option-icon{display:block;width:18px;height:18px;flex:0 0 18px}
+.devops-studio-dropdown .kubernetes-brand-icon{color:#79aef7}
+.devops-studio-dropdown .docker-brand-icon{color:#9c8cff}
+.desktop-app-header-actions .desktop-app-search-button{box-sizing:border-box!important;display:inline-flex!important;flex:0 0 36px!important;width:36px!important;min-width:36px!important;max-width:36px!important;height:34px!important;min-height:34px!important;padding:0!important;align-items:center!important;justify-content:center!important;gap:0!important}
+.desktop-app-header-actions .desktop-app-search-button svg{display:block!important;width:16px!important;height:16px!important;flex:0 0 16px!important}
+.desktop-app-header-actions .desktop-app-search-button .desktop-app-search-label,
+.desktop-app-header-actions .desktop-app-search-button .desktop-app-search-shortcut{display:none!important}
+@media(max-width:1100px){.devops-studio-toggle{width:34px;min-width:34px;max-width:34px;padding:0}}
