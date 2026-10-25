@@ -87,11 +87,15 @@ try {
         }
       }
       const headerRect = header?.getBoundingClientRect();
+      const toolbar = document.querySelector(".desktop-canvas-region .excalidraw .App-toolbar-container");
+      const toolbarRect = toolbar && visible(toolbar) ? toolbar.getBoundingClientRect() : null;
       return {
         viewportWidth: document.documentElement.clientWidth,
         documentWidth: document.documentElement.scrollWidth,
         headerWidth: headerRect?.width ?? null,
         headerRight: headerRect?.right ?? null,
+        headerBottom: headerRect?.bottom ?? null,
+        toolbarTop: toolbarRect?.top ?? null,
         overlaps,
       };
     });
@@ -104,7 +108,10 @@ try {
     if (layout.overlaps.length) {
       throw new Error(`Editor header controls overlap at ${width}px: ${JSON.stringify(layout.overlaps)}`);
     }
-    console.log(`PASS: editor header geometry at ${width}px (${layout.headerWidth}px header, no overlapping controls or horizontal overflow).`);
+    if (layout.toolbarTop !== null && layout.headerBottom !== null && layout.toolbarTop < layout.headerBottom - 2) {
+      throw new Error(`Drawing toolbar overlaps the application header at ${width}px: toolbar top ${layout.toolbarTop}px / header bottom ${layout.headerBottom}px.`);
+    }
+    console.log(`PASS: editor header geometry at ${width}px (${layout.headerWidth}px header, toolbar clear of header, no overlapping controls or horizontal overflow).`);
   }
 
   if (errors.length) throw new Error(`Browser console exceptions: ${errors.join(" | ")}`);
