@@ -224,6 +224,7 @@
     flex-flow: row nowrap;
     align-items: center;
     justify-content: center;
+    position: relative;
     gap: 4px;
     width: 100%;
     min-width: 0;
