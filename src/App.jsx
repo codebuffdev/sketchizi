@@ -414,7 +414,7 @@ function App() {
     const columns = Math.max(1, Math.ceil(Math.sqrt(resources.length)));
     const positions = new Map();
     const iconForKind = (kind) => {
-      const aliases = { EndpointSlice: "endpoints", PersistentVolumeClaim: "persistent-volume-claim", PersistentVolume: "persistent-volume", StorageClass: "storage-class", HorizontalPodAutoscaler: "horizontal-pod-autoscaler", NetworkPolicy: "network-policy", ServiceAccount: "service-account", ClusterRoleBinding: "cluster-role-binding", ClusterRole: "cluster-role", RoleBinding: "role-binding", CustomResourceDefinition: "custom-resource-definition", PodSecurityPolicy: "pod-security-policy" };
+      const aliases = { EndpointSlice: "endpoints", PersistentVolumeClaim: "persistent-volume-claim", PersistentVolume: "persistent-volume", StorageClass: "storage-class", HorizontalPodAutoscaler: "horizontal-pod-autoscaler", NetworkPolicy: "network-policy", ServiceAccount: "service-account", ClusterRoleBinding: "cluster-role-binding", ClusterRole: "cluster-role", RoleBinding: "role-binding", CustomResourceDefinition: "custom-resource-definition", PodSecurityPolicy: "pod-security-policy", ConfigMap: "configmap", CronJob: "cronjob", ResourceQuota: "resourcequota", LimitRange: "limitrange" };
       const id = aliases[kind] || String(kind).replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
       return kubernetesIcons.find((icon) => icon.id === `k8s:${id}`) || null;
     };
