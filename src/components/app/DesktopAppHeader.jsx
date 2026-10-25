@@ -229,6 +229,20 @@ export default function DesktopAppHeader({
                       <span>{action.label}</span>
                     </button>
                   ))}
+                  {menu.label === "View" && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="desktop-app-command-search-menuitem"
+                      onClick={() => {
+                        setOpenMenu(null);
+                        openCommandPalette?.();
+                      }}
+                    >
+                      <span>Search Commands</span>
+                      <kbd>Ctrl+Shift+P</kbd>
+                    </button>
+                  )}
                   {commandsForMenu.map((command) => (
                     <button
                       type="button"
@@ -350,8 +364,8 @@ export default function DesktopAppHeader({
           type="button"
           className="desktop-app-header-icon-button desktop-app-search-button"
           onClick={() => { setOpenMenu(null); openCommandPalette?.(); }}
-          aria-label="Search commands"
-          title="Search commands (Ctrl+K)"
+          aria-label="Search commands (Ctrl+Shift+P)"
+          title="Search commands (Ctrl+Shift+P or Ctrl+K)"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="10.8" cy="10.8" r="6.3" />
