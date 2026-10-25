@@ -17,7 +17,7 @@ test("K8s Studio uses the existing Kubernetes catalog and resource insertion ser
   const studio = await readFile(new URL("src/features/kubernetes/ui/KubernetesStudio.jsx", root), "utf8");
   assert.match(app, /import \{ insertKubernetesResource \} from "\.\/features\/kubernetes-resources\/kubernetesResourceService\.js"/);
   assert.match(app, /await insertKubernetesResource\(/);
-  assert.match(studio, /icons=\{\}/);
+  assert.match(studio, /icons\\s*=\\s*\\[\\]/);
   assert.match(studio, /icon\.searchAliases/);
   assert.match(studio, /aria-pressed=\{selected\}/);
   assert.match(studio, /Add to canvas/);
