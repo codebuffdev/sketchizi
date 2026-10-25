@@ -99,13 +99,22 @@ export default function DesktopAppHeader({
     // A flex header can overflow while reporting its oversized content width,
     // preventing the compact state from ever activating.
     const updateWidth = () => {
-      const width = Math.round(container.getBoundingClientRect().width);
+      // A parent can report a width larger than the visible app viewport when
+      // a descendant has a legacy min-width. Clamp to the visible layout width
+      // so split-window layouts still activate the constrained header.
+      const containerWidth = container.getBoundingClientRect().width;
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const width = Math.round(Math.min(containerWidth, viewportWidth));
       setAvailableWidth((current) => current === width ? current : width);
     };
     updateWidth();
     const observer = new ResizeObserver(updateWidth);
     observer.observe(container);
-    return () => observer.disconnect();
+    window.addEventListener("resize", updateWidth);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
   }, []);
 
   useEffect(() => {
