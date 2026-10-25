@@ -570,3 +570,82 @@
   }
 }
 
+
+/* Responsive desktop header hardening — keep every control reachable from
+   compact laptop windows through ultrawide monitors without squeezing the canvas. */
+@media (min-width: 1025px) and (max-width: 1600px) {
+  .desktop-app-header {
+    gap: 4px;
+    padding-inline: 8px;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-border, #cbd0dc) transparent;
+  }
+
+  .desktop-app-header > * {
+    flex-shrink: 0;
+  }
+
+  .desktop-app-nav,
+  .desktop-app-header-panel-actions,
+  .desktop-app-header-account-zone,
+  .desktop-app-header-actions {
+    flex-shrink: 0;
+    min-width: max-content;
+  }
+
+  .desktop-app-header-spacer {
+    flex: 1 0 4px;
+    min-width: 4px;
+  }
+
+  .desktop-app-header .auth-account-name {
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-app-header-actions {
+    margin-left: 4px;
+    padding-left: 6px;
+  }
+}
+
+/* Compact desktop/laptop: prioritize icon access over long labels. The menu
+   controls remain available; labels are hidden only where space is constrained. */
+@media (min-width: 1025px) and (max-width: 1200px) {
+  .desktop-app-nav-button {
+    padding-inline: 5px;
+    gap: 2px;
+  }
+
+  .desktop-app-header-panel-actions {
+    gap: 3px;
+    padding-inline: 5px;
+  }
+
+  .desktop-app-header-account-zone {
+    gap: 4px;
+    padding-inline: 5px;
+  }
+
+  .desktop-app-header .auth-account-name,
+  .desktop-app-header .auth-account-chevron {
+    display: none;
+  }
+
+  .desktop-app-start-collaboration-button {
+    margin-left: 4px;
+    padding-inline: 8px;
+  }
+}
+
+/* Wide desktop: do not let the responsive overflow treatment affect the
+   established spacious layout. */
+@media (min-width: 1601px) {
+  .desktop-app-header {
+    overflow: visible;
+  }
+}
