@@ -118,6 +118,18 @@ export default function DesktopAppHeader({
   }, []);
 
   useEffect(() => {
+    const onCommandSearchShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.altKey || event.key.toLowerCase() !== "p") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpenMenu(null);
+      openCommandPalette?.();
+    };
+    document.addEventListener("keydown", onCommandSearchShortcut, true);
+    return () => document.removeEventListener("keydown", onCommandSearchShortcut, true);
+  }, [openCommandPalette]);
+
+  useEffect(() => {
     if (!openMenu) return undefined;
     const close = (event) => {
       if (!(event.target instanceof Element)) return;
