@@ -58,6 +58,7 @@ function App() {
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
+  const [devopsStudioMenuOpen, setDevopsStudioMenuOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridVisible, setGridVisible] = useState(false);
@@ -964,38 +965,45 @@ function App() {
           <span>Create Design</span>
         </button>
 
-        <button
-          type="button"
-          className="kubernetes-studio-toggle"
-          onClick={() => setKubernetesStudioOpen(true)}
-          title="Design Kubernetes architectures and import YAML"
-          aria-label="Open K8s Studio"
-        >
-          <span aria-hidden="true">☸</span>
-          <span>K8s Studio</span>
-        </button>
-
-        <button
-          type="button"
-          className="docker-compose-studio-toggle"
-          onClick={() => setDockerStudioOpen(true)}
-          title="Design Docker Compose applications"
-          aria-label="Open Docker Compose Studio"
-        >
-          <span aria-hidden="true">▦</span>
-          <span>Docker Studio</span>
-        </button>
-
-        <button
-          type="button"
-          className="community-reviews-toggle"
-          onClick={() => { window.location.href = "/reviews"; }}
-          title="Read Sketchizi reviews and share feedback"
-          aria-label="Reviews and Feedback"
-        >
-          <span aria-hidden="true">★</span>
-          <span>Reviews</span>
-        </button>
+        <div className="devops-studio-menu">
+          <button
+            type="button"
+            className={devopsStudioMenuOpen ? "devops-studio-toggle active" : "devops-studio-toggle"}
+            onClick={() => setDevopsStudioMenuOpen((open) => !open)}
+            title="Open DevOps design studios"
+            aria-label="DevOps Studio"
+            aria-haspopup="menu"
+            aria-expanded={devopsStudioMenuOpen}
+          >
+            <span aria-hidden="true">⚙</span>
+            <span>DevOps Studio</span>
+            <span className="devops-studio-chevron" aria-hidden="true">⌄</span>
+          </button>
+          {devopsStudioMenuOpen && (
+            <div className="devops-studio-dropdown" role="menu" aria-label="DevOps Studio">
+              <button
+                type="button"
+                role="menuitem"
+                className="kubernetes-studio-menu-item"
+                onClick={() => { setDevopsStudioMenuOpen(false); setKubernetesStudioOpen(true); }}
+                title="Design Kubernetes architectures and import YAML"
+              >
+                <span aria-hidden="true">☸</span>
+                <span>K8s Studio</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="docker-compose-studio-menu-item"
+                onClick={() => { setDevopsStudioMenuOpen(false); setDockerStudioOpen(true); }}
+                title="Design Docker Compose applications"
+              >
+                <span aria-hidden="true">▦</span>
+                <span>Docker Studio</span>
+              </button>
+            </div>
+          )}
+        </div>
 
 
         <button
