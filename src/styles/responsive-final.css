@@ -774,3 +774,112 @@
     white-space: nowrap;
   }
 }
+
+/* Final compact desktop composition (roughly 768px–1024px CSS viewport):
+   keep a stable utility row and a clean feature row. Do not squeeze menu labels
+   or create a horizontal scrollbar. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .desktop-app-header {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: flex-start;
+    align-content: flex-start;
+    column-gap: 6px;
+    row-gap: 6px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: 6px 8px;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  .desktop-app-header > .desktop-app-menu-trigger { order: 1; }
+  .desktop-app-header > .desktop-app-library-toggle { order: 2; }
+  .desktop-app-header > .desktop-app-nav { display: none !important; }
+
+  .desktop-app-header > .desktop-app-document-identity {
+    order: 3;
+    flex: 1 1 100px;
+    min-width: 84px;
+    max-width: 150px;
+  }
+
+  .desktop-app-header > .desktop-app-header-account-zone {
+    order: 4;
+    flex: 0 0 auto;
+    margin-left: auto;
+    gap: 4px;
+    padding-inline: 2px;
+  }
+
+  .desktop-app-header > .desktop-app-save-status-wrap {
+    order: 5;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .desktop-app-header > .desktop-app-start-collaboration-button {
+    order: 6;
+    flex: 0 0 32px;
+    width: 32px;
+    min-width: 32px;
+    height: 30px;
+    min-height: 30px;
+    justify-content: center;
+    padding: 4px;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .desktop-app-header > .desktop-app-header-actions {
+    order: 7;
+    flex: 0 0 30px;
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  .desktop-app-header > .desktop-app-header-spacer { display: none !important; }
+
+  .desktop-app-header .desktop-app-document-identity-copy {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .desktop-app-header .desktop-app-document-identity-name,
+  .desktop-app-header .desktop-app-document-identity-state,
+  .desktop-app-header .desktop-app-save-status-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-app-header .desktop-app-save-status-label { max-width: 66px; }
+
+  .desktop-app-header > .desktop-app-header-panel-actions {
+    order: 10;
+    flex: 1 0 100%;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .desktop-app-header-panel-actions > * {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .desktop-app-header-panel-actions button {
+    min-height: 30px;
+  }
+}
