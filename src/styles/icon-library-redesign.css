@@ -548,3 +548,71 @@
     .library-recent-searches { display: none; }
   }
 }
+
+
+/* Sketchizi-owned catalog identity: the general-purpose icon collection is
+   presented as Essentials rather than exposing the upstream provider name. */
+.app .library-panel-redesign .library-source-chip-eraser {
+  gap: 7px;
+  border-color: #34304f;
+  background: linear-gradient(180deg, #211e32, #1a202d);
+  color: #d7ccff;
+  letter-spacing: .005em;
+}
+
+.app .library-panel-redesign .library-source-chip-eraser:hover {
+  border-color: #7655c5;
+  background: linear-gradient(180deg, #2a2343, #211e32);
+  color: #f4efff;
+}
+
+.app .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #9a75ff;
+  background: linear-gradient(135deg, #8b5cf6, #6435d8);
+  color: #fff;
+  box-shadow: 0 4px 14px rgb(124 58 237 / 24%);
+}
+
+.app .library-panel-redesign .library-source-chip-mark {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .95;
+}
+
+.app .library-panel-redesign .library-icon-card {
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.app .library-panel-redesign .library-icon-tag {
+  border: 1px solid rgb(143 155 190 / 8%);
+}
+
+.app.theme-light .library-panel-redesign .library-source-chip-eraser {
+  border-color: #e1d8ff;
+  background: linear-gradient(180deg, #f8f5ff, #f0edfa);
+  color: #6541b5;
+}
+
+.app.theme-light .library-panel-redesign .library-source-chip-eraser:hover {
+  border-color: #c4b2f7;
+  background: #eee7ff;
+  color: #5030a2;
+}
+
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #8b5cf6, #6435d8);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign .library-icon-card {
+    transition: none;
+  }
+}
