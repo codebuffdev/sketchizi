@@ -15,33 +15,33 @@ const COMPLETION_KINDS = [
 const COMPLETION_API_VERSIONS = ["v1", "apps/v1", "batch/v1", "networking.k8s.io/v1", "rbac.authorization.k8s.io/v1", "autoscaling/v2", "storage.k8s.io/v1", "policy/v1"];
 
 function buildCompletions(text, caret, force = false) {
-  const lineStart = text.lastIndexOf("\\n", Math.max(0, caret - 1)) + 1;
-  const lineEndIndex = text.indexOf("\\n", caret);
+  const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+  const lineEndIndex = text.indexOf("\n", caret);
   const lineEnd = lineEndIndex < 0 ? text.length : lineEndIndex;
   const line = text.slice(lineStart, lineEnd);
   const beforeCaret = text.slice(lineStart, caret);
-  const indent = (line.match(/^\\s*/) || [""])[0];
-  const previousLines = text.slice(0, lineStart).split("\\n").reverse();
+  const indent = (line.match(/^\s*/) || [""])[0];
+  const previousLines = text.slice(0, lineStart).split("\n").reverse();
   const previousLine = previousLines.find((value) => value.trim())?.trim() || "";
-  const kind = text.match(/^kind:\\s*([A-Za-z]+)/m)?.[1] || "";
+  const kind = text.match(/^kind:\s*([A-Za-z]+)/m)?.[1] || "";
   let items = [];
   let replaceStart = lineStart + indent.length;
   let replaceEnd = caret;
   const add = (label, detail, insert) => items.push({ label, detail, insert });
 
-  if (/^kind:\\s*/.test(beforeCaret)) {
+  if (/^kind:\s*/.test(beforeCaret)) {
     const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
-    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\\s*/) || [""])[0].length;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\s*/) || [""])[0].length;
     replaceEnd = caret;
     COMPLETION_KINDS.forEach(([name, version]) => add(name, version, name));
-  } else if (/^apiVersion:\\s*/.test(beforeCaret)) {
+  } else if (/^apiVersion:\s*/.test(beforeCaret)) {
     const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
-    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\\s*/) || [""])[0].length;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\s*/) || [""])[0].length;
     replaceEnd = caret;
     COMPLETION_API_VERSIONS.forEach((version) => add(version, "Kubernetes API version", version));
-  } else if (/^\\s*kind:\\s*$/.test(line) || /^\\s*apiVersion:\\s*$/.test(line)) {
+  } else if (/^\s*kind:\s*$/.test(line) || /^\s*apiVersion:\s*$/.test(line)) {
     return { items: [], replaceStart, replaceEnd };
-  } else if (/^\\s*kind:\\s*[^\\s]+/.test(line) && beforeCaret.includes("kind:")) {
+  } else if (/^\s*kind:\s*[^\s]+/.test(line) && beforeCaret.includes("kind:")) {
     return { items: [], replaceStart, replaceEnd };
   } else {
     const parent = previousLine.replace(/:.*$/, "").trim();
@@ -74,7 +74,7 @@ function buildCompletions(text, caret, force = false) {
     let choices = fieldGroups[parent] || fieldGroups.root;
     if (beforeCaret.trim()) {
       const partial = beforeCaret.trim();
-      if (/^[A-Za-z][\\w-]*$/.test(partial)) {
+      if (/^[A-Za-z][\w-]*$/.test(partial)) {
         const match = choices.filter((entry) => entry.toLowerCase().startsWith(partial.toLowerCase()));
         if (match.length) choices = match;
       }
@@ -86,8 +86,8 @@ function buildCompletions(text, caret, force = false) {
     if (!force && !beforeCaret.trim() && !previousLine.endsWith(":")) items = [];
   }
 
-  const isKindValue = /^kind:\\s*/.test(beforeCaret);
-  const isApiVersionValue = /^apiVersion:\\s*/.test(beforeCaret);
+  const isKindValue = /^kind:\s*/.test(beforeCaret);
+  const isApiVersionValue = /^apiVersion:\s*/.test(beforeCaret);
   const query = isKindValue || isApiVersionValue
     ? beforeCaret.slice(beforeCaret.indexOf(":") + 1).trim()
     : beforeCaret.trim().replace(/^[- ]+/, "");
@@ -128,7 +128,9 @@ function normalizeManifest(value, index) {
 }
 
 export default function KubernetesStudio({ onClose, onCreateDiagram }) {
-  const fileInputRef = useRef(null);\n  const yamlEditorRef = useRef(null);\n  const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+  const fileInputRef = useRef(null);
+  const yamlEditorRef = useRef(null);
+  const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [yamlText, setYamlText] = useState(`apiVersion: apps/v1
 kind: Deployment
 metadata:
