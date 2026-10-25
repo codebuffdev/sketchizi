@@ -54,7 +54,10 @@ try {
   // This checks rendered geometry rather than inferring responsiveness from CSS source.
   await responsive.page.getByRole("button", { name: "Start blank" }).click();
   await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
-  await responsive.page.locator(".excalidraw").waitFor({ timeout: 30000 });
+  // The creation screen starts at a phone width, where the editor canvas is intentionally hidden.
+  // Enter the editor at desktop width first, then resize it through the responsive acceptance matrix.
+  await responsive.page.setViewportSize({ width: 1280, height: 844 });
+  await responsive.page.locator(".excalidraw").waitFor({ state: "visible", timeout: 30000 });
 
   for (const width of [1440, 1280, 1024, 900, 768, 600, 480, 390, 360, 320]) {
     await responsive.page.setViewportSize({ width, height: 844 });
