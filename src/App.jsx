@@ -458,7 +458,7 @@ function App() {
         resource.kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
         resource.kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
         resource.apiVersion || "",
-      ].filter(Boolean).join("\\n");
+      ].filter(Boolean).join("\n");
       const metadata = {
         provider: "kubernetes", resourceType: String(resource.kind || "resource").toLowerCase(),
         catalog: "kubernetes", importedFromYaml: true,
@@ -488,7 +488,7 @@ function App() {
       }
       nodes.push({
         type: "text", x: x + 91, y: y + 14, width: cardWidth - 105, height: 32,
-        text: `${resource.kind}\\n${resource.name}`, fontSize: 18, fontFamily: 1, textAlign: "left",
+        text: `${resource.kind}\n${resource.name}`, fontSize: 18, fontFamily: 1, textAlign: "left",
         verticalAlign: "middle", strokeColor: "#e6efff", backgroundColor: "transparent", autoResize: false,
         groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
       });
