@@ -29,6 +29,8 @@ import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziE
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
 import CreateDesignScreen from "./features/design/ui/CreateDesignScreen.jsx";
 import DockerComposeStudio from "./features/docker-compose/ui/DockerComposeStudio.jsx";
+import KubernetesStudio from "./features/kubernetes/ui/KubernetesStudio.jsx";
+import { insertKubernetesResource } from "./features/kubernetes-resources/kubernetesResourceService.js";
 import { createProfileForTemplate, createTemplateElements } from "./features/design/templates/templateRegistry.js";
 import { withDesignProfile } from "./features/design/model/designDocument.js";
 import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
@@ -56,6 +58,7 @@ function App() {
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
+  const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridVisible, setGridVisible] = useState(false);
@@ -393,6 +396,41 @@ function App() {
       });
     });
   }, [apiRef, handleExcalidrawChange]);
+
+  const createKubernetesDiagram = useCallback(async (resources) => {
+    const api = apiRef.current;
+    if (!api || !collaborationCanEdit) {
+      showToast("Kubernetes diagram editing is unavailable in the current session.", "error");
+      return;
+    }
+    if (!Array.isArray(resources) || resources.length === 0) return;
+
+    const appState = api.getAppState?.() || {};
+    const zoom = Math.max(0.1, Number(appState.zoom?.value) || 1);
+    const startX = (Number(appState.width) || window.innerWidth) / (2 * zoom) - (Number(appState.scrollX) || 0) - 330;
+    const startY = (Number(appState.height) || window.innerHeight) / (2 * zoom) - (Number(appState.scrollY) || 0) - 180;
+    let inserted = 0;
+    for (let index = 0; index < resources.length; index += 1) {
+      const icon = resources[index];
+      const column = index % 2;
+      const row = Math.floor(index / 2);
+      const ok = await insertKubernetesResource({
+        api,
+        icon,
+        x: startX + column * 380,
+        y: startY + row * 300,
+        markRecentlyUsed,
+      });
+      if (ok) inserted += 1;
+    }
+    if (inserted) {
+      api.scrollToContent?.(api.getSceneElements?.() || [], { fitToContent: true, animate: true });
+      setKubernetesStudioOpen(false);
+      showToast(`Added ${inserted} Kubernetes resource${inserted === 1 ? "" : "s"} to the canvas.`);
+    } else {
+      showToast("No Kubernetes resources were added. Check the selected resource definitions and try again.", "error");
+    }
+  }, [collaborationCanEdit, markRecentlyUsed, showToast]);
 
   const createComposeDiagram = useCallback(async (composeDocument) => {
     const api = apiRef.current;
@@ -825,6 +863,17 @@ function App() {
 
         <button
           type="button"
+          className="kubernetes-studio-header-toggle"
+          onClick={() => setKubernetesStudioOpen(true)}
+          title="Build and review Kubernetes architectures"
+          aria-label="Open K8s Studio"
+        >
+          <span aria-hidden="true">☸</span>
+          <span>K8s Studio</span>
+        </button>
+
+        <button
+          type="button"
           className="community-reviews-toggle"
           onClick={() => { window.location.href = "/reviews"; }}
           title="Read Sketchizi reviews and share feedback"
@@ -1046,6 +1095,7 @@ function App() {
         </div>
       )}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
+      {kubernetesStudioOpen && <KubernetesStudio icons={kubernetesIcons} categories={kubernetesCategories} canEdit={collaborationCanEdit} onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} />}
       {designStudioOpen && (
         <CreateDesignScreen
           isDarkTheme={isDarkTheme}
