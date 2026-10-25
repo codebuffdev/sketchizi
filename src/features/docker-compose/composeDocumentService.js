@@ -128,11 +128,30 @@ export function validateComposeDocument(input) {
       !(Array.isArray(service.healthcheck.test) || typeof service.healthcheck.test === "string")) {
       findings.push(diagnostic("COMPOSE_INVALID_HEALTHCHECK_TEST", "error", "Healthcheck test must be a string or list.", `${path}.healthcheck.test`, "Use a command string or a list such as [CMD, curl, -f, http://localhost]."));
     }
-    for (const volume of Array.isArray(service.volumes) ? service.volumes : []) {
-      if (typeof volume !== "string") continue;
-      const sourceName = volume.split(":")[0];
-      if (sourceName && !sourceName.startsWith(".") && !sourceName.startsWith("/") && !sourceName.startsWith("${") && !Object.hasOwn(document.volumes, sourceName)) {
-        findings.push(diagnostic("COMPOSE_UNKNOWN_VOLUME", "warning", `Service "${name}" references undeclared named volume "${sourceName}".`, `${path}.volumes`, "Declare the named volume at the top level if it is intended to be persistent."));
+    if (service.depends_on != null && !Array.isArray(service.depends_on) && !isRecord(service.depends_on)) {
+      findings.push(diagnostic("COMPOSE_INVALID_DEPENDS_ON", "error", "depends_on must be a list of service names or a mapping of service conditions.", `${path}.depends_on`, "Use a list of service names or a mapping with condition options."));
+    }
+    if (service.networks != null && !Array.isArray(service.networks) && !isRecord(service.networks)) {
+      findings.push(diagnostic("COMPOSE_INVALID_NETWORKS", "error", "networks must be a list or mapping.", `${path}.networks`, "Use a list of declared network names or a mapping of network names to options."));
+    }
+    if (service.volumes != null && !Array.isArray(service.volumes)) {
+      findings.push(diagnostic("COMPOSE_INVALID_VOLUMES", "error", "volumes must be a list of mount definitions.", `${path}.volumes`, "Use short-form mount strings or long-form mount mappings."));
+    }
+    for (const [index, volume] of (Array.isArray(service.volumes) ? service.volumes : []).entries()) {
+      if (typeof volume === "string") {
+        const sourceName = volume.split(":")[0];
+        if (sourceName && !sourceName.startsWith(".") && !sourceName.startsWith("/") && !sourceName.startsWith("${") && !Object.hasOwn(document.volumes, sourceName)) {
+          findings.push(diagnostic("COMPOSE_UNKNOWN_VOLUME", "warning", `Service "${name}" references undeclared named volume "${sourceName}".`, `${path}.volumes[${index}]`, "Declare the named volume at the top level if it is intended to be persistent."));
+        }
+      } else if (isRecord(volume)) {
+        if (volume.type === "volume" && volume.source && !Object.hasOwn(document.volumes, volume.source)) {
+          findings.push(diagnostic("COMPOSE_UNKNOWN_VOLUME", "warning", `Service "${name}" references undeclared named volume "${volume.source}".`, `${path}.volumes[${index}].source`, "Declare the named volume at the top level if it is intended to be persistent."));
+        }
+        if (typeof volume.target !== "string" || !volume.target.trim()) {
+          findings.push(diagnostic("COMPOSE_INVALID_VOLUME_TARGET", "error", "Long-form volume mounts must define a target path.", `${path}.volumes[${index}].target`, "Set target to the path inside the container."));
+        }
+      } else {
+        findings.push(diagnostic("COMPOSE_INVALID_VOLUME_ENTRY", "error", "Volume mount entries must be strings or mappings.", `${path}.volumes[${index}]`, "Use a short-form mount string or a long-form mapping with type and target."));
       }
     }
   }
