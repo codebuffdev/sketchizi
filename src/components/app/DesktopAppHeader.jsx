@@ -300,30 +300,7 @@ export default function DesktopAppHeader({
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
       </div>
 
-      {!isConstrained && <div className="desktop-app-header-panel-actions">{children}</div>}
-
-      {isConstrained && (
-        <div className="desktop-app-responsive-tools">
-          <button
-            type="button"
-            className="desktop-app-responsive-tools-trigger"
-            aria-haspopup="menu"
-            aria-expanded={responsiveToolsOpen}
-            aria-label="Open tools and features"
-            title="Tools and features"
-            onClick={() => setResponsiveToolsOpen((open) => !open)}
-          >
-            <span aria-hidden="true">☷</span>
-            <span>Tools</span>
-            <span aria-hidden="true">⌄</span>
-          </button>
-          {responsiveToolsOpen && (
-            <div className="desktop-app-responsive-tools-menu" role="menu" aria-label="Tools and features">
-              {children}
-            </div>
-          )}
-        </div>
-      )}
+      <div className="desktop-app-header-panel-actions">{children}</div>
 
       {collaborationCreationState === "creating" && (
         <div className="collaboration-header-status creating" role="status" aria-live="polite">
