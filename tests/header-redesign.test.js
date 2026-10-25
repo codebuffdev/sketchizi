@@ -83,10 +83,13 @@ test("header layout responds to measured available width rather than viewport br
   assert.match(header, /container\.getBoundingClientRect\(\)\.width/);
   assert.match(header, /observer\.observe\(container\)/);
   assert.match(header, /availableWidth < 1120 \? " is-compact"/);
-  assert.match(header, /availableWidth < 900 \? " is-constrained"/);
+  assert.match(header, /isConstrained \? " is-constrained"/);
+  assert.match(header, /desktop-app-responsive-tools-trigger/);
+  assert.match(header, /role="menu" aria-label="Tools and features"/);
   assert.match(css, /\.desktop-app-header\.is-compact/);
   assert.match(css, /\.desktop-app-header\.is-constrained/);
-  assert.match(css, /grid-template-areas:[\s\S]*?"menu library document account save collab search"[\s\S]*?"features features features features features features features"/);
+  assert.match(css, /grid-template-areas:[\s\S]*?"menu library document account save collab search"[\s\S]*?"tools tools tools tools tools tools tools"/);
+  assert.match(css, /\.desktop-app-responsive-tools-menu/);
   assert.doesNotMatch(css, /@media screen and \(min-width: 761px\) and \(max-width: 1024px\)/);
   const widthDrivenStyles = css.slice(css.indexOf("/* Width-driven responsive header states"));
   assert.doesNotMatch(widthDrivenStyles, /content: "More Tools"/);
