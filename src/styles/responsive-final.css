@@ -212,7 +212,9 @@
   .desktop-canvas-region .excalidraw .App-toolbar-container,
   .excalidraw .App-toolbar-container {
     position: fixed !important;
-    top: 112px !important;
+    /* The compact header has a primary row and a wrapped feature row. Keep
+       the native drawing tools below both rows so they never cover actions. */
+    top: 158px !important;
     left: 10px !important;
     right: auto !important;
     bottom: auto !important;
