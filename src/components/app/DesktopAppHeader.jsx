@@ -4,17 +4,6 @@ import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx
 
 const MENU_DEFINITIONS = [
   {
-    label: "File",
-    ids: ["files.new", "files.open", "files.save", "files.save-as", "files.open-folder", "files.close-folder"],
-  },
-  {
-    label: "Edit",
-    nativeActions: [
-      { label: "Undo", keys: /undo/i },
-      { label: "Redo", keys: /redo/i },
-    ],
-  },
-  {
     label: "View",
     ids: [
       "view.zoom-in",
