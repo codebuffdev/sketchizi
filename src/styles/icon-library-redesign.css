@@ -616,3 +616,100 @@
     transition: none;
   }
 }
+
+
+/* Essential icon tint controls */
+.app .library-panel-redesign .library-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #2a3345;
+  border-radius: 10px;
+  background: #141a25;
+}
+
+.app .library-panel-redesign .library-color-picker-label {
+  color: #aab5d0;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.app .library-panel-redesign .library-color-swatches {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app .library-panel-redesign .library-color-swatch {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.app .library-panel-redesign .library-color-swatch span {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 50%;
+  background: var(--swatch-color);
+  transition: transform .14s ease;
+}
+
+.app .library-panel-redesign .library-color-swatch:hover span {
+  transform: scale(1.12);
+}
+
+.app .library-panel-redesign .library-color-swatch.active {
+  border-color: #c4b5fd;
+  box-shadow: 0 0 0 2px rgb(139 92 246 / 18%);
+}
+
+.app .library-panel-redesign .library-color-swatch:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 2px;
+}
+
+.app .library-panel-redesign .library-color-picker-value {
+  margin-left: auto;
+  color: #c5b8ff;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.app.theme-light .library-panel-redesign .library-color-picker {
+  border-color: #e1e4ef;
+  background: #f7f8fc;
+}
+
+.app.theme-light .library-panel-redesign .library-color-picker-label {
+  color: #626b85;
+}
+
+.app.theme-light .library-panel-redesign .library-color-picker-value {
+  color: #6541b5;
+}
+
+@media (max-width: 640px) {
+  .app .library-panel-redesign .library-color-picker {
+    gap: 7px;
+    padding: 6px 7px;
+  }
+  .app .library-panel-redesign .library-color-swatches { gap: 2px; }
+  .app .library-panel-redesign .library-color-swatch { width: 21px; height: 21px; }
+  .app .library-panel-redesign .library-color-swatch span { width: 13px; height: 13px; }
+  .app .library-panel-redesign .library-color-picker-value { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign .library-color-swatch span { transition: none; }
+}
