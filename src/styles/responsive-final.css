@@ -218,24 +218,28 @@
   }
 
   .app .desktop-app-header.is-constrained > .desktop-app-header-panel-actions {
-    grid-area: features;
-    grid-column: 1 / -1;
-    justify-self: stretch;
-    position: static;
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    width: 100%;
-    min-width: 0;
-    margin: 0 auto;
-    padding: 0;
-    border: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
+    position: absolute !important;
+    top: 56px !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateX(-50%) !important;
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    width: max-content !important;
+    max-width: calc(100% - 220px) !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
     scrollbar-width: none;
+    z-index: 125 !important;
   }
 
   .app .desktop-app-header.is-constrained .desktop-app-header-panel-actions > * {
