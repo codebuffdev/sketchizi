@@ -1208,3 +1208,189 @@
     content: none;
   }
 }
+
+
+/* Narrow desktop layout: stable grid areas replace competing flex shrink/wrap
+   rules. Essential actions remain visible; feature actions get a dedicated row. */
+@media screen and (min-width: 761px) and (max-width: 1024px) {
+  .app .desktop-app-header {
+    display: grid !important;
+    grid-template-columns: 30px 30px minmax(90px, 1fr) auto auto 34px 34px;
+    grid-template-areas:
+      "menu library document account save collab search"
+      "features features features features features features features";
+    align-items: center !important;
+    column-gap: 6px !important;
+    row-gap: 7px !important;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 8px 10px !important;
+    overflow: visible !important;
+    box-sizing: border-box;
+  }
+
+  .app .desktop-app-header > .desktop-app-menu-trigger {
+    grid-area: menu;
+    display: grid !important;
+    width: 30px;
+    min-width: 30px;
+    margin: 0;
+  }
+
+  .app .desktop-app-header > .desktop-app-library-toggle {
+    grid-area: library;
+    width: 30px;
+    min-width: 30px;
+    margin: 0;
+  }
+
+  .app .desktop-app-header > .desktop-app-nav {
+    display: none !important;
+  }
+
+  .app .desktop-app-header > .desktop-app-document-identity {
+    grid-area: document;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .app .desktop-app-header .desktop-app-document-identity-copy {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .app .desktop-app-header .desktop-app-document-identity-name,
+  .app .desktop-app-header .desktop-app-document-identity-state {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app .desktop-app-header > .desktop-app-header-account-zone {
+    grid-area: account;
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    min-width: max-content;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .app .desktop-app-header > .desktop-app-save-status-wrap {
+    grid-area: save;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .app .desktop-app-header .desktop-app-save-status-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 30px;
+    width: auto;
+    min-height: 30px;
+    padding: 4px 6px;
+    white-space: nowrap;
+  }
+
+  .app .desktop-app-header .desktop-app-save-status-label,
+  .app .desktop-app-header .desktop-app-save-status-chevron {
+    display: none;
+  }
+
+  .app .desktop-app-header > .desktop-app-start-collaboration-button {
+    grid-area: collab;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    min-width: 34px;
+    height: 30px;
+    min-height: 30px;
+    margin: 0;
+    padding: 4px;
+    gap: 0;
+  }
+
+  .app .desktop-app-header .desktop-app-start-collaboration-label {
+    display: none;
+  }
+
+  .app .desktop-app-header > .desktop-app-header-actions {
+    grid-area: search;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    min-width: 34px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .app .desktop-app-header .desktop-app-search-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    min-width: 32px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0;
+  }
+
+  .app .desktop-app-header .desktop-app-search-label,
+  .app .desktop-app-header .desktop-app-search-shortcut,
+  .app .desktop-app-header > .desktop-app-header-spacer {
+    display: none !important;
+  }
+
+  .app .desktop-app-header > .desktop-app-header-panel-actions {
+    grid-area: features;
+    display: flex !important;
+    flex-flow: row wrap !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 7px 0 0;
+    border: 0;
+    border-top: 1px solid var(--ui-border, #e3e5eb);
+    overflow: visible;
+  }
+
+  .app .desktop-app-header-panel-actions > * {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .app .desktop-app-header-panel-actions .properties-toggle,
+  .app .desktop-app-header-panel-actions .architecture-validation-toggle,
+  .app .desktop-app-header-panel-actions .ai-ask-toggle,
+  .app .desktop-app-header-panel-actions .community-reviews-toggle,
+  .app .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
+    width: auto;
+    min-width: 32px;
+    max-width: 100%;
+    min-height: 30px;
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+
+  .app .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger::after {
+    content: "More Tools";
+    display: inline;
+    font-size: 11px;
+  }
+}
