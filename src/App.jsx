@@ -492,6 +492,8 @@ function App() {
     if (fileAssets.length) api.addFiles(fileAssets);
 
     const nodes = [];
+    const resourceRectangles = new Map();
+    const resourceElementIds = new Map(resources.map((resource) => [resource.id, `k8s-resource-${Math.random().toString(36).slice(2, 13)}`]));
     const labelsMatch = (selector, labels) => selector && labels && Object.entries(selector).length > 0
       && Object.entries(selector).every(([key, value]) => labels[key] === value);
     iconAssets.forEach(({ resource, x, y, icon, fileId }) => {
@@ -511,14 +513,19 @@ function App() {
         properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion },
         manifest,
       };
-      nodes.push({
+      const resourceElementId = resourceElementIds.get(resource.id);
+      const resourceRectangle = {
+        id: resourceElementId,
         type: "rectangle", x, y, width: cardWidth, height: cardHeight,
+        boundElements: [],
         strokeColor: resource.kind === "Service" ? "#0891b2" : resource.kind === "Ingress" ? "#8b5cf6" : ["ConfigMap", "Secret", "PersistentVolumeClaim", "PersistentVolume", "StorageClass"].includes(resource.kind) ? "#b28b43" : "#4779bf",
         backgroundColor: resource.kind === "Service" ? "#102b32" : resource.kind === "Ingress" ? "#241c38" : ["ConfigMap", "Secret", "PersistentVolumeClaim", "PersistentVolume", "StorageClass"].includes(resource.kind) ? "#28251d" : "#172333",
         fillStyle: "solid", strokeWidth: 1.5, roughness: 0, roundness: { type: 3 },
         groupIds: [resourceGroup],
         customData: { diagramIcon: true, iconId: icon?.id || null, iconName: icon?.name || resource.kind, iconCategory: icon?.category || "Kubernetes", iconSource: "kubernetes", kubernetesManifestResource: metadata },
-      });
+      };
+      resourceRectangles.set(resource.id, resourceRectangle);
+      nodes.push(resourceRectangle);
       if (fileId) {
         nodes.push({
           type: "image", x: x + 18, y: y + 30, width: 62, height: 62, fileId,
@@ -555,7 +562,11 @@ function App() {
       edgePairs.add(pairKey);
       const from = positions.get(fromResource.id);
       const to = positions.get(toResource.id);
-      if (!from || !to) return;
+      const fromElementId = resourceElementIds.get(fromResource.id);
+      const toElementId = resourceElementIds.get(toResource.id);
+      const fromRectangle = resourceRectangles.get(fromResource.id);
+      const toRectangle = resourceRectangles.get(toResource.id);
+      if (!from || !to || !fromElementId || !toElementId || !fromRectangle || !toRectangle) return;
       const fromCenter = { x: from.x + cardWidth / 2, y: from.y + cardHeight / 2 };
       const toCenter = { x: to.x + cardWidth / 2, y: to.y + cardHeight / 2 };
       const dx = toCenter.x - fromCenter.x;
@@ -567,11 +578,19 @@ function App() {
       const endPoint = { x: toCenter.x - dx * toScale, y: toCenter.y - dy * toScale };
       const left = Math.min(startPoint.x, endPoint.x);
       const top = Math.min(startPoint.y, endPoint.y);
+      const arrowId = `k8s-link-${Math.random().toString(36).slice(2, 13)}`;
+      // Excalidraw requires both arrow bindings and reciprocal boundElements
+      // on the resource cards; without both, moving a card leaves a detached line.
+      fromRectangle.boundElements.push({ id: arrowId, type: "arrow" });
+      toRectangle.boundElements.push({ id: arrowId, type: "arrow" });
       edges.push({
+        id: arrowId,
         type: "arrow", x: left, y: top,
         width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y),
         points: [[startPoint.x - left, startPoint.y - top], [endPoint.x - left, endPoint.y - top]],
-        strokeColor: color, strokeWidth: 2, endArrowhead: "triangle",
+        startBinding: { elementId: fromElementId, focus: 0, gap: 8 },
+        endBinding: { elementId: toElementId, focus: 0, gap: 8 },
+        strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
         label: { text: label, fontSize: 11 },
       });
     };
