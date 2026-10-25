@@ -29,6 +29,7 @@ import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziE
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
 import CreateDesignScreen from "./features/design/ui/CreateDesignScreen.jsx";
 import DockerComposeStudio from "./features/docker-compose/ui/DockerComposeStudio.jsx";
+import KubernetesStudio from "./features/kubernetes-studio/ui/KubernetesStudio.jsx";
 import { createProfileForTemplate, createTemplateElements } from "./features/design/templates/templateRegistry.js";
 import { withDesignProfile } from "./features/design/model/designDocument.js";
 import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
@@ -56,6 +57,7 @@ function App() {
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
+  const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridVisible, setGridVisible] = useState(false);
@@ -393,6 +395,105 @@ function App() {
       });
     });
   }, [apiRef, handleExcalidrawChange]);
+
+  const createKubernetesDiagram = useCallback((resources) => {
+    const api = apiRef.current;
+    if (!api?.updateScene || !collaborationCanEdit) {
+      showToast("The editor is not ready or you do not have permission to edit.", "error");
+      return;
+    }
+    if (!Array.isArray(resources) || !resources.length) {
+      showToast("No Kubernetes resources were found in the YAML.", "error");
+      return;
+    }
+
+    const cardWidth = 270;
+    const cardHeight = 118;
+    const gapX = 72;
+    const gapY = 54;
+    const columns = Math.max(1, Math.ceil(Math.sqrt(resources.length)));
+    const positions = new Map();
+    const nodes = resources.map((resource, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      const x = 180 + column * (cardWidth + gapX);
+      const y = 150 + row * (cardHeight + gapY);
+      positions.set(resource.id, { x, y });
+      const manifest = resource.manifest || {};
+      const spec = manifest.spec || {};
+      const detailLines = [
+        `Namespace: ${resource.namespace || "default"}`,
+        resource.kind === "Deployment" || resource.kind === "StatefulSet" ? `Replicas: ${spec.replicas ?? 1}` : "",
+        resource.kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
+        resource.kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
+        resource.apiVersion || "",
+      ].filter(Boolean);
+      return {
+        type: "rectangle",
+        x, y, width: cardWidth, height: cardHeight,
+        strokeColor: resource.kind === "Service" ? "#0e7490" : resource.kind === "Ingress" ? "#7c3aed" : "#3267b2",
+        backgroundColor: resource.kind === "Service" ? "#ecfeff" : resource.kind === "Ingress" ? "#f5f3ff" : "#eff6ff",
+        fillStyle: "solid",
+        strokeWidth: 1.5,
+        roughness: 0,
+        roundness: { type: 3 },
+        label: { text: `${resource.kind}\n${resource.name}\n${detailLines.join("\n")}`, fontSize: 14, textAlign: "left", verticalAlign: "middle" },
+        customData: {
+          diagramIcon: true,
+          kubernetesManifest: manifest,
+          kubernetesResource: {
+            provider: "kubernetes",
+            resourceType: String(resource.kind || "resource").toLowerCase(),
+            catalog: "kubernetes",
+            importedFromYaml: true,
+            properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion },
+          },
+        },
+      };
+    });
+
+    const edges = [];
+    const labelsMatch = (selector, labels) => selector && labels && Object.entries(selector).length > 0
+      && Object.entries(selector).every(([key, value]) => labels[key] === value);
+    resources.forEach((resource) => {
+      if (resource.kind !== "Service") return;
+      const selector = resource.manifest?.spec?.selector;
+      if (!selector) return;
+      resources.forEach((candidate) => {
+        if (!["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod"].includes(candidate.kind)) return;
+        const labels = candidate.kind === "Pod"
+          ? candidate.manifest?.metadata?.labels
+          : candidate.manifest?.spec?.template?.metadata?.labels || candidate.manifest?.spec?.selector?.matchLabels;
+        if (!labelsMatch(selector, labels)) return;
+        const from = positions.get(candidate.id);
+        const to = positions.get(resource.id);
+        if (!from || !to) return;
+        edges.push({
+          type: "arrow",
+          x: from.x + cardWidth,
+          y: from.y + cardHeight / 2,
+          width: to.x - (from.x + cardWidth),
+          height: to.y + cardHeight / 2 - (from.y + cardHeight / 2),
+          points: [[0, 0], [to.x - (from.x + cardWidth), to.y + cardHeight / 2 - (from.y + cardHeight / 2)]],
+          strokeColor: "#0e7490",
+          strokeWidth: 2,
+          endArrowhead: "arrow",
+          label: { text: "selects", fontSize: 12 },
+        });
+      });
+    });
+
+    const created = restoreElements(convertToExcalidrawElements([...edges, ...nodes]), null, { deleteInvisibleElements: true });
+    const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+    api.updateScene({
+      elements: [...existing, ...created],
+      appState: { ...api.getAppState(), selectedElementIds: Object.fromEntries(created.map((element) => [element.id, true])) },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+    api.scrollToContent?.(created, { fitToContent: true, animate: true });
+    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || created, api.getAppState?.() || {});
+    showToast(`Created Kubernetes diagram with ${resources.length} resources`);
+  }, [collaborationCanEdit, queueSketchSave, showToast]);
 
   const createComposeDiagram = useCallback(async (composeDocument) => {
     const api = apiRef.current;
@@ -814,6 +915,17 @@ function App() {
 
         <button
           type="button"
+          className="kubernetes-studio-toggle"
+          onClick={() => setKubernetesStudioOpen(true)}
+          title="Design Kubernetes architectures and import YAML"
+          aria-label="Open K8s Studio"
+        >
+          <span aria-hidden="true">☸</span>
+          <span>K8s Studio</span>
+        </button>
+
+        <button
+          type="button"
           className="docker-compose-studio-toggle"
           onClick={() => setDockerStudioOpen(true)}
           title="Design Docker Compose applications"
@@ -1046,6 +1158,7 @@ function App() {
         </div>
       )}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
+      {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} />}
       {designStudioOpen && (
         <CreateDesignScreen
           isDarkTheme={isDarkTheme}
