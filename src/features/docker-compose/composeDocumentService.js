@@ -137,6 +137,49 @@ export function validateComposeDocument(input) {
     }
   }
 
+  const hostPortOwners = new Map();
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service)) continue;
+    for (const [index, port] of (Array.isArray(service.ports) ? service.ports : []).entries()) {
+      const hostPort = typeof port === "string"
+        ? (port.includes(":") ? port.split(":").at(-2) : "")
+        : port?.published == null ? "" : String(port.published);
+      if (!/^\\d+$/.test(hostPort)) continue;
+      const owner = { serviceName, index };
+      if (hostPortOwners.has(hostPort)) {
+        const previous = hostPortOwners.get(hostPort);
+        findings.push(diagnostic(
+          "COMPOSE_DUPLICATE_HOST_PORT", "error",
+          `Host port ${hostPort} is published by both "${previous.serviceName}" and "${serviceName}".`,
+          `services.${serviceName}.ports[${index}]`,
+          "Assign a different host port to each service or remove the duplicate published mapping."
+        ));
+      } else {
+        hostPortOwners.set(hostPort, owner);
+      }
+    }
+    const environment = service.environment;
+    if (Array.isArray(environment)) {
+      for (const [index, entry] of environment.entries()) {
+        if (typeof entry !== "string" || !entry.trim() || entry.startsWith("=") || /\\n|\\r/.test(entry)) {
+          findings.push(diagnostic(
+            "COMPOSE_INVALID_ENVIRONMENT_ENTRY", "error",
+            `Service "${serviceName}" has an invalid environment entry at index ${index}.`,
+            `services.${serviceName}.environment[${index}]`,
+            "Use KEY=value or a non-empty KEY entry on each line."
+          ));
+        }
+      }
+    } else if (environment != null && !isRecord(environment)) {
+      findings.push(diagnostic(
+        "COMPOSE_INVALID_ENVIRONMENT", "error",
+        `Service "${serviceName}" environment must be a mapping or list of KEY=value entries.`,
+        `services.${serviceName}.environment`,
+        "Use a mapping of variable names to values or a list of KEY=value strings."
+      ));
+    }
+  }
+
   for (const [section, values] of [["volumes", document.volumes], ["networks", document.networks], ["secrets", cloneRecord(input.secrets)], ["configs", cloneRecord(input.configs)]]) {
     for (const [name, definition] of Object.entries(values)) {
       if (!NAME_PATTERN.test(name)) findings.push(diagnostic("COMPOSE_INVALID_RESOURCE_NAME", "error", `Invalid ${section.slice(0, -1)} name "${name}".`, `${section}.${name}`, "Use letters, numbers, underscores, periods, or hyphens."));
