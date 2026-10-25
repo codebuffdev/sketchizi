@@ -1,4 +1,4 @@
-import { getCompatibleKubernetesRelationshipTypes } from "../kubernetes-relationships/kubernetesRelationshipSemantics.js";
+import { getCompatibleKubernetesRelationshipTypes } from "../../kubernetes-relationships/kubernetesRelationshipSemantics.js";
 
 const TYPE_BY_ICON = Object.freeze({
   "k8s:group": "cluster",
