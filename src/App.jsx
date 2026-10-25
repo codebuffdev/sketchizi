@@ -430,9 +430,10 @@ function App() {
       const candidates = kubernetesIcons.map((icon) => {
         const id = normalizedIconToken(String(icon.id || "").replace(/^k8s:/, ""));
         const name = normalizedIconToken(icon.name);
+        const srcName = normalizedIconToken(String(icon.src || "").split(/[/?#]/).filter(Boolean).pop() || "");
         const category = normalizedIconToken(icon.category);
-        const exact = tokens.has(id) || tokens.has(name);
-        const partial = [...tokens].some((token) => token.length >= 4 && (id.endsWith(token) || name === token || name.startsWith(token)));
+        const exact = tokens.has(id) || tokens.has(name) || tokens.has(srcName);
+        const partial = [...tokens].some((token) => token.length >= 4 && (id.endsWith(token) || name === token || name.startsWith(token) || srcName === token || srcName.startsWith(token)));
         return { icon, score: exact ? 100 : partial ? 60 : category === "kubernetes" && [...tokens].some((token) => id.includes(token)) ? 30 : 0 };
       }).sort((a, b) => b.score - a.score);
       return candidates[0]?.score ? candidates[0].icon : null;
@@ -594,6 +595,30 @@ function App() {
       const defaultName = ingress.manifest?.spec?.defaultBackend?.service?.name;
       if (defaultName) serviceNames.add(defaultName);
       serviceNames.forEach((name) => addRelationship(ingress, services.find((service) => service.name === name && service.namespace === ingress.namespace), "routes to", "#9b78ef"));
+    });
+    resources.filter((resource) => resource.kind === "Namespace").forEach((namespace) => {
+      resources.filter((resource) => resource.id !== namespace.id && (resource.manifest?.metadata?.namespace || "default") === namespace.name
+        && ["Ingress", "Service", "Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(resource.kind))
+        .forEach((resource) => addRelationship(namespace, resource, "contains", "#6e91c9"));
+    });
+    resources.filter((resource) => resource.kind === "NetworkPolicy").forEach((policy) => {
+      const selector = policy.manifest?.spec?.podSelector?.matchLabels || {};
+      workloads.filter((workload) => workload.namespace === policy.namespace).forEach((workload) => {
+        const labels = workload.kind === "Pod" ? workload.manifest?.metadata?.labels
+          : workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.spec?.selector?.matchLabels;
+        if (Object.keys(selector).length === 0 || labelsMatch(selector, labels)) addRelationship(policy, workload, "applies to", "#b68bea");
+      });
+    });
+    resources.filter((resource) => resource.kind === "ServiceMonitor").forEach((monitor) => {
+      const selector = monitor.manifest?.spec?.selector?.matchLabels || {};
+      services.filter((service) => service.namespace === monitor.namespace).forEach((service) => {
+        const labels = service.manifest?.metadata?.labels || {};
+        if (Object.keys(selector).length === 0 || labelsMatch(selector, labels)) addRelationship(monitor, service, "monitors", "#b68bea");
+      });
+    });
+    resources.filter((resource) => resource.kind === "PersistentVolumeClaim").forEach((claim) => {
+      const volume = resources.find((resource) => resource.kind === "PersistentVolume" && resource.manifest?.spec?.claimRef?.name === claim.name);
+      if (volume) addRelationship(claim, volume, "bound to", "#c59b4d");
     });
     workloads.forEach((workload) => {
       const spec = workload.manifest?.spec?.template?.spec || workload.manifest?.spec || {};
