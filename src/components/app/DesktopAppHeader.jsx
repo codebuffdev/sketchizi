@@ -19,6 +19,31 @@ const MENU_DEFINITIONS = [
 ];
 
 
+const VIEW_COMMAND_ICONS = {
+  "view.zoom-in": "plus",
+  "view.zoom-out": "minus",
+  "view.reset-zoom": "reset",
+  "view.fit-canvas": "fit",
+  "view.toggle-minimap": "map",
+  "view.toggle-theme": "theme",
+  "view.toggle-canvas-grid": "grid",
+  "view.toggle-grid": "snap",
+};
+function ViewCommandIcon({ name }) {
+  const paths = {
+    plus: <><path d="M12 5v14M5 12h14" /></>,
+    minus: <path d="M5 12h14" />,
+    reset: <><path d="M4 11a8 8 0 1 1 2.3 5.7" /><path d="M4 4v7h7" /></>,
+    fit: <><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5" /><path d="M8 8h8v8H8z" /></>,
+    map: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m9 4 0 16M15 4v16" /></>,
+    theme: <><path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z" /></>,
+    grid: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>,
+    snap: <><path d="M5 5h5v5H5zM14 14h5v5h-5z" /><path d="M10 7h4v4M7 10v4h4" /></>,
+    search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></>,
+  };
+  return <span className="desktop-app-dropdown-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.fit}</svg></span>;
+}
+
 function canRun(command) {
   if (!command) return false;
   try {
@@ -251,7 +276,8 @@ export default function DesktopAppHeader({
                         openCommandPalette?.();
                       }}
                     >
-                      <span>Search Commands</span>
+                      <ViewCommandIcon name="search" />
+                      <span className="desktop-app-dropdown-label">Search Commands</span>
                       <kbd>Ctrl+Shift+P</kbd>
                     </button>
                   )}
@@ -260,9 +286,11 @@ export default function DesktopAppHeader({
                       type="button"
                       role="menuitem"
                       key={command.id}
+                      className="desktop-app-dropdown-command"
                       onClick={() => executeCommand(command)}
                     >
-                      <span>{command.label}</span>
+                      <ViewCommandIcon name={VIEW_COMMAND_ICONS[command.id] || "fit"} />
+                      <span className="desktop-app-dropdown-label">{command.label}</span>
                       {command.shortcut && <kbd>{command.shortcut}</kbd>}
                     </button>
                   ))}
