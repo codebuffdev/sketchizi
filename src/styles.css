@@ -668,3 +668,9 @@
 .docker-compose-studio-toggle{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border:1px solid #4a347a;border-radius:9px;background:linear-gradient(135deg,#2a2043,#1a1f2c);color:#d8c7ff;font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
 .docker-compose-studio-toggle:hover{background:#38275c;border-color:#8b5cf6;transform:translateY(-1px)}
 .docker-compose-studio-toggle span:first-child{font-size:15px}
+
+/* Kubernetes Studio entry point */
+.kubernetes-studio-toggle{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border:1px solid #31578f;border-radius:9px;background:linear-gradient(135deg,#1b3458,#172131);color:#b9d6ff;font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.kubernetes-studio-toggle:hover{background:#244779;border-color:#5b9bff;transform:translateY(-1px)}
+.kubernetes-studio-toggle span:first-child{font-size:15px}
+@media(max-width:1100px){.kubernetes-studio-toggle{padding:0 8px}.kubernetes-studio-toggle span:last-child{display:none}}
