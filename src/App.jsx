@@ -454,15 +454,18 @@ function App() {
     });
     const resourcePositions = new Map();
     const maxPerRow = 3;
+    let nextLayoutY = 90;
     [...buckets.entries()].sort((a, b) => a[0] - b[0]).forEach(([rank, items]) => {
+      const rowCount = Math.ceil(items.length / maxPerRow);
       items.forEach((resource, index) => {
         const row = Math.floor(index / maxPerRow);
         const column = index % maxPerRow;
         const x = 120 + column * (cardWidth + gapX);
-        const y = 90 + rank * 245 + row * (cardHeight + 34);
+        const y = nextLayoutY + row * (cardHeight + 34);
         resourcePositions.set(resource.id, { x, y, rank, row, column });
         positions.set(resource.id, { x, y });
       });
+      nextLayoutY += rowCount * (cardHeight + 34) + 84;
     });
 
     const iconAssets = await Promise.all(resources.map(async (resource) => {
