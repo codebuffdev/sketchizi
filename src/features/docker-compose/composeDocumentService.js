@@ -144,7 +144,7 @@ export function validateComposeDocument(input) {
       const hostPort = typeof port === "string"
         ? (port.includes(":") ? port.split(":").at(-2) : "")
         : port?.published == null ? "" : String(port.published);
-      if (!/^\\d+$/.test(hostPort)) continue;
+      if (!/^\d+$/.test(hostPort)) continue;
       const owner = { serviceName, index };
       if (hostPortOwners.has(hostPort)) {
         const previous = hostPortOwners.get(hostPort);
