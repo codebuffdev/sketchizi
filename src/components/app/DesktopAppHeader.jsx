@@ -185,7 +185,9 @@ export default function DesktopAppHeader({
     };
   }, [responsiveToolsOpen]);
 
-  const isConstrained = availableWidth > 0 && availableWidth < 900;
+  // Switch to the compact workspace before the full desktop header runs out of room.
+  // This is based on the measured app width, so snapped half-screen windows behave correctly.
+  const isConstrained = availableWidth > 0 && availableWidth < 1120;
   const commandMap = useMemo(() => new Map(commands.map((command) => [command.id, command])), [commands]);
 
   const executeCommand = (command) => {
