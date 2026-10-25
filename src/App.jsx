@@ -396,7 +396,7 @@ function App() {
     });
   }, [apiRef, handleExcalidrawChange]);
 
-  const createKubernetesDiagram = useCallback((resources) => {
+  const createKubernetesDiagram = useCallback(async (resources) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit) {
       showToast("The editor is not ready or you do not have permission to edit.", "error");
@@ -407,54 +407,100 @@ function App() {
       return;
     }
 
-    const cardWidth = 270;
-    const cardHeight = 118;
-    const gapX = 72;
-    const gapY = 54;
+    const cardWidth = 292;
+    const cardHeight = 126;
+    const gapX = 78;
+    const gapY = 64;
     const columns = Math.max(1, Math.ceil(Math.sqrt(resources.length)));
     const positions = new Map();
-    const nodes = resources.map((resource, index) => {
+    const iconForKind = (kind) => {
+      const aliases = { EndpointSlice: "endpoints", PersistentVolumeClaim: "persistent-volume-claim", PersistentVolume: "persistent-volume", StorageClass: "storage-class", HorizontalPodAutoscaler: "horizontal-pod-autoscaler", NetworkPolicy: "network-policy", ServiceAccount: "service-account", ClusterRoleBinding: "cluster-role-binding", ClusterRole: "cluster-role", RoleBinding: "role-binding", CustomResourceDefinition: "custom-resource-definition", PodSecurityPolicy: "pod-security-policy" };
+      const id = aliases[kind] || String(kind).replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+      return kubernetesIcons.find((icon) => icon.id === `k8s:${id}`) || null;
+    };
+
+    const iconAssets = await Promise.all(resources.map(async (resource, index) => {
       const column = index % columns;
       const row = Math.floor(index / columns);
       const x = 180 + column * (cardWidth + gapX);
       const y = 150 + row * (cardHeight + gapY);
       positions.set(resource.id, { x, y });
+      const icon = iconForKind(resource.kind);
+      if (!icon) return { resource, x, y, icon: null, fileId: null };
+      try {
+        const response = await fetch(icon.src, { cache: "force-cache" });
+        if (!response.ok) throw new Error(`Kubernetes icon request failed (${response.status})`);
+        const svg = await response.text();
+        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+        const fileId = `k8s-import-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`;
+        return { resource, x, y, icon, fileId, dataURL };
+      } catch (error) {
+        showToast(`Could not load the ${resource.kind} icon; using a labeled resource card instead.`, "warning");
+        return { resource, x, y, icon, fileId: null };
+      }
+    }));
+
+    const fileAssets = iconAssets.filter((asset) => asset.dataURL).map((asset) => ({
+      id: asset.fileId, dataURL: asset.dataURL, mimeType: "image/svg+xml", created: Date.now(), lastRetrieved: Date.now(),
+    }));
+    if (fileAssets.length) api.addFiles(fileAssets);
+
+    const nodes = [];
+    const labelsMatch = (selector, labels) => selector && labels && Object.entries(selector).length > 0
+      && Object.entries(selector).every(([key, value]) => labels[key] === value);
+    iconAssets.forEach(({ resource, x, y, icon, fileId }) => {
       const manifest = resource.manifest || {};
       const spec = manifest.spec || {};
-      const detailLines = [
+      const resourceGroup = `k8s-import-${resource.id}`;
+      const details = [
         `Namespace: ${resource.namespace || "default"}`,
-        resource.kind === "Deployment" || resource.kind === "StatefulSet" ? `Replicas: ${spec.replicas ?? 1}` : "",
+        resource.kind === "Deployment" || resource.kind === "StatefulSet" || resource.kind === "DaemonSet" ? `Replicas: ${spec.replicas ?? (resource.kind === "DaemonSet" ? "node-managed" : 1)}` : "",
         resource.kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
         resource.kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
         resource.apiVersion || "",
-      ].filter(Boolean);
-      return {
-        type: "rectangle",
-        x, y, width: cardWidth, height: cardHeight,
-        strokeColor: resource.kind === "Service" ? "#0e7490" : resource.kind === "Ingress" ? "#7c3aed" : "#3267b2",
-        backgroundColor: resource.kind === "Service" ? "#ecfeff" : resource.kind === "Ingress" ? "#f5f3ff" : "#eff6ff",
-        fillStyle: "solid",
-        strokeWidth: 1.5,
-        roughness: 0,
-        roundness: { type: 3 },
-        label: { text: `${resource.kind}\n${resource.name}\n${detailLines.join("\n")}`, fontSize: 14, textAlign: "left", verticalAlign: "middle" },
-        customData: {
-          diagramIcon: true,
-          kubernetesManifest: manifest,
-          kubernetesResource: {
-            provider: "kubernetes",
-            resourceType: String(resource.kind || "resource").toLowerCase(),
-            catalog: "kubernetes",
-            importedFromYaml: true,
-            properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion },
-          },
-        },
+      ].filter(Boolean).join("\\n");
+      const metadata = {
+        provider: "kubernetes", resourceType: String(resource.kind || "resource").toLowerCase(),
+        catalog: "kubernetes", importedFromYaml: true,
+        properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion },
+        manifest,
       };
+      nodes.push({
+        type: "rectangle", x, y, width: cardWidth, height: cardHeight,
+        strokeColor: resource.kind === "Service" ? "#0891b2" : resource.kind === "Ingress" ? "#8b5cf6" : "#4779bf",
+        backgroundColor: resource.kind === "Service" ? "#102b32" : resource.kind === "Ingress" ? "#241c38" : "#172333",
+        fillStyle: "solid", strokeWidth: 1.5, roughness: 0, roundness: { type: 3 },
+        groupIds: [resourceGroup],
+        customData: { diagramIcon: true, iconId: icon?.id || null, iconName: icon?.name || resource.kind, iconCategory: icon?.category || "Kubernetes", iconSource: "kubernetes", kubernetesManifestResource: metadata },
+      });
+      if (fileId) {
+        nodes.push({
+          type: "image", x: x + 15, y: y + 22, width: 64, height: 64, fileId,
+          groupIds: [resourceGroup],
+          customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+        });
+      } else {
+        nodes.push({
+          type: "text", x: x + 16, y: y + 30, width: 62, height: 46, text: String(resource.kind).slice(0, 3).toUpperCase(),
+          fontSize: 18, fontFamily: 1, textAlign: "center", verticalAlign: "middle", strokeColor: "#9fc5ff",
+          groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+        });
+      }
+      nodes.push({
+        type: "text", x: x + 91, y: y + 14, width: cardWidth - 105, height: 32,
+        text: `${resource.kind}\\n${resource.name}`, fontSize: 18, fontFamily: 1, textAlign: "left",
+        verticalAlign: "middle", strokeColor: "#e6efff", backgroundColor: "transparent", autoResize: false,
+        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+      });
+      nodes.push({
+        type: "text", x: x + 91, y: y + 51, width: cardWidth - 105, height: 62,
+        text: details, fontSize: 12, fontFamily: 1, textAlign: "left",
+        verticalAlign: "middle", strokeColor: "#a8bbd4", backgroundColor: "transparent", autoResize: false,
+        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+      });
     });
 
     const edges = [];
-    const labelsMatch = (selector, labels) => selector && labels && Object.entries(selector).length > 0
-      && Object.entries(selector).every(([key, value]) => labels[key] === value);
     resources.forEach((resource) => {
       if (resource.kind !== "Service") return;
       const selector = resource.manifest?.spec?.selector;
@@ -475,15 +521,10 @@ function App() {
         const left = Math.min(startX, endX);
         const top = Math.min(startY, endY);
         edges.push({
-          type: "arrow",
-          x: left,
-          y: top,
-          width: Math.abs(endX - startX),
-          height: Math.abs(endY - startY),
+          type: "arrow", x: left, y: top,
+          width: Math.abs(endX - startX), height: Math.abs(endY - startY),
           points: [[startX - left, startY - top], [endX - left, endY - top]],
-          strokeColor: "#0e7490",
-          strokeWidth: 2,
-          endArrowhead: "arrow",
+          strokeColor: "#22a6b9", strokeWidth: 2, endArrowhead: "triangle",
           label: { text: "selects", fontSize: 12 },
         });
       });
@@ -500,7 +541,6 @@ function App() {
     queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || created, api.getAppState?.() || {});
     showToast(`Created Kubernetes diagram with ${resources.length} resources`);
   }, [collaborationCanEdit, queueSketchSave, showToast]);
-
   const createComposeDiagram = useCallback(async (composeDocument) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit) return;
