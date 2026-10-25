@@ -680,3 +680,97 @@
     content: none;
   }
 }
+
+/* Desktop widths that cannot fit every primary action: use a clean two-row
+   header rather than clipping controls, overlapping buttons, or scrolling. */
+@media (min-width: 761px) and (max-width: 1320px) {
+  .desktop-app-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px 7px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    padding: 6px 8px;
+    box-sizing: border-box;
+  }
+
+  .desktop-app-header > .desktop-app-menu-trigger,
+  .desktop-app-header > .desktop-app-library-toggle,
+  .desktop-app-header > .desktop-app-document-identity {
+    flex: 0 0 auto;
+  }
+
+  .desktop-app-header > .desktop-app-document-identity {
+    min-width: 92px;
+    max-width: 150px;
+  }
+
+  .desktop-app-header .desktop-app-document-identity-copy {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .desktop-app-header .desktop-app-document-identity-name,
+  .desktop-app-header .desktop-app-document-identity-state {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-app-header > .desktop-app-header-panel-actions {
+    order: 10;
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .desktop-app-header-panel-actions > * {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+
+  .desktop-app-header > .desktop-app-header-account-zone {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  .desktop-app-header > .desktop-app-save-status-wrap,
+  .desktop-app-header > .desktop-app-start-collaboration-button,
+  .desktop-app-header > .desktop-app-header-actions {
+    flex: 0 0 auto;
+  }
+
+  .desktop-app-header > .desktop-app-header-spacer {
+    display: none;
+  }
+
+  .desktop-app-header .desktop-app-nav {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .desktop-app-header .desktop-app-nav-button {
+    padding-inline: 5px;
+  }
+
+  .desktop-app-header .desktop-app-save-status-label {
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
