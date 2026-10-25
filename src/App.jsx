@@ -663,7 +663,29 @@ function App() {
       if (pdb) addRelationship(pdb, workload, "protects", "#b68bea");
     });
 
-    const created = restoreElements(convertToExcalidrawElements([...edges, ...nodes]), null, { deleteInvisibleElements: true });
+    const converted = convertToExcalidrawElements([...edges, ...nodes]);
+    const created = restoreElements(converted, null, { deleteInvisibleElements: true });
+
+    // Reapply connector bindings after Excalidraw normalizes the imported
+    // skeletons. This ensures the final restored elements reference the exact
+    // IDs of the rectangle cards that are inserted into the scene.
+    const createdById = new Map(created.map((element) => [element.id, element]));
+    edges.forEach((edge) => {
+      const arrow = createdById.get(edge.id);
+      const startElement = createdById.get(edge.startBinding?.elementId);
+      const endElement = createdById.get(edge.endBinding?.elementId);
+      if (!arrow || !startElement || !endElement) return;
+      arrow.startBinding = { elementId: startElement.id, focus: edge.startBinding?.focus ?? 0, gap: edge.startBinding?.gap ?? 8 };
+      arrow.endBinding = { elementId: endElement.id, focus: edge.endBinding?.focus ?? 0, gap: edge.endBinding?.gap ?? 8 };
+      startElement.boundElements = [
+        ...(startElement.boundElements || []).filter((binding) => binding.id !== arrow.id),
+        { id: arrow.id, type: "arrow" },
+      ];
+      endElement.boundElements = [
+        ...(endElement.boundElements || []).filter((binding) => binding.id !== arrow.id),
+        { id: arrow.id, type: "arrow" },
+      ];
+    });
     const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
     api.updateScene({
       elements: [...existing, ...created],
