@@ -205,7 +205,34 @@
     min-height: 0;
   }
 
-  /* The floating toolbar remains the native Excalidraw toolbar. On all
+  /* Split-screen workspace: keep the drawing toolbar anchored to the document
+     identity lane instead of centering it over the canvas. This avoids the
+     drifting/centered composition seen when the browser window is resized. */
+@media (min-width: 761px) and (max-width: 1119px) {
+  .desktop-canvas-region .excalidraw .App-toolbar-container,
+  .excalidraw .App-toolbar-container {
+    position: fixed !important;
+    top: 72px !important;
+    left: 10px !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: min(620px, calc(100vw - 20px)) !important;
+    max-width: min(620px, calc(100vw - 20px)) !important;
+    transform: none !important;
+    z-index: 120 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+  }
+
+  .desktop-canvas-region .excalidraw .Island.App-toolbar,
+  .excalidraw .Island.App-toolbar {
+    margin-inline: 0;
+  }
+}
+
+/* The floating toolbar remains the native Excalidraw toolbar. On all
      supported widths at or above 521px it uses the same top-center lane as
      the desktop design, while the scroll container prevents viewport escape.
    */
