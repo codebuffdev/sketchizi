@@ -301,3 +301,28 @@ test("Compose Studio supports duplicating a service with a unique name and revie
   assert.match(ui, /onClick=\{duplicateSelected\}>Duplicate service<\/button>/);
   assert.match(ui, /Review ports, volumes, and environment values before running/);
 });
+
+
+test("validates duplicate published host ports across services", () => {
+  const result = validateComposeDocument({
+    services: {
+      web: { image: "nginx:1.27", ports: ["8080:80"] },
+      admin: { image: "nginx:1.27", ports: ["8080:8081"] },
+    },
+  });
+  const finding = result.findings.find((item) => item.code === "COMPOSE_DUPLICATE_HOST_PORT");
+  assert.ok(finding);
+  assert.equal(finding.severity, "error");
+  assert.match(finding.message, /8080/);
+});
+
+test("validates malformed environment entries without rejecting valid mappings", () => {
+  const invalid = validateComposeDocument({
+    services: { api: { image: "example/api:1", environment: ["", "=missing-key", "GOOD=value"] } },
+  });
+  assert.ok(invalid.findings.some((item) => item.code === "COMPOSE_INVALID_ENVIRONMENT_ENTRY"));
+  const valid = validateComposeDocument({
+    services: { api: { image: "example/api:1", environment: { NODE_ENV: "production" } } },
+  });
+  assert.equal(valid.findings.some((item) => item.code === "COMPOSE_INVALID_ENVIRONMENT"), false);
+});
