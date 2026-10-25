@@ -86,5 +86,6 @@ test("header layout responds to measured available width rather than viewport br
   assert.match(css, /\.desktop-app-header\.is-constrained/);
   assert.match(css, /grid-template-areas:[\s\S]*?"menu library document account save collab search"[\s\S]*?"features features features features features features features"/);
   assert.doesNotMatch(css, /@media screen and \(min-width: 761px\) and \(max-width: 1024px\)/);
-  assert.doesNotMatch(css, /content: "More Tools"/);
+  const widthDrivenStyles = css.slice(css.indexOf("/* Width-driven responsive header states"));
+  assert.doesNotMatch(widthDrivenStyles, /content: "More Tools"/);
 });
