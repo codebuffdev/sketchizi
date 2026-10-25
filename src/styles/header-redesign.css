@@ -1212,56 +1212,56 @@
 
 /* Width-driven responsive header states. The component measures its own
    available width so split-window layouts behave like resized viewports. */
-.desktop-app-header.is-compact {
+.app .desktop-app-header.is-compact {
   gap: 3px;
   padding-inline: 8px;
   min-width: 0;
 }
 
-.desktop-app-header.is-compact .desktop-app-header-spacer {
+.app .desktop-app-header.is-compact .desktop-app-header-spacer {
   display: none;
 }
 
-.desktop-app-header.is-compact .desktop-app-nav {
+.app .desktop-app-header.is-compact .desktop-app-nav {
   gap: 0;
   padding-right: 4px;
 }
 
-.desktop-app-header.is-compact .desktop-app-nav-button {
+.app .desktop-app-header.is-compact .desktop-app-nav-button {
   padding-inline: 4px;
   font-size: 10px;
 }
 
-.desktop-app-header.is-compact .desktop-app-header-panel-actions {
+.app .desktop-app-header.is-compact .desktop-app-header-panel-actions {
   gap: 4px;
   padding-inline: 6px;
 }
 
-.desktop-app-header.is-compact .desktop-app-header-account-zone {
+.app .desktop-app-header.is-compact .desktop-app-header-account-zone {
   gap: 4px;
   padding-inline: 4px;
 }
 
-.desktop-app-header.is-compact .auth-account-name,
-.desktop-app-header.is-compact .auth-account-chevron {
+.app .desktop-app-header.is-compact .auth-account-name,
+.app .desktop-app-header.is-compact .auth-account-chevron {
   display: none;
 }
 
-.desktop-app-header.is-compact .desktop-app-start-collaboration-label,
-.desktop-app-header.is-compact .desktop-app-search-label,
-.desktop-app-header.is-compact .desktop-app-search-shortcut {
+.app .desktop-app-header.is-compact .desktop-app-start-collaboration-label,
+.app .desktop-app-header.is-compact .desktop-app-search-label,
+.app .desktop-app-header.is-compact .desktop-app-search-shortcut {
   display: none;
 }
 
-.desktop-app-header.is-compact .desktop-app-start-collaboration-button,
-.desktop-app-header.is-compact .desktop-app-search-button {
+.app .desktop-app-header.is-compact .desktop-app-start-collaboration-button,
+.app .desktop-app-header.is-compact .desktop-app-search-button {
   width: 32px;
   min-width: 32px;
   justify-content: center;
   padding-inline: 4px;
 }
 
-.desktop-app-header.is-constrained {
+.app .desktop-app-header.is-constrained {
   display: grid;
   grid-template-columns: 30px 30px minmax(72px, 1fr) auto 30px 34px 32px;
   grid-template-areas:
@@ -1278,7 +1278,7 @@
   box-sizing: border-box;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-menu-trigger {
+.app .desktop-app-header.is-constrained > .desktop-app-menu-trigger {
   grid-area: menu;
   display: grid;
   width: 30px;
@@ -1286,18 +1286,18 @@
   margin: 0;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-library-toggle {
+.app .desktop-app-header.is-constrained > .desktop-app-library-toggle {
   grid-area: library;
   width: 30px;
   min-width: 30px;
   margin: 0;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-nav {
+.app .desktop-app-header.is-constrained > .desktop-app-nav {
   display: none;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-document-identity {
+.app .desktop-app-header.is-constrained > .desktop-app-document-identity {
   grid-area: document;
   min-width: 0;
   max-width: none;
@@ -1305,19 +1305,19 @@
   overflow: hidden;
 }
 
-.desktop-app-header.is-constrained .desktop-app-document-identity-copy {
+.app .desktop-app-header.is-constrained .desktop-app-document-identity-copy {
   min-width: 0;
   overflow: hidden;
 }
 
-.desktop-app-header.is-constrained .desktop-app-document-identity-name,
-.desktop-app-header.is-constrained .desktop-app-document-identity-state {
+.app .desktop-app-header.is-constrained .desktop-app-document-identity-name,
+.app .desktop-app-header.is-constrained .desktop-app-document-identity-state {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-header-account-zone {
+.app .desktop-app-header.is-constrained > .desktop-app-header-account-zone {
   grid-area: account;
   display: flex;
   align-items: center;
@@ -1329,13 +1329,13 @@
   border: 0;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-save-status-wrap {
+.app .desktop-app-header.is-constrained > .desktop-app-save-status-wrap {
   grid-area: save;
   min-width: 0;
   margin: 0;
 }
 
-.desktop-app-header.is-constrained .desktop-app-save-status-trigger {
+.app .desktop-app-header.is-constrained .desktop-app-save-status-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1344,12 +1344,12 @@
   padding: 4px;
 }
 
-.desktop-app-header.is-constrained .desktop-app-save-status-label,
-.desktop-app-header.is-constrained .desktop-app-save-status-chevron {
+.app .desktop-app-header.is-constrained .desktop-app-save-status-label,
+.app .desktop-app-header.is-constrained .desktop-app-save-status-chevron {
   display: none;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-start-collaboration-button {
+.app .desktop-app-header.is-constrained > .desktop-app-start-collaboration-button {
   grid-area: collab;
   display: inline-flex;
   align-items: center;
@@ -1363,11 +1363,11 @@
   gap: 0;
 }
 
-.desktop-app-header.is-constrained .desktop-app-start-collaboration-label {
+.app .desktop-app-header.is-constrained .desktop-app-start-collaboration-label {
   display: none;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-header-actions {
+.app .desktop-app-header.is-constrained > .desktop-app-header-actions {
   grid-area: search;
   display: flex;
   align-items: center;
@@ -1379,7 +1379,7 @@
   border: 0;
 }
 
-.desktop-app-header.is-constrained .desktop-app-search-button {
+.app .desktop-app-header.is-constrained .desktop-app-search-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1390,13 +1390,13 @@
   padding: 0;
 }
 
-.desktop-app-header.is-constrained .desktop-app-search-label,
-.desktop-app-header.is-constrained .desktop-app-search-shortcut,
-.desktop-app-header.is-constrained > .desktop-app-header-spacer {
+.app .desktop-app-header.is-constrained .desktop-app-search-label,
+.app .desktop-app-header.is-constrained .desktop-app-search-shortcut,
+.app .desktop-app-header.is-constrained > .desktop-app-header-spacer {
   display: none;
 }
 
-.desktop-app-header.is-constrained > .desktop-app-header-panel-actions {
+.app .desktop-app-header.is-constrained > .desktop-app-header-panel-actions {
   grid-area: features;
   display: flex;
   flex-flow: row wrap;
@@ -1412,18 +1412,18 @@
   overflow: visible;
 }
 
-.desktop-app-header.is-constrained .desktop-app-header-panel-actions > * {
+.app .desktop-app-header.is-constrained .desktop-app-header-panel-actions > * {
   flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
   margin: 0;
 }
 
-.desktop-app-header.is-constrained .desktop-app-header-panel-actions .properties-toggle,
-.desktop-app-header.is-constrained .desktop-app-header-panel-actions .architecture-validation-toggle,
-.desktop-app-header.is-constrained .desktop-app-header-panel-actions .ai-ask-toggle,
-.desktop-app-header.is-constrained .desktop-app-header-panel-actions .community-reviews-toggle,
-.desktop-app-header.is-constrained .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
+.app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .properties-toggle,
+.app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .architecture-validation-toggle,
+.app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .ai-ask-toggle,
+.app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .community-reviews-toggle,
+.app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
   width: auto;
   min-width: 32px;
   max-width: 100%;
@@ -1433,7 +1433,7 @@
 }
 
 /* The collaboration status is exceptional content, not a grid column. */
-.desktop-app-header.is-constrained > .collaboration-header-status {
+.app .desktop-app-header.is-constrained > .collaboration-header-status {
   grid-column: 1 / -1;
   min-width: 0;
   max-width: 100%;
