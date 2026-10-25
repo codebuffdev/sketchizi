@@ -408,24 +408,65 @@ function App() {
       return;
     }
 
-    const cardWidth = 292;
-    const cardHeight = 126;
-    const gapX = 78;
-    const gapY = 64;
-    const columns = Math.max(1, Math.ceil(Math.sqrt(resources.length)));
+    const cardWidth = 320;
+    const cardHeight = 164;
+    const gapX = 76;
+    const gapY = 78;
     const positions = new Map();
-    const iconForKind = (kind) => {
-      const aliases = { EndpointSlice: "endpoints", PersistentVolumeClaim: "persistent-volume-claim", PersistentVolume: "persistent-volume", StorageClass: "storage-class", HorizontalPodAutoscaler: "horizontal-pod-autoscaler", NetworkPolicy: "network-policy", ServiceAccount: "service-account", ClusterRoleBinding: "cluster-role-binding", ClusterRole: "cluster-role", RoleBinding: "role-binding", CustomResourceDefinition: "custom-resource-definition", PodSecurityPolicy: "pod-security-policy", ConfigMap: "configmap", CronJob: "cronjob", ResourceQuota: "resourcequota", LimitRange: "limitrange" };
-      const id = aliases[kind] || String(kind).replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-      return kubernetesIcons.find((icon) => icon.id === `k8s:${id}`) || null;
+    const normalizedIconToken = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const iconAliases = {
+      EndpointSlice: ["endpointslice", "endpoints"], PersistentVolumeClaim: ["persistentvolumeclaim", "pvc"],
+      PersistentVolume: ["persistentvolume", "pv"], StorageClass: ["storageclass"], HorizontalPodAutoscaler: ["horizontalpodautoscaler", "hpa"],
+      NetworkPolicy: ["networkpolicy"], ServiceAccount: ["serviceaccount"], ClusterRoleBinding: ["clusterrolebinding"],
+      ClusterRole: ["clusterrole"], RoleBinding: ["rolebinding"], CustomResourceDefinition: ["customresourcedefinition", "crd"],
+      PodSecurityPolicy: ["podsecuritypolicy"], ConfigMap: ["configmap"], CronJob: ["cronjob"],
+      ResourceQuota: ["resourcequota"], LimitRange: ["limitrange"], PodDisruptionBudget: ["poddisruptionbudget", "pdb"],
+      ServiceMonitor: ["servicemonitor"], Deployment: ["deployment"], StatefulSet: ["statefulset"], DaemonSet: ["daemonset"],
+      ReplicaSet: ["replicaset"], Service: ["service"], Ingress: ["ingress"], Pod: ["pod"], Namespace: ["namespace"],
+      Secret: ["secret"], Job: ["job"], Node: ["node"], Role: ["role"], PersistentVolumeClaim: ["persistentvolumeclaim", "pvc"],
     };
+    const iconForKind = (kind) => {
+      const tokens = new Set([normalizedIconToken(kind), ...(iconAliases[kind] || [])]);
+      const candidates = kubernetesIcons.map((icon) => {
+        const id = normalizedIconToken(String(icon.id || "").replace(/^k8s:/, ""));
+        const name = normalizedIconToken(icon.name);
+        const category = normalizedIconToken(icon.category);
+        const exact = tokens.has(id) || tokens.has(name);
+        const partial = [...tokens].some((token) => token.length >= 4 && (id.endsWith(token) || name === token || name.startsWith(token)));
+        return { icon, score: exact ? 100 : partial ? 60 : category === "kubernetes" && [...tokens].some((token) => id.includes(token)) ? 30 : 0 };
+      }).sort((a, b) => b.score - a.score);
+      return candidates[0]?.score ? candidates[0].icon : null;
+    };
+    const layoutRank = (resource) => {
+      const kind = resource.kind;
+      if (kind === "Ingress" || kind === "Gateway" || kind === "HTTPRoute") return 0;
+      if (kind === "Service") return 1;
+      if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(kind)) return 2;
+      if (["PersistentVolumeClaim", "PersistentVolume", "StorageClass", "ConfigMap", "Secret", "ServiceAccount"].includes(kind)) return 3;
+      if (["HorizontalPodAutoscaler", "PodDisruptionBudget", "NetworkPolicy"].includes(kind)) return 4;
+      return 5;
+    };
+    const buckets = new Map();
+    resources.forEach((resource) => {
+      const rank = layoutRank(resource);
+      if (!buckets.has(rank)) buckets.set(rank, []);
+      buckets.get(rank).push(resource);
+    });
+    const resourcePositions = new Map();
+    const maxPerRow = 3;
+    [...buckets.entries()].sort((a, b) => a[0] - b[0]).forEach(([rank, items]) => {
+      items.forEach((resource, index) => {
+        const row = Math.floor(index / maxPerRow);
+        const column = index % maxPerRow;
+        const x = 120 + column * (cardWidth + gapX);
+        const y = 90 + rank * 245 + row * (cardHeight + 34);
+        resourcePositions.set(resource.id, { x, y, rank, row, column });
+        positions.set(resource.id, { x, y });
+      });
+    });
 
-    const iconAssets = await Promise.all(resources.map(async (resource, index) => {
-      const column = index % columns;
-      const row = Math.floor(index / columns);
-      const x = 180 + column * (cardWidth + gapX);
-      const y = 150 + row * (cardHeight + gapY);
-      positions.set(resource.id, { x, y });
+    const iconAssets = await Promise.all(resources.map(async (resource) => {
+      const { x, y } = positions.get(resource.id);
       const icon = iconForKind(resource.kind);
       if (!icon) return { resource, x, y, icon: null, fileId: null };
       try {
@@ -433,7 +474,7 @@ function App() {
         if (!response.ok) throw new Error(`Kubernetes icon request failed (${response.status})`);
         const svg = await response.text();
         const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
-        const fileId = `k8s-import-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`;
+        const fileId = `k8s-import-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         return { resource, x, y, icon, fileId, dataURL };
       } catch (error) {
         showToast(`Could not load the ${resource.kind} icon; using a labeled resource card instead.`, "warning");
@@ -468,72 +509,111 @@ function App() {
       };
       nodes.push({
         type: "rectangle", x, y, width: cardWidth, height: cardHeight,
-        strokeColor: resource.kind === "Service" ? "#0891b2" : resource.kind === "Ingress" ? "#8b5cf6" : "#4779bf",
-        backgroundColor: resource.kind === "Service" ? "#102b32" : resource.kind === "Ingress" ? "#241c38" : "#172333",
+        strokeColor: resource.kind === "Service" ? "#0891b2" : resource.kind === "Ingress" ? "#8b5cf6" : ["ConfigMap", "Secret", "PersistentVolumeClaim", "PersistentVolume", "StorageClass"].includes(resource.kind) ? "#b28b43" : "#4779bf",
+        backgroundColor: resource.kind === "Service" ? "#102b32" : resource.kind === "Ingress" ? "#241c38" : ["ConfigMap", "Secret", "PersistentVolumeClaim", "PersistentVolume", "StorageClass"].includes(resource.kind) ? "#28251d" : "#172333",
         fillStyle: "solid", strokeWidth: 1.5, roughness: 0, roundness: { type: 3 },
         groupIds: [resourceGroup],
         customData: { diagramIcon: true, iconId: icon?.id || null, iconName: icon?.name || resource.kind, iconCategory: icon?.category || "Kubernetes", iconSource: "kubernetes", kubernetesManifestResource: metadata },
       });
       if (fileId) {
         nodes.push({
-          type: "image", x: x + 15, y: y + 22, width: 64, height: 64, fileId,
+          type: "image", x: x + 18, y: y + 30, width: 62, height: 62, fileId,
           groupIds: [resourceGroup],
           customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", kubernetesManifestResource: metadata },
         });
       } else {
         nodes.push({
-          type: "text", x: x + 16, y: y + 30, width: 62, height: 46, text: String(resource.kind).slice(0, 3).toUpperCase(),
-          fontSize: 18, fontFamily: 1, textAlign: "center", verticalAlign: "middle", strokeColor: "#9fc5ff",
+          type: "text", x: x + 16, y: y + 34, width: 66, height: 44, text: String(resource.kind).replace(/([a-z])([A-Z])/g, "$1 $2").split(/\s+/).map((part) => part.slice(0, 1)).join("").slice(0, 4).toUpperCase(),
+          fontSize: 15, fontFamily: 2, textAlign: "center", verticalAlign: "middle", strokeColor: "#9fc5ff",
           groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
         });
       }
       nodes.push({
-        type: "text", x: x + 91, y: y + 14, width: cardWidth - 105, height: 32,
-        text: `${resource.kind}\n${resource.name}`, fontSize: 18, fontFamily: 1, textAlign: "left",
-        verticalAlign: "middle", strokeColor: "#e6efff", backgroundColor: "transparent", autoResize: false,
+        type: "text", x: x + 98, y: y + 16, width: cardWidth - 116, height: 44,
+        text: `${resource.kind}\n${resource.name}`, fontSize: 16, fontFamily: 2, textAlign: "left",
+        verticalAlign: "top", strokeColor: "#e6efff", backgroundColor: "transparent", autoResize: false,
         groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
       });
       nodes.push({
-        type: "text", x: x + 91, y: y + 51, width: cardWidth - 105, height: 62,
-        text: details, fontSize: 12, fontFamily: 1, textAlign: "left",
-        verticalAlign: "middle", strokeColor: "#a8bbd4", backgroundColor: "transparent", autoResize: false,
+        type: "text", x: x + 98, y: y + 64, width: cardWidth - 116, height: 84,
+        text: details, fontSize: 11, fontFamily: 2, textAlign: "left",
+        verticalAlign: "top", strokeColor: "#a8bbd4", backgroundColor: "transparent", autoResize: false,
         groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
       });
     });
 
     const edges = [];
-    resources.forEach((resource) => {
-      if (resource.kind !== "Service") return;
-      const selector = resource.manifest?.spec?.selector;
-      if (!selector) return;
-      resources.forEach((candidate) => {
-        if (!["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod"].includes(candidate.kind)) return;
-        const labels = candidate.kind === "Pod"
-          ? candidate.manifest?.metadata?.labels
-          : candidate.manifest?.spec?.template?.metadata?.labels || candidate.manifest?.spec?.selector?.matchLabels;
-        if (!labelsMatch(selector, labels)) return;
-        const from = positions.get(candidate.id);
-        const to = positions.get(resource.id);
-        if (!from || !to) return;
-        const fromCenter = { x: from.x + cardWidth / 2, y: from.y + cardHeight / 2 };
-        const toCenter = { x: to.x + cardWidth / 2, y: to.y + cardHeight / 2 };
-        const dx = toCenter.x - fromCenter.x;
-        const dy = toCenter.y - fromCenter.y;
-        if (dx === 0 && dy === 0) return;
-        const fromScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
-        const toScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
-        const start = { x: fromCenter.x + dx * fromScale, y: fromCenter.y + dy * fromScale };
-        const end = { x: toCenter.x - dx * toScale, y: toCenter.y - dy * toScale };
-        const left = Math.min(start.x, end.x);
-        const top = Math.min(start.y, end.y);
-        edges.push({
-          type: "arrow", x: left, y: top,
-          width: Math.abs(end.x - start.x), height: Math.abs(end.y - start.y),
-          points: [[start.x - left, start.y - top], [end.x - left, end.y - top]],
-          strokeColor: "#22a6b9", strokeWidth: 2, endArrowhead: "triangle",
-          label: { text: "selects", fontSize: 12 },
-        });
+    const edgePairs = new Set();
+    const addRelationship = (fromResource, toResource, label, color = "#22a6b9") => {
+      if (!fromResource || !toResource || fromResource.id === toResource.id) return;
+      const pairKey = `${fromResource.id}->${toResource.id}:${label}`;
+      if (edgePairs.has(pairKey)) return;
+      edgePairs.add(pairKey);
+      const from = positions.get(fromResource.id);
+      const to = positions.get(toResource.id);
+      if (!from || !to) return;
+      const fromCenter = { x: from.x + cardWidth / 2, y: from.y + cardHeight / 2 };
+      const toCenter = { x: to.x + cardWidth / 2, y: to.y + cardHeight / 2 };
+      const dx = toCenter.x - fromCenter.x;
+      const dy = toCenter.y - fromCenter.y;
+      if (Math.abs(dx) + Math.abs(dy) < 1) return;
+      const fromScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
+      const toScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
+      const startPoint = { x: fromCenter.x + dx * fromScale, y: fromCenter.y + dy * fromScale };
+      const endPoint = { x: toCenter.x - dx * toScale, y: toCenter.y - dy * toScale };
+      const left = Math.min(startPoint.x, endPoint.x);
+      const top = Math.min(startPoint.y, endPoint.y);
+      edges.push({
+        type: "arrow", x: left, y: top,
+        width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y),
+        points: [[startPoint.x - left, startPoint.y - top], [endPoint.x - left, endPoint.y - top]],
+        strokeColor: color, strokeWidth: 2, endArrowhead: "triangle",
+        label: { text: label, fontSize: 11 },
       });
+    };
+    const workloads = resources.filter((resource) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(resource.kind));
+    const services = resources.filter((resource) => resource.kind === "Service");
+    const ingressResources = resources.filter((resource) => resource.kind === "Ingress");
+    services.forEach((service) => {
+      const selector = service.manifest?.spec?.selector;
+      if (selector && Object.keys(selector).length) {
+        workloads.forEach((workload) => {
+          const labels = workload.kind === "Pod"
+            ? workload.manifest?.metadata?.labels
+            : workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.spec?.selector?.matchLabels;
+          if (labelsMatch(selector, labels)) addRelationship(service, workload, "routes to");
+        });
+      }
+    });
+    ingressResources.forEach((ingress) => {
+      const rules = ingress.manifest?.spec?.rules || [];
+      const serviceNames = new Set(rules.flatMap((rule) => (rule.http?.paths || []).map((path) => path.backend?.service?.name).filter(Boolean)));
+      const defaultName = ingress.manifest?.spec?.defaultBackend?.service?.name;
+      if (defaultName) serviceNames.add(defaultName);
+      serviceNames.forEach((name) => addRelationship(ingress, services.find((service) => service.name === name && service.namespace === ingress.namespace), "routes to", "#9b78ef"));
+    });
+    workloads.forEach((workload) => {
+      const spec = workload.manifest?.spec?.template?.spec || workload.manifest?.spec || {};
+      const podSpec = spec;
+      const podTemplateLabels = workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.metadata?.labels || {};
+      const referencedNames = new Set([
+        ...(podSpec.volumes || []).flatMap((volume) => [volume.persistentVolumeClaim?.claimName, volume.configMap?.name, volume.secret?.secretName].filter(Boolean)),
+        ...(podSpec.containers || []).flatMap((container) => [
+          ...(container.envFrom || []).flatMap((item) => [item.configMapRef?.name, item.secretRef?.name].filter(Boolean)),
+          ...(container.env || []).flatMap((item) => [item.valueFrom?.configMapKeyRef?.name, item.valueFrom?.secretKeyRef?.name].filter(Boolean)),
+        ]),
+      ]);
+      resources.filter((resource) => referencedNames.has(resource.name) && resource.namespace === workload.namespace
+        && ["ConfigMap", "Secret", "PersistentVolumeClaim"].includes(resource.kind))
+        .forEach((resource) => addRelationship(workload, resource, resource.kind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d"));
+      const hpa = resources.find((resource) => resource.kind === "HorizontalPodAutoscaler"
+        && resource.namespace === workload.namespace
+        && resource.manifest?.spec?.scaleTargetRef?.name === workload.name);
+      if (hpa) addRelationship(hpa, workload, "scales", "#b68bea");
+      const pdb = resources.find((resource) => resource.kind === "PodDisruptionBudget"
+        && resource.namespace === workload.namespace
+        && labelsMatch(resource.manifest?.spec?.selector?.matchLabels, podTemplateLabels));
+      if (pdb) addRelationship(pdb, workload, "protects", "#b68bea");
     });
 
     const created = restoreElements(convertToExcalidrawElements([...edges, ...nodes]), null, { deleteInvisibleElements: true });
