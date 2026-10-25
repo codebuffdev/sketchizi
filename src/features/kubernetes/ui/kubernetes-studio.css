@@ -43,3 +43,7 @@
 .k8s-studio-review-list .k8s-studio-review-note { align-items: flex-start; }
 .k8s-studio-review-note p { margin: 0; flex: 1; min-width: 180px; }
 @media (max-width: 600px) { .k8s-studio-review { padding: 18px; } .k8s-studio-review-summary { grid-template-columns: 1fr; } }
+
+.k8s-studio-hidden-input { display: none; }
+.k8s-studio-import-button { margin-top: 12px; }
+.k8s-studio-import-message { margin: 8px 0 0; font-size: 12px; color: var(--text-muted, #8e9bb0); }
