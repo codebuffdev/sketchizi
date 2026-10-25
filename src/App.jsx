@@ -854,6 +854,7 @@ function App() {
           </button>
         )}
 
+        <div className="studio-actions-group" aria-label="Creation and architecture tools">
         <button
           type="button"
           className="design-studio-header-toggle"
@@ -922,6 +923,8 @@ function App() {
           <span className="architecture-validation-toggle-icon">✓</span>
           <span>Validation</span>
         </button>
+
+        </div>
 
         {collaborationCanEdit && (
           <MoreTools
