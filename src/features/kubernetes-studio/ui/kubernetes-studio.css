@@ -36,3 +36,13 @@
 .k8s-yaml-editor-shell.has-content textarea::selection{background:#467ac866;-webkit-text-fill-color:transparent}
 .k8s-yaml-highlight .yaml-token-key{color:#83baff}.k8s-yaml-highlight .yaml-token-punctuation{color:#a4b4ca}.k8s-yaml-highlight .yaml-token-value{color:#d6e6fa}.k8s-yaml-highlight .yaml-token-string{color:#b8e5a4}.k8s-yaml-highlight .yaml-token-number{color:#e8bd86}.k8s-yaml-highlight .yaml-token-literal{color:#d4a6ff}.k8s-yaml-highlight .yaml-token-type{color:#f3cc8a}.k8s-yaml-highlight .yaml-token-comment{color:#71839b;font-style:italic}
 .k8s-yaml-highlight .yaml-highlight-line{display:block;min-height:1.65em}
+
+
+.k8s-studio-manifest-title{flex-wrap:wrap}
+.k8s-yaml-editor-controls{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0}
+.k8s-yaml-editor-controls button{display:grid;place-items:center;min-width:27px;height:25px;padding:0 6px;border:1px solid #34445c;border-radius:6px;background:#182337;color:#cbdaf0;font-size:12px;font-weight:750;cursor:pointer}
+.k8s-yaml-editor-controls button:hover:not(:disabled){border-color:#4d83e7;background:#1d3150;color:#fff}
+.k8s-yaml-editor-controls button:disabled{opacity:.35;cursor:not-allowed}
+.k8s-yaml-editor-controls output{min-width:32px;color:#a9bedb;font-size:10px;text-align:center;font-variant-numeric:tabular-nums}
+.k8s-yaml-editor-controls small{margin-left:5px;color:#899ab2;font-size:11px;white-space:nowrap}
+@media(max-width:540px){.k8s-yaml-editor-controls{gap:3px}.k8s-yaml-editor-controls small{display:none}}
