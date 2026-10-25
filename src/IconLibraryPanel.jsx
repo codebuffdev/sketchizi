@@ -171,7 +171,7 @@ export default function IconLibraryPanel({
 
         <div className="library-filter-row">
           <nav className="library-source-tabs" aria-label="Icon collections">
-            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={activeChip === tab.id ? "library-source-chip active" : "library-source-chip"} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.label}</button>)}
+            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.id === "eraser" && <svg className="library-source-chip-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2 8 1.5Z" /><path d="m12.4 1 .7 1.9L15 3.6l-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" /></svg>}{tab.label}</button>)}
             <div className="library-collections-wrap">
               <button type="button" className={activeChip === "collections" || collectionsOpen ? "library-source-chip active" : "library-source-chip"} aria-expanded={collectionsOpen} onClick={() => setCollectionsOpen((open) => !open)}>Collections <span aria-hidden="true" className="library-chip-chevron">⌄</span></button>
               {collectionsOpen && <div className="library-collections-menu" role="menu" aria-label="Collections">
