@@ -92,12 +92,19 @@ export default function DesktopAppHeader({
 
   useEffect(() => {
     const header = headerRef.current;
-    if (!header || typeof ResizeObserver === "undefined") return undefined;
-    const observer = new ResizeObserver(([entry]) => {
-      const width = Math.round(entry.contentRect.width);
+    const container = header?.parentElement;
+    if (!container || typeof ResizeObserver === "undefined") return undefined;
+
+    // Observe the containing layout, not the header's own intrinsic width.
+    // A flex header can overflow while reporting its oversized content width,
+    // preventing the compact state from ever activating.
+    const updateWidth = () => {
+      const width = Math.round(container.getBoundingClientRect().width);
       setAvailableWidth((current) => current === width ? current : width);
-    });
-    observer.observe(header);
+    };
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(container);
     return () => observer.disconnect();
   }, []);
 
