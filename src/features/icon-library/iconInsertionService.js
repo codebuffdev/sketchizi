@@ -363,7 +363,36 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
         addImage(dataURL);
       })
       .catch((error) => {
-        logger.error("Could not load Eraser icon", error, { category: "canvas", operation: "icon-insert", iconSource: "eraser" });
+        logger.error("Could not load library icon", error, { category: "canvas", operation: "icon-insert", iconSource: icon.source || "unknown", iconId: icon.id });
+        // Kubernetes resources must remain placeable even if a local SVG is
+        // missing or the browser cannot load it. Preserve the resource as an
+        // editable, grouped card instead of silently dropping the click.
+        if (icon.source === "kubernetes") {
+          const groupId = `kubernetes-fallback-${icon.id}-${Date.now()}`;
+          const resource = {
+            provider: "kubernetes",
+            catalog: "kubernetes",
+            resourceType: String(icon.id || "").replace(/^k8s:/, ""),
+            iconId: icon.id,
+            properties: { name: icon.name, category: icon.category },
+          };
+          const fallback = convertToExcalidrawElements([
+            {
+              type: "rectangle", x, y, width: 210, height: 94,
+              strokeColor: "#3267b2", backgroundColor: "#eff6ff",
+              fillStyle: "solid", strokeWidth: 2, roughness: 0,
+              roundness: { type: 3 }, groupIds: [groupId],
+              customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", kubernetesResource: resource },
+            },
+            {
+              type: "text", x: x + 12, y: y + 25, width: 186, text: icon.name || "Kubernetes resource",
+              fontSize: 16, fontFamily: 1, textAlign: "center", verticalAlign: "middle",
+              strokeColor: "#1e1e1e", backgroundColor: "transparent", groupIds: [groupId],
+              customData: { diagramIcon: true, iconId: icon.id, iconSource: "kubernetes", kubernetesResource: resource },
+            },
+          ]);
+          commitInsertedElements(fallback);
+        }
       });
   };
   return addIconToCanvas;
