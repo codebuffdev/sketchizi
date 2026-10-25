@@ -931,3 +931,19 @@
     opacity: 1 !important;
   }
 }
+
+/* Keep the primary creation/architecture actions visually grouped in the header. */
+.studio-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid var(--default-border-color, #2a3342);
+  border-radius: 13px;
+  background: var(--island-bg-color, rgba(20, 27, 39, 0.55));
+  flex: 0 0 auto;
+}
+.studio-actions-group > button { margin: 0; }
+@media (max-width: 1120px) {
+  .studio-actions-group { gap: 4px; padding: 3px 4px; }
+}
