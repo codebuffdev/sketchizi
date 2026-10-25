@@ -49,6 +49,63 @@ try {
   if (overflow) throw new Error("Creation screen has horizontal overflow at 390px viewport width.");
   console.log("PASS: creation screen remains usable at 390px without horizontal overflow.");
 
+  // Exercise the editor header across desktop, split-screen, tablet and phone widths.
+  // This checks rendered geometry rather than inferring responsiveness from CSS source.
+  await responsive.page.getByRole("button", { name: /create a new design/i }).click();
+  await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor();
+  await responsive.page.getByRole("button", { name: "Start blank" }).click();
+  await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
+  await responsive.page.locator(".excalidraw").waitFor({ timeout: 30000 });
+
+  for (const width of [1440, 1280, 1024, 900, 768, 600, 480, 390, 360, 320]) {
+    await responsive.page.setViewportSize({ width, height: 844 });
+    await responsive.page.waitForTimeout(100);
+    const layout = await responsive.page.evaluate(() => {
+      const header = document.querySelector(".desktop-app-header");
+      const visible = (element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" &&
+          Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
+      };
+      const rectOf = (element) => {
+        const rect = element.getBoundingClientRect();
+        return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height,
+          label: element.getAttribute("aria-label") || element.getAttribute("title") || element.textContent.trim().slice(0, 50) || element.className };
+      };
+      const controls = header
+        ? [...header.querySelectorAll("button, [role='button']")].filter(visible).map(rectOf)
+        : [];
+      const overlaps = [];
+      for (let i = 0; i < controls.length; i++) {
+        for (let j = i + 1; j < controls.length; j++) {
+          const a = controls[i], b = controls[j];
+          const area = Math.max(0, Math.min(a.right, b.right) - Math.max(a.x, b.x)) *
+            Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y));
+          if (area > 4) overlaps.push({ first: a.label, second: b.label, area: Math.round(area) });
+        }
+      }
+      const headerRect = header?.getBoundingClientRect();
+      return {
+        viewportWidth: document.documentElement.clientWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        headerWidth: headerRect?.width ?? null,
+        headerRight: headerRect?.right ?? null,
+        overlaps,
+      };
+    });
+    if (layout.documentWidth > layout.viewportWidth + 1) {
+      throw new Error(`Editor has horizontal overflow at ${width}px: document ${layout.documentWidth}px / viewport ${layout.viewportWidth}px.`);
+    }
+    if (layout.headerRight !== null && layout.headerRight > layout.viewportWidth + 1) {
+      throw new Error(`Editor header exceeds viewport at ${width}px: right edge ${layout.headerRight}px / viewport ${layout.viewportWidth}px.`);
+    }
+    if (layout.overlaps.length) {
+      throw new Error(`Editor header controls overlap at ${width}px: ${JSON.stringify(layout.overlaps)}`);
+    }
+    console.log(`PASS: editor header geometry at ${width}px (${layout.headerWidth}px header, no overlapping controls or horizontal overflow).`);
+  }
+
   if (errors.length) throw new Error(`Browser console exceptions: ${errors.join(" | ")}`);
 } finally {
   await browser.close();
