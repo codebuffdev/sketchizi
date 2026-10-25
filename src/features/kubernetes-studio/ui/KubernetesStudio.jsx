@@ -2,6 +2,101 @@ import { useMemo, useRef, useState } from "react";
 import { parseAllDocuments } from "yaml";
 import "./kubernetes-studio.css";
 
+const COMPLETION_KINDS = [
+  ["Pod", "v1"], ["Service", "v1"], ["Namespace", "v1"], ["ConfigMap", "v1"], ["Secret", "v1"],
+  ["PersistentVolume", "v1"], ["PersistentVolumeClaim", "v1"], ["ServiceAccount", "v1"],
+  ["Deployment", "apps/v1"], ["StatefulSet", "apps/v1"], ["DaemonSet", "apps/v1"], ["ReplicaSet", "apps/v1"],
+  ["Job", "batch/v1"], ["CronJob", "batch/v1"], ["Ingress", "networking.k8s.io/v1"],
+  ["NetworkPolicy", "networking.k8s.io/v1"], ["Role", "rbac.authorization.k8s.io/v1"],
+  ["RoleBinding", "rbac.authorization.k8s.io/v1"], ["ClusterRole", "rbac.authorization.k8s.io/v1"],
+  ["ClusterRoleBinding", "rbac.authorization.k8s.io/v1"], ["HorizontalPodAutoscaler", "autoscaling/v2"],
+  ["StorageClass", "storage.k8s.io/v1"], ["ResourceQuota", "v1"], ["LimitRange", "v1"],
+];
+const COMPLETION_API_VERSIONS = ["v1", "apps/v1", "batch/v1", "networking.k8s.io/v1", "rbac.authorization.k8s.io/v1", "autoscaling/v2", "storage.k8s.io/v1", "policy/v1"];
+
+function buildCompletions(text, caret, force = false) {
+  const lineStart = text.lastIndexOf("\\n", Math.max(0, caret - 1)) + 1;
+  const lineEndIndex = text.indexOf("\\n", caret);
+  const lineEnd = lineEndIndex < 0 ? text.length : lineEndIndex;
+  const line = text.slice(lineStart, lineEnd);
+  const beforeCaret = text.slice(lineStart, caret);
+  const indent = (line.match(/^\\s*/) || [""])[0];
+  const previousLines = text.slice(0, lineStart).split("\\n").reverse();
+  const previousLine = previousLines.find((value) => value.trim())?.trim() || "";
+  const kind = text.match(/^kind:\\s*([A-Za-z]+)/m)?.[1] || "";
+  let items = [];
+  let replaceStart = lineStart + indent.length;
+  let replaceEnd = caret;
+  const add = (label, detail, insert) => items.push({ label, detail, insert });
+
+  if (/^kind:\\s*/.test(beforeCaret)) {
+    const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\\s*/) || [""])[0].length;
+    replaceEnd = caret;
+    COMPLETION_KINDS.forEach(([name, version]) => add(name, version, name));
+  } else if (/^apiVersion:\\s*/.test(beforeCaret)) {
+    const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\\s*/) || [""])[0].length;
+    replaceEnd = caret;
+    COMPLETION_API_VERSIONS.forEach((version) => add(version, "Kubernetes API version", version));
+  } else if (/^\\s*kind:\\s*$/.test(line) || /^\\s*apiVersion:\\s*$/.test(line)) {
+    return { items: [], replaceStart, replaceEnd };
+  } else if (/^\\s*kind:\\s*[^\\s]+/.test(line) && beforeCaret.includes("kind:")) {
+    return { items: [], replaceStart, replaceEnd };
+  } else {
+    const parent = previousLine.replace(/:.*$/, "").trim();
+    const fieldGroups = {
+      root: ["apiVersion:", "kind:", "metadata:", "spec:", "data:", "type:"],
+      metadata: ["name:", "namespace:", "labels:", "annotations:"],
+      spec: kind === "Deployment" || kind === "StatefulSet" || kind === "ReplicaSet"
+        ? ["replicas:", "selector:", "template:", "strategy:", "minReadySeconds:"]
+        : kind === "Service" ? ["type:", "selector:", "ports:", "sessionAffinity:"]
+        : kind === "Pod" ? ["containers:", "initContainers:", "volumes:", "restartPolicy:", "serviceAccountName:", "nodeSelector:"]
+        : kind === "Ingress" ? ["ingressClassName:", "rules:", "tls:", "defaultBackend:"]
+        : ["selector:", "template:", "containers:", "ports:", "resources:", "type:", "accessModes:", "storageClassName:"],
+      selector: ["matchLabels:", "matchExpressions:"],
+      template: ["metadata:", "spec:"],
+      containers: ["- name: app", "image:", "ports:", "env:", "resources:", "volumeMounts:", "command:", "args:"],
+      ports: ["- port:", "targetPort:", "protocol:", "name:", "nodePort:"],
+      labels: ["app:", "tier:", "component:"],
+      resources: ["requests:", "limits:"],
+      requests: ["cpu:", "memory:"],
+      limits: ["cpu:", "memory:"],
+      rules: ["- host:", "http:", "paths:"],
+      http: ["paths:"],
+      paths: ["- path:", "pathType:", "backend:"],
+      backend: ["service:", "resource:"],
+      service: ["name:", "port:"],
+      volumes: ["- name:", "persistentVolumeClaim:", "configMap:", "secret:"],
+      persistentVolumeClaim: ["claimName:"],
+      data: ["APP_ENV:", "LOG_LEVEL:"],
+    };
+    let choices = fieldGroups[parent] || fieldGroups.root;
+    if (beforeCaret.trim()) {
+      const partial = beforeCaret.trim();
+      if (/^[A-Za-z][\\w-]*$/.test(partial)) {
+        const match = choices.filter((entry) => entry.toLowerCase().startsWith(partial.toLowerCase()));
+        if (match.length) choices = match;
+      }
+    }
+    if (parent === "containers" && (!beforeCaret.trim() || beforeCaret.trim() === "-")) {
+      choices = ["- name: app", "- name: web"];
+    }
+    choices.forEach((entry) => add(entry, parent ? `Kubernetes ${parent} field` : "Kubernetes manifest field", entry));
+    if (!force && !beforeCaret.trim() && !previousLine.endsWith(":")) items = [];
+  }
+
+  const query = /^(?:kind|apiVersion):\\s*/.test(beforeCaret)
+    ? ""
+    : beforeCaret.trim().replace(/^[- ]+/, "");
+  if (query && !/^kind:|^apiVersion:/.test(beforeCaret)) {
+    items = items.filter((item) => item.label.toLowerCase().startsWith(query.toLowerCase()));
+    replaceStart = lineStart + indent.length;
+  }
+  if (!force && !items.length) return { items: [], replaceStart, replaceEnd };
+  return { items: items.slice(0, 10), replaceStart, replaceEnd };
+}
+
 const KIND_LABELS = {
   Pod: "Pod", Deployment: "Deployment", StatefulSet: "StatefulSet", DaemonSet: "DaemonSet",
   Service: "Service", Ingress: "Ingress", ConfigMap: "ConfigMap", Secret: "Secret",
@@ -31,7 +126,7 @@ function normalizeManifest(value, index) {
 }
 
 export default function KubernetesStudio({ onClose, onCreateDiagram }) {
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef(null);\n  const yamlEditorRef = useRef(null);\n  const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [yamlText, setYamlText] = useState(`apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -63,6 +158,60 @@ spec:
       targetPort: 8080`);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const updateCompletions = (text, caret, force = false) => {
+    const next = buildCompletions(text, caret, force);
+    setCompletion({ ...next, selectedIndex: 0 });
+  };
+  const applyCompletion = (item) => {
+    const editor = yamlEditorRef.current;
+    if (!editor || !item) return;
+    const start = completion.replaceStart;
+    const end = completion.replaceEnd;
+    const nextText = yamlText.slice(0, start) + item.insert + yamlText.slice(end);
+    const nextCaret = start + item.insert.length;
+    setYamlText(nextText);
+    setError("");
+    setNotice("");
+    setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+    requestAnimationFrame(() => {
+      editor.focus();
+      editor.setSelectionRange(nextCaret, nextCaret);
+    });
+  };
+  const handleYamlKeyDown = (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.code === "Space") {
+      event.preventDefault();
+      updateCompletions(yamlText, event.currentTarget.selectionStart, true);
+      return;
+    }
+    if (completion.items.length && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      setCompletion((current) => ({ ...current, selectedIndex: (current.selectedIndex + (event.key === "ArrowDown" ? 1 : current.items.length - 1)) % current.items.length }));
+      return;
+    }
+    if (completion.items.length && (event.key === "Enter" || event.key === "Tab")) {
+      event.preventDefault();
+      applyCompletion(completion.items[completion.selectedIndex]);
+      return;
+    }
+    if (event.key === "Escape") {
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      return;
+    }
+    if (event.key === "Enter" && !completion.items.length) {
+      const editor = event.currentTarget;
+      const before = yamlText.slice(0, editor.selectionStart);
+      const line = before.slice(before.lastIndexOf("\\n") + 1);
+      const indentation = (line.match(/^\\s*/) || [""])[0];
+      if (line.trim().endsWith(":")) {
+        event.preventDefault();
+        const nextText = yamlText.slice(0, editor.selectionStart) + "\\n" + indentation + "  " + yamlText.slice(editor.selectionEnd);
+        const nextCaret = editor.selectionStart + indentation.length + 3;
+        setYamlText(nextText);
+        requestAnimationFrame(() => { editor.focus(); editor.setSelectionRange(nextCaret, nextCaret); updateCompletions(nextText, nextCaret); });
+      }
+    }
+  };
   const parsed = useMemo(() => {
     if (!yamlText.trim()) return { resources: [], unsupported: [], parseError: "" };
     try {
@@ -143,7 +292,42 @@ spec:
         <div className="k8s-studio-workspace">
           <section className="k8s-studio-editor">
             <div className="k8s-studio-section-title"><div><span>01</span><h2>Manifest YAML</h2></div><small>{yamlText.length.toLocaleString()} characters</small></div>
-            <textarea aria-label="Kubernetes YAML manifest" spellCheck="false" value={yamlText} onChange={(event) => { setYamlText(event.target.value); setError(""); setNotice(""); }} placeholder="Paste Kubernetes YAML here…" />
+            <div className="k8s-yaml-editor-shell">
+              <textarea
+                ref={yamlEditorRef}
+                aria-label="Kubernetes YAML manifest"
+                spellCheck="false"
+                autoCapitalize="off"
+                autoCorrect="off"
+                value={yamlText}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  const caret = event.target.selectionStart;
+                  setYamlText(value);
+                  setError("");
+                  setNotice("");
+                  updateCompletions(value, caret);
+                }}
+                onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)}
+                onKeyUp={(event) => {
+                  if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart);
+                }}
+                onKeyDown={handleYamlKeyDown}
+                onBlur={() => window.setTimeout(() => setCompletion((current) => ({ ...current, items: [] })), 120)}
+                placeholder="Paste Kubernetes YAML here…"
+              />
+              {completion.items.length > 0 && (
+                <div className="k8s-yaml-completions" role="listbox" aria-label="YAML completions">
+                  <div className="k8s-yaml-completion-heading">Kubernetes suggestions <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></div>
+                  {completion.items.map((item, index) => (
+                    <button type="button" role="option" aria-selected={index === completion.selectedIndex} className={index === completion.selectedIndex ? "k8s-yaml-completion active" : "k8s-yaml-completion"} key={item.label} onMouseDown={(event) => event.preventDefault()} onClick={() => applyCompletion(item)}>
+                      <code>{item.label}</code><span>{item.detail}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="k8s-yaml-editor-status"><span>YAML</span><span>Ctrl+Space for completions</span><span>Indent: 2 spaces</span></div>
             <p className="k8s-studio-help">Paste one manifest or a multi-document Kubernetes YAML file. Your current canvas is preserved when the diagram is added.</p>
           </section>
           <aside className="k8s-studio-preview">
