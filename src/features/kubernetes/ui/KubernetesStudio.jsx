@@ -13,7 +13,6 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
   const [category, setCategory] = useState("All resources");
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeTab, setActiveTab] = useState("resources");
-  const architecturePlan = useMemo(() => buildKubernetesArchitecturePlan(selectedIcons), [selectedIcons]);
   const [busy, setBusy] = useState(false);
   const filteredIcons = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -21,6 +20,7 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
       (!needle || [icon.name, icon.subtitle, icon.category, ...(icon.searchAliases || [])].join(" ").toLowerCase().includes(needle)));
   }, [icons, query, category]);
   const selectedIcons = useMemo(() => selectedIds.map((id) => icons.find((icon) => icon.id === id)).filter(Boolean), [icons, selectedIds]);
+  const architecturePlan = useMemo(() => buildKubernetesArchitecturePlan(selectedIcons), [selectedIcons]);
   const toggleResource = (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const loadStarter = (starter) => {
     setSelectedIds(starter.resources.filter((id) => icons.some((icon) => icon.id === id)));
