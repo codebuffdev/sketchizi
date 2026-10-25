@@ -109,3 +109,11 @@ test("constrained header selectors override legacy app-scoped header styles", as
   assert.match(responsive, /\.app \.desktop-app-header\.is-constrained\s*\{/);
   assert.match(responsive, /\.app \.desktop-app-header\.is-constrained > \.desktop-app-header-panel-actions/);
 });
+
+
+test("header width measurement is clamped to visible viewport in split-window layouts", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  assert.match(header, /Math\.min\(containerWidth, viewportWidth\)/);
+  assert.match(header, /document\.documentElement\.clientWidth \|\| window\.innerWidth/);
+  assert.match(header, /window\.addEventListener\("resize", updateWidth\)/);
+});
