@@ -16,10 +16,6 @@ const MENU_DEFINITIONS = [
       "view.toggle-grid",
     ],
   },
-  {
-    label: "Help",
-    ids: ["application.shortcuts", "application.excalidraw-command-palette"],
-  },
 ];
 
 
