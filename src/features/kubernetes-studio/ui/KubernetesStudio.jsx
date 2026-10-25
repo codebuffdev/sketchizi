@@ -139,6 +139,7 @@ function buildCompletions(text, caret, force = false) {
   if (query) {
     items = items.filter((item) => item.label.toLowerCase().startsWith(query.toLowerCase()));
     if (!isValueCompletion) replaceStart = lineStart + indent.length;
+    if (!force && items.some((item) => item.label.toLowerCase() === query.toLowerCase())) items = [];
   }
   if (!force && !items.length) return { items: [], replaceStart, replaceEnd };
   return { items: items.slice(0, 10), replaceStart, replaceEnd };
