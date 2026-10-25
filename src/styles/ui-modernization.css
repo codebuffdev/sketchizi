@@ -986,3 +986,38 @@
     max-width: calc(100% - 16px);
   }
 }
+
+
+/* Refined header dropdown chevron: a crisp icon rather than a text glyph. */
+.app .desktop-app-nav-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app .desktop-app-nav-chevron {
+  display: block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  color: currentColor;
+  opacity: .68;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.app .desktop-app-nav-button:hover .desktop-app-nav-chevron,
+.app .desktop-app-nav-button:focus-visible .desktop-app-nav-chevron,
+.app .desktop-app-nav-button.active .desktop-app-nav-chevron {
+  opacity: 1;
+}
+
+.app .desktop-app-nav-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-nav-chevron {
+    transition: none;
+  }
+}
