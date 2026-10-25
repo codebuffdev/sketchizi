@@ -40,8 +40,8 @@ export function buildKubernetesArchitecturePlan(icons = []) {
   const relationships = [];
   const connected = new Set();
   for (const [sourceType, targetType, relationshipType] of PREFERRED_RELATIONSHIPS) {
-    const source = resources.find((resource) => resource.resourceType === sourceType && !connected.has(resource.index));
-    const target = resources.find((resource) => resource.resourceType === targetType && !connected.has(resource.index));
+    const source = resources.find((resource) => resource.resourceType === sourceType);
+    const target = resources.find((resource) => resource.resourceType === targetType);
     if (!source || !target) continue;
     if (!getCompatibleKubernetesRelationshipTypes(source.resourceType, target.resourceType).includes(relationshipType)) continue;
     relationships.push({
