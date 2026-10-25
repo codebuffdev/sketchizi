@@ -86,12 +86,14 @@ function buildCompletions(text, caret, force = false) {
     if (!force && !beforeCaret.trim() && !previousLine.endsWith(":")) items = [];
   }
 
-  const query = /^(?:kind|apiVersion):\\s*/.test(beforeCaret)
-    ? ""
+  const isKindValue = /^kind:\\s*/.test(beforeCaret);
+  const isApiVersionValue = /^apiVersion:\\s*/.test(beforeCaret);
+  const query = isKindValue || isApiVersionValue
+    ? beforeCaret.slice(beforeCaret.indexOf(":") + 1).trim()
     : beforeCaret.trim().replace(/^[- ]+/, "");
-  if (query && !/^kind:|^apiVersion:/.test(beforeCaret)) {
+  if (query) {
     items = items.filter((item) => item.label.toLowerCase().startsWith(query.toLowerCase()));
-    replaceStart = lineStart + indent.length;
+    if (!isKindValue && !isApiVersionValue) replaceStart = lineStart + indent.length;
   }
   if (!force && !items.length) return { items: [], replaceStart, replaceEnd };
   return { items: items.slice(0, 10), replaceStart, replaceEnd };
@@ -254,7 +256,7 @@ spec:
     }
   };
 
-  const createDiagram = () => {
+  const createDiagram = async () => {
     if (!parsed.resources.length) {
       setError(parsed.parseError || "Add at least one Kubernetes resource with kind and metadata.name.");
       return;
