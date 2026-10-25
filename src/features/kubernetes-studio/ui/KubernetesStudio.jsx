@@ -49,7 +49,8 @@ function buildCompletions(text, caret, force = false) {
   const indent = (line.match(/^\s*/) || [""])[0];
   const previousLines = text.slice(0, lineStart).split("\n").reverse();
   const previousLine = previousLines.find((value) => value.trim())?.trim() || "";
-  const kind = text.match(/^kind:\s*([A-Za-z]+)/m)?.[1] || "";
+  const currentDocument = text.slice(0, caret).split(/^---\s*$/m).pop() || "";
+  const kind = currentDocument.match(/^kind:\s*([A-Za-z]+)/m)?.[1] || "";
   let items = [];
   let replaceStart = lineStart + indent.length;
   let replaceEnd = caret;
