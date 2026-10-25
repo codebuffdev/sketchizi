@@ -39,6 +39,22 @@ function buildCompletions(text, caret, force = false) {
     replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\s*/) || [""])[0].length;
     replaceEnd = caret;
     COMPLETION_API_VERSIONS.forEach((version) => add(version, "Kubernetes API version", version));
+  } else if (/^\s*type:\s*/.test(beforeCaret) && kind === "Service") {
+    const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\s*/) || [""])[0].length;
+    ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"].forEach((value) => add(value, "Service type", value));
+  } else if (/^\s*restartPolicy:\s*/.test(beforeCaret)) {
+    const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\s*/) || [""])[0].length;
+    ["Always", "OnFailure", "Never"].forEach((value) => add(value, "Pod restart policy", value));
+  } else if (/^\s*protocol:\s*/.test(beforeCaret)) {
+    const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\s*/) || [""])[0].length;
+    ["TCP", "UDP", "SCTP"].forEach((value) => add(value, "Network protocol", value));
+  } else if (/^\s*pathType:\s*/.test(beforeCaret)) {
+    const valueStart = lineStart + beforeCaret.indexOf(":") + 1;
+    replaceStart = valueStart + (text.slice(valueStart, caret).match(/^\s*/) || [""])[0].length;
+    ["Prefix", "Exact", "ImplementationSpecific"].forEach((value) => add(value, "Ingress path matching", value));
   } else if (/^\s*kind:\s*$/.test(line) || /^\s*apiVersion:\s*$/.test(line)) {
     return { items: [], replaceStart, replaceEnd };
   } else if (/^\s*kind:\s*[^\s]+/.test(line) && beforeCaret.includes("kind:")) {
@@ -205,15 +221,16 @@ spec:
     if (event.key === "Enter" && !completion.items.length) {
       const editor = event.currentTarget;
       const before = yamlText.slice(0, editor.selectionStart);
-      const line = before.slice(before.lastIndexOf("\\n") + 1);
-      const indentation = (line.match(/^\\s*/) || [""])[0];
-      if (line.trim().endsWith(":")) {
-        event.preventDefault();
-        const nextText = yamlText.slice(0, editor.selectionStart) + "\\n" + indentation + "  " + yamlText.slice(editor.selectionEnd);
-        const nextCaret = editor.selectionStart + indentation.length + 3;
-        setYamlText(nextText);
-        requestAnimationFrame(() => { editor.focus(); editor.setSelectionRange(nextCaret, nextCaret); updateCompletions(nextText, nextCaret); });
-      }
+      const line = before.slice(before.lastIndexOf("\n") + 1);
+      const indentation = (line.match(/^\s*/) || [""])[0];
+      const extraIndent = line.trim().endsWith(":") ? "  " : "";
+      event.preventDefault();
+      const inserted = "\n" + indentation + extraIndent;
+      const nextText = yamlText.slice(0, editor.selectionStart) + inserted + yamlText.slice(editor.selectionEnd);
+      const nextCaret = editor.selectionStart + inserted.length;
+      setYamlText(nextText);
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      requestAnimationFrame(() => { editor.focus(); editor.setSelectionRange(nextCaret, nextCaret); updateCompletions(nextText, nextCaret); });
     }
   };
   const parsed = useMemo(() => {
