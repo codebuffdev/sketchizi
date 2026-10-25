@@ -89,3 +89,13 @@ test("header layout responds to measured available width rather than viewport br
   const widthDrivenStyles = css.slice(css.indexOf("/* Width-driven responsive header states"));
   assert.doesNotMatch(widthDrivenStyles, /content: "More Tools"/);
 });
+
+
+test("narrow desktop retains the structural workspace grid until the mobile breakpoint", async () => {
+  const css = await read("../src/styles/responsive-desktop.css");
+  assert.match(css, /@media \(min-width: 761px\) \{[\s\S]*?\.desktop-workspace \{[\s\S]*?display: grid/);
+  assert.match(css, /@media \(max-width: 760px\) \{[\s\S]*?\.desktop-app-header \{[\s\S]*?display: contents/);
+  assert.match(css, /@media \(min-width: 761px\) and \(max-width: 1024px\)/);
+  assert.match(css, /--sketchizi-desktop-resources-width: 220px/);
+  assert.match(css, /--sketchizi-desktop-context-width: 280px/);
+});
