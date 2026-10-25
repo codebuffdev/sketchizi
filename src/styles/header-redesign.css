@@ -1107,3 +1107,104 @@
   color: #f1f0f8;
   border-color: #454552;
 }
+
+/* Compact desktop: the header must fit the viewport, not merely become scrollable. */
+@media (min-width: 1025px) and (max-width: 1320px) {
+  .desktop-app-header {
+    gap: 2px;
+    padding-inline: 6px;
+    overflow: hidden;
+  }
+
+  .desktop-app-header-spacer {
+    display: none;
+  }
+
+  .desktop-app-nav {
+    gap: 0;
+    padding-right: 4px;
+  }
+
+  .desktop-app-nav-button {
+    padding-inline: 4px;
+    font-size: 10px;
+  }
+
+  .desktop-app-header-panel-actions {
+    gap: 3px;
+    padding-inline: 5px;
+  }
+
+  .desktop-app-header-panel-actions .properties-toggle,
+  .desktop-app-header-panel-actions .architecture-validation-toggle,
+  .desktop-app-header-panel-actions .ai-ask-toggle {
+    padding-inline: 6px;
+    font-size: 10px;
+  }
+
+  .desktop-app-header-account-zone {
+    gap: 3px;
+    padding-inline: 5px;
+  }
+
+  .desktop-app-header .auth-account-name,
+  .desktop-app-header .auth-account-chevron {
+    display: none;
+  }
+
+  .desktop-app-header .auth-account-trigger {
+    padding-inline: 3px;
+  }
+
+  .desktop-app-header .desktop-app-start-collaboration-button {
+    width: 34px;
+    min-width: 34px;
+    justify-content: center;
+    gap: 0;
+    margin-left: 3px;
+    padding-inline: 4px;
+    overflow: hidden;
+  }
+
+  .desktop-app-header .desktop-app-start-collaboration-label {
+    display: none;
+  }
+
+  .desktop-app-header-actions {
+    margin-left: 3px;
+    padding-left: 4px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1140px) {
+  .desktop-app-library-toggle {
+    margin-right: 3px;
+  }
+
+  .desktop-app-nav-button {
+    padding-inline: 3px;
+    font-size: 9px;
+  }
+
+  .desktop-app-header-panel-actions .community-reviews-toggle {
+    width: 30px;
+    min-width: 30px;
+    padding-inline: 3px;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .desktop-app-header-panel-actions .community-reviews-toggle svg {
+    flex: 0 0 auto;
+  }
+
+  .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
+    min-width: 32px;
+    width: 32px;
+    padding-inline: 4px;
+  }
+
+  .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger::after {
+    content: none;
+  }
+}
