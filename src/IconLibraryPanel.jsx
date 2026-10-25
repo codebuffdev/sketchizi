@@ -8,7 +8,7 @@ function sourceLabel(icon) {
   if (icon?.source === "networking" || icon?.category === "Networking") return "Networking";
   if (icon?.category === "Mind Maps") return "Mind Maps";
   if (icon?.category === "UML Diagrams") return "Architecture";
-  return icon?.subtitle && icon.subtitle !== "Eraser" ? icon.subtitle : "Essentials";
+  return icon?.subtitle && icon.subtitle !== "Eraser" && icon.subtitle !== "Eraser Icons" ? icon.subtitle : "Essentials";
 }
 
 function iconTags(icon) {
