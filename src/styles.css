@@ -674,3 +674,18 @@
 .kubernetes-studio-toggle:hover{background:#244779;border-color:#5b9bff;transform:translateY(-1px)}
 .kubernetes-studio-toggle span:first-child{font-size:15px}
 @media(max-width:1100px){.kubernetes-studio-toggle{padding:0 8px}.kubernetes-studio-toggle span:last-child{display:none}}
+
+
+/* DevOps Studio menu: one compact toolbar entry for both infrastructure studios. */
+.devops-studio-menu{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}
+.devops-studio-toggle{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border:1px solid #31578f;border-radius:9px;background:linear-gradient(135deg,#1b3458,#172131);color:#c4dcff;font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.devops-studio-toggle:hover,.devops-studio-toggle.active{background:#244779;border-color:#5b9bff}
+.devops-studio-toggle span:first-child{font-size:14px}
+.devops-studio-chevron{font-size:12px;opacity:.8;transition:transform .15s}
+.devops-studio-toggle.active .devops-studio-chevron{transform:rotate(180deg)}
+.devops-studio-dropdown{position:absolute;z-index:1000;top:calc(100% + 7px);left:0;display:flex;flex-direction:column;gap:4px;min-width:174px;padding:6px;border:1px solid var(--ui-border,#343946);border-radius:11px;background:var(--ui-surface-solid,#1b202b);box-shadow:0 12px 32px rgb(0 0 0 / 30%)}
+.devops-studio-dropdown button{display:flex;align-items:center;gap:9px;width:100%;min-height:36px;padding:7px 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--ui-text,#e6e8ef);font:inherit;font-size:11px;font-weight:700;text-align:left;cursor:pointer}
+.devops-studio-dropdown button:hover,.devops-studio-dropdown button:focus-visible{background:var(--ui-hover,#282f3d);border-color:var(--ui-border,#41495a)}
+.devops-studio-dropdown .kubernetes-studio-menu-item span:first-child{color:#9fc7ff;font-size:15px}
+.devops-studio-dropdown .docker-compose-studio-menu-item span:first-child{color:#d2b7ff;font-size:15px}
+@media(max-width:1100px){.devops-studio-toggle{padding:0 8px}.devops-studio-toggle span:nth-child(2){display:none}.devops-studio-dropdown{min-width:160px}}
