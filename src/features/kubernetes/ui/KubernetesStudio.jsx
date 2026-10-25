@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { parseAllDocuments } from "yaml";
 import "./kubernetes-studio.css";
 import { buildKubernetesArchitecturePlan } from "./kubernetesArchitecturePlanner.js";
 
@@ -14,6 +15,8 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeTab, setActiveTab] = useState("resources");
   const [busy, setBusy] = useState(false);
+  const yamlInputRef = useRef(null);
+  const [importMessage, setImportMessage] = useState("");
   const filteredIcons = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return icons.filter((icon) => (category === "All resources" || icon.category === category) &&
@@ -31,6 +34,45 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
     setBusy(true);
     try {
       await onCreateDiagram?.(selectedIcons);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const importYaml = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const source = await file.text();
+      const documents = parseAllDocuments(source, { prettyErrors: true });
+      const resources = documents.flatMap((document) => {
+        if (document.errors?.length) throw document.errors[0];
+        const value = document.toJSON();
+        return value && typeof value === "object" && value.kind ? [value] : [];
+      });
+      if (!resources.length) throw new Error("No Kubernetes resources with a kind field were found.");
+      const iconByKind = {
+        Namespace: "k8s:namespace", Node: "k8s:node", Pod: "k8s:pod",
+        Deployment: "k8s:deployment", StatefulSet: "k8s:statefulset",
+        DaemonSet: "k8s:daemonset", Service: "k8s:service",
+        PersistentVolume: "k8s:persistent-volume",
+        PersistentVolumeClaim: "k8s:persistent-volume-claim",
+        StorageClass: "k8s:storage-class", Ingress: "k8s:ingress",
+        ConfigMap: "k8s:configmap", Secret: "k8s:secret",
+        Job: "k8s:job", CronJob: "k8s:cronjob", ReplicaSet: "k8s:replicaset",
+        NetworkPolicy: "k8s:network-policy", ServiceAccount: "k8s:service-account",
+        Role: "k8s:role", RoleBinding: "k8s:role-binding",
+        ClusterRole: "k8s:cluster-role", ClusterRoleBinding: "k8s:cluster-role-binding",
+        CustomResourceDefinition: "k8s:custom-resource-definition",
+      };
+      const mapped = resources.map((resource) => icons.find((icon) => icon.id === iconByKind[resource.kind])).filter(Boolean);
+      if (!mapped.length) throw new Error("The YAML contains Kubernetes kinds that are not in the current Studio catalog.");
+      setImportMessage("Parsed " + resources.length + " resource document(s); " + mapped.length + " catalog resource(s) can be drawn.");
+      setBusy(true);
+      await onCreateDiagram?.(mapped);
+    } catch (error) {
+      setImportMessage(error?.message || "Could not parse this YAML file.");
     } finally {
       setBusy(false);
     }
@@ -64,7 +106,7 @@ export default function KubernetesStudio({ icons = [], categories = [], onClose,
             </aside>
             <main className="k8s-studio-catalog">
               <div className="k8s-studio-catalog-intro">
-                <div><h2>Kubernetes resources</h2><p>Select resources to add to your diagram. Search supports common Kubernetes aliases.</p></div>
+                <div><h2>Kubernetes resources</h2><p>Select resources to add to your diagram. Search supports common Kubernetes aliases.</p><button type="button" className="k8s-studio-secondary k8s-studio-import-button" onClick={() => yamlInputRef.current?.click()} disabled={!canEdit || busy}>Import YAML</button><input ref={yamlInputRef} className="k8s-studio-hidden-input" type="file" accept=".yaml,.yml,.json,text/yaml,application/yaml,application/json" onChange={importYaml} aria-label="Import Kubernetes YAML file" />{importMessage && <p className="k8s-studio-import-message" role="status">{importMessage}</p>}</div>
                 <label className="k8s-studio-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search resources, e.g. ingress, CRD…" aria-label="Search Kubernetes resources" /></label>
               </div>
               <div className="k8s-studio-resource-grid">
