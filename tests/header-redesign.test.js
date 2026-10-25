@@ -73,3 +73,14 @@ test("hamburger trigger toggles Excalidraw menu state directly and can close an 
   assert.match(app, /const toggleNativeMenu = useCallback/);
   assert.match(app, /openMenu: shouldOpen \? "canvas" : null/);
 });
+
+
+test("narrow desktop header uses stable grid areas with no horizontal scrolling", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  assert.match(css, /@media screen and \(min-width: 761px\) and \(max-width: 1024px\)/);
+  assert.match(css, /grid-template-areas:[\s\S]*?"menu library document account save collab search"[\s\S]*?"features features features features features features features"/);
+  assert.match(css, /\.app \.desktop-app-header > \.desktop-app-header-panel-actions[\s\S]*?grid-area: features/);
+  assert.match(css, /\.app \.desktop-app-header > \.desktop-app-header-actions[\s\S]*?grid-area: search/);
+  assert.match(css, /\.app \.desktop-app-header-panel-actions \.sketchizi-more-tools-header[\s\S]*?content: "More Tools"/);
+  assert.doesNotMatch(css.slice(css.lastIndexOf("Narrow desktop layout: stable grid areas")), /overflow-x:\s*auto/);
+});
