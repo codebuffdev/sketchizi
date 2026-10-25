@@ -514,16 +514,21 @@ function App() {
         const from = positions.get(candidate.id);
         const to = positions.get(resource.id);
         if (!from || !to) return;
-        const startX = from.x + cardWidth / 2;
-        const startY = from.y + cardHeight / 2;
-        const endX = to.x + cardWidth / 2;
-        const endY = to.y + cardHeight / 2;
-        const left = Math.min(startX, endX);
-        const top = Math.min(startY, endY);
+        const fromCenter = { x: from.x + cardWidth / 2, y: from.y + cardHeight / 2 };
+        const toCenter = { x: to.x + cardWidth / 2, y: to.y + cardHeight / 2 };
+        const dx = toCenter.x - fromCenter.x;
+        const dy = toCenter.y - fromCenter.y;
+        if (dx === 0 && dy === 0) return;
+        const fromScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
+        const toScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
+        const start = { x: fromCenter.x + dx * fromScale, y: fromCenter.y + dy * fromScale };
+        const end = { x: toCenter.x - dx * toScale, y: toCenter.y - dy * toScale };
+        const left = Math.min(start.x, end.x);
+        const top = Math.min(start.y, end.y);
         edges.push({
           type: "arrow", x: left, y: top,
-          width: Math.abs(endX - startX), height: Math.abs(endY - startY),
-          points: [[startX - left, startY - top], [endX - left, endY - top]],
+          width: Math.abs(end.x - start.x), height: Math.abs(end.y - start.y),
+          points: [[start.x - left, start.y - top], [end.x - left, end.y - top]],
           strokeColor: "#22a6b9", strokeWidth: 2, endArrowhead: "triangle",
           label: { text: "selects", fontSize: 12 },
         });
