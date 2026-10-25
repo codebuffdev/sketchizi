@@ -50,9 +50,8 @@ try {
   console.log("PASS: creation screen remains usable at 390px without horizontal overflow.");
 
   // Exercise the editor header across desktop, split-screen, tablet and phone widths.
+  // The responsive page is already on the creation screen from the check above.
   // This checks rendered geometry rather than inferring responsiveness from CSS source.
-  await responsive.page.getByRole("button", { name: /create a new design/i }).click();
-  await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor();
   await responsive.page.getByRole("button", { name: "Start blank" }).click();
   await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
   await responsive.page.locator(".excalidraw").waitFor({ timeout: 30000 });
