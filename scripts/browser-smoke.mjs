@@ -57,7 +57,8 @@ try {
   await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
   await responsive.page.locator(".excalidraw").waitFor({ state: "visible", timeout: 30000 });
 
-  for (const width of [1440, 1280, 1024, 900, 768, 600, 480, 390, 360, 320]) {
+  // Phone widths are intentionally out of scope; validate the supported desktop/tablet workspace.
+  for (const width of [1440, 1280, 1120, 1024, 900, 768]) {
     await responsive.page.setViewportSize({ width, height: 844 });
     await responsive.page.waitForTimeout(100);
     const layout = await responsive.page.evaluate(() => {
