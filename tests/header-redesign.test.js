@@ -84,8 +84,8 @@ test("header layout responds to measured available width rather than viewport br
   assert.match(header, /observer\.observe\(container\)/);
   assert.match(header, /availableWidth < 1120 \? " is-compact"/);
   assert.match(header, /isConstrained \? " is-constrained"/);
-  assert.match(header, /desktop-app-responsive-tools-trigger/);
-  assert.match(header, /role="menu" aria-label="Tools and features"/);
+  assert.match(header, /className="desktop-app-header-panel-actions"/);
+  assert.doesNotMatch(header, /desktop-app-responsive-tools-trigger/);
   assert.match(css, /\.desktop-app-header\.is-compact/);
   assert.match(css, /\.desktop-app-header\.is-constrained/);
   assert.match(css, /grid-template-areas:[\s\S]*?"menu library document account save collab search"[\s\S]*?"tools tools tools tools tools tools tools"/);
