@@ -309,7 +309,7 @@ spec:
       return;
     }
     try {
-      onCreateDiagram?.(parsed.resources);
+      await onCreateDiagram?.(parsed.resources);
       setError("");
       setNotice(`Added ${parsed.resources.length} Kubernetes resource(s) to the canvas.`);
       onClose?.();
