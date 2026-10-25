@@ -79,7 +79,9 @@ test("header layout responds to measured available width rather than viewport br
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const css = await read("../src/styles/header-redesign.css");
   assert.match(header, /new ResizeObserver/);
-  assert.match(header, /observer\.observe\(header\)/);
+  assert.match(header, /header\?\.parentElement/);
+  assert.match(header, /container\.getBoundingClientRect\(\)\.width/);
+  assert.match(header, /observer\.observe\(container\)/);
   assert.match(header, /availableWidth < 1120 \? " is-compact"/);
   assert.match(header, /availableWidth < 900 \? " is-constrained"/);
   assert.match(css, /\.desktop-app-header\.is-compact/);
