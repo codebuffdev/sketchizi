@@ -205,48 +205,35 @@
     min-height: 0;
   }
 
-  /* Final override: the native toolbar must sit below the complete compact
-   application header, including the wrapped feature-action row. */
-@media (min-width: 761px) and (max-width: 1119px) {
-  html body .app .desktop-canvas-region .excalidraw .App-toolbar-container {
-    top: 122px !important;
-    left: 10px !important;
-    right: auto !important;
-    transform: none !important;
-    width: min(620px, calc(100vw - 20px)) !important;
-    max-width: min(620px, calc(100vw - 20px)) !important;
-  }
-}
-
-/* Compact desktop dock: keep feature shortcuts in the top band and dock
+  /* Compact desktop dock: keep feature shortcuts in the top band and dock
    the native drawing tools vertically on the right edge of the canvas. */
 @media (min-width: 761px) and (max-width: 1119px) {
   .app .desktop-app-header.is-constrained {
     grid-template-columns: 26px 26px minmax(90px, 1fr) auto 28px 30px 28px;
-    grid-template-areas: "menu library document account save collab search";
+    grid-template-areas: "menu library document account save collab search" "features features features features features features features";
     column-gap: 4px;
-    row-gap: 0;
+    row-gap: 5px;
     min-height: 42px;
     padding: 5px 8px;
   }
 
   .app .desktop-app-header.is-constrained > .desktop-app-header-panel-actions {
-    position: absolute;
-    top: 5px;
-    left: 205px;
-    right: 175px;
+    grid-area: features;
+    position: static;
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: flex-start;
     gap: 4px;
-    width: auto;
+    width: 100%;
     min-width: 0;
     margin: 0;
     padding: 0;
     border: 0;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     white-space: nowrap;
+    scrollbar-width: none;
   }
 
   .app .desktop-app-header.is-constrained .desktop-app-header-panel-actions > * {
@@ -276,14 +263,16 @@
     left: auto !important;
     right: 10px !important;
     bottom: 42px !important;
-    width: 48px !important;
-    max-width: 48px !important;
+    width: 54px !important;
+    min-width: 54px !important;
+    max-width: 54px !important;
     height: auto !important;
     max-height: calc(100vh - 154px) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     transform: none !important;
     z-index: 120 !important;
+    box-sizing: border-box !important;
   }
 
   html body .app .desktop-canvas-region .excalidraw .App-toolbar-container .App-toolbar {
@@ -300,35 +289,6 @@
     flex: 0 0 auto !important;
     max-width: 100% !important;
     margin: 0 !important;
-  }
-}
-
-/* Split-screen workspace: keep the drawing toolbar anchored to the document
-     identity lane instead of centering it over the canvas. This avoids the
-     drifting/centered composition seen when the browser window is resized. */
-@media (min-width: 761px) and (max-width: 1119px) {
-  .desktop-canvas-region .excalidraw .App-toolbar-container,
-  .excalidraw .App-toolbar-container {
-    position: fixed !important;
-    /* The compact header has a primary row and a wrapped feature row. Keep
-       the native drawing tools below both rows so they never cover actions. */
-    top: 158px !important;
-    left: 10px !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: min(620px, calc(100vw - 20px)) !important;
-    max-width: min(620px, calc(100vw - 20px)) !important;
-    transform: none !important;
-    z-index: 120 !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scrollbar-width: none;
-    overscroll-behavior-inline: contain;
-  }
-
-  .desktop-canvas-region .excalidraw .Island.App-toolbar,
-  .excalidraw .Island.App-toolbar {
-    margin-inline: 0;
   }
 }
 
