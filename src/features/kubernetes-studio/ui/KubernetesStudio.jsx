@@ -104,12 +104,14 @@ function buildCompletions(text, caret, force = false) {
 
   const isKindValue = /^kind:\s*/.test(beforeCaret);
   const isApiVersionValue = /^apiVersion:\s*/.test(beforeCaret);
-  const query = isKindValue || isApiVersionValue
+  const isOtherValue = /^\s*(?:type|restartPolicy|protocol|pathType):\s*/.test(beforeCaret);
+  const isValueCompletion = isKindValue || isApiVersionValue || isOtherValue;
+  const query = isValueCompletion
     ? beforeCaret.slice(beforeCaret.indexOf(":") + 1).trim()
     : beforeCaret.trim().replace(/^[- ]+/, "");
   if (query) {
     items = items.filter((item) => item.label.toLowerCase().startsWith(query.toLowerCase()));
-    if (!isKindValue && !isApiVersionValue) replaceStart = lineStart + indent.length;
+    if (!isValueCompletion) replaceStart = lineStart + indent.length;
   }
   if (!force && !items.length) return { items: [], replaceStart, replaceEnd };
   return { items: items.slice(0, 10), replaceStart, replaceEnd };
