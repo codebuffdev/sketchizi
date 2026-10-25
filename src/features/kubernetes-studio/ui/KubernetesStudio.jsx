@@ -14,6 +14,32 @@ const COMPLETION_KINDS = [
 ];
 const COMPLETION_API_VERSIONS = ["v1", "apps/v1", "batch/v1", "networking.k8s.io/v1", "rbac.authorization.k8s.io/v1", "autoscaling/v2", "storage.k8s.io/v1", "policy/v1"];
 
+function highlightYaml(source) {
+  return source.split("\n").map((line, index) => {
+    const commentIndex = line.indexOf("#");
+    const content = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
+    const comment = commentIndex >= 0 ? line.slice(commentIndex) : "";
+    const match = content.match(/^(\s*)(-\s+)?([A-Za-z_][\w.-]*)(\s*:\s*)(.*)$/);
+    let rendered;
+    if (match) {
+      const [, indent, listMarker = "", key, separator, value] = match;
+      const valueClass = /^(true|false|null|yes|no|on|off)$/i.test(value.trim())
+        ? "yaml-token-literal"
+        : /^-?\d+(?:\.\d+)?$/.test(value.trim())
+        ? "yaml-token-number"
+        : /^["'].*["']$/.test(value.trim())
+        ? "yaml-token-string"
+        : key === "kind" || key === "apiVersion"
+        ? "yaml-token-type"
+        : "yaml-token-value";
+      rendered = <>{indent}<span className="yaml-token-punctuation">{listMarker}</span><span className="yaml-token-key">{key}</span><span className="yaml-token-punctuation">{separator}</span><span className={valueClass}>{value}</span>{comment ? <span className="yaml-token-comment">{comment}</span> : null}</>;
+    } else {
+      rendered = <>{content}{comment ? <span className="yaml-token-comment">{comment}</span> : null}</>;
+    }
+    return <span className="yaml-highlight-line" key={index}>{rendered}{"\n"}</span>;
+  });
+}
+
 function buildCompletions(text, caret, force = false) {
   const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
   const lineEndIndex = text.indexOf("\n", caret);
@@ -315,7 +341,8 @@ spec:
         <div className="k8s-studio-workspace">
           <section className="k8s-studio-editor">
             <div className="k8s-studio-section-title"><div><span>01</span><h2>Manifest YAML</h2></div><small>{yamlText.length.toLocaleString()} characters</small></div>
-            <div className="k8s-yaml-editor-shell">
+            <div className={yamlText ? "k8s-yaml-editor-shell has-content" : "k8s-yaml-editor-shell"}>
+              <pre className="k8s-yaml-highlight" aria-hidden="true">{highlightYaml(yamlText)}</pre>
               <textarea
                 ref={yamlEditorRef}
                 aria-label="Kubernetes YAML manifest"
@@ -337,6 +364,13 @@ spec:
                 }}
                 onKeyDown={handleYamlKeyDown}
                 onBlur={() => window.setTimeout(() => setCompletion((current) => ({ ...current, items: [] })), 120)}
+                onScroll={(event) => {
+                  const highlight = event.currentTarget.parentElement?.querySelector(".k8s-yaml-highlight");
+                  if (highlight) {
+                    highlight.scrollTop = event.currentTarget.scrollTop;
+                    highlight.scrollLeft = event.currentTarget.scrollLeft;
+                  }
+                }}
                 placeholder="Paste Kubernetes YAML here…"
               />
               {completion.items.length > 0 && (
