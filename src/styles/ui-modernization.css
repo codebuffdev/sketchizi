@@ -963,3 +963,26 @@
 @media (prefers-reduced-motion: reduce) {
   .app .desktop-app-dropdown { animation: none; }
 }
+
+
+/* Keep the native Excalidraw tool dock at the bottom by default.
+   User drag/keyboard positioning uses inline !important coordinates and can
+   still move the dock elsewhere during the current session. */
+.app .desktop-canvas-region .excalidraw .App-toolbar-container {
+  top: auto !important;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: max-content;
+  max-width: calc(100% - 24px);
+}
+.app .desktop-canvas-region .excalidraw .App-toolbar-container .App-toolbar {
+  max-width: 100%;
+}
+@media (max-width: 760px) {
+  .app .desktop-canvas-region .excalidraw .App-toolbar-container {
+    bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    max-width: calc(100% - 16px);
+  }
+}
