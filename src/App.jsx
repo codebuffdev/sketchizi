@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
-import { CaptureUpdateAction, convertToExcalidrawElements } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
@@ -468,13 +468,19 @@ function App() {
         const from = positions.get(candidate.id);
         const to = positions.get(resource.id);
         if (!from || !to) return;
+        const startX = from.x + cardWidth / 2;
+        const startY = from.y + cardHeight / 2;
+        const endX = to.x + cardWidth / 2;
+        const endY = to.y + cardHeight / 2;
+        const left = Math.min(startX, endX);
+        const top = Math.min(startY, endY);
         edges.push({
           type: "arrow",
-          x: from.x + cardWidth,
-          y: from.y + cardHeight / 2,
-          width: to.x - (from.x + cardWidth),
-          height: to.y + cardHeight / 2 - (from.y + cardHeight / 2),
-          points: [[0, 0], [to.x - (from.x + cardWidth), to.y + cardHeight / 2 - (from.y + cardHeight / 2)]],
+          x: left,
+          y: top,
+          width: Math.abs(endX - startX),
+          height: Math.abs(endY - startY),
+          points: [[startX - left, startY - top], [endX - left, endY - top]],
           strokeColor: "#0e7490",
           strokeWidth: 2,
           endArrowhead: "arrow",
