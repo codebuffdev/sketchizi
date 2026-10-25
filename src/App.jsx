@@ -588,6 +588,9 @@ function App() {
         type: "arrow", x: left, y: top,
         width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y),
         points: [[startPoint.x - left, startPoint.y - top], [endPoint.x - left, endPoint.y - top]],
+        // Skeleton API uses start/end IDs to create real Excalidraw bindings.
+        start: { id: fromElementId },
+        end: { id: toElementId },
         startBinding: { elementId: fromElementId, focus: 0, gap: 8 },
         endBinding: { elementId: toElementId, focus: 0, gap: 8 },
         strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
@@ -663,7 +666,9 @@ function App() {
       if (pdb) addRelationship(pdb, workload, "protects", "#b68bea");
     });
 
-    const converted = convertToExcalidrawElements([...edges, ...nodes]);
+    // Preserve authored element IDs so the arrow start/end references remain
+    // valid when the skeletons are converted into fully qualified elements.
+    const converted = convertToExcalidrawElements([...edges, ...nodes], { regenerateIds: false });
     const created = restoreElements(converted, null, { deleteInvisibleElements: true });
 
     // Reapply connector bindings after Excalidraw normalizes the imported
