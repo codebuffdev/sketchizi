@@ -1208,3 +1208,68 @@
     content: none;
   }
 }
+
+/* Compact desktop polish: keep theme choices visibly sized and keep More Tools
+   in the feature row instead of allowing its trigger to collapse into a dot. */
+@media screen and (min-width: 761px) and (max-width: 1024px) {
+  .app .desktop-app-header > .desktop-app-header-account-zone {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+
+  .app .desktop-app-header .desktop-app-theme-toggle {
+    display: inline-flex !important;
+    flex: 0 0 54px !important;
+    width: 54px !important;
+    min-width: 54px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 2px !important;
+    gap: 2px !important;
+    overflow: visible !important;
+  }
+
+  .app .desktop-app-header .desktop-app-theme-toggle .theme-toggle-option {
+    display: grid !important;
+    flex: 0 0 24px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    place-items: center !important;
+    padding: 0 !important;
+  }
+
+  .app .desktop-app-header .desktop-app-theme-toggle svg {
+    display: block !important;
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .app .desktop-app-header-panel-actions .sketchizi-more-tools-header {
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  .app .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: 82px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    padding-inline: 9px !important;
+    overflow: visible !important;
+    font-size: 11px !important;
+  }
+
+  .app .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger::after {
+    content: "More Tools" !important;
+    display: inline !important;
+    font-size: 11px !important;
+  }
+}
