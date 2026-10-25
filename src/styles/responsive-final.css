@@ -205,7 +205,20 @@
     min-height: 0;
   }
 
-  /* Split-screen workspace: keep the drawing toolbar anchored to the document
+  /* Final override: the native toolbar must sit below the complete compact
+   application header, including the wrapped feature-action row. */
+@media (min-width: 761px) and (max-width: 1119px) {
+  html body .app .desktop-canvas-region .excalidraw .App-toolbar-container {
+    top: 172px !important;
+    left: 10px !important;
+    right: auto !important;
+    transform: none !important;
+    width: min(620px, calc(100vw - 20px)) !important;
+    max-width: min(620px, calc(100vw - 20px)) !important;
+  }
+}
+
+/* Split-screen workspace: keep the drawing toolbar anchored to the document
      identity lane instead of centering it over the canvas. This avoids the
      drifting/centered composition seen when the browser window is resized. */
 @media (min-width: 761px) and (max-width: 1119px) {
