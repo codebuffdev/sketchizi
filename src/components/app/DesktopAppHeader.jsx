@@ -83,6 +83,7 @@ export default function DesktopAppHeader({
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
+  const [responsiveToolsOpen, setResponsiveToolsOpen] = useState(false);
   const [availableWidth, setAvailableWidth] = useState(0);
   const headerRef = useRef(null);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
@@ -168,6 +169,23 @@ export default function DesktopAppHeader({
     };
   }, [saveDetailsOpen]);
 
+  useEffect(() => {
+    if (!responsiveToolsOpen) return undefined;
+    const close = (event) => {
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest(".desktop-app-responsive-tools")) return;
+      setResponsiveToolsOpen(false);
+    };
+    const onKeyDown = (event) => { if (event.key === "Escape") setResponsiveToolsOpen(false); };
+    document.addEventListener("pointerdown", close, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [responsiveToolsOpen]);
+
+  const isConstrained = availableWidth > 0 && availableWidth < 900;
   const commandMap = useMemo(() => new Map(commands.map((command) => [command.id, command])), [commands]);
 
   const executeCommand = (command) => {
@@ -191,7 +209,7 @@ export default function DesktopAppHeader({
     : "No successful local save yet";
 
   return (
-    <header ref={headerRef} className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}`}>
+    <header ref={headerRef} className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${isConstrained ? " is-constrained" : ""}`}>
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
@@ -280,7 +298,30 @@ export default function DesktopAppHeader({
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
       </div>
 
-      <div className="desktop-app-header-panel-actions">{children}</div>
+      {!isConstrained && <div className="desktop-app-header-panel-actions">{children}</div>}
+
+      {isConstrained && (
+        <div className="desktop-app-responsive-tools">
+          <button
+            type="button"
+            className="desktop-app-responsive-tools-trigger"
+            aria-haspopup="menu"
+            aria-expanded={responsiveToolsOpen}
+            aria-label="Open tools and features"
+            title="Tools and features"
+            onClick={() => setResponsiveToolsOpen((open) => !open)}
+          >
+            <span aria-hidden="true">☷</span>
+            <span>Tools</span>
+            <span aria-hidden="true">⌄</span>
+          </button>
+          {responsiveToolsOpen && (
+            <div className="desktop-app-responsive-tools-menu" role="menu" aria-label="Tools and features">
+              {children}
+            </div>
+          )}
+        </div>
+      )}
 
       {collaborationCreationState === "creating" && (
         <div className="collaboration-header-status creating" role="status" aria-live="polite">
