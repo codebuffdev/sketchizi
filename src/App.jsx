@@ -421,7 +421,7 @@ function App() {
       ClusterRole: ["clusterrole"], RoleBinding: ["rolebinding"], CustomResourceDefinition: ["customresourcedefinition", "crd"],
       PodSecurityPolicy: ["podsecuritypolicy"], ConfigMap: ["configmap"], CronJob: ["cronjob"],
       ResourceQuota: ["resourcequota"], LimitRange: ["limitrange"], PodDisruptionBudget: ["poddisruptionbudget", "pdb"],
-      ServiceMonitor: ["servicemonitor"], Deployment: ["deployment"], StatefulSet: ["statefulset"], DaemonSet: ["daemonset"],
+      ServiceMonitor: ["servicemonitor", "service"], PodDisruptionBudget: ["poddisruptionbudget", "pdb", "pod"], Deployment: ["deployment"], StatefulSet: ["statefulset"], DaemonSet: ["daemonset"],
       ReplicaSet: ["replicaset"], Service: ["service"], Ingress: ["ingress"], Pod: ["pod"], Namespace: ["namespace"],
       Secret: ["secret"], Job: ["job"], Node: ["node"], Role: ["role"], PersistentVolumeClaim: ["persistentvolumeclaim", "pvc"],
     };
