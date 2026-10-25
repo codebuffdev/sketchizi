@@ -101,3 +101,11 @@ test("narrow desktop retains the structural workspace grid until the mobile brea
   assert.match(css, /--sketchizi-desktop-resources-width: 220px/);
   assert.match(css, /--sketchizi-desktop-context-width: 280px/);
 });
+
+
+test("constrained header selectors override legacy app-scoped header styles", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  const responsive = css.slice(css.indexOf("/* Width-driven responsive header states."));
+  assert.match(responsive, /\.app \.desktop-app-header\.is-constrained\s*\{/);
+  assert.match(responsive, /\.app \.desktop-app-header\.is-constrained > \.desktop-app-header-panel-actions/);
+});
