@@ -39,24 +39,22 @@ try {
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: blank-canvas path opens the editor.");
 
-  // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
-  const responsive = await makePage({ width: 390, height: 844 });
+  // Open the creation screen at desktop width, then resize it to a narrow viewport.
+  // Starting at desktop width ensures the creation action is available before testing responsiveness.
+  const responsive = await makePage({ width: 1280, height: 844 });
   await responsive.page.goto(baseURL, { waitUntil: "networkidle", timeout: 60000 });
   await responsive.page.getByRole("button", { name: /create a new design/i }).click();
   await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor();
+  await responsive.page.setViewportSize({ width: 390, height: 844 });
   await responsive.page.getByRole("button", { name: "Start blank" }).waitFor();
   const overflow = await responsive.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   if (overflow) throw new Error("Creation screen has horizontal overflow at 390px viewport width.");
   console.log("PASS: creation screen remains usable at 390px without horizontal overflow.");
 
-  // Exercise the editor header across desktop, split-screen, tablet and phone widths.
-  // The responsive page is already on the creation screen from the check above.
-  // This checks rendered geometry rather than inferring responsiveness from CSS source.
+  // Return to desktop width to enter the editor, then resize through the acceptance matrix.
+  await responsive.page.setViewportSize({ width: 1280, height: 844 });
   await responsive.page.getByRole("button", { name: "Start blank" }).click();
   await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
-  // The creation screen starts at a phone width, where the editor canvas is intentionally hidden.
-  // Enter the editor at desktop width first, then resize it through the responsive acceptance matrix.
-  await responsive.page.setViewportSize({ width: 1280, height: 844 });
   await responsive.page.locator(".excalidraw").waitFor({ state: "visible", timeout: 30000 });
 
   for (const width of [1440, 1280, 1024, 900, 768, 600, 480, 390, 360, 320]) {
