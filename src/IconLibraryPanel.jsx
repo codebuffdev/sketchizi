@@ -8,7 +8,7 @@ function sourceLabel(icon) {
   if (icon?.source === "networking" || icon?.category === "Networking") return "Networking";
   if (icon?.category === "Mind Maps") return "Mind Maps";
   if (icon?.category === "UML Diagrams") return "Architecture";
-  return icon?.subtitle && icon.subtitle !== "Eraser" ? icon.subtitle : "Eraser Icons";
+  return icon?.subtitle && icon.subtitle !== "Eraser" ? icon.subtitle : "Essentials";
 }
 
 function iconTags(icon) {
@@ -18,7 +18,7 @@ function iconTags(icon) {
     icon?.category,
   ];
   const tags = [...new Set(candidates.filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim()))];
-  return (tags.length ? tags : ["icon"]).slice(0, 3);
+  return (tags.length ? tags : ["icon"]).slice(0, 3).map((tag) => tag === "Eraser Icons" || tag === "Eraser" ? "Essentials" : tag);
 }
 
 function iconSearchText(icon) {
@@ -137,7 +137,7 @@ export default function IconLibraryPanel({
   const activeChip = activeSource;
   const sourceTabs = [
     { id: "all", label: "All" },
-    { id: "eraser", label: "Eraser" },
+    { id: "eraser", label: "Essentials" },
     { id: "aws", label: "AWS" },
     { id: "kubernetes", label: "Kubernetes" },
   ];
@@ -198,9 +198,9 @@ export default function IconLibraryPanel({
 
         <section className="icons library-results" aria-label="Icon results">
           <div className="section-heading library-results-heading">
-            <div className="library-results-title-wrap"><div className="section-title">{search.trim() ? "Search results" : activeSource === "all" ? "All icons" : activeCategory}</div><div className="icon-total">{displayedIcons.length.toLocaleString()} icons</div></div>
+            <div className="library-results-title-wrap"><div className="section-title">{search.trim() ? "Search results" : activeSource === "all" ? "All icons" : activeSource === "eraser" ? "Essentials" : activeCategory}</div><div className="icon-total">{displayedIcons.length.toLocaleString()} icons</div></div>
             <div className="library-results-controls">
-              {activeSource === "eraser" && !search.trim() && <button type="button" className="library-sync-button" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length} title={eraserSyncing ? "Synchronizing icons" : "Make Eraser icons available offline"}>{eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : eraserCachedCount > 0 ? "Offline ready" : "Make offline"}</button>}
+              {activeSource === "eraser" && !search.trim() && <button type="button" className="library-sync-button" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length} title={eraserSyncing ? "Synchronizing icons" : "Make icons available offline"}>{eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : eraserCachedCount > 0 ? "Offline ready" : "Make offline"}</button>}
               {activeCategory === "Mind Maps" && activeSource === "collections" && <button type="button" className="library-sync-button" onClick={createStarterMindMap}>Starter mind map</button>}
               <label className="library-layout-select-label"><select aria-label="Card layout" title="Card layout" className="library-layout-select" value={cardLayout} onChange={(event) => setCardLayout(event.target.value)}><option value="two-column">Two-column cards</option><option value="compact">Compact cards</option></select></label>
               <div className="library-view-toggle" role="group" aria-label="Result layout">
