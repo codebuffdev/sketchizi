@@ -6,7 +6,7 @@
  * collaboration surfaces are reused rather than reimplemented.
  */
 
-@media (min-width: 1025px) {
+@media (min-width: 761px) {
   :root {
     --sketchizi-desktop-header-height: 58px;
     --sketchizi-desktop-resources-width: 286px;
@@ -1060,9 +1060,50 @@
   }
 }
 
+/* Medium desktop shell: preserve real layout structure in split-window
+   widths. Width-aware header states handle navigation; the workspace keeps
+   its grid instead of turning every shell wrapper into display: contents. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  :root {
+    --sketchizi-desktop-header-height: auto;
+    --sketchizi-desktop-resources-width: 220px;
+    --sketchizi-desktop-context-width: 280px;
+    --sketchizi-desktop-panel-gap: 6px;
+  }
+
+  .app {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .desktop-workspace-library-open.desktop-workspace-context-open {
+    grid-template-columns: minmax(180px, var(--sketchizi-desktop-resources-width)) minmax(0, 1fr) minmax(240px, var(--sketchizi-desktop-context-width));
+  }
+
+  .desktop-workspace-library-open.desktop-workspace-context-closed {
+    grid-template-columns: minmax(180px, var(--sketchizi-desktop-resources-width)) minmax(0, 1fr);
+  }
+
+  .desktop-workspace-library-closed.desktop-workspace-context-open {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, var(--sketchizi-desktop-context-width));
+  }
+
+  .desktop-app-header.is-constrained {
+    display: grid;
+    grid-template-columns: 30px 30px minmax(80px, 1fr) auto 30px 34px 32px;
+  }
+
+  .desktop-app-header.is-constrained > .desktop-app-header-panel-actions {
+    min-width: 0;
+  }
+
+  .desktop-app-header.is-constrained .desktop-app-document-identity-state {
+    display: none;
+  }
+}
+
 /* Mobile/tablet: the structural desktop wrappers become transparent and the
  * previously established responsive interaction model owns the panels. */
-@media (max-width: 1024px) {
+@media (max-width: 760px) {
   .desktop-app-theme-toggle {
     position: fixed;
     top: 16px;
