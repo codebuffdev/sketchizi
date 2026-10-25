@@ -326,3 +326,36 @@ test("validates malformed environment entries without rejecting valid mappings",
   });
   assert.equal(valid.findings.some((item) => item.code === "COMPOSE_INVALID_ENVIRONMENT"), false);
 });
+
+
+test("validates long-form volume source references and target paths", () => {
+  const result = validateComposeDocument({
+    services: {
+      api: {
+        image: "example/api:1",
+        volumes: [
+          { type: "volume", source: "missing-data", target: "/var/lib/data" },
+          { type: "bind", source: "./config", target: "" },
+        ],
+      },
+    },
+  });
+  assert.ok(result.findings.some((item) => item.code === "COMPOSE_UNKNOWN_VOLUME" && item.path.endsWith(".source")));
+  assert.ok(result.findings.some((item) => item.code === "COMPOSE_INVALID_VOLUME_TARGET"));
+});
+
+test("rejects invalid dependency, network, and volume container shapes", () => {
+  const result = validateComposeDocument({
+    services: {
+      api: {
+        image: "example/api:1",
+        depends_on: "database",
+        networks: "backend",
+        volumes: { data: "/var/lib/data" },
+      },
+    },
+  });
+  assert.ok(result.findings.some((item) => item.code === "COMPOSE_INVALID_DEPENDS_ON"));
+  assert.ok(result.findings.some((item) => item.code === "COMPOSE_INVALID_NETWORKS"));
+  assert.ok(result.findings.some((item) => item.code === "COMPOSE_INVALID_VOLUMES"));
+});
