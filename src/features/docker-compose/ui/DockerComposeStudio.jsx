@@ -63,6 +63,24 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     setSelectedId(name);
     setNotice("");
   };
+  const duplicateSelected = () => {
+    if (!selected) return;
+    const existingNames = new Set(services.map((service) => service.name));
+    const baseName = selected.name.replace(/-copy(?:-\d+)?$/, "");
+    let name = `${baseName}-copy`;
+    let index = 2;
+    while (existingNames.has(name)) name = `${baseName}-copy-${index++}`;
+    const duplicate = { ...selected, name };
+    setServices((current) => {
+      const selectedIndex = current.findIndex((service) => service.name === selected.name);
+      const next = [...current];
+      next.splice(selectedIndex + 1, 0, duplicate);
+      return next;
+    });
+    setSelectedId(name);
+    setNotice(`Duplicated ${selected.name} as ${name}. Review ports, volumes, and environment values before running.`);
+  };
+
   const renameSelected = (name) => {
     if (!selected) return;
     const nextName = name.replace(/[^a-zA-Z0-9_.-]/g, "-");
@@ -249,7 +267,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
           <div className="docker-studio-editor">
             {selected ? (
               <>
-                <div className="docker-studio-editor-heading"><div><span className="docker-studio-eyebrow">SERVICE CONFIGURATION</span><h2>{selected.name}</h2></div><button type="button" className="docker-studio-danger" onClick={removeSelected} disabled={services.length === 1}>Remove service</button></div>
+                <div className="docker-studio-editor-heading"><div><span className="docker-studio-eyebrow">SERVICE CONFIGURATION</span><h2>{selected.name}</h2></div><div className="docker-studio-editor-actions"><button type="button" className="docker-studio-secondary" onClick={duplicateSelected}>Duplicate service</button><button type="button" className="docker-studio-danger" onClick={removeSelected} disabled={services.length === 1}>Remove service</button></div></div>
                 <div className="docker-studio-fields">
                   <label>Service name<input value={selected.name} onChange={(event) => renameSelected(event.target.value)} /></label>
                   <label>Container image<input value={selected.image} onChange={(event) => updateSelected({ image: event.target.value })} placeholder="e.g. nginx:alpine" /></label>
