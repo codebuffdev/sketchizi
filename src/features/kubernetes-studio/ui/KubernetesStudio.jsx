@@ -177,6 +177,7 @@ export default function KubernetesStudio({ onClose, onCreateDiagram }) {
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+  const [manifestFontSize, setManifestFontSize] = useState(12);
   const [yamlText, setYamlText] = useState(`apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -342,9 +343,17 @@ spec:
 
         <div className="k8s-studio-workspace">
           <section className="k8s-studio-editor">
-            <div className="k8s-studio-section-title"><div><span>01</span><h2>Manifest YAML</h2></div><small>{yamlText.length.toLocaleString()} characters</small></div>
+            <div className="k8s-studio-section-title k8s-studio-manifest-title">
+              <div><span>01</span><h2>Manifest YAML</h2></div>
+              <div className="k8s-yaml-editor-controls" aria-label="Manifest font size controls">
+                <button type="button" onClick={() => setManifestFontSize((size) => Math.max(10, size - 1))} disabled={manifestFontSize <= 10} aria-label="Decrease manifest font size" title="Decrease font size">A−</button>
+                <output aria-live="polite" title="Manifest font size">{manifestFontSize}px</output>
+                <button type="button" onClick={() => setManifestFontSize((size) => Math.min(20, size + 1))} disabled={manifestFontSize >= 20} aria-label="Increase manifest font size" title="Increase font size">A+</button>
+                <small>{yamlText.length.toLocaleString()} characters</small>
+              </div>
+            </div>
             <div className={yamlText ? "k8s-yaml-editor-shell has-content" : "k8s-yaml-editor-shell"}>
-              <pre className="k8s-yaml-highlight" aria-hidden="true">{highlightYaml(yamlText)}</pre>
+              <pre className="k8s-yaml-highlight" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}>{highlightYaml(yamlText)}</pre>
               <textarea
                 ref={yamlEditorRef}
                 aria-label="Kubernetes YAML manifest"
@@ -352,6 +361,7 @@ spec:
                 autoCapitalize="off"
                 autoCorrect="off"
                 value={yamlText}
+                style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}
                 onChange={(event) => {
                   const value = event.target.value;
                   const caret = event.target.selectionStart;
