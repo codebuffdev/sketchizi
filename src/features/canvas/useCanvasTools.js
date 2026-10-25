@@ -39,30 +39,36 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
 
   const applyToSelected = useCallback((patch) => {
     if (!canEdit) return;
-    const api = apiRef.current; if (!api) return;
-    const selected = getSelectedElements(); if (!selected.length) return;
-    const ids = new Set(selected.map((element) => element.id)); const now = Date.now();
-    const sceneElements = api.getSceneElements();
-    // Library icons are image assets, not native vector shapes. Do not mutate
-    // their SVG files from the generic stroke-color action; the toolbar hides
-    // color controls for image selections until asset-aware recoloring exists.
-    const updatedElements = sceneElements.map((element) => {
-      if (!ids.has(element.id)) return element;
-      const recoloredFileId = recoloredFileIds.get(element.id);
+    const api = apiRef.current;
+    if (!api) return;
+    const selected = getSelectedElements();
+    if (!selected.length) return;
+
+    const selectedIds = new Set(selected.map((element) => element.id));
+    const now = Date.now();
+    const updatedElements = api.getSceneElements().map((element) => {
+      if (!selectedIds.has(element.id)) return element;
+      // Library images are intentionally not recolored. The toolbar hides
+      // color controls for these assets; native text and shapes use Excalidraw
+      // element properties normally.
+      if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) {
+        return element;
+      }
       return {
         ...element,
         ...patch,
-        ...(recoloredFileId ? { fileId: recoloredFileId } : {}),
         version: element.version + 1,
         versionNonce: Math.floor(Math.random() * 2147483647),
         updated: now,
       };
     });
-    // Excalidraw caches image assets by file ID. Use a fresh ID for recolored
-    // artwork so the renderer cannot keep displaying the original cached SVG.
-    if (recoloredFiles.length) api.addFiles(recoloredFiles);
-    api.updateScene({ elements: updatedElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+
+    api.updateScene({
+      elements: updatedElements,
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
   }, [apiRef, canEdit, getSelectedElements]);
+
   const applyToSelectedArrow = useCallback((patch) => {
     if (!canEdit) return;
     const api = apiRef.current; if (!api) return;
