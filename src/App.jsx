@@ -3,6 +3,7 @@ import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
 import { CaptureUpdateAction, convertToExcalidrawElements } from "@excalidraw/excalidraw";
+import { parseAllDocuments } from "yaml";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
@@ -414,13 +415,27 @@ function App() {
       const icon = resources[index];
       const column = index % 2;
       const row = Math.floor(index / 2);
-      const ok = await insertKubernetesResource({
-        api,
-        icon,
-        x: startX + column * 380,
-        y: startY + row * 300,
-        markRecentlyUsed,
-      });
+      const x = startX + column * 380;
+      const y = startY + row * 300;
+      let ok = await insertKubernetesResource({ api, icon, x, y, markRecentlyUsed });
+      // The intelligent property editor currently supports a subset of the catalog.
+      // Other official Kubernetes catalog icons should still be insertable as diagram artwork.
+      if (!ok && icon?.src) {
+        try {
+          const response = await fetch(icon.src, { cache: "force-cache" });
+          if (!response.ok) throw new Error(`Icon request failed (${response.status})`);
+          const svg = await response.text();
+          const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+          const fileId = `k8s-catalog-${Date.now()}-${index}`;
+          api.addFiles([{ id: fileId, dataURL, mimeType: "image/svg+xml", created: Date.now(), lastRetrieved: Date.now() }]);
+          const elements = convertToExcalidrawElements([{ type: "image", x, y, width: 120, height: 120, fileId, customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes" } }]);
+          api.updateScene({ elements: [...api.getSceneElementsIncludingDeleted(), ...elements], captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+          markRecentlyUsed(icon);
+          ok = true;
+        } catch (error) {
+          console.error("Could not insert Kubernetes catalog icon", icon.id, error);
+        }
+      }
       if (ok) inserted += 1;
     }
     if (inserted) {
