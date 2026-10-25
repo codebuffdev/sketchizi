@@ -21,6 +21,7 @@ test("K8s Studio uses the existing Kubernetes catalog and resource insertion ser
   assert.match(studio, /icon\.searchAliases/);
   assert.match(studio, /aria-pressed=\{selected\}/);
   assert.match(studio, /Add to canvas/);
+  assert.ok(studio.indexOf("const selectedIcons = useMemo") < studio.indexOf("const architecturePlan = useMemo"), "architecture plan must be computed after selectedIcons initializes");
 });
 
 test("K8s Studio starter architectures use resource IDs present in the catalog", async () => {
