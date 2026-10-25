@@ -975,8 +975,11 @@ function App() {
             aria-haspopup="menu"
             aria-expanded={devopsStudioMenuOpen}
           >
-            <span aria-hidden="true">⚙</span>
-            <span>DevOps Studio</span>
+            <svg className="devops-studio-brand-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+              <circle cx="16" cy="16" r="4.2" fill="currentColor" />
+              <circle cx="16" cy="16" r="9.3" fill="none" stroke="currentColor" strokeWidth="2.5" />
+              <path d="M16 2.5v5M16 24.5v5M2.5 16h5M24.5 16h5M6.45 6.45l3.55 3.55M22 22l3.55 3.55M25.55 6.45L22 10M10 22l-3.55 3.55" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
             <span className="devops-studio-chevron" aria-hidden="true">⌄</span>
           </button>
           {devopsStudioMenuOpen && (
@@ -988,7 +991,15 @@ function App() {
                 onClick={() => { setDevopsStudioMenuOpen(false); setKubernetesStudioOpen(true); }}
                 title="Design Kubernetes architectures and import YAML"
               >
-                <span aria-hidden="true">☸</span>
+                <svg className="devops-option-icon kubernetes-brand-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M14.1 1.8a4 4 0 0 1 3.8 0l9.2 5.3a4 4 0 0 1 1.9 3.3v10.7a4 4 0 0 1-1.9 3.4l-9.2 5.2a4 4 0 0 1-3.8 0l-9.2-5.2A4 4 0 0 1 3 21.1V10.4a4 4 0 0 1 1.9-3.3z" opacity=".16"/>
+                  <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <path d="M16 7v18M7.8 11.2l16.4 9.6M7.8 20.8l16.4-9.6"/>
+                    <circle cx="16" cy="16" r="5.4"/>
+                    <circle cx="16" cy="16" r="2.1" fill="currentColor" stroke="none"/>
+                    <path d="M16 3.8v3M16 25.2v3M5.3 10l2.6 1.5M24.1 20.5l2.6 1.5M5.3 22l2.6-1.5M24.1 11.5l2.6-1.5"/>
+                  </g>
+                </svg>
                 <span>K8s Studio</span>
               </button>
               <button
@@ -998,7 +1009,13 @@ function App() {
                 onClick={() => { setDevopsStudioMenuOpen(false); setDockerStudioOpen(true); }}
                 title="Design Docker Compose applications"
               >
-                <span aria-hidden="true">▦</span>
+                <svg className="devops-option-icon docker-brand-icon" viewBox="0 0 40 32" aria-hidden="true" focusable="false">
+                  <g fill="currentColor">
+                    <rect x="8" y="4" width="6" height="6" rx=".7"/><rect x="15" y="4" width="6" height="6" rx=".7"/><rect x="22" y="4" width="6" height="6" rx=".7"/>
+                    <rect x="1" y="11" width="6" height="6" rx=".7"/><rect x="8" y="11" width="6" height="6" rx=".7"/><rect x="15" y="11" width="6" height="6" rx=".7"/><rect x="22" y="11" width="6" height="6" rx=".7"/>
+                    <path d="M38 13.2c-2.2-1.5-4.6-1.6-6.8-.4-.5-3.1-2.3-5.2-5.2-6.5l-1.1 2.2c1.7 1.1 2.7 2.7 2.9 4.8H4.3c-.4 8.2 3.7 13 11.2 13h5.1c8.5 0 13.8-4.3 15.3-11.1l2.1-.1z"/>
+                  </g>
+                </svg>
                 <span>Docker Studio</span>
               </button>
             </div>
