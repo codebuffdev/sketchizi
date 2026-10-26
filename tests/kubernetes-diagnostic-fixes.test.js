@@ -331,7 +331,7 @@ test("K8s Studio validates PersistentVolume and PVC storage fields", () => {
     { id: "pv", kind: "PersistentVolume", name: "bad-volume", namespace: "", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolume", metadata: { name: "bad-volume" }, spec: { capacity: { storage: "-5GB" }, accessModes: ["ReadWriteOnce", "ReadWriteOnce"], volumeMode: "Directory", persistentVolumeReclaimPolicy: "KeepForever" } } },
   ];
   const issues = validateKubernetesResources(resources);
-  assert.ok(issues.some((issue) => issue.message.includes("PVC storage request must be a valid Kubernetes quantity")));
+  assert.ok(issues.some((issue) => issue.message.includes("PersistentVolumeClaim storage request must be a valid Kubernetes quantity")));
   assert.ok(issues.some((issue) => issue.message.includes("PersistentVolume storage capacity must be a valid Kubernetes quantity")));
   assert.ok(issues.some((issue) => issue.message.includes("accessModes must not contain duplicates")));
   assert.ok(issues.some((issue) => issue.message.includes("volumeMode must be Filesystem or Block")));
