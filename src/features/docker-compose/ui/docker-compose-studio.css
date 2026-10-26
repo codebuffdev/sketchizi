@@ -289,3 +289,16 @@
 .docker-compose-yaml-completion.active{box-shadow:inset 2px 0 #9a83ff}
 .docker-studio-yaml-shortcuts{padding:5px 12px;border-top:1px solid #243348;background:#101a29;color:#7e93ad;font-size:10px}
 @media(max-width:700px){.docker-compose-yaml-completions{left:52px;width:calc(100% - 64px);max-height:210px}.docker-compose-yaml-completion{align-items:flex-start;flex-direction:column;gap:3px}.docker-compose-yaml-completion small{text-align:left}}
+
+
+/* Subtle editor row guides for easier Compose YAML scanning. */
+.docker-studio .docker-studio-yaml-input{
+  background-image:repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(1.65em - 1px),
+    rgba(148,163,184,.09) calc(1.65em - 1px),
+    rgba(148,163,184,.09) 1.65em
+  )!important;
+  background-attachment:local;
+}
