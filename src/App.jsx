@@ -1429,17 +1429,17 @@ function App() {
             type="button"
             className={devopsStudioMenuOpen ? "design-studio-header-toggle active" : "design-studio-header-toggle"}
             onClick={() => setDevopsStudioMenuOpen((open) => !open)}
-            title="Create a design"
-            aria-label="Create Design"
+            title="Open design workspaces"
+            aria-label="Design Workspaces"
             aria-haspopup="menu"
             aria-expanded={devopsStudioMenuOpen}
           >
             <span aria-hidden="true">＋</span>
-            <span>Create Design</span>
+            <span>Workspaces</span>
             <span className="devops-studio-chevron" aria-hidden="true">⌄</span>
           </button>
           {devopsStudioMenuOpen && (
-            <div className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Create Design">
+            <div className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Design Workspaces">
               <button type="button" role="menuitem" className="design-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDesignStudioOpen(true); }} title="Create an architecture or diagram from a template">
                 <span className="create-design-menu-icon" aria-hidden="true">◇</span>
                 <span><strong>Design Studio</strong><small>Architecture and diagram templates</small></span>
