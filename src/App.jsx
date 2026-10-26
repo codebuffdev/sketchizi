@@ -397,6 +397,63 @@ function App() {
     });
   }, [apiRef, handleExcalidrawChange]);
 
+  const applyKubernetesResourceYaml = useCallback((resource) => {
+    const api = apiRef.current;
+    if (!api?.updateScene || !collaborationCanEdit || !resource?.manifest) {
+      throw new Error("The canvas is not ready for Kubernetes resource updates.");
+    }
+    const current = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+    const targetElements = current.filter((element) => {
+      if (element.isDeleted) return false;
+      const metadata = element.customData?.kubernetesManifestResource;
+      return metadata?.properties?.manifestResourceId === resource.id;
+    });
+    if (!targetElements.length) {
+      showToast("This resource is not on the canvas yet. Create the diagram first, then edit its YAML.", "warning");
+      return;
+    }
+    const manifest = resource.manifest;
+    const kind = String(manifest.kind || resource.kind);
+    const name = String(manifest.metadata?.name || resource.name);
+    const namespace = String(manifest.metadata?.namespace || (kind === "Namespace" ? name : "default"));
+    const apiVersion = String(manifest.apiVersion || resource.apiVersion);
+    const spec = manifest.spec || {};
+    const details = [
+      `Namespace: ${namespace}`,
+      ["Deployment", "StatefulSet", "DaemonSet"].includes(kind) ? `Replicas: ${spec.replicas ?? (kind === "DaemonSet" ? "node-managed" : 1)}` : "",
+      kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
+      kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
+      apiVersion,
+    ].filter(Boolean).join("\\n");
+    const updated = current.map((element) => {
+      if (element.isDeleted) return element;
+      const metadata = element.customData?.kubernetesManifestResource;
+      if (metadata?.properties?.manifestResourceId !== resource.id) return element;
+      const isTitle = element.type === "text" && String(element.text || "").startsWith(kind + "\\n");
+      const isDetails = element.type === "text" && String(element.text || "").startsWith("Namespace:");
+      return {
+        ...element,
+        ...(isTitle ? { text: `${kind}\\n${name}` } : {}),
+        ...(isDetails ? { text: details } : {}),
+        customData: {
+          ...element.customData,
+          kubernetesManifestResource: {
+            ...metadata,
+            resourceType: kind.toLowerCase(),
+            properties: { ...metadata.properties, name, namespace, apiVersion, manifestResourceId: resource.id },
+            manifest,
+          },
+        },
+        version: (element.version || 0) + 1,
+        versionNonce: Math.floor(Math.random() * 0x7fffffff),
+        updated: Date.now(),
+      };
+    });
+    api.updateScene({ elements: updated, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || updated, api.getAppState?.() || {});
+    showToast(`Updated canvas card for ${kind}/${name}. Relationships may need to be regenerated if selector or reference fields changed.`);
+  }, [collaborationCanEdit, queueSketchSave, showToast]);
+
   const createKubernetesDiagram = useCallback(async (resources) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit) {
@@ -515,7 +572,7 @@ function App() {
       const metadata = {
         provider: "kubernetes", resourceType: String(resource.kind || "resource").toLowerCase(),
         catalog: "kubernetes", importedFromYaml: true,
-        properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion },
+        properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion, manifestResourceId: resource.id },
         manifest,
       };
       const resourceElementId = resourceElementIds.get(resource.id);
@@ -1440,7 +1497,7 @@ function App() {
         </div>
       )}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
-      {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} />}
+      {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
       {designStudioOpen && (
         <CreateDesignScreen
           isDarkTheme={isDarkTheme}
