@@ -84,8 +84,9 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
         aria-modal="true"
         aria-label="Sketchizi command palette"
       >
+        <div className="sketchizi-command-heading"><div className="sketchizi-command-heading-mark" aria-hidden="true">⌘</div><div><strong>Command Center</strong><small>Find actions and navigate your workspace</small></div><button type="button" className="sketchizi-command-close" onClick={onClose} aria-label="Close command center">×</button></div>
         <label className="sketchizi-command-search-wrap">
-          <span className="sketchizi-command-search-icon" aria-hidden="true">⌕</span>
+          <span className="sketchizi-command-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg></span>
           <input
             ref={inputRef}
             className="sketchizi-command-search"
@@ -104,7 +105,7 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
               }
             }}
             type="search"
-            placeholder="Search commands..."
+            placeholder="What would you like to do?"
             aria-label="Search commands"
             autoComplete="off"
             spellCheck="false"
@@ -115,6 +116,7 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
           </span>
         </label>
 
+        <div className="sketchizi-command-results-heading"><span>{query.trim() ? "Matching commands" : "Explore commands"}</span><span>{visibleCommands.length} available</span></div>
         <div className="sketchizi-command-results" role="listbox" aria-label="Commands">
           {visibleCommands.length === 0 ? (
             <div className="sketchizi-command-empty">No commands found</div>

@@ -839,3 +839,185 @@
   .app.theme-dark .desktop-app-header button,
   .app.theme-dark .desktop-app-header [role="button"] { transition: none; }
 }
+
+
+/* View menu polish: clear hierarchy, compact icon rail, and readable shortcuts. */
+.app .desktop-app-nav-item {
+  position: relative;
+}
+.app .desktop-app-dropdown {
+  width: 284px;
+  min-width: 284px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--ui-border, #dfe3ed);
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-strong, #25283b);
+  box-shadow: 0 22px 54px rgb(12 18 35 / 22%), 0 4px 12px rgb(12 18 35 / 8%);
+  transform-origin: top left;
+  animation: sketchizi-view-menu-in 120ms ease-out;
+  z-index: 1000;
+}
+.app .desktop-app-dropdown button {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  width: 100%;
+  min-height: 39px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+.app .desktop-app-dropdown .desktop-app-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--ui-text-muted, #777f92);
+}
+.app .desktop-app-dropdown .desktop-app-dropdown-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+.app .desktop-app-dropdown .desktop-app-dropdown-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .desktop-app-dropdown button kbd {
+  justify-self: end;
+  padding: 3px 5px;
+  border: 1px solid var(--ui-border, #e1e4ec);
+  border-radius: 5px;
+  background: var(--ui-surface-soft, #f4f5f9);
+  color: var(--ui-text-muted, #747b8d);
+  font-family: inherit;
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.app .desktop-app-dropdown button:hover {
+  border-color: color-mix(in srgb, var(--ui-accent, #7666e8) 18%, transparent);
+  background: var(--ui-hover, #f3f3fc);
+  color: var(--ui-text-strong, #25283b);
+}
+.app .desktop-app-dropdown button:hover .desktop-app-dropdown-icon {
+  color: var(--ui-accent, #7666e8);
+}
+.app .desktop-app-dropdown button:focus-visible {
+  outline: 2px solid var(--ui-accent, #7666e8);
+  outline-offset: 1px;
+}
+.app .desktop-app-dropdown .desktop-app-command-search-menuitem {
+  margin-bottom: 7px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ui-border-soft, #e8eaf1);
+  border-radius: 8px 8px 3px 3px;
+  background: var(--ui-surface-soft, #f8f8fc);
+}
+.app .desktop-app-dropdown .desktop-app-command-search-menuitem .desktop-app-dropdown-icon {
+  color: var(--ui-accent, #7666e8);
+}
+.app.theme-dark .desktop-app-dropdown {
+  border-color: #383d50;
+  background: #20232e;
+  color: #eef0f8;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 42%), 0 4px 14px rgb(0 0 0 / 20%);
+}
+.app.theme-dark .desktop-app-dropdown .desktop-app-dropdown-icon {
+  color: #aeb5ca;
+}
+.app.theme-dark .desktop-app-dropdown button:hover {
+  border-color: rgb(151 139 255 / 24%);
+  background: #2b2e3d;
+  color: #fff;
+}
+.app.theme-dark .desktop-app-dropdown button:hover .desktop-app-dropdown-icon,
+.app.theme-dark .desktop-app-dropdown .desktop-app-command-search-menuitem .desktop-app-dropdown-icon {
+  color: #b4a9ff;
+}
+.app.theme-dark .desktop-app-dropdown button kbd {
+  border-color: #41465a;
+  background: #292c39;
+  color: #aeb5ca;
+}
+.app.theme-dark .desktop-app-dropdown .desktop-app-command-search-menuitem {
+  border-bottom-color: #383d50;
+  background: #272a38;
+}
+@keyframes sketchizi-view-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-dropdown { animation: none; }
+}
+
+
+/* Keep the native Excalidraw tool dock at the bottom by default.
+   User drag/keyboard positioning uses inline !important coordinates and can
+   still move the dock elsewhere during the current session. */
+.app .desktop-canvas-region .excalidraw .App-toolbar-container {
+  top: auto !important;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: max-content;
+  max-width: calc(100% - 24px);
+}
+.app .desktop-canvas-region .excalidraw .App-toolbar-container .App-toolbar {
+  max-width: 100%;
+}
+@media (max-width: 760px) {
+  .app .desktop-canvas-region .excalidraw .App-toolbar-container {
+    bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    max-width: calc(100% - 16px);
+  }
+}
+
+
+/* Refined header dropdown chevron: a crisp icon rather than a text glyph. */
+.app .desktop-app-nav-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app .desktop-app-nav-chevron {
+  display: block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  color: currentColor;
+  opacity: .68;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.app .desktop-app-nav-button:hover .desktop-app-nav-chevron,
+.app .desktop-app-nav-button:focus-visible .desktop-app-nav-chevron,
+.app .desktop-app-nav-button.active .desktop-app-nav-chevron {
+  opacity: 1;
+}
+
+.app .desktop-app-nav-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-nav-chevron {
+    transition: none;
+  }
+}

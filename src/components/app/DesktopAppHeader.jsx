@@ -4,17 +4,6 @@ import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx
 
 const MENU_DEFINITIONS = [
   {
-    label: "File",
-    ids: ["files.new", "files.open", "files.save", "files.save-as", "files.open-folder", "files.close-folder"],
-  },
-  {
-    label: "Edit",
-    nativeActions: [
-      { label: "Undo", keys: /undo/i },
-      { label: "Redo", keys: /redo/i },
-    ],
-  },
-  {
     label: "View",
     ids: [
       "view.zoom-in",
@@ -27,12 +16,33 @@ const MENU_DEFINITIONS = [
       "view.toggle-grid",
     ],
   },
-  {
-    label: "Help",
-    ids: ["application.shortcuts", "application.excalidraw-command-palette"],
-  },
 ];
 
+
+const VIEW_COMMAND_ICONS = {
+  "view.zoom-in": "plus",
+  "view.zoom-out": "minus",
+  "view.reset-zoom": "reset",
+  "view.fit-canvas": "fit",
+  "view.toggle-minimap": "map",
+  "view.toggle-theme": "theme",
+  "view.toggle-canvas-grid": "grid",
+  "view.toggle-grid": "snap",
+};
+function ViewCommandIcon({ name }) {
+  const paths = {
+    plus: <><path d="M12 5v14M5 12h14" /></>,
+    minus: <path d="M5 12h14" />,
+    reset: <><path d="M4 11a8 8 0 1 1 2.3 5.7" /><path d="M4 4v7h7" /></>,
+    fit: <><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5" /><path d="M8 8h8v8H8z" /></>,
+    map: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m9 4 0 16M15 4v16" /></>,
+    theme: <><path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z" /></>,
+    grid: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>,
+    snap: <><path d="M5 5h5v5H5zM14 14h5v5h-5z" /><path d="M10 7h4v4M7 10v4h4" /></>,
+    search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></>,
+  };
+  return <span className="desktop-app-dropdown-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.fit}</svg></span>;
+}
 
 function canRun(command) {
   if (!command) return false;
@@ -133,6 +143,18 @@ export default function DesktopAppHeader({
   }, []);
 
   useEffect(() => {
+    const onCommandSearchShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.altKey || event.key.toLowerCase() !== "p") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpenMenu(null);
+      openCommandPalette?.();
+    };
+    document.addEventListener("keydown", onCommandSearchShortcut, true);
+    return () => document.removeEventListener("keydown", onCommandSearchShortcut, true);
+  }, [openCommandPalette]);
+
+  useEffect(() => {
     if (!openMenu) return undefined;
     const close = (event) => {
       if (!(event.target instanceof Element)) return;
@@ -226,7 +248,7 @@ export default function DesktopAppHeader({
                 onClick={() => setOpenMenu((current) => current === menu.label ? null : menu.label)}
               >
                 <span>{menu.label}</span>
-                <span className="desktop-app-nav-chevron" aria-hidden="true">⌄</span>
+                <svg className={`desktop-app-nav-chevron${openMenu === menu.label ? " is-open" : ""}`} viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4.5 6 3.5 3.5L11.5 6" /></svg>
               </button>
 
               {openMenu === menu.label && (
@@ -244,14 +266,31 @@ export default function DesktopAppHeader({
                       <span>{action.label}</span>
                     </button>
                   ))}
+                  {menu.label === "View" && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="desktop-app-command-search-menuitem"
+                      onClick={() => {
+                        setOpenMenu(null);
+                        openCommandPalette?.();
+                      }}
+                    >
+                      <ViewCommandIcon name="search" />
+                      <span className="desktop-app-dropdown-label">Search Commands</span>
+                      <kbd>Ctrl+Shift+P</kbd>
+                    </button>
+                  )}
                   {commandsForMenu.map((command) => (
                     <button
                       type="button"
                       role="menuitem"
                       key={command.id}
+                      className="desktop-app-dropdown-command"
                       onClick={() => executeCommand(command)}
                     >
-                      <span>{command.label}</span>
+                      <ViewCommandIcon name={VIEW_COMMAND_ICONS[command.id] || "fit"} />
+                      <span className="desktop-app-dropdown-label">{command.label}</span>
                       {command.shortcut && <kbd>{command.shortcut}</kbd>}
                     </button>
                   ))}
@@ -365,8 +404,8 @@ export default function DesktopAppHeader({
           type="button"
           className="desktop-app-header-icon-button desktop-app-search-button"
           onClick={() => { setOpenMenu(null); openCommandPalette?.(); }}
-          aria-label="Search commands"
-          title="Search commands (Ctrl+K)"
+          aria-label="Search commands (Ctrl+Shift+P)"
+          title="Search commands (Ctrl+Shift+P or Ctrl+K)"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="10.8" cy="10.8" r="6.3" />

@@ -48,12 +48,8 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     const now = Date.now();
     const updatedElements = api.getSceneElements().map((element) => {
       if (!selectedIds.has(element.id)) return element;
-      // Library images are intentionally not recolored. The toolbar hides
-      // color controls for these assets; native text and shapes use Excalidraw
-      // element properties normally.
-      if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) {
-        return element;
-      }
+      // Library images retain their original artwork; native text and shapes use Excalidraw properties.
+      if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
       return {
         ...element,
         ...patch,

@@ -145,6 +145,40 @@ export default function AuthenticationControl() {
     }
   };
 
+  // A second tab can open while the auth backend is waking or a prior
+  // status request failed. Recheck when this tab becomes active instead of
+  // leaving the header stuck in "Auth unavailable" until a manual retry.
+  useEffect(() => {
+    if (auth.status === "authenticated") return undefined;
+    let checking = false;
+    const recheckWhenActive = async () => {
+      if (checking || document.visibilityState === "hidden") return;
+      checking = true;
+      invalidateCurrentUserCache();
+      try {
+        const { authenticated, user } = await fetchCurrentUser();
+        setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
+        if (authenticated) setLoginError("");
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setAuth((current) => current.status === "authenticated" ? current : {
+            status: "unavailable",
+            user: null,
+            error: error.message || "Sign-in status is temporarily unavailable. You can keep using Sketchizi.",
+          });
+        }
+      } finally {
+        checking = false;
+      }
+    };
+    window.addEventListener("focus", recheckWhenActive);
+    document.addEventListener("visibilitychange", recheckWhenActive);
+    return () => {
+      window.removeEventListener("focus", recheckWhenActive);
+      document.removeEventListener("visibilitychange", recheckWhenActive);
+    };
+  }, [auth.status]);
+
   const handleGoogleSignIn = async () => {
     if (busy) return;
     setBusy(true);

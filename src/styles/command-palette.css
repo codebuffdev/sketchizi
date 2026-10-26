@@ -268,3 +268,99 @@ html[data-sketchizi-theme="dark"] .sketchizi-command-palette {
     padding-right: 10px;
   }
 }
+
+
+/* Command Center — elevated workspace surface */
+html[data-sketchizi-theme="dark"] .sketchizi-command-palette {
+  --ui-surface-solid: #111722;
+  --ui-surface-soft: #1a2231;
+  --ui-border: #303b50;
+  --ui-border-soft: #253145;
+  --ui-text: #f2f4ff;
+  --ui-text-muted: #a3aec7;
+  --ui-text-faint: #77859f;
+  --ui-accent: #a48aff;
+}
+.sketchizi-command-palette-overlay {
+  padding-top: clamp(48px, 10vh, 104px);
+  background: rgba(5, 9, 17, .6);
+  backdrop-filter: blur(9px);
+}
+.sketchizi-command-palette {
+  width: min(690px, calc(100vw - 32px));
+  max-height: min(650px, calc(100dvh - 80px));
+  border-radius: 18px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.36), 0 0 0 1px rgba(155,135,255,.08);
+}
+.sketchizi-command-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 19px 22px 12px;
+}
+.sketchizi-command-heading-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(145deg,#8d4cf5,#5332d6);
+  color: white;
+  font-size: 22px;
+  box-shadow: 0 6px 20px rgba(111,69,230,.25);
+}
+.sketchizi-command-heading strong { display:block; font-size:15px; font-weight:750; letter-spacing:-.025em; }
+.sketchizi-command-heading small { display:block; margin-top:3px; color:var(--ui-text-muted); font-size:11px; }
+.sketchizi-command-close {
+  margin-left:auto;
+  width:30px;
+  height:30px;
+  border:1px solid var(--ui-border);
+  border-radius:9px;
+  background:var(--ui-surface-soft);
+  color:var(--ui-text-muted);
+  font-size:20px;
+  cursor:pointer;
+}
+.sketchizi-command-close:hover { color:var(--ui-text); border-color:var(--ui-accent); }
+.sketchizi-command-search-wrap { margin: 0 18px 10px; padding:0; border:0; background:transparent; }
+.sketchizi-command-search { height:49px; border:1px solid var(--ui-border); border-radius:11px; padding-left:45px; font-size:14px; }
+.sketchizi-command-search:focus { border-color:var(--ui-accent); box-shadow:0 0 0 3px rgba(139,105,255,.15); background:var(--ui-surface-soft); }
+.sketchizi-command-search-icon { left:15px; display:flex; align-items:center; }
+.sketchizi-command-search-icon svg { width:19px; height:19px; }
+.sketchizi-command-search-hints { right:13px; gap:6px; }
+.sketchizi-command-search-hints kbd,.sketchizi-command-item > kbd,.sketchizi-command-palette-footer kbd {
+  border-radius:6px; padding:4px 6px; font-size:10px; font-weight:550;
+}
+.sketchizi-command-results-heading { display:flex; justify-content:space-between; gap:12px; padding:8px 24px 6px; color:var(--ui-text-faint); font-size:11px; }
+.sketchizi-command-results { padding:3px 12px 12px; scrollbar-width:thin; scrollbar-color:var(--ui-border) transparent; }
+.sketchizi-command-group + .sketchizi-command-group { margin-top:10px; }
+.sketchizi-command-group-title { padding:12px 10px 7px; font-size:10px; font-weight:750; letter-spacing:.09em; color:var(--ui-text-muted); }
+.sketchizi-command-item { grid-template-columns:36px minmax(0,1fr) auto; min-height:54px; gap:12px; padding:8px 12px; border-radius:10px; }
+.sketchizi-command-item:hover,.sketchizi-command-item.selected { background:var(--ui-surface-soft); }
+.sketchizi-command-item.selected { box-shadow:inset 3px 0 0 var(--ui-accent); }
+.sketchizi-command-icon { width:34px; height:34px; border-radius:9px; font-size:15px; }
+.sketchizi-command-copy strong { font-size:13px; }
+.sketchizi-command-copy small { display:block; margin-top:3px; font-size:10px; line-height:1.3; color:var(--ui-text-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sketchizi-command-palette-footer { gap:20px; padding:12px 20px; font-size:10px; }
+@media(max-width:640px) {
+  .sketchizi-command-palette-overlay { padding:40px 10px 10px; }
+  .sketchizi-command-palette { max-height:calc(100dvh - 50px); border-radius:14px; }
+  .sketchizi-command-heading { padding:14px 14px 10px; }
+  .sketchizi-command-search-wrap { margin:0 12px 8px; }
+  .sketchizi-command-search { padding-right:72px; }
+  .sketchizi-command-results-heading { padding-left:17px; padding-right:17px; }
+  .sketchizi-command-results { padding-left:7px; padding-right:7px; }
+  .sketchizi-command-palette-footer { gap:12px; padding:10px 12px; }
+}
+@media(prefers-reduced-motion:reduce) { .sketchizi-command-palette * { scroll-behavior:auto; } }
+
+
+/* Neutral focus state for command search; retain a clear boundary without a
+   purple halo while the user is typing. */
+.sketchizi-command-palette .sketchizi-command-search:focus,
+.sketchizi-command-palette .sketchizi-command-search:focus-visible {
+  border-color: var(--ui-border, #394357) !important;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(180, 190, 210, .07) !important;
+}

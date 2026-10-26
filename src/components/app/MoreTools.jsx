@@ -2,6 +2,31 @@ import { useEffect } from "react";
 
 export default function MoreTools({ open, anchor, position, activateTool, toggle, canEdit = true, placement = "canvas" }) {
   useEffect(() => {
+    if (!open) return undefined;
+    const closeOnOutsidePointer = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".sketchizi-more-tools")) return;
+      // The More Tools menu follows the single-catalog policy: any click
+      // elsewhere, including the canvas or another toolbar/catalog button,
+      // dismisses it before the other control handles its own click.
+      toggle("more-tools");
+    };
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      toggle("more-tools");
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer, true);
+    document.addEventListener("keydown", closeOnEscape, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
+      document.removeEventListener("keydown", closeOnEscape, true);
+    };
+  }, [open, toggle]);
+
+  useEffect(() => {
     const handleQuickTool = (event) => {
       const tool = event.detail?.tool;
       if (!canEdit || !["bucketfill", "autoshape"].includes(tool)) return;

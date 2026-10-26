@@ -3,6 +3,14 @@ import { logger } from "../../logging/logger";
 import { insertAwsResource, isIntelligentAwsResourceIcon } from "../aws-resources/awsResourceService";
 import { insertKubernetesResource, isIntelligentKubernetesResourceIcon } from "../kubernetes-resources/kubernetesResourceService";
 import { insertNetworkingResource, isIntelligentNetworkingResourceIcon } from "../networking/networkingResourceService.js";
+function tintMonochromeSvg(svg, tintColor) {
+  if (!/^#[0-9a-f]{6}$/i.test(String(tintColor || ""))) return svg;
+  const color = tintColor;
+  return String(svg)
+    .replace(/\b(fill|stroke)\s*=\s*(["'])(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))\2/gi, (_, property, quote) => property + "=" + quote + color + quote)
+    .replace(/\b(fill|stroke)\s*:\s*(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))/gi, (_, property) => property + ":" + color);
+}
+
 
 export function createEditableLibraryElements(icon, x, y) {
     const source = icon?.source;
@@ -359,11 +367,41 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
         return response.text();
       })
       .then((svg) => {
-        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+        const preparedSvg = icon.tintColor ? tintMonochromeSvg(svg, icon.tintColor) : svg;
+        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(preparedSvg)))}`;
         addImage(dataURL);
       })
       .catch((error) => {
-        logger.error("Could not load Eraser icon", error, { category: "canvas", operation: "icon-insert", iconSource: "eraser" });
+        logger.error("Could not load library icon", error, { category: "canvas", operation: "icon-insert", iconSource: icon.source || "unknown", iconId: icon.id });
+        // Kubernetes resources must remain placeable even if a local SVG is
+        // missing or the browser cannot load it. Preserve the resource as an
+        // editable, grouped card instead of silently dropping the click.
+        if (icon.source === "kubernetes") {
+          const groupId = `kubernetes-fallback-${icon.id}-${Date.now()}`;
+          const resource = {
+            provider: "kubernetes",
+            catalog: "kubernetes",
+            resourceType: String(icon.id || "").replace(/^k8s:/, ""),
+            iconId: icon.id,
+            properties: { name: icon.name, category: icon.category },
+          };
+          const fallback = convertToExcalidrawElements([
+            {
+              type: "rectangle", x, y, width: 210, height: 94,
+              strokeColor: "#3267b2", backgroundColor: "#eff6ff",
+              fillStyle: "solid", strokeWidth: 2, roughness: 0,
+              roundness: { type: 3 }, groupIds: [groupId],
+              customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", kubernetesResource: resource },
+            },
+            {
+              type: "text", x: x + 12, y: y + 25, width: 186, text: icon.name || "Kubernetes resource",
+              fontSize: 16, fontFamily: 1, textAlign: "center", verticalAlign: "middle",
+              strokeColor: "#1e1e1e", backgroundColor: "transparent", groupIds: [groupId],
+              customData: { diagramIcon: true, iconId: icon.id, iconSource: "kubernetes", kubernetesResource: resource },
+            },
+          ]);
+          commitInsertedElements(fallback);
+        }
       });
   };
   return addIconToCanvas;

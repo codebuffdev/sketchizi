@@ -108,10 +108,34 @@ export async function insertKubernetesResource({ api, icon, x, y, markRecentlyUs
     markRecentlyUsed(icon);
     return true;
   } catch (error) {
-    logger.error("Could not create Kubernetes intelligent resource", error, {
-      category: "canvas", operation: "kubernetes-resource-insert", resourceDefinition: definition.id, iconId: icon.id,
+    logger.warn("Kubernetes icon could not be loaded; inserting an editable text card instead.", error, {
+      category: "canvas", operation: "kubernetes-resource-insert-fallback", resourceDefinition: definition.id, iconId: icon.id,
     });
-    return false;
+    try {
+      const fallbackElements = restoreElements(convertToExcalidrawElements([
+        withResourceData({
+          type: "rectangle", x, y, width, height,
+          strokeColor: "#3267b2", backgroundColor: "#eff6ff", fillStyle: "solid",
+          strokeWidth: 1.5, roughness: 0, roundness: { type: 3 },
+        }, resource, "container"),
+        textElement(x + 18, y + 14, width - 36, definition.displayName, resource, "name", { fontSize: 18 }),
+        textElement(x + 18, y + 48, width - 36, resourceDetails(definition, properties), resource, "details", { fontSize: 13 }),
+      ]), null, { deleteInvisibleElements: true });
+      const previousElements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+      const ids = fallbackElements.map((element) => element.id);
+      api.updateScene({
+        elements: [...previousElements, ...fallbackElements],
+        appState: { ...api.getAppState(), selectedElementIds: Object.fromEntries(ids.map((id) => [id, true])) },
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      });
+      markRecentlyUsed(icon);
+      return true;
+    } catch (fallbackError) {
+      logger.error("Could not create Kubernetes fallback resource", fallbackError, {
+        category: "canvas", operation: "kubernetes-resource-insert-fallback", resourceDefinition: definition.id, iconId: icon.id,
+      });
+      return false;
+    }
   }
 }
 

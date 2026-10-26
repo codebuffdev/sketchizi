@@ -8,7 +8,7 @@ function sourceLabel(icon) {
   if (icon?.source === "networking" || icon?.category === "Networking") return "Networking";
   if (icon?.category === "Mind Maps") return "Mind Maps";
   if (icon?.category === "UML Diagrams") return "Architecture";
-  return icon?.subtitle && icon.subtitle !== "Eraser" ? icon.subtitle : "Eraser Icons";
+  return icon?.subtitle && icon.subtitle !== "Eraser" && icon.subtitle !== "Eraser Icons" ? icon.subtitle : "Essentials";
 }
 
 function iconTags(icon) {
@@ -18,7 +18,7 @@ function iconTags(icon) {
     icon?.category,
   ];
   const tags = [...new Set(candidates.filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim()))];
-  return (tags.length ? tags : ["icon"]).slice(0, 3);
+  return (tags.length ? tags : ["icon"]).slice(0, 3).map((tag) => tag === "Eraser Icons" || tag === "Eraser" ? "Essentials" : tag);
 }
 
 function iconSearchText(icon) {
@@ -40,6 +40,17 @@ export default function IconLibraryPanel({
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("cards");
   const [cardLayout, setCardLayout] = useState("two-column");
+  const [selectedEssentialColor, setSelectedEssentialColor] = useState("#7c5cff");
+  const essentialColors = [
+    { value: "#1f2937", label: "Graphite" },
+    { value: "#64748b", label: "Slate" },
+    { value: "#2563eb", label: "Blue" },
+    { value: "#0d9488", label: "Teal" },
+    { value: "#16a34a", label: "Green" },
+    { value: "#e59a22", label: "Amber" },
+    { value: "#e05252", label: "Red" },
+    { value: "#7c5cff", label: "Violet" },
+  ];
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || "[]");
@@ -134,10 +145,11 @@ export default function IconLibraryPanel({
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
+  const withSelectedEssentialColor = (icon) => activeSource === "eraser" ? { ...icon, tintColor: selectedEssentialColor } : icon;
   const activeChip = activeSource;
   const sourceTabs = [
     { id: "all", label: "All" },
-    { id: "eraser", label: "Eraser" },
+    { id: "eraser", label: "Essentials" },
     { id: "aws", label: "AWS" },
     { id: "kubernetes", label: "Kubernetes" },
   ];
@@ -171,7 +183,7 @@ export default function IconLibraryPanel({
 
         <div className="library-filter-row">
           <nav className="library-source-tabs" aria-label="Icon collections">
-            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={activeChip === tab.id ? "library-source-chip active" : "library-source-chip"} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.label}</button>)}
+            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.id === "eraser" && <svg className="library-source-chip-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2 8 1.5Z" /><path d="m12.4 1 .7 1.9L15 3.6l-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" /></svg>}{tab.label}</button>)}
             <div className="library-collections-wrap">
               <button type="button" className={activeChip === "collections" || collectionsOpen ? "library-source-chip active" : "library-source-chip"} aria-expanded={collectionsOpen} onClick={() => setCollectionsOpen((open) => !open)}>Collections <span aria-hidden="true" className="library-chip-chevron">⌄</span></button>
               {collectionsOpen && <div className="library-collections-menu" role="menu" aria-label="Collections">
@@ -196,11 +208,12 @@ export default function IconLibraryPanel({
         {(activeSource === "kubernetes" && !search.trim()) && <div className="library-subcategory-row"><label htmlFor="kubernetes-icon-subcategory">Kubernetes category</label><select id="kubernetes-icon-subcategory" value={activeKubernetesCategory} onChange={(event) => { setActiveKubernetesCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">All Kubernetes categories</option>{kubernetesCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>}
         {activeSource === "eraser" && !search.trim() && eraserSyncError && <div className="library-inline-status" role="status">{eraserSyncError}</div>}
 
+
         <section className="icons library-results" aria-label="Icon results">
           <div className="section-heading library-results-heading">
-            <div className="library-results-title-wrap"><div className="section-title">{search.trim() ? "Search results" : activeSource === "all" ? "All icons" : activeCategory}</div><div className="icon-total">{displayedIcons.length.toLocaleString()} icons</div></div>
+            <div className="library-results-title-wrap"><div className="section-title">{search.trim() ? "Search results" : activeSource === "all" ? "All icons" : activeSource === "eraser" ? "Essentials" : activeCategory}</div><div className="icon-total">{displayedIcons.length.toLocaleString()} icons</div></div>
             <div className="library-results-controls">
-              {activeSource === "eraser" && !search.trim() && <button type="button" className="library-sync-button" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length} title={eraserSyncing ? "Synchronizing icons" : "Make Eraser icons available offline"}>{eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : eraserCachedCount > 0 ? "Offline ready" : "Make offline"}</button>}
+              {activeSource === "eraser" && !search.trim() && <button type="button" className="library-sync-button" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length} title={eraserSyncing ? "Synchronizing icons" : "Make icons available offline"}>{eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : eraserCachedCount > 0 ? "Offline ready" : "Make offline"}</button>}
               {activeCategory === "Mind Maps" && activeSource === "collections" && <button type="button" className="library-sync-button" onClick={createStarterMindMap}>Starter mind map</button>}
               <label className="library-layout-select-label"><select aria-label="Card layout" title="Card layout" className="library-layout-select" value={cardLayout} onChange={(event) => setCardLayout(event.target.value)}><option value="two-column">Two-column cards</option><option value="compact">Compact cards</option></select></label>
               <div className="library-view-toggle" role="group" aria-label="Result layout">
@@ -216,12 +229,12 @@ export default function IconLibraryPanel({
           }}>
             {shownIcons.map((icon) => {
               const favorite = isFavorite(icon);
-              return <div key={`${icon.category || icon.source}-${icon.id}`} role="button" tabIndex={0} className={`icon-card library-icon-card ${draggingIcon?.icon?.id === icon.id ? "is-drag-source" : ""} ${favorite ? "has-favorite" : ""}`} onClick={() => handleIconClick(icon)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); handleIconClick(icon); } }} onPointerDown={(event) => handleIconPointerDown(event, icon)} onMouseDown={(event) => handleIconMouseDown(event, icon)} onDragStart={(event) => handleDragStart(event, icon)} title={`Insert ${icon.name} into the canvas`} aria-label={`Insert ${icon.name} into the canvas`}>
+              return <div key={`${icon.category || icon.source}-${icon.id}`} role="button" tabIndex={0} className={`icon-card library-icon-card ${draggingIcon?.icon?.id === icon.id ? "is-drag-source" : ""} ${favorite ? "has-favorite" : ""}`} onClick={() => handleIconClick(withSelectedEssentialColor(icon))} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); handleIconClick(withSelectedEssentialColor(icon)); } }} onPointerDown={(event) => handleIconPointerDown(event, withSelectedEssentialColor(icon))} onMouseDown={(event) => handleIconMouseDown(event, withSelectedEssentialColor(icon))} onDragStart={(event) => handleDragStart(event, withSelectedEssentialColor(icon))} title={`Insert ${icon.name} into the canvas`} aria-label={`Insert ${icon.name} into the canvas`}>
                 <span className="icon-preview library-icon-preview"><img src={icon.src} alt="" draggable={false} /></span>
                 <span className="library-icon-card-content"><span className="icon-name">{icon.name}</span><span className="icon-subtitle">{getIconSubtitle(icon)}</span><span className="library-icon-tags">{iconTags(icon).map((tag) => <span key={tag} className="library-icon-tag">{tag}</span>)}</span></span>
                 <span className="library-icon-card-actions">
                   <span className={favorite ? "favorite-button active" : "favorite-button"} role="button" tabIndex={0} title={favorite ? "Remove from favorites" : "Add to favorites"} aria-label={favorite ? "Remove from favorites" : "Add to favorites"} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleFavorite(icon); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleFavorite(icon); } }}>{favorite ? "★" : "☆"}</span>
-                  <span className="library-add-icon" role="button" tabIndex={0} title={`Insert ${icon.name}`} aria-label={`Insert ${icon.name}`} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleIconClick(icon); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); handleIconClick(icon); } }}>+</span>
+                  <span className="library-add-icon" role="button" tabIndex={0} title={`Insert ${icon.name}`} aria-label={`Insert ${icon.name}`} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleIconClick(withSelectedEssentialColor(icon)); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); handleIconClick(withSelectedEssentialColor(icon)); } }}>+</span>
                 </span>
               </div>;
             })}
