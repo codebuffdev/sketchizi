@@ -3,314 +3,125 @@ import { parseDocument, stringify } from "yaml";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
 import "./docker-compose-studio.css";
 
-function emptyService() {
-  return { image: "", buildContext: "", portsText: "", environmentText: "", dependsText: "", volumesText: "", networksText: "", healthcheckText: "", restart: "unless-stopped" };
-}
+const STARTER = "name: ecommerce\nservices:\n  web:\n    image: nginx:1.27\n    ports:\n      - \"8080:80\"\n    depends_on:\n      api:\n        condition: service_healthy\n    networks: [frontend]\n  api:\n    build:\n      context: ./api\n    environment:\n      NODE_ENV: production\n      DATABASE_URL: ${DATABASE_URL}\n    depends_on:\n      database:\n        condition: service_healthy\n    networks: [frontend, backend]\n  database:\n    image: postgres:17\n    environment:\n      POSTGRES_DB: ecommerce\n      POSTGRES_USER: app\n      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}\n    volumes:\n      - database-data:/var/lib/postgresql/data\n    healthcheck:\n      test: [CMD-SHELL, \"pg_isready -U app -d ecommerce\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n    networks: [backend]\nvolumes:\n  database-data: {}\nnetworks:\n  frontend: {}\n  backend:\n    internal: true\n";
+const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+const namesOf = (value) => Array.isArray(value) ? value.map((item) => typeof item === "string" ? item : item?.source).filter(Boolean) : isRecord(value) ? Object.keys(value) : [];
+const imageOf = (service) => typeof service?.image === "string" ? service.image : typeof service?.build === "string" ? "build: " + service.build : isRecord(service?.build) ? "build: " + (service.build.context || ".") : "Image/build not configured";
+const dependenciesOf = (service) => namesOf(service?.depends_on);
 
-function parseLines(value) {
-  return value.split("\n").map((line) => line.trim()).filter(Boolean);
-}
-
-function toDocument(name, services, volumeNames, networkNames) {
-  const normalized = {};
-  for (const service of services) {
-    const definition = {};
-    if (service.image.trim()) definition.image = service.image.trim();
-    if (service.buildContext.trim()) definition.build = { context: service.buildContext.trim() };
-    const ports = parseLines(service.portsText);
-    if (ports.length) definition.ports = ports;
-    const environment = parseLines(service.environmentText);
-    if (environment.length) definition.environment = environment;
-    const depends = parseLines(service.dependsText);
-    if (depends.length) definition.depends_on = depends;
-    const volumesForService = parseLines(service.volumesText);
-    if (volumesForService.length) definition.volumes = volumesForService;
-    const networksForService = parseLines(service.networksText);
-    if (networksForService.length) definition.networks = networksForService;
-    const healthcheck = parseLines(service.healthcheckText);
-    if (healthcheck.length) definition.healthcheck = { test: ["CMD-SHELL", healthcheck[0]], ...(healthcheck[1] ? { interval: healthcheck[1] } : {}), ...(healthcheck[2] ? { retries: Number(healthcheck[2]) || healthcheck[2] } : {}) };
-    if (service.restart) definition.restart = service.restart;
-    normalized[service.name.trim()] = definition;
-  }
-  const volumes = Object.fromEntries(parseLines(volumeNames).map((name) => [name, {}]));
-  const networks = Object.fromEntries(parseLines(networkNames).map((name) => [name, {}]));
-  return { name: name.trim(), services: normalized, volumes, networks };
+function highlightLine(line) {
+  const trimmed = line.trimStart();
+  if (!trimmed || trimmed.startsWith("#")) return <span className={trimmed.startsWith("#") ? "docker-yaml-comment" : ""}>{line}</span>;
+  const match = line.match(/^(\s*(?:-\s+)?)([^:#][^:]*)(:\s*)(.*)$/);
+  if (!match) return line;
+  const [, indent, key, separator, value] = match;
+  const valueClass = /^(true|false|null)$/i.test(value.trim()) ? "docker-yaml-literal" : /^-?\d+(?:\.\d+)?$/.test(value.trim()) ? "docker-yaml-number" : /^[\"'].*[\"']$/.test(value.trim()) ? "docker-yaml-string" : "docker-yaml-value";
+  return <>{indent}<span className="docker-yaml-key">{key}</span><span className="docker-yaml-punctuation">{separator}</span><span className={valueClass}>{value}</span></>;
 }
 
 export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
-  const [projectName, setProjectName] = useState("my-compose-project");
-  const [services, setServices] = useState([{ name: "web", ...emptyService() }]);
-  const [selectedId, setSelectedId] = useState("web");
-  const [volumeNames, setVolumeNames] = useState("");
-  const [networkNames, setNetworkNames] = useState("");
-  const [sourceDocument, setSourceDocument] = useState(null);
-  const fileInputRef = useRef(null);
+  const [yamlText, setYamlText] = useState(STARTER);
+  const [savedYaml, setSavedYaml] = useState(STARTER);
+  const [selectedService, setSelectedService] = useState("web");
+  const [fontSize, setFontSize] = useState(13);
+  const [scrollTop, setScrollTop] = useState(0);
   const [notice, setNotice] = useState("");
-  const selected = services.find((service) => service.name === selectedId) || services[0];
-  const composeDocument = useMemo(() => toDocument(projectName, services, volumeNames, networkNames), [projectName, services, volumeNames, networkNames]);
-  const validation = useMemo(() => validateComposeDocument(composeDocument), [composeDocument]);
-  const readiness = useMemo(() => analyzeComposeReadiness(composeDocument), [composeDocument]);
+  const [error, setError] = useState("");
+  const [showValidation, setShowValidation] = useState(false);
+  const fileInputRef = useRef(null);
+  const editorRef = useRef(null);
+  const parsed = useMemo(() => {
+    try {
+      const doc = parseDocument(yamlText, { prettyErrors: true, uniqueKeys: true });
+      if (doc.errors.length) return { document: null, error: doc.errors[0].message };
+      const value = doc.toJS();
+      if (!isRecord(value)) return { document: null, error: "Compose YAML must be a mapping." };
+      if (!isRecord(value.services)) return { document: null, error: "Add a top-level services mapping." };
+      return { document: value, error: "" };
+    } catch (cause) { return { document: null, error: cause?.message || "Could not parse Compose YAML." }; }
+  }, [yamlText]);
+  const document = parsed.document;
+  const serviceEntries = Object.entries(document?.services || {});
+  const serviceNames = new Set(serviceEntries.map(([name]) => name));
+  const selected = document?.services?.[selectedService];
+  const volumes = Object.keys(document?.volumes || {});
+  const networks = Object.keys(document?.networks || {});
+  const validation = useMemo(() => document ? validateComposeDocument(document) : { valid: false, findings: [] }, [document]);
+  const readiness = useMemo(() => document ? analyzeComposeReadiness(document) : null, [document]);
+  const edges = serviceEntries.flatMap(([from, service]) => dependenciesOf(service).map((to) => ({ from, to, exists: serviceNames.has(to) })));
+  const dirty = yamlText !== savedYaml;
+  const close = () => { if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return; onClose?.(); };
 
-  const updateSelected = (patch) => {
-    if (!selected) return;
-    setServices((current) => current.map((service) => service.name === selected.name ? { ...service, ...patch } : service));
-  };
-  const addService = () => {
-    let index = services.length + 1;
-    let name = `service-${index}`;
-    while (services.some((service) => service.name === name)) name = `service-${++index}`;
-    setServices((current) => [...current, { name, ...emptyService() }]);
-    setSelectedId(name);
-    setNotice("");
-  };
-  const duplicateSelected = () => {
-    if (!selected) return;
-    const existingNames = new Set(services.map((service) => service.name));
-    const baseName = selected.name.replace(/-copy(?:-\d+)?$/, "");
-    let name = `${baseName}-copy`;
-    let index = 2;
-    while (existingNames.has(name)) name = `${baseName}-copy-${index++}`;
-    const duplicate = { ...selected, name };
-    setServices((current) => {
-      const selectedIndex = current.findIndex((service) => service.name === selected.name);
-      const next = [...current];
-      next.splice(selectedIndex + 1, 0, duplicate);
-      return next;
-    });
-    setSelectedId(name);
-    setNotice(`Duplicated ${selected.name} as ${name}. Review ports, volumes, and environment values before running.`);
-  };
-
-  const renameSelected = (name) => {
-    if (!selected) return;
-    const nextName = name.replace(/[^a-zA-Z0-9_.-]/g, "-");
-    setServices((current) => current.map((service) => service.name === selected.name ? { ...service, name: nextName } : service));
-    setSelectedId(nextName);
-  };
-  const removeSelected = () => {
-    if (!selected) return;
-    const next = services.filter((service) => service !== selected);
-    setServices(next);
-    setSelectedId(next[0]?.name || "");
-    setNotice("");
-  };
   const importYaml = async (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
+    const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
     try {
       const text = await file.text();
-      const parsed = parseDocument(text, { uniqueKeys: true });
-      if (parsed.errors.length) throw new Error(parsed.errors[0].message);
-      const imported = parsed.toJS();
-      if (!imported || typeof imported !== "object" || Array.isArray(imported) || !imported.services || typeof imported.services !== "object" || Array.isArray(imported.services)) throw new Error("The file must contain a Compose document with a services mapping.");
-      const importedServices = Object.entries(imported.services).map(([name, definition]) => {
-        const service = definition && typeof definition === "object" && !Array.isArray(definition) ? definition : {};
-        const build = typeof service.build === "string" ? service.build : service.build?.context || "";
-        const environment = Array.isArray(service.environment) ? service.environment : Object.entries(service.environment || {}).map(([key, value]) => `${key}=${value ?? ""}`);
-        const health = service.healthcheck || {};
-        const healthCommand = Array.isArray(health.test) ? health.test.slice(1).join(" ") : "";
-        return { name, ...emptyService(), image: typeof service.image === "string" ? service.image : "", buildContext: build, portsText: (service.ports || []).map((value) => typeof value === "object" ? [value.host_ip, value.published, value.target].filter(Boolean).join(":") : String(value)).join("\n"), environmentText: environment.join("\n"), dependsText: (Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {})).join("\n"), volumesText: (service.volumes || []).map((value) => typeof value === "string" ? value : [value.source, value.target, value.read_only ? "ro" : ""].filter(Boolean).join(":")).join("\n"), networksText: (Array.isArray(service.networks) ? service.networks : Object.keys(service.networks || {})).join("\n"), healthcheckText: [healthCommand, health.interval, health.retries].filter((value) => value !== undefined && value !== "").join("\n"), restart: service.restart || "unless-stopped" };
-      });
-      setProjectName(typeof imported.name === "string" ? imported.name : file.name.replace(/\.(ya?ml)$/i, ""));
-      setServices(importedServices);
-      setSelectedId(importedServices[0]?.name || "");
-      setVolumeNames(Object.keys(imported.volumes || {}).join("\n"));
-      setNetworkNames(Object.keys(imported.networks || {}).join("\n"));
-      setSourceDocument(imported);
-      setNotice(`Imported ${file.name}. Unsupported fields will be retained on export.`);
-    } catch (error) {
-      setNotice(`Import failed: ${error instanceof Error ? error.message : "Invalid Compose YAML"}`);
-    }
+      const doc = parseDocument(text, { prettyErrors: true, uniqueKeys: true });
+      if (doc.errors.length) throw new Error(doc.errors[0].message);
+      const value = doc.toJS();
+      if (!isRecord(value) || !isRecord(value.services)) throw new Error("The file must contain a Compose document with a top-level services mapping.");
+      const next = text.endsWith("\n") ? text : text + "\n";
+      setYamlText(next); setSavedYaml(next); setSelectedService(Object.keys(value.services)[0] || "");
+      setError(""); setNotice("Imported " + file.name + ". The full source YAML is retained in the editor.");
+    } catch (cause) { setError("Import failed: " + (cause?.message || "Invalid Compose YAML")); setNotice(""); }
+  };
+  const exportYaml = () => {
+    if (!document) { setError(parsed.error || "Fix YAML before exporting."); return; }
+    const blob = new Blob([yamlText.endsWith("\n") ? yamlText : yamlText + "\n"], { type: "text/yaml;charset=utf-8" });
+    const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
+    anchor.href = url; anchor.download = "compose.yaml"; anchor.click(); URL.revokeObjectURL(url);
+    setSavedYaml(yamlText); setError(""); setNotice("compose.yaml exported directly from the editor; unsupported fields were not reconstructed or discarded.");
+  };
+  const exportReport = () => {
+    if (!document) { setError(parsed.error || "Fix YAML before exporting a report."); return; }
+    const blob = new Blob([exportComposeReadinessReport(document)], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
+    anchor.href = url; anchor.download = (document.name || "compose") + "-preflight-report.md"; anchor.click(); URL.revokeObjectURL(url);
+    setNotice("Static preflight report exported. No containers were started.");
+  };
+  const createDiagram = async () => {
+    if (!document) { setError(parsed.error || "Fix YAML before creating a diagram."); return; }
+    if (validation.findings.some((finding) => finding.severity === "error")) { setShowValidation(true); setError("Resolve blocking Compose validation errors before creating the diagram."); return; }
+    try { await onCreateDiagram?.(document); setSavedYaml(yamlText); setError(""); setNotice("Diagram created from the current Compose YAML."); onClose?.(); }
+    catch (cause) { setError(cause?.message || "Could not create the Compose diagram."); }
+  };
+  const addService = () => {
+    if (!document) { setError(parsed.error); return; }
+    let i = serviceEntries.length + 1; let name = "service-" + i;
+    while (serviceNames.has(name)) name = "service-" + (++i);
+    setYamlText(stringify({ ...document, services: { ...document.services, [name]: { image: "nginx:alpine", restart: "unless-stopped" } } }));
+    setSelectedService(name); setError(""); setNotice("Added " + name + " to the YAML.");
+  };
+  const focusSelected = () => {
+    if (!editorRef.current) return;
+    const lines = yamlText.split("\n"); const line = lines.findIndex((line) => new RegExp("^  " + selectedService.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":").test(line));
+    if (line < 0) return;
+    const offset = lines.slice(0, line).reduce((sum, line) => sum + line.length + 1, 0);
+    editorRef.current.focus(); editorRef.current.setSelectionRange(offset, offset);
   };
 
-  const getExportDocument = () => sourceDocument ? {
-    ...sourceDocument,
-    ...composeDocument,
-    volumes: Object.fromEntries(Object.keys(composeDocument.volumes).map((name) => [name, sourceDocument.volumes?.[name] ?? {}])),
-    networks: Object.fromEntries(Object.keys(composeDocument.networks).map((name) => [name, sourceDocument.networks?.[name] ?? {}])),
-    services: Object.fromEntries(Object.entries(composeDocument.services).map(([name, service]) => {
-      const original = { ...(sourceDocument.services?.[name] || {}) };
-      for (const key of ["image", "build", "ports", "environment", "depends_on", "volumes", "networks", "healthcheck", "restart"]) delete original[key];
-      return [name, { ...original, ...service }];
-    }))
-  } : composeDocument;
-
-  const downloadYaml = () => {
-    if (!validation.valid) {
-      setNotice("Fix the validation errors before exporting.");
-      return;
-    }
-    const output = getExportDocument();
-    const blob = new Blob([stringify(output)], { type: "text/yaml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "compose.yaml";
-    anchor.click();
-    URL.revokeObjectURL(url);
-    setNotice("compose.yaml exported.");
-  };
-
-  const downloadPreflightReport = () => {
-    const report = exportComposeReadinessReport(composeDocument);
-    const blob = new Blob([report], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = (projectName.trim() || "compose") + "-preflight-report.md";
-    anchor.click();
-    URL.revokeObjectURL(url);
-    setNotice("Preflight report exported. It records static checks only; no deployment was run.");
-  };
-
-  return (
-    <div className="docker-studio-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="docker-studio" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
-        <header className="docker-studio-header">
-          <div className="docker-studio-brand-mark" aria-hidden="true">▦</div>
-          <div className="docker-studio-heading">
-            <span className="docker-studio-eyebrow">INFRASTRUCTURE DESIGN</span>
-            <h1 id="docker-studio-title">Docker Compose Studio</h1>
-            <p>Model your multi-container application and export a Compose file.</p>
-          </div>
-          <button type="button" className="docker-studio-close" onClick={onClose} aria-label="Close Docker Compose Studio">×</button>
-        </header>
-
-        <div className="docker-studio-project-row">
-          <label>Project name<input value={projectName} onChange={(event) => setProjectName(event.target.value)} /></label>
-          <div className="docker-studio-header-actions">
-            <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" className="docker-studio-file-input" style={{ display: "none" }} onChange={importYaml} aria-label="Import Compose YAML" />
-            <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
-            <button type="button" className="docker-studio-secondary" onClick={() => onCreateDiagram?.(composeDocument)}>Open as diagram</button>
-            <button type="button" className="docker-studio-secondary" onClick={downloadPreflightReport}>Export preflight report</button>
-            <button type="button" className="docker-studio-secondary" onClick={addService}>＋ Add service</button>
-            <button type="button" className="docker-studio-primary" onClick={downloadYaml}>Export compose.yaml</button>
-          </div>
-        </div>
-
-        <section className="docker-studio-topology" aria-label="Visual service topology">
-          <div className="docker-studio-topology-heading">
-            <div>
-              <span className="docker-studio-eyebrow">LIVE TOPOLOGY</span>
-              <h2>Service connections</h2>
-            </div>
-            <span className="docker-studio-topology-count">{services.length} {services.length === 1 ? "service" : "services"}</span>
-          </div>
-          {services.length ? (
-            <>
-              <div className="docker-studio-topology-services" aria-label="Service cards">
-                <div className="docker-studio-topology-nodes">
-                  {services.map((service) => {
-                    const isSelected = selected?.name === service.name;
-                    return (
-                      <button
-                        key={service.name}
-                        type="button"
-                        className={isSelected ? "docker-studio-topology-node selected" : "docker-studio-topology-node"}
-                        onClick={() => setSelectedId(service.name)}
-                        aria-pressed={isSelected}
-                      >
-                        <span className="docker-studio-topology-node-icon" aria-hidden="true">▣</span>
-                        <span className="docker-studio-topology-node-copy">
-                          <strong>{service.name}</strong>
-                          <small>{service.image || "Image not configured"}</small>
-                          {service.portsText.trim() && <small className="docker-studio-topology-port">Ports: {parseLines(service.portsText).join(", ")}</small>}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {services.some((service) => parseLines(service.dependsText).length > 0) && (
-                <section className="docker-studio-dependency-section" aria-label="Dependency connections">
-                  <div className="docker-studio-dependency-heading">
-                    <h3>Dependency connections</h3>
-                    <span className="docker-studio-dependency-count">{services.reduce((count, service) => count + parseLines(service.dependsText).length, 0)} connections</span>
-                    <span className="docker-studio-scroll-hint">Scroll horizontally to see more <span aria-hidden="true">→</span></span>
-                  </div>
-                  <div className="docker-studio-topology-edges">
-                    {services.flatMap((service) => parseLines(service.dependsText).map((dependency) => {
-                      const exists = services.some((candidate) => candidate.name === dependency);
-                      return (
-                        <div key={`${service.name}-depends-${dependency}`} className={exists ? "docker-studio-topology-edge" : "docker-studio-topology-edge missing"}>
-                          <strong>{service.name}</strong>
-                          <span aria-hidden="true">⟶</span>
-                          <strong>{dependency}</strong>
-                          <small>{exists ? "depends on" : "missing service"}</small>
-                        </div>
-                      );
-                    }))}
-                  </div>
-                </section>
-              )}
-            </>
-          ) : <p className="docker-studio-topology-empty">Add a service to see the topology.</p>}
+  return <div className="docker-studio-overlay docker-studio-k8s-layout" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+    <section className="docker-studio docker-studio-yaml-first" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
+      <header className="docker-studio-header"><div className="docker-studio-brand-mark" aria-hidden="true">▦</div><div className="docker-studio-heading"><span className="docker-studio-eyebrow">INFRASTRUCTURE WORKSPACE</span><h1 id="docker-studio-title">Docker Compose Studio</h1><p>Edit Compose YAML and inspect its containers and relationships.</p></div><button type="button" className="docker-studio-close" onClick={close} aria-label="Close Docker Compose Studio">×</button></header>
+      <div className="docker-studio-toolbar"><div className="docker-studio-toolbar-context"><strong>{document?.name || "Compose project"}</strong><span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>{dirty && <em>Unsaved edits</em>}</div><div className="docker-studio-toolbar-actions"><input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/><button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button><button type="button" className="docker-studio-secondary" onClick={addService} disabled={!document}>+ Service</button><button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!document}>Preflight report</button><button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!document}>Export YAML</button><button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!document || Boolean(parsed.error)}>Create diagram</button></div></div>
+      <div className="docker-studio-k8s-workspace">
+        <section className="docker-studio-yaml-pane" aria-label="Compose YAML editor">
+          <div className="docker-studio-pane-heading"><div><span>01</span><h2>Compose YAML</h2></div><div className="docker-studio-font-controls"><button type="button" onClick={() => setFontSize((size) => Math.max(10, size - 1))} disabled={fontSize <= 10} aria-label="Decrease YAML font size">A−</button><output>{fontSize}px</output><button type="button" onClick={() => setFontSize((size) => Math.min(20, size + 1))} disabled={fontSize >= 20} aria-label="Increase YAML font size">A+</button></div></div>
+          <div className="docker-studio-yaml-shell"><div className="docker-studio-yaml-gutter" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + scrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split("\n").length) }, (_, i) => <span key={i}>{i + 1}</span>)}</div></div><pre className="docker-studio-yaml-highlight" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}>{yamlText.split("\n").map((line, i) => <span className="docker-yaml-line" key={i}>{highlightLine(line)}{"\n"}</span>)}</pre><textarea ref={editorRef} className="docker-studio-yaml-input" aria-label="Docker Compose YAML" spellCheck="false" autoCapitalize="off" autoCorrect="off" value={yamlText} style={{ fontSize: fontSize + "px", lineHeight: 1.65 }} onChange={(event) => { setYamlText(event.target.value); setError(""); setNotice(""); }} onScroll={(event) => { setScrollTop(event.currentTarget.scrollTop); const pre = event.currentTarget.parentElement?.querySelector(".docker-studio-yaml-highlight"); if (pre) { pre.scrollTop = event.currentTarget.scrollTop; pre.scrollLeft = event.currentTarget.scrollLeft; } }} placeholder="Paste compose.yaml here…"/></div>
+          <div className="docker-studio-yaml-status"><span>YAML</span><span>{yamlText.split("\n").length} lines</span><span>{yamlText.length.toLocaleString()} characters</span></div><p className="docker-studio-editor-help">YAML is the source of truth. Imports and exports keep the complete document, including fields the visual preview does not yet interpret.</p>
         </section>
-
-        <section className="docker-studio-resources" aria-label="Shared volumes and networks">
-          <label>Named volumes <span>One volume name per line</span><textarea className="docker-studio-resource-list" value={volumeNames} onChange={(event) => setVolumeNames(event.target.value)} placeholder={"database-data\nuploads"} rows={2} /></label>
-          <label>Networks <span>One network name per line</span><textarea className="docker-studio-resource-list" value={networkNames} onChange={(event) => setNetworkNames(event.target.value)} placeholder={"frontend\nbackend"} rows={2} /></label>
-        </section>
-
-        <div className="docker-studio-workspace">
-          <aside className="docker-studio-service-list" aria-label="Services">
-            <div className="docker-studio-section-heading"><span>Services</span><span>{services.length}</span></div>
-            {services.map((service) => (
-              <button key={service.name} type="button" className={selected?.name === service.name ? "docker-studio-service active" : "docker-studio-service"} onClick={() => setSelectedId(service.name)}>
-                <span className="docker-studio-service-icon" aria-hidden="true">▣</span>
-                <span><strong>{service.name}</strong><small>{service.image || "Image not configured"}</small></span>
-              </button>
-            ))}
-          </aside>
-
-          <div className="docker-studio-editor">
-            {selected ? (
-              <>
-                <div className="docker-studio-editor-heading"><div><span className="docker-studio-eyebrow">SERVICE CONFIGURATION</span><h2>{selected.name}</h2></div><div className="docker-studio-editor-actions"><button type="button" className="docker-studio-secondary" onClick={duplicateSelected}>Duplicate service</button><button type="button" className="docker-studio-danger" onClick={removeSelected} disabled={services.length === 1}>Remove service</button></div></div>
-                <div className="docker-studio-fields">
-                  <label>Service name<input value={selected.name} onChange={(event) => renameSelected(event.target.value)} /></label>
-                  <label>Container image<input value={selected.image} onChange={(event) => updateSelected({ image: event.target.value })} placeholder="e.g. nginx:alpine" /></label>
-                  <label>Build context <span>Directory containing a Dockerfile</span><input value={selected.buildContext} onChange={(event) => updateSelected({ buildContext: event.target.value })} placeholder="." /></label>
-                  <label>Published ports <span>One mapping per line</span><textarea value={selected.portsText} onChange={(event) => updateSelected({ portsText: event.target.value })} placeholder={"8080:80\n8443:443"} rows={3} /></label>
-                  <label>Environment variables <span>KEY=value, one per line</span><textarea value={selected.environmentText} onChange={(event) => updateSelected({ environmentText: event.target.value })} placeholder={"NODE_ENV=production\nPORT=3000"} rows={3} /></label>
-                  <label>Depends on <span>Service names, one per line</span><textarea value={selected.dependsText} onChange={(event) => updateSelected({ dependsText: event.target.value })} placeholder="database" rows={2} /></label>
-                  <label>Mounted volumes <span>source:target, one per line</span><textarea value={selected.volumesText} onChange={(event) => updateSelected({ volumesText: event.target.value })} placeholder={"database-data:/var/lib/data\n./config:/app/config:ro"} rows={3} /></label>
-                  <label>Networks <span>Declared network names, one per line</span><textarea value={selected.networksText} onChange={(event) => updateSelected({ networksText: event.target.value })} placeholder={"frontend\nbackend"} rows={2} /></label>
-                  <label>Health check <span>Command, interval, retries (one per line)</span><textarea value={selected.healthcheckText} onChange={(event) => updateSelected({ healthcheckText: event.target.value })} placeholder={"curl -f http://localhost/health || exit 1\n30s\n3"} rows={3} /></label>
-                  <label>Restart policy<select value={selected.restart} onChange={(event) => updateSelected({ restart: event.target.value })}><option value="unless-stopped">unless-stopped</option><option value="always">always</option><option value="on-failure">on-failure</option><option value="no">no</option></select></label>
-                </div>
-              </>
-            ) : <p>Add a service to start designing your Compose project.</p>}
-          </div>
-
-          <aside className="docker-studio-validation">
-            <div className="docker-studio-section-heading"><span>Validation</span><span className={validation.valid && readiness.ready ? "docker-studio-status valid" : "docker-studio-status invalid"}>{validation.valid && readiness.ready ? "Ready" : "Issues"}</span></div>
-            <section className="docker-studio-readiness" aria-label="Startup readiness">
-              <div className="docker-studio-section-heading"><span>Run readiness</span><span className={readiness.ready ? "docker-studio-status valid" : "docker-studio-status invalid"}>{readiness.ready ? "Ready to review" : "Action needed"}</span></div>
-              <div className="docker-studio-readiness-score" aria-label={`Readiness score ${readiness.readinessScore} out of 100`}>
-                <strong>{readiness.readinessScore}/100</strong><span>{readiness.readinessGrade}</span>
-                <small>{readiness.severityCounts.error} errors · {readiness.severityCounts.warning} warnings · {readiness.severityCounts.info} recommendations</small>
-              </div>
-              {readiness.startupOrder.length > 0 && <p><strong>Suggested startup order</strong><br />{readiness.startupOrder.join(" → ")}</p>}
-              {readiness.prioritizedFindings.length > 0 ? (
-                <>
-                  <p className="docker-studio-remediation-intro">Recommended fixes are ordered by severity. Address blocking errors first, then review warnings.</p>
-                  {readiness.prioritizedFindings.map((finding, index) => (
-                    <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}>
-                      <div className="docker-studio-remediation-priority"><strong>{finding.priority}</strong><span>{finding.priorityLabel}</span></div>
-                      <strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p>
-                    </div>
-                  ))}
-                </>
-              ) : <p>No dependency cycles or readiness findings detected. Review external environment variables before starting.</p>}
-            </section>
-            {validation.findings.length ? validation.findings.map((finding, index) => <div key={finding.code + finding.path + index} className={`docker-studio-finding ${finding.severity}`}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></div>) : <div className="docker-studio-empty-check"><span aria-hidden="true">✓</span><strong>No issues found</strong><p>Your current Compose model passes the initial checks.</p></div>}
-            {notice && <p className="docker-studio-notice" role="status">{notice}</p>}
-          </aside>
-        </div>
-        <footer className="docker-studio-footer"><span>Docker Compose Studio</span><span>Visual design, validation, and export</span></footer>
-      </section>
-    </div>
-  );
+        <aside className="docker-studio-resource-pane" aria-label="Live service preview">
+          <div className="docker-studio-pane-heading"><div><span>02</span><h2>Containers</h2></div><strong>{serviceEntries.length}</strong></div>
+          {parsed.error && <div className="docker-studio-parse-error" role="alert"><strong>YAML needs attention</strong><p>{parsed.error}</p></div>}
+          {!parsed.error && !serviceEntries.length && <div className="docker-studio-empty-check">Define services in YAML to see their containers here.</div>}
+          <div className="docker-studio-container-list">{serviceEntries.map(([name, service]) => <button key={name} type="button" className={selectedService === name ? "docker-studio-container-card selected" : "docker-studio-container-card"} onClick={() => { setSelectedService(name); setError(""); }} aria-pressed={selectedService === name}><span className="docker-studio-container-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></span><span className="docker-studio-container-copy"><strong>{name}</strong><small>{imageOf(service)}</small><small className="docker-studio-container-meta">{service?.ports?.length || 0} ports · {service?.volumes?.length || 0} mounts · {service?.environment ? (Array.isArray(service.environment) ? service.environment.length : Object.keys(service.environment).length) : 0} env</small></span></button>)}</div>
+          {selected && <section className="docker-studio-selected-details"><div className="docker-studio-selected-heading"><span>SELECTED SERVICE</span><button type="button" onClick={focusSelected}>Edit YAML</button></div><h3>{selectedService}</h3><p>{imageOf(selected)}</p>{dependenciesOf(selected).length > 0 && <div><strong>Depends on</strong><div className="docker-studio-chip-list">{dependenciesOf(selected).map((name) => <button type="button" key={name} className={serviceNames.has(name) ? "" : "missing"} onClick={() => setSelectedService(name)}>{name}</button>)}</div></div>}{namesOf(selected.volumes).length > 0 && <div><strong>Mounts</strong><div className="docker-studio-detail-list">{namesOf(selected.volumes).map((value, i) => <span key={i}>{value}</span>)}</div></div>}{namesOf(selected.networks).length > 0 && <div><strong>Networks</strong><div className="docker-studio-chip-list">{namesOf(selected.networks).map((name) => <span key={name}>{name}</span>)}</div></div>}</section>}
+          <section className="docker-studio-relationship-panel" aria-label="Service relationships"><div className="docker-studio-relationship-heading"><strong>Relationships</strong><span>{edges.length}</span></div>{edges.length ? edges.map((edge, i) => <button type="button" key={edge.from + edge.to + i} className={edge.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => setSelectedService(edge.exists ? edge.to : edge.from)}><strong>{edge.from}</strong><span>→</span><strong>{edge.to}</strong><small>{edge.exists ? "depends on" : "missing service"}</small></button>) : <p>No service dependencies are defined.</p>}{(volumes.length > 0 || networks.length > 0) && <div className="docker-studio-shared-resources"><strong>Shared resources</strong>{volumes.map((name) => <span key={"v" + name}>Volume · {name}</span>)}{networks.map((name) => <span key={"n" + name}>Network · {name}</span>)}</div>}</section>
+        </aside>
+      </div>
+      <section className="docker-studio-validation-strip" aria-label="Compose validation"><button type="button" className="docker-studio-validation-toggle" onClick={() => setShowValidation((value) => !value)} aria-expanded={showValidation}><span className={parsed.error || validation.findings.some((finding) => finding.severity === "error") ? "docker-studio-validation-dot error" : "docker-studio-validation-dot"}/><strong>{parsed.error ? "YAML parse error" : validation.findings.length ? validation.findings.length + " validation findings" : "Compose checks"}</strong><span>{parsed.error ? "Fix YAML syntax to continue" : validation.findings.filter((finding) => finding.severity === "error").length + " errors · " + validation.findings.filter((finding) => finding.severity === "warning").length + " warnings"}</span><span>{showValidation ? "−" : "+"}</span></button>{showValidation && <div className="docker-studio-validation-content">{parsed.error && <p className="docker-studio-parse-error">{parsed.error}</p>}{validation.findings.map((finding, i) => <article key={finding.code + finding.path + i} className={"docker-studio-finding " + finding.severity}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></article>)}{readiness && <div className="docker-studio-readiness-summary"><strong>Readiness {readiness.readinessScore}/100 · {readiness.readinessGrade}</strong><span>{readiness.severityCounts.error} errors · {readiness.severityCounts.warning} warnings · {readiness.severityCounts.info} recommendations</span>{readiness.startupOrder.length > 0 && <p>Suggested startup order: {readiness.startupOrder.join(" → ")}</p>}</div>}{!parsed.error && !validation.findings.length && <p>No issues detected by the static checks.</p>}</div>}</section>
+      {(error || notice) && <div className={error ? "docker-studio-message error" : "docker-studio-message"} role={error ? "alert" : "status"}>{error || notice}</div>}
+      <footer className="docker-studio-footer"><span>{serviceEntries.length} services · {volumes.length} named volumes · {networks.length} networks</span><span>YAML-first workflow · Canvas changes only after Create diagram</span></footer>
+    </section>
+  </div>;
 }
