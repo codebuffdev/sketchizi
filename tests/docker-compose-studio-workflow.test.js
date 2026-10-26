@@ -81,3 +81,10 @@ test("Compose YAML remains visible in the editable textarea without relying on s
   assert.match(css, /\.docker-studio-yaml-highlight\{display:none!important\}/);
   assert.match(css, /\.docker-studio-yaml-input\{z-index:2;background:#0b1320!important;color:#c8d5e6!important;-webkit-text-fill-color:#c8d5e6!important/);
 });
+
+
+test("Compose YAML input padding clears the line-number gutter and keeps a visible caret", () => {
+  assert.match(css, /\.docker-studio \.docker-studio-yaml-input\{padding:12px 16px 20px 60px!important/);
+  assert.match(css, /caret-color:#f3f6ff!important/);
+  assert.match(css, /\.docker-studio \.docker-studio-yaml-input:focus\{padding-left:60px!important/);
+});
