@@ -191,3 +191,17 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 
 
 .k8s-studio-values-row{grid-column:1/-1;display:grid;grid-template-columns:140px minmax(0,1fr);align-items:center;gap:8px}.k8s-studio-values-row label{font-weight:700}.k8s-studio-values-row select{min-width:0;width:100%;padding:8px 10px;border:1px solid #344760;border-radius:7px;background:#172538;color:#e4edf8;font:inherit}.k8s-studio-render-button{justify-self:start;min-height:34px;padding:0 13px;font-size:11px}.k8s-studio-render-button:disabled{opacity:.5;cursor:not-allowed}@media(max-width:760px){.k8s-studio-values-row{grid-template-columns:1fr}}
+
+
+/* Subtle editor row guides for easier YAML scanning. */
+.k8s-yaml-editor-shell textarea,
+.k8s-yaml-editor-shell .k8s-yaml-highlight{
+  background-image:repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(1.65em - 1px),
+    rgba(148,163,184,.09) calc(1.65em - 1px),
+    rgba(148,163,184,.09) 1.65em
+  );
+  background-attachment:local;
+}
