@@ -677,18 +677,35 @@ spec:
       if (normalized.kind !== inspectedResource.kind || normalized.documentIndex !== inspectedResource.documentIndex) {
         throw new Error("Changing the resource kind is not supported in the inspector. Edit its fields and try again.");
       }
+      if (normalized.name !== inspectedResource.name || normalized.namespace !== inspectedResource.namespace) {
+        const collision = parsed.resources.find((candidate) =>
+          candidate.id !== inspectedResource.id &&
+          candidate.kind === normalized.kind &&
+          candidate.name === normalized.name &&
+          candidate.namespace === normalized.namespace
+        );
+        if (collision) throw new Error("A " + normalized.kind + " named '" + normalized.name + "' already exists in namespace '" + normalized.namespace + "'. Choose a unique name before applying.");
+      }
       const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
       const targetDocument = documents[inspectedResource.documentIndex];
       if (!targetDocument) throw new Error("The original YAML document could not be located. Reopen the inspector and try again.");
       targetDocument.contents = editedDocument.contents;
-      onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
       const nextYaml = documents.map((document) => document.toString().trimEnd()).filter(Boolean).join("\n---\n") + "\n";
+      const previousYaml = yamlText;
       setYamlText(nextYaml);
       setSavedYamlText(nextYaml);
+      setHasInspectedEdits(true);
       setInspectorOpen(false);
-      setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Review validation before creating the diagram.");
+      setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Revalidate the manifest set before creating the diagram.");
       setError("");
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      try {
+        onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
+      } catch (callbackError) {
+        setYamlText(previousYaml);
+        setSavedYamlText(previousYaml);
+        throw callbackError;
+      }
     } catch (cause) {
       setError(cause?.message || "The resource YAML could not be applied.");
     }
