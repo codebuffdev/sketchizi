@@ -703,3 +703,55 @@
 .desktop-app-header-actions .desktop-app-search-button .desktop-app-search-label,
 .desktop-app-header-actions .desktop-app-search-button .desktop-app-search-shortcut{display:none!important}
 @media(max-width:1100px){.devops-studio-toggle{width:34px;min-width:34px;max-width:34px;padding:0}}
+
+
+/* Unified creation menu: keep all workspace entry points under Create Design. */
+.create-design-menu .design-studio-header-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.create-design-menu .design-studio-header-toggle .devops-studio-chevron {
+  display: inline-block;
+  font-size: 11px;
+  opacity: .75;
+  transition: transform .15s ease;
+}
+.create-design-menu .design-studio-header-toggle.active .devops-studio-chevron {
+  transform: rotate(180deg);
+}
+.create-design-dropdown {
+  min-width: 248px;
+}
+.create-design-dropdown button > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.create-design-dropdown button strong {
+  color: var(--ui-text, #e6e8ef);
+  font-size: 12px;
+  font-weight: 700;
+}
+.create-design-dropdown button small {
+  color: var(--ui-muted, #9ba5bb);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+.create-design-dropdown .create-design-menu-icon {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  min-width: 25px;
+  height: 25px;
+  border-radius: 7px;
+  background: var(--ui-hover, #282f3d);
+  color: #bda0ff;
+  font-size: 17px;
+}
+.create-design-menu .devops-studio-dropdown button {
+  min-height: 46px;
+}
