@@ -323,13 +323,27 @@ function validateKubernetesResources(resources) {
     }
 
     if (resource.kind === "Ingress") {
-      const backends = (spec.rules || []).flatMap((rule) => rule.http?.paths || []).map((path) => path.backend?.service).filter(Boolean);
+      const rules = Array.isArray(spec.rules) ? spec.rules : [];
+      const backends = rules.flatMap((rule) => rule.http?.paths || []).map((path) => path.backend?.service).filter(Boolean);
       if (spec.defaultBackend?.service) backends.push(spec.defaultBackend.service);
       if (!backends.length && !spec.defaultBackend) add(resource, "warning", "Ingress has no HTTP service backend configured.");
+      for (const rule of rules) {
+        for (const path of rule.http?.paths || []) {
+          if (!path.path || typeof path.path !== "string" || !path.path.startsWith("/")) add(resource, "error", "Ingress HTTP paths must specify a path beginning with '/'.");
+          if (path.pathType && !["Exact", "Prefix", "ImplementationSpecific"].includes(path.pathType)) add(resource, "error", "Ingress pathType must be Exact, Prefix, or ImplementationSpecific.");
+          if (!path.pathType) add(resource, "warning", "Ingress path '" + (path.path || "(missing)") + "' does not declare pathType.");
+          if (!path.backend?.service?.name) add(resource, "error", "Each Ingress HTTP path must reference a backend Service name.");
+          if (path.backend?.service && path.backend.service.port?.number == null && !path.backend.service.port?.name) add(resource, "error", "Ingress backend Service '" + (path.backend.service.name || "(unnamed)") + "' must specify a port number or port name.");
+        }
+      }
       for (const backend of backends) {
         const service = resources.find((candidate) => candidate.kind === "Service" && candidate.name === backend.name && candidate.namespace === resource.namespace);
         if (!service) add(resource, "warning", "Ingress backend Service '" + backend.name + "' is not present in this manifest set.");
-        else if (backend.port?.number != null && !(service.manifest?.spec?.ports || []).some((port) => port.port === backend.port.number)) add(resource, "warning", "Ingress backend port " + backend.port.number + " is not declared by Service '" + backend.name + "'.");
+        else {
+          const servicePorts = service.manifest?.spec?.ports || [];
+          if (backend.port?.number != null && !servicePorts.some((port) => port.port === backend.port.number)) add(resource, "warning", "Ingress backend port " + backend.port.number + " is not declared by Service '" + backend.name + "'.");
+          if (backend.port?.name && !servicePorts.some((port) => port.name === backend.port.name)) add(resource, "warning", "Ingress backend port name '" + backend.port.name + "' is not declared by Service '" + backend.name + "'.");
+        }
       }
     }
 
