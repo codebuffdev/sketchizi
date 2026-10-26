@@ -14,10 +14,18 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
     sourceTabs.indexOf('{ id: "eraser", label: "Essentials" }'),
     sourceTabs.indexOf('{ id: "aws", label: "AWS" }'),
     sourceTabs.indexOf('{ id: "kubernetes", label: "Kubernetes" }'),
+    sourceTabs.indexOf('{ id: "networking", label: "Networking" }'),
   ];
   assert.ok(positions.every((position) => position >= 0));
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
   assert.match(panel, /library-source-chip.*Collections/);
+});
+
+test("Networking is a first-class source tab while remaining available in Collections", () => {
+  assert.match(panel, /\{ id: "networking", label: "Networking" \}/);
+  assert.match(panel, /else if \(source === "networking"\)[\s\S]*?setActiveCategory\("Networking"\)/);
+  assert.match(panel, /activeSource === "aws" \|\| activeSource === "kubernetes" \|\| activeSource === "networking"/);
+  assert.match(catalog, /activeCategory === "Networking"[\s\S]*?base = networkingIcons/);
 });
 
 test("Collections keeps implemented favorites, recently used, mind map, UML, and networking paths accessible", () => {
