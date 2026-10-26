@@ -35,7 +35,7 @@
 .k8s-yaml-editor-shell.has-content textarea{background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent;caret-color:#f0f6ff;position:relative;z-index:1}
 .k8s-yaml-editor-shell.has-content textarea::selection{background:#467ac866;-webkit-text-fill-color:transparent}
 .k8s-yaml-highlight .yaml-token-key{color:#83baff}.k8s-yaml-highlight .yaml-token-punctuation{color:#a4b4ca}.k8s-yaml-highlight .yaml-token-value{color:#d6e6fa}.k8s-yaml-highlight .yaml-token-string{color:#b8e5a4}.k8s-yaml-highlight .yaml-token-number{color:#e8bd86}.k8s-yaml-highlight .yaml-token-literal{color:#d4a6ff}.k8s-yaml-highlight .yaml-token-type{color:#f3cc8a}.k8s-yaml-highlight .yaml-token-comment{color:#71839b;font-style:italic}
-.k8s-yaml-highlight .yaml-highlight-line{display:block;min-height:1.65em}
+.k8s-yaml-highlight .yaml-highlight-line{display:block;min-height:1.65em;background:transparent;border:0;box-shadow:none}
 
 
 .k8s-studio-manifest-title{flex-wrap:wrap}
@@ -191,3 +191,15 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 
 
 .k8s-studio-values-row{grid-column:1/-1;display:grid;grid-template-columns:140px minmax(0,1fr);align-items:center;gap:8px}.k8s-studio-values-row label{font-weight:700}.k8s-studio-values-row select{min-width:0;width:100%;padding:8px 10px;border:1px solid #344760;border-radius:7px;background:#172538;color:#e4edf8;font:inherit}.k8s-studio-render-button{justify-self:start;min-height:34px;padding:0 13px;font-size:11px}.k8s-studio-render-button:disabled{opacity:.5;cursor:not-allowed}@media(max-width:760px){.k8s-studio-values-row{grid-template-columns:1fr}}
+
+
+/* No horizontal row guides: indentation is communicated only by the YAML's leading spaces. */
+
+/* Rainbow indentation guides, similar to IDE YAML editors. */
+.k8s-yaml-highlight .yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--yaml-indent-bg);border-radius:2px}
+.k8s-yaml-highlight .yaml-indent-level-0{--yaml-indent-bg:rgba(248,113,113,.104)}
+.k8s-yaml-highlight .yaml-indent-level-1{--yaml-indent-bg:rgba(251,191,36,.104)}
+.k8s-yaml-highlight .yaml-indent-level-2{--yaml-indent-bg:rgba(74,222,128,.091)}
+.k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.1105)}
+.k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.1105)}
+.k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.104)}

@@ -23,9 +23,11 @@ function highlightYaml(source) {
     const content = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
     const comment = commentIndex >= 0 ? line.slice(commentIndex) : "";
     const match = content.match(/^(\s*)(-\s+)?([A-Za-z_][\w.-]*)(\s*:\s*)(.*)$/);
+    const indent = (content.match(/^ */) || [""])[0];
+    const indentMarkup = Array.from({ length: Math.ceil(indent.length / 2) }, (_, depth) => <span className={"yaml-indent-guide yaml-indent-level-" + (depth % 6)} key={depth}>{indent.slice(depth * 2, depth * 2 + 2)}</span>);
     let rendered;
     if (match) {
-      const [, indent, listMarker = "", key, separator, value] = match;
+      const [, , listMarker = "", key, separator, value] = match;
       const valueClass = /^(true|false|null|yes|no|on|off)$/i.test(value.trim())
         ? "yaml-token-literal"
         : /^-?\d+(?:\.\d+)?$/.test(value.trim())
@@ -35,9 +37,9 @@ function highlightYaml(source) {
         : key === "kind" || key === "apiVersion"
         ? "yaml-token-type"
         : "yaml-token-value";
-      rendered = <>{indent}<span className="yaml-token-punctuation">{listMarker}</span><span className="yaml-token-key">{key}</span><span className="yaml-token-punctuation">{separator}</span><span className={valueClass}>{value}</span>{comment ? <span className="yaml-token-comment">{comment}</span> : null}</>;
+      rendered = <>{indentMarkup}<span className="yaml-token-punctuation">{listMarker}</span><span className="yaml-token-key">{key}</span><span className="yaml-token-punctuation">{separator}</span><span className={valueClass}>{value}</span>{comment ? <span className="yaml-token-comment">{comment}</span> : null}</>;
     } else {
-      rendered = <>{content}{comment ? <span className="yaml-token-comment">{comment}</span> : null}</>;
+      rendered = <>{indentMarkup}{content.slice(indent.length)}{comment ? <span className="yaml-token-comment">{comment}</span> : null}</>;
     }
     return <span className="yaml-highlight-line" key={index}>{rendered}{"\n"}</span>;
   });

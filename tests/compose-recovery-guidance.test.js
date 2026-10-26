@@ -56,7 +56,7 @@ test("service context is included in recovery scope and guidance does not permit
 
 test("Compose Studio excludes runtime recovery UI while retaining static configuration reports", async () => {
   const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(ui, /downloadPreflightReport/);
+  assert.match(ui, /const exportReport/);
   assert.match(ui, /exportComposeReadinessReport/);
   assert.doesNotMatch(ui, /getComposeRecoveryGuidance|Copy diagnostic report|Start services|Stop services|runnerResult/);
 });

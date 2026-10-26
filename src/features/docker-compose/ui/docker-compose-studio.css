@@ -160,3 +160,150 @@
 .docker-studio-config-diagnostics li>strong,.docker-studio-config-diagnostics li>small{display:block;font-size:11px;overflow-wrap:anywhere}
 .docker-studio-config-diagnostics li>small{margin-top:4px;color:#c6aeb4;font-size:10px}
 .docker-studio-config-diagnostics li>p{margin:5px 0 0;color:#f1dce0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+
+
+/* YAML-first workspace, aligned with the K8s Studio editor/preview pattern. */
+.docker-studio-k8s-layout{padding:0!important;place-items:stretch!important;background:#0b1019!important}
+.docker-studio-yaml-first{width:100%!important;height:100%!important;max-height:100%!important;border:0!important;border-radius:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;background:#0d1522!important;color:#e7edf7!important}
+.docker-studio-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 20px;border-bottom:1px solid #27364a;background:#101b2a;flex-shrink:0}
+.docker-studio-toolbar-context{display:flex;align-items:center;gap:12px;min-width:0;color:#9eafc5;font-size:11px}
+.docker-studio-toolbar-context strong{font-size:13px;color:#e8eef8;white-space:nowrap}
+.docker-studio-toolbar-context em{font-style:normal;color:#d5a45b;white-space:nowrap}
+.docker-studio-toolbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.docker-studio-toolbar-actions button{min-height:32px;padding:0 11px;font-size:11px}
+.docker-studio-k8s-workspace{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.8fr);gap:0;flex:1;min-height:0;overflow:hidden}
+.docker-studio-yaml-pane,.docker-studio-resource-pane{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.docker-studio-yaml-pane{border-right:1px solid #29384c}
+.docker-studio-pane-heading{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;border-bottom:1px solid #26364a;background:#111d2c;flex-shrink:0}
+.docker-studio-pane-heading>div:first-child{display:flex;align-items:center;gap:9px}
+.docker-studio-pane-heading>div:first-child>span{color:#8e75ed;font-size:10px;font-weight:800;letter-spacing:.08em}
+.docker-studio-pane-heading h2{margin:0;color:#e4ebf6;font-size:12px;font-weight:700}
+.docker-studio-pane-heading>strong{color:#b9c8dc;font-size:12px}
+.docker-studio-font-controls{display:flex;align-items:center;gap:6px;color:#9aabc2;font-size:10px}
+.docker-studio-font-controls button{height:26px;min-width:28px;padding:0 5px;border:1px solid #34465d;border-radius:5px;background:#172538;color:#dbe5f3;cursor:pointer}
+.docker-studio-font-controls button:disabled{opacity:.4;cursor:default}
+.docker-studio-yaml-shell{position:relative;flex:1;min-height:0;overflow:hidden;background:#0b1320;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.docker-studio-yaml-gutter{position:absolute;z-index:3;inset:0 auto 0 0;width:48px;overflow:hidden;padding:12px 9px 20px 0;box-sizing:border-box;border-right:1px solid #1b2a3d;background:#0e1827;color:#60738d;text-align:right;pointer-events:none}
+.docker-studio-yaml-gutter span{display:block;height:1.65em}
+.docker-studio-yaml-highlight,.docker-studio-yaml-input{position:absolute;inset:0;margin:0;padding:12px 16px 20px 60px;border:0;box-sizing:border-box;white-space:pre;overflow:auto;tab-size:2;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-ligatures:none;letter-spacing:0}
+.docker-studio-yaml-highlight{z-index:1;color:#c8d5e6;pointer-events:none}
+.docker-studio-yaml-input{z-index:2;width:100%;height:100%;resize:none;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#f3f6ff;outline:none!important;box-shadow:none!important}
+.docker-studio-yaml-input::selection{background:rgba(125,102,235,.38);-webkit-text-fill-color:transparent}
+.docker-studio-yaml-input:focus{outline:none!important;border:0!important;box-shadow:none!important}
+.docker-yaml-line{display:block;min-height:1.65em;background:transparent;border:0;box-shadow:none}
+.docker-yaml-key{color:#9ab9f5}
+.docker-yaml-punctuation{color:#8a9bb2}
+.docker-yaml-string{color:#a8d6a0}
+.docker-yaml-number,.docker-yaml-literal{color:#e4b77c}
+.docker-yaml-value{color:#cbd7e8}
+.docker-yaml-comment{color:#687e99}
+.docker-studio-yaml-status{display:flex;gap:14px;padding:7px 13px;border-top:1px solid #243348;background:#101a29;color:#8194ad;font-size:10px;flex-shrink:0}
+.docker-studio-editor-help{margin:0;padding:8px 14px;border-top:1px solid #243348;background:#101a29;color:#8497b0;font-size:10px;line-height:1.45;flex-shrink:0}
+.docker-studio-resource-pane{background:#0f1927}
+.docker-studio-container-list{display:flex;flex-direction:column;gap:7px;padding:12px;overflow:auto;min-height:90px;max-height:38%;border-bottom:1px solid #26364a}
+.docker-studio-container-card{display:flex;align-items:center;gap:10px;width:100%;min-width:0;padding:10px;text-align:left;border:1px solid #2b3b50;border-radius:8px;background:#121f30;color:#dfe8f5;cursor:pointer}
+.docker-studio-container-card:hover{border-color:#6f5ad7;background:#17253a}
+.docker-studio-container-card.selected{border-color:#8a74f1;background:#211f3b;box-shadow:inset 2px 0 #9b87ff}
+.docker-studio-container-icon{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:7px;background:#202d42;color:#b6a7ff}
+.docker-studio-container-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.docker-studio-container-icon-web{color:#8b9dff;background:#202744}
+.docker-studio-container-icon-server{color:#7dd3fc;background:#1b2d3e}
+.docker-studio-container-icon-database{color:#86efac;background:#1c332e}
+.docker-studio-container-icon-worker{color:#fbbf24;background:#382f1e}
+.docker-studio-container-icon-storage{color:#c4b5fd;background:#2b2541}
+.docker-studio-container-icon-container{color:#b6a7ff;background:#202d42}
+.docker-studio-container-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.docker-studio-container-copy strong{font-size:12px;color:#eef3fb;overflow-wrap:anywhere}
+.docker-studio-container-copy small{font-size:10px;line-height:1.35;color:#9aacc3;overflow-wrap:anywhere}
+.docker-studio-container-copy .docker-studio-container-meta{color:#7187a3}
+.docker-studio-selected-details{display:grid;gap:9px;padding:13px 15px;border-bottom:1px solid #26364a;overflow:auto}
+.docker-studio-selected-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.docker-studio-selected-heading>span{font-size:9px;font-weight:800;letter-spacing:.1em;color:#8c79e8}
+.docker-studio-selected-heading button{padding:4px 8px;border:1px solid #35465e;border-radius:5px;background:#172538;color:#c9d5e6;font-size:10px;cursor:pointer}
+.docker-studio-selected-details h3{margin:0;color:#edf2fb;font-size:14px;overflow-wrap:anywhere}
+.docker-studio-selected-details p{margin:0;color:#94a8c1;font-size:11px;overflow-wrap:anywhere}
+.docker-studio-selected-details>div>strong{display:block;margin-bottom:5px;color:#aabbd0;font-size:10px}
+.docker-studio-chip-list,.docker-studio-detail-list{display:flex;flex-wrap:wrap;gap:5px}
+.docker-studio-chip-list button,.docker-studio-chip-list span,.docker-studio-detail-list span{padding:4px 7px;border:1px solid #31435a;border-radius:5px;background:#17263a;color:#bdcce0;font-size:10px;overflow-wrap:anywhere}
+.docker-studio-chip-list button{cursor:pointer}
+.docker-studio-chip-list .missing{border-color:#8e454b;color:#f0a0a5}
+.docker-studio-relationship-panel{display:flex;flex-direction:column;gap:6px;min-height:0;overflow:auto;padding:12px}
+.docker-studio-relationship-heading{display:flex;align-items:center;justify-content:space-between;color:#dce6f4;font-size:11px}
+.docker-studio-relationship-heading span{color:#9eafc5}
+.docker-studio-relationship-panel>p{margin:0;color:#8094ad;font-size:11px}
+.docker-studio-relationship{display:grid;grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr);align-items:center;gap:5px;padding:7px 8px;border:1px solid #293a50;border-radius:6px;background:#121f30;color:#cdd9e9;text-align:left;cursor:pointer}
+.docker-studio-relationship strong{font-size:10px;overflow-wrap:anywhere}
+.docker-studio-relationship>span{text-align:center;color:#9d8aff}
+.docker-studio-relationship small{grid-column:1/-1;color:#8195af;font-size:9px}
+.docker-studio-relationship.missing{border-color:#82434a;background:#291c27}
+.docker-studio-shared-resources{display:grid;gap:5px;margin-top:5px;padding-top:9px;border-top:1px solid #29384c}
+.docker-studio-shared-resources strong{font-size:10px;color:#c3d0e1}
+.docker-studio-shared-resources span{color:#879bb5;font-size:10px;overflow-wrap:anywhere}
+.docker-studio-parse-error{margin:10px;padding:10px;border:1px solid #8c4249;border-radius:6px;background:#2a1b25;color:#f0b5b8;font-size:11px;overflow-wrap:anywhere}
+.docker-studio-parse-error p{margin:5px 0 0}
+.docker-studio-validation-strip{border-top:1px solid #29384c;background:#101a28;flex-shrink:0;max-height:44px;overflow:hidden}
+.docker-studio-validation-strip.expanded{max-height:180px;overflow:auto}
+.docker-studio-validation-toggle{display:flex;align-items:center;gap:9px;width:100%;min-height:42px;padding:0 17px;border:0;background:transparent;color:#b8c7db;text-align:left;cursor:pointer}
+.docker-studio-validation-toggle strong{font-size:11px;color:#dfe8f4}
+.docker-studio-validation-toggle>span:nth-of-type(2){color:#8396ae;font-size:10px}
+.docker-studio-validation-toggle>span:last-child{margin-left:auto;color:#9a8aff}
+.docker-studio-validation-dot{width:7px;height:7px;border-radius:50%;background:#4fba91}
+.docker-studio-validation-dot.error{background:#ef777e}
+.docker-studio-validation-content{display:grid;gap:7px;padding:0 15px 12px}
+.docker-studio-validation-content>p{margin:0;color:#aabbd0;font-size:11px}
+.docker-studio-readiness-summary{display:flex;flex-wrap:wrap;gap:8px 16px;color:#c7d4e5;font-size:10px}
+.docker-studio-readiness-summary span{color:#8ea1ba}
+.docker-studio-readiness-summary p{flex-basis:100%;margin:0;color:#9aacc2}
+.docker-studio-message{margin:0;padding:8px 16px;border-top:1px solid #29384c;background:#132638;color:#a8ddca;font-size:11px;overflow-wrap:anywhere}
+.docker-studio-message.error{background:#2a1b25;color:#f0b5b8}
+.docker-studio-yaml-first .docker-studio-footer{display:flex;justify-content:space-between;gap:12px;flex-shrink:0;padding:8px 16px;border-top:1px solid #29384c;background:#0c1522;color:#7f93ad;font-size:10px}
+@media(max-width:900px){.docker-studio-toolbar{align-items:flex-start;flex-direction:column}.docker-studio-toolbar-actions{justify-content:flex-start}.docker-studio-k8s-workspace{grid-template-columns:minmax(0,1fr) minmax(260px,.8fr)}}
+@media(max-width:700px){.docker-studio-k8s-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(280px,1fr) minmax(220px,.8fr);overflow:auto}.docker-studio-yaml-pane{border-right:0;border-bottom:1px solid #29384c}.docker-studio-toolbar-context{flex-wrap:wrap}.docker-studio-toolbar-actions button{flex:1 1 auto}.docker-studio-container-list{max-height:none}.docker-studio-yaml-first .docker-studio-footer{flex-direction:column;gap:4px}.docker-studio-validation-strip.expanded{max-height:140px}}
+
+
+/* Keep the live container/service inspector on the left and Compose YAML on the right. */
+.docker-studio-k8s-workspace{grid-template-columns:minmax(300px,.8fr) minmax(0,1.45fr)}
+.docker-studio-resource-pane{grid-column:1;grid-row:1;border-right:1px solid #29384c}
+.docker-studio-yaml-pane{grid-column:2;grid-row:1;border-right:0;border-left:0}
+@media(max-width:700px){
+  .docker-studio-k8s-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(280px,.8fr) minmax(280px,1fr)}
+  .docker-studio-resource-pane{grid-column:1;grid-row:1;border-right:0;border-bottom:1px solid #29384c}
+  .docker-studio-yaml-pane{grid-column:1;grid-row:2;border-left:0}
+}
+
+
+/* Keep the editable YAML surface clean: no horizontal row guides or full-editor color bands. */
+.docker-studio-yaml-highlight{display:block!important;z-index:1;background:#0b1320!important;background-image:none!important}
+.docker-studio-yaml-input{z-index:2;background:transparent!important;background-image:none!important;color:transparent!important;-webkit-text-fill-color:transparent!important;caret-color:#f3f6ff!important}
+.docker-studio-yaml-input::selection{background:rgba(125,102,235,.38)!important;-webkit-text-fill-color:#fff!important}
+
+
+/* Override the legacy generic textarea padding: the gutter overlays the left 48px. */
+.docker-studio .docker-studio-yaml-input{padding:12px 16px 20px 60px!important;text-indent:0!important;letter-spacing:0!important;line-height:1.65;caret-color:#f3f6ff!important}
+.docker-studio .docker-studio-yaml-input:focus{padding-left:60px!important;caret-color:#f3f6ff!important}
+
+
+/* Compose YAML IntelliJ-style inline completion menu. */
+.docker-studio-yaml-shell{position:relative}
+.docker-compose-yaml-completions{position:absolute;z-index:8;left:60px;top:44px;width:min(360px,calc(100% - 76px));max-height:270px;overflow:auto;border:1px solid #455673;border-radius:8px;background:#111d2d;box-shadow:0 14px 38px #0008;color:#dce7f6}
+.docker-compose-yaml-completion-heading{position:sticky;top:0;display:flex;align-items:center;gap:5px;padding:8px 10px;border-bottom:1px solid #2d3d53;background:#152338;color:#aabbd1;font-size:10px}
+.docker-compose-yaml-completion-heading kbd{margin-left:auto;padding:2px 4px;border:1px solid #3a4a61;border-radius:3px;color:#dce7f6;font:inherit}
+.docker-compose-yaml-completion{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:8px 10px;border:0;border-bottom:1px solid #25364b;background:transparent;color:#e2ebf8;text-align:left;cursor:pointer}
+.docker-compose-yaml-completion strong{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;font-weight:600}
+.docker-compose-yaml-completion small{color:#91a5bf;font-size:10px;text-align:right}
+.docker-compose-yaml-completion:hover,.docker-compose-yaml-completion.active{background:#28254a;color:#fff}
+.docker-compose-yaml-completion.active{box-shadow:inset 2px 0 #9a83ff}
+.docker-studio-yaml-shortcuts{padding:5px 12px;border-top:1px solid #243348;background:#101a29;color:#7e93ad;font-size:10px}
+@media(max-width:700px){.docker-compose-yaml-completions{left:52px;width:calc(100% - 64px);max-height:210px}.docker-compose-yaml-completion{align-items:flex-start;flex-direction:column;gap:3px}.docker-compose-yaml-completion small{text-align:left}}
+
+
+/* Horizontal row guides intentionally removed; only indentation-level colors remain. */
+
+/* Rainbow indentation guides, similar to IDE YAML editors. */
+.docker-studio-yaml-highlight .docker-yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--compose-indent-bg);border-radius:1px}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-0{--compose-indent-bg:rgba(248,113,113,.104)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-1{--compose-indent-bg:rgba(251,191,36,.104)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-2{--compose-indent-bg:rgba(74,222,128,.091)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-3{--compose-indent-bg:rgba(96,165,250,.1105)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-4{--compose-indent-bg:rgba(192,132,252,.1105)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-5{--compose-indent-bg:rgba(244,114,182,.104)}
