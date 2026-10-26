@@ -40,12 +40,12 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       return { document: value, error: "" };
     } catch (cause) { return { document: null, error: cause?.message || "Could not parse Compose YAML." }; }
   }, [yamlText]);
-  const document = parsed.document;
-  const serviceEntries = Object.entries(document?.services || {});
+  const composeDoc = parsed.document;
+  const serviceEntries = Object.entries(composeDoc?.services || {});
   const serviceNames = new Set(serviceEntries.map(([name]) => name));
-  const selected = document?.services?.[selectedService];
-  const volumes = Object.keys(document?.volumes || {});
-  const networks = Object.keys(document?.networks || {});
+  const selected = composeDoc?.services?.[selectedService];
+  const volumes = Object.keys(composeDoc?.volumes || {});
+  const networks = Object.keys(composeDoc?.networks || {});
   const validation = useMemo(() => document ? validateComposeDocument(document) : { valid: false, findings: [] }, [document]);
   const readiness = useMemo(() => document ? analyzeComposeReadiness(document) : null, [document]);
   const edges = serviceEntries.flatMap(([from, service]) => dependenciesOf(service).map((to) => ({ from, to, exists: serviceNames.has(to) })));
@@ -66,30 +66,30 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     } catch (cause) { setError("Import failed: " + (cause?.message || "Invalid Compose YAML")); setNotice(""); }
   };
   const exportYaml = () => {
-    if (!document) { setError(parsed.error || "Fix YAML before exporting."); return; }
+    if (!composeDoc) { setError(parsed.error || "Fix YAML before exporting."); return; }
     const blob = new Blob([yamlText.endsWith("\n") ? yamlText : yamlText + "\n"], { type: "text/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
     anchor.href = url; anchor.download = "compose.yaml"; anchor.click(); URL.revokeObjectURL(url);
     setSavedYaml(yamlText); setError(""); setNotice("compose.yaml exported directly from the editor; unsupported fields were not reconstructed or discarded.");
   };
   const exportReport = () => {
-    if (!document) { setError(parsed.error || "Fix YAML before exporting a report."); return; }
+    if (!composeDoc) { setError(parsed.error || "Fix YAML before exporting a report."); return; }
     const blob = new Blob([exportComposeReadinessReport(document)], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
-    anchor.href = url; anchor.download = (document.name || "compose") + "-preflight-report.md"; anchor.click(); URL.revokeObjectURL(url);
+    anchor.href = url; anchor.download = (composeDoc.name || "compose") + "-preflight-report.md"; anchor.click(); URL.revokeObjectURL(url);
     setNotice("Static preflight report exported. No containers were started.");
   };
   const createDiagram = async () => {
-    if (!document) { setError(parsed.error || "Fix YAML before creating a diagram."); return; }
+    if (!composeDoc) { setError(parsed.error || "Fix YAML before creating a diagram."); return; }
     if (validation.findings.some((finding) => finding.severity === "error")) { setShowValidation(true); setError("Resolve blocking Compose validation errors before creating the diagram."); return; }
     try { await onCreateDiagram?.(document); setSavedYaml(yamlText); setError(""); setNotice("Diagram created from the current Compose YAML."); onClose?.(); }
     catch (cause) { setError(cause?.message || "Could not create the Compose diagram."); }
   };
   const addService = () => {
-    if (!document) { setError(parsed.error); return; }
+    if (!composeDoc) { setError(parsed.error); return; }
     let i = serviceEntries.length + 1; let name = "service-" + i;
     while (serviceNames.has(name)) name = "service-" + (++i);
-    setYamlText(stringify({ ...document, services: { ...document.services, [name]: { image: "nginx:alpine", restart: "unless-stopped" } } }));
+    setYamlText(stringify({ ...composeDoc, services: { ...composeDoc.services, [name]: { image: "nginx:alpine", restart: "unless-stopped" } } }));
     setSelectedService(name); setError(""); setNotice("Added " + name + " to the YAML.");
   };
   const focusSelected = () => {
@@ -103,7 +103,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   return <div className="docker-studio-overlay docker-studio-k8s-layout" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
     <section className="docker-studio docker-studio-yaml-first" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
       <header className="docker-studio-header"><div className="docker-studio-brand-mark" aria-hidden="true">▦</div><div className="docker-studio-heading"><span className="docker-studio-eyebrow">INFRASTRUCTURE WORKSPACE</span><h1 id="docker-studio-title">Docker Compose Studio</h1><p>Edit Compose YAML and inspect its containers and relationships.</p></div><button type="button" className="docker-studio-close" onClick={close} aria-label="Close Docker Compose Studio">×</button></header>
-      <div className="docker-studio-toolbar"><div className="docker-studio-toolbar-context"><strong>{document?.name || "Compose project"}</strong><span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>{dirty && <em>Unsaved edits</em>}</div><div className="docker-studio-toolbar-actions"><input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/><button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button><button type="button" className="docker-studio-secondary" onClick={addService} disabled={!document}>+ Service</button><button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!document}>Preflight report</button><button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!document}>Export YAML</button><button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!document || Boolean(parsed.error)}>Create diagram</button></div></div>
+      <div className="docker-studio-toolbar"><div className="docker-studio-toolbar-context"><strong>{composeDoc?.name || "Compose project"}</strong><span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>{dirty && <em>Unsaved edits</em>}</div><div className="docker-studio-toolbar-actions"><input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/><button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button><button type="button" className="docker-studio-secondary" onClick={addService} disabled={!document}>+ Service</button><button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!document}>Preflight report</button><button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!document}>Export YAML</button><button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!document || Boolean(parsed.error)}>Create diagram</button></div></div>
       <div className="docker-studio-k8s-workspace">
         <section className="docker-studio-yaml-pane" aria-label="Compose YAML editor">
           <div className="docker-studio-pane-heading"><div><span>01</span><h2>Compose YAML</h2></div><div className="docker-studio-font-controls"><button type="button" onClick={() => setFontSize((size) => Math.max(10, size - 1))} disabled={fontSize <= 10} aria-label="Decrease YAML font size">A−</button><output>{fontSize}px</output><button type="button" onClick={() => setFontSize((size) => Math.min(20, size + 1))} disabled={fontSize >= 20} aria-label="Increase YAML font size">A+</button></div></div>
