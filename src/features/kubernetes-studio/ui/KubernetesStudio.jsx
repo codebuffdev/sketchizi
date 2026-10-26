@@ -157,6 +157,43 @@ const KIND_LABELS = {
   ResourceQuota: "ResourceQuota", EndpointSlice: "EndpointSlice",
 };
 
+function validateKubernetesResources(resources) {
+  const issues = [];
+  const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
+  const add = (resource, severity, message) => issues.push({ id: resource.id + ":" + severity + ":" + message, resource: resource.name, kind: resource.kind, severity, message });
+  const matches = (selector, labels) => Boolean(selector && labels && Object.keys(selector).length && Object.entries(selector).every(([key, value]) => labels[key] === value));
+  const workloads = resources.filter((resource) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod"].includes(resource.kind));
+  const seen = new Set();
+  for (const resource of resources) {
+    const manifest = resource.manifest || {};
+    const spec = manifest.spec || {};
+    const expected = expectedApiVersions[resource.kind];
+    if (expected && resource.apiVersion !== expected) add(resource, "error", "Expected apiVersion " + expected + ", found " + resource.apiVersion + ".");
+    if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind)) {
+      const selector = spec.selector?.matchLabels;
+      const labels = spec.template?.metadata?.labels;
+      if (!selector || !Object.keys(selector).length) add(resource, "error", "spec.selector.matchLabels is required.");
+      else if (!matches(selector, labels)) add(resource, "error", "Selector labels must match spec.template.metadata.labels.");
+      const containers = spec.template?.spec?.containers;
+      if (!Array.isArray(containers) || !containers.length) add(resource, "error", "At least one container is required in the pod template.");
+      else containers.forEach((container, index) => { if (!container.image) add(resource, "error", "Container " + (container.name || index + 1) + " is missing an image."); });
+    }
+    if (resource.kind === "Pod") {
+      const containers = spec.containers;
+      if (!Array.isArray(containers) || !containers.length) add(resource, "error", "At least one container is required.");
+      else containers.forEach((container, index) => { if (!container.image) add(resource, "error", "Container " + (container.name || index + 1) + " is missing an image."); });
+    }
+    if (resource.kind === "Service" && spec.selector && Object.keys(spec.selector).length) {
+      const matchingWorkload = workloads.some((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
+      if (!matchingWorkload) add(resource, "warning", "No workload in this manifest set matches the Service selector.");
+    }
+    const key = resource.namespace + "/" + resource.kind + "/" + resource.name;
+    if (seen.has(key)) add(resource, "error", "Duplicate resource name and kind in the same namespace.");
+    seen.add(key);
+  }
+  return issues;
+}
+
 function normalizeManifest(value, index) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const kind = String(value.kind || "").trim();
@@ -265,7 +302,7 @@ spec:
     }
   };
   const parsed = useMemo(() => {
-    if (!yamlText.trim()) return { resources: [], unsupported: [], parseError: "" };
+    if (!yamlText.trim()) return { resources: [], unsupported: [], parseError: "", issues: [] };
     try {
       const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
       const resources = [];
@@ -283,9 +320,9 @@ spec:
         else unsupported.push(`${resource.kind}/${resource.name}: valid Kubernetes kind, rendered as a generic resource`);
         if (!resource.supported) resources.push(resource);
       }
-      return { resources, unsupported, parseError: "" };
+      return { resources, unsupported, parseError: "", issues: validateKubernetesResources(resources) };
     } catch (cause) {
-      return { resources: [], unsupported: [], parseError: cause?.message || "Unable to parse YAML." };
+      return { resources: [], unsupported: [], parseError: cause?.message || "Unable to parse YAML.", issues: [] };
     }
   }, [yamlText]);
 
