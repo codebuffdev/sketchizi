@@ -45,23 +45,23 @@ const COMPOSE_VALUE_COMPLETIONS = {
   endpoint_mode: [["vip", "Virtual IP"], ["dnsrr", "DNS round-robin"]],
 };
 function buildComposeCompletions(text, caret, force = false) {
-  const lineStart = text.lastIndexOf("\\n", Math.max(0, caret - 1)) + 1;
-  const lineEndIndex = text.indexOf("\\n", caret);
+  const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+  const lineEndIndex = text.indexOf("\n", caret);
   const lineEnd = lineEndIndex < 0 ? text.length : lineEndIndex;
   const line = text.slice(lineStart, lineEnd);
   const before = text.slice(lineStart, caret);
-  const indent = (line.match(/^\\s*/) || [""])[0];
-  const previous = text.slice(0, lineStart).split("\\n").reverse().find((value) => value.trim())?.trim() || "";
-  const parent = previous.replace(/:\\s*.*$/, "").replace(/^[- ]+/, "").trim();
+  const indent = (line.match(/^\s*/) || [""])[0];
+  const previous = text.slice(0, lineStart).split("\n").reverse().find((value) => value.trim())?.trim() || "";
+  const parent = previous.replace(/:\s*.*$/, "").replace(/^[- ]+/, "").trim();
   const trimmed = before.trim();
   let items = [];
   let replaceStart = lineStart + indent.length;
   let replaceEnd = caret;
   const add = (label, detail, insert = label) => items.push({ label, detail, insert });
-  const valueKey = before.match(/^\\s*([A-Za-z_][\\w-]*):\\s*(.*)$/);
+  const valueKey = before.match(/^\s*([A-Za-z_][\w-]*):\s*(.*)$/);
   if (valueKey && COMPOSE_VALUE_COMPLETIONS[valueKey[1]]) {
     const key = valueKey[1];
-    const valueStart = lineStart + before.indexOf(":") + 1 + (before.slice(before.indexOf(":") + 1).match(/^\\s*/) || [""])[0].length;
+    const valueStart = lineStart + before.indexOf(":") + 1 + (before.slice(before.indexOf(":") + 1).match(/^\s*/) || [""])[0].length;
     replaceStart = valueStart;
     COMPOSE_VALUE_COMPLETIONS[key].forEach(([value, detail]) => add(value, detail, value));
   } else {
@@ -191,11 +191,11 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     if (event.key === "Enter") {
       const editor = event.currentTarget;
       const before = yamlText.slice(0, editor.selectionStart);
-      const line = before.slice(before.lastIndexOf("\\n") + 1);
-      const indentation = (line.match(/^\\s*/) || [""])[0];
+      const line = before.slice(before.lastIndexOf("\n") + 1);
+      const indentation = (line.match(/^\s*/) || [""])[0];
       const extraIndent = line.trim().endsWith(":") ? "  " : "";
       event.preventDefault();
-      const inserted = "\\n" + indentation + extraIndent;
+      const inserted = "\n" + indentation + extraIndent;
       const nextText = yamlText.slice(0, editor.selectionStart) + inserted + yamlText.slice(editor.selectionEnd);
       const nextCaret = editor.selectionStart + inserted.length;
       setYamlText(nextText);
@@ -245,7 +245,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   };
   const focusSelected = () => {
     if (!editorRef.current) return;
-    const lines = yamlText.split("\n"); const line = lines.findIndex((line) => new RegExp("^  " + selectedService.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":").test(line));
+    const lines = yamlText.split("\n"); const line = lines.findIndex((line) => new RegExp("^  " + selectedService.replace(/[.*+?^${}()|[\]\]/g, "\$&") + ":").test(line));
     if (line < 0) return;
     const offset = lines.slice(0, line).reduce((sum, line) => sum + line.length + 1, 0);
     editorRef.current.focus(); editorRef.current.setSelectionRange(offset, offset);
