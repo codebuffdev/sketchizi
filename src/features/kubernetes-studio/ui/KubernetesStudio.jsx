@@ -211,7 +211,7 @@ function normalizeManifest(value, index) {
   };
 }
 
-export default function KubernetesStudio({ onClose, onCreateDiagram }) {
+export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyResourceYaml }) {
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
@@ -364,6 +364,7 @@ spec:
       const targetDocument = documents[inspectedResource.documentIndex];
       if (!targetDocument) throw new Error("The original YAML document could not be located. Reopen the inspector and try again.");
       targetDocument.contents = editedDocument.contents;
+      onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
       const nextYaml = documents.map((document) => document.toString().trimEnd()).filter(Boolean).join("\n---\n") + "\n";
       setYamlText(nextYaml);
       setInspectorOpen(false);
