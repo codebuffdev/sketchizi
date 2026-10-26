@@ -290,9 +290,15 @@ function validateKubernetesResources(resources) {
         const matchingWorkload = workloads.some((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
         if (!matchingWorkload) add(resource, "warning", "No workload in this manifest set matches the Service selector.");
       }
+      const seenServicePorts = new Set();
       for (const port of spec.ports || []) {
+        const portKey = String(port.name || "") + "/" + String(port.port) + "/" + String(port.protocol || "TCP");
+        if (seenServicePorts.has(portKey)) add(resource, "error", "Service contains a duplicate port entry for " + port.port + "/" + (port.protocol || "TCP") + ".");
+        seenServicePorts.add(portKey);
+        if (!Number.isInteger(port.port) || port.port < 1 || port.port > 65535) add(resource, "error", "Service port must be an integer between 1 and 65535.");
+        if (typeof port.targetPort === "number" && (!Number.isInteger(port.targetPort) || port.targetPort < 1 || port.targetPort > 65535)) add(resource, "error", "Numeric targetPort must be an integer between 1 and 65535.");
+        if (port.nodePort != null && (!Number.isInteger(port.nodePort) || port.nodePort < 30000 || port.nodePort > 32767)) add(resource, "warning", "NodePort " + port.nodePort + " is outside the default 30000–32767 range.");
         if (port.targetPort == null) add(resource, "info", "Service port " + port.port + " omits targetPort; Kubernetes defaults it to port.");
-        if (port.nodePort != null && (port.nodePort < 30000 || port.nodePort > 32767)) add(resource, "warning", "NodePort " + port.nodePort + " is outside the default 30000–32767 range.");
       }
     }
 
