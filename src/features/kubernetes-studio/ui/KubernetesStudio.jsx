@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
 import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
 import { readZipTextFiles } from "../zipBundleReader.js";
+import { renderHelmBundle, renderKustomizeBundle } from "../browserBundleRenderer.js";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -286,6 +287,7 @@ spec:
   const [bundleSources, setBundleSources] = useState([]);
   const [selectedBundleSource, setSelectedBundleSource] = useState("");
   const [bundleFile, setBundleFile] = useState(null);
+  const [bundleFiles, setBundleFiles] = useState([]);
   const [bundleValuesFiles, setBundleValuesFiles] = useState([]);
   const [selectedValuesFile, setSelectedValuesFile] = useState("");
   const [renderingBundle, setRenderingBundle] = useState(false);
@@ -518,7 +520,12 @@ spec:
       setImportedFileNames(paths);
       setBundleSources(sourceOptions);
       setSelectedBundleSource(sourceOptions[0]?.path || "");
-      setBundleFile(originalZipFile);
+      setBundleFile(originalZipFile || { name: "folder-import" });
+      const bundleContents = zipImportedFiles || await Promise.all(files.map(async (file, index) => ({
+        name: paths[index],
+        text: await file.text(),
+      })));
+      setBundleFiles(bundleContents);
       const valuesFiles = paths.filter((path) => /(^|\/)values[^/]*\.ya?ml$/i.test(path)).sort((a, b) => {
         const rank = (value) => /production/i.test(value) ? 0 : /staging/i.test(value) ? 1 : /(^|\/)values\.ya?ml$/i.test(value) ? 2 : 3;
         return rank(a) - rank(b) || a.localeCompare(b);
@@ -535,6 +542,7 @@ spec:
       return;
     }
     setBundleFile(null);
+    setBundleFiles([]);
     setBundleValuesFiles([]);
     setSelectedValuesFile("");
     setBundleSources([]);
@@ -572,23 +580,14 @@ spec:
   const renderSelectedBundle = async () => {
     const source = bundleSources.find((entry) => entry.path === selectedBundleSource);
     if (!source) { setError("Choose a Kustomize source or Helm chart first."); return; }
-    if (!bundleFile) { setError("Direct rendering requires a ZIP bundle. Re-import the folder as a ZIP file."); return; }
-    const rendererUrl = import.meta.env.VITE_K8S_RENDER_URL;
-    if (!rendererUrl) { setError("The K8s renderer is not configured. Set VITE_K8S_RENDER_URL in the frontend deployment and rebuild."); return; }
+    if (!bundleFiles.length) { setError("No bundle files are available. Import the ZIP or folder again."); return; }
     setRenderingBundle(true);
     setError("");
-    setNotice("Rendering " + source.label + "…");
+    setNotice("Rendering " + source.label + " in your browser…");
     try {
-      const form = new FormData();
-      form.append("bundle", bundleFile);
-      form.append("kind", source.type);
-      form.append("sourcePath", source.path);
-      if (source.type === "helm" && selectedValuesFile) form.append("valuesFile", selectedValuesFile);
-      const response = await fetch(rendererUrl.replace(/\/$/, "") + "/render", { method: "POST", body: form });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "The selected source could not be rendered.");
-      const renderedYaml = String(result.yaml || "").trim();
-      if (!renderedYaml) throw new Error("The renderer returned no Kubernetes YAML.");
+      const renderedYaml = source.type === "kustomize"
+        ? renderKustomizeBundle(bundleFiles, source.path)
+        : renderHelmBundle(bundleFiles, source.path, selectedValuesFile, "sketchizi");
       const documents = parseAllDocuments(renderedYaml, { prettyErrors: true, uniqueKeys: true });
       const parseFailure = documents.find((document) => document.errors.length);
       if (parseFailure) throw new Error("Rendered YAML could not be parsed: " + parseFailure.errors[0].message);
@@ -597,15 +596,17 @@ spec:
       if (invalidDocuments.length) throw new Error("Rendered document(s) " + invalidDocuments.join(", ") + " do not include kind and metadata.name.");
       const resources = normalized.filter(Boolean);
       if (!resources.length) throw new Error("The selected source rendered no Kubernetes resources.");
-      setYamlText(renderedYaml + "\n");
-      setSavedYamlText(renderedYaml + "\n");
+      const nextYaml = renderedYaml.endsWith("\n") ? renderedYaml : renderedYaml + "\n";
+      setYamlText(nextYaml);
+      setSavedYamlText(nextYaml);
       setImportedFileNames([source.label + " (rendered)"]);
       setBundleSources([]);
       setSelectedBundleSource("");
       setBundleFile(null);
+      setBundleFiles([]);
       setBundleValuesFiles([]);
       setSelectedValuesFile("");
-      setNotice("Rendered " + resources.length + " Kubernetes resource(s). Review validation, then create the diagram.");
+      setNotice("Rendered " + resources.length + " Kubernetes resource(s) locally in your browser. Review validation, then create the diagram.");
     } catch (cause) {
       setError(cause?.message || "Could not render the selected source bundle.");
       setNotice("");
@@ -660,7 +661,7 @@ spec:
           <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-folder")?.click()}>Import folder</button>
           <input id="k8s-studio-source-folder" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
           <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import Kubernetes YAML, or choose a source bundle for render instructions."}</span>
-          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setBundleSources([]); setSelectedBundleSource(""); setBundleFile(null); setBundleValuesFiles([]); setSelectedValuesFile(""); setNotice(""); setError(""); }}>Clear</button>
+          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setBundleSources([]); setSelectedBundleSource(""); setBundleFile(null); setBundleFiles([]); setBundleValuesFiles([]); setSelectedValuesFile(""); setNotice(""); setError(""); }}>Clear</button>
         </div>
 
         {bundleSources.length > 0 && (
@@ -673,12 +674,12 @@ spec:
               const source = bundleSources.find((entry) => entry.path === selectedBundleSource);
               if (!source) return "Select a source to see its render command.";
               return source.type === "kustomize"
-                ? "From the extracted bundle directory, run: kubectl kustomize " + source.directory + " > rendered-kustomize.yaml"
-                : "From the extracted bundle directory, run: helm template shop " + source.directory + " -f " + source.directory + "/values.yaml > rendered-helm.yaml. Replace values.yaml with values-staging.yaml or values-production.yaml for an environment-specific render.";
+                ? "K8s Studio resolves selected Kustomize resources and common transforms locally in this browser."
+                : "K8s Studio renders supported Helm template expressions locally. Charts using advanced Go-template functions may require a fuller renderer.";
             })()}</p>
             {(() => { const source = bundleSources.find((entry) => entry.path === selectedBundleSource); return source?.type === "helm" ? <div className="k8s-studio-values-row"><label htmlFor="k8s-studio-values-file">Values file</label><select id="k8s-studio-values-file" value={selectedValuesFile} onChange={(event) => setSelectedValuesFile(event.target.value)}><option value="">Chart defaults</option>{bundleValuesFiles.map((path) => <option key={path} value={path}>{path}</option>)}</select></div> : null; })()}
             <button type="button" className="k8s-studio-primary k8s-studio-render-button" onClick={renderSelectedBundle} disabled={renderingBundle || !bundleFile || !selectedBundleSource}>{renderingBundle ? "Rendering…" : "Render selected source"}</button>
-            <p>{bundleFile ? "Rendering uses the isolated Helm/Kustomize service. The current canvas is not changed until you choose Create diagram." : "Folder import can detect sources; direct rendering currently requires uploading the bundle as a ZIP."}</p>
+            <p>{"Rendering runs locally in your browser. The current canvas is not changed until you choose Create diagram."}</p>
           </section>
         )}
 
