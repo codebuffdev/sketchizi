@@ -989,8 +989,24 @@ function App() {
       ];
     });
     const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+    const generatedIds = new Set(existing.filter((element) => {
+      const metadata = element.customData?.kubernetesManifestResource;
+      return metadata?.properties?.manifestResourceId || metadata?.properties?.importedFromYaml || metadata?.importedFromYaml;
+    }).map((element) => element.id));
+    const replacedResourceIds = new Set(existing.map((element) => element.customData?.kubernetesManifestResource?.properties?.manifestResourceId).filter(Boolean));
+    const retained = existing.filter((element) => {
+      if (element.isDeleted) return true;
+      const metadata = element.customData?.kubernetesManifestResource;
+      if (metadata?.importedFromYaml || metadata?.properties?.importedFromYaml) return false;
+      const relationship = element.customData?.kubernetesRelationship;
+      if (element.type === "arrow" && relationship && (replacedResourceIds.has(relationship.fromResourceId) || replacedResourceIds.has(relationship.toResourceId))) return false;
+      return true;
+    }).map((element) => {
+      if (!Array.isArray(element.boundElements) || !element.boundElements.some((binding) => generatedIds.has(binding.id))) return element;
+      return { ...element, boundElements: element.boundElements.filter((binding) => !generatedIds.has(binding.id)) };
+    });
     api.updateScene({
-      elements: [...existing, ...created],
+      elements: [...retained, ...created],
       appState: { ...api.getAppState(), selectedElementIds: Object.fromEntries(created.map((element) => [element.id, true])) },
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
