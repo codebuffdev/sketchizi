@@ -155,3 +155,8 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-studio-resource-glyph-job,.k8s-studio-resource-glyph-cronjob{color:#a8d98b;background:#263720;border-color:#405b34}
 .k8s-studio-resource-glyph-node,.k8s-studio-resource-glyph-namespace{color:#aebeff;background:#252d49;border-color:#414e79}
 .k8s-studio-resource-glyph-serviceaccount,.k8s-studio-resource-glyph-role,.k8s-studio-resource-glyph-clusterrole,.k8s-studio-resource-glyph-rolebinding,.k8s-studio-resource-glyph-clusterrolebinding{color:#e5ca8d;background:#37311f;border-color:#625333}
+
+
+/* Keep the YAML editor focus state restrained; line numbers are informational, not a selection highlight. */
+.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus{border-color:#31435d!important;box-shadow:none!important;outline:none!important}
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers{background:#0a111d;color:#65748b;border-right-color:#1b2737}
