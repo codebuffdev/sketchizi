@@ -805,8 +805,8 @@ spec:
         <div className="k8s-studio-actions">
           <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
           <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
-          <span>Supports multiple YAML documents separated by <code>---</code></span>
-          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setNotice(""); setError(""); }}>Clear</button>
+          <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import one or more YAML files; documents separated by --- are supported."}</span>
+          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setHasInspectedEdits(false); setNotice(""); setError(""); }}>Clear</button>
         </div>
 
         <div className="k8s-studio-workspace" ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
