@@ -205,7 +205,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       requestAnimationFrame(() => { editor.focus(); editor.setSelectionRange(nextCaret, nextCaret); updateCompletions(nextText, nextCaret); });
     }
   };
-\n  const importYaml = async (event) => {
+
+  const importYaml = async (event) => {
     const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
     try {
       const text = await file.text();
