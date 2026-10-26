@@ -791,3 +791,20 @@
 .desktop-app-nav-button.active .desktop-app-nav-chevron {
   opacity: .88;
 }
+
+
+/* Persistent, restrained active-tool state in the floating Excalidraw dock. */
+.app .App-toolbar .sketchizi-dock-tool-active,
+.app .App-toolbar .sketchizi-dock-quick-tool.sketchizi-dock-tool-active {
+  background: #303b4d !important;
+  border-color: #71819a !important;
+  color: #f0f4fa !important;
+  box-shadow: inset 0 0 0 1px rgba(190, 205, 226, .12) !important;
+}
+.app .App-toolbar .sketchizi-dock-tool-active svg {
+  color: inherit;
+}
+.app .App-toolbar .sketchizi-dock-tool-active:focus-visible {
+  outline: 2px solid #aab9cf !important;
+  outline-offset: 2px;
+}
