@@ -1424,74 +1424,37 @@ function App() {
           </button>
         )}
 
-        <button
-          type="button"
-          className="design-studio-header-toggle"
-          onClick={() => setDesignStudioOpen(true)}
-          title="Create a new design"
-          aria-label="Create a new design"
-        >
-          <span aria-hidden="true">＋</span>
-          <span>Create Design</span>
-        </button>
-
-        <div className="devops-studio-menu">
+        <div className="devops-studio-menu create-design-menu">
           <button
             type="button"
-            className={devopsStudioMenuOpen ? "devops-studio-toggle active" : "devops-studio-toggle"}
+            className={devopsStudioMenuOpen ? "design-studio-header-toggle active" : "design-studio-header-toggle"}
             onClick={() => setDevopsStudioMenuOpen((open) => !open)}
-            title="Open DevOps design studios"
-            aria-label="DevOps Studio"
+            title="Create a design"
+            aria-label="Create Design"
             aria-haspopup="menu"
             aria-expanded={devopsStudioMenuOpen}
           >
-            <svg className="devops-studio-brand-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-              <circle cx="16" cy="16" r="4.2" fill="currentColor" />
-              <circle cx="16" cy="16" r="9.3" fill="none" stroke="currentColor" strokeWidth="2.5" />
-              <path d="M16 2.5v5M16 24.5v5M2.5 16h5M24.5 16h5M6.45 6.45l3.55 3.55M22 22l3.55 3.55M25.55 6.45L22 10M10 22l-3.55 3.55" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            </svg>
+            <span aria-hidden="true">＋</span>
+            <span>Create Design</span>
             <span className="devops-studio-chevron" aria-hidden="true">⌄</span>
           </button>
           {devopsStudioMenuOpen && (
-            <div className="devops-studio-dropdown" role="menu" aria-label="DevOps Studio">
-              <button
-                type="button"
-                role="menuitem"
-                className="kubernetes-studio-menu-item"
-                onClick={() => { setDevopsStudioMenuOpen(false); setKubernetesStudioOpen(true); }}
-                title="Design Kubernetes architectures and import YAML"
-              >
-                <svg className="devops-option-icon kubernetes-brand-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-                  <path fill="currentColor" d="M14.1 1.8a4 4 0 0 1 3.8 0l9.2 5.3a4 4 0 0 1 1.9 3.3v10.7a4 4 0 0 1-1.9 3.4l-9.2 5.2a4 4 0 0 1-3.8 0l-9.2-5.2A4 4 0 0 1 3 21.1V10.4a4 4 0 0 1 1.9-3.3z" opacity=".16"/>
-                  <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                    <path d="M16 7v18M7.8 11.2l16.4 9.6M7.8 20.8l16.4-9.6"/>
-                    <circle cx="16" cy="16" r="5.4"/>
-                    <circle cx="16" cy="16" r="2.1" fill="currentColor" stroke="none"/>
-                    <path d="M16 3.8v3M16 25.2v3M5.3 10l2.6 1.5M24.1 20.5l2.6 1.5M5.3 22l2.6-1.5M24.1 11.5l2.6-1.5"/>
-                  </g>
-                </svg>
-                <span>K8s Studio</span>
+            <div className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Create Design">
+              <button type="button" role="menuitem" className="design-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDesignStudioOpen(true); }} title="Create an architecture or diagram from a template">
+                <span className="create-design-menu-icon" aria-hidden="true">◇</span>
+                <span><strong>Design Studio</strong><small>Architecture and diagram templates</small></span>
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="docker-compose-studio-menu-item"
-                onClick={() => { setDevopsStudioMenuOpen(false); setDockerStudioOpen(true); }}
-                title="Design Docker Compose applications"
-              >
-                <svg className="devops-option-icon docker-brand-icon" viewBox="0 0 40 32" aria-hidden="true" focusable="false">
-                  <g fill="currentColor">
-                    <rect x="8" y="4" width="6" height="6" rx=".7"/><rect x="15" y="4" width="6" height="6" rx=".7"/><rect x="22" y="4" width="6" height="6" rx=".7"/>
-                    <rect x="1" y="11" width="6" height="6" rx=".7"/><rect x="8" y="11" width="6" height="6" rx=".7"/><rect x="15" y="11" width="6" height="6" rx=".7"/><rect x="22" y="11" width="6" height="6" rx=".7"/>
-                    <path d="M38 13.2c-2.2-1.5-4.6-1.6-6.8-.4-.5-3.1-2.3-5.2-5.2-6.5l-1.1 2.2c1.7 1.1 2.7 2.7 2.9 4.8H4.3c-.4 8.2 3.7 13 11.2 13h5.1c8.5 0 13.8-4.3 15.3-11.1l2.1-.1z"/>
-                  </g>
-                </svg>
-                <span>Docker Studio</span>
+              <button type="button" role="menuitem" className="kubernetes-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setKubernetesStudioOpen(true); }} title="Design Kubernetes architectures and import YAML">
+                <span className="create-design-menu-icon" aria-hidden="true">⎈</span>
+                <span><strong>K8s Studio</strong><small>Kubernetes manifests and diagrams</small></span>
+              </button>
+              <button type="button" role="menuitem" className="docker-compose-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDockerStudioOpen(true); }} title="Design Docker Compose applications">
+                <span className="create-design-menu-icon" aria-hidden="true">▦</span>
+                <span><strong>Docker Studio</strong><small>Compose files and service diagrams</small></span>
               </button>
             </div>
           )}
         </div>
-
 
         <button
           type="button"
