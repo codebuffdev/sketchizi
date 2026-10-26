@@ -194,8 +194,11 @@ test("K8s Studio detects Kustomize and Helm source bundles before treating files
   const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /kustomization\\\.ya\?ml\|Kustomization/);
   assert.match(studio, /Chart\\\.yaml/);
-  assert.match(studio, /kubectl kustomize .*rendered-kustomize\.yaml/);
-  assert.match(studio, /helm template .*rendered-helm\.yaml/);
+  assert.match(studio, /kubectl kustomize/);
+  assert.match(studio, /helm template shop/);
+  assert.match(studio, /k8s-studio-bundle-source/);
+  assert.match(studio, /bundleSources\.map/);
+  assert.match(studio, /selectedBundleSource/);
   assert.match(studio, /K8s Studio does not silently approximate Kustomize rendering/);
   assert.match(studio, /K8s Studio does not pretend raw templates are deployable manifests/);
   assert.match(studio, /webkitdirectory/);
