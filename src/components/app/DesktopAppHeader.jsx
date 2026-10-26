@@ -313,11 +313,7 @@ export default function DesktopAppHeader({
         </svg>
         <span className="desktop-app-document-identity-copy">
           <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
-          <span className="desktop-app-document-identity-state">
-            {currentDocumentFileBacked ? (currentDocumentDirty ? "File changes not saved" : "Linked file") : saveStateLabel}
-          </span>
-        </span>
-        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        </span>       {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
       </div>
 
       <div className="desktop-app-header-panel-actions">{children}</div>
