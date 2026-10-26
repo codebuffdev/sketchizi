@@ -117,6 +117,25 @@ function App() {
 
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
+  // Workspace menu is transient navigation: Escape and any other open panel/dialog dismiss it.
+  useEffect(() => {
+    if (activePanel || aiAskOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen) {
+      setDevopsStudioMenuOpen(false);
+    }
+  }, [activePanel, aiAskOpen, designStudioOpen, dockerStudioOpen, kubernetesStudioOpen]);
+
+  useEffect(() => {
+    if (!devopsStudioMenuOpen) return undefined;
+    const closeWorkspaceMenuOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setDevopsStudioMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeWorkspaceMenuOnEscape, true);
+    return () => window.removeEventListener("keydown", closeWorkspaceMenuOnEscape, true);
+  }, [devopsStudioMenuOpen]);
+
   useEffect(() => {
     wakeBackendOnPageLoad();
     return startPeriodicBackendWarmup();
