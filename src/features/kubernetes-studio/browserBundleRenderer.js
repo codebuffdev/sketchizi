@@ -272,7 +272,7 @@ function renderBlocks(source, context, namedTemplates) {
       if (block.elseToken?.isElseIf && !condition) otherwise = "{{ if " + block.elseToken.expression + " }}" + otherwise + "{{ end }}";
       body = condition ? renderBlocks(body, context, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
     } else if (opening.kind === "with") {
-      const value = evaluateExpression(opening.expression, context);
+      const value = evaluateExpression(opening.expression, context, namedTemplates);
       body = truthy(value) ? renderBlocks(body, { ...context, __dot: value }, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
     } else {
       const rangeMatch = opening.expression.match(/^(?:(\$[\w]+)(?:\s*,\s*(\$[\w]+))?\s*:=\s*)?(.+)$/);
