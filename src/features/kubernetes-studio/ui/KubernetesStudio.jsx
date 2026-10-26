@@ -359,9 +359,12 @@ spec:
       return;
     }
     if (event.key === "Escape") {
-      const lineStart = yamlText.lastIndexOf("\n", Math.max(0, event.currentTarget.selectionStart - 1)) + 1;
+      event.preventDefault();
+      event.stopPropagation();
+      const caret = event.currentTarget.selectionStart;
+      const lineStart = yamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
       setDismissedCompletionLine(lineStart);
-      setCompletion({ items: [], replaceStart: lineStart, replaceEnd: event.currentTarget.selectionStart, selectedIndex: 0 });
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
       return;
     }
     if (event.key === "Enter" && !completion.items.length) {
