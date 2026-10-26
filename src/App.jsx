@@ -424,7 +424,7 @@ function App() {
       kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
       kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
       apiVersion,
-    ].filter(Boolean).join("\\n");
+    ].filter(Boolean).join("\n");
     // Remove generated connectors involving this resource before its metadata changes.
     // Their reciprocal card bindings must be removed too, otherwise Excalidraw can retain stale
     // boundElements references after the YAML is reapplied.
@@ -442,11 +442,11 @@ function App() {
         if (!Array.isArray(element.boundElements) || !element.boundElements.some((bound) => staleRelationshipIds.has(bound.id))) return element;
         return { ...element, boundElements: element.boundElements.filter((bound) => !staleRelationshipIds.has(bound.id)), version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now() };
       }
-      const isTitle = element.type === "text" && String(element.text || "").startsWith(kind + "\\n");
+      const isTitle = element.type === "text" && String(element.text || "").startsWith(kind + "\n");
       const isDetails = element.type === "text" && String(element.text || "").startsWith("Namespace:");
       return {
         ...element,
-        ...(isTitle ? { text: `${kind}\\n${name}` } : {}),
+        ...(isTitle ? { text: `${kind}\n${name}` } : {}),
         ...(isDetails ? { text: details } : {}),
         customData: {
           ...element.customData,
