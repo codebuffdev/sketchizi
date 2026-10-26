@@ -268,7 +268,7 @@ function renderBlocks(source, context, namedTemplates) {
     const closingTag = source.slice(block.endStart, block.end);
     if (/^{{-/.test(closingTag)) body = body.replace(/\s+$/, "");
     if (opening.kind === "if") {
-      const condition = opening.expression.startsWith("not ") ? !truthy(evaluateExpression(opening.expression.slice(4), context)) : truthy(evaluateExpression(opening.expression, context));
+      const condition = opening.expression.startsWith("not ") ? !truthy(evaluateExpression(opening.expression.slice(4), context, namedTemplates)) : truthy(evaluateExpression(opening.expression, context, namedTemplates));
       if (block.elseToken?.isElseIf && !condition) otherwise = "{{ if " + block.elseToken.expression + " }}" + otherwise + "{{ end }}";
       body = condition ? renderBlocks(body, context, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
     } else if (opening.kind === "with") {
@@ -276,7 +276,7 @@ function renderBlocks(source, context, namedTemplates) {
       body = truthy(value) ? renderBlocks(body, { ...context, __dot: value }, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
     } else {
       const rangeMatch = opening.expression.match(/^(?:(\$[\w]+)(?:\s*,\s*(\$[\w]+))?\s*:=\s*)?(.+)$/);
-      const value = evaluateExpression(rangeMatch?.[3] || opening.expression, context);
+      const value = evaluateExpression(rangeMatch?.[3] || opening.expression, context, namedTemplates);
       const entries = Array.isArray(value) ? value.map((item, index) => [index, item]) : value && typeof value === "object" ? Object.entries(value) : [];
       body = entries.map(([key, item]) => {
         const scoped = { ...context, __dot: item };
