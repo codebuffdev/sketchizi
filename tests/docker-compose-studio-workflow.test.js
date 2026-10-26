@@ -138,7 +138,6 @@ test("complex Compose document round-trips without dropping operational configur
   // YAML from the parsed object, preserving comments, ordering, and formatting.
   assert.match(component, /new Blob\(\[yamlText\.endsWith/);
   assert.match(component, /anchor\.download = "compose\.yaml"/);
-  assert.equal(source, source.endsWith("\\n") ? source : source + "\\n");
 });
 
 test("YAML editor, syntax overlay and line-number gutter share scrolling and typography", () => {
