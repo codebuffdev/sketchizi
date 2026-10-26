@@ -46,3 +46,17 @@
 .k8s-yaml-editor-controls output{min-width:32px;color:#a9bedb;font-size:10px;text-align:center;font-variant-numeric:tabular-nums}
 .k8s-yaml-editor-controls small{margin-left:5px;color:#899ab2;font-size:11px;white-space:nowrap}
 @media(max-width:540px){.k8s-yaml-editor-controls{gap:3px}.k8s-yaml-editor-controls small{display:none}}
+
+.k8s-studio-validation { margin: 10px 0 14px; border: 1px solid var(--k8s-border, #30384b); border-radius: 10px; background: rgba(12, 17, 27, .55); overflow: hidden; }
+.k8s-studio-validation-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--k8s-border, #30384b); font-size: 11px; }
+.k8s-studio-validation-heading span { color: var(--k8s-muted, #9ca8c2); font-size: 10px; }
+.k8s-studio-validation ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; max-height: 190px; overflow: auto; }
+.k8s-studio-validation li { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-bottom: 1px solid rgba(120, 135, 165, .12); }
+.k8s-studio-validation li:last-child { border-bottom: 0; }
+.k8s-studio-validation li > span { flex: 0 0 auto; min-width: 44px; padding: 3px 5px; border-radius: 5px; background: rgba(100, 116, 139, .16); color: #b7c1d8; font-size: 9px; text-align: center; text-transform: uppercase; }
+.k8s-studio-validation-error > span { background: rgba(239, 68, 68, .13) !important; color: #f87171 !important; }
+.k8s-studio-validation-warning > span { background: rgba(245, 158, 11, .13) !important; color: #fbbf24 !important; }
+.k8s-studio-validation li > div { min-width: 0; }
+.k8s-studio-validation li strong { display: block; font-size: 10px; font-weight: 650; }
+.k8s-studio-validation li p { margin: 3px 0 0; color: var(--k8s-muted, #9ca8c2); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .k8s-studio-validation * { scroll-behavior: auto; } }
