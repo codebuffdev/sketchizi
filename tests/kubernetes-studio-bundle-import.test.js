@@ -9,8 +9,8 @@ const reader = await readFile(resolve(root, "src/features/kubernetes-studio/zipB
 const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
 
 test("ZIP bundle reader selects YAML and Kubernetes source files by extension", () => {
-  assert.match(reader, /!\/\\\.(?:ya\?ml)\$\/i\.test\(name\)/);
-  assert.doesNotMatch(reader, /!\/\\\\\.(?:ya\?ml)\$\/i\.test\(name\)/);
+  assert.ok(reader.includes(String.raw`if (!/\.(?:ya?ml)$/i.test(name)) continue;`), "YAML extension matching must use a literal dot");
+  assert.ok(!reader.includes(String.raw`if (!/\\.(?:ya?ml)$/i.test(name)) continue;`), "the extension matcher must not require a backslash");
 });
 
 test("K8s Studio accepts ZIP files and provides a separate folder picker", () => {
@@ -22,5 +22,5 @@ test("K8s Studio accepts ZIP files and provides a separate folder picker", () =>
 test("K8s Studio clears example YAML when a source bundle is detected", () => {
   assert.match(studio, /Kustomize bundle loaded/);
   assert.match(studio, /Helm bundle loaded/);
-  assert.match(studio, /setYamlText\("\\"\);\s*setSavedYamlText\("\\"\);\s*setImportedFileNames\(paths\)/);
+  assert.ok(studio.includes('setYamlText("");\n      setSavedYamlText("");\n      setImportedFileNames(paths);'));
 });
