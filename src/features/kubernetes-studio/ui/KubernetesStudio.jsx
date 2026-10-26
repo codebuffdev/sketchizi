@@ -52,8 +52,15 @@ function buildCompletions(text, caret, force = false) {
   const line = text.slice(lineStart, lineEnd);
   const beforeCaret = text.slice(lineStart, caret);
   const indent = (line.match(/^\s*/) || [""])[0];
-  const previousLines = text.slice(0, lineStart).split("\n").reverse();
-  const previousLine = previousLines.find((value) => value.trim())?.trim() || "";
+  const previousLines = text.slice(0, lineStart).split("\n");
+  const currentIndent = indent.length;
+  const previousLine = [...previousLines].reverse().find((value) => value.trim())?.trim() || "";
+  const parentLine = [...previousLines].reverse().find((value) => {
+    if (!value.trim()) return false;
+    const lineIndent = (value.match(/^\s*/) || [""])[0].length;
+    return lineIndent < currentIndent && /^[\s-]*[A-Za-z_][\w.-]*\s*:\s*(?:#.*)?$/.test(value);
+  }) || "";
+  const parent = (parentLine.trim().match(/(?:^|-\s*)([A-Za-z_][\w.-]*)\s*:/) || [])[1] || "";
   const currentDocument = text.slice(0, caret).split(/^---\s*$/m).pop() || "";
   const kind = currentDocument.match(/^kind:\s*([A-Za-z]+)/m)?.[1] || "";
   let items = [];
@@ -92,7 +99,6 @@ function buildCompletions(text, caret, force = false) {
   } else if (/^\s*kind:\s*[^\s]+/.test(line) && beforeCaret.includes("kind:")) {
     return { items: [], replaceStart, replaceEnd };
   } else {
-    const parent = previousLine.replace(/:.*$/, "").trim();
     const fieldGroups = {
       root: ["apiVersion:", "kind:", "metadata:", "spec:", "data:", "type:"],
       metadata: ["name:", "namespace:", "labels:", "annotations:"],
