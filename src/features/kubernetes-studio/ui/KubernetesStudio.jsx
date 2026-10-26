@@ -373,7 +373,7 @@ function validateKubernetesResources(resources) {
       if (spec.scaleTargetRef?.kind && !["Deployment", "StatefulSet", "ReplicaSet"].includes(spec.scaleTargetRef.kind)) add(resource, "warning", "HPA scaleTargetRef.kind is not a commonly supported scalable workload kind.");
     }
     if (resource.kind === "NetworkPolicy") {
-      if (!spec.podSelector || typeof spec.podSelector !== "object") add(resource, "error", "NetworkPolicy must define spec.podSelector (use an empty object to select all pods in the namespace).");
+      if (!spec.podSelector || typeof spec.podSelector !== "object") add(resource, "error", "NetworkPolicy must define spec\\.podSelector (use an empty object to select all pods in the namespace).");
       if (spec.policyTypes != null && (!Array.isArray(spec.policyTypes) || spec.policyTypes.some((type) => !["Ingress", "Egress"].includes(type)))) add(resource, "error", "NetworkPolicy policyTypes entries must be Ingress or Egress.");
       for (const [direction, rules] of [["ingress", spec.ingress], ["egress", spec.egress]]) {
         if (rules != null && !Array.isArray(rules)) add(resource, "error", "NetworkPolicy spec." + direction + " must be a list.");
