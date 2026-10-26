@@ -126,6 +126,22 @@ function buildCompletions(text, caret, force = false) {
       data: ["APP_ENV:", "LOG_LEVEL:"],
     };
     let choices = fieldGroups[parent] || fieldGroups.root;
+    // Avoid suggesting keys already present at this same YAML nesting level.
+    // Only inspect siblings before the current line, so editing a key doesn't hide itself.
+    const siblingKeys = new Set(
+      previousLines
+        .filter((value) => {
+          if (!value.trim()) return false;
+          const lineIndent = (value.match(/^\\s*/) || [""])[0].length;
+          return lineIndent === currentIndent;
+        })
+        .map((value) => (value.trim().match(/^[- ]*([A-Za-z_][\\w.-]*)\\s*:/) || [])[1])
+        .filter(Boolean)
+    );
+    choices = choices.filter((entry) => {
+      const key = (entry.match(/^[- ]*([A-Za-z_][\\w.-]*)\\s*:/) || [])[1];
+      return !key || !siblingKeys.has(key);
+    });
     if (beforeCaret.trim()) {
       const partial = beforeCaret.trim();
       if (/^[A-Za-z][\w-]*$/.test(partial)) {
