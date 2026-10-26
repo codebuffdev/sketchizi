@@ -27,8 +27,8 @@ test("Compose Studio exposes dependency relationships and shared resources from 
   assert.match(component, /dependenciesOf\(service\)/);
   assert.match(component, /docker-studio-relationship-panel/);
   assert.match(component, /docker-studio-shared-resources/);
-  assert.match(component, /validateComposeDocument\(document\)/);
-  assert.match(component, /analyzeComposeReadiness\(document\)/);
+  assert.match(component, /validateComposeDocument\(composeDoc\)/);
+  assert.match(component, /analyzeComposeReadiness\(composeDoc\)/);
 });
 
 test("Compose Studio keeps editor and preview independently scrollable at compact widths", () => {
