@@ -242,7 +242,7 @@ function findBlock(source, opening) {
     else if (kind === "end") {
       depth -= 1;
       if (depth === 0) return { endStart: token.index, end: directives.lastIndex, elseToken: firstElse };
-    } else if (kind === "else" && depth === 1 && !firstElse) firstElse = { start: token.index, end: directives.lastIndex, expression: token[2].replace(/^\s*if\s+/, "").trim(), isElseIf: /^\s*if\b/.test(token[2]) };
+    } else if (kind === "else" && depth === 1 && !firstElse) firstElse = { start: token.index, end: directives.lastIndex, expression: token[2].replace(/^\s*if\s+/, "").trim(), isElseIf: token[1].includes("if") };
   }
   throw new Error("A Helm template block is missing its closing {{ end }}.");
 }
