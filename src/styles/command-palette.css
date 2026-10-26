@@ -354,3 +354,13 @@ html[data-sketchizi-theme="dark"] .sketchizi-command-palette {
   .sketchizi-command-palette-footer { gap:12px; padding:10px 12px; }
 }
 @media(prefers-reduced-motion:reduce) { .sketchizi-command-palette * { scroll-behavior:auto; } }
+
+
+/* Neutral focus state for command search; retain a clear boundary without a
+   purple halo while the user is typing. */
+.sketchizi-command-palette .sketchizi-command-search:focus,
+.sketchizi-command-palette .sketchizi-command-search:focus-visible {
+  border-color: var(--ui-border, #394357) !important;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(180, 190, 210, .07) !important;
+}
