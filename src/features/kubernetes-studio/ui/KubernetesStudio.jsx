@@ -201,6 +201,7 @@ function normalizeManifest(value, index) {
   if (!kind || !metadata.name) return null;
   return {
     id: `${kind.toLowerCase()}-${String(metadata.namespace || "default")}-${String(metadata.name)}-${index}`,
+    documentIndex: index - 1,
     kind,
     name: String(metadata.name),
     namespace: String(metadata.namespace || (kind === "Namespace" ? metadata.name : "default")),
@@ -248,6 +249,7 @@ spec:
   const [error, setError] = useState("");
   const [inspectedResourceId, setInspectedResourceId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorDraft, setInspectorDraft] = useState("");
   const updateCompletions = (text, caret, force = false) => {
     const next = buildCompletions(text, caret, force);
     setCompletion({ ...next, selectedIndex: 0 });
@@ -329,14 +331,38 @@ spec:
   }, [yamlText]);
 
   const inspectedResource = parsed.resources.find((resource) => resource.id === inspectedResourceId) || null;
-  const inspectResource = (resource) => { setInspectedResourceId(resource.id); setInspectorOpen(true); };
-  const loadInspectedResource = () => {
-    if (!inspectedResource) return;
-    if (yamlText.trim() && !window.confirm("Loading one resource replaces the editor contents. Continue?")) return;
-    setYamlText(stringify(inspectedResource.manifest));
-    setInspectorOpen(false);
-    setNotice("Loaded " + inspectedResource.kind + "/" + inspectedResource.name + " into the editor. Other documents are not included in this editor view.");
+  const inspectResource = (resource) => {
+    setInspectedResourceId(resource.id);
+    setInspectorDraft(stringify(resource.manifest));
+    setInspectorOpen(true);
     setError("");
+  };
+  const applyInspectedResource = () => {
+    if (!inspectedResource) return;
+    try {
+      const editedDocuments = parseAllDocuments(inspectorDraft, { prettyErrors: true, uniqueKeys: true });
+      if (editedDocuments.length !== 1) throw new Error("Edit exactly one Kubernetes resource in this inspector.");
+      const editedDocument = editedDocuments[0];
+      if (editedDocument.errors.length) throw editedDocument.errors[0];
+      const editedManifest = editedDocument.toJSON();
+      const normalized = normalizeManifest(editedManifest, inspectedResource.documentIndex + 1);
+      if (!normalized) throw new Error("The edited YAML must include kind and metadata.name.");
+      if (normalized.kind !== inspectedResource.kind || normalized.documentIndex !== inspectedResource.documentIndex) {
+        throw new Error("Changing the resource kind is not supported in the inspector. Edit its fields and try again.");
+      }
+      const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
+      const targetDocument = documents[inspectedResource.documentIndex];
+      if (!targetDocument) throw new Error("The original YAML document could not be located. Reopen the inspector and try again.");
+      targetDocument.contents = editedDocument.contents;
+      const nextYaml = documents.map((document) => document.toString().trimEnd()).filter(Boolean).join("\n---\n") + "\n";
+      setYamlText(nextYaml);
+      setInspectorOpen(false);
+      setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Review validation before creating the diagram.");
+      setError("");
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+    } catch (cause) {
+      setError(cause?.message || "The resource YAML could not be applied.");
+    }
   };
   const exportYaml = () => {
     if (!yamlText.trim() || parsed.parseError) { setError(parsed.parseError || "Add valid YAML before exporting."); return; }
@@ -484,7 +510,7 @@ spec:
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
           <div><button type="button" className="k8s-studio-secondary" onClick={onClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
         </footer>
-      {inspectorOpen && inspectedResource && <div className="k8s-studio-inspector-backdrop"><section className="k8s-studio-inspector" role="dialog" aria-modal="true"><header><div><strong>{inspectedResource.kind}/{inspectedResource.name}</strong><small>{inspectedResource.namespace} · {inspectedResource.apiVersion}</small></div><button type="button" onClick={() => setInspectorOpen(false)}>Close</button></header><pre>{stringify(inspectedResource.manifest)}</pre><footer><span>Read-only inspection</span><button type="button" className="k8s-studio-primary" onClick={loadInspectedResource}>Edit this resource</button></footer></section></div>}
+      {inspectorOpen && inspectedResource && <div className="k8s-studio-inspector-backdrop"><section className="k8s-studio-inspector" role="dialog" aria-modal="true"><header><div><strong>{inspectedResource.kind}/{inspectedResource.name}</strong><small>{inspectedResource.namespace} · {inspectedResource.apiVersion}</small></div><button type="button" onClick={() => setInspectorOpen(false)}>Close</button></header><textarea className="k8s-studio-inspector-editor" aria-label={"Edit YAML for " + inspectedResource.kind + "/" + inspectedResource.name} spellCheck="false" value={inspectorDraft} onChange={(event) => { setInspectorDraft(event.target.value); setError(""); }} /><footer><span>Changes apply to this document only</span><button type="button" className="k8s-studio-secondary" onClick={() => setInspectorOpen(false)}>Cancel</button><button type="button" className="k8s-studio-primary" onClick={applyInspectedResource}>Apply changes</button></footer></section></div>}
       </section>
     </div>
   );
