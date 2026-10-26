@@ -639,31 +639,78 @@ function App() {
       });
     });
     resources.filter((resource) => resource.kind === "PersistentVolumeClaim").forEach((claim) => {
-      const volume = resources.find((resource) => resource.kind === "PersistentVolume" && resource.manifest?.spec?.claimRef?.name === claim.name);
+      const volume = resources.find((resource) => resource.kind === "PersistentVolume"
+        && resource.manifest?.spec?.claimRef?.name === claim.name
+        && (!resource.manifest?.spec?.claimRef?.namespace || resource.manifest.spec.claimRef.namespace === claim.namespace));
       if (volume) addRelationship(claim, volume, "bound to", "#c59b4d");
     });
     workloads.forEach((workload) => {
-      const spec = workload.manifest?.spec?.template?.spec || workload.manifest?.spec || {};
-      const podSpec = spec;
+      const podSpec = workload.manifest?.spec?.template?.spec || workload.manifest?.spec || {};
       const podTemplateLabels = workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.metadata?.labels || {};
-      const referencedNames = new Set([
-        ...(podSpec.volumes || []).flatMap((volume) => [volume.persistentVolumeClaim?.claimName, volume.configMap?.name, volume.secret?.secretName].filter(Boolean)),
-        ...(podSpec.containers || []).flatMap((container) => [
-          ...(container.envFrom || []).flatMap((item) => [item.configMapRef?.name, item.secretRef?.name].filter(Boolean)),
-          ...(container.env || []).flatMap((item) => [item.valueFrom?.configMapKeyRef?.name, item.valueFrom?.secretKeyRef?.name].filter(Boolean)),
-        ]),
-      ]);
-      resources.filter((resource) => referencedNames.has(resource.name) && resource.namespace === workload.namespace
+      const referencedResources = new Map();
+      const remember = (kind, name) => { if (name) referencedResources.set(kind + "/" + name, { kind, name }); };
+      (podSpec.volumes || []).forEach((volume) => {
+        remember("PersistentVolumeClaim", volume.persistentVolumeClaim?.claimName);
+        remember("ConfigMap", volume.configMap?.name);
+        remember("Secret", volume.secret?.secretName);
+        (volume.projected?.sources || []).forEach((source) => {
+          remember("ConfigMap", source.configMap?.name);
+          remember("Secret", source.secret?.name);
+        });
+      });
+      [...(podSpec.initContainers || []), ...(podSpec.containers || []), ...(podSpec.ephemeralContainers || [])].forEach((container) => {
+        (container.envFrom || []).forEach((item) => {
+          remember("ConfigMap", item.configMapRef?.name);
+          remember("Secret", item.secretRef?.name);
+        });
+        (container.env || []).forEach((item) => {
+          remember("ConfigMap", item.valueFrom?.configMapKeyRef?.name);
+          remember("Secret", item.valueFrom?.secretKeyRef?.name);
+        });
+      });
+      resources.filter((resource) => referencedResources.has(resource.kind + "/" + resource.name)
+        && resource.namespace === workload.namespace
         && ["ConfigMap", "Secret", "PersistentVolumeClaim"].includes(resource.kind))
         .forEach((resource) => addRelationship(workload, resource, resource.kind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d"));
+      if (podSpec.serviceAccountName) {
+        const account = resources.find((resource) => resource.kind === "ServiceAccount" && resource.name === podSpec.serviceAccountName && resource.namespace === workload.namespace);
+        if (account) addRelationship(workload, account, "uses identity", "#b68bea");
+      }
       const hpa = resources.find((resource) => resource.kind === "HorizontalPodAutoscaler"
         && resource.namespace === workload.namespace
-        && resource.manifest?.spec?.scaleTargetRef?.name === workload.name);
+        && resource.manifest?.spec?.scaleTargetRef?.name === workload.name
+        && (!resource.manifest.spec.scaleTargetRef.kind || resource.manifest.spec.scaleTargetRef.kind === workload.kind));
       if (hpa) addRelationship(hpa, workload, "scales", "#b68bea");
       const pdb = resources.find((resource) => resource.kind === "PodDisruptionBudget"
         && resource.namespace === workload.namespace
         && labelsMatch(resource.manifest?.spec?.selector?.matchLabels, podTemplateLabels));
       if (pdb) addRelationship(pdb, workload, "protects", "#b68bea");
+      if (workload.kind === "CronJob") {
+        const jobTemplate = workload.manifest?.spec?.jobTemplate?.spec?.template?.spec || {};
+        const cronReferences = new Set([
+          ...(jobTemplate.volumes || []).flatMap((volume) => [volume.configMap?.name, volume.secret?.secretName, volume.persistentVolumeClaim?.claimName].filter(Boolean)),
+          ...(jobTemplate.containers || []).flatMap((container) => [
+            ...(container.envFrom || []).flatMap((item) => [item.configMapRef?.name, item.secretRef?.name].filter(Boolean)),
+          ]),
+        ]);
+        resources.filter((resource) => cronReferences.has(resource.name) && resource.namespace === workload.namespace
+          && ["ConfigMap", "Secret", "PersistentVolumeClaim"].includes(resource.kind))
+          .forEach((resource) => addRelationship(workload, resource, "uses", "#c59b4d"));
+      }
+    });
+    resources.filter((resource) => ["RoleBinding", "ClusterRoleBinding"].includes(resource.kind)).forEach((binding) => {
+      const roleRef = binding.manifest?.roleRef;
+      if (roleRef?.name) {
+        const targetKind = roleRef.kind;
+        const target = resources.find((resource) => resource.kind === targetKind && resource.name === roleRef.name
+          && (binding.kind === "ClusterRoleBinding" || resource.namespace === binding.namespace));
+        if (target) addRelationship(binding, target, "grants role", "#b68bea");
+      }
+      (binding.manifest?.subjects || []).filter((subject) => subject.kind === "ServiceAccount").forEach((subject) => {
+        const account = resources.find((resource) => resource.kind === "ServiceAccount" && resource.name === subject.name
+          && resource.namespace === (subject.namespace || binding.namespace));
+        if (account) addRelationship(binding, account, "binds identity", "#b68bea");
+      });
     });
 
     // Preserve authored element IDs so the arrow start/end references remain
