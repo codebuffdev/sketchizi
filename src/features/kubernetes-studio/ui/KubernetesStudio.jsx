@@ -237,6 +237,23 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
+
+  useEffect(() => {
+    if (!completion.items.length) return undefined;
+    const dismissOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+      const editor = yamlEditorRef.current;
+      const caret = editor?.selectionStart ?? 0;
+      const lineStart = yamlText.lastIndexOf("\\n", Math.max(0, caret - 1)) + 1;
+      setDismissedCompletionLine(lineStart);
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+    };
+    window.addEventListener("keydown", dismissOnEscape, true);
+    return () => window.removeEventListener("keydown", dismissOnEscape, true);
+  }, [completion.items.length, yamlText]);
   const [manifestFontSize, setManifestFontSize] = useState(12);
   const [yamlScrollTop, setYamlScrollTop] = useState(0);
   const [previewSplit, setPreviewSplit] = useState(50);
