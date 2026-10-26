@@ -29,3 +29,13 @@ services:
             sync: false
           - key: COLLAB_HOST_TOKEN_SECRET
             sync: false
+    - type: web
+      name: sketchizi-k8s-render
+      runtime: docker
+      rootDir: k8s-render-service
+      dockerfilePath: Dockerfile
+      dockerContext: .
+      healthCheckPath: /health
+      envVars:
+          - key: FRONTEND_ORIGIN
+            value: https://sketchizi.pages.dev
