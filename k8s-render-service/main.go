@@ -24,7 +24,12 @@ func cleanBundlePath(s string) (string,error) {
 }
 func extractZip(r io.ReaderAt, size int64, dest string) error {
 	z,err:=zip.NewReader(r,size); if err!=nil{return err}
+	if len(z.File) > 2000 { return errors.New("ZIP contains too many entries") }
+	var totalUncompressed uint64
 	for _,f:=range z.File {
+		totalUncompressed += f.UncompressedSize64
+		if totalUncompressed > 200<<20 { return errors.New("ZIP expands beyond the 200 MB limit") }
+		if f.UncompressedSize64 > 20<<20 { return fmt.Errorf("ZIP entry exceeds the 20 MB limit: %s", f.Name) }
 		name:=strings.ReplaceAll(f.Name,"\\","/")
 		if strings.HasPrefix(name,"/") || path.Clean(name)==".." || strings.HasPrefix(path.Clean(name),"../") { return fmt.Errorf("unsafe path in ZIP: %s",name) }
 		target:=filepath.Join(dest,filepath.FromSlash(name))
@@ -33,7 +38,7 @@ func extractZip(r io.ReaderAt, size int64, dest string) error {
 		if err=os.MkdirAll(filepath.Dir(target),0755);err!=nil{return err}
 		in,e:=f.Open();if e!=nil{return e}
 		out,e:=os.OpenFile(target,os.O_CREATE|os.O_TRUNC|os.O_WRONLY,0644);if e!=nil{in.Close();return e}
-		_,e=io.Copy(out,io.LimitReader(in,20<<20));in.Close();out.Close();if e!=nil{return e}
+		written,copyErr:=io.Copy(out,io.LimitReader(in,(20<<20)+1));in.Close();out.Close();if copyErr!=nil{return copyErr};if written>20<<20{return fmt.Errorf("ZIP entry exceeds the 20 MB limit: %s",f.Name)}
 	}
 	return nil
 }
@@ -48,8 +53,6 @@ func render(w http.ResponseWriter,r *http.Request) {
 	tmp,err:=os.MkdirTemp("","k8s-render-*");if err!=nil{writeJSON(w,500,response{Error:"Unable to prepare renderer."});return};defer os.RemoveAll(tmp)
 	if err=extractZip(bytes.NewReader(buf),int64(len(buf)),tmp);err!=nil{writeJSON(w,400,response{Error:"Invalid ZIP: "+err.Error()});return}
 	root:=tmp
-	// Handle the common ZIP layout where every entry is nested beneath one root directory.
-	entries,_:=os.ReadDir(root);if len(entries)==1&&entries[0].IsDir(){root=filepath.Join(root,entries[0].Name())}
 	sourceAbs:=filepath.Join(root,filepath.FromSlash(source))
 	if !strings.HasPrefix(sourceAbs,filepath.Clean(root)+string(os.PathSeparator)){writeJSON(w,400,response{Error:"Source path escapes the bundle."});return}
 	var cmd *exec.Cmd
