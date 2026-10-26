@@ -674,7 +674,7 @@ function App() {
       ResourceQuota: ["resourcequota"], LimitRange: ["limitrange"], PodDisruptionBudget: ["poddisruptionbudget", "pdb"],
       ServiceMonitor: ["servicemonitor", "service"], PodDisruptionBudget: ["poddisruptionbudget", "pdb", "pod"], Deployment: ["deployment"], StatefulSet: ["statefulset"], DaemonSet: ["daemonset"],
       ReplicaSet: ["replicaset"], Service: ["service"], Ingress: ["ingress"], Pod: ["pod"], Namespace: ["namespace"],
-      Secret: ["secret"], Job: ["job"], Node: ["node"], Role: ["role"], PersistentVolumeClaim: ["persistentvolumeclaim", "pvc"],
+      Secret: ["secret"], Job: ["job"], Node: ["node"], Role: ["role"],
     };
     const iconForKind = (kind) => {
       const tokens = new Set([normalizedIconToken(kind), ...(iconAliases[kind] || [])]);
