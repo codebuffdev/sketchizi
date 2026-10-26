@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 import { analyzeArchitectureGraph } from "../src/features/architecture/architectureGraphService.js";
 import { validateArchitectureWithProviderRules } from "../src/features/architecture/architectureValidationComposition.js";
 import { applyKubernetesRelationshipSuggestion } from "../src/features/architecture/kubernetesDiagnosticFixService.js";
-import { validateKubernetesResources } from "../src/features/kubernetes-studio/ui/KubernetesStudio.jsx";
+import { validateKubernetesResources } from "../src/features/kubernetes-studio/validation/validateKubernetesResources.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
