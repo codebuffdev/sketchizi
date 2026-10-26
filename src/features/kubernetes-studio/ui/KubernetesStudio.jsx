@@ -505,7 +505,7 @@ spec:
       setSavedYamlText("");
       setImportedFileNames(paths);
       setError("");
-      setNotice("Kustomize bundle loaded (" + kustomizeFiles.length + " kustomization file(s)). The starter manifest has been cleared. Render the selected overlay with: kubectl kustomize " + overlayDirectory + " > rendered-kustomize.yaml, then import rendered-kustomize.yaml. K8s Studio does not silently approximate Kustomize rendering, patches, generators, or transformations.");
+      setNotice("Kustomize bundle loaded (" + kustomizeFiles.length + " kustomization file(s)). The starter manifest has been cleared. Render the selected overlay with: kubectl kustomize " + overlayDirectory + " > rendered-kustomize.yaml, then import rendered-kustomize.yaml. This keeps patches, generators, and transformations accurate. K8s Studio does not silently approximate Kustomize rendering, patches, generators, or transformations.");
       return;
     }
     if (helmCharts.length) {
