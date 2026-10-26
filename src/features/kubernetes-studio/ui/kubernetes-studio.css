@@ -174,3 +174,9 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 
 /* The focus frame comes from the legacy editor textarea rule above; override it at equal specificity. */
 .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus{border-color:#31435d;box-shadow:none}
+
+
+/* High-specificity override for the focused manifest editor (the purple frame is the textarea focus border). */
+#root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,
+#root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible,
+#root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:active{border:1px solid #31435d!important;outline:0!important;box-shadow:none!important}
