@@ -342,13 +342,17 @@ spec:
     const editor = yamlEditorRef.current;
     if (editor) {
       const beforeCaret = text.slice(0, caret);
-      const lineIndex = beforeCaret.split("\\n").length - 1;
-      const column = beforeCaret.length - beforeCaret.lastIndexOf("\\n") - 1;
+      const lineIndex = beforeCaret.split("\n").length - 1;
+      const column = beforeCaret.length - beforeCaret.lastIndexOf("\n") - 1;
       const lineHeight = manifestFontSize * 1.65;
       const charWidth = manifestFontSize * 0.602;
+      const shell = editor.parentElement;
+      const shellWidth = shell?.clientWidth || editor.clientWidth;
+      const popupWidth = Math.min(390, Math.max(220, shellWidth - 16));
+      const desiredLeft = 16 + column * charWidth - editor.scrollLeft;
       setCompletionPosition({
-        top: Math.max(8, 16 + lineIndex * lineHeight - editor.scrollTop + lineHeight),
-        left: Math.max(8, Math.min(editor.clientWidth - 300, 16 + column * charWidth - editor.scrollLeft))
+        top: Math.max(8, 16 + (lineIndex + 1) * lineHeight - editor.scrollTop),
+        left: Math.max(8, Math.min(shellWidth - popupWidth - 8, desiredLeft))
       });
     }
     const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
