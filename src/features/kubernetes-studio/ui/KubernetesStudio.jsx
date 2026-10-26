@@ -523,7 +523,7 @@ spec:
       setBundleFile(originalZipFile || { name: "folder-import" });
       const bundleContents = zipImportedFiles || await Promise.all(files
         .map((file, index) => ({ file, index }))
-        .filter(({ index }) => /\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(paths[index]))
+        .filter(({ index }) => /\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(paths[index]))
         .map(async ({ file, index }) => ({ name: paths[index], text: await file.text() })));
       setBundleFiles(bundleContents);
       const valuesFiles = paths.filter((path) => /(^|\/)values[^/]*\.ya?ml$/i.test(path)).sort((a, b) => {
