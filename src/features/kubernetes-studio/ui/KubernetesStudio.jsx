@@ -311,12 +311,24 @@ function validateKubernetesResources(resources) {
         if (!matchingWorkload) add(resource, "warning", "No workload in this manifest set matches the Service selector.");
       }
       const seenServicePorts = new Set();
+      const matchingWorkloads = workloads.filter((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
       for (const port of spec.ports || []) {
-        const portKey = String(port.name || "") + "/" + String(port.port) + "/" + String(port.protocol || "TCP");
-        if (seenServicePorts.has(portKey)) add(resource, "error", "Service contains a duplicate port entry for " + port.port + "/" + (port.protocol || "TCP") + ".");
+        const protocol = String(port.protocol || "TCP").toUpperCase();
+        const portKey = String(port.port) + "/" + protocol;
+        if (seenServicePorts.has(portKey)) add(resource, "error", "Service contains a duplicate port/protocol pair for " + port.port + "/" + protocol + ".");
         seenServicePorts.add(portKey);
         if (!Number.isInteger(port.port) || port.port < 1 || port.port > 65535) add(resource, "error", "Service port must be an integer between 1 and 65535.");
+        if (port.name && !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(port.name)) add(resource, "error", "Service port name '" + port.name + "' must be a lowercase alphanumeric name with optional internal hyphens.");
         if (typeof port.targetPort === "number" && (!Number.isInteger(port.targetPort) || port.targetPort < 1 || port.targetPort > 65535)) add(resource, "error", "Numeric targetPort must be an integer between 1 and 65535.");
+        if (typeof port.targetPort === "string" && matchingWorkloads.length) {
+          const namedPortExists = matchingWorkloads.some((workload) => {
+            const workloadPodSpec = workload.kind === "Pod" ? workload.manifest?.spec : workload.manifest?.spec?.template?.spec;
+            return [...(workloadPodSpec?.initContainers || []), ...(workloadPodSpec?.containers || [])].some((container) =>
+              (container.ports || []).some((containerPort) => containerPort.name === port.targetPort && String(containerPort.protocol || "TCP").toUpperCase() === protocol)
+            );
+          });
+          if (!namedPortExists) add(resource, "warning", "Named targetPort '" + port.targetPort + "' is not declared by a matching workload container for protocol " + protocol + ".");
+        }
         if (port.nodePort != null && (!Number.isInteger(port.nodePort) || port.nodePort < 30000 || port.nodePort > 32767)) add(resource, "warning", "NodePort " + port.nodePort + " is outside the default 30000–32767 range.");
         if (port.targetPort == null) add(resource, "info", "Service port " + port.port + " omits targetPort; Kubernetes defaults it to port.");
       }
