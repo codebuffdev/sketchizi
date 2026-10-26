@@ -70,3 +70,23 @@ test("inspector updates replace only the edited YAML document source range", () 
   assert.doesNotMatch(applyFunction, /documents\.map\(\(document\) => document\.toString\(\)/);
   assert.match(applyFunction, /original YAML remains unchanged/);
 });
+
+
+test("source-range replacement preserves unrelated manifest text and comments byte-for-byte", () => {
+  const original = `# header comment\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: first\ndata:\n  greeting: "hello"\n---\n# preserve this comment exactly\napiVersion: v1\nkind: Secret\nmetadata:\n  name: second\nstringData:\n  token: "keep: colon"\n`;
+  const documents = parseAllDocuments(original, { prettyErrors: true, uniqueKeys: true });
+  assert.equal(documents.length, 2);
+  const untouchedText = original.slice(documents[1].range[0], documents[1].range[2]);
+  const edited = documents[0].toJSON();
+  edited.data.greeting = "updated";
+  const replacement = stringify(edited).trimEnd();
+  const range = documents[0].range;
+  const next = original.slice(0, range[0]) + replacement + original.slice(range[2]);
+  assert.ok(next.includes(untouchedText), "the untouched document's source range must remain byte-for-byte");
+  assert.ok(next.includes("# preserve this comment exactly"));
+  const reparsed = parseAllDocuments(next, { prettyErrors: true, uniqueKeys: true });
+  assert.equal(reparsed.length, 2);
+  assert.equal(reparsed[0].toJSON().data.greeting, "updated");
+  assert.equal(reparsed[1].toJSON().metadata.name, "second");
+  assert.equal(reparsed[1].toJSON().stringData.token, "keep: colon");
+});
