@@ -75,3 +75,9 @@ test("Compose Studio places the container inspector left of the YAML editor on d
   assert.match(css, /\.docker-studio-resource-pane\{grid-column:1;grid-row:1/);
   assert.match(css, /\.docker-studio-yaml-pane\{grid-column:2;grid-row:1/);
 });
+
+
+test("Compose YAML remains visible in the editable textarea without relying on syntax overlay", () => {
+  assert.match(css, /\.docker-studio-yaml-highlight\{display:none!important\}/);
+  assert.match(css, /\.docker-studio-yaml-input\{z-index:2;background:#0b1320!important;color:#c8d5e6!important;-webkit-text-fill-color:#c8d5e6!important/);
+});
