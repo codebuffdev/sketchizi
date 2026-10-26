@@ -755,3 +755,16 @@
 .create-design-menu .devops-studio-dropdown button {
   min-height: 46px;
 }
+
+
+/* Workspaces is a destination switcher, not an add action. */
+.create-design-menu .workspaces-menu-icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  color: currentColor;
+}
+.create-design-menu .design-studio-header-toggle {
+  gap: 8px;
+}
