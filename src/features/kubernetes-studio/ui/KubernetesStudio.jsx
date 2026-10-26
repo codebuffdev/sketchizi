@@ -242,6 +242,7 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+  const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 24 });
   const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
 
   const [manifestFontSize, setManifestFontSize] = useState(12);
@@ -338,6 +339,18 @@ spec:
   };
 
   const updateCompletions = (text, caret, force = false) => {
+    const editor = yamlEditorRef.current;
+    if (editor) {
+      const beforeCaret = text.slice(0, caret);
+      const lineIndex = beforeCaret.split("\\n").length - 1;
+      const column = beforeCaret.length - beforeCaret.lastIndexOf("\\n") - 1;
+      const lineHeight = manifestFontSize * 1.65;
+      const charWidth = manifestFontSize * 0.602;
+      setCompletionPosition({
+        top: Math.max(8, 16 + lineIndex * lineHeight - editor.scrollTop + lineHeight),
+        left: Math.max(8, Math.min(editor.clientWidth - 300, 16 + column * charWidth - editor.scrollLeft))
+      });
+    }
     const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
     if (force) setDismissedCompletionLine(null);
     else if (dismissedCompletionLine === lineStart) {
@@ -772,7 +785,7 @@ spec:
                 placeholder="Paste Kubernetes YAML here…"
               />
               {completion.items.length > 0 && (
-                <div className="k8s-yaml-completions" role="listbox" aria-label="YAML completions">
+                <div className="k8s-yaml-completions" style={{ top: completionPosition.top, left: completionPosition.left }} role="listbox" aria-label="YAML completions">
                   <div className="k8s-yaml-completion-heading">Kubernetes suggestions <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></div>
                   {completion.items.map((item, index) => (
                     <button type="button" role="option" aria-selected={index === completion.selectedIndex} className={index === completion.selectedIndex ? "k8s-yaml-completion active" : "k8s-yaml-completion"} key={item.label} onMouseDown={(event) => event.preventDefault()} onClick={() => applyCompletion(item)}>
