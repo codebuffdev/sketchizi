@@ -123,8 +123,8 @@ test("Compose runner validates dependency references and cycles before validate 
 test("Compose Studio stays focused on design-time import, validation, diagramming, and export", async () => {
   const source = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
   assert.match(source, /Import YAML/);
-  assert.match(source, /Open as diagram/);
-  assert.match(source, /Export compose\.yaml/);
-  assert.match(source, /downloadPreflightReport/);
+  assert.match(source, /Create diagram/);
+  assert.match(source, /Export YAML/);
+  assert.match(source, /const exportReport/);
   assert.doesNotMatch(source, /Execution Preflight|Deployment preflight|Start services|Stop services|Local runner URL|runnerUrl/);
 });
