@@ -692,6 +692,11 @@ spec:
       targetDocument.contents = editedDocument.contents;
       const nextYaml = documents.map((document) => document.toString().trimEnd()).filter(Boolean).join("\n---\n") + "\n";
       const previousYaml = yamlText;
+      try {
+        onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
+      } catch (callbackError) {
+        throw new Error("The editor could not apply this resource change. The original YAML remains unchanged. " + (callbackError?.message || ""));
+      }
       setYamlText(nextYaml);
       setSavedYamlText(nextYaml);
       setHasInspectedEdits(true);
@@ -699,13 +704,6 @@ spec:
       setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Revalidate the manifest set before creating the diagram.");
       setError("");
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
-      try {
-        onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
-      } catch (callbackError) {
-        setYamlText(previousYaml);
-        setSavedYamlText(previousYaml);
-        throw callbackError;
-      }
     } catch (cause) {
       setError(cause?.message || "The resource YAML could not be applied.");
     }
