@@ -267,8 +267,8 @@
 
 
 /* Keep the editable YAML surface clean: no horizontal row guides or full-editor color bands. */
-.docker-studio-yaml-highlight{display:none!important}
-.docker-studio-yaml-input{z-index:2;background:#0b1320!important;background-image:none!important;color:#c8d5e6!important;-webkit-text-fill-color:#c8d5e6!important;caret-color:#f3f6ff!important}
+.docker-studio-yaml-highlight{display:block!important;z-index:1;background:#0b1320!important;background-image:none!important}
+.docker-studio-yaml-input{z-index:2;background:transparent!important;background-image:none!important;color:transparent!important;-webkit-text-fill-color:transparent!important;caret-color:#f3f6ff!important}
 .docker-studio-yaml-input::selection{background:rgba(125,102,235,.38)!important;-webkit-text-fill-color:#fff!important}
 
 
@@ -304,7 +304,7 @@
 }
 
 /* Rainbow indentation guides, similar to IDE YAML editors. */
-.docker-studio-yaml-highlight .docker-yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--compose-indent-bg);border-radius:2px}
+.docker-studio-yaml-highlight .docker-yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--compose-indent-bg);border-radius:1px}
 .docker-studio-yaml-highlight .docker-yaml-indent-level-0{--compose-indent-bg:rgba(248,113,113,.035)}
 .docker-studio-yaml-highlight .docker-yaml-indent-level-1{--compose-indent-bg:rgba(251,191,36,.035)}
 .docker-studio-yaml-highlight .docker-yaml-indent-level-2{--compose-indent-bg:rgba(74,222,128,.03)}
