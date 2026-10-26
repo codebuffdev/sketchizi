@@ -533,7 +533,7 @@ spec:
       setBundleValuesFiles(valuesFiles);
       setSelectedValuesFile(valuesFiles[0] || "");
       setError("");
-      setNotice(originalZipFile ? "Bundle loaded. Select an environment and render it to populate the resource preview." : "Folder detected. Re-import this folder as a ZIP to render it directly in K8s Studio.");
+      setNotice(originalZipFile ? "Bundle loaded. Select an environment and render it to populate the resource preview." : "Folder loaded. Select a source and render it directly in K8s Studio.");
       return;
     }
     const invalidFiles = files.filter((file) => !/\.ya?ml$/i.test(file.name));
