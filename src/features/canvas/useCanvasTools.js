@@ -1,5 +1,16 @@
 import { useCallback } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+function recolorSvgDataUrl(dataURL, color) {
+  if (!/^#[0-9a-f]{6}$/i.test(String(color || "")) || !String(dataURL || "").startsWith("data:image/svg+xml;base64,")) return null;
+  try {
+    const svg = decodeURIComponent(escape(atob(dataURL.slice(dataURL.indexOf(",") + 1)));
+    const recolored = svg
+      .replace(/\b(fill|stroke)\s*=\s*(["\x27])(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))\2/gi, (_, property, quote) => property + "=" + quote + color + quote)
+      .replace(/\b(fill|stroke)\s*:\s*(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))/gi, (_, property) => property + ":" + color);
+    return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(recolored)));
+  } catch { return null; }
+}
+
 
 export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit = true }) {
   const getSelectedElements = useCallback(() => {
@@ -46,22 +57,20 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
 
     const selectedIds = new Set(selected.map((element) => element.id));
     const now = Date.now();
+    const files = api.getFiles?.() || {};
+    const recoloredFiles = [];
     const updatedElements = api.getSceneElements().map((element) => {
       if (!selectedIds.has(element.id)) return element;
-      // Library images are intentionally not recolored. The toolbar hides
-      // color controls for these assets; native text and shapes use Excalidraw
-      // element properties normally.
-      if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) {
-        return element;
+      if (patch.tintColor && element.type === "image" && element.customData?.iconId && !["AWS Architecture", "Kubernetes", "Networking"].includes(element.customData?.iconCategory)) {
+        const file = files[element.fileId];
+        const dataURL = recolorSvgDataUrl(file?.dataURL, patch.tintColor);
+        if (dataURL) recoloredFiles.push({ id: element.fileId, dataURL, mimeType: "image/svg+xml", created: file.created || now, lastRetrieved: now });
+        return { ...element, customData: { ...(element.customData || {}), tintColor: patch.tintColor }, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now };
       }
-      return {
-        ...element,
-        ...patch,
-        version: element.version + 1,
-        versionNonce: Math.floor(Math.random() * 2147483647),
-        updated: now,
-      };
+      if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
+      return { ...element, ...patch, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now };
     });
+    if (recoloredFiles.length) api.addFiles(recoloredFiles);
 
     api.updateScene({
       elements: updatedElements,
