@@ -295,9 +295,9 @@
 
 /* Rainbow indentation guides, similar to IDE YAML editors. */
 .docker-studio-yaml-highlight .docker-yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--compose-indent-bg);border-radius:1px}
-.docker-studio-yaml-highlight .docker-yaml-indent-level-0{--compose-indent-bg:rgba(248,113,113,.035)}
-.docker-studio-yaml-highlight .docker-yaml-indent-level-1{--compose-indent-bg:rgba(251,191,36,.035)}
-.docker-studio-yaml-highlight .docker-yaml-indent-level-2{--compose-indent-bg:rgba(74,222,128,.03)}
-.docker-studio-yaml-highlight .docker-yaml-indent-level-3{--compose-indent-bg:rgba(96,165,250,.04)}
-.docker-studio-yaml-highlight .docker-yaml-indent-level-4{--compose-indent-bg:rgba(192,132,252,.04)}
-.docker-studio-yaml-highlight .docker-yaml-indent-level-5{--compose-indent-bg:rgba(244,114,182,.035)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-0{--compose-indent-bg:rgba(248,113,113,.16)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-1{--compose-indent-bg:rgba(251,191,36,.16)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-2{--compose-indent-bg:rgba(74,222,128,.14)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-3{--compose-indent-bg:rgba(96,165,250,.17)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-4{--compose-indent-bg:rgba(192,132,252,.17)}
+.docker-studio-yaml-highlight .docker-yaml-indent-level-5{--compose-indent-bg:rgba(244,114,182,.16)}
