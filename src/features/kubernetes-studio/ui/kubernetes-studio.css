@@ -132,3 +132,12 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-studio-inspector-code .k8s-studio-inspector-editor:focus{border:0;outline:0;box-shadow:none!important}
 @media(min-width:1500px){.k8s-studio-inspector-line-numbers{font-size:14px}.k8s-studio-inspector-code .k8s-studio-inspector-editor{font-size:14px}}
 @media(max-width:640px){.k8s-studio-inspector-code{grid-template-columns:38px minmax(0,1fr)}.k8s-studio-inspector-line-numbers{padding:12px 0;font-size:12px}.k8s-studio-inspector-line-numbers span{padding-right:8px}.k8s-studio-inspector-code .k8s-studio-inspector-editor{padding:12px;font-size:12px}}
+
+
+/* Line-number gutter for the primary manifest editor (not only the inspect dialog). */
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers{position:absolute;z-index:2;top:1px;bottom:1px;left:1px;width:48px;overflow:hidden;padding-top:16px;border-right:1px solid #202d3f;border-radius:10px 0 0 10px;background:#0e1520;color:#61738d;text-align:right;user-select:none;pointer-events:none;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers>div{display:flex;flex-direction:column;will-change:transform}
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers span{display:block;height:1.65em;padding-right:12px;white-space:nowrap}
+.k8s-studio-editor .k8s-yaml-editor-shell textarea{padding-left:64px}
+.k8s-yaml-editor-shell .k8s-yaml-highlight{left:49px!important;right:1px!important;padding-left:16px!important}
+@media(max-width:640px){.k8s-yaml-editor-shell .k8s-yaml-line-numbers{width:38px;font-size:11px}.k8s-yaml-editor-shell .k8s-yaml-line-numbers span{padding-right:8px}.k8s-studio-editor .k8s-yaml-editor-shell textarea{padding-left:50px}.k8s-yaml-editor-shell .k8s-yaml-highlight{left:39px!important}}
