@@ -252,6 +252,38 @@ function validateKubernetesResources(resources) {
       if (!container.readinessProbe) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no readiness probe.");
     }
 
+    if (podSpec) {
+      const podSecurityContext = podSpec.securityContext || {};
+      if (podSecurityContext.runAsUser === 0) add(resource, "warning", "Pod securityContext explicitly runs as root (runAsUser: 0). Use a non-root user where possible.");
+      for (const volume of podSpec.volumes || []) {
+        if (volume.hostPath) add(resource, "warning", "Volume '" + (volume.name || "unnamed") + "' uses hostPath, which exposes node filesystem paths to the workload.");
+      }
+      for (const container of containers) {
+        if (container.securityContext?.allowPrivilegeEscalation === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' allows privilege escalation.");
+        if (container.securityContext?.runAsUser === 0) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' explicitly runs as root (runAsUser: 0).");
+        if (container.securityContext?.runAsNonRoot !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not enforce runAsNonRoot.");
+        if (container.securityContext?.readOnlyRootFilesystem !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not use a read-only root filesystem.");
+      }
+    }
+
+    if (["Role", "ClusterRole"].includes(resource.kind)) {
+      const rules = Array.isArray(manifest.rules) ? manifest.rules : [];
+      for (const rule of rules) {
+        if ((rule.verbs || []).includes("*")) add(resource, "warning", "RBAC rule grants wildcard verbs (*); restrict permissions to the actions required.");
+        if ((rule.resources || []).includes("*")) add(resource, "warning", "RBAC rule grants access to all resources (*); enumerate only the required resources.");
+        if ((rule.apiGroups || []).includes("*")) add(resource, "warning", "RBAC rule spans all API groups (*); restrict it to the required API groups.");
+        if ((rule.resources || []).includes("secrets") && (rule.verbs || []).some((verb) => ["*", "get", "list", "watch"].includes(verb))) {
+          add(resource, "warning", "RBAC rule can read Secrets; grant this only when the workload explicitly requires it.");
+        }
+      }
+    }
+    if (resource.kind === "ClusterRoleBinding" && manifest.roleRef?.name === "cluster-admin") {
+      add(resource, "warning", "This binding grants the cluster-admin ClusterRole; use a narrower role whenever possible.");
+    }
+    if (resource.kind === "RoleBinding" && manifest.roleRef?.name === "cluster-admin") {
+      add(resource, "warning", "This binding references cluster-admin; verify that cluster-wide administrator permissions are truly required.");
+    }
+
     if (resource.kind === "Service") {
       if (!Array.isArray(spec.ports) || !spec.ports.length) add(resource, "error", "A Service must define at least one port.");
       if (spec.selector && Object.keys(spec.selector).length) {
