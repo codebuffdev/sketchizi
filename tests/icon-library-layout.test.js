@@ -20,10 +20,13 @@ test("Only the icon result grid owns vertical scrolling and has a visible purple
   assert.match(styles, /library-icon-grid::\-webkit-scrollbar-thumb/);
 });
 
-test("Search, recent-search chips, collection menu, and view controls are present", () => {
+test("Search, recent-search chips, first-class source tabs, and view controls are present", () => {
   assert.match(panel, /Search icons, tags, or categories/);
   assert.match(panel, /library-recent-searches/);
-  assert.match(panel, /library-collections-menu/);
+  assert.match(panel, /library-source-tabs/);
+  assert.match(panel, /label: "Networking"/);
+  assert.match(panel, /label: "UML"/);
+  assert.match(panel, /label: "Mind Maps"/);
   assert.match(panel, /library-view-toggle/);
 });
 
