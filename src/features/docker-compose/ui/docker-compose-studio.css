@@ -291,17 +291,7 @@
 @media(max-width:700px){.docker-compose-yaml-completions{left:52px;width:calc(100% - 64px);max-height:210px}.docker-compose-yaml-completion{align-items:flex-start;flex-direction:column;gap:3px}.docker-compose-yaml-completion small{text-align:left}}
 
 
-/* Subtle editor row guides for easier Compose YAML scanning. */
-.docker-studio .docker-studio-yaml-input{
-  background-image:repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(1.65em - 1px),
-    rgba(148,163,184,.09) calc(1.65em - 1px),
-    rgba(148,163,184,.09) 1.65em
-  )!important;
-  background-attachment:local;
-}
+/* Horizontal row guides intentionally removed; only indentation-level colors remain. */
 
 /* Rainbow indentation guides, similar to IDE YAML editors. */
 .docker-studio-yaml-highlight .docker-yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--compose-indent-bg);border-radius:1px}
