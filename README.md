@@ -1,203 +1,38 @@
 # Sketchizi
 
-**Sketchizi** is a browser-based diagram and visual thinking tool built with React, Vite, and Excalidraw.
+**Sketchizi is a browser-based visual workspace for diagrams, cloud architecture, and infrastructure design.** It is built with React, Vite, and Excalidraw, with focused studios for Kubernetes and Docker Compose workflows.
 
-Create diagrams, flowcharts, system designs, architecture diagrams, and visual notes directly in your browser.
+Repository: https://github.com/codebuffdev/sketchizi  
+Live app: https://sketchizi.pages.dev/
 
-## Features
+## What you can do
 
-* 🎨 Excalidraw-powered drawing canvas
-* 🧩 Large **Eraser icon library**
-* 🔎 Icon search and Favorites
-* 🕘 Recently Used icons
-* 📦 Make Eraser icons available offline
-* 💾 Local persistent canvas storage
-* 📁 Recent Files for quickly reopening saved drawings
-* 📄 Native `.sketchizi` files plus `.excalidraw` compatibility
-* 🌓 Light / Dark / System theme
-* 🗺️ Minimap
-* ⌨️ Keyboard shortcuts
-* 📱 Tablet and touch support
-* 🧹 Clear canvas confirmation
-* 💽 Emergency local backup when persistent storage fails
-* 📱 PWA support
+- **Diagramming:** Create flowcharts, UML-style diagrams, architecture diagrams, mind maps, and visual notes on an Excalidraw-powered canvas.
+- **Icon library:** Search and insert architecture and Eraser catalog icons; use favorites and recently used icons.
+- **Kubernetes Studio:** Import Kubernetes YAML manifests, visualize resources and their relationships, inspect resource details, edit manifests, validate cross-resource references, and export YAML.
+- **Docker Compose Studio:** Work with Compose YAML, visualize services and their relationships, edit configuration, and export the Compose file.
+- **Canvas editing:** Use properties and contextual controls, connectors, minimap, themes, keyboard shortcuts, and diagram file import/export.
+- **Persistence and files:** Save drawings locally, reopen recent files, and work with Sketchizi's `.sketchizi` format and Excalidraw-compatible `.excalidraw` files.
+- **Collaboration:** Share a room link for real-time editing through the separate WebSocket collaboration service.
+- **Optional account features:** Authentication and related backend features depend on their configured services and deployment environment.
 
-## Tech Stack
+## Technology
 
-* **React**
-* **Vite**
-* **Excalidraw**
-* **JavaScript**
-* **CSS**
-* **IndexedDB**
-* **LocalStorage**
-* **Service Worker / PWA**
+- React and JavaScript
+- Vite
+- Excalidraw
+- CSS
+- Browser storage (including IndexedDB)
+- Node.js WebSocket collaboration server
+- Cloudflare Pages and Pages Functions for the frontend/API routes
+- Separate backend services for features that require them
 
-## Getting Started
+## Requirements
 
-### Requirements
+- Node.js and npm (use a current Node.js LTS release compatible with the lockfile and project dependencies).
+- Git to clone the repository.
 
-* Node.js
-* npm
-
-### Install
-
-```bash
-npm install
-```
-
-### Development
-
-```bash
-npm run dev
-```
-
-Open the local development URL shown by Vite.
-
-### Production Build
-
-```bash
-npm run build
-```
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
-## Project Structure
-
-```text
-sketchizi/
-├── public/
-├── functions/api/
-│   ├── eraser-catalog.js
-│   └── eraser-icon.js
-├── server/
-│   └── collaboration-server.mjs
-├── src/
-│   ├── components/app/
-│   │   ├── SketchiziCanvas.jsx
-│   │   ├── CollaborationUI.jsx
-│   │   └── MoreTools.jsx
-│   ├── features/
-│   │   ├── canvas/
-│   │   │   ├── useExcalidrawScene.js
-│   │   │   ├── useMinimapController.js
-│   │   │   └── useCanvasTools.js
-│   │   ├── collaboration/
-│   │   │   └── useCollaboration.js
-│   │   ├── files/
-│   │   │   ├── useFileManager.js
-│   │   │   └── useRecentFiles.js
-│   │   ├── icon-library/
-│   │   │   ├── useIconCatalog.js
-│   │   │   ├── useIconInsertion.js
-│   │   │   └── iconInsertionService.js
-│   │   ├── navigation/
-│   │   │   ├── useMoreTools.js
-│   │   │   ├── useNativeSketchiziMenu.js
-│   │   │   ├── usePanelState.js
-│   │   │   └── useSketchiziPreferences.js
-│   │   └── persistence/
-│   │       └── useSketchPersistence.js
-│   ├── App.jsx
-│   ├── IconLibraryPanel.jsx
-│   ├── PropertiesPanel.jsx
-│   ├── Minimap.jsx
-│   ├── ShortcutHelp.jsx
-│   ├── persistence.js
-│   ├── fileSystem.js
-│   └── styles/
-│       ├── base.css
-│       ├── library.css
-│       ├── properties.css
-│       ├── icon-library.css
-│       ├── minimap.css
-│       ├── theme.css
-│       ├── eraser.css
-│       ├── shell.css
-│       └── responsive*.css
-├── index.html
-├── package.json
-└── README.md
-```
-
-### Architecture boundaries
-
-The 1.9.0 structure keeps Excalidraw integration, collaboration, persistence, filesystem operations, icon-catalog behavior, and UI rendering behind feature-oriented boundaries. `App.jsx` is now composition/state wiring rather than the implementation home for those systems. Collaboration protocol behavior and the existing realtime synchronization path remain in their existing collaboration module/server; the refactor only changes ownership and module boundaries.
-
-
-## Local Storage
-
-Sketchizi keeps drawing data locally in the browser.
-
-The main canvas uses **IndexedDB** for persistent storage, with an emergency LocalStorage backup mechanism for storage failures.
-
-Recent drawings are stored separately so that clearing the current canvas does **not** remove your saved recent drawings.
-
-## Eraser Icon Library
-
-Sketchizi integrates the public Eraser icon catalog.
-
-Icons can be:
-
-* searched
-* dragged onto the canvas
-* favorited
-* reused from Recently Used
-* cached locally for offline use
-
-The offline library uses browser caching so previously synchronized icons remain available without an internet connection.
-
-## File Format
-
-Sketchizi supports the standard:
-
-```text
-.excalidraw
-```
-
-format.
-
-Drawings can therefore be exported and reopened using Excalidraw-compatible tools.
-
-## Keyboard Shortcuts
-
-| Shortcut    | Action                  |
-| ----------- | ----------------------- |
-| `/`         | Focus icon search       |
-| `L`         | Toggle Library          |
-| `P`         | Open Properties         |
-| `D`         | Toggle Dark / Light Theme |
-| `Shift + G` | Toggle grid             |
-| `M`         | Toggle Minimap          |
-| `F`         | Toggle fullscreen       |
-| `Esc`       | Close active panel      |
-| `?`         | Show keyboard shortcuts |
-
-Some shortcuts depend on the corresponding feature being enabled.
-
-## Logging
-
-Sketchizi uses a centralized browser logger under `src/logging/`. Application code should use `logger.debug()`, `logger.info()`, `logger.warn()`, and `logger.error()` rather than calling browser console methods directly. Development defaults to readable DevTools output for all levels; production defaults to `warn` and does not use the browser console as its production sink.
-
-Set `VITE_LOG_LEVEL` to `debug`, `info`, `warn`, or `error` when a different threshold is required. Any `VITE_*` value is client-visible, so it must never contain a private secret.
-
-Production error reporting is isolated behind `src/logging/errorReporter.js`. No vendor or custom ingestion endpoint is hard-coded. A future Sentry, Cloudflare Worker, or other provider can be configured behind that boundary without changing application call sites.
-
-The logger sanitizes structured context, excludes sensitive keys and large/private document fields, and keeps collaboration/file logging low-volume. Browser logs and collaboration-server logs are separate; the server uses `server/logger.mjs`.
-
-## Privacy
-
-Sketchizi is designed around local-first browser storage.
-
-Drawings and recent files are stored locally in the browser rather than requiring a Sketchizi account.
-
-External resources, such as the Eraser icon catalog, may require an internet connection when icons have not yet been cached locally.
-
-## Development
+## Run locally
 
 Clone the repository and install dependencies:
 
@@ -208,113 +43,126 @@ npm install
 npm run dev
 ```
 
+Open the local URL printed by Vite.
 
-**Sketchizi — Draw • Connect • Visualize**
+### Run real-time collaboration locally
 
-
-## Mind Map Library
-
-Sketchizi 1.4.0 adds a an editable Mind Maps section with Central Topic, Main Topic, Subtopic, Floating Topic, Summary, Boundary, Relationship, Branch, and Callout elements. All use the same Library drag-to-canvas interaction. The section also provides a Create starter mind map action that inserts a central topic with six connected branches.
-
-
-## Real-time collaboration
-## Collaboration session lifecycle
-
-Collaboration sessions distinguish the room creator (host) from participants (joinees). The host sees **Disconnect**; a joinee sees **Leave**.
-
-- **Disconnect** terminates the room, notifies connected participants, closes their collaboration connections, and makes the old collaboration URL unavailable. The local canvas is preserved and no automatic save is performed.
-- **Leave** removes only the current joinee. The host and other participants remain connected and the room continues.
-- If the host's WebSocket closes unexpectedly, the server terminates the room and notifies the remaining participants.
-- A terminated room ID cannot be recreated while the collaboration server remains running.
-
-
-Sketchizi collaboration is event-driven and uses a persistent WebSocket connection. The browser remains local-first: Excalidraw updates the local canvas immediately, while changed elements and binary file data are sent to a room server.
-
-### Local development
-
-Run the frontend:
-
-```bash
-npm run dev
-```
-
-In a second terminal run:
+In a second terminal, from the project directory, start the collaboration server:
 
 ```bash
 npm run collaboration-server
 ```
 
-Vite proxies `/collaboration` WebSocket traffic to `ws://localhost:8787/collaboration`.
+The local Vite setup proxies collaboration WebSocket traffic to `ws://localhost:8787/collaboration`.
 
-To collaborate:
+### Build and preview
 
-1. Open Sketchizi in Browser A.
-2. Click **Collaborate**.
-3. Copy the generated room link.
-4. Open the link in Browser B.
-5. Click **Join**.
-6. Edit the drawing in either browser.
+Create a production build:
 
-Rooms are held in server memory for the lifetime of the connected clients. They are intentionally ephemeral in this first collaboration version.
+```bash
+npm run build
+```
 
-### Eraser icon catalog
+Preview the generated build locally:
 
-The application uses the existing Cloudflare Pages Functions at `/api/eraser-catalog` and `/api/eraser-icon`. Those functions read the public Eraser catalog/assets and remain the production runtime path.
+```bash
+npm run preview
+```
 
-The Vite development server now mounts the same functions locally, so `npm run dev` no longer produces a 404 for the Eraser catalog. `npm run sync:eraser` remains the existing project utility for downloading a local Eraser icon catalog/assets; it is not required just to load the catalog in the application.
+## Kubernetes Studio
 
-### Narrow responsive layout
+Kubernetes Studio turns Kubernetes manifests into a visual resource graph and supports a YAML-and-diagram workflow.
 
-Version 1.8.6 keeps the 1.8.5 responsive shell intact. At compact tablet widths the collaboration status uses a bounded center lane; at 761–900px it moves to a dedicated top status lane. When collaboration is active, Sketchizi Library and Properties surfaces begin below that status lane so they do not cover lifecycle controls. Excalidraw’s native toolbar is left under Excalidraw’s own responsive layout.
+Current workflow capabilities include:
 
-## Collaboration capacity
+1. Import YAML containing Kubernetes resources.
+2. Generate resource cards and relationship connectors on the canvas.
+3. Inspect resources and their manifest details.
+4. Edit YAML and synchronize supported resource details and relationships back to the diagram.
+5. Run manifest and cross-resource dependency diagnostics.
+6. Export the manifest YAML.
+7. Re-import manifests while avoiding duplicate diagram resources and stale connectors.
 
-The current collaboration server enforces **no explicit per-room participant limit**. A room's participants are tracked in an in-memory `Set` (`room.clients`), and each connected client is included in presence broadcasts. The server does enforce message/scene/file limits (`MAX_MESSAGE_BYTES`, `MAX_ELEMENTS`, `MAX_FILES`, and `MAX_FILE_DATA_URL`), but none of those is a participant-count limit. The per-file data-URL allowance is kept below the 8 MiB WebSocket message ceiling with room for JSON overhead; an oversized or malformed file is rejected with a specific reason in the collaboration status and server logs.
+Validation guidance can flag configuration issues and unresolved references. These diagnostics are intended to assist review; they are not a replacement for Kubernetes API-server validation, policy enforcement, or a deployment dry run.
 
-The practical ceiling is therefore determined by the resources and deployment constraints of the single collaboration-server process: memory, CPU, network bandwidth, WebSocket connection capacity, and the frequency/size of scene updates. No Cloudflare-specific or hosting-provider per-room participant limit is configured in this repository.
+## Docker Compose Studio
 
-### Production
+Docker Compose Studio supports importing a Compose YAML file, visualizing services and their connections, editing configuration, and exporting the Compose file. Exact diagram coverage depends on the Compose constructs supported by the current implementation.
 
-Run the collaboration server separately and set:
+## Collaboration setup
+
+The frontend and collaboration server are separate processes. For production, deploy the Node collaboration service separately and configure the frontend build with the WebSocket endpoint:
 
 ```text
 VITE_COLLAB_WS_URL=wss://your-host.example/collaboration
 ```
 
-The WebSocket endpoint should be served over `wss://` when Sketchizi itself is served over HTTPS. In a deployed build, `VITE_COLLAB_WS_URL` is required; without it, Sketchizi must not silently try the static Pages origin as though it were the collaboration server. Configure this variable in the Cloudflare Pages project for the intended environment and trigger a new build/deployment. The value must include the exact `/collaboration` path. Confirm the Node collaboration service is healthy at its `/health` endpoint before testing from the UI.
+Use `wss://` when the app is served over HTTPS, and include the exact `/collaboration` path. Configure the variable in the appropriate hosting environment and rebuild/redeploy the frontend after changing it. Check the collaboration service's health endpoint and hosting logs when diagnosing connection problems.
 
-### Collaboration protocol
+Do not commit secrets. Any `VITE_*` environment variable is exposed to browser code and must contain only public configuration. Keep backend credentials and signing secrets in server-side environment configuration.
 
-The client sends:
+## Useful scripts
 
-- `join` with the current local snapshot
-- `update` with only changed Excalidraw elements and changed binary files
+The project defines additional focused checks in `package.json`. Common commands include:
 
-The server keeps a room-level element map and merges updates by Excalidraw `version`, using `versionNonce` as a deterministic tie-breaker for concurrent writes to the same element. Deleted elements remain as Excalidraw tombstones so deletions propagate correctly.
+```bash
+npm run build
+npm run test:all
+npm run test:kubernetes-relationships
+npm run test:kubernetes-resource-validation
+npm run test:kubernetes-completeness
+npm run test:kubernetes-corrections
+npm run test:production-workflow
+```
 
-A joining client receives the current room scene. Remote updates are merged into the local scene rather than blindly replacing the entire scene for every incremental event.
+Run a focused test while developing a feature, then run the broader suite before release. A script being available does not mean it has already passed in a given checkout; check the actual command output or CI run.
 
-The server validates room IDs, message sizes, element identifiers/version fields, and binary file payload sizes. It does not expose filesystem access or execute client-provided code.
+## Repository layout
 
-### Images
+```text
+sketchizi/
+├── public/                         # Static assets
+├── functions/                      # Cloudflare Pages Functions
+├── server/                         # Node collaboration server and server utilities
+├── src/
+│   ├── components/                 # Shared application UI
+│   ├── features/
+│   │   ├── canvas/                 # Canvas interaction
+│   │   ├── collaboration/          # Collaboration client
+│   │   ├── files/                  # File handling and recent files
+│   │   ├── icon-library/           # Icon catalog and insertion
+│   │   ├── kubernetes-resources/   # Kubernetes resource graph utilities
+│   │   ├── kubernetes-studio/      # Kubernetes Studio workspace
+│   │   ├── navigation/             # App navigation and preferences
+│   │   └── persistence/            # Local persistence
+│   └── styles/                     # Application styles
+├── tests/                          # Automated tests
+├── scripts/                        # Build and verification utilities
+├── package.json
+└── README.md
+```
 
-Image elements and their `BinaryFileData` are included in the collaboration snapshot/update protocol. This first version keeps those file payloads in the room server's memory and forwards them to connected participants. Large files are rejected by the server's payload limits.
+This is a high-level map; individual files and feature boundaries may evolve.
 
-## Responsive layout (1.9.0)
+## Data and privacy notes
 
-Sketchizi's stylesheet retains responsive layout rules for desktop (`>=1200px`), tablet/compact desktop (`761–1199px`), and narrow viewports. Phone devices are blocked at the application entry point before the drawing workspace, sign-in controls, or collaboration UI are mounted. Tablets and desktop browsers remain supported; a desktop browser is not blocked merely because its window is narrow.
+- Canvas persistence is primarily browser-local; local data is associated with the browser and its storage.
+- Collaboration sends scene updates and required image/file payloads to the configured collaboration server so participants can share the room state.
+- Icon catalogs and separately hosted services may require network access.
+- Do not place private credentials, tokens, or sensitive information in diagrams intended for shared collaboration.
+- Review the deployment configuration and service-specific documentation before enabling optional authentication or backend integrations.
 
-The phone gate uses phone-specific user-agent signals, mobile UA Client Hints, and physical screen dimensions rather than the current viewport width alone. This allows tablets (including iPadOS desktop-site mode) while blocking recognized smartphone browsers. The dedicated gate explains that Sketchizi requires a tablet or desktop computer.
+## Contributing
 
-The application shell uses containing `100%` dimensions with document-level overflow disabled to avoid accidental browser horizontal/vertical scrolling. Panels are viewport-bounded and scroll internally.
+1. Create a feature branch from the current `main`.
+2. Keep changes scoped to the feature and update relevant tests or documentation.
+3. Run the focused tests and production build where possible.
+4. Open a pull request describing the behavior change, verification performed, and any remaining limitations.
 
-## Google Sign-In foundation (Phase 1)
+## License
 
-The optional Google Sign-In foundation and Spring Boot authentication service are documented in [`docs/GOOGLE_AUTH_SETUP.md`](docs/GOOGLE_AUTH_SETUP.md). Authentication is optional; diagramming and collaboration remain available without signing in. The current implementation does not include AI Ask, Spring AI, Gemini, or AI usage limits. See [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) for the verification status and remaining manual integration checks.
+Check the repository's license file and any third-party asset/license terms before redistributing or using the project commercially.
 
+---
 
-
-### Collaboration creation troubleshooting
-
-The Node collaboration service emits structured JSON logs for WebSocket upgrade requests, accepted connections, `join` messages, host authorization rejection reasons, room creation, join acknowledgement, and close codes/reasons. Search the Render collaboration-service logs for `Collaboration host authorization rejected` to distinguish missing configuration from a signature or room-claim mismatch. Never paste `COLLAB_HOST_TOKEN_SECRET` or any host token into logs or support messages. The same `COLLAB_HOST_TOKEN_SECRET` (at least 32 UTF-8 bytes) must be configured independently in both the Spring Boot auth service and Node collaboration service.
-
+**Sketchizi — Draw, connect, and visualize.**
