@@ -1535,7 +1535,7 @@ function App() {
           )}
         </aside>
 
-        <section className="desktop-canvas-region" aria-label="Canvas workspace">
+        <section className="desktop-canvas-region" aria-label="Canvas workspace" onPointerDownCapture={() => { if (devopsStudioMenuOpen) setDevopsStudioMenuOpen(false); }} onClickCapture={() => { if (devopsStudioMenuOpen) setDevopsStudioMenuOpen(false); }}>
           <SketchiziCanvas
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
