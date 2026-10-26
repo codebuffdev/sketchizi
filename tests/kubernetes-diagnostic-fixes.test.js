@@ -200,9 +200,8 @@ test("K8s Studio detects Kustomize and Helm source bundles before treating files
   assert.match(studio, /bundleSources\.map/);
   assert.match(studio, /selectedBundleSource/);
   assert.match(studio, /Source templates are not rendered Kubernetes manifests/);
-  assert.match(studio, /K8s Studio does not pretend raw templates are deployable manifests/);
   assert.match(studio, /webkitdirectory/);
-  assert.match(studio, /This keeps patches, generators, and transformations accurate/);
+  assert.match(studio, /render the selected source, then import the rendered YAML/);
 });
 
 test("K8s Studio validates direct env references, optional dependencies, storage classes and mount paths", async () => {
