@@ -381,3 +381,19 @@ test("K8s Studio integration: selector expressions distinguish matching and non-
   const invalidMessages = validateKubernetesResources([workload, invalidPdb]).map((issue) => issue.message);
   assert.ok(invalidMessages.some((message) => message.includes("PodDisruptionBudget selector does not match a workload")));
 });
+
+
+test("K8s Studio reports malformed RBAC rules, role references and subjects", () => {
+  const resources = [
+    { id: "role-bad", kind: "Role", name: "broken", namespace: "production", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role", metadata: { name: "broken", namespace: "production" }, rules: [{ verbs: [], resources: [] }] } },
+    { id: "cluster-binding-bad", kind: "ClusterRoleBinding", name: "broken-binding", namespace: "", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRoleBinding", metadata: { name: "broken-binding" }, roleRef: { kind: "Role", name: "broken" }, subjects: [{ kind: "Pod", name: "" }] } },
+    { id: "role-binding-empty", kind: "RoleBinding", name: "empty-binding", namespace: "production", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding", metadata: { name: "empty-binding", namespace: "production" }, roleRef: { kind: "Role", name: "broken" }, subjects: [] } },
+  ];
+  const issues = validateKubernetesResources(resources);
+  const messages = issues.map((issue) => issue.message);
+  assert.ok(messages.some((message) => message.includes("must define a non-empty verbs list")));
+  assert.ok(messages.some((message) => message.includes("must define resources or nonResourceURLs")));
+  assert.ok(messages.some((message) => message.includes("ClusterRoleBinding roleRef.kind must be ClusterRole")));
+  assert.ok(messages.some((message) => message.includes("subject 1 must define a supported kind and name")));
+  assert.ok(messages.some((message) => message.includes("must define at least one subject")));
+});
