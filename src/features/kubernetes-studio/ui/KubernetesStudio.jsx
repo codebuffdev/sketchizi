@@ -404,13 +404,13 @@ function validateKubernetesResources(resources) {
       else if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolumeClaim contains an unsupported access mode.");
     }
     if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
-    if (resource.kind === "PersistentVolumeClaim" && spec.storageClassName && !hasResource("StorageClass", spec.storageClassName, null)) {
+    if (resource.kind === "PersistentVolumeClaim" && spec.storageClassName && !resources.some((candidate) => candidate.kind === "StorageClass" && candidate.name === spec.storageClassName)) {
       add(resource, "warning", "PersistentVolumeClaim references StorageClass '" + spec.storageClassName + "', which is not present in this manifest set (it may be provided by the cluster).");
     }
-    if (resource.kind === "PersistentVolume" && spec.storageClassName && !hasResource("StorageClass", spec.storageClassName, null)) {
+    if (resource.kind === "PersistentVolume" && spec.storageClassName && !resources.some((candidate) => candidate.kind === "StorageClass" && candidate.name === spec.storageClassName)) {
       add(resource, "warning", "PersistentVolume references StorageClass '" + spec.storageClassName + "', which is not present in this manifest set (it may be provided by the cluster).");
     }
-    if (resource.kind === "PersistentVolume" && spec.claimRef?.name && !hasResource("PersistentVolumeClaim", spec.claimRef.name, spec.claimRef.namespace || "default")) {
+    if (resource.kind === "PersistentVolume" && spec.claimRef?.name && !resources.some((candidate) => candidate.kind === "PersistentVolumeClaim" && candidate.name === spec.claimRef.name && candidate.namespace === (spec.claimRef.namespace || "default"))) {
       add(resource, "warning", "PersistentVolume claimRef references PersistentVolumeClaim '" + spec.claimRef.name + "', which is not present in this manifest set.");
     }
     if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) && spec.replicas != null && (!Number.isInteger(spec.replicas) || spec.replicas < 0)) add(resource, "error", "spec.replicas must be a non-negative integer.");
