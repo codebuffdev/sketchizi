@@ -303,8 +303,8 @@ export default function DesktopAppHeader({
 
       <div
         className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
-        title={`${currentDocumentName}${currentDocumentDirty ? " — changes not saved to file" : currentDocumentFileBacked ? " — linked file" : " — browser-local canvas"}`}
-        aria-label={`Current document: ${currentDocumentName}. ${currentDocumentDirty ? "Changes not saved to file." : currentDocumentFileBacked ? "Connected to a file." : "Browser-local canvas."}`}
+        title={`${currentDocumentName}${currentDocumentFileBacked ? (currentDocumentDirty ? " — file changes not saved" : " — linked file") : ` — ${saveStateLabel.toLowerCase()}`}`}
+        aria-label={`Current document: ${currentDocumentName}. ${currentDocumentFileBacked ? (currentDocumentDirty ? "File changes are not saved." : "Connected to a file.") : saveStateLabel + "."}`}
       >
         <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M6 3.75h8l4 4v12.5H6z" />
@@ -313,7 +313,7 @@ export default function DesktopAppHeader({
         <span className="desktop-app-document-identity-copy">
           <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
           <span className="desktop-app-document-identity-state">
-            {currentDocumentDirty ? "Changes not saved to file" : currentDocumentFileBacked ? "Linked file" : "Local canvas"}
+            {currentDocumentFileBacked ? (currentDocumentDirty ? "File changes not saved" : "Linked file") : saveStateLabel}
           </span>
         </span>
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
