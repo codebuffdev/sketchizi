@@ -264,3 +264,9 @@
   .docker-studio-resource-pane{grid-column:1;grid-row:1;border-right:0;border-bottom:1px solid #29384c}
   .docker-studio-yaml-pane{grid-column:1;grid-row:2;border-left:0}
 }
+
+
+/* Reliability fix: render the actual editable YAML text visibly above the syntax layer. */
+.docker-studio-yaml-highlight{display:none!important}
+.docker-studio-yaml-input{z-index:2;background:#0b1320!important;color:#c8d5e6!important;-webkit-text-fill-color:#c8d5e6!important;caret-color:#f3f6ff!important}
+.docker-studio-yaml-input::selection{background:rgba(125,102,235,.38)!important;-webkit-text-fill-color:#fff!important}
