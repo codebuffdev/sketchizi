@@ -989,21 +989,24 @@ function App() {
       ];
     });
     const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-    const generatedIds = new Set(existing.filter((element) => {
+    const importedResourceIds = new Set(existing.filter((element) => {
       const metadata = element.customData?.kubernetesManifestResource;
-      return metadata?.properties?.manifestResourceId || metadata?.properties?.importedFromYaml || metadata?.importedFromYaml;
+      return !element.isDeleted && Boolean(metadata?.importedFromYaml || metadata?.properties?.importedFromYaml);
+    }).map((element) => element.customData?.kubernetesManifestResource?.properties?.manifestResourceId).filter(Boolean));
+    const staleRelationshipIds = new Set(existing.filter((element) => {
+      const relationship = element.customData?.kubernetesRelationship;
+      return !element.isDeleted && element.type === "arrow" && relationship
+        && (importedResourceIds.has(relationship.fromResourceId) || importedResourceIds.has(relationship.toResourceId));
     }).map((element) => element.id));
-    const replacedResourceIds = new Set(existing.map((element) => element.customData?.kubernetesManifestResource?.properties?.manifestResourceId).filter(Boolean));
     const retained = existing.filter((element) => {
       if (element.isDeleted) return true;
       const metadata = element.customData?.kubernetesManifestResource;
       if (metadata?.importedFromYaml || metadata?.properties?.importedFromYaml) return false;
-      const relationship = element.customData?.kubernetesRelationship;
-      if (element.type === "arrow" && relationship && (replacedResourceIds.has(relationship.fromResourceId) || replacedResourceIds.has(relationship.toResourceId))) return false;
+      if (staleRelationshipIds.has(element.id)) return false;
       return true;
     }).map((element) => {
-      if (!Array.isArray(element.boundElements) || !element.boundElements.some((binding) => generatedIds.has(binding.id))) return element;
-      return { ...element, boundElements: element.boundElements.filter((binding) => !generatedIds.has(binding.id)) };
+      if (!Array.isArray(element.boundElements) || !element.boundElements.some((binding) => staleRelationshipIds.has(binding.id))) return element;
+      return { ...element, boundElements: element.boundElements.filter((binding) => !staleRelationshipIds.has(binding.id)), version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
     });
     api.updateScene({
       elements: [...retained, ...created],
