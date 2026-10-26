@@ -3,10 +3,10 @@ import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 function recolorSvgDataUrl(dataURL, color) {
   if (!/^#[0-9a-f]{6}$/i.test(String(color || "")) || !String(dataURL || "").startsWith("data:image/svg+xml;base64,")) return null;
   try {
-    const svg = decodeURIComponent(escape(atob(dataURL.slice(dataURL.indexOf(",") + 1)));
+    const svg = decodeURIComponent(escape(atob(dataURL.slice(dataURL.indexOf(",") + 1))));
     const recolored = svg
-      .replace(/\b(fill|stroke)\s*=\s*(["\x27])(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))\2/gi, (_, property, quote) => property + "=" + quote + color + quote)
-      .replace(/\b(fill|stroke)\s*:\s*(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))/gi, (_, property) => property + ":" + color);
+      .replace(/\b(fill|stroke)\s*=\s*(["\x27])(?!none\2|transparent\2)[^"\x27]+\2/gi, (_, property, quote) => property + "=" + quote + color + quote)
+      .replace(/\b(fill|stroke)\s*:\s*(?!none\b|transparent\b)[^;"}]+/gi, (_, property) => property + ":" + color);
     return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(recolored)));
   } catch { return null; }
 }
