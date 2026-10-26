@@ -283,6 +283,8 @@ spec:
   const [importedFileNames, setImportedFileNames] = useState([]);
   const hasUnsavedChanges = yamlText !== savedYamlText;
   const [notice, setNotice] = useState("");
+  const [bundleSources, setBundleSources] = useState([]);
+  const [selectedBundleSource, setSelectedBundleSource] = useState("");
   const [error, setError] = useState("");
   const [inspectedResourceId, setInspectedResourceId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -498,24 +500,21 @@ spec:
     const paths = files.map((file) => String(file.webkitRelativePath || file.name).replace(/\\/g, "/"));
     const kustomizeFiles = paths.filter((path) => /(^|\/)(?:kustomization\.ya?ml|Kustomization)$/i.test(path));
     const helmCharts = paths.filter((path) => /(^|\/)Chart\.yaml$/i.test(path));
-    if (kustomizeFiles.length) {
-      const source = kustomizeFiles[0];
-      const overlayDirectory = source.slice(0, source.lastIndexOf("/")) || "<overlay-directory>";
+    if (kustomizeFiles.length || helmCharts.length) {
+      const sourceOptions = [
+        ...kustomizeFiles.map((path) => ({ type: "kustomize", path, directory: path.slice(0, path.lastIndexOf("/")) || ".", label: "Kustomize · " + (path.slice(0, path.lastIndexOf("/")) || ".") })),
+        ...helmCharts.map((path) => ({ type: "helm", path, directory: path.slice(0, path.lastIndexOf("/")) || ".", label: "Helm chart · " + (path.slice(0, path.lastIndexOf("/")) || ".") })),
+      ].sort((a, b) => {
+        const rank = (entry) => entry.type === "kustomize" && /overlays?\/(staging|production)/i.test(entry.directory) ? 0 : entry.type === "kustomize" && /overlays?\//i.test(entry.directory) ? 1 : entry.type === "helm" ? 2 : 3;
+        return rank(a) - rank(b) || a.directory.localeCompare(b.directory);
+      });
       setYamlText("");
       setSavedYamlText("");
       setImportedFileNames(paths);
+      setBundleSources(sourceOptions);
+      setSelectedBundleSource(sourceOptions[0]?.path || "");
       setError("");
-      setNotice("Kustomize bundle loaded (" + kustomizeFiles.length + " kustomization file(s)). The starter manifest has been cleared. Render the selected overlay with: kubectl kustomize " + overlayDirectory + " > rendered-kustomize.yaml, then import rendered-kustomize.yaml. This keeps patches, generators, and transformations accurate. K8s Studio does not silently approximate Kustomize rendering, patches, generators, or transformations.");
-      return;
-    }
-    if (helmCharts.length) {
-      const chartFile = helmCharts[0];
-      const chartDirectory = chartFile.slice(0, chartFile.lastIndexOf("/")) || "<chart-directory>";
-      setYamlText("");
-      setSavedYamlText("");
-      setImportedFileNames(paths);
-      setError("");
-      setNotice("Helm bundle loaded. The starter manifest has been cleared. Render the chart with: helm template <release-name> " + chartDirectory + " -f <values.yaml> > rendered-helm.yaml, then import rendered-helm.yaml. This preserves Helm values and template functions; K8s Studio does not pretend raw templates are deployable manifests.");
+      setNotice("Bundle loaded. Choose a Kustomize overlay or Helm chart below. Source templates are not rendered Kubernetes manifests; render the selected source, then import the rendered YAML to populate the resource preview.");
       return;
     }
     const invalidFiles = files.filter((file) => !/\.ya?ml$/i.test(file.name));
@@ -600,8 +599,25 @@ spec:
           <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-folder")?.click()}>Import folder</button>
           <input id="k8s-studio-source-folder" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
           <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import Kubernetes YAML, or choose a source bundle for render instructions."}</span>
-          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setNotice(""); setError(""); }}>Clear</button>
+          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setBundleSources([]); setSelectedBundleSource(""); setNotice(""); setError(""); }}>Clear</button>
         </div>
+
+        {bundleSources.length > 0 && (
+          <section className="k8s-studio-bundle-panel" aria-label="Bundle source selection">
+            <label htmlFor="k8s-studio-bundle-source">Detected source</label>
+            <select id="k8s-studio-bundle-source" value={selectedBundleSource} onChange={(event) => setSelectedBundleSource(event.target.value)}>
+              {bundleSources.map((source) => <option key={source.path} value={source.path}>{source.label}</option>)}
+            </select>
+            <p>{(() => {
+              const source = bundleSources.find((entry) => entry.path === selectedBundleSource);
+              if (!source) return "Select a source to see its render command.";
+              return source.type === "kustomize"
+                ? "From the extracted bundle directory, run: kubectl kustomize " + source.directory + " > rendered-kustomize.yaml"
+                : "From the extracted bundle directory, run: helm template shop " + source.directory + " -f " + source.directory + "/values.yaml > rendered-helm.yaml. Replace values.yaml with values-staging.yaml or values-production.yaml for an environment-specific render.";
+            })()}</p>
+            <p>Import the resulting rendered YAML with <strong>Import YAML</strong>. The browser does not render Helm or Kustomize source, so resources appear after the rendered output is imported.</p>
+          </section>
+        )}
 
         <div className="k8s-studio-workspace" ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
           <section className="k8s-studio-editor">
