@@ -422,7 +422,7 @@ function validateKubernetesResources(resources) {
         const rollingUpdate = strategy.rollingUpdate;
         const validRolloutValue = (value) => value == null
           || (Number.isInteger(value) && value >= 0)
-          || (typeof value === "string" && /^(?:\\d{1,2}|100)%$/.test(value));
+          || (typeof value === "string" && value.endsWith("%") && Number.isInteger(Number(value.slice(0, -1))) && Number(value.slice(0, -1)) >= 0 && Number(value.slice(0, -1)) <= 100);
         for (const field of ["maxSurge", "maxUnavailable"]) {
           if (!validRolloutValue(rollingUpdate[field])) add(resource, "error", "Deployment rollingUpdate." + field + " must be a non-negative integer or a percentage from 0% to 100%.");
         }
@@ -435,7 +435,7 @@ function validateKubernetesResources(resources) {
       const hasMaxUnavailable = spec.maxUnavailable != null;
       if (hasMinAvailable === hasMaxUnavailable) add(resource, "error", "PodDisruptionBudget must define exactly one of spec.minAvailable or spec.maxUnavailable.");
       const validDisruptionValue = (value) => (Number.isInteger(value) && value >= 0)
-        || (typeof value === "string" && /^(?:\\d{1,2}|100)%$/.test(value));
+        || (typeof value === "string" && value.endsWith("%") && Number.isInteger(Number(value.slice(0, -1))) && Number(value.slice(0, -1)) >= 0 && Number(value.slice(0, -1)) <= 100);
       for (const field of ["minAvailable", "maxUnavailable"]) {
         if (spec[field] != null && !validDisruptionValue(spec[field])) add(resource, "error", "PodDisruptionBudget " + field + " must be a non-negative integer or a percentage from 0% to 100%.");
       }
