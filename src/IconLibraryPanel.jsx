@@ -146,6 +146,7 @@ export default function IconLibraryPanel({
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
+  const selectedIcon = displayedIcons.find((icon) => icon.id === selectedIconId) || null;
   const withSelectedEssentialColor = (icon) => activeSource === "eraser" ? { ...icon, tintColor: selectedEssentialColor } : icon;
   const activeChip = activeSource;
   const sourceTabs = [
@@ -223,6 +224,22 @@ export default function IconLibraryPanel({
               </div>
             </div>
           </div>
+
+          {selectedIcon && (
+            <div className="library-selected-action" role="region" aria-label="Selected icon">
+              <div className="library-selected-preview">
+                <img src={selectedIcon.src} alt="" draggable={false} />
+                <div className="library-selected-copy">
+                  <span className="library-selected-eyebrow">Selected asset</span>
+                  <strong>{selectedIcon.name}</strong>
+                  <span>{getIconSubtitle(selectedIcon)}</span>
+                </div>
+              </div>
+              <button type="button" className="library-selected-add" onClick={() => handleIconClick(withSelectedEssentialColor(selectedIcon))}>
+                <span aria-hidden="true">＋</span> Add to canvas
+              </button>
+            </div>
+          )}
 
           {remoteLoading && activeSource === "eraser" && displayedIcons.length === 0 ? <div className="empty">Loading icons…</div> : shownIcons.length > 0 ? <div ref={iconListRef} className={`icon-grid library-icon-grid ${viewMode === "list" ? "is-list-view" : ""} ${cardLayout === "compact" ? "is-compact-layout" : ""}`} onScroll={(event) => {
             const el = event.currentTarget;
