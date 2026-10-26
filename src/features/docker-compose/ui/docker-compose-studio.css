@@ -266,9 +266,29 @@
 }
 
 
-/* Reliability fix: render the actual editable YAML text visibly above the syntax layer. */
+/* Keep Compose text readable and add low-contrast, editor-style indentation guides. */
 .docker-studio-yaml-highlight{display:none!important}
-.docker-studio-yaml-input{z-index:2;background:#0b1320!important;color:#c8d5e6!important;-webkit-text-fill-color:#c8d5e6!important;caret-color:#f3f6ff!important}
+.docker-studio-yaml-input{
+  z-index:2;
+  background-color:#0b1320!important;
+  background-image:repeating-linear-gradient(to right,
+    transparent 0,transparent calc(2ch - 1px),
+    rgba(248,113,113,.10) calc(2ch - 1px),rgba(248,113,113,.10) 2ch,
+    transparent 2ch,transparent calc(4ch - 1px),
+    rgba(251,191,36,.10) calc(4ch - 1px),rgba(251,191,36,.10) 4ch,
+    transparent 4ch,transparent calc(6ch - 1px),
+    rgba(74,222,128,.09) calc(6ch - 1px),rgba(74,222,128,.09) 6ch,
+    transparent 6ch,transparent calc(8ch - 1px),
+    rgba(96,165,250,.10) calc(8ch - 1px),rgba(96,165,250,.10) 8ch,
+    transparent 8ch,transparent calc(10ch - 1px),
+    rgba(192,132,252,.10) calc(10ch - 1px),rgba(192,132,252,.10) 10ch,
+    transparent 10ch,transparent calc(12ch - 1px),
+    rgba(244,114,182,.09) calc(12ch - 1px),rgba(244,114,182,.09) 12ch)!important;
+  background-size:12ch 100%!important;
+  background-position:60px 0!important;
+  background-repeat:repeat!important;
+  color:#c8d5e6!important;-webkit-text-fill-color:#c8d5e6!important;caret-color:#f3f6ff!important
+}
 .docker-studio-yaml-input::selection{background:rgba(125,102,235,.38)!important;-webkit-text-fill-color:#fff!important}
 
 
