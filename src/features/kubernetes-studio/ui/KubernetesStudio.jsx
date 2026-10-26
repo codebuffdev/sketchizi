@@ -349,7 +349,7 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
     const onMove = (event) => {
       if (!splitDragRef.current || !workspaceRef.current) return;
       const rect = workspaceRef.current.getBoundingClientRect();
-      const next = ((event.clientX - rect.left) / rect.width) * 100;
+      const next = 100 - ((event.clientX - rect.left) / rect.width) * 100;
       setPreviewSplit(Math.max(28, Math.min(72, next)));
     };
     const onUp = () => { splitDragRef.current = false; document.body.classList.remove("k8s-studio-resizing"); };
