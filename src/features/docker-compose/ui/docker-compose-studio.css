@@ -253,3 +253,14 @@
 .docker-studio-yaml-first .docker-studio-footer{display:flex;justify-content:space-between;gap:12px;flex-shrink:0;padding:8px 16px;border-top:1px solid #29384c;background:#0c1522;color:#7f93ad;font-size:10px}
 @media(max-width:900px){.docker-studio-toolbar{align-items:flex-start;flex-direction:column}.docker-studio-toolbar-actions{justify-content:flex-start}.docker-studio-k8s-workspace{grid-template-columns:minmax(0,1fr) minmax(260px,.8fr)}}
 @media(max-width:700px){.docker-studio-k8s-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(280px,1fr) minmax(220px,.8fr);overflow:auto}.docker-studio-yaml-pane{border-right:0;border-bottom:1px solid #29384c}.docker-studio-toolbar-context{flex-wrap:wrap}.docker-studio-toolbar-actions button{flex:1 1 auto}.docker-studio-container-list{max-height:none}.docker-studio-yaml-first .docker-studio-footer{flex-direction:column;gap:4px}.docker-studio-validation-strip.expanded{max-height:140px}}
+
+
+/* Keep the live container/service inspector on the left and Compose YAML on the right. */
+.docker-studio-k8s-workspace{grid-template-columns:minmax(300px,.8fr) minmax(0,1.45fr)}
+.docker-studio-resource-pane{grid-column:1;grid-row:1;border-right:1px solid #29384c}
+.docker-studio-yaml-pane{grid-column:2;grid-row:1;border-right:0;border-left:0}
+@media(max-width:700px){
+  .docker-studio-k8s-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(280px,.8fr) minmax(280px,1fr)}
+  .docker-studio-resource-pane{grid-column:1;grid-row:1;border-right:0;border-bottom:1px solid #29384c}
+  .docker-studio-yaml-pane{grid-column:1;grid-row:2;border-left:0}
+}
