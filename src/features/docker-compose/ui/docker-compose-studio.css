@@ -206,6 +206,12 @@
 .docker-studio-container-card.selected{border-color:#8a74f1;background:#211f3b;box-shadow:inset 2px 0 #9b87ff}
 .docker-studio-container-icon{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:7px;background:#202d42;color:#b6a7ff}
 .docker-studio-container-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.docker-studio-container-icon-web{color:#8b9dff;background:#202744}
+.docker-studio-container-icon-server{color:#7dd3fc;background:#1b2d3e}
+.docker-studio-container-icon-database{color:#86efac;background:#1c332e}
+.docker-studio-container-icon-worker{color:#fbbf24;background:#382f1e}
+.docker-studio-container-icon-storage{color:#c4b5fd;background:#2b2541}
+.docker-studio-container-icon-container{color:#b6a7ff;background:#202d42}
 .docker-studio-container-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
 .docker-studio-container-copy strong{font-size:12px;color:#eef3fb;overflow-wrap:anywhere}
 .docker-studio-container-copy small{font-size:10px;line-height:1.35;color:#9aacc3;overflow-wrap:anywhere}
