@@ -13,21 +13,16 @@ export const KUBERNETES_RELATIONSHIP_TYPES = Object.freeze([
 const SEMANTIC_PAIRS = new Map([
   ["contains", new Set([
     "cluster->namespace",
-    ...[
-      "pod", "deployment", "statefulset", "daemonset", "replicaset", "job", "cronjob",
-      "service", "ingress", "configmap", "secret", "persistentvolumeclaim", "serviceaccount",
-      "role", "rolebinding", "resourcequota", "limitrange", "networkpolicy",
-      "horizontalpodautoscaler", "poddisruptionbudget", "servicemonitor", "endpointslice",
-    ].map((kind) => `namespace->${kind}`),
+    "namespace->pod",
+    "namespace->deployment",
+    "namespace->statefulset",
+    "namespace->daemonset",
+    "namespace->service",
   ])],
   ["schedules", new Set([
-    "deployment->replicaset",
     "deployment->pod",
-    "replicaset->pod",
     "statefulset->pod",
     "daemonset->pod",
-    "job->pod",
-    "cronjob->job",
   ])],
   ["exposes", new Set(["service->pod"])],
   ["runs-on", new Set(["pod->node"])],

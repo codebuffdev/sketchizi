@@ -155,3 +155,11 @@ test("K8s Studio validates Service routing against matching workload ports", asy
   assert.match(studio, /Service port name .* must be a lowercase alphanumeric name/);
   assert.match(studio, /matchingWorkloads = workloads\.filter/);
 });
+
+
+test("cross-resource validation resolves cluster-scoped dependencies independent of namespace", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /const CLUSTER_SCOPED_KINDS = new Set/);
+  assert.match(studio, /CLUSTER_SCOPED_KINDS\.has\(kind\) \|\| namespace == null \|\| candidate\.namespace === namespace/);
+  assert.match(studio, /Role binding references .* which is not present in this manifest set/);
+});

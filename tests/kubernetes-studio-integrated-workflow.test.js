@@ -48,14 +48,3 @@ test("multi-file import resets source tracking consistently when cleared", () =>
   assert.match(source, /setImportedFileNames\(\[\]\)/);
   assert.match(source, /setImportedFileNames\(importedFiles\.map\(\(file\) => file\.name\)\)/);
 });
-
-
-test("K8s diagram relationships cover namespace membership, storage, scheduling and StatefulSet services", async () => {
-  const app = await readFile(resolve(root, "src/App.jsx"), "utf8");
-  assert.match(app, /clusterScopedKinds/);
-  assert.match(app, /addRelationship\(claim, storageClass, "provisioned by"/);
-  assert.match(app, /addRelationship\(statefulSet, service, "governed by"/);
-  assert.match(app, /addRelationship\(pod, node, "runs on"/);
-  assert.match(app, /workload\.kind === "CronJob"\s*\?\s*workload\.manifest\?\.spec\?\.jobTemplate\?\.spec\?\.template\?\.spec/);
-  assert.match(app, /targetKind === "ClusterRole"/);
-});

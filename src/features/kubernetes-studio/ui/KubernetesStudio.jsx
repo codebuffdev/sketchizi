@@ -388,8 +388,16 @@ function validateKubernetesResources(resources) {
   const addDependencyIssue = (resource, severity, code, message) => {
     issues.push({ id: resource.id + ":" + severity + ":" + code, resource: resource.name, kind: resource.kind, severity, message });
   };
+  // Cluster-scoped objects are addressed by kind/name, never by a namespace.
+  // Treating their normalized "default" namespace as real caused false missing
+  // dependency warnings when a namespaced resource referenced them.
+  const CLUSTER_SCOPED_KINDS = new Set([
+    "Namespace", "Node", "PersistentVolume", "StorageClass", "ClusterRole",
+    "ClusterRoleBinding", "CustomResourceDefinition", "IngressClass",
+  ]);
   const hasResource = (kind, name, namespace) => resources.some((candidate) =>
-    candidate.kind === kind && candidate.name === name && (namespace == null || candidate.namespace === namespace)
+    candidate.kind === kind && candidate.name === name
+      && (CLUSTER_SCOPED_KINDS.has(kind) || namespace == null || candidate.namespace === namespace)
   );
 
   for (const resource of resources) {

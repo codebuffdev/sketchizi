@@ -111,15 +111,3 @@ test("Properties panel is wired to show compatibility labels and alternatives", 
   assert.match(propertiesPanel, /compatibleRelationshipTypes/);
   assert.match(propertiesPanel, /Suggested types:/);
 });
-
-
-test("relationship semantics cover common namespace members and controller hierarchies", () => {
-  for (const kind of ["configmap", "secret", "persistentvolumeclaim", "serviceaccount", "networkpolicy", "job", "cronjob", "ingress"]) {
-    assert.equal(isKubernetesRelationshipTypeCompatible("contains", "namespace", kind), true, `namespace contains ${kind}`);
-  }
-  assert.equal(isKubernetesRelationshipTypeCompatible("contains", "namespace", "node"), false);
-  assert.equal(isKubernetesRelationshipTypeCompatible("schedules", "deployment", "replicaset"), true);
-  assert.equal(isKubernetesRelationshipTypeCompatible("schedules", "replicaset", "pod"), true);
-  assert.equal(isKubernetesRelationshipTypeCompatible("schedules", "cronjob", "job"), true);
-  assert.equal(isKubernetesRelationshipTypeCompatible("schedules", "service", "pod"), false);
-});

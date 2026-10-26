@@ -888,16 +888,8 @@ function App() {
       serviceNames.forEach((name) => addRelationship(ingress, services.find((service) => service.name === name && service.namespace === ingress.namespace), "routes to", "#9b78ef"));
     });
     resources.filter((resource) => resource.kind === "Namespace").forEach((namespace) => {
-      // Namespace membership applies to every namespaced object, not just the
-      // common networking and workload kinds. Omitted metadata.namespace means
-      // the default namespace; cluster-scoped resources are deliberately excluded.
-      const clusterScopedKinds = new Set([
-        "Namespace", "Node", "PersistentVolume", "StorageClass", "ClusterRole",
-        "ClusterRoleBinding", "CustomResourceDefinition",
-      ]);
-      resources.filter((resource) => resource.id !== namespace.id
-        && !clusterScopedKinds.has(resource.kind)
-        && (resource.manifest?.metadata?.namespace || "default") === namespace.name)
+      resources.filter((resource) => resource.id !== namespace.id && (resource.manifest?.metadata?.namespace || "default") === namespace.name
+        && ["Ingress", "Service", "Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(resource.kind))
         .forEach((resource) => addRelationship(namespace, resource, "contains", "#6e91c9"));
     });
     resources.filter((resource) => resource.kind === "NetworkPolicy").forEach((policy) => {
@@ -920,26 +912,9 @@ function App() {
         && resource.manifest?.spec?.claimRef?.name === claim.name
         && (!resource.manifest?.spec?.claimRef?.namespace || resource.manifest.spec.claimRef.namespace === claim.namespace));
       if (volume) addRelationship(claim, volume, "bound to", "#c59b4d");
-      const storageClassName = claim.manifest?.spec?.storageClassName;
-      if (storageClassName) {
-        const storageClass = resources.find((resource) => resource.kind === "StorageClass" && resource.name === storageClassName);
-        if (storageClass) addRelationship(claim, storageClass, "provisioned by", "#c59b4d");
-      }
-    });
-    resources.filter((resource) => resource.kind === "StatefulSet").forEach((statefulSet) => {
-      const serviceName = statefulSet.manifest?.spec?.serviceName;
-      if (!serviceName) return;
-      const service = services.find((candidate) => candidate.name === serviceName && candidate.namespace === statefulSet.namespace);
-      if (service) addRelationship(statefulSet, service, "governed by", "#22a6b9");
-    });
-    resources.filter((resource) => resource.kind === "Pod" && resource.manifest?.spec?.nodeName).forEach((pod) => {
-      const node = resources.find((candidate) => candidate.kind === "Node" && candidate.name === pod.manifest.spec.nodeName);
-      if (node) addRelationship(pod, node, "runs on", "#6e91c9");
     });
     workloads.forEach((workload) => {
-      const podSpec = workload.kind === "CronJob"
-        ? workload.manifest?.spec?.jobTemplate?.spec?.template?.spec || {}
-        : workload.manifest?.spec?.template?.spec || workload.manifest?.spec || {};
+      const podSpec = workload.manifest?.spec?.template?.spec || workload.manifest?.spec || {};
       const podTemplateLabels = workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.metadata?.labels || {};
       const referencedResources = new Map();
       const remember = (kind, name) => { if (name) referencedResources.set(kind + "/" + name, { kind, name }); };
@@ -997,7 +972,7 @@ function App() {
       if (roleRef?.name) {
         const targetKind = roleRef.kind;
         const target = resources.find((resource) => resource.kind === targetKind && resource.name === roleRef.name
-          && (binding.kind === "ClusterRoleBinding" || targetKind === "ClusterRole" || resource.namespace === binding.namespace));
+          && (binding.kind === "ClusterRoleBinding" || resource.namespace === binding.namespace));
         if (target) addRelationship(binding, target, "grants role", "#b68bea");
       }
       (binding.manifest?.subjects || []).filter((subject) => subject.kind === "ServiceAccount").forEach((subject) => {
