@@ -10,7 +10,7 @@ const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/K
 
 test("ZIP bundle reader selects YAML and Kubernetes source files by extension", () => {
   assert.ok(reader.includes(String.raw`if (!/\.(?:ya?ml)$/i.test(name)) continue;`), "YAML extension matching must use a literal dot");
-  assert.ok(!reader.includes(String.raw`if (!/\\.(?:ya?ml)$/i.test(name)) continue;`), "the extension matcher must not require a backslash");
+  assert.ok(!reader.includes(String.raw`if (!/\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(name)) continue;`), "the extension matcher must not require a backslash");
 });
 
 test("K8s Studio accepts ZIP files and provides a separate folder picker", () => {
