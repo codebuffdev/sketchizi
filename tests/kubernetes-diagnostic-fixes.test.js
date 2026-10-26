@@ -146,3 +146,12 @@ test("K8s Studio validates StatefulSet, HPA, CronJob and NetworkPolicy invariant
   assert.match(studio, /NetworkPolicy policyTypes entries must be Ingress or Egress/);
   assert.match(studio, /NetworkPolicy .* ports must be a list/);
 });
+
+
+test("K8s Studio validates Service routing against matching workload ports", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /duplicate port\/protocol pair/);
+  assert.match(studio, /Named targetPort .* is not declared by a matching workload container/);
+  assert.match(studio, /Service port name .* must be a lowercase alphanumeric name/);
+  assert.match(studio, /matchingWorkloads = workloads\.filter/);
+});
