@@ -155,6 +155,37 @@ export function validateKubernetesResources(resources) {
     }
 
     if (["Role", "ClusterRole"].includes(resource.kind)) {
+      if (!Array.isArray(manifest.rules) || !manifest.rules.length) add(resource, "warning", resource.kind + " should define a non-empty rules list.");
+      for (const [index, rule] of (Array.isArray(manifest.rules) ? manifest.rules : []).entries()) {
+        if (!rule || typeof rule !== "object") {
+          add(resource, "error", "RBAC rule " + (index + 1) + " must be an object.");
+          continue;
+        }
+        if (!Array.isArray(rule.verbs) || !rule.verbs.length || rule.verbs.some((verb) => typeof verb !== "string" || !verb.trim())) add(resource, "error", "RBAC rule " + (index + 1) + " must define a non-empty verbs list.");
+        if ((!Array.isArray(rule.resources) || !rule.resources.length) && (!Array.isArray(rule.nonResourceURLs) || !rule.nonResourceURLs.length)) add(resource, "error", "RBAC rule " + (index + 1) + " must define resources or nonResourceURLs.");
+        if (rule.apiGroups != null && (!Array.isArray(rule.apiGroups) || rule.apiGroups.some((group) => typeof group !== "string"))) add(resource, "error", "RBAC rule " + (index + 1) + " apiGroups must be a list of strings.");
+        if (rule.resources != null && (!Array.isArray(rule.resources) || rule.resources.some((item) => typeof item !== "string"))) add(resource, "error", "RBAC rule " + (index + 1) + " resources must be a list of strings.");
+        if (rule.resourceNames != null && (!Array.isArray(rule.resourceNames) || rule.resourceNames.some((item) => typeof item !== "string" || !item.trim()))) add(resource, "error", "RBAC rule " + (index + 1) + " resourceNames must be a list of non-empty strings.");
+        if (rule.nonResourceURLs != null && (!Array.isArray(rule.nonResourceURLs) || rule.nonResourceURLs.some((item) => typeof item !== "string" || !item.trim()))) add(resource, "error", "RBAC rule " + (index + 1) + " nonResourceURLs must be a list of non-empty strings.");
+      }
+    }
+    if (["RoleBinding", "ClusterRoleBinding"].includes(resource.kind)) {
+      const roleRef = manifest.roleRef;
+      if (!roleRef || typeof roleRef !== "object" || !roleRef.name || !roleRef.kind) {
+        add(resource, "error", "RBAC binding must define roleRef.kind and roleRef.name.");
+      } else if (resource.kind === "ClusterRoleBinding" && roleRef.kind !== "ClusterRole") {
+        add(resource, "error", "ClusterRoleBinding roleRef.kind must be ClusterRole.");
+      } else if (resource.kind === "RoleBinding" && !["Role", "ClusterRole"].includes(roleRef.kind)) {
+        add(resource, "error", "RoleBinding roleRef.kind must be Role or ClusterRole.");
+      }
+      if (!Array.isArray(manifest.subjects) || !manifest.subjects.length) add(resource, "error", "RBAC binding must define at least one subject.");
+      for (const [index, subject] of (Array.isArray(manifest.subjects) ? manifest.subjects : []).entries()) {
+        if (!subject || typeof subject !== "object" || !["User", "Group", "ServiceAccount"].includes(subject.kind) || !subject.name) {
+          add(resource, "error", "RBAC binding subject " + (index + 1) + " must define a supported kind and name.");
+        }
+      }
+    }
+    if (["Role", "ClusterRole"].includes(resource.kind)) {
       const rules = Array.isArray(manifest.rules) ? manifest.rules : [];
       for (const rule of rules) {
         if ((rule.verbs || []).includes("*")) add(resource, "warning", "RBAC rule grants wildcard verbs (*); restrict permissions to the actions required.");
