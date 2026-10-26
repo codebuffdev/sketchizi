@@ -394,7 +394,7 @@ spec:
 
         <div className="k8s-studio-workspace">
           <section className="k8s-studio-editor">
-            <div className="k8s-studio-section-title k8s-studio-manifest-title">
+            <div className="k8s-studio-section-title k8s-studio-manifest-title"><button type="button" className="k8s-studio-secondary" onClick={exportYaml} disabled={!yamlText.trim() || Boolean(parsed.parseError)}>Export YAML</button>
               <div><span>01</span><h2>Manifest YAML</h2></div>
               <div className="k8s-yaml-editor-controls" aria-label="Manifest font size controls">
                 <button type="button" onClick={() => setManifestFontSize((size) => Math.max(10, size - 1))} disabled={manifestFontSize <= 10} aria-label="Decrease manifest font size" title="Decrease font size">A−</button>
