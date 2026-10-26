@@ -342,6 +342,21 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [manifestFontSize, setManifestFontSize] = useState(12);
+  const [previewSplit, setPreviewSplit] = useState(50);
+  const workspaceRef = useRef(null);
+  const splitDragRef = useRef(false);
+  useEffect(() => {
+    const onMove = (event) => {
+      if (!splitDragRef.current || !workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const next = ((event.clientX - rect.left) / rect.width) * 100;
+      setPreviewSplit(Math.max(28, Math.min(72, next)));
+    };
+    const onUp = () => { splitDragRef.current = false; document.body.classList.remove("k8s-studio-resizing"); };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); document.body.classList.remove("k8s-studio-resizing"); };
+  }, []);
   const [yamlText, setYamlText] = useState(`apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -586,7 +601,7 @@ spec:
           <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setNotice(""); setError(""); }}>Clear</button>
         </div>
 
-        <div className="k8s-studio-workspace">
+        <div className="k8s-studio-workspace" ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
           <section className="k8s-studio-editor">
             <div className="k8s-studio-section-title k8s-studio-manifest-title"><button type="button" className="k8s-studio-secondary" onClick={exportYaml} disabled={!yamlText.trim() || Boolean(parsed.parseError)}>Export YAML</button>
               <div><span>01</span><h2>Manifest YAML</h2></div>
@@ -644,6 +659,7 @@ spec:
             <div className="k8s-yaml-editor-status"><span>YAML</span><span>Ctrl+Space for completions</span><span>Indent: 2 spaces</span></div>
             <p className="k8s-studio-help">Paste one manifest or a multi-document Kubernetes YAML file. Your current canvas is preserved when the diagram is added.</p>
           </section>
+          <div className="k8s-studio-splitter" role="separator" aria-label="Resize manifest and resource preview" aria-orientation="vertical" aria-valuemin={28} aria-valuemax={72} aria-valuenow={Math.round(previewSplit)} tabIndex={0} onPointerDown={(event) => { splitDragRef.current = true; document.body.classList.add("k8s-studio-resizing"); }} onKeyDown={(event) => { if (event.key === "ArrowLeft") { event.preventDefault(); setPreviewSplit((value) => Math.max(28, value - 3)); } if (event.key === "ArrowRight") { event.preventDefault(); setPreviewSplit((value) => Math.min(72, value + 3)); } }} />
           <aside className="k8s-studio-preview">
             <div className="k8s-studio-section-title"><div><span>02</span><h2>Resource preview</h2></div><strong>{parsed.resources.length}</strong></div>
             {parsed.parseError ? <div className="k8s-studio-error" role="alert"><strong>YAML parsing failed</strong><p>{parsed.parseError}</p></div> : null}
