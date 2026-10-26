@@ -146,8 +146,16 @@ export default function IconLibraryPanel({
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
-  const selectedIcon = displayedIcons.find((icon) => icon.id === selectedIconId) || null;
-  const withSelectedEssentialColor = (icon) => activeSource === "eraser" ? { ...icon, tintColor: selectedEssentialColor } : icon;
+  // Keep the selected asset available while the user browses other sources or searches.
+  // Resolve from the full catalog first so changing filters does not hide the add action.
+  const selectedIcon = allIcons.find((icon) => icon.id === selectedIconId)
+    || favorites.find((icon) => icon.id === selectedIconId)
+    || recentIcons.find((icon) => icon.id === selectedIconId)
+    || displayedIcons.find((icon) => icon.id === selectedIconId)
+    || null;
+  const withSelectedEssentialColor = (icon) => (icon?.source === "eraser" || icon?.source === "essentials" || icon?.category === "Eraser Icons")
+    ? { ...icon, tintColor: selectedEssentialColor }
+    : icon;
   const activeChip = activeSource;
   const sourceTabs = [
     { id: "all", label: "All" },
