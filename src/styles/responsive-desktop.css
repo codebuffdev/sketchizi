@@ -1066,7 +1066,7 @@
    second grid composition here was misleading: its workspace grid rules were
    overridden by responsive-final.css while its app grid-row rule survived. */
 
-/* Mobile/tablet:/* Mobile/tablet: the structural desktop wrappers become transparent and the
+/* Mobile/tablet: the structural desktop wrappers become transparent and the
  * previously established responsive interaction model owns the panels. */
 @media (max-width: 760px) {
   .desktop-app-theme-toggle {
