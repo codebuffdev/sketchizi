@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
 import "./kubernetes-studio.css";
 
@@ -245,11 +245,28 @@ spec:
   ports:
     - port: 80
       targetPort: 8080`);
+  const initialYamlRef = useRef(yamlText);
+  const hasUnsavedChanges = yamlText !== initialYamlRef.current;
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [inspectedResourceId, setInspectedResourceId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorDraft, setInspectorDraft] = useState("");
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const warnBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const requestClose = () => {
+    if (hasUnsavedChanges && !window.confirm("You have unsaved YAML changes. Close K8s Studio and discard them?")) return;
+    onClose?.();
+  };
+
   const updateCompletions = (text, caret, force = false) => {
     const next = buildCompletions(text, caret, force);
     setCompletion({ ...next, selectedIndex: 0 });
@@ -429,7 +446,7 @@ spec:
             <h1 id="k8s-studio-title">K8s Studio</h1>
             <p>Build a Kubernetes architecture from resources or existing YAML manifests.</p>
           </div>
-          <button type="button" className="k8s-studio-close" onClick={onClose} aria-label="Close K8s Studio">×</button>
+          <button type="button" className="k8s-studio-close" onClick={requestClose} aria-label="Close K8s Studio">×</button>
         </header>
 
         <div className="k8s-studio-actions">
