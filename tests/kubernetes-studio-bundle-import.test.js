@@ -20,7 +20,7 @@ test("K8s Studio accepts ZIP files and provides a separate folder picker", () =>
 });
 
 test("K8s Studio clears example YAML when a source bundle is detected", () => {
-  assert.match(studio, /Bundle loaded\. Choose a Kustomize overlay or Helm chart below/);
+  assert.match(studio, /Bundle loaded\. Select an environment and render it to populate the resource preview/);
   assert.match(studio, /bundleSources/);
   assert.ok(studio.includes('setYamlText("");\n      setSavedYamlText("");\n      setImportedFileNames(paths);'));
   assert.match(studio, /renderKustomizeBundle\(bundleFiles, source\.path\)/);
