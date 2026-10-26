@@ -255,6 +255,26 @@ function validateKubernetesResources(resources) {
     if (podSpec) {
       const podSecurityContext = podSpec.securityContext || {};
       if (podSecurityContext.runAsUser === 0) add(resource, "warning", "Pod securityContext explicitly runs as root (runAsUser: 0). Use a non-root user where possible.");
+      const volumeNames = new Set();
+      for (const volume of podSpec.volumes || []) {
+        if (volume.name && volumeNames.has(volume.name)) add(resource, "error", "Pod volume name '" + volume.name + "' is duplicated.");
+        if (volume.name) volumeNames.add(volume.name);
+      }
+      for (const container of containers) {
+        const mountedNames = new Set();
+        for (const mount of container.volumeMounts || []) {
+          if (!mount.name || !volumeNames.has(mount.name)) add(resource, "error", "Container '" + (container.name || "unnamed") + "' mounts volume '" + (mount.name || "(missing name)") + "', but that volume is not declared in the pod spec.");
+          if (mount.name && mountedNames.has(mount.name) && !mount.mountPath) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has a repeated volume mount for '" + mount.name + "'.");
+          if (mount.name) mountedNames.add(mount.name);
+        }
+        const declaredPorts = new Set();
+        for (const port of container.ports || []) {
+          if (!Number.isInteger(port.containerPort) || port.containerPort < 1 || port.containerPort > 65535) add(resource, "error", "Container '" + (container.name || "unnamed") + "' has a containerPort outside the valid 1–65535 range.");
+          const portKey = String(port.containerPort) + "/" + String(port.protocol || "TCP");
+          if (declaredPorts.has(portKey)) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' declares container port " + portKey + " more than once.");
+          declaredPorts.add(portKey);
+        }
+      }
       for (const volume of podSpec.volumes || []) {
         if (volume.hostPath) add(resource, "warning", "Volume '" + (volume.name || "unnamed") + "' uses hostPath, which exposes node filesystem paths to the workload.");
       }
