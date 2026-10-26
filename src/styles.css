@@ -768,3 +768,26 @@
 .create-design-menu .design-studio-header-toggle {
   gap: 8px;
 }
+
+
+/* Keep navigation chevrons small and quiet rather than glyph-like. */
+.create-design-menu .devops-studio-chevron {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  opacity: .62;
+  transition: transform .15s ease, opacity .15s ease;
+}
+.create-design-menu .design-studio-header-toggle:hover .devops-studio-chevron,
+.create-design-menu .design-studio-header-toggle.active .devops-studio-chevron {
+  opacity: .9;
+}
+.desktop-app-nav-chevron {
+  width: 11px !important;
+  height: 11px !important;
+  opacity: .62;
+}
+.desktop-app-nav-button:hover .desktop-app-nav-chevron,
+.desktop-app-nav-button.active .desktop-app-nav-chevron {
+  opacity: .88;
+}
