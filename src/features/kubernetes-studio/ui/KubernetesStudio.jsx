@@ -705,7 +705,12 @@ spec:
         throw new Error("The original YAML document boundaries could not be preserved. Reopen the inspector and try again.");
       }
       const replacementText = stringify(editedManifest).trimEnd();
-      const nextYaml = yamlText.slice(0, sourceRange[0]) + replacementText + yamlText.slice(sourceRange[2]);
+      const suffix = yamlText.slice(sourceRange[2]);
+      const hasFollowingDocuments = documents.length > inspectedResource.documentIndex + 1;
+      // Some YAML parser ranges include the document separator. Restore one
+      // only when replacing the source range consumed it.
+      const separator = hasFollowingDocuments && !/^\\s*---(?:\\s|#|$)/.test(suffix) ? "\\n---\\n" : "";
+      const nextYaml = yamlText.slice(0, sourceRange[0]) + replacementText + separator + suffix;
       const previousYaml = yamlText;
       try {
         onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
