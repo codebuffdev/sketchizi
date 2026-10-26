@@ -543,6 +543,8 @@ spec:
     - port: 80
       targetPort: 8080`);
   const [savedYamlText, setSavedYamlText] = useState(yamlText);
+  const [importedFileNames, setImportedFileNames] = useState([]);
+  const [hasInspectedEdits, setHasInspectedEdits] = useState(false);
   const hasUnsavedChanges = yamlText !== savedYamlText;
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
