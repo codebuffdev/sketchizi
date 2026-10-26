@@ -313,7 +313,8 @@ export default function DesktopAppHeader({
         </svg>
         <span className="desktop-app-document-identity-copy">
           <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
-        </span>       {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        </span>
+        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
       </div>
 
       <div className="desktop-app-header-panel-actions">{children}</div>
