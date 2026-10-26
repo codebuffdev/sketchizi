@@ -68,3 +68,10 @@ test("complex Compose YAML preserves service conditions, environment substitutio
   assert.deepEqual(roundTrip.services.api.networks, ["backend"]);
   assert.equal(roundTrip.services.api.healthcheck.test[1], "curl");
 });
+
+
+test("Compose Studio places the container inspector left of the YAML editor on desktop", () => {
+  assert.match(css, /\.docker-studio-k8s-workspace\{grid-template-columns:minmax\(300px,\.8fr\) minmax\(0,1\.45fr\)\}/);
+  assert.match(css, /\.docker-studio-resource-pane\{grid-column:1;grid-row:1/);
+  assert.match(css, /\.docker-studio-yaml-pane\{grid-column:2;grid-row:1/);
+});
