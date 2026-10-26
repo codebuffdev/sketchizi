@@ -754,7 +754,10 @@ spec:
                 }}
                 onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)}
                 onKeyUp={(event) => {
-                  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart);
+                  // ArrowUp/ArrowDown navigate the visible suggestion list; do not
+                  // recompute completions on keyup or the selection jumps back to item 1.
+                  if (completion.items.length && ["ArrowUp", "ArrowDown"].includes(event.key)) return;
+                  if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart);
                 }}
                 onKeyDown={handleYamlKeyDown}
                 onBlur={() => window.setTimeout(() => setCompletion((current) => ({ ...current, items: [] })), 120)}
