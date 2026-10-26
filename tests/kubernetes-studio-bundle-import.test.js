@@ -23,4 +23,7 @@ test("K8s Studio clears example YAML when a source bundle is detected", () => {
   assert.match(studio, /Bundle loaded\. Choose a Kustomize overlay or Helm chart below/);
   assert.match(studio, /bundleSources/);
   assert.ok(studio.includes('setYamlText("");\n      setSavedYamlText("");\n      setImportedFileNames(paths);'));
+  assert.match(studio, /renderKustomizeBundle\(bundleFiles, source\.path\)/);
+  assert.match(studio, /renderHelmBundle\(bundleFiles, source\.path, selectedValuesFile/);
+  assert.doesNotMatch(studio, /VITE_K8S_RENDER_URL|fetch\(rendererUrl/);
 });
