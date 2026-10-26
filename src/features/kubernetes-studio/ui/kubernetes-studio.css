@@ -141,3 +141,17 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-studio-editor .k8s-yaml-editor-shell textarea{padding-left:64px}
 .k8s-yaml-editor-shell .k8s-yaml-highlight{left:49px!important;right:1px!important;padding-left:16px!important}
 @media(max-width:640px){.k8s-yaml-editor-shell .k8s-yaml-line-numbers{width:38px;font-size:11px}.k8s-yaml-editor-shell .k8s-yaml-line-numbers span{padding-right:8px}.k8s-studio-editor .k8s-yaml-editor-shell textarea{padding-left:50px}.k8s-yaml-editor-shell .k8s-yaml-highlight{left:39px!important}}
+
+
+/* Resource-kind iconography in the preview list. */
+.k8s-studio-resource-glyph{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:10px;border:1px solid #354a68;background:#1a2b43;color:#9dc4ff}
+.k8s-studio-resource-glyph .k8s-resource-icon{display:block;width:21px;height:21px}
+.k8s-studio-resource-glyph-deployment,.k8s-studio-resource-glyph-replicaset{color:#9fc2ff;background:#1b2f4d;border-color:#355781}
+.k8s-studio-resource-glyph-pod{color:#7fe0cf;background:#173531;border-color:#285b54}
+.k8s-studio-resource-glyph-service,.k8s-studio-resource-glyph-ingress{color:#c6a9ff;background:#2b2143;border-color:#514076}
+.k8s-studio-resource-glyph-statefulset,.k8s-studio-resource-glyph-daemonset{color:#f2c27c;background:#3a2d1d;border-color:#654b2b}
+.k8s-studio-resource-glyph-configmap,.k8s-studio-resource-glyph-secret{color:#e5b2d4;background:#38243a;border-color:#5a3b60}
+.k8s-studio-resource-glyph-persistentvolume,.k8s-studio-resource-glyph-persistentvolumeclaim,.k8s-studio-resource-glyph-storageclass{color:#8bd1ed;background:#193442;border-color:#2e586c}
+.k8s-studio-resource-glyph-job,.k8s-studio-resource-glyph-cronjob{color:#a8d98b;background:#263720;border-color:#405b34}
+.k8s-studio-resource-glyph-node,.k8s-studio-resource-glyph-namespace{color:#aebeff;background:#252d49;border-color:#414e79}
+.k8s-studio-resource-glyph-serviceaccount,.k8s-studio-resource-glyph-role,.k8s-studio-resource-glyph-clusterrole,.k8s-studio-resource-glyph-rolebinding,.k8s-studio-resource-glyph-clusterrolebinding{color:#e5ca8d;background:#37311f;border-color:#625333}
