@@ -230,7 +230,8 @@ test("K8s Studio validates rollout strategy and PodDisruptionBudget availability
 
 test("K8s Studio checks resource request/limit quantities and quota policies", async () => {
   const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
-  assert.match(studio, /has an invalid /);\n  assert.match(studio, /quantity/);
+  assert.match(studio, /has an invalid /);
+  assert.match(studio, /quantity/);
   assert.match(studio, /above its configured limit/);
   assert.match(studio, /ResourceQuota should define spec\.hard limits/);
   assert.match(studio, /ResourceQuota hard limit .* cannot be empty/);
