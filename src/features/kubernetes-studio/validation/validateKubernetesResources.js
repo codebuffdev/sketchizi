@@ -300,7 +300,7 @@ export function validateKubernetesResources(resources) {
     if (resource.kind === "PersistentVolumeClaim") {
       const requestedStorage = spec.resources?.requests?.storage;
       if (requestedStorage == null || requestedStorage === "") add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
-      else if (typeof requestedStorage !== "string" || !/^(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:m|k|K|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei)?$/.test(requestedStorage)) add(resource, "error", "PersistentVolumeClaim storage request must be a valid Kubernetes quantity.");
+      else if (typeof requestedStorage !== "string" || !/^(?:0|[1-9][0-9]*)(?:[.][0-9]+)?(?:m|k|K|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei)?$/.test(requestedStorage)) add(resource, "error", "PersistentVolumeClaim storage request must be a valid Kubernetes quantity.");
       if (!Array.isArray(spec.accessModes) || !spec.accessModes.length) add(resource, "error", "PersistentVolumeClaim must define at least one spec.accessModes entry.");
       else {
         if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolumeClaim contains an unsupported access mode.");
@@ -312,7 +312,7 @@ export function validateKubernetesResources(resources) {
     if (resource.kind === "PersistentVolume") {
       const capacity = spec.capacity?.storage;
       if (capacity == null || capacity === "") add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
-      else if (typeof capacity !== "string" || !/^(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:m|k|K|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei)?$/.test(capacity)) add(resource, "error", "PersistentVolume storage capacity must be a valid Kubernetes quantity.");
+      else if (typeof capacity !== "string" || !/^(?:0|[1-9][0-9]*)(?:[.][0-9]+)?(?:m|k|K|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei)?$/.test(capacity)) add(resource, "error", "PersistentVolume storage capacity must be a valid Kubernetes quantity.");
       if (!Array.isArray(spec.accessModes) || !spec.accessModes.length) add(resource, "error", "PersistentVolume must define at least one spec.accessModes entry.");
       else {
         if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolume contains an unsupported access mode.");
