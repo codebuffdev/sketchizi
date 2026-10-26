@@ -45,6 +45,7 @@ test("diagram creation blocks validation errors while allowing reviewed warnings
 });
 
 test("multi-file import resets source tracking consistently when cleared", () => {
-  assert.match(source, /setImportedFileNames\(\[\]\); setHasInspectedEdits\(false\)/);
+  assert.match(source, /setImportedFileNames\(\[\]\)/);
+  assert.match(source, /setHasInspectedEdits\(false\)/);
   assert.match(source, /setImportedFileNames\(importedFiles\.map\(\(file\) => file\.name\)\)/);
 });
