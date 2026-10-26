@@ -325,6 +325,18 @@ test("K8s Studio integration: storage and RBAC dependencies resolve across a val
   assert.equal(issues.some((issue) => /StorageClass|claimRef references PersistentVolumeClaim|Role binding references/.test(issue.message)), false, JSON.stringify(issues, null, 2));
 });
 
+test("K8s Studio validates RBAC roleRef API groups and subject fields", () => {
+  const resources = [
+    { id: "bad-role-ref", kind: "RoleBinding", name: "bad-role-ref", namespace: "default", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding", metadata: { name: "bad-role-ref" }, roleRef: { apiGroup: "wrong.example.com", kind: "Role", name: "reader" }, subjects: [{ kind: "ServiceAccount", name: "app", namespace: 42, apiGroup: "example.com" }] } },
+    { id: "bad-subject", kind: "ClusterRoleBinding", name: "bad-subject", namespace: "default", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRoleBinding", metadata: { name: "bad-subject" }, roleRef: { apiGroup: "rbac.authorization.k8s.io", kind: "ClusterRole", name: "reader" }, subjects: [{ kind: "Group", name: "developers", apiGroup: "wrong.example.com" }] } },
+  ];
+  const issues = validateKubernetesResources(resources);
+  assert.ok(issues.some((issue) => issue.message.includes("roleRef.apiGroup must be rbac.authorization.k8s.io")));
+  assert.ok(issues.some((issue) => issue.message.includes("ServiceAccount subjects must not set a non-empty apiGroup")));
+  assert.ok(issues.some((issue) => issue.message.includes("ServiceAccount subject namespace must be a non-empty string")));
+  assert.ok(issues.some((issue) => issue.message.includes("User and Group subjects must use apiGroup rbac.authorization.k8s.io")));
+});
+
 test("K8s Studio integration: reports unresolved storage and RBAC dependencies", () => {
   const resources = [
     { id: "pvc", kind: "PersistentVolumeClaim", name: "data", namespace: "production", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolumeClaim", metadata: { name: "data", namespace: "production" }, spec: { storageClassName: "missing-fast", accessModes: ["ReadWriteOnce"], resources: { requests: { storage: "1Gi" } } } } },

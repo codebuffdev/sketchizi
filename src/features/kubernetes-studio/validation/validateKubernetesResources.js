@@ -173,15 +173,29 @@ export function validateKubernetesResources(resources) {
       const roleRef = manifest.roleRef;
       if (!roleRef || typeof roleRef !== "object" || !roleRef.name || !roleRef.kind) {
         add(resource, "error", "RBAC binding must define roleRef.kind and roleRef.name.");
-      } else if (resource.kind === "ClusterRoleBinding" && roleRef.kind !== "ClusterRole") {
-        add(resource, "error", "ClusterRoleBinding roleRef.kind must be ClusterRole.");
-      } else if (resource.kind === "RoleBinding" && !["Role", "ClusterRole"].includes(roleRef.kind)) {
-        add(resource, "error", "RoleBinding roleRef.kind must be Role or ClusterRole.");
+      } else {
+        if (roleRef.apiGroup !== "rbac.authorization.k8s.io") add(resource, "error", "RBAC binding roleRef.apiGroup must be rbac.authorization.k8s.io.");
+        if (resource.kind === "ClusterRoleBinding" && roleRef.kind !== "ClusterRole") {
+          add(resource, "error", "ClusterRoleBinding roleRef.kind must be ClusterRole.");
+        } else if (resource.kind === "RoleBinding" && !["Role", "ClusterRole"].includes(roleRef.kind)) {
+          add(resource, "error", "RoleBinding roleRef.kind must be Role or ClusterRole.");
+        }
       }
       if (!Array.isArray(manifest.subjects) || !manifest.subjects.length) add(resource, "error", "RBAC binding must define at least one subject.");
       for (const [index, subject] of (Array.isArray(manifest.subjects) ? manifest.subjects : []).entries()) {
-        if (!subject || typeof subject !== "object" || !["User", "Group", "ServiceAccount"].includes(subject.kind) || !subject.name) {
+        if (!subject || typeof subject !== "object" || !["User", "Group", "ServiceAccount"].includes(subject.kind) || typeof subject.name !== "string" || !subject.name.trim()) {
           add(resource, "error", "RBAC binding subject " + (index + 1) + " must define a supported kind and name.");
+          continue;
+        }
+        if (subject.apiGroup != null && typeof subject.apiGroup !== "string") {
+          add(resource, "error", "RBAC binding subject " + (index + 1) + " apiGroup must be a string.");
+        } else if (subject.kind === "ServiceAccount" && subject.apiGroup) {
+          add(resource, "error", "RBAC ServiceAccount subjects must not set a non-empty apiGroup.");
+        } else if (["User", "Group"].includes(subject.kind) && subject.apiGroup && subject.apiGroup !== "rbac.authorization.k8s.io") {
+          add(resource, "error", "RBAC User and Group subjects must use apiGroup rbac.authorization.k8s.io.");
+        }
+        if (subject.kind === "ServiceAccount" && subject.namespace != null && (typeof subject.namespace !== "string" || !subject.namespace.trim())) {
+          add(resource, "error", "RBAC ServiceAccount subject namespace must be a non-empty string when specified.");
         }
       }
     }
