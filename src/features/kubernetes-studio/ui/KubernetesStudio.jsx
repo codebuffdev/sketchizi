@@ -403,6 +403,15 @@ function validateKubernetesResources(resources) {
       const backends = rules.flatMap((rule) => rule.http?.paths || []).map((path) => path.backend?.service).filter(Boolean);
       if (spec.defaultBackend?.service) backends.push(spec.defaultBackend.service);
       if (!backends.length && !spec.defaultBackend) add(resource, "warning", "Ingress has no HTTP service backend configured.");
+      const tlsHosts = new Set((spec.tls || []).flatMap((entry) => Array.isArray(entry.hosts) ? entry.hosts.map((host) => String(host).toLowerCase()) : []));
+      for (const [index, entry] of (Array.isArray(spec.tls) ? spec.tls : []).entries()) {
+        if (!Array.isArray(entry.hosts) || !entry.hosts.length) add(resource, "warning", "Ingress TLS entry " + (index + 1) + " does not list any hosts.");
+        if (!entry.secretName || typeof entry.secretName !== "string") add(resource, "warning", "Ingress TLS entry " + (index + 1) + " does not define a TLS Secret name.");
+        else if (!resources.some((candidate) => candidate.kind === "Secret" && candidate.name === entry.secretName && candidate.namespace === resource.namespace)) add(resource, "info", "Ingress TLS Secret '" + entry.secretName + "' is not in this manifest set; it may be provisioned separately.");
+      }
+      for (const rule of rules) {
+        if (rule.host && tlsHosts.size && !tlsHosts.has(String(rule.host).toLowerCase())) add(resource, "info", "Ingress host '" + rule.host + "' is not listed in this Ingress TLS configuration.");
+      }
       const seenIngressPaths = new Set();
       for (const rule of rules) {
         for (const path of rule.http?.paths || []) {
@@ -509,6 +518,9 @@ function validateKubernetesResources(resources) {
       if (spec.maxUnavailable === 0 || spec.maxUnavailable === "0%") add(resource, "warning", "PodDisruptionBudget maxUnavailable is zero and may block voluntary disruptions.");
     }
     if (resource.kind === "StatefulSet" && !spec.serviceName) add(resource, "error", "StatefulSet must define spec.serviceName for its governing Service.");
+    if (resource.kind === "StatefulSet" && spec.serviceName && !resources.some((candidate) => candidate.kind === "Service" && candidate.name === spec.serviceName && candidate.namespace === resource.namespace)) {
+      add(resource, "warning", "StatefulSet governing Service '" + spec.serviceName + "' is not present in this manifest set.");
+    }
     if (resource.kind === "CronJob" && !spec.schedule) add(resource, "error", "CronJob must define spec.schedule.");
     if (resource.kind === "CronJob" && spec.concurrencyPolicy != null && !["Allow", "Forbid", "Replace"].includes(spec.concurrencyPolicy)) add(resource, "error", "CronJob concurrencyPolicy must be Allow, Forbid, or Replace.");
     if (resource.kind === "HorizontalPodAutoscaler") {
@@ -520,6 +532,11 @@ function validateKubernetesResources(resources) {
     }
     if (resource.kind === "NetworkPolicy") {
       if (!spec.podSelector || typeof spec.podSelector !== "object") add(resource, "error", "NetworkPolicy must define spec.podSelector (use an empty object to select all pods in the namespace).");
+      else if (Object.keys(spec.podSelector).length && spec.podSelector.matchLabels && Object.keys(spec.podSelector.matchLabels).length && !spec.podSelector.matchExpressions?.length) {
+        const selectedWorkload = workloads.some((workload) => workload.namespace === resource.namespace
+          && matches(spec.podSelector.matchLabels, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
+        if (!selectedWorkload) add(resource, "warning", "NetworkPolicy selector does not match a workload in this manifest set.");
+      }
       if (spec.policyTypes != null && (!Array.isArray(spec.policyTypes) || spec.policyTypes.some((type) => !["Ingress", "Egress"].includes(type)))) add(resource, "error", "NetworkPolicy policyTypes entries must be Ingress or Egress.");
       for (const [direction, rules] of [["ingress", spec.ingress], ["egress", spec.egress]]) {
         if (rules != null && !Array.isArray(rules)) add(resource, "error", "NetworkPolicy spec." + direction + " must be a list.");
@@ -614,9 +631,23 @@ function validateKubernetesResources(resources) {
     const spec = resource.manifest?.spec || {};
     if (resource.kind === "HorizontalPodAutoscaler" && spec.scaleTargetRef?.name) {
       const targetKind = spec.scaleTargetRef.kind || "Deployment";
-      if (!hasResource(targetKind, spec.scaleTargetRef.name, resource.namespace)) {
+      const target = resources.find((candidate) => candidate.kind === targetKind && candidate.name === spec.scaleTargetRef.name && candidate.namespace === resource.namespace);
+      if (!target) {
         addDependencyIssue(resource, "warning", "hpa-target:" + spec.scaleTargetRef.name, "HPA target " + targetKind + "/" + spec.scaleTargetRef.name + " is not present in this manifest set.");
+      } else {
+        const metrics = Array.isArray(spec.metrics) ? spec.metrics : [];
+        const usesCpuUtilization = metrics.some((metric) => metric.resource?.name === "cpu" && metric.resource?.target?.type === "Utilization");
+        if (usesCpuUtilization) {
+          const targetPodSpec = target.kind === "Pod" ? target.manifest?.spec : target.manifest?.spec?.template?.spec;
+          const targetContainers = [...(targetPodSpec?.initContainers || []), ...(targetPodSpec?.containers || [])];
+          if (targetContainers.some((container) => !container.resources?.requests?.cpu)) {
+            addDependencyIssue(resource, "warning", "hpa-cpu-request:" + target.name, "HPA uses CPU utilization, but at least one target container has no CPU request; utilization may be undefined.");
+          }
+        }
       }
+    }
+    if (resource.kind === "StatefulSet" && spec.serviceName && !hasResource("Service", spec.serviceName, resource.namespace)) {
+      addDependencyIssue(resource, "warning", "statefulset-service:" + spec.serviceName, "StatefulSet governing Service '" + spec.serviceName + "' is not present in this manifest set.");
     }
     if (resource.kind === "RoleBinding" || resource.kind === "ClusterRoleBinding") {
       const roleRef = spec.roleRef;

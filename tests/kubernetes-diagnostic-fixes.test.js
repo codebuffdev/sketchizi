@@ -239,3 +239,14 @@ test("K8s Studio checks resource request/limit quantities and quota policies", a
   assert.match(studio, /has an unsupported type/);
   assert.match(studio, /minimum for .* exceeds its maximum/);
 });
+
+
+test("K8s Studio checks Ingress TLS, StatefulSet services, NetworkPolicy selectors and HPA CPU readiness", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /Ingress TLS entry .* does not list any hosts/);
+  assert.match(studio, /does not define a TLS Secret name/);
+  assert.match(studio, /is not listed in this Ingress TLS configuration/);
+  assert.match(studio, /StatefulSet governing Service .* is not present in this manifest set/);
+  assert.match(studio, /NetworkPolicy selector does not match a workload/);
+  assert.match(studio, /HPA uses CPU utilization, but at least one target container has no CPU request/);
+});
