@@ -180,3 +180,11 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 #root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,
 #root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible,
 #root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:active{border:1px solid #31435d!important;outline:0!important;box-shadow:none!important}
+
+
+.k8s-studio-bundle-panel{display:grid;grid-template-columns:minmax(140px,auto) minmax(220px,1fr);gap:8px 12px;align-items:center;padding:12px 20px;background:#101c2a;border-bottom:1px solid #29384c;color:#c7d4e5;font-size:12px}
+.k8s-studio-bundle-panel label{font-weight:700}
+.k8s-studio-bundle-panel select{min-width:0;width:100%;padding:8px 10px;border:1px solid #344760;border-radius:7px;background:#172538;color:#e4edf8;font:inherit}
+.k8s-studio-bundle-panel p{grid-column:1/-1;margin:0;line-height:1.5;color:#9fb0c7;overflow-wrap:anywhere}
+.k8s-studio-bundle-panel p strong{color:#dbe7f7}
+@media(max-width:760px){.k8s-studio-bundle-panel{grid-template-columns:1fr}.k8s-studio-bundle-panel p{grid-column:1}}
