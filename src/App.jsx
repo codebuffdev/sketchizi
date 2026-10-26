@@ -671,7 +671,7 @@ function App() {
       NetworkPolicy: ["networkpolicy"], ServiceAccount: ["serviceaccount"], ClusterRoleBinding: ["clusterrolebinding"],
       ClusterRole: ["clusterrole"], RoleBinding: ["rolebinding"], CustomResourceDefinition: ["customresourcedefinition", "crd"],
       PodSecurityPolicy: ["podsecuritypolicy"], ConfigMap: ["configmap"], CronJob: ["cronjob"],
-      ResourceQuota: ["resourcequota"], LimitRange: ["limitrange"], PodDisruptionBudget: ["poddisruptionbudget", "pdb"],
+      ResourceQuota: ["resourcequota"], LimitRange: ["limitrange"],
       ServiceMonitor: ["servicemonitor", "service"], PodDisruptionBudget: ["poddisruptionbudget", "pdb", "pod"], Deployment: ["deployment"], StatefulSet: ["statefulset"], DaemonSet: ["daemonset"],
       ReplicaSet: ["replicaset"], Service: ["service"], Ingress: ["ingress"], Pod: ["pod"], Namespace: ["namespace"],
       Secret: ["secret"], Job: ["job"], Node: ["node"], Role: ["role"],
