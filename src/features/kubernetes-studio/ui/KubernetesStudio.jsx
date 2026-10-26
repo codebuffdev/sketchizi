@@ -7,7 +7,7 @@ const COMPLETION_KINDS = [
   ["PersistentVolume", "v1"], ["PersistentVolumeClaim", "v1"], ["ServiceAccount", "v1"],
   ["Deployment", "apps/v1"], ["StatefulSet", "apps/v1"], ["DaemonSet", "apps/v1"], ["ReplicaSet", "apps/v1"],
   ["Job", "batch/v1"], ["CronJob", "batch/v1"], ["Ingress", "networking.k8s.io/v1"],
-  ["NetworkPolicy", "networking.k8s.io/v1"], ["Role", "rbac.authorization.k8s.io/v1"],
+  ["NetworkPolicy", "networking.k8s.io/v1"], ["PodDisruptionBudget", "policy/v1"], ["Role", "rbac.authorization.k8s.io/v1"],
   ["RoleBinding", "rbac.authorization.k8s.io/v1"], ["ClusterRole", "rbac.authorization.k8s.io/v1"],
   ["ClusterRoleBinding", "rbac.authorization.k8s.io/v1"], ["HorizontalPodAutoscaler", "autoscaling/v2"],
   ["StorageClass", "storage.k8s.io/v1"], ["ResourceQuota", "v1"], ["LimitRange", "v1"],
@@ -210,7 +210,7 @@ function KubernetesResourceIcon({ kind }) {
 
 function validateKubernetesResources(resources) {
   const issues = [];
-  const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
+  const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", PodDisruptionBudget: "policy/v1", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
   const add = (resource, severity, message) => issues.push({ id: resource.id + ":" + severity + ":" + message, resource: resource.name, kind: resource.kind, severity, message });
   const matches = (selector, labels) => Boolean(selector && labels && Object.keys(selector).length && Object.entries(selector).every(([key, value]) => labels[key] === value));
   const workloads = resources.filter((resource) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod"].includes(resource.kind));
@@ -414,6 +414,39 @@ function validateKubernetesResources(resources) {
       add(resource, "warning", "PersistentVolume claimRef references PersistentVolumeClaim '" + spec.claimRef.name + "', which is not present in this manifest set.");
     }
     if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) && spec.replicas != null && (!Number.isInteger(spec.replicas) || spec.replicas < 0)) add(resource, "error", "spec.replicas must be a non-negative integer.");
+    if (resource.kind === "Deployment") {
+      const strategy = spec.strategy || {};
+      if (strategy.type != null && !["Recreate", "RollingUpdate"].includes(strategy.type)) add(resource, "error", "Deployment strategy.type must be Recreate or RollingUpdate.");
+      if (strategy.type === "Recreate" && strategy.rollingUpdate != null) add(resource, "warning", "Deployment Recreate strategy should not define rollingUpdate settings.");
+      if (strategy.type !== "Recreate" && strategy.rollingUpdate != null) {
+        const rollingUpdate = strategy.rollingUpdate;
+        const validRolloutValue = (value) => value == null
+          || (Number.isInteger(value) && value >= 0)
+          || (typeof value === "string" && /^(?:\\d{1,2}|100)%$/.test(value));
+        for (const field of ["maxSurge", "maxUnavailable"]) {
+          if (!validRolloutValue(rollingUpdate[field])) add(resource, "error", "Deployment rollingUpdate." + field + " must be a non-negative integer or a percentage from 0% to 100%.");
+        }
+        if (rollingUpdate.maxSurge === 0 && rollingUpdate.maxUnavailable === 0) add(resource, "error", "Deployment rollingUpdate cannot set both maxSurge and maxUnavailable to zero.");
+        if (rollingUpdate.maxSurge === "0%" && rollingUpdate.maxUnavailable === "0%") add(resource, "error", "Deployment rollingUpdate cannot set both maxSurge and maxUnavailable to zero.");
+      }
+    }
+    if (resource.kind === "PodDisruptionBudget") {
+      const hasMinAvailable = spec.minAvailable != null;
+      const hasMaxUnavailable = spec.maxUnavailable != null;
+      if (hasMinAvailable === hasMaxUnavailable) add(resource, "error", "PodDisruptionBudget must define exactly one of spec.minAvailable or spec.maxUnavailable.");
+      const validDisruptionValue = (value) => (Number.isInteger(value) && value >= 0)
+        || (typeof value === "string" && /^(?:\\d{1,2}|100)%$/.test(value));
+      for (const field of ["minAvailable", "maxUnavailable"]) {
+        if (spec[field] != null && !validDisruptionValue(spec[field])) add(resource, "error", "PodDisruptionBudget " + field + " must be a non-negative integer or a percentage from 0% to 100%.");
+      }
+      if (!spec.selector || typeof spec.selector !== "object" || !Object.keys(spec.selector).length) add(resource, "warning", "PodDisruptionBudget should define a non-empty selector to identify protected workloads.");
+      else {
+        const selectedWorkload = workloads.some((workload) => workload.namespace === resource.namespace
+          && matches(spec.selector.matchLabels || {}, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
+        if (!selectedWorkload) add(resource, "warning", "PodDisruptionBudget selector does not match a workload in this manifest set.");
+      }
+      if (spec.maxUnavailable === 0 || spec.maxUnavailable === "0%") add(resource, "warning", "PodDisruptionBudget maxUnavailable is zero and may block voluntary disruptions.");
+    }
     if (resource.kind === "StatefulSet" && !spec.serviceName) add(resource, "error", "StatefulSet must define spec.serviceName for its governing Service.");
     if (resource.kind === "CronJob" && !spec.schedule) add(resource, "error", "CronJob must define spec.schedule.");
     if (resource.kind === "CronJob" && spec.concurrencyPolicy != null && !["Allow", "Forbid", "Replace"].includes(spec.concurrencyPolicy)) add(resource, "error", "CronJob concurrencyPolicy must be Allow, Forbid, or Replace.");

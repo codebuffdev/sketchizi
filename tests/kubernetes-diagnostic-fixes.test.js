@@ -213,3 +213,16 @@ test("K8s Studio validates direct env references, optional dependencies, storage
   assert.match(studio, /mounts more than one volume at path/);
   assert.match(studio, /defines both subPath and subPathExpr/);
 });
+
+
+test("K8s Studio validates rollout strategy and PodDisruptionBudget availability rules", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /Deployment strategy\.type must be Recreate or RollingUpdate/);
+  assert.match(studio, /rollingUpdate\.maxSurge.*non-negative integer or a percentage/);
+  assert.match(studio, /cannot set both maxSurge and maxUnavailable to zero/);
+  assert.match(studio, /PodDisruptionBudget must define exactly one of spec\.minAvailable or spec\.maxUnavailable/);
+  assert.match(studio, /PodDisruptionBudget.*must be a non-negative integer or a percentage/);
+  assert.match(studio, /PodDisruptionBudget selector does not match a workload/);
+  assert.match(studio, /maxUnavailable is zero and may block voluntary disruptions/);
+  assert.match(studio, /PodDisruptionBudget: "policy\/v1"/);
+});
