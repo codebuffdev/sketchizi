@@ -120,3 +120,15 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-studio-inspector-footer{flex:0 0 auto}
 @media(min-width:1500px){.k8s-studio-inspector{width:min(1320px,88vw);height:min(88vh,1080px);max-height:88vh}.k8s-studio-inspector-editor{font-size:14px}}
 @media(max-width:640px){.k8s-studio-inspector-backdrop{padding:8px}.k8s-studio-inspector{width:100%;height:92vh;max-height:92vh}}
+
+
+/* Gutter with synchronized line numbers for the resource YAML editor. */
+.k8s-studio-inspector-code{display:grid;grid-template-columns:48px minmax(0,1fr);flex:1;min-height:0;overflow:hidden;border:1px solid #2b394e;border-radius:12px;background:#0b111b}
+.k8s-studio-inspector-code:focus-within{border-color:#7187a7;box-shadow:0 0 0 3px rgba(113,135,167,.12)}
+.k8s-studio-inspector-line-numbers{overflow:hidden;padding:18px 0;background:#0e1520;border-right:1px solid #202d3f;color:#61738d;text-align:right;user-select:none;font:13px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace}
+.k8s-studio-inspector-line-numbers>div{display:flex;flex-direction:column;will-change:transform}
+.k8s-studio-inspector-line-numbers span{display:block;height:1.85em;padding:0 12px 0 4px;white-space:nowrap}
+.k8s-studio-inspector-code .k8s-studio-inspector-editor{min-width:0;min-height:0;border:0;border-radius:0;resize:none;box-shadow:none!important;padding:18px;font-size:13px;line-height:1.85}
+.k8s-studio-inspector-code .k8s-studio-inspector-editor:focus{border:0;outline:0;box-shadow:none!important}
+@media(min-width:1500px){.k8s-studio-inspector-line-numbers{font-size:14px}.k8s-studio-inspector-code .k8s-studio-inspector-editor{font-size:14px}}
+@media(max-width:640px){.k8s-studio-inspector-code{grid-template-columns:38px minmax(0,1fr)}.k8s-studio-inspector-line-numbers{padding:12px 0;font-size:12px}.k8s-studio-inspector-line-numbers span{padding-right:8px}.k8s-studio-inspector-code .k8s-studio-inspector-editor{padding:12px;font-size:12px}}
