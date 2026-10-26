@@ -849,7 +849,7 @@
   width: 284px;
   min-width: 284px;
   padding: 8px;
-  border-radius: 14px;
+  border-radius: var(--sk-radius-dialog);
   border: 1px solid var(--ui-border, #dfe3ed);
   background: var(--ui-surface-solid, #fff);
   color: var(--ui-text-strong, #25283b);
@@ -867,7 +867,7 @@
   min-height: 39px;
   padding: 8px 10px;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: var(--sk-radius-control-sm);
   background: transparent;
   color: inherit;
   text-align: left;
