@@ -725,11 +725,23 @@ function App() {
       const manifest = resource.manifest || {};
       const spec = manifest.spec || {};
       const resourceGroup = `k8s-import-${resource.id}`;
+      const workloadKinds = ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"];
+      const podSpec = resource.kind === "CronJob" ? spec.jobTemplate?.spec?.template?.spec
+        : resource.kind === "Job" ? spec.template?.spec
+        : ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) ? spec.template?.spec
+        : spec;
+      const images = (podSpec?.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2);
+      const ports = (spec.ports || []).map((port) => `${port.port}${port.targetPort ? `→${port.targetPort}` : ""}/${port.protocol || "TCP"}`).slice(0, 3);
+      const selector = Object.entries(spec.selector?.matchLabels || spec.selector || {}).map(([key, value]) => `${key}=${value}`).slice(0, 2);
       const details = [
         `Namespace: ${resource.namespace || "default"}`,
-        resource.kind === "Deployment" || resource.kind === "StatefulSet" || resource.kind === "DaemonSet" ? `Replicas: ${spec.replicas ?? (resource.kind === "DaemonSet" ? "node-managed" : 1)}` : "",
+        workloadKinds.includes(resource.kind) ? `Replicas: ${spec.replicas ?? (resource.kind === "DaemonSet" ? "node-managed" : 1)}` : "",
+        images.length ? `Images: ${images.join(", ")}` : "",
         resource.kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
-        resource.kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
+        ports.length ? `Ports: ${ports.join(", ")}` : "",
+        selector.length ? `Selector: ${selector.join(", ")}` : "",
+        resource.kind === "Ingress" ? `Hosts: ${(spec.rules || []).map((rule) => rule.host).filter(Boolean).slice(0, 2).join(", ") || "default backend"}` : "",
+        resource.kind === "ConfigMap" ? `Keys: ${Object.keys(manifest.data || {}).slice(0, 3).join(", ")}` : "",
         resource.apiVersion || "",
       ].filter(Boolean).join("\n");
       const metadata = {
