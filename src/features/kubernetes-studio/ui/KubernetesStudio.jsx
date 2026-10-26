@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
 import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
+import { readZipTextFiles } from "../zipBundleReader.js";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -475,9 +476,21 @@ spec:
   };
 
   const importFile = async (event) => {
-    const files = Array.from(event.target.files || []);
+    const selectedFiles = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!files.length) return;
+    if (!selectedFiles.length) return;
+    let files = selectedFiles;
+    let zipImportedFiles = null;
+    try {
+      if (selectedFiles.length === 1 && /\.zip$/i.test(selectedFiles[0].name)) {
+        zipImportedFiles = await readZipTextFiles(selectedFiles[0]);
+        files = zipImportedFiles.map((entry) => ({ name: entry.name, text: entry.text }));
+      }
+    } catch (cause) {
+      setError(cause?.message || "The selected ZIP bundle could not be read.");
+      setNotice("");
+      return;
+    }
 
     // Kustomize overlays and Helm charts are source projects, not Kubernetes
     // API manifests. Detect them before extension checks so they never get
@@ -488,15 +501,21 @@ spec:
     if (kustomizeFiles.length) {
       const source = kustomizeFiles[0];
       const overlayDirectory = source.slice(0, source.lastIndexOf("/")) || "<overlay-directory>";
+      setYamlText("");
+      setSavedYamlText("");
+      setImportedFileNames(paths);
       setError("");
-      setNotice("Kustomize source detected (" + kustomizeFiles.length + " kustomization file(s)). Render the selected overlay first, then import the output: kubectl kustomize " + overlayDirectory + " > rendered-kustomize.yaml. This keeps patches, generators, and transformations accurate; K8s Studio does not silently approximate Kustomize rendering.");
+      setNotice("Kustomize bundle loaded (" + kustomizeFiles.length + " kustomization file(s)). The starter manifest has been cleared. Render the selected overlay with: kubectl kustomize " + overlayDirectory + " > rendered-kustomize.yaml, then import rendered-kustomize.yaml. K8s Studio does not approximate patches, generators, or transformations.");
       return;
     }
     if (helmCharts.length) {
       const chartFile = helmCharts[0];
       const chartDirectory = chartFile.slice(0, chartFile.lastIndexOf("/")) || "<chart-directory>";
+      setYamlText("");
+      setSavedYamlText("");
+      setImportedFileNames(paths);
       setError("");
-      setNotice("Helm chart source detected. Render templates with helm template <release-name> " + chartDirectory + " -f <values.yaml> > rendered-helm.yaml, then import rendered-helm.yaml. This preserves Helm values and template functions; K8s Studio does not pretend raw templates are deployable manifests.");
+      setNotice("Helm bundle loaded. The starter manifest has been cleared. Render the chart with: helm template <release-name> " + chartDirectory + " -f <values.yaml> > rendered-helm.yaml, then import rendered-helm.yaml. This preserves Helm values and template functions.");
       return;
     }
     const invalidFiles = files.filter((file) => !/\.ya?ml$/i.test(file.name));
@@ -505,7 +524,7 @@ spec:
       return;
     }
     try {
-      const importedFiles = await Promise.all(files.map(async (file) => ({
+      const importedFiles = zipImportedFiles || await Promise.all(files.map(async (file) => ({
         name: file.name,
         text: await file.text(),
       })));
@@ -577,7 +596,9 @@ spec:
           <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
           <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
           <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Kustomize / Helm bundle</button>
-          <input id="k8s-studio-source-bundle" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
+          <input id="k8s-studio-source-bundle" type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden onChange={importFile} aria-label="Choose a ZIP containing a Kustomize bundle or Helm chart" />
+          <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-folder")?.click()}>Import folder</button>
+          <input id="k8s-studio-source-folder" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
           <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import Kubernetes YAML, or choose a source bundle for render instructions."}</span>
           <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setNotice(""); setError(""); }}>Clear</button>
         </div>
