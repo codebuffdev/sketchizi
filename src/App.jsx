@@ -1396,6 +1396,7 @@ function App() {
         currentDocumentDirty={documentDirty}
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
+        onSaveToFile={() => fileActionsRef.current.saveCurrentDrawing?.()}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
         libraryToggle={collaborationCanEdit ? (
           <button
