@@ -102,3 +102,20 @@ test("Compose YAML editor provides context-aware completions and keyboard accept
   assert.match(css, /\.docker-compose-yaml-completions/);
   assert.match(css, /\.docker-compose-yaml-completion\.active/);
 });
+
+
+test("Compose YAML completions use indentation-aware parent context and filter existing sibling keys", () => {
+  assert.match(component, /const parentLine = \[\.\.\.previousLines\]\.reverse\(\)\.find/);
+  assert.match(component, /lineIndent < currentIndent/);
+  assert.match(component, /const siblingKeys = new Set/);
+  assert.match(component, /!siblingKeys\.has\(key\)/);
+});
+
+test("Compose YAML completions support line dismissal, explicit reopen, and cursor-relative popup placement", () => {
+  assert.match(component, /dismissedCompletionLine/);
+  assert.match(component, /setDismissedCompletionLine\(yamlText\.lastIndexOf/);
+  assert.match(component, /if \(force\) setDismissedCompletionLine\(null\)/);
+  assert.match(component, /completionPosition\.top/);
+  assert.match(component, /completionPosition\.left/);
+  assert.match(component, /onKeyUp=\{/);
+});

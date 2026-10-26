@@ -51,8 +51,15 @@ function buildComposeCompletions(text, caret, force = false) {
   const line = text.slice(lineStart, lineEnd);
   const before = text.slice(lineStart, caret);
   const indent = (line.match(/^\s*/) || [""])[0];
-  const previous = text.slice(0, lineStart).split("\n").reverse().find((value) => value.trim())?.trim() || "";
-  const parent = previous.replace(/:\s*.*$/, "").replace(/^[- ]+/, "").trim();
+  const previousLines = text.slice(0, lineStart).split("\n");
+  const currentIndent = indent.length;
+  const previous = [...previousLines].reverse().find((value) => value.trim())?.trim() || "";
+  const parentLine = [...previousLines].reverse().find((value) => {
+    if (!value.trim()) return false;
+    const lineIndent = (value.match(/^\s*/) || [""])[0].length;
+    return lineIndent < currentIndent && /^[\s-]*[A-Za-z_][\w.-]*\s*:\s*(?:#.*)?$/.test(value);
+  }) || "";
+  const parent = (parentLine.trim().match(/(?:^|-\s*)([A-Za-z_][\w.-]*)\s*:/) || [])[1] || "";
   const trimmed = before.trim();
   let items = [];
   let replaceStart = lineStart + indent.length;
@@ -90,6 +97,20 @@ function buildComposeCompletions(text, caret, force = false) {
       choices = COMPOSE_COMPLETION_GROUPS.service;
       if (!indent && trimmed) choices = COMPOSE_COMPLETION_GROUPS.root;
     }
+    const siblingKeys = new Set(
+      previousLines
+        .filter((value) => {
+          if (!value.trim()) return false;
+          const lineIndent = (value.match(/^\s*/) || [""])[0].length;
+          return lineIndent === currentIndent;
+        })
+        .map((value) => (value.trim().match(/^[- ]*([A-Za-z_][\w.-]*)\s*:/) || [])[1])
+        .filter(Boolean)
+    );
+    choices = choices.filter((entry) => {
+      const key = (entry.match(/^[- ]*([A-Za-z_][\w.-]*)\s*:/) || [])[1];
+      return !key || !siblingKeys.has(key);
+    });
     choices.forEach((entry) => add(entry, parent ? "Compose " + parent + " option" : "Docker Compose option", entry));
     if (!force && !trimmed && !previous.endsWith(":")) items = [];
   }
@@ -153,6 +174,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [error, setError] = useState("");
   const [showValidation, setShowValidation] = useState(false);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+  const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
+  const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 60 });
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
   const parsed = useMemo(() => {
@@ -179,6 +202,26 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
 
 
   const updateCompletions = (text, caret, force = false) => {
+    const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+    if (force) setDismissedCompletionLine(null);
+    else if (dismissedCompletionLine === lineStart) {
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      return;
+    } else if (dismissedCompletionLine !== null) setDismissedCompletionLine(null);
+    const editor = editorRef.current;
+    if (editor) {
+      const beforeCaret = text.slice(0, caret);
+      const lineIndex = beforeCaret.split("\n").length - 1;
+      const column = beforeCaret.length - beforeCaret.lastIndexOf("\n") - 1;
+      const lineHeight = fontSize * 1.65;
+      const shell = editor.parentElement;
+      const shellWidth = shell?.clientWidth || editor.clientWidth;
+      const popupWidth = Math.min(360, Math.max(220, shellWidth - 72));
+      setCompletionPosition({
+        top: Math.max(8, Math.min((shell?.clientHeight || editor.clientHeight) - 48, 12 + (lineIndex + 1) * lineHeight - editor.scrollTop)),
+        left: Math.max(52, Math.min(shellWidth - popupWidth - 8, 60 + column * fontSize * 0.602 - editor.scrollLeft))
+      });
+    }
     const next = buildComposeCompletions(text, caret, force);
     setCompletion({ ...next, selectedIndex: 0 });
   };
@@ -211,6 +254,10 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       return;
     }
     if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      const caret = event.currentTarget.selectionStart;
+      setDismissedCompletionLine(yamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1);
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
       return;
     }
@@ -285,7 +332,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       <div className="docker-studio-k8s-workspace">
         <section className="docker-studio-yaml-pane" aria-label="Compose YAML editor">
           <div className="docker-studio-pane-heading"><div><span>01</span><h2>Compose YAML</h2></div><div className="docker-studio-font-controls"><button type="button" onClick={() => setFontSize((size) => Math.max(10, size - 1))} disabled={fontSize <= 10} aria-label="Decrease YAML font size">A−</button><output>{fontSize}px</output><button type="button" onClick={() => setFontSize((size) => Math.min(20, size + 1))} disabled={fontSize >= 20} aria-label="Increase YAML font size">A+</button></div></div>
-          <div className="docker-studio-yaml-shell"><div className="docker-studio-yaml-gutter" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + scrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split("\n").length) }, (_, i) => <span key={i}>{i + 1}</span>)}</div></div><pre className="docker-studio-yaml-highlight" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}>{yamlText.split("\n").map((line, i) => <span className="docker-yaml-line" key={i}>{highlightLine(line)}{"\n"}</span>)}</pre><textarea ref={editorRef} className="docker-studio-yaml-input" aria-label="Docker Compose YAML" spellCheck="false" autoCapitalize="off" autoCorrect="off" value={yamlText} style={{ fontSize: fontSize + "px", lineHeight: 1.65 }} onChange={(event) => { const nextText = event.target.value; setYamlText(nextText); setError(""); setNotice(""); updateCompletions(nextText, event.target.selectionStart); }} onKeyDown={handleYamlKeyDown} onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)} onScroll={(event) => { setScrollTop(event.currentTarget.scrollTop); const pre = event.currentTarget.parentElement?.querySelector(".docker-studio-yaml-highlight"); if (pre) { pre.scrollTop = event.currentTarget.scrollTop; pre.scrollLeft = event.currentTarget.scrollLeft; } }} placeholder="Paste compose.yaml here…"/>{completion.items.length > 0 && <div className="docker-compose-yaml-completions" role="listbox" aria-label="Compose YAML completions"><div className="docker-compose-yaml-completion-heading">Compose suggestions <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd></div>{completion.items.map((item, index) => <button type="button" role="option" aria-selected={index === completion.selectedIndex} className={index === completion.selectedIndex ? "docker-compose-yaml-completion active" : "docker-compose-yaml-completion"} key={item.label} onMouseDown={(event) => event.preventDefault()} onClick={() => applyCompletion(item)}><strong>{item.label}</strong><small>{item.detail}</small></button>)}</div>}</div>
+          <div className="docker-studio-yaml-shell"><div className="docker-studio-yaml-gutter" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + scrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split("\n").length) }, (_, i) => <span key={i}>{i + 1}</span>)}</div></div><pre className="docker-studio-yaml-highlight" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}>{yamlText.split("\n").map((line, i) => <span className="docker-yaml-line" key={i}>{highlightLine(line)}{"\n"}</span>)}</pre><textarea ref={editorRef} className="docker-studio-yaml-input" aria-label="Docker Compose YAML" spellCheck="false" autoCapitalize="off" autoCorrect="off" value={yamlText} style={{ fontSize: fontSize + "px", lineHeight: 1.65 }} onChange={(event) => { const nextText = event.target.value; setYamlText(nextText); setError(""); setNotice(""); updateCompletions(nextText, event.target.selectionStart); }} onKeyDown={handleYamlKeyDown} onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)} onKeyUp={(event) => { if (completion.items.length && ["ArrowUp", "ArrowDown"].includes(event.key)) return; if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart); }} onScroll={(event) => { setScrollTop(event.currentTarget.scrollTop); const pre = event.currentTarget.parentElement?.querySelector(".docker-studio-yaml-highlight"); if (pre) { pre.scrollTop = event.currentTarget.scrollTop; pre.scrollLeft = event.currentTarget.scrollLeft; } }} placeholder="Paste compose.yaml here…"/>{completion.items.length > 0 && <div className="docker-compose-yaml-completions" style={{ top: completionPosition.top, left: completionPosition.left }} role="listbox" aria-label="Compose YAML completions"><div className="docker-compose-yaml-completion-heading">Compose suggestions <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd></div>{completion.items.map((item, index) => <button type="button" role="option" aria-selected={index === completion.selectedIndex} className={index === completion.selectedIndex ? "docker-compose-yaml-completion active" : "docker-compose-yaml-completion"} key={item.label} onMouseDown={(event) => event.preventDefault()} onClick={() => applyCompletion(item)}><strong>{item.label}</strong><small>{item.detail}</small></button>)}</div>}</div>
           <div className="docker-studio-yaml-status"><span>YAML</span><span>{yamlText.split("\n").length} lines</span><span>{yamlText.length.toLocaleString()} characters</span><span>Ctrl+Space suggestions · Enter/Tab accept</span></div><p className="docker-studio-editor-help">YAML is the source of truth. Imports and exports keep the complete document, including fields the visual preview does not yet interpret.</p>
         </section>
         <aside className="docker-studio-resource-pane" aria-label="Live service preview">
