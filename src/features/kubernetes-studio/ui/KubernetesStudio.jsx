@@ -769,9 +769,19 @@ spec:
       setError(parsed.parseError || "Add at least one Kubernetes resource with kind and metadata.name.");
       return;
     }
+    if (parsed.parseError) {
+      setError(parsed.parseError);
+      return;
+    }
+    const blockingIssues = parsed.issues.filter((issue) => issue.severity === "error");
+    if (blockingIssues.length) {
+      setError("Resolve " + blockingIssues.length + " manifest error(s) before creating the diagram. Warnings can be reviewed and accepted.");
+      return;
+    }
     try {
       await onCreateDiagram?.(parsed.resources);
       setError("");
+      setSavedYamlText(yamlText);
       setNotice(`Added ${parsed.resources.length} Kubernetes resource(s) to the canvas.`);
       onClose?.();
     } catch (cause) {
