@@ -1021,3 +1021,30 @@
     transition: none;
   }
 }
+
+.contextual-formatting-group.contextual-essential-icon-colors {
+  gap: 5px;
+  padding: 5px 8px;
+}
+.contextual-essential-icon-colors-label {
+  margin-right: 3px;
+  color: var(--ui-text-muted, #a4a4ad);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.contextual-essential-custom-color {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 3px;
+  padding-left: 7px;
+  border-left: 1px solid var(--ui-border, #34343a);
+}
+.contextual-essential-custom-color input[type="color"] {
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border: 1px solid var(--ui-border, #34343a);
+  border-radius: 6px;
+  background: var(--ui-surface-solid, #1b1b1b);
+  cursor: pointer;
+}
