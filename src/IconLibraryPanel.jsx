@@ -87,6 +87,12 @@ export default function IconLibraryPanel({
 
   useEffect(() => {
     const handleShortcut = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose?.();
+        return;
+      }
       if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target;
       const isTyping = target instanceof HTMLElement && (target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(target.tagName));
@@ -95,9 +101,9 @@ export default function IconLibraryPanel({
         searchRef.current?.focus();
       }
     };
-    window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
-  }, [searchRef]);
+    window.addEventListener("keydown", handleShortcut, true);
+    return () => window.removeEventListener("keydown", handleShortcut, true);
+  }, [searchRef, onClose]);
 
   const rememberSearch = (value = search) => {
     const normalized = value.trim();
@@ -238,22 +244,6 @@ export default function IconLibraryPanel({
             </div>
           </div>
 
-          {selectedIcon && (
-            <div className="library-selected-action" role="region" aria-label="Selected icon">
-              <div className="library-selected-preview">
-                <img src={selectedIcon.src} alt="" draggable={false} />
-                <div className="library-selected-copy">
-                  <span className="library-selected-eyebrow">Selected asset</span>
-                  <strong>{selectedIcon.name}</strong>
-                  <span>{getIconSubtitle(selectedIcon)}</span>
-                </div>
-              </div>
-              <button type="button" className="library-selected-add" aria-label={`Add selected icon ${selectedIcon.name} to the canvas center`} title={`Add ${selectedIcon.name} to the canvas center`} onClick={() => handleIconClick(withSelectedEssentialColor(selectedIcon))}>
-                <span aria-hidden="true">＋</span> Add to canvas
-              </button>
-            </div>
-          )}
-
           {remoteLoading && activeSource === "eraser" && displayedIcons.length === 0 ? <div className="empty">Loading icons…</div> : shownIcons.length > 0 ? <div ref={iconListRef} className={`icon-grid library-icon-grid ${viewMode === "list" ? "is-list-view" : ""} ${cardLayout === "compact" ? "is-compact-layout" : ""}`} onScroll={(event) => {
             const el = event.currentTarget;
             if (el.scrollTop + el.clientHeight >= el.scrollHeight - 240) setIconDisplayLimit((limit) => Math.min(limit + 120, displayedIcons.length));
@@ -262,7 +252,7 @@ export default function IconLibraryPanel({
               const favorite = isFavorite(icon);
               return <div key={`${icon.category || icon.source}-${icon.id}`} role="button" tabIndex={0} className={`icon-card library-icon-card ${draggingIcon?.icon?.id === icon.id ? "is-drag-source" : ""} ${selectedIconId === iconSelectionKey(icon) ? "is-selected" : ""} ${favorite ? "has-favorite" : ""}`} aria-pressed={selectedIconId === iconSelectionKey(icon)} onClick={() => setSelectedIconId(iconSelectionKey(icon))} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setSelectedIconId(iconSelectionKey(icon)); } }} onPointerDown={(event) => handleIconPointerDown(event, withSelectedEssentialColor(icon))} onMouseDown={(event) => handleIconMouseDown(event, withSelectedEssentialColor(icon))} onDragStart={(event) => handleDragStart(event, withSelectedEssentialColor(icon))} title={`Select ${icon.name}; drag onto the canvas to place`} aria-label={`Select ${icon.name}; drag onto the canvas to place`}>
                 <span className="icon-preview library-icon-preview"><img src={icon.src} alt="" draggable={false} /></span>
-                <span className="library-icon-card-content"><span className="icon-name">{icon.name}</span><span className="icon-subtitle">{getIconSubtitle(icon)}</span><span className="library-icon-tags">{iconTags(icon).map((tag) => <span key={tag} className="library-icon-tag">{tag}</span>)}</span></span>
+                <span className="library-icon-card-content"><span className="icon-name">{icon.name}</span><span className="icon-subtitle">{getIconSubtitle(icon)}</span></span>
                 <span className="library-icon-card-actions">
                   <span className={favorite ? "favorite-button active" : "favorite-button"} role="button" tabIndex={0} title={favorite ? "Remove from favorites" : "Add to favorites"} aria-label={favorite ? "Remove from favorites" : "Add to favorites"} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleFavorite(icon); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleFavorite(icon); } }}>{favorite ? "★" : "☆"}</span>
                   <span className="library-add-icon" role="button" tabIndex={0} title={`Add ${icon.name} to the canvas center`} aria-label={`Add ${icon.name} to the canvas center`} onPointerDown={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleIconClick(withSelectedEssentialColor(icon)); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); handleIconClick(withSelectedEssentialColor(icon)); } }}>+</span>
