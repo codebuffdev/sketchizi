@@ -132,14 +132,14 @@ function buildCompletions(text, caret, force = false) {
       previousLines
         .filter((value) => {
           if (!value.trim()) return false;
-          const lineIndent = (value.match(/^\\s*/) || [""])[0].length;
+          const lineIndent = (value.match(/^\s*/) || [""])[0].length;
           return lineIndent === currentIndent;
         })
-        .map((value) => (value.trim().match(/^[- ]*([A-Za-z_][\\w.-]*)\\s*:/) || [])[1])
+        .map((value) => (value.trim().match(/^[- ]*([A-Za-z_][\w.-]*)\s*:/) || [])[1])
         .filter(Boolean)
     );
     choices = choices.filter((entry) => {
-      const key = (entry.match(/^[- ]*([A-Za-z_][\\w.-]*)\\s*:/) || [])[1];
+      const key = (entry.match(/^[- ]*([A-Za-z_][\w.-]*)\s*:/) || [])[1];
       return !key || !siblingKeys.has(key);
     });
     if (beforeCaret.trim()) {
