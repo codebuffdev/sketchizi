@@ -425,10 +425,23 @@ function App() {
       kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
       apiVersion,
     ].filter(Boolean).join("\\n");
+    // Remove generated connectors involving this resource before its metadata changes.
+    // Their reciprocal card bindings must be removed too, otherwise Excalidraw can retain stale
+    // boundElements references after the YAML is reapplied.
+    const staleRelationshipIds = new Set(current
+      .filter((element) => !element.isDeleted
+        && element.type === "arrow"
+        && (element.customData?.kubernetesRelationship?.fromResourceId === resource.id
+          || element.customData?.kubernetesRelationship?.toResourceId === resource.id))
+      .map((element) => element.id));
     const updated = current.map((element) => {
       if (element.isDeleted) return element;
+      if (staleRelationshipIds.has(element.id)) return { ...element, isDeleted: true, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now() };
       const metadata = element.customData?.kubernetesManifestResource;
-      if (metadata?.properties?.manifestResourceId !== resource.id) return element;
+      if (metadata?.properties?.manifestResourceId !== resource.id) {
+        if (!Array.isArray(element.boundElements) || !element.boundElements.some((bound) => staleRelationshipIds.has(bound.id))) return element;
+        return { ...element, boundElements: element.boundElements.filter((bound) => !staleRelationshipIds.has(bound.id)), version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now() };
+      }
       const isTitle = element.type === "text" && String(element.text || "").startsWith(kind + "\\n");
       const isDetails = element.type === "text" && String(element.text || "").startsWith("Namespace:");
       return {
@@ -451,7 +464,7 @@ function App() {
     });
     api.updateScene({ elements: updated, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || updated, api.getAppState?.() || {});
-    showToast(`Updated canvas card for ${kind}/${name}. Relationships may need to be regenerated if selector or reference fields changed.`);
+    showToast(`Updated canvas card for ${kind}/${name}. Existing generated relationships for this resource were cleared; regenerate the diagram to rebuild them.`);
   }, [collaborationCanEdit, queueSketchSave, showToast]);
 
   const createKubernetesDiagram = useCallback(async (resources) => {
