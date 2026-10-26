@@ -10,13 +10,18 @@ const makePage = async (viewport) => {
   return { context, page };
 };
 
+const openDesignStudio = async (page) => {
+  await page.getByRole("button", { name: /design workspaces/i }).click();
+  await page.getByRole("menuitem", { name: /design studio/i }).click();
+  await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
+};
+
 try {
   // Template journey at desktop width, then verify the creation screen at narrow widths.
   const desktop = await makePage({ width: 1440, height: 1000 });
   const page = desktop.page;
   await page.goto(baseURL, { waitUntil: "networkidle", timeout: 60000 });
-  await page.getByRole("button", { name: /create a new design/i }).click();
-  await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
+  await openDesignStudio(page);
   await page.getByRole("tab", { name: "AWS architecture" }).click();
   await page.getByRole("button", { name: /Three-Tier AWS Web Application/i }).waitFor();
   await page.getByRole("button", { name: /Three-Tier AWS Web Application/i }).click();
@@ -32,8 +37,7 @@ try {
   // A fresh browser context validates the independent blank-canvas path.
   const blank = await makePage({ width: 1280, height: 800 });
   await blank.page.goto(baseURL, { waitUntil: "networkidle", timeout: 60000 });
-  await blank.page.getByRole("button", { name: /create a new design/i }).click();
-  await blank.page.getByRole("heading", { name: "What are you designing?" }).waitFor();
+  await openDesignStudio(blank.page);
   await blank.page.getByRole("button", { name: "Start blank" }).click();
   await blank.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
@@ -42,8 +46,7 @@ try {
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
   await responsive.page.goto(baseURL, { waitUntil: "networkidle", timeout: 60000 });
-  await responsive.page.getByRole("button", { name: /create a new design/i }).click();
-  await responsive.page.getByRole("heading", { name: "What are you designing?" }).waitFor();
+  await openDesignStudio(responsive.page);
   await responsive.page.getByRole("button", { name: "Start blank" }).waitFor();
   const overflow = await responsive.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   if (overflow) throw new Error("Creation screen has horizontal overflow at 390px viewport width.");
