@@ -115,6 +115,8 @@ export default function IconLibraryPanel({
     setActiveSource(source);
     setCollectionsOpen(false);
     setIconDisplayLimit(120);
+    if (source !== "kubernetes") setActiveKubernetesCategory("All");
+    if (source !== "aws") setActiveAwsCategory("All");
     if (source === "all" || source === "eraser") {
       setActiveCategory("Eraser Icons");
       if (source === "all") { setActiveAwsCategory("All"); setActiveKubernetesCategory("All"); }
