@@ -170,3 +170,7 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 /* Ensure no ancestor or global focus-visible treatment draws the violet editor frame. */
 .k8s-studio-editor .k8s-yaml-editor-shell,.k8s-studio-editor .k8s-yaml-editor-shell:focus,.k8s-studio-editor .k8s-yaml-editor-shell:focus-within{outline:0!important;box-shadow:none!important;border-color:transparent!important}
 .k8s-studio-editor .k8s-yaml-editor-shell textarea,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible,.k8s-studio-editor .k8s-yaml-editor-shell textarea:active{outline:0!important;box-shadow:none!important;border-color:#31435d!important}
+
+
+/* The focus frame comes from the legacy editor textarea rule above; override it at equal specificity. */
+.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus{border-color:#31435d;box-shadow:none}
