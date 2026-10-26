@@ -168,10 +168,37 @@ function helmValue(expression, context) {
 
 function renderSimpleTemplate(template, context, namedTemplates) {
   let source = template.replace(/{{-?\s*define\s+"([^"]+)"\s*-?}}([\s\S]*?){{-?\s*end\s*-?}}/g, (_, name, body) => { namedTemplates.set(name, body); return ""; });
-  source = source.replace(/{{-?\s*(?:include|template)\s+"([^"]+)"(?:\s+[^}]*)?\s*-?}}/g, (_, name) => {
+  source = source.replace(/{{-?\s*(?:include|template)\s+"([^"]+)"(?:\s+\.)?([^}]*)-?}}/g, (_, name, tail = "") => {
     const body = namedTemplates.get(name);
     if (body === undefined) throw new Error("Helm helper '" + name + "' is not defined in the selected chart.");
-    return renderSimpleTemplate(body, context, namedTemplates);
+    let value = renderSimpleTemplate(body, context, namedTemplates);
+    const stages = tail.split("|").map((stage) => stage.trim()).filter(Boolean);
+    for (const stage of stages) {
+      const [fn, ...args] = stage.split(/\s+/);
+      const arg = args.join(" ").replace(/^["']|["']$/g, "");
+      if (fn === "nindent" || fn === "indent") {
+        const indent = " ".repeat(Math.min(80, Math.max(0, Number(args[0] || 0))));
+        value = String(value).trimEnd().split("\n").map((line) => indent + line).join("\n");
+        if (fn === "nindent") value = "\n" + value;
+      } else if (fn === "trim") value = String(value).trim();
+      else if (fn === "upper") value = String(value).toUpperCase();
+      else if (fn === "lower") value = String(value).toLowerCase();
+      else if (fn === "quote") value = JSON.stringify(String(value));
+      else if (fn === "default" && !value) value = arg;
+      else throw new Error("This Helm helper uses unsupported pipeline function '" + fn + "'.");
+    }
+    return value;
+  });
+  source = source.replace(/{{-?\s*range\s+(?:(\$[\w]+)(?:\s*,\s*(\$[\w]+))?\s*:=\s*)?([^}]+?)\s*-?}}([\s\S]*?){{-?\s*end\s*-?}}/g, (_, firstVar, secondVar, expression, body) => {
+    const value = lookup(context, expression.trim());
+    const entries = Array.isArray(value) ? value.map((item, index) => [index, item]) : value && typeof value === "object" ? Object.entries(value) : [];
+    return entries.map(([key, item]) => {
+      const scoped = { ...context };
+      if (item && typeof item === "object" && !Array.isArray(item)) Object.assign(scoped, item);
+      if (firstVar && secondVar) { scoped[firstVar.slice(1)] = key; scoped[secondVar.slice(1)] = item; }
+      else if (firstVar) scoped[firstVar.slice(1)] = item;
+      return renderSimpleTemplate(body, scoped, namedTemplates);
+    }).join("");
   });
   // Resolve simple if/else blocks before evaluating values.
   for (let pass = 0; pass < 20; pass++) {
