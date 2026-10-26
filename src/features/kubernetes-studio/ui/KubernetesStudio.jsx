@@ -342,6 +342,7 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [manifestFontSize, setManifestFontSize] = useState(12);
+  const [yamlScrollTop, setYamlScrollTop] = useState(0);
   const [previewSplit, setPreviewSplit] = useState(50);
   const workspaceRef = useRef(null);
   const splitDragRef = useRef(false);
@@ -614,6 +615,7 @@ spec:
               </div>
             </div>
             <div className={yamlText ? "k8s-yaml-editor-shell has-content" : "k8s-yaml-editor-shell"}>
+              <div className="k8s-yaml-line-numbers" aria-hidden="true"><div style={{ transform: "translateY(-" + yamlScrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split(String.fromCharCode(10)).length) }, (_, index) => <span key={index}>{index + 1}</span>)}</div></div>
               <pre className="k8s-yaml-highlight" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}>{highlightYaml(yamlText)}</pre>
               <textarea
                 ref={yamlEditorRef}
@@ -638,6 +640,7 @@ spec:
                 onKeyDown={handleYamlKeyDown}
                 onBlur={() => window.setTimeout(() => setCompletion((current) => ({ ...current, items: [] })), 120)}
                 onScroll={(event) => {
+                  setYamlScrollTop(event.currentTarget.scrollTop);
                   const highlight = event.currentTarget.parentElement?.querySelector(".k8s-yaml-highlight");
                   if (highlight) {
                     highlight.scrollTop = event.currentTarget.scrollTop;
