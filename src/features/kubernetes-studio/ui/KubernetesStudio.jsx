@@ -484,6 +484,7 @@ spec:
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
           <div><button type="button" className="k8s-studio-secondary" onClick={onClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
         </footer>
+      {inspectorOpen && inspectedResource && <div className="k8s-studio-inspector-backdrop"><section className="k8s-studio-inspector" role="dialog" aria-modal="true"><header><div><strong>{inspectedResource.kind}/{inspectedResource.name}</strong><small>{inspectedResource.namespace} · {inspectedResource.apiVersion}</small></div><button type="button" onClick={() => setInspectorOpen(false)}>Close</button></header><pre>{stringify(inspectedResource.manifest)}</pre><footer><span>Read-only inspection</span><button type="button" className="k8s-studio-primary" onClick={loadInspectedResource}>Edit this resource</button></footer></section></div>}
       </section>
     </div>
   );
