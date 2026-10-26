@@ -165,3 +165,8 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 /* Final override: keep editor focus and active shell free of violet/blue outlines. */
 .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible{border-color:#31435d!important;box-shadow:none!important;outline:none!important}
 .k8s-studio-editor .k8s-yaml-editor-shell:focus-within,.k8s-studio-editor .k8s-yaml-editor-shell:focus-within textarea{box-shadow:none!important;outline:none!important}
+
+
+/* Ensure no ancestor or global focus-visible treatment draws the violet editor frame. */
+.k8s-studio-editor .k8s-yaml-editor-shell,.k8s-studio-editor .k8s-yaml-editor-shell:focus,.k8s-studio-editor .k8s-yaml-editor-shell:focus-within{outline:0!important;box-shadow:none!important;border-color:transparent!important}
+.k8s-studio-editor .k8s-yaml-editor-shell textarea,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible,.k8s-studio-editor .k8s-yaml-editor-shell textarea:active{outline:0!important;box-shadow:none!important;border-color:#31435d!important}
