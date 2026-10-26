@@ -1135,3 +1135,84 @@
 .app .library-panel-redesign .mobile-panel-close:focus-visible {
   outline-color: #9aa9c1 !important;
 }
+
+
+/* Subtle Icon Library branding: quiet neutral icon tile, no violet glow. */
+.app .library-panel-redesign .library-brand-icon {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border: 1px solid #343d4b !important;
+  border-radius: 11px !important;
+  background: #202733 !important;
+  color: #c5cedd !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-brand-icon svg {
+  width: 21px !important;
+  height: 21px !important;
+  stroke: currentColor !important;
+}
+.app .library-panel-redesign .library-panel-header .label {
+  color: #e1e6ef !important;
+  font-weight: 680 !important;
+  letter-spacing: -.02em !important;
+}
+.app .library-panel-redesign .library-panel-subtitle {
+  color: #929db0 !important;
+}
+.app .library-panel-redesign .library-pin-button,
+.app .library-panel-redesign .mobile-panel-close {
+  border-color: #303949 !important;
+  background: #171e29 !important;
+  color: #aeb9ca !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-pin-button:hover,
+.app .library-panel-redesign .mobile-panel-close:hover {
+  border-color: #4b586c !important;
+  background: #222b39 !important;
+  color: #e1e7f0 !important;
+}
+.app .library-panel-redesign .library-pin-button.active {
+  border-color: #53647c !important;
+  background: #293548 !important;
+  color: #e2eaf5 !important;
+}
+.app .library-panel-redesign .library-source-chip.active,
+.app .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #536178 !important;
+  background: #293344 !important;
+  color: #edf1f7 !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-source-chip-eraser {
+  border-color: #343d4b !important;
+  background: #1a202a !important;
+  color: #c2cad8 !important;
+}
+.app .library-panel-redesign .library-icon-card .library-add-icon {
+  width: 31px !important;
+  height: 31px !important;
+  border: 1px solid #414d60 !important;
+  border-radius: 10px !important;
+  background: #293344 !important;
+  color: #dce4ef !important;
+  font-size: 22px !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-icon-card .library-add-icon:hover {
+  border-color: #66768f !important;
+  background: #344157 !important;
+}
+.app .library-panel-redesign .library-icon-card .favorite-button:hover,
+.app .library-panel-redesign .library-icon-card .favorite-button.active {
+  background: #293344 !important;
+  color: #e1e7f0 !important;
+}
+.app .library-panel-redesign .library-source-chip:focus-visible,
+.app .library-panel-redesign .library-icon-card .library-add-icon:focus-visible,
+.app .library-panel-redesign .library-pin-button:focus-visible,
+.app .library-panel-redesign .mobile-panel-close:focus-visible {
+  outline-color: #9baac0 !important;
+}
