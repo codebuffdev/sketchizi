@@ -236,6 +236,7 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+  const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
   const [manifestFontSize, setManifestFontSize] = useState(12);
   const [yamlScrollTop, setYamlScrollTop] = useState(0);
   const [previewSplit, setPreviewSplit] = useState(50);
@@ -314,6 +315,14 @@ spec:
   };
 
   const updateCompletions = (text, caret, force = false) => {
+    const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+    if (force) setDismissedCompletionLine(null);
+    else if (dismissedCompletionLine === lineStart) {
+      setCompletion({ items: [], replaceStart: lineStart, replaceEnd: caret, selectedIndex: 0 });
+      return;
+    } else if (dismissedCompletionLine !== null) {
+      setDismissedCompletionLine(null);
+    }
     const next = buildCompletions(text, caret, force);
     setCompletion({ ...next, selectedIndex: 0 });
   };
@@ -350,7 +359,9 @@ spec:
       return;
     }
     if (event.key === "Escape") {
-      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      const lineStart = yamlText.lastIndexOf("\n", Math.max(0, event.currentTarget.selectionStart - 1)) + 1;
+      setDismissedCompletionLine(lineStart);
+      setCompletion({ items: [], replaceStart: lineStart, replaceEnd: event.currentTarget.selectionStart, selectedIndex: 0 });
       return;
     }
     if (event.key === "Enter" && !completion.items.length) {
@@ -717,7 +728,7 @@ spec:
                 }}
                 onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)}
                 onKeyUp={(event) => {
-                  if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart);
+                  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart);
                 }}
                 onKeyDown={handleYamlKeyDown}
                 onBlur={() => window.setTimeout(() => setCompletion((current) => ({ ...current, items: [] })), 120)}
