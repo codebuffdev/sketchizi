@@ -230,13 +230,91 @@ function validateKubernetesResources(resources) {
     if (resource.kind === "CronJob" && !spec.schedule) add(resource, "error", "CronJob must define spec.schedule.");
   }
 
+  const addDependencyIssue = (resource, severity, code, message) => {
+    issues.push({ id: resource.id + ":" + severity + ":" + code, resource: resource.name, kind: resource.kind, severity, message });
+  };
+  const hasResource = (kind, name, namespace) => resources.some((candidate) =>
+    candidate.kind === kind && candidate.name === name && (namespace == null || candidate.namespace === namespace)
+  );
+
   for (const resource of resources) {
     const podSpec = resource.kind === "Pod" ? resource.manifest?.spec : resource.manifest?.spec?.template?.spec;
-    for (const claim of podSpec?.volumes || []) {
-      const claimName = claim.persistentVolumeClaim?.claimName;
-      if (!claimName) continue;
-      const found = resources.some((candidate) => candidate.kind === "PersistentVolumeClaim" && candidate.name === claimName && candidate.namespace === resource.namespace);
-      if (!found) issues.push({ id: resource.id + ":warning:pvc:" + claimName, resource: resource.name, kind: resource.kind, severity: "warning", message: "Volume references PersistentVolumeClaim '" + claimName + "', which is not present in this manifest set." });
+    if (!podSpec) continue;
+    if (podSpec.serviceAccountName && !hasResource("ServiceAccount", podSpec.serviceAccountName, resource.namespace)) {
+      addDependencyIssue(resource, "warning", "service-account:" + podSpec.serviceAccountName, "References ServiceAccount '" + podSpec.serviceAccountName + "', which is not present in this manifest set (it may be created separately).");
+    }
+    for (const imagePullSecret of podSpec.imagePullSecrets || []) {
+      if (imagePullSecret.name && !hasResource("Secret", imagePullSecret.name, resource.namespace)) {
+        addDependencyIssue(resource, "warning", "image-pull-secret:" + imagePullSecret.name, "Image pull credentials reference Secret '" + imagePullSecret.name + "', which is not present in this manifest set.");
+      }
+    }
+    for (const volume of podSpec.volumes || []) {
+      const claimName = volume.persistentVolumeClaim?.claimName;
+      if (claimName && !hasResource("PersistentVolumeClaim", claimName, resource.namespace)) {
+        addDependencyIssue(resource, "warning", "pvc:" + claimName, "Volume references PersistentVolumeClaim '" + claimName + "', which is not present in this manifest set.");
+      }
+      const configMapName = volume.configMap?.name;
+      if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
+        addDependencyIssue(resource, "warning", "configmap:" + configMapName, "Volume references ConfigMap '" + configMapName + "', which is not present in this manifest set.");
+      }
+      const secretName = volume.secret?.secretName;
+      if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
+        addDependencyIssue(resource, "warning", "secret:" + secretName, "Volume references Secret '" + secretName + "', which is not present in this manifest set.");
+      }
+      const projected = volume.projected?.sources || [];
+      for (const source of projected) {
+        const projectedConfigMap = source.configMap?.name;
+        const projectedSecret = source.secret?.name;
+        if (projectedConfigMap && !hasResource("ConfigMap", projectedConfigMap, resource.namespace)) {
+          addDependencyIssue(resource, "warning", "projected-configmap:" + projectedConfigMap, "Projected volume references ConfigMap '" + projectedConfigMap + "', which is not present in this manifest set.");
+        }
+        if (projectedSecret && !hasResource("Secret", projectedSecret, resource.namespace)) {
+          addDependencyIssue(resource, "warning", "projected-secret:" + projectedSecret, "Projected volume references Secret '" + projectedSecret + "', which is not present in this manifest set.");
+        }
+      }
+    }
+    for (const container of [...(podSpec.initContainers || []), ...(podSpec.containers || []), ...(podSpec.ephemeralContainers || [])]) {
+      for (const envFrom of container.envFrom || []) {
+        const configMapName = envFrom.configMapRef?.name;
+        const secretName = envFrom.secretRef?.name;
+        if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
+          addDependencyIssue(resource, "warning", "env-configmap:" + configMapName, "Container environment references ConfigMap '" + configMapName + "', which is not present in this manifest set.");
+        }
+        if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
+          addDependencyIssue(resource, "warning", "env-secret:" + secretName, "Container environment references Secret '" + secretName + "', which is not present in this manifest set.");
+        }
+      }
+      for (const env of container.env || []) {
+        const configMapName = env.valueFrom?.configMapKeyRef?.name;
+        const secretName = env.valueFrom?.secretKeyRef?.name;
+        if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
+          addDependencyIssue(resource, "warning", "env-key-configmap:" + configMapName, "Environment variable '" + env.name + "' references ConfigMap '" + configMapName + "', which is not present in this manifest set.");
+        }
+        if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
+          addDependencyIssue(resource, "warning", "env-key-secret:" + secretName, "Environment variable '" + env.name + "' references Secret '" + secretName + "', which is not present in this manifest set.");
+        }
+      }
+    }
+  }
+
+  for (const resource of resources) {
+    const spec = resource.manifest?.spec || {};
+    if (resource.kind === "HorizontalPodAutoscaler" && spec.scaleTargetRef?.name) {
+      const targetKind = spec.scaleTargetRef.kind || "Deployment";
+      if (!hasResource(targetKind, spec.scaleTargetRef.name, resource.namespace)) {
+        addDependencyIssue(resource, "warning", "hpa-target:" + spec.scaleTargetRef.name, "HPA target " + targetKind + "/" + spec.scaleTargetRef.name + " is not present in this manifest set.");
+      }
+    }
+    if (resource.kind === "RoleBinding" || resource.kind === "ClusterRoleBinding") {
+      const roleRef = spec.roleRef;
+      if (roleRef?.name && !hasResource(roleRef.kind, roleRef.name, resource.namespace)) {
+        addDependencyIssue(resource, "warning", "role-ref:" + roleRef.name, "Role binding references " + roleRef.kind + "/" + roleRef.name + ", which is not present in this manifest set.");
+      }
+      for (const subject of spec.subjects || []) {
+        if (subject.kind === "ServiceAccount" && subject.name && !hasResource("ServiceAccount", subject.name, subject.namespace || resource.namespace)) {
+          addDependencyIssue(resource, "warning", "rbac-service-account:" + subject.name, "Role binding references ServiceAccount '" + subject.name + "', which is not present in this manifest set.");
+        }
+      }
     }
   }
   return issues;
