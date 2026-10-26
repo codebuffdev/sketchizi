@@ -286,20 +286,19 @@ test("exports a Markdown preflight report with score, findings, and scope limita
 test("Compose Studio exports a static preflight report without requiring local Docker execution", async () => {
   const { readFile } = await import("node:fs/promises");
   const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(ui, /Export preflight report/);
-  assert.match(ui, /Export compose\.yaml/);
-  assert.match(ui, /Open as diagram/);
+  assert.match(ui, /Preflight report/);
+  assert.match(ui, /Export YAML/);
+  assert.match(ui, /Create diagram/);
   assert.doesNotMatch(ui, /Execution Preflight|Deployment preflight|docker compose -f compose\.yaml up|Local runner URL/);
 });
 
 
-test("Compose Studio supports duplicating a service with a unique name and review notice", async () => {
+test("Compose Studio supports adding services and creating diagrams from valid YAML", async () => {
   const { readFile } = await import("node:fs/promises");
   const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
-  assert.match(ui, /const duplicateSelected = \(\) =>/);
-  assert.match(ui, /const existingNames = new Set\(services\.map\(\(service\) => service\.name\)\)/);
-  assert.match(ui, /onClick=\{duplicateSelected\}>Duplicate service<\/button>/);
-  assert.match(ui, /Review ports, volumes, and environment values before running/);
+  assert.match(ui, /const addService = \(\) =>/);
+  assert.match(ui, /onClick=\{addService\}>\+ Service<\/button>/);
+  assert.match(ui, /Canvas changes only after Create diagram/);
 });
 
 
