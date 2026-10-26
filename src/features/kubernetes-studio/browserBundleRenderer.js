@@ -156,7 +156,10 @@ function lookup(context, expression) {
 }
 
 function truthy(value) {
-  return !(value == null || value === false || value === 0 || value === "");
+  if (value == null || value === false || value === 0 || value === "") return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
 }
 
 function parseArgs(source, context) {
@@ -213,8 +216,14 @@ function callTemplateFunction(name, args) {
   }
 }
 
-function evaluateExpression(expression, context) {
-  const stages = String(expression || "").split(/\s+\|\s+/);
+function evaluateExpression(expression, context, namedTemplates) {
+  let expanded = String(expression || "");
+  expanded = expanded.replace(/\(include\s+"([^"]+)"\s+\.\)/g, (_, name) => {
+    const body = namedTemplates?.get(name);
+    if (body === undefined) throw new Error("Helm helper '" + name + "' is not defined in the selected chart.");
+    return JSON.stringify(renderSimpleTemplate(body, context, namedTemplates));
+  });
+  const stages = expanded.split(/\s+\|\s+/);
   const first = stages.shift() || "";
   const tokens = first.trim().match(/"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+/g) || [];
   let value;
@@ -223,9 +232,9 @@ function evaluateExpression(expression, context) {
   else if (tokens.length === 1 && functions.has(tokens[0])) value = callTemplateFunction(tokens[0], []);
   else value = lookup(context, first.trim());
   for (const stage of stages) {
-    const tokens = stage.trim().match(/"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+/g) || [];
-    const name = tokens.shift();
-    value = callTemplateFunction(name, [...parseArgs(tokens.join(" "), context), value]);
+    const stageTokens = stage.trim().match(/"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+/g) || [];
+    const name = stageTokens.shift();
+    value = callTemplateFunction(name, [...parseArgs(stageTokens.join(" "), context), value]);
   }
   return value;
 }
@@ -296,20 +305,21 @@ function renderSimpleTemplate(template, context, namedTemplates) {
     let value = renderSimpleTemplate(body, context, namedTemplates);
     const stages = tail.split("|").map((stage) => stage.trim()).filter(Boolean);
     for (const stage of stages) {
-      const [fn, ...args] = stage.split(/\s+/);
-      value = callTemplateFunction(fn, [...parseArgs(args.join(" "), context), value]);
+      const stageTokens = stage.match(/"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+/g) || [];
+      const fn = stageTokens.shift();
+      value = callTemplateFunction(fn, [...parseArgs(stageTokens.join(" "), context), value]);
     }
     return value;
   });
-  source = renderBlocks(source, context, namedTemplates);
   source = source.replace(/{{-?\s*(\$\w+)\s*:=\s*([^}]+?)\s*-?}}/g, (_, variable, expression) => {
-    context[variable.slice(1)] = evaluateExpression(expression, context);
+    context[variable.slice(1)] = evaluateExpression(expression, context, namedTemplates);
     return "";
   });
+  source = renderBlocks(source, context, namedTemplates);
   source = source.replace(/{{-?\s*([^{}]+?)\s*-?}}/g, (_, expression) => {
     const expr = expression.trim();
     if (/^(?:else|end|\/\*|\*)/.test(expr)) return "";
-    return evaluateExpression(expr, context) ?? "";
+    return evaluateExpression(expr, context, namedTemplates) ?? "";
   });
   if (/{{[\s\S]*?}}/.test(source)) throw new Error("The selected Helm chart uses template features not supported by Sketchizi's browser renderer. No diagram was created; the existing canvas is unchanged.");
   return source;
