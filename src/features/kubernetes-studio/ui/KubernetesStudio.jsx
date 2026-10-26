@@ -440,6 +440,10 @@ spec:
             <div className="k8s-studio-section-title"><div><span>02</span><h2>Resource preview</h2></div><strong>{parsed.resources.length}</strong></div>
             {parsed.parseError ? <div className="k8s-studio-error" role="alert"><strong>YAML parsing failed</strong><p>{parsed.parseError}</p></div> : null}
             {!parsed.parseError && !parsed.resources.length ? <div className="k8s-studio-empty">Resources will appear here after valid YAML is provided.</div> : null}
+            {parsed.issues?.length > 0 && <section className="k8s-studio-validation" aria-label="Manifest validation">
+              <div className="k8s-studio-validation-heading"><strong>Manifest checks</strong><span>{parsed.issues.filter((issue) => issue.severity === "error").length} errors · {parsed.issues.filter((issue) => issue.severity === "warning").length} warnings</span></div>
+              <ul>{parsed.issues.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}><span>{issue.severity === "error" ? "Error" : issue.severity === "warning" ? "Warning" : "Info"}</span><div><strong>{issue.kind}/{issue.resource}</strong><p>{issue.message}</p></div></li>)}</ul>
+            </section>}
             <div className="k8s-studio-resource-list">
               {parsed.resources.map((resource) => <article className="k8s-studio-resource" key={resource.id}>
                 <span className="k8s-studio-resource-glyph">{resource.kind.slice(0, 2).toUpperCase()}</span>
@@ -454,7 +458,7 @@ spec:
         {(error || parsed.parseError || notice) && <div className={error || parsed.parseError ? "k8s-studio-message error" : "k8s-studio-message"} role={error || parsed.parseError ? "alert" : "status"}>{error || parsed.parseError || notice}</div>}
         <footer className="k8s-studio-footer">
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
-          <div><button type="button" className="k8s-studio-secondary" onClick={onClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError)} onClick={createDiagram}>Create diagram</button></div>
+          <div><button type="button" className="k8s-studio-secondary" onClick={onClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
         </footer>
       </section>
     </div>
