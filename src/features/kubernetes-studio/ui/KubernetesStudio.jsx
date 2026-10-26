@@ -362,7 +362,7 @@ function validateKubernetesResources(resources) {
     if (resource.kind === "PersistentVolumeClaim" && !spec.resources?.requests?.storage) add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
     if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
     if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) && spec.replicas != null && (!Number.isInteger(spec.replicas) || spec.replicas < 0)) add(resource, "error", "spec.replicas must be a non-negative integer.");
-    if (resource.kind === "StatefulSet" && !spec.serviceName) add(resource, "error", "StatefulSet must define spec.serviceName for its governing Service.");
+    if (resource.kind === "StatefulSet" && !spec.serviceName) add(resource, "error", "StatefulSet must define spec\\.serviceName for its governing Service.");
     if (resource.kind === "CronJob" && !spec.schedule) add(resource, "error", "CronJob must define spec.schedule.");
     if (resource.kind === "CronJob" && spec.concurrencyPolicy != null && !["Allow", "Forbid", "Replace"].includes(spec.concurrencyPolicy)) add(resource, "error", "CronJob concurrencyPolicy must be Allow, Forbid, or Replace.");
     if (resource.kind === "HorizontalPodAutoscaler") {
