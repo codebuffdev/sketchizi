@@ -262,3 +262,16 @@ test("K8s Studio evaluates Kubernetes matchExpressions for PDB and NetworkPolicy
   assert.match(studio, /matchesKubernetesSelector\(spec\.selector, workloadLabels\(workload\)\)/);
   assert.match(studio, /matchesKubernetesSelector\(spec\.podSelector, workloadLabels\(workload\)\)/);
 });
+
+
+test("K8s Studio validates HPA metrics and scaling behavior policies", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /HPA should define at least one spec\.metrics target/);
+  assert.match(studio, /HPA metric .* is missing its metric source/);
+  assert.match(studio, /must define metric\.name/);
+  assert.match(studio, /must define a supported target type/);
+  assert.match(studio, /stabilizationWindowSeconds must be an integer from 0 to 3600/);
+  assert.match(studio, /selectPolicy must be Max, Min, or Disabled/);
+  assert.match(studio, /policies must be a list/);
+  assert.match(studio, /periodSeconds must be an integer from 1 to 1800/);
+});

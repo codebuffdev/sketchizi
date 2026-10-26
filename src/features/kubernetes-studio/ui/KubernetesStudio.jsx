@@ -546,6 +546,42 @@ function validateKubernetesResources(resources) {
       if (spec.maxReplicas != null && (!Number.isInteger(spec.maxReplicas) || spec.maxReplicas < 1)) add(resource, "error", "HPA maxReplicas must be a positive integer.");
       if (Number.isInteger(spec.minReplicas) && Number.isInteger(spec.maxReplicas) && spec.minReplicas > spec.maxReplicas) add(resource, "error", "HPA minReplicas cannot exceed maxReplicas.");
       if (spec.scaleTargetRef?.kind && !["Deployment", "StatefulSet", "ReplicaSet"].includes(spec.scaleTargetRef.kind)) add(resource, "warning", "HPA scaleTargetRef.kind is not a commonly supported scalable workload kind.");
+      if (!Array.isArray(spec.metrics) || !spec.metrics.length) add(resource, "warning", "HPA should define at least one spec.metrics target.");
+      for (const [index, metric] of (Array.isArray(spec.metrics) ? spec.metrics : []).entries()) {
+        if (!metric || typeof metric !== "object") {
+          add(resource, "error", "HPA metric " + (index + 1) + " must be an object.");
+          continue;
+        }
+        const metricTypes = ["Resource", "Pods", "Object", "External", "ContainerResource"];
+        if (!metricTypes.includes(metric.type)) add(resource, "error", "HPA metric " + (index + 1) + " has an unsupported type.");
+        const sourceByType = {
+          Resource: metric.resource,
+          Pods: metric.pods,
+          Object: metric.object,
+          External: metric.external,
+          ContainerResource: metric.containerResource,
+        };
+        const source = sourceByType[metric.type];
+        if (!source) add(resource, "error", "HPA " + (metric.type || "unknown") + " metric " + (index + 1) + " is missing its metric source.");
+        if (["Resource", "ContainerResource"].includes(metric.type) && !source?.name) add(resource, "error", "HPA resource metric " + (index + 1) + " must define a resource name.");
+        if (["Pods", "External"].includes(metric.type) && !source?.metric?.name) add(resource, "error", "HPA " + metric.type + " metric " + (index + 1) + " must define metric.name.");
+        if (metric.type === "Object" && (!source?.describedObject?.kind || !source?.describedObject?.name || !source?.metric?.name)) add(resource, "error", "HPA Object metric " + (index + 1) + " must define describedObject and metric.name.");
+        if (source && (!source.target || !["Utilization", "AverageValue", "Value"].includes(source.target.type))) add(resource, "error", "HPA metric " + (index + 1) + " must define a supported target type.");
+        if (source?.target?.type === "Utilization" && (!Number.isInteger(source.target.averageUtilization) || source.target.averageUtilization < 1)) add(resource, "error", "HPA metric " + (index + 1) + " Utilization target must define a positive averageUtilization.");
+        if (["AverageValue", "Value"].includes(source?.target?.type) && (source.target.averageValue == null && source.target.value == null)) add(resource, "error", "HPA metric " + (index + 1) + " target must define an averageValue or value quantity.");
+      }
+      for (const direction of ["scaleUp", "scaleDown"]) {
+        const policy = spec.behavior?.[direction];
+        if (!policy) continue;
+        if (policy.stabilizationWindowSeconds != null && (!Number.isInteger(policy.stabilizationWindowSeconds) || policy.stabilizationWindowSeconds < 0 || policy.stabilizationWindowSeconds > 3600)) add(resource, "error", "HPA " + direction + " stabilizationWindowSeconds must be an integer from 0 to 3600.");
+        if (policy.selectPolicy != null && !["Max", "Min", "Disabled"].includes(policy.selectPolicy)) add(resource, "error", "HPA " + direction + " selectPolicy must be Max, Min, or Disabled.");
+        if (policy.policies != null && !Array.isArray(policy.policies)) add(resource, "error", "HPA " + direction + " policies must be a list.");
+        for (const [index, item] of (Array.isArray(policy.policies) ? policy.policies : []).entries()) {
+          if (!["Pods", "Percent"].includes(item?.type)) add(resource, "error", "HPA " + direction + " policy " + (index + 1) + " type must be Pods or Percent.");
+          if (!Number.isInteger(item?.value) || item.value < 1) add(resource, "error", "HPA " + direction + " policy " + (index + 1) + " value must be a positive integer.");
+          if (!Number.isInteger(item?.periodSeconds) || item.periodSeconds < 1 || item.periodSeconds > 1800) add(resource, "error", "HPA " + direction + " policy " + (index + 1) + " periodSeconds must be an integer from 1 to 1800.");
+        }
+      }
     }
     if (resource.kind === "NetworkPolicy") {
       if (!spec.podSelector || typeof spec.podSelector !== "object") add(resource, "error", "NetworkPolicy must define spec.podSelector (use an empty object to select all pods in the namespace).");
