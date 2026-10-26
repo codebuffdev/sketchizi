@@ -28,5 +28,5 @@ test("K8s Studio clears example YAML when a source bundle is detected", () => {
 });
 
 test("folder imports filter bundle files using normal file extensions", () => {
-  assert.ok(studio.includes('.filter(({ index }) => /\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(paths[index]))'));
+  assert.ok(studio.split("\n").some((line) => line.includes(".filter(({ index }) => /\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(paths[index]))")), "folder import must filter recognized bundle files by extension");
 });
