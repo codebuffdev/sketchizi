@@ -8,9 +8,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const reader = await readFile(resolve(root, "src/features/kubernetes-studio/zipBundleReader.js"), "utf8");
 const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
 
-test("ZIP bundle reader selects YAML and Kubernetes source files by extension", () => {
-  assert.ok(reader.includes(String.raw`if (!/\.(?:ya?ml)$/i.test(name)) continue;`), "YAML extension matching must use a literal dot");
-  assert.ok(!reader.includes(String.raw`if (!/\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(name)) continue;`), "the extension matcher must not require a backslash");
+test("ZIP bundle reader retains YAML and Helm helper text files by extension", () => {
+  assert.ok(reader.includes('if (!/\\\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(name)) continue;'), "ZIP imports must retain Helm helper and text files");
+  assert.ok(!reader.includes(String.raw`if (!/\\\\\\\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(name)) continue;`), "the extension matcher must not require a doubled backslash");
 });
 
 test("K8s Studio accepts ZIP files and provides a separate folder picker", () => {
