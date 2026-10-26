@@ -11,7 +11,7 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
   const sourceTabs = panel.slice(sourceTabsStart, sourceTabsEnd);
   const positions = [
     sourceTabs.indexOf('{ id: "all", label: "All" }'),
-    sourceTabs.indexOf('{ id: "eraser", label: "Eraser" }'),
+    sourceTabs.indexOf('{ id: "eraser", label: "Essentials" }'),
     sourceTabs.indexOf('{ id: "aws", label: "AWS" }'),
     sourceTabs.indexOf('{ id: "kubernetes", label: "Kubernetes" }'),
   ];
