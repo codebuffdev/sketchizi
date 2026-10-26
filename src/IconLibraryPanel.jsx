@@ -190,8 +190,6 @@ export default function IconLibraryPanel({
           <div className="library-panel-subtitle">Drag icons onto the canvas to place them precisely</div>
         </div>
         <div className="library-panel-header-actions">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l-1 5 3 3v2h-5v6l-1 1-1-1v-6H6v-2l3-3-1-5Z" /></svg>
-          </button>
           <button type="button" className="mobile-panel-close" onClick={onClose} aria-label="Close Icon Library" title="Close Icon Library">×</button>
         </div>
       </div>
