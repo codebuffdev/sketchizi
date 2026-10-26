@@ -41,7 +41,6 @@ export default function IconLibraryPanel({
   onClose,
 }) {
   const [activeSource, setActiveSource] = useState("all");
-  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("cards");
   const [cardLayout, setCardLayout] = useState("two-column");
   const [selectedEssentialColor, setSelectedEssentialColor] = useState("#7c5cff");
@@ -113,7 +112,6 @@ export default function IconLibraryPanel({
 
   const chooseSource = (source) => {
     setActiveSource(source);
-    setCollectionsOpen(false);
     setIconDisplayLimit(120);
     if (source !== "kubernetes") setActiveKubernetesCategory("All");
     if (source !== "aws") setActiveAwsCategory("All");
@@ -128,16 +126,21 @@ export default function IconLibraryPanel({
       setActiveCategory("Kubernetes");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
+    } else if (source === "networking") {
+      setActiveCategory("Networking");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
+    } else if (source === "uml") {
+      setActiveCategory("UML Diagrams");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
+    } else if (source === "mindmaps") {
+      setActiveCategory("Mind Maps");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
     }
   };
 
-  const chooseCollection = (category) => {
-    setActiveSource("collections");
-    setActiveCategory(category);
-    setSearch("");
-    setCollectionsOpen(false);
-    setIconDisplayLimit(120);
-  };
 
   const displayedIcons = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -147,13 +150,7 @@ export default function IconLibraryPanel({
     if (activeSource === "eraser") {
       return eraserCatalog.filter((icon) => !query || iconSearchText(icon).includes(query));
     }
-    if (activeSource === "collections") {
-      const collectionItems = activeCategory === "Favorites" ? favorites
-        : activeCategory === "Recently Used" ? recentIcons
-          : visibleIcons;
-      return collectionItems.filter((icon) => !query || iconSearchText(icon).includes(query));
-    }
-    if (activeSource === "aws" || activeSource === "kubernetes") return visibleIcons;
+    if (["aws", "kubernetes", "networking", "uml", "mindmaps"].includes(activeSource)) return visibleIcons;
     return visibleIcons;
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
@@ -175,6 +172,9 @@ export default function IconLibraryPanel({
     { id: "eraser", label: "Essentials" },
     { id: "aws", label: "AWS" },
     { id: "kubernetes", label: "Kubernetes" },
+    { id: "networking", label: "Networking" },
+    { id: "uml", label: "UML" },
+    { id: "mindmaps", label: "Mind Maps" },
   ];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
@@ -197,27 +197,14 @@ export default function IconLibraryPanel({
       <div className="library-panel-body library-panel-redesign-body">
         <div className="search-wrap library-search-wrap">
           <svg className="library-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
-          <input ref={searchRef} className="search" value={search} onChange={(event) => { setSearch(event.target.value); setIconDisplayLimit(120); }} onKeyDown={(event) => { if (event.key === "Enter") rememberSearch(); if (event.key === "Escape") { if (collectionsOpen) setCollectionsOpen(false); else if (search) { setSearch(""); setIconDisplayLimit(120); } } }} onBlur={() => rememberSearch()} placeholder="Search icons, tags, or categories..." aria-label="Search icons, tags, or categories" />
+          <input ref={searchRef} className="search" value={search} onChange={(event) => { setSearch(event.target.value); setIconDisplayLimit(120); }} onKeyDown={(event) => { if (event.key === "Enter") rememberSearch(); if (event.key === "Escape") { if (search) { setSearch(""); setIconDisplayLimit(120); } } }} onBlur={() => rememberSearch()} placeholder="Search icons, tags, or categories..." aria-label="Search icons, tags, or categories" />
           {search && <button type="button" className="library-search-clear" onClick={() => { setSearch(""); setIconDisplayLimit(120); searchRef.current?.focus(); }} aria-label="Clear icon search" title="Clear search">×</button>}
           <kbd>/</kbd>
         </div>
 
         <div className="library-filter-row">
           <nav className="library-source-tabs" aria-label="Icon collections">
-            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.id === "eraser" && <svg className="library-source-chip-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2 8 1.5Z" /><path d="m12.4 1 .7 1.9L15 3.6l-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" /></svg>}{tab.label}</button>)}
-            <div className="library-collections-wrap">
-              <button type="button" className={activeChip === "collections" || collectionsOpen ? "library-source-chip active" : "library-source-chip"} aria-expanded={collectionsOpen} onClick={() => setCollectionsOpen((open) => !open)}>Collections <span aria-hidden="true" className="library-chip-chevron">⌄</span></button>
-              {collectionsOpen && <div className="library-collections-menu" role="menu" aria-label="Collections">
-                {[
-                  ["Favorites", `${favorites.length} saved`],
-                  ["Recently Used", `${recentIcons.length} icons`],
-                  ["Mind Maps", `${mindMapIcons.length} elements`],
-                  ["UML Diagrams", `${umlIcons.length} elements`],
-                  ["Networking", `${networkingIcons.length} resources`],
-                ].map(([category, count]) => <button key={category} type="button" role="menuitem" onClick={() => chooseCollection(category)}><span>{category}</span><small>{count}</small></button>)}
-              </div>}
-            </div>
-          </nav>
+            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.id === "eraser" && <svg className="library-source-chip-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2 8 1.5Z" /><path d="m12.4 1 .7 1.9L15 3.6l-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" /></svg>}{tab.label}</button>)}          </nav>
         </div>
 
         {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
@@ -233,7 +220,7 @@ export default function IconLibraryPanel({
             <div className="library-results-title-wrap"><div className="section-title">{search.trim() ? "Search results" : activeSource === "all" ? "All icons" : activeSource === "eraser" ? "Essentials" : activeCategory}</div><div className="icon-total">{displayedIcons.length.toLocaleString()} icons</div></div>
             <div className="library-results-controls">
               {activeSource === "eraser" && !search.trim() && <button type="button" className="library-sync-button" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length} title={eraserSyncing ? "Synchronizing icons" : "Make icons available offline"}>{eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : eraserCachedCount > 0 ? "Offline ready" : "Make offline"}</button>}
-              {activeCategory === "Mind Maps" && activeSource === "collections" && <button type="button" className="library-sync-button" onClick={createStarterMindMap}>Starter mind map</button>}
+              {activeCategory === "Mind Maps" && <button type="button" className="library-sync-button" onClick={createStarterMindMap}>Starter mind map</button>}
               {activeSource === "aws" && !search.trim() && <select className="library-layout-select" aria-label="AWS category" value={activeAwsCategory} onChange={(event) => { setActiveAwsCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">AWS: All categories</option>{awsCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select>}{activeSource === "kubernetes" && !search.trim() && <select className="library-layout-select" aria-label="Kubernetes category" value={activeKubernetesCategory} onChange={(event) => { setActiveKubernetesCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">Kubernetes: All categories</option>{kubernetesCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select>}<label className="library-layout-select-label"><select aria-label="Card layout" title="Card layout" className="library-layout-select" value={cardLayout} onChange={(event) => setCardLayout(event.target.value)}><option value="two-column">Two-column cards</option><option value="compact">Compact cards</option></select></label>
               <div className="library-view-toggle" role="group" aria-label="Result layout">
                 <button type="button" className={effectiveViewMode === "cards" ? "active" : ""} onClick={() => setViewMode("cards")} aria-label="Two-column card view" aria-pressed={effectiveViewMode === "cards"}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>

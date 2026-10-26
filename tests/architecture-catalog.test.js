@@ -14,18 +14,31 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
     sourceTabs.indexOf('{ id: "eraser", label: "Essentials" }'),
     sourceTabs.indexOf('{ id: "aws", label: "AWS" }'),
     sourceTabs.indexOf('{ id: "kubernetes", label: "Kubernetes" }'),
+    sourceTabs.indexOf('{ id: "networking", label: "Networking" }'),
+    sourceTabs.indexOf('{ id: "uml", label: "UML" }'),
+    sourceTabs.indexOf('{ id: "mindmaps", label: "Mind Maps" }'),
   ];
   assert.ok(positions.every((position) => position >= 0));
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
-  assert.match(panel, /library-source-chip.*Collections/);
+  assert.doesNotMatch(panel, /Collections|library-collections-wrap|library-collections-menu/);
 });
 
-test("Collections keeps implemented favorites, recently used, mind map, UML, and networking paths accessible", () => {
-  assert.match(panel, /\["Favorites", `\$\{favorites\.length\} saved`\]/);
-  assert.match(panel, /\["Recently Used", `\$\{recentIcons\.length\} icons`\]/);
-  assert.match(panel, /\["Mind Maps", `\$\{mindMapIcons\.length\} elements`\]/);
-  assert.match(panel, /\["UML Diagrams", `\$\{umlIcons\.length\} elements`\]/);
-  assert.match(panel, /\["Networking", `\$\{networkingIcons\.length\} resources`\]/);
+test("Networking is a first-class source tab routed through the existing catalog", () => {
+  assert.match(panel, /\{ id: "networking", label: "Networking" \}/);
+  assert.match(panel, /else if \(source === "networking"\)[\s\S]*?setActiveCategory\("Networking"\)/);
+  assert.match(panel, /\["aws", "kubernetes", "networking", "uml", "mindmaps"\]\.includes\(activeSource\)/);
+  assert.match(catalog, /activeCategory === "Networking"[\s\S]*?base = networkingIcons/);
+});
+
+test("UML and Mind Maps are direct catalog tabs routed through their existing catalogs", () => {
+  assert.match(panel, /else if \(source === "uml"\)[\s\S]*?setActiveCategory\("UML Diagrams"\)/);
+  assert.match(panel, /else if \(source === "mindmaps"\)[\s\S]*?setActiveCategory\("Mind Maps"\)/);
+  assert.match(catalog, /activeCategory === "UML Diagrams"[\s\S]*?base = umlIcons/);
+  assert.match(catalog, /activeCategory === "Mind Maps"[\s\S]*?base = mindMapIcons/);
+});
+
+test("Icon Library removes the redundant Collections dropdown without placeholder catalogs", () => {
+  assert.doesNotMatch(panel, /Collections|library-collections-wrap|library-collections-menu|chooseCollection|activeSource === "collections"/);
   for (const future of ["Security & Identity", "Compute & Runtime", "Data & Storage", "Messaging & Events", "Observability", "CI/CD & DevOps", "AI & Machine Learning", "Hybrid Cloud & Edge"]) {
     assert.equal(panel.includes(`"${future}"`), false, `${future} must not be a visible placeholder`);
   }
@@ -34,5 +47,5 @@ test("Collections keeps implemented favorites, recently used, mind map, UML, and
 test("existing UML and Networking catalog selection paths remain intact", () => {
   assert.match(catalog, /activeCategory === "UML Diagrams"[\s\S]*?base = umlIcons/);
   assert.match(catalog, /activeCategory === "Networking"[\s\S]*?base = networkingIcons/);
-  assert.match(panel, /const chooseCollection = \(category\) => \{[\s\S]*?setActiveCategory\(category\)/);
+  assert.match(panel, /setActiveCategory\("Networking"\)/);
 });
