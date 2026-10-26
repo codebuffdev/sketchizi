@@ -127,7 +127,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [scrollTop, setScrollTop] = useState(0);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [showValidation, setShowValidation] = useState(false);\n  const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+  const [showValidation, setShowValidation] = useState(false);
+  const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
   const parsed = useMemo(() => {
