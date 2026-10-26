@@ -109,3 +109,14 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-studio-splitter{grid-column:2;grid-row:1}
 .k8s-studio-editor{grid-column:3;grid-row:1;min-width:0}
 @media(max-width:760px){.k8s-studio-workspace{grid-template-columns:1fr}.k8s-studio-preview,.k8s-studio-editor{grid-column:1;grid-row:auto}.k8s-studio-splitter{display:none}}
+
+
+/* Use the available viewport for the resource YAML editor instead of a compact dialog. */
+.k8s-studio-inspector-backdrop{padding:clamp(12px,2.5vw,36px)}
+.k8s-studio-inspector{width:min(1200px,92vw);height:min(86vh,980px);max-height:86vh}
+.k8s-studio-inspector-header{flex:0 0 auto}
+.k8s-studio-inspector-body{flex:1;min-height:0}
+.k8s-studio-inspector-editor{min-height:0;resize:none;font-size:13px;line-height:1.85}
+.k8s-studio-inspector-footer{flex:0 0 auto}
+@media(min-width:1500px){.k8s-studio-inspector{width:min(1320px,88vw);height:min(88vh,1080px);max-height:88vh}.k8s-studio-inspector-editor{font-size:14px}}
+@media(max-width:640px){.k8s-studio-inspector-backdrop{padding:8px}.k8s-studio-inspector{width:100%;height:92vh;max-height:92vh}}
