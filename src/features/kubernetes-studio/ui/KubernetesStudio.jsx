@@ -157,6 +157,57 @@ const KIND_LABELS = {
   ResourceQuota: "ResourceQuota", EndpointSlice: "EndpointSlice",
 };
 
+function KubernetesResourceIcon({ kind }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round" };
+  let artwork;
+  switch (kind) {
+    case "Pod":
+      artwork = <><path {...common} d="M12 3.5 19.5 7.8v8.4L12 20.5l-7.5-4.3V7.8L12 3.5Z" /><circle {...common} cx="12" cy="12" r="2.7" /><path {...common} d="M12 5.5v3.8M17.6 8.8l-3.3 1.9M17.6 15.2l-3.3-1.9M12 18.5v-3.8M6.4 15.2l3.3-1.9M6.4 8.8l3.3 1.9" /></>;
+      break;
+    case "Deployment":
+    case "ReplicaSet":
+      artwork = <><rect {...common} x="5" y="5" width="14" height="5" rx="1.5" /><rect {...common} x="5" y="14" width="6" height="5" rx="1.5" /><rect {...common} x="13" y="14" width="6" height="5" rx="1.5" /><path {...common} d="M12 10v2M8 12h8" /></>;
+      break;
+    case "Service":
+      artwork = <><circle {...common} cx="12" cy="12" r="3" /><circle {...common} cx="5" cy="6" r="2" /><circle {...common} cx="19" cy="6" r="2" /><circle {...common} cx="5" cy="18" r="2" /><circle {...common} cx="19" cy="18" r="2" /><path {...common} d="m7 7.5 3 2.7m4 0 3-2.7m-10 9 3-2.7m4 0 3 2.7" /></>;
+      break;
+    case "StatefulSet":
+    case "DaemonSet":
+      artwork = <><path {...common} d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" /><path {...common} d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12.1V21" /></>;
+      break;
+    case "Ingress":
+      artwork = <><path {...common} d="M4 5h16v4H4zM12 9v4M7 13h10M7 13v6m10-6v6" /><path {...common} d="m5 17 2 2 2-2m6 0 2 2 2-2" /></>;
+      break;
+    case "ConfigMap":
+    case "Secret":
+      artwork = <><path {...common} d="M7 3.5h7l4 4V20H7z" /><path {...common} d="M14 3.5V8h4M10 12h5M10 15h5" />{kind === "Secret" ? <circle {...common} cx="12.5" cy="17.5" r="1.3" /> : null}</>;
+      break;
+    case "PersistentVolume":
+    case "PersistentVolumeClaim":
+    case "StorageClass":
+      artwork = <><ellipse {...common} cx="12" cy="6" rx="7.5" ry="3" /><path {...common} d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" /></>;
+      break;
+    case "Node":
+    case "Namespace":
+      artwork = <><rect {...common} x="4" y="4" width="6" height="6" rx="1" /><rect {...common} x="14" y="4" width="6" height="6" rx="1" /><rect {...common} x="9" y="14" width="6" height="6" rx="1" /><path {...common} d="M7 10v2h10v-2m-5 2v2" /></>;
+      break;
+    case "Job":
+    case "CronJob":
+      artwork = <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 7v5l3.5 2M17.5 3.5l2 2" /></>;
+      break;
+    case "ServiceAccount":
+    case "Role":
+    case "ClusterRole":
+    case "RoleBinding":
+    case "ClusterRoleBinding":
+      artwork = <><circle {...common} cx="9" cy="8" r="3.2" /><path {...common} d="M3.5 19v-1.5a5.5 5.5 0 0 1 11 0V19zM16 9h5m-2.5-2.5v5" /></>;
+      break;
+    default:
+      artwork = <><rect {...common} x="4" y="4" width="16" height="16" rx="3" /><path {...common} d="M8 9h8M8 12h8M8 15h5" /></>;
+  }
+  return <svg className={"k8s-resource-icon k8s-resource-icon-" + kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")} viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">{artwork}</svg>;
+}
+
 function validateKubernetesResources(resources) {
   const issues = [];
   const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
@@ -674,7 +725,7 @@ spec:
             </section>}
             <div className="k8s-studio-resource-list">
               {parsed.resources.map((resource) => <article className="k8s-studio-resource" key={resource.id}>
-                <span className="k8s-studio-resource-glyph">{resource.kind.slice(0, 2).toUpperCase()}</span>
+                <span className={"k8s-studio-resource-glyph k8s-studio-resource-glyph-" + resource.kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")}><KubernetesResourceIcon kind={resource.kind} /></span>
                 <div><strong>{resource.name}</strong><small>{resource.kind} · {resource.namespace}</small></div><button type="button" className="k8s-studio-resource-inspect" onClick={() => inspectResource(resource)}>Inspect</button>
                 {!resource.supported && <em>Generic</em>}
               </article>)}
