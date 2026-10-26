@@ -188,3 +188,15 @@ test("cross-resource validation resolves cluster-scoped dependencies independent
   assert.match(studio, /CLUSTER_SCOPED_KINDS\.has\(kind\) \|\| namespace == null \|\| candidate\.namespace === namespace/);
   assert.match(studio, /Role binding references .* which is not present in this manifest set/);
 });
+
+test("K8s Studio detects Kustomize and Helm source bundles before treating files as Kubernetes manifests", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /kustomization\\\.ya\?ml\|Kustomization/);
+  assert.match(studio, /Chart\\\.yaml/);
+  assert.match(studio, /kubectl kustomize .*rendered-kustomize\.yaml/);
+  assert.match(studio, /helm template .*rendered-helm\.yaml/);
+  assert.match(studio, /K8s Studio does not silently approximate Kustomize rendering/);
+  assert.match(studio, /K8s Studio does not pretend raw templates are deployable manifests/);
+  assert.match(studio, /webkitdirectory/);
+  assert.match(studio, /This keeps patches, generators, and transformations accurate/);
+});
