@@ -183,13 +183,61 @@ function validateKubernetesResources(resources) {
       if (!Array.isArray(containers) || !containers.length) add(resource, "error", "At least one container is required.");
       else containers.forEach((container, index) => { if (!container.image) add(resource, "error", "Container " + (container.name || index + 1) + " is missing an image."); });
     }
-    if (resource.kind === "Service" && spec.selector && Object.keys(spec.selector).length) {
-      const matchingWorkload = workloads.some((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
-      if (!matchingWorkload) add(resource, "warning", "No workload in this manifest set matches the Service selector.");
-    }
     const key = resource.namespace + "/" + resource.kind + "/" + resource.name;
     if (seen.has(key)) add(resource, "error", "Duplicate resource name and kind in the same namespace.");
     seen.add(key);
+
+    const podSpec = resource.kind === "Pod" ? spec : spec.template?.spec;
+    const containers = [...(podSpec?.initContainers || []), ...(podSpec?.containers || []), ...(podSpec?.ephemeralContainers || [])];
+    const containerNames = new Set();
+    for (const container of containers) {
+      if (container.name && containerNames.has(container.name)) add(resource, "error", "Container name '" + container.name + "' is duplicated.");
+      if (container.name) containerNames.add(container.name);
+      if (container.image && /:latest$/.test(container.image)) add(resource, "warning", "Image '" + container.image + "' uses the mutable latest tag; pin a version or digest for repeatable deployments.");
+      if (container.image && !container.image.includes(":") && !container.image.includes("@")) add(resource, "warning", "Image '" + container.image + "' has no explicit tag or digest.");
+      if (container.securityContext?.privileged === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' runs in privileged mode.");
+      if (!container.resources?.requests?.cpu && !container.resources?.requests?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory requests.");
+      if (!container.resources?.limits?.cpu && !container.resources?.limits?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory limits.");
+      if (!container.readinessProbe) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no readiness probe.");
+    }
+
+    if (resource.kind === "Service") {
+      if (!Array.isArray(spec.ports) || !spec.ports.length) add(resource, "error", "A Service must define at least one port.");
+      if (spec.selector && Object.keys(spec.selector).length) {
+        const matchingWorkload = workloads.some((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
+        if (!matchingWorkload) add(resource, "warning", "No workload in this manifest set matches the Service selector.");
+      }
+      for (const port of spec.ports || []) {
+        if (port.targetPort == null) add(resource, "info", "Service port " + port.port + " omits targetPort; Kubernetes defaults it to port.");
+        if (port.nodePort != null && (port.nodePort < 30000 || port.nodePort > 32767)) add(resource, "warning", "NodePort " + port.nodePort + " is outside the default 30000–32767 range.");
+      }
+    }
+
+    if (resource.kind === "Ingress") {
+      const backends = (spec.rules || []).flatMap((rule) => rule.http?.paths || []).map((path) => path.backend?.service).filter(Boolean);
+      if (spec.defaultBackend?.service) backends.push(spec.defaultBackend.service);
+      if (!backends.length && !spec.defaultBackend) add(resource, "warning", "Ingress has no HTTP service backend configured.");
+      for (const backend of backends) {
+        const service = resources.find((candidate) => candidate.kind === "Service" && candidate.name === backend.name && candidate.namespace === resource.namespace);
+        if (!service) add(resource, "warning", "Ingress backend Service '" + backend.name + "' is not present in this manifest set.");
+        else if (backend.port?.number != null && !(service.manifest?.spec?.ports || []).some((port) => port.port === backend.port.number)) add(resource, "warning", "Ingress backend port " + backend.port.number + " is not declared by Service '" + backend.name + "'.");
+      }
+    }
+
+    if (resource.kind === "PersistentVolumeClaim" && !spec.resources?.requests?.storage) add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
+    if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
+    if (resource.kind === "Deployment" && spec.replicas != null && (!Number.isInteger(spec.replicas) || spec.replicas < 0)) add(resource, "error", "spec.replicas must be a non-negative integer.");
+    if (resource.kind === "CronJob" && !spec.schedule) add(resource, "error", "CronJob must define spec.schedule.");
+  }
+
+  for (const resource of resources) {
+    const podSpec = resource.kind === "Pod" ? resource.manifest?.spec : resource.manifest?.spec?.template?.spec;
+    for (const claim of podSpec?.volumes || []) {
+      const claimName = claim.persistentVolumeClaim?.claimName;
+      if (!claimName) continue;
+      const found = resources.some((candidate) => candidate.kind === "PersistentVolumeClaim" && candidate.name === claimName && candidate.namespace === resource.namespace);
+      if (!found) issues.push({ id: resource.id + ":warning:pvc:" + claimName, resource: resource.name, kind: resource.kind, severity: "warning", message: "Volume references PersistentVolumeClaim '" + claimName + "', which is not present in this manifest set." });
+    }
   }
   return issues;
 }
