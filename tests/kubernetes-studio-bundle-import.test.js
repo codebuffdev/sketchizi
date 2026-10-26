@@ -26,3 +26,7 @@ test("K8s Studio clears example YAML when a source bundle is detected", () => {
   assert.match(studio, /renderHelmBundle\(bundleFiles, source\.path, selectedValuesFile/);
   assert.doesNotMatch(studio, /VITE_K8S_RENDER_URL|fetch\(rendererUrl/);
 });
+
+test("folder imports filter bundle files using normal file extensions", () => {
+  assert.match(studio, /\.filter\(\(\{ index \}\) => \/\\\.(?:ya\?ml\|tpl\|json\|txt\|properties\|conf)\$\/i\.test\(paths\[index\]\)\)/);
+});
