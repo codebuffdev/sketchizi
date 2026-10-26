@@ -107,6 +107,28 @@ const STARTER = "name: ecommerce\nservices:\n  web:\n    image: nginx:1.27\n    
 const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const namesOf = (value) => Array.isArray(value) ? value.map((item) => typeof item === "string" ? item : item?.source).filter(Boolean) : isRecord(value) ? Object.keys(value) : [];
 const imageOf = (service) => typeof service?.image === "string" ? service.image : typeof service?.build === "string" ? "build: " + service.build : isRecord(service?.build) ? "build: " + (service.build.context || ".") : "Image/build not configured";
+
+function serviceIconType(name, service) {
+  const label = String(name || "").toLowerCase();
+  const image = String(service?.image || "").toLowerCase();
+  const build = typeof service?.build === "string" ? service.build.toLowerCase() : isRecord(service?.build) ? String(service.build.context || "").toLowerCase() : "";
+  const value = label + " " + image + " " + build;
+  if (/database|postgres|mysql|mariadb|mongo|redis|memcached|cockroach|clickhouse|dynamodb/.test(value)) return "database";
+  if (/web|frontend|front-end|nginx|apache|httpd|caddy|traefik|proxy|gateway|ingress/.test(value)) return "web";
+  if (/worker|queue|consumer|scheduler|cron|celery|sidekiq|job/.test(value)) return "worker";
+  if (/api|backend|back-end|server|service|app|node|spring|django|flask|rails|express/.test(value)) return "server";
+  if (/volume|storage|s3|minio|file/.test(value)) return "storage";
+  return "container";
+}
+
+function ServiceIcon({ type }) {
+  if (type === "web") return <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>;
+  if (type === "database") return <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>;
+  if (type === "worker") return <svg viewBox="0 0 24 24"><path d="M9 3h6M12 3v4M7 7h10l2 3v10H5V10l2-3Z"/><path d="M9 13h6M9 16h4"/></svg>;
+  if (type === "storage") return <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/></svg>;
+  if (type === "server") return <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="8" rx="2"/><rect x="4" y="13" width="16" height="8" rx="2"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/></svg>;
+  return <svg viewBox="0 0 24 24"><path d="m12 2 8 4.5v11L12 22l-8-4.5v-11L12 2Z"/><path d="m4.5 6.8 7.5 4.3 7.5-4.3M12 11v10"/></svg>;
+}
 const dependenciesOf = (service) => namesOf(service?.depends_on);
 
 function highlightLine(line) {
@@ -270,7 +292,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
           <div className="docker-studio-pane-heading"><div><span>02</span><h2>Containers</h2></div><strong>{serviceEntries.length}</strong></div>
           {parsed.error && <div className="docker-studio-parse-error" role="alert"><strong>YAML needs attention</strong><p>{parsed.error}</p></div>}
           {!parsed.error && !serviceEntries.length && <div className="docker-studio-empty-check">Define services in YAML to see their containers here.</div>}
-          <div className="docker-studio-container-list">{serviceEntries.map(([name, service]) => <button key={name} type="button" className={selectedService === name ? "docker-studio-container-card selected" : "docker-studio-container-card"} onClick={() => { setSelectedService(name); setError(""); }} aria-pressed={selectedService === name}><span className="docker-studio-container-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></span><span className="docker-studio-container-copy"><strong>{name}</strong><small>{imageOf(service)}</small><small className="docker-studio-container-meta">{service?.ports?.length || 0} ports · {service?.volumes?.length || 0} mounts · {service?.environment ? (Array.isArray(service.environment) ? service.environment.length : Object.keys(service.environment).length) : 0} env</small></span></button>)}</div>
+          <div className="docker-studio-container-list">{serviceEntries.map(([name, service]) => <button key={name} type="button" className={selectedService === name ? "docker-studio-container-card selected" : "docker-studio-container-card"} onClick={() => { setSelectedService(name); setError(""); }} aria-pressed={selectedService === name}><span className={"docker-studio-container-icon docker-studio-container-icon-" + serviceIconType(name, service)} aria-hidden="true"><ServiceIcon type={serviceIconType(name, service)} /></span><span className="docker-studio-container-copy"><strong>{name}</strong><small>{imageOf(service)}</small><small className="docker-studio-container-meta">{service?.ports?.length || 0} ports · {service?.volumes?.length || 0} mounts · {service?.environment ? (Array.isArray(service.environment) ? service.environment.length : Object.keys(service.environment).length) : 0} env</small></span></button>)}</div>
           {selected && <section className="docker-studio-selected-details"><div className="docker-studio-selected-heading"><span>SELECTED SERVICE</span><button type="button" onClick={focusSelected}>Edit YAML</button></div><h3>{selectedService}</h3><p>{imageOf(selected)}</p>{dependenciesOf(selected).length > 0 && <div><strong>Depends on</strong><div className="docker-studio-chip-list">{dependenciesOf(selected).map((name) => <button type="button" key={name} className={serviceNames.has(name) ? "" : "missing"} onClick={() => setSelectedService(name)}>{name}</button>)}</div></div>}{namesOf(selected.volumes).length > 0 && <div><strong>Mounts</strong><div className="docker-studio-detail-list">{namesOf(selected.volumes).map((value, i) => <span key={i}>{value}</span>)}</div></div>}{namesOf(selected.networks).length > 0 && <div><strong>Networks</strong><div className="docker-studio-chip-list">{namesOf(selected.networks).map((name) => <span key={name}>{name}</span>)}</div></div>}</section>}
           <section className="docker-studio-relationship-panel" aria-label="Service relationships"><div className="docker-studio-relationship-heading"><strong>Relationships</strong><span>{edges.length}</span></div>{edges.length ? edges.map((edge, i) => <button type="button" key={edge.from + edge.to + i} className={edge.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => setSelectedService(edge.exists ? edge.to : edge.from)}><strong>{edge.from}</strong><span>→</span><strong>{edge.to}</strong><small>{edge.exists ? "depends on" : "missing service"}</small></button>) : <p>No service dependencies are defined.</p>}{(volumes.length > 0 || networks.length > 0) && <div className="docker-studio-shared-resources"><strong>Shared resources</strong>{volumes.map((name) => <span key={"v" + name}>Volume · {name}</span>)}{networks.map((name) => <span key={"n" + name}>Network · {name}</span>)}</div>}</section>
         </aside>
