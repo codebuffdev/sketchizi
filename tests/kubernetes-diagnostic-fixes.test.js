@@ -337,3 +337,47 @@ test("K8s Studio integration: reports unresolved storage and RBAC dependencies",
   assert.ok(issues.some((issue) => issue.message.includes("Role/missing-role")));
   assert.ok(issues.some((issue) => issue.message.includes("ServiceAccount 'missing-app'")));
 });
+
+
+test("K8s Studio integration: malformed HPA metrics and scaling policies are diagnosed", () => {
+  const resources = [{
+    id: "hpa-bad", kind: "HorizontalPodAutoscaler", name: "web", namespace: "production", apiVersion: "autoscaling/v2",
+    manifest: { apiVersion: "autoscaling/v2", kind: "HorizontalPodAutoscaler", metadata: { name: "web", namespace: "production" }, spec: {
+      scaleTargetRef: { apiVersion: "apps/v1", kind: "Deployment", name: "web" },
+      minReplicas: 8, maxReplicas: 2,
+      metrics: [{ type: "Resource", resource: { name: "cpu", target: { type: "Utilization", averageUtilization: 0 } } }, { type: "External", external: { metric: {}, target: { type: "Value" } } }],
+      behavior: { scaleUp: { stabilizationWindowSeconds: 4000, selectPolicy: "Fastest", policies: [{ type: "Percent", value: 0, periodSeconds: 2000 }] } },
+    } },
+  }];
+  const messages = validateKubernetesResources(resources).map((issue) => issue.message);
+  assert.ok(messages.some((message) => message.includes("minReplicas cannot exceed maxReplicas")));
+  assert.ok(messages.some((message) => message.includes("positive averageUtilization")));
+  assert.ok(messages.some((message) => message.includes("must define metric.name")));
+  assert.ok(messages.some((message) => message.includes("must define an averageValue or value quantity")));
+  assert.ok(messages.some((message) => message.includes("stabilizationWindowSeconds")));
+  assert.ok(messages.some((message) => message.includes("selectPolicy must be Max, Min, or Disabled")));
+  assert.ok(messages.some((message) => message.includes("value must be a positive integer")));
+  assert.ok(messages.some((message) => message.includes("periodSeconds must be an integer from 1 to 1800")));
+});
+
+test("K8s Studio integration: selector expressions distinguish matching and non-matching workloads", () => {
+  const workload = {
+    id: "deployment-web", kind: "Deployment", name: "web", namespace: "production", apiVersion: "apps/v1",
+    manifest: { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "web", namespace: "production" }, spec: {
+      selector: { matchLabels: { app: "web" } },
+      template: { metadata: { labels: { app: "web", tier: "frontend" } }, spec: { containers: [{ name: "web", image: "nginx:1.27" }] } },
+    } },
+  };
+  const pdb = {
+    id: "pdb-web", kind: "PodDisruptionBudget", name: "web", namespace: "production", apiVersion: "policy/v1",
+    manifest: { apiVersion: "policy/v1", kind: "PodDisruptionBudget", metadata: { name: "web", namespace: "production" }, spec: {
+      minAvailable: 1,
+      selector: { matchExpressions: [{ key: "tier", operator: "In", values: ["frontend"] }, { key: "app", operator: "NotIn", values: ["worker"] }] },
+    } },
+  };
+  const validMessages = validateKubernetesResources([workload, pdb]).map((issue) => issue.message);
+  assert.equal(validMessages.some((message) => message.includes("PodDisruptionBudget selector does not match a workload")), false);
+  const invalidPdb = { ...pdb, manifest: { ...pdb.manifest, spec: { ...pdb.manifest.spec, selector: { matchExpressions: [{ key: "tier", operator: "In", values: ["backend"] }] } } } };
+  const invalidMessages = validateKubernetesResources([workload, invalidPdb]).map((issue) => issue.message);
+  assert.ok(invalidMessages.some((message) => message.includes("PodDisruptionBudget selector does not match a workload")));
+});
