@@ -199,7 +199,7 @@ test("K8s Studio detects Kustomize and Helm source bundles before treating files
   assert.match(studio, /k8s-studio-bundle-source/);
   assert.match(studio, /bundleSources\.map/);
   assert.match(studio, /selectedBundleSource/);
-  assert.match(studio, /K8s Studio does not silently approximate Kustomize rendering/);
+  assert.match(studio, /Source templates are not rendered Kubernetes manifests/);
   assert.match(studio, /K8s Studio does not pretend raw templates are deployable manifests/);
   assert.match(studio, /webkitdirectory/);
   assert.match(studio, /This keeps patches, generators, and transformations accurate/);
