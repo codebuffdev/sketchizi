@@ -79,7 +79,6 @@ export default function ContextualFormattingToolbar({
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
-  const hasEssentialIconSelection = liveSelection.some((element) => element.type === "image" && element.customData?.iconId && !["AWS Architecture", "Kubernetes", "Networking"].includes(element.customData?.iconCategory));
   const onlyTextSelection = liveSelection.every((element) => element.type === "text");
   const currentStroke = first?.strokeColor?.toLowerCase();
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
@@ -95,12 +94,6 @@ export default function ContextualFormattingToolbar({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
-      {hasEssentialIconSelection && <div className="contextual-formatting-group contextual-essential-icon-colors" role="group" aria-label="Essential icon color">
-        <span className="contextual-essential-icon-colors-label">Icon color</span>
-        {[["#1f2937","Graphite"],["#64748b","Slate"],["#2563eb","Blue"],["#0d9488","Teal"],["#16a34a","Green"],["#e59a22","Amber"],["#e05252","Red"],["#7c5cff","Violet"]].map(([color,label]) => <button key={color} type="button" className="contextual-color-swatch" style={{"--swatch-color":color}} aria-label={label} title={label} onClick={() => applyToSelected({ tintColor: color })} />)}
-        <label className="contextual-essential-custom-color" title="Choose custom icon color"><input type="color" aria-label="Custom icon color" defaultValue="#7c5cff" onChange={(event) => applyToSelected({ tintColor: event.target.value })} /></label>
-      </div>}
-
       {onlyTextSelection && <div className="contextual-formatting-group" role="group" aria-label="Text color">
         {STROKE_COLORS.map(([color, label]) => (
           <button
