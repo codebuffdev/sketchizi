@@ -298,11 +298,29 @@ export function validateKubernetesResources(resources) {
     }
 
     if (resource.kind === "PersistentVolumeClaim") {
-      if (!spec.resources?.requests?.storage) add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
+      const requestedStorage = spec.resources?.requests?.storage;
+      if (requestedStorage == null || requestedStorage === "") add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
+      else if (typeof requestedStorage !== "string" || !/^(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:m|k|K|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei)?$/.test(requestedStorage)) add(resource, "error", "PersistentVolumeClaim storage request must be a valid Kubernetes quantity.");
       if (!Array.isArray(spec.accessModes) || !spec.accessModes.length) add(resource, "error", "PersistentVolumeClaim must define at least one spec.accessModes entry.");
-      else if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolumeClaim contains an unsupported access mode.");
+      else {
+        if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolumeClaim contains an unsupported access mode.");
+        if (new Set(spec.accessModes).size !== spec.accessModes.length) add(resource, "error", "PersistentVolumeClaim accessModes must not contain duplicates.");
+      }
+      if (spec.volumeMode != null && !["Filesystem", "Block"].includes(spec.volumeMode)) add(resource, "error", "PersistentVolumeClaim volumeMode must be Filesystem or Block.");
+      if (spec.selector != null && (!spec.selector || typeof spec.selector !== "object" || Array.isArray(spec.selector))) add(resource, "error", "PersistentVolumeClaim selector must be an object.");
     }
-    if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
+    if (resource.kind === "PersistentVolume") {
+      const capacity = spec.capacity?.storage;
+      if (capacity == null || capacity === "") add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
+      else if (typeof capacity !== "string" || !/^(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:m|k|K|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei)?$/.test(capacity)) add(resource, "error", "PersistentVolume storage capacity must be a valid Kubernetes quantity.");
+      if (!Array.isArray(spec.accessModes) || !spec.accessModes.length) add(resource, "error", "PersistentVolume must define at least one spec.accessModes entry.");
+      else {
+        if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolume contains an unsupported access mode.");
+        if (new Set(spec.accessModes).size !== spec.accessModes.length) add(resource, "error", "PersistentVolume accessModes must not contain duplicates.");
+      }
+      if (spec.volumeMode != null && !["Filesystem", "Block"].includes(spec.volumeMode)) add(resource, "error", "PersistentVolume volumeMode must be Filesystem or Block.");
+      if (spec.persistentVolumeReclaimPolicy != null && !["Retain", "Recycle", "Delete"].includes(spec.persistentVolumeReclaimPolicy)) add(resource, "error", "PersistentVolume reclaim policy must be Retain, Recycle, or Delete.");
+    }
     if (resource.kind === "ResourceQuota") {
       if (!spec.hard || typeof spec.hard !== "object" || !Object.keys(spec.hard).length) add(resource, "warning", "ResourceQuota should define spec.hard limits.");
       for (const [quotaName, quotaValue] of Object.entries(spec.hard || {})) {

@@ -325,6 +325,20 @@ test("K8s Studio integration: storage and RBAC dependencies resolve across a val
   assert.equal(issues.some((issue) => /StorageClass|claimRef references PersistentVolumeClaim|Role binding references/.test(issue.message)), false, JSON.stringify(issues, null, 2));
 });
 
+test("K8s Studio validates PersistentVolume and PVC storage fields", () => {
+  const resources = [
+    { id: "pvc", kind: "PersistentVolumeClaim", name: "bad-claim", namespace: "default", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolumeClaim", metadata: { name: "bad-claim" }, spec: { accessModes: ["ReadWriteOnce", "ReadWriteOnce"], volumeMode: "Shared", selector: [], resources: { requests: { storage: "lots" } } } } },
+    { id: "pv", kind: "PersistentVolume", name: "bad-volume", namespace: "", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolume", metadata: { name: "bad-volume" }, spec: { capacity: { storage: "-5GB" }, accessModes: ["ReadWriteOnce", "ReadWriteOnce"], volumeMode: "Directory", persistentVolumeReclaimPolicy: "KeepForever" } } },
+  ];
+  const issues = validateKubernetesResources(resources);
+  assert.ok(issues.some((issue) => issue.message.includes("PVC storage request must be a valid Kubernetes quantity")));
+  assert.ok(issues.some((issue) => issue.message.includes("PersistentVolume storage capacity must be a valid Kubernetes quantity")));
+  assert.ok(issues.some((issue) => issue.message.includes("accessModes must not contain duplicates")));
+  assert.ok(issues.some((issue) => issue.message.includes("volumeMode must be Filesystem or Block")));
+  assert.ok(issues.some((issue) => issue.message.includes("selector must be an object")));
+  assert.ok(issues.some((issue) => issue.message.includes("reclaim policy must be Retain, Recycle, or Delete")));
+});
+
 test("K8s Studio validates RBAC roleRef API groups and subject fields", () => {
   const resources = [
     { id: "bad-role-ref", kind: "RoleBinding", name: "bad-role-ref", namespace: "default", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding", metadata: { name: "bad-role-ref" }, roleRef: { apiGroup: "wrong.example.com", kind: "Role", name: "reader" }, subjects: [{ kind: "ServiceAccount", name: "app", namespace: 42, apiGroup: "example.com" }] } },
