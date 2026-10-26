@@ -111,3 +111,12 @@ test("source-range replacement preserves unrelated manifest text and comments by
   assert.equal(reparsed[1].toJSON().metadata.name, "second");
   assert.equal(reparsed[1].toJSON().stringData.token, "keep: colon");
 });
+
+test("YAML completion dismissal is scoped to the current line and Ctrl+Space reopens it", () => {
+  assert.match(source, /const \[dismissedCompletionLine, setDismissedCompletionLine\] = useState\(null\)/);
+  assert.match(source, /if \(force\) setDismissedCompletionLine\(null\)/);
+  assert.match(source, /else if \(dismissedCompletionLine === lineStart\)/);
+  assert.match(source, /setDismissedCompletionLine\(lineStart\);/);
+  assert.match(source, /event\.code === "Space"/);
+  assert.match(source, /"ArrowUp", "ArrowDown"/);
+});
