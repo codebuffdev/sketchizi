@@ -15,6 +15,8 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
     sourceTabs.indexOf('{ id: "aws", label: "AWS" }'),
     sourceTabs.indexOf('{ id: "kubernetes", label: "Kubernetes" }'),
     sourceTabs.indexOf('{ id: "networking", label: "Networking" }'),
+    sourceTabs.indexOf('{ id: "uml", label: "UML" }'),
+    sourceTabs.indexOf('{ id: "mindmaps", label: "Mind Maps" }'),
   ];
   assert.ok(positions.every((position) => position >= 0));
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
@@ -24,8 +26,15 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
 test("Networking is a first-class source tab while remaining available in Collections", () => {
   assert.match(panel, /\{ id: "networking", label: "Networking" \}/);
   assert.match(panel, /else if \(source === "networking"\)[\s\S]*?setActiveCategory\("Networking"\)/);
-  assert.match(panel, /activeSource === "aws" \|\| activeSource === "kubernetes" \|\| activeSource === "networking"/);
+  assert.match(panel, /\["aws", "kubernetes", "networking", "uml", "mindmaps"\]\.includes\(activeSource\)/);
   assert.match(catalog, /activeCategory === "Networking"[\s\S]*?base = networkingIcons/);
+});
+
+test("UML and Mind Maps are direct catalog tabs routed through their existing catalogs", () => {
+  assert.match(panel, /else if \(source === "uml"\)[\s\S]*?setActiveCategory\("UML Diagrams"\)/);
+  assert.match(panel, /else if \(source === "mindmaps"\)[\s\S]*?setActiveCategory\("Mind Maps"\)/);
+  assert.match(catalog, /activeCategory === "UML Diagrams"[\s\S]*?base = umlIcons/);
+  assert.match(catalog, /activeCategory === "Mind Maps"[\s\S]*?base = mindMapIcons/);
 });
 
 test("Collections keeps implemented favorites, recently used, mind map, UML, and networking paths accessible", () => {
