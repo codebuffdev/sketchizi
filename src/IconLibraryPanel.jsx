@@ -132,6 +132,14 @@ export default function IconLibraryPanel({
       setActiveCategory("Networking");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
+    } else if (source === "uml") {
+      setActiveCategory("UML Diagrams");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
+    } else if (source === "mindmaps") {
+      setActiveCategory("Mind Maps");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
     }
   };
 
@@ -157,7 +165,7 @@ export default function IconLibraryPanel({
           : visibleIcons;
       return collectionItems.filter((icon) => !query || iconSearchText(icon).includes(query));
     }
-    if (activeSource === "aws" || activeSource === "kubernetes" || activeSource === "networking") return visibleIcons;
+    if (["aws", "kubernetes", "networking", "uml", "mindmaps"].includes(activeSource)) return visibleIcons;
     return visibleIcons;
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
@@ -180,6 +188,8 @@ export default function IconLibraryPanel({
     { id: "aws", label: "AWS" },
     { id: "kubernetes", label: "Kubernetes" },
     { id: "networking", label: "Networking" },
+    { id: "uml", label: "UML" },
+    { id: "mindmaps", label: "Mind Maps" },
   ];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
