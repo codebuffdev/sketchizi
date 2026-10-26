@@ -88,3 +88,17 @@ test("Compose YAML input padding clears the line-number gutter and keeps a visib
   assert.match(css, /caret-color:#f3f6ff!important/);
   assert.match(css, /\.docker-studio \.docker-studio-yaml-input:focus\{padding-left:60px!important/);
 });
+
+
+test("Compose YAML editor provides context-aware completions and keyboard acceptance", () => {
+  assert.match(component, /function buildComposeCompletions/);
+  assert.match(component, /COMPOSE_COMPLETION_GROUPS/);
+  assert.match(component, /COMPOSE_VALUE_COMPLETIONS/);
+  assert.match(component, /event\.code === "Space"/);
+  assert.match(component, /event\.key === "ArrowDown"/);
+  assert.match(component, /applyCompletion\(completion\.items\[completion\.selectedIndex\]\)/);
+  assert.match(component, /docker-compose-yaml-completions/);
+  assert.match(component, /Ctrl\+Space suggestions/);
+  assert.match(css, /\.docker-compose-yaml-completions/);
+  assert.match(css, /\.docker-compose-yaml-completion\.active/);
+});
