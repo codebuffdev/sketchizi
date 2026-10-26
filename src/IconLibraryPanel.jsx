@@ -248,7 +248,7 @@ export default function IconLibraryPanel({
                   <span>{getIconSubtitle(selectedIcon)}</span>
                 </div>
               </div>
-              <button type="button" className="library-selected-add" onClick={() => handleIconClick(withSelectedEssentialColor(selectedIcon))}>
+              <button type="button" className="library-selected-add" aria-label={`Add selected icon ${selectedIcon.name} to the canvas center`} title={`Add ${selectedIcon.name} to the canvas center`} onClick={() => handleIconClick(withSelectedEssentialColor(selectedIcon))}>
                 <span aria-hidden="true">＋</span> Add to canvas
               </button>
             </div>
