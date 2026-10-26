@@ -231,29 +231,9 @@ export default function SketchiziCanvas({
         });
         toolbar.insertBefore(grip, toolbar.firstChild);
       }
-      // Mirror Excalidraw's active tool into an explicit class on the dock button.
-      const syncActiveDockTool = () => {
-        const activeTool = apiRef?.current?.getAppState?.()?.activeTool?.type;
-        const aliases = { selection: ["selection", "select"], rectangle: ["rectangle", "rect"], diamond: ["diamond"], ellipse: ["ellipse"], arrow: ["arrow"], line: ["line"], freedraw: ["freedraw", "draw"], text: ["text"], image: ["image"], eraser: ["eraser"] };
-        [...toolbar.querySelectorAll("button, [role='button']")].forEach((button) => {
-          if (button.classList.contains("sketchizi-dock-grip")) return;
-          const label = [button.getAttribute("aria-label"), button.getAttribute("title"), button.dataset.testid].filter(Boolean).join(" ").toLowerCase();
-          const matchedType = Object.keys(aliases).find((type) => aliases[type].some((alias) => label.includes(alias)));
-          const isActive = Boolean(activeTool && matchedType === activeTool);
-          button.classList.toggle("sketchizi-dock-tool-active", isActive);
-          if (matchedType) button.setAttribute("aria-pressed", String(isActive));
-        });
-      };
-      syncActiveDockTool();
-      if (!toolbar.dataset.sketchiziActiveToolBound) {
-        toolbar.dataset.sketchiziActiveToolBound = "true";
-        const refreshActiveTool = () => requestAnimationFrame(syncActiveDockTool);
-        toolbar.addEventListener("pointerup", refreshActiveTool, true);
-        toolbar.addEventListener("click", refreshActiveTool, true);
-        toolbar.addEventListener("keydown", refreshActiveTool, true);
-        window.addEventListener("sketchizi:active-tool-changed", refreshActiveTool);
-      }
-
+      // Excalidraw owns the active-tool state and marks its selected toolbar button.
+      // Style that native state instead of inferring tools from labels, which can
+      // incorrectly highlight unrelated controls or remain stale while editing text.
       // Add concise native hover labels without replacing Excalidraw's own
       // accessible names, button elements, keyboard bindings, or handlers.
       // Shortcut text is read from Excalidraw's rendered keybinding element.
