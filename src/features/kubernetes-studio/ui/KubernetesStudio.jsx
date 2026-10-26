@@ -245,8 +245,8 @@ spec:
   ports:
     - port: 80
       targetPort: 8080`);
-  const initialYamlRef = useRef(yamlText);
-  const hasUnsavedChanges = yamlText !== initialYamlRef.current;
+  const [savedYamlText, setSavedYamlText] = useState(yamlText);
+  const hasUnsavedChanges = yamlText !== savedYamlText;
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [inspectedResourceId, setInspectedResourceId] = useState("");
@@ -384,6 +384,7 @@ spec:
       onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
       const nextYaml = documents.map((document) => document.toString().trimEnd()).filter(Boolean).join("\n---\n") + "\n";
       setYamlText(nextYaml);
+      setSavedYamlText(nextYaml);
       setInspectorOpen(false);
       setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Review validation before creating the diagram.");
       setError("");
@@ -400,7 +401,8 @@ spec:
     link.href = url;
     link.download = "kubernetes-manifests.yaml";
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setSavedYamlText(yamlText);
     setNotice("Exported the complete manifest set.");
   };
 
@@ -413,7 +415,9 @@ spec:
       return;
     }
     try {
-      setYamlText(await file.text());
+      const importedText = await file.text();
+      setYamlText(importedText);
+      setSavedYamlText(importedText);
       setNotice(`Loaded ${file.name}. Review the resources before creating the diagram.`);
       setError("");
     } catch {
