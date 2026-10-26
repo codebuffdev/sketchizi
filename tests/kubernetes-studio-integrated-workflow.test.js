@@ -67,7 +67,7 @@ test("inspector updates replace only the edited YAML document source range", () 
   const applyEnd = source.indexOf("\n  const exportYaml", applyStart);
   const applyFunction = source.slice(applyStart, applyEnd);
   assert.match(applyFunction, /const sourceRange = targetDocument\.range/);
-  assert.match(applyFunction, /yamlText\.slice\(0, sourceRange\[0\]\) \+ replacementText \+ yamlText\.slice\(sourceRange\[2\]\)/);
+  assert.match(applyFunction, /yamlText\.slice\(0, sourceRange\[0\]\) \+ replacementText \+ separator \+ suffix/);
   assert.doesNotMatch(applyFunction, /documents\.map\(\(document\) => document\.toString\(\)/);
   assert.match(applyFunction, /original YAML remains unchanged/);
 });
@@ -100,7 +100,8 @@ test("source-range replacement preserves unrelated manifest text and comments by
   const replacement = stringify(edited).trimEnd();
   const range = documents[0].range;
   const suffix = original.slice(range[2]);
-  const separator = documents.length > 1 && !/^\s*---(?:\s|#|$)/.test(suffix) ? "\n---\n" : "";
+  const suffixHasSeparator = /^\s*(?:#.*\n)*---(?:\s|#|$)/.test(suffix);
+  const separator = documents.length > 1 && !suffixHasSeparator ? "\n---\n" : "";
   const next = original.slice(0, range[0]) + replacement + separator + suffix;
   assert.ok(next.includes(untouchedText), "the untouched document's source range must remain byte-for-byte");
   assert.ok(next.includes("# preserve this comment exactly"));

@@ -709,7 +709,8 @@ spec:
       const hasFollowingDocuments = documents.length > inspectedResource.documentIndex + 1;
       // Some YAML parser ranges include the document separator. Restore one
       // only when replacing the source range consumed it.
-      const separator = hasFollowingDocuments && !/^\s*---(?:\s|#|$)/.test(suffix) ? "\n---\n" : "";
+      const suffixHasSeparator = /^\s*(?:#.*\n)*---(?:\s|#|$)/.test(suffix);
+      const separator = hasFollowingDocuments && !suffixHasSeparator ? "\n---\n" : "";
       const nextYaml = yamlText.slice(0, sourceRange[0]) + replacementText + separator + suffix;
       const previousYaml = yamlText;
       try {
