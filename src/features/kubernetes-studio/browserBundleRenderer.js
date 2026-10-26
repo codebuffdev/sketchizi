@@ -1,8 +1,17 @@
 import { parseAllDocuments, parseDocument, stringify } from "yaml";
 
-const clean = (value) => String(value || "").replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+/g, "/");
+const clean = (value) => String(value || "").replace(/\\/g, "/").replace(/\/+/g, "/").replace(/^\.\//, "");
+const normalizePath = (value) => {
+  const stack = [];
+  for (const part of clean(value).split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") { if (stack.length) stack.pop(); continue; }
+    stack.push(part);
+  }
+  return stack.join("/");
+};
 const dirname = (value) => { const p = clean(value).split("/"); p.pop(); return p.join("/"); };
-const join = (...parts) => clean(parts.filter(Boolean).join("/")).replace(/^\//, "");
+const join = (...parts) => normalizePath(parts.filter(Boolean).join("/"));
 const basename = (value) => clean(value).split("/").pop() || "";
 const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
 
