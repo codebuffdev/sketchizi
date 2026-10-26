@@ -241,9 +241,14 @@ export function validateKubernetesResources(resources) {
       const backends = rules.flatMap((rule) => rule.http?.paths || []).map((path) => path.backend?.service).filter(Boolean);
       if (spec.defaultBackend?.service) backends.push(spec.defaultBackend.service);
       if (!backends.length && !spec.defaultBackend) add(resource, "warning", "Ingress has no HTTP service backend configured.");
-      const tlsHosts = new Set((spec.tls || []).flatMap((entry) => Array.isArray(entry.hosts) ? entry.hosts.map((host) => String(host).toLowerCase()) : []));
+      const tlsHosts = new Set();
       for (const [index, entry] of (Array.isArray(spec.tls) ? spec.tls : []).entries()) {
         if (!Array.isArray(entry.hosts) || !entry.hosts.length) add(resource, "warning", "Ingress TLS entry " + (index + 1) + " does not list any hosts.");
+        for (const host of Array.isArray(entry.hosts) ? entry.hosts : []) {
+          const normalizedHost = String(host).toLowerCase();
+          if (tlsHosts.has(normalizedHost)) add(resource, "warning", "Ingress TLS host '" + host + "' is declared more than once.");
+          tlsHosts.add(normalizedHost);
+        }
         if (!entry.secretName || typeof entry.secretName !== "string") add(resource, "warning", "Ingress TLS entry " + (index + 1) + " does not define a TLS Secret name.");
         else if (!resources.some((candidate) => candidate.kind === "Secret" && candidate.name === entry.secretName && candidate.namespace === resource.namespace)) add(resource, "info", "Ingress TLS Secret '" + entry.secretName + "' is not in this manifest set; it may be provisioned separately.");
       }
@@ -257,10 +262,14 @@ export function validateKubernetesResources(resources) {
           if (seenIngressPaths.has(routeKey)) add(resource, "warning", "Ingress repeats host/path route '" + routeKey.replace(/\|/g, " / ") + "'.");
           seenIngressPaths.add(routeKey);
           if (!path.path || typeof path.path !== "string" || !path.path.startsWith("/")) add(resource, "error", "Ingress HTTP paths must specify a path beginning with '/'.");
-          if (path.pathType && !["Exact", "Prefix", "ImplementationSpecific"].includes(path.pathType)) add(resource, "error", "Ingress pathType must be Exact, Prefix, or ImplementationSpecific.");
+          if (path.pathType != null && !["Exact", "Prefix", "ImplementationSpecific"].includes(path.pathType)) add(resource, "error", "Ingress pathType must be Exact, Prefix, or ImplementationSpecific.");
           if (!path.pathType) add(resource, "warning", "Ingress path '" + (path.path || "(missing)") + "' does not declare pathType.");
           if (!path.backend?.service?.name) add(resource, "error", "Each Ingress HTTP path must reference a backend Service name.");
-          if (path.backend?.service && path.backend.service.port?.number == null && !path.backend.service.port?.name) add(resource, "error", "Ingress backend Service '" + (path.backend.service.name || "(unnamed)") + "' must specify a port number or port name.");
+          const backendPort = path.backend?.service?.port;
+          if (path.backend?.service && backendPort?.number == null && !backendPort?.name) add(resource, "error", "Ingress backend Service '" + (path.backend.service.name || "(unnamed)") + "' must specify a port number or port name.");
+          if (backendPort?.number != null && (!Number.isInteger(backendPort.number) || backendPort.number < 1 || backendPort.number > 65535)) add(resource, "error", "Ingress backend Service port number must be an integer from 1 to 65535.");
+          if (backendPort?.number != null && backendPort?.name) add(resource, "error", "Ingress backend Service port must specify either number or name, not both.");
+          if (backendPort?.name != null && (typeof backendPort.name !== "string" || !backendPort.name.trim())) add(resource, "error", "Ingress backend Service port name must be a non-empty string.");
         }
       }
       for (const backend of backends) {

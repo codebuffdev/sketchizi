@@ -397,3 +397,22 @@ test("K8s Studio reports malformed RBAC rules, role references and subjects", ()
   assert.ok(messages.some((message) => message.includes("subject 1 must define a supported kind and name")));
   assert.ok(messages.some((message) => message.includes("must define at least one subject")));
 });
+
+
+test("K8s Studio validates Ingress path types, backend port values and duplicate TLS hosts", () => {
+  const resources = [
+    { id: "service", kind: "Service", name: "web", namespace: "production", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "Service", metadata: { name: "web", namespace: "production" }, spec: { ports: [{ port: 80, name: "http" }] } } },
+    { id: "ingress", kind: "Ingress", name: "web", namespace: "production", apiVersion: "networking.k8s.io/v1", manifest: { apiVersion: "networking.k8s.io/v1", kind: "Ingress", metadata: { name: "web", namespace: "production" }, spec: {
+      tls: [{ hosts: ["example.test"] }, { hosts: ["EXAMPLE.TEST"] }],
+      rules: [{ host: "example.test", http: { paths: [
+        { path: "/", pathType: "Bogus", backend: { service: { name: "web", port: { number: 70000 } } } },
+        { path: "/named", pathType: "Prefix", backend: { service: { name: "web", port: { number: 80, name: "http" } } } },
+      ] } }],
+    } } },
+  ];
+  const messages = validateKubernetesResources(resources).map((issue) => issue.message);
+  assert.ok(messages.some((message) => message.includes("Ingress pathType must be Exact, Prefix, or ImplementationSpecific")));
+  assert.ok(messages.some((message) => message.includes("port number must be an integer from 1 to 65535")));
+  assert.ok(messages.some((message) => message.includes("must specify either number or name, not both")));
+  assert.ok(messages.some((message) => message.includes("TLS host 'EXAMPLE.TEST' is declared more than once")));
+});
