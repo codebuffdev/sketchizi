@@ -246,6 +246,19 @@ function validateKubernetesResources(resources) {
       if (container.name) containerNames.add(container.name);
       if (container.image && /:latest$/.test(container.image)) add(resource, "warning", "Image '" + container.image + "' uses the mutable latest tag; pin a version or digest for repeatable deployments.");
       if (container.image && !container.image.includes(":") && !container.image.includes("@")) add(resource, "warning", "Image '" + container.image + "' has no explicit tag or digest.");
+      if (container.imagePullPolicy != null && !["Always", "IfNotPresent", "Never"].includes(container.imagePullPolicy)) add(resource, "error", "Container '" + (container.name || "unnamed") + "' has invalid imagePullPolicy '" + container.imagePullPolicy + "'.");
+      const declaredContainerPortNames = new Set((container.ports || []).map((port) => port.name).filter(Boolean));
+      for (const probeName of ["readinessProbe", "livenessProbe", "startupProbe"]) {
+        const probe = container[probeName];
+        if (!probe) continue;
+        const probePort = probe.httpGet?.port ?? probe.tcpSocket?.port;
+        if (typeof probePort === "number" && (!Number.isInteger(probePort) || probePort < 1 || probePort > 65535)) add(resource, "error", "Container '" + (container.name || "unnamed") + "' " + probeName + " port must be an integer between 1 and 65535.");
+        if (typeof probePort === "string" && !declaredContainerPortNames.has(probePort)) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' " + probeName + " references named port '" + probePort + "', which is not declared on that container.");
+        if (probe.httpGet && !probe.httpGet.path) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' " + probeName + " HTTP probe does not declare a path.");
+        for (const timingField of ["initialDelaySeconds", "periodSeconds", "timeoutSeconds", "failureThreshold", "successThreshold"]) {
+          if (probe[timingField] != null && (!Number.isInteger(probe[timingField]) || probe[timingField] < (timingField === "initialDelaySeconds" ? 0 : 1))) add(resource, "error", "Container '" + (container.name || "unnamed") + "' " + probeName + " " + timingField + " has an invalid value.");
+        }
+      }
       if (container.securityContext?.privileged === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' runs in privileged mode.");
       if (!container.resources?.requests?.cpu && !container.resources?.requests?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory requests.");
       if (!container.resources?.limits?.cpu && !container.resources?.limits?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory limits.");
@@ -319,6 +332,9 @@ function validateKubernetesResources(resources) {
     }
 
     if (resource.kind === "Service") {
+      if (spec.type != null && !["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"].includes(spec.type)) add(resource, "error", "Service type must be ClusterIP, NodePort, LoadBalancer, or ExternalName.");
+      if (spec.type === "ExternalName" && (typeof spec.externalName !== "string" || !spec.externalName.trim())) add(resource, "error", "ExternalName Service must define spec.externalName.");
+      if (spec.type !== "ExternalName" && spec.externalName != null) add(resource, "warning", "spec.externalName is only used by an ExternalName Service.");
       if (!Array.isArray(spec.ports) || !spec.ports.length) add(resource, "error", "A Service must define at least one port.");
       if (spec.selector && Object.keys(spec.selector).length) {
         const matchingWorkload = workloads.some((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
@@ -353,8 +369,12 @@ function validateKubernetesResources(resources) {
       const backends = rules.flatMap((rule) => rule.http?.paths || []).map((path) => path.backend?.service).filter(Boolean);
       if (spec.defaultBackend?.service) backends.push(spec.defaultBackend.service);
       if (!backends.length && !spec.defaultBackend) add(resource, "warning", "Ingress has no HTTP service backend configured.");
+      const seenIngressPaths = new Set();
       for (const rule of rules) {
         for (const path of rule.http?.paths || []) {
+          const routeKey = String(rule.host || "*").toLowerCase() + "|" + String(path.path || "/") + "|" + String(path.pathType || "Prefix");
+          if (seenIngressPaths.has(routeKey)) add(resource, "warning", "Ingress repeats host/path route '" + routeKey.replace(/\|/g, " / ") + "'.");
+          seenIngressPaths.add(routeKey);
           if (!path.path || typeof path.path !== "string" || !path.path.startsWith("/")) add(resource, "error", "Ingress HTTP paths must specify a path beginning with '/'.");
           if (path.pathType && !["Exact", "Prefix", "ImplementationSpecific"].includes(path.pathType)) add(resource, "error", "Ingress pathType must be Exact, Prefix, or ImplementationSpecific.");
           if (!path.pathType) add(resource, "warning", "Ingress path '" + (path.path || "(missing)") + "' does not declare pathType.");
@@ -373,7 +393,11 @@ function validateKubernetesResources(resources) {
       }
     }
 
-    if (resource.kind === "PersistentVolumeClaim" && !spec.resources?.requests?.storage) add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
+    if (resource.kind === "PersistentVolumeClaim") {
+      if (!spec.resources?.requests?.storage) add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
+      if (!Array.isArray(spec.accessModes) || !spec.accessModes.length) add(resource, "error", "PersistentVolumeClaim must define at least one spec.accessModes entry.");
+      else if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolumeClaim contains an unsupported access mode.");
+    }
     if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
     if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) && spec.replicas != null && (!Number.isInteger(spec.replicas) || spec.replicas < 0)) add(resource, "error", "spec.replicas must be a non-negative integer.");
     if (resource.kind === "StatefulSet" && !spec.serviceName) add(resource, "error", "StatefulSet must define spec.serviceName for its governing Service.");

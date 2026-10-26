@@ -149,6 +149,19 @@ test("K8s Studio security checks cover host namespaces, service-account tokens a
   assert.match(studio, /does not drop all Linux capabilities/);
 });
 
+test("K8s Studio validates image policies, probes, Service types, Ingress routes and PVC access modes", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /invalid imagePullPolicy/);
+  assert.match(studio, /references named port/);
+  assert.match(studio, /HTTP probe does not declare a path/);
+  assert.match(studio, /probeName.*timingField/s);
+  assert.match(studio, /Service type must be ClusterIP, NodePort, LoadBalancer, or ExternalName/);
+  assert.match(studio, /ExternalName Service must define spec\.externalName/);
+  assert.match(studio, /Ingress repeats host\/path route/);
+  assert.match(studio, /PersistentVolumeClaim must define at least one spec\.accessModes entry/);
+  assert.match(studio, /contains an unsupported access mode/);
+});
+
 test("K8s Studio validates StatefulSet, HPA, CronJob and NetworkPolicy invariants", async () => {
   const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
   assert.match(studio, /StatefulSet must define spec\.serviceName/);
