@@ -226,3 +226,15 @@ test("K8s Studio validates rollout strategy and PodDisruptionBudget availability
   assert.match(studio, /maxUnavailable is zero and may block voluntary disruptions/);
   assert.match(studio, /PodDisruptionBudget: "policy\/v1"/);
 });
+
+
+test("K8s Studio checks resource request/limit quantities and quota policies", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /has an invalid .* quantity/);
+  assert.match(studio, /requests .* above its configured limit/);
+  assert.match(studio, /ResourceQuota should define spec\.hard limits/);
+  assert.match(studio, /ResourceQuota hard limit .* cannot be empty/);
+  assert.match(studio, /LimitRange should define at least one spec\.limits entry/);
+  assert.match(studio, /LimitRange entry .* has an unsupported type/);
+  assert.match(studio, /minimum for .* exceeds its maximum/);
+});

@@ -260,8 +260,37 @@ function validateKubernetesResources(resources) {
         }
       }
       if (container.securityContext?.privileged === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' runs in privileged mode.");
-      if (!container.resources?.requests?.cpu && !container.resources?.requests?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory requests.");
-      if (!container.resources?.limits?.cpu && !container.resources?.limits?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory limits.");
+      const requests = container.resources?.requests || {};
+      const limits = container.resources?.limits || {};
+      if (!requests.cpu && !requests.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory requests.");
+      if (!limits.cpu && !limits.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory limits.");
+      const parseQuantity = (value, resourceName) => {
+        if (typeof value === "number") return Number.isFinite(value) && value >= 0 ? value : null;
+        if (typeof value !== "string" || !value.trim()) return null;
+        const match = value.trim().match(/^([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)(m|Ki|Mi|Gi|Ti|Pi|Ei|k|K|M|G|T|P|E)?$/);
+        if (!match) return null;
+        const amount = Number(match[1]);
+        if (!Number.isFinite(amount) || amount < 0) return null;
+        const suffix = match[2] || "";
+        if (resourceName === "cpu") {
+          if (suffix === "m") return amount / 1000;
+          if (["Ki", "Mi", "Gi", "Ti", "Pi", "Ei"].includes(suffix)) return null;
+          const factors = { k: 1e3, K: 1e3, M: 1e6, G: 1e9, T: 1e12, P: 1e15, E: 1e18 };
+          return amount * (factors[suffix] || 1);
+        }
+        const factors = { m: 0.001, Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4, Pi: 1024 ** 5, Ei: 1024 ** 6, k: 1e3, K: 1e3, M: 1e6, G: 1e9, T: 1e12, P: 1e15, E: 1e18 };
+        return amount * (factors[suffix] || 1);
+      };
+      for (const resourceName of ["cpu", "memory"]) {
+        for (const [field, values] of [["requests", requests], ["limits", limits]]) {
+          if (values[resourceName] != null && parseQuantity(values[resourceName], resourceName) == null) add(resource, "error", "Container '" + (container.name || "unnamed") + "' has an invalid " + field + "." + resourceName + " quantity '" + values[resourceName] + "'.");
+        }
+        if (requests[resourceName] != null && limits[resourceName] != null) {
+          const requestValue = parseQuantity(requests[resourceName], resourceName);
+          const limitValue = parseQuantity(limits[resourceName], resourceName);
+          if (requestValue != null && limitValue != null && requestValue > limitValue) add(resource, "error", "Container '" + (container.name || "unnamed") + "' requests " + resourceName + " above its configured limit.");
+        }
+      }
       if (!container.readinessProbe) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no readiness probe.");
     }
 
@@ -404,6 +433,38 @@ function validateKubernetesResources(resources) {
       else if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolumeClaim contains an unsupported access mode.");
     }
     if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
+    if (resource.kind === "ResourceQuota") {
+      if (!spec.hard || typeof spec.hard !== "object" || !Object.keys(spec.hard).length) add(resource, "warning", "ResourceQuota should define spec.hard limits.");
+      for (const [quotaName, quotaValue] of Object.entries(spec.hard || {})) {
+        if (typeof quotaValue !== "string" && typeof quotaValue !== "number") add(resource, "error", "ResourceQuota hard limit '" + quotaName + "' must be a quantity string or number.");
+        else if (typeof quotaValue === "string" && !quotaValue.trim()) add(resource, "error", "ResourceQuota hard limit '" + quotaName + "' cannot be empty.");
+      }
+    }
+    if (resource.kind === "LimitRange") {
+      if (!Array.isArray(spec.limits) || !spec.limits.length) add(resource, "warning", "LimitRange should define at least one spec.limits entry.");
+      for (const [index, limit] of (Array.isArray(spec.limits) ? spec.limits : []).entries()) {
+        if (!limit || typeof limit !== "object") {
+          add(resource, "error", "LimitRange spec.limits entry " + (index + 1) + " must be an object.");
+          continue;
+        }
+        if (!["Container", "Pod", "PersistentVolumeClaim"].includes(limit.type)) add(resource, "error", "LimitRange entry " + (index + 1) + " has an unsupported type.");
+        for (const resourceName of new Set([...Object.keys(limit.min || {}), ...Object.keys(limit.max || {})])) {
+          const minValue = limit.min?.[resourceName];
+          const maxValue = limit.max?.[resourceName];
+          if (minValue != null && maxValue != null && typeof minValue === "number" && typeof maxValue === "number" && minValue > maxValue) {
+            add(resource, "error", "LimitRange " + limit.type + " minimum for '" + resourceName + "' exceeds its maximum.");
+          }
+        }
+        for (const field of ["default", "defaultRequest"]) {
+          const defaults = limit[field] || {};
+          const maximums = limit.max || {};
+          for (const [resourceName, defaultValue] of Object.entries(defaults)) {
+            const maxValue = maximums[resourceName];
+            if (typeof defaultValue === "number" && typeof maxValue === "number" && defaultValue > maxValue) add(resource, "warning", "LimitRange " + field + " for '" + resourceName + "' exceeds the configured maximum.");
+          }
+        }
+      }
+    }
     if (resource.kind === "PersistentVolumeClaim" && spec.storageClassName && !resources.some((candidate) => candidate.kind === "StorageClass" && candidate.name === spec.storageClassName)) {
       add(resource, "warning", "PersistentVolumeClaim references StorageClass '" + spec.storageClassName + "', which is not present in this manifest set (it may be provided by the cluster).");
     }
