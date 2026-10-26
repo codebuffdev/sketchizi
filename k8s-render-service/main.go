@@ -77,7 +77,22 @@ func render(w http.ResponseWriter,r *http.Request) {
 	if len(bytes.TrimSpace(out))==0{writeJSON(w,422,response{Error:"Renderer produced no Kubernetes YAML."});return}
 	writeJSON(w,200,response{YAML:string(out)})
 }
+func withCORS(next http.Handler) http.Handler {
+	allowedOrigin := strings.TrimSpace(os.Getenv("FRONTEND_ORIGIN"))
+	if allowedOrigin == "" { allowedOrigin = "https://sketchizi.pages.dev" }
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" && origin == allowedOrigin {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		}
+		if r.Method == http.MethodOptions { w.WriteHeader(http.StatusNoContent); return }
+		next.ServeHTTP(w, r)
+	})
+}
 func main(){
 	mux:=http.NewServeMux();mux.HandleFunc("/health",func(w http.ResponseWriter,r *http.Request){w.WriteHeader(200);_,_=w.Write([]byte("ok"))});mux.HandleFunc("/render",render)
-	addr:=os.Getenv("PORT");if addr==""{addr="8080"};_ = http.ListenAndServe(":"+addr,mux)
+	addr:=os.Getenv("PORT");if addr==""{addr="8080"};_ = http.ListenAndServe(":"+addr,withCORS(mux))
 }
