@@ -110,13 +110,15 @@ const imageOf = (service) => typeof service?.image === "string" ? service.image 
 const dependenciesOf = (service) => namesOf(service?.depends_on);
 
 function highlightLine(line) {
+  const indent = (line.match(/^ */) || [""])[0];
+  const indentMarkup = Array.from({ length: Math.ceil(indent.length / 2) }, (_, depth) => <span className={"docker-yaml-indent-guide docker-yaml-indent-level-" + (depth % 6)} key={depth}>{indent.slice(depth * 2, depth * 2 + 2)}</span>);
   const trimmed = line.trimStart();
-  if (!trimmed || trimmed.startsWith("#")) return <span className={trimmed.startsWith("#") ? "docker-yaml-comment" : ""}>{line}</span>;
-  const match = line.match(/^(\s*(?:-\s+)?)([^:#][^:]*)(:\s*)(.*)$/);
-  if (!match) return line;
-  const [, indent, key, separator, value] = match;
-  const valueClass = /^(true|false|null)$/i.test(value.trim()) ? "docker-yaml-literal" : /^-?\d+(?:\.\d+)?$/.test(value.trim()) ? "docker-yaml-number" : /^[\"'].*[\"']$/.test(value.trim()) ? "docker-yaml-string" : "docker-yaml-value";
-  return <>{indent}<span className="docker-yaml-key">{key}</span><span className="docker-yaml-punctuation">{separator}</span><span className={valueClass}>{value}</span></>;
+  if (!trimmed || trimmed.startsWith("#")) return <>{indentMarkup}<span className={trimmed.startsWith("#") ? "docker-yaml-comment" : ""}>{line.slice(indent.length)}</span></>;
+  const match = line.slice(indent.length).match(/^(-\\s+)?([^:#][^:]*)(:\\s*)(.*)$/);
+  if (!match) return <>{indentMarkup}{line.slice(indent.length)}</>;
+  const [, listMarker = "", key, separator, value] = match;
+  const valueClass = /^(true|false|null)$/i.test(value.trim()) ? "docker-yaml-literal" : /^-?\\d+(?:\\.\\d+)?$/.test(value.trim()) ? "docker-yaml-number" : /^[\"'].*[\"']$/.test(value.trim()) ? "docker-yaml-string" : "docker-yaml-value";
+  return <>{indentMarkup}<span className="docker-yaml-punctuation">{listMarker}</span><span className="docker-yaml-key">{key}</span><span className="docker-yaml-punctuation">{separator}</span><span className={valueClass}>{value}</span></>;
 }
 
 export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
