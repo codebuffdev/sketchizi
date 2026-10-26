@@ -247,7 +247,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   };
   const focusSelected = () => {
     if (!editorRef.current) return;
-    const lines = yamlText.split("\n"); const line = lines.findIndex((line) => new RegExp("^  " + selectedService.replace(/[.*+?^${}()|[\]\]/g, "\$&") + ":").test(line));
+    const lines = yamlText.split("\n"); const line = lines.findIndex((line) => line === "  " + selectedService + ":");
     if (line < 0) return;
     const offset = lines.slice(0, line).reduce((sum, line) => sum + line.length + 1, 0);
     editorRef.current.focus(); editorRef.current.setSelectionRange(offset, offset);
