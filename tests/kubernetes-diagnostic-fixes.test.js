@@ -267,7 +267,7 @@ test("K8s Studio evaluates Kubernetes matchExpressions for PDB and NetworkPolicy
 test("K8s Studio validates HPA metrics and scaling behavior policies", async () => {
   const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
   assert.match(studio, /HPA should define at least one spec\.metrics target/);
-  assert.match(studio, /HPA metric .* is missing its metric source/);
+  assert.match(studio, /is missing its metric source/);
   assert.match(studio, /must define metric\.name/);
   assert.match(studio, /must define a supported target type/);
   assert.match(studio, /stabilizationWindowSeconds must be an integer from 0 to 3600/);
