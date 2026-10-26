@@ -165,7 +165,7 @@ export default function IconLibraryPanel({
         </div>
         <div className="library-panel-heading">
           <div className="label"><span id="icon-library-title">Icon Library</span></div>
-          <div className="library-panel-subtitle">Browse and insert icons to your diagram</div>
+          <div className="library-panel-subtitle">Drag icons onto the canvas to place them precisely</div>
         </div>
         <div className="library-panel-header-actions">
           <button type="button" className={iconLibraryPinned ? "library-pin-button active" : "library-pin-button"} onClick={() => setIconLibraryPinned((pinned) => !pinned)} aria-label={iconLibraryPinned ? "Unpin Icon Library" : "Pin Icon Library"} aria-pressed={iconLibraryPinned} title={iconLibraryPinned ? "Unpin Icon Library" : "Pin Icon Library"}>
