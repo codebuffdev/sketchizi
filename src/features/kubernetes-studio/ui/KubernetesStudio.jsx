@@ -696,8 +696,16 @@ spec:
       const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
       const targetDocument = documents[inspectedResource.documentIndex];
       if (!targetDocument) throw new Error("The original YAML document could not be located. Reopen the inspector and try again.");
-      targetDocument.contents = editedDocument.contents;
-      const nextYaml = documents.map((document) => document.toString().trimEnd()).filter(Boolean).join("\n---\n") + "\n";
+      // Replace only the edited document's source range. Serializing every
+      // document here silently reformatted unrelated manifests and comments.
+      const sourceRange = targetDocument.range;
+      if (!Array.isArray(sourceRange) || sourceRange.length < 3
+        || !Number.isInteger(sourceRange[0]) || !Number.isInteger(sourceRange[2])
+        || sourceRange[0] < 0 || sourceRange[2] < sourceRange[0] || sourceRange[2] > yamlText.length) {
+        throw new Error("The original YAML document boundaries could not be preserved. Reopen the inspector and try again.");
+      }
+      const replacementText = stringify(editedManifest).trimEnd();
+      const nextYaml = yamlText.slice(0, sourceRange[0]) + replacementText + yamlText.slice(sourceRange[2]);
       const previousYaml = yamlText;
       try {
         onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });

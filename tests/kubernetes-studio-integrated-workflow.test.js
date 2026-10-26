@@ -59,3 +59,14 @@ test("K8s diagram relationships cover namespace membership, storage, scheduling 
   assert.match(app, /workload\.kind === "CronJob"\s*\?\s*workload\.manifest\?\.spec\?\.jobTemplate\?\.spec\?\.template\?\.spec/);
   assert.match(app, /targetKind === "ClusterRole"/);
 });
+
+
+test("inspector updates replace only the edited YAML document source range", () => {
+  const applyStart = source.indexOf("  const applyInspectedResource = () => {");
+  const applyEnd = source.indexOf("\n  const exportYaml", applyStart);
+  const applyFunction = source.slice(applyStart, applyEnd);
+  assert.match(applyFunction, /const sourceRange = targetDocument\.range/);
+  assert.match(applyFunction, /yamlText\.slice\(0, sourceRange\[0\]\) \+ replacementText \+ yamlText\.slice\(sourceRange\[2\]\)/);
+  assert.doesNotMatch(applyFunction, /documents\.map\(\(document\) => document\.toString\(\)/);
+  assert.match(applyFunction, /original YAML remains unchanged/);
+});
