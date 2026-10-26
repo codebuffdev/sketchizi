@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { parseAllDocuments } from "yaml";
+import { parseAllDocuments, stringify } from "yaml";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -246,6 +246,8 @@ spec:
       targetPort: 8080`);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [inspectedResourceId, setInspectedResourceId] = useState("");
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const updateCompletions = (text, caret, force = false) => {
     const next = buildCompletions(text, caret, force);
     setCompletion({ ...next, selectedIndex: 0 });
