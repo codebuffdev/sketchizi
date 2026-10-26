@@ -74,7 +74,24 @@ test("inspector updates replace only the edited YAML document source range", () 
 
 
 test("source-range replacement preserves unrelated manifest text and comments byte-for-byte", () => {
-  const original = `# header comment\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: first\ndata:\n  greeting: "hello"\n---\n# preserve this comment exactly\napiVersion: v1\nkind: Secret\nmetadata:\n  name: second\nstringData:\n  token: "keep: colon"\n`;
+  const original = [
+    "# header comment",
+    "apiVersion: v1",
+    "kind: ConfigMap",
+    "metadata:",
+    "  name: first",
+    "data:",
+    '  greeting: "hello"',
+    "---",
+    "# preserve this comment exactly",
+    "apiVersion: v1",
+    "kind: Secret",
+    "metadata:",
+    "  name: second",
+    "stringData:",
+    '  token: "keep: colon"',
+    "",
+  ].join("\n");
   const documents = parseAllDocuments(original, { prettyErrors: true, uniqueKeys: true });
   assert.equal(documents.length, 2);
   const untouchedText = original.slice(documents[1].range[0], documents[1].range[2]);
