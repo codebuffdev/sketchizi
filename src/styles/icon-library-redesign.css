@@ -1019,3 +1019,64 @@
   .app .library-panel-redesign .library-recent-chips { flex-wrap: nowrap; overflow-x: auto; }
   .app .library-panel-redesign .library-recent-chip { flex: 0 0 auto; }
 }
+
+
+/* Final polish: make results and empty states feel deliberate and legible. */
+.app .library-panel-redesign .library-results-heading {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 9px 0 10px;
+  background: linear-gradient(180deg, rgba(16,21,31,.99), rgba(16,21,31,.94));
+  backdrop-filter: blur(12px);
+}
+.app .library-panel-redesign .library-results-title-wrap { min-width: 0; }
+.app .library-panel-redesign .library-results-title-wrap .section-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-results-title-wrap .icon-total {
+  margin-top: 3px;
+  color: #909bb7;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.app .library-panel-redesign .library-empty,
+.app .library-panel-redesign .library-results > .empty {
+  display: grid;
+  min-height: 150px;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  border: 1px dashed #394157;
+  border-radius: 13px;
+  background: rgba(10,14,23,.3);
+  color: #aab4cd;
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
+.app .library-panel-redesign .library-icon-card .library-icon-card-actions {
+  opacity: .72;
+  transition: opacity .15s ease;
+}
+.app .library-panel-redesign .library-icon-card:hover .library-icon-card-actions,
+.app .library-panel-redesign .library-icon-card:focus-within .library-icon-card-actions,
+.app .library-panel-redesign .library-icon-card.is-selected .library-icon-card-actions {
+  opacity: 1;
+}
+.app.theme-light .library-panel-redesign .library-results-heading {
+  background: linear-gradient(180deg, rgba(250,251,255,.99), rgba(250,251,255,.94));
+}
+.app.theme-light .library-panel-redesign .library-results-title-wrap .icon-total { color: #727995; }
+.app.theme-light .library-panel-redesign .library-empty,
+.app.theme-light .library-panel-redesign .library-results > .empty {
+  border-color: #d9dce9;
+  background: #fbfbfe;
+  color: #727995;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign .library-icon-card .library-icon-card-actions { transition: none; }
+}
