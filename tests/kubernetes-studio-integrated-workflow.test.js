@@ -26,7 +26,7 @@ test("K8s Studio does not replace YAML text with a re-serialized form during exp
 
 test("inspector edits validate resource identity and duplicate names before canvas update", () => {
   const applyStart = source.indexOf("  const applyInspectedResource = () => {");
-  const applyEnd = source.indexOf("\n\n  const exportYaml", applyStart);
+  const applyEnd = source.indexOf("\n  const exportYaml", applyStart);
   assert.ok(applyStart >= 0 && applyEnd > applyStart, "inspector apply function should be present");
   const applyFunction = source.slice(applyStart, applyEnd);
   assert.match(applyFunction, /Changing the resource kind is not supported/);
