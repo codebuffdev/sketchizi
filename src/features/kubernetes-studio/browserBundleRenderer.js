@@ -1,8 +1,8 @@
 import { parseAllDocuments, parseDocument, stringify } from "yaml";
 
-const clean = (value) => String(value || "").replace(/\\\\/g, "/").replace(/^\\.\\//, "").replace(/\\/+/g, "/");
+const clean = (value) => String(value || "").replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+/g, "/");
 const dirname = (value) => { const p = clean(value).split("/"); p.pop(); return p.join("/"); };
-const join = (...parts) => clean(parts.filter(Boolean).join("/")).replace(/^\\//, "");
+const join = (...parts) => clean(parts.filter(Boolean).join("/")).replace(/^\//, "");
 const basename = (value) => clean(value).split("/").pop() || "";
 const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
 
@@ -131,10 +131,10 @@ function lookup(context, expression) {
 }
 
 function helmValue(expression, context) {
-  const tokens = expression.trim().split(/\\s+\\|\\s+/);
+  const tokens = expression.trim().split(/\s+\|\s+/);
   let value = lookup(context, tokens.shift() || "");
   for (const token of tokens) {
-    const [fn, ...args] = token.trim().split(/\\s+/);
+    const [fn, ...args] = token.trim().split(/\s+/);
     const arg = args.join(" ").replace(/^["']|["']$/g, "");
     if (fn === "quote") value = JSON.stringify(String(value ?? ""));
     else if (fn === "upper") value = String(value ?? "").toUpperCase();
@@ -158,31 +158,31 @@ function helmValue(expression, context) {
 }
 
 function renderSimpleTemplate(template, context, namedTemplates) {
-  let source = template.replace(/{{-?\\s*define\\s+"([^"]+)"\\s*-?}}([\\s\\S]*?){{-?\\s*end\\s*-?}}/g, (_, name, body) => { namedTemplates.set(name, body); return ""; });
-  source = source.replace(/{{-?\\s*(?:include|template)\\s+"([^"]+)"(?:\\s+[^}]*)?\\s*-?}}/g, (_, name) => {
+  let source = template.replace(/{{-?\s*define\s+"([^"]+)"\s*-?}}([\s\S]*?){{-?\s*end\s*-?}}/g, (_, name, body) => { namedTemplates.set(name, body); return ""; });
+  source = source.replace(/{{-?\s*(?:include|template)\s+"([^"]+)"(?:\s+[^}]*)?\s*-?}}/g, (_, name) => {
     const body = namedTemplates.get(name);
     if (body === undefined) throw new Error("Helm helper '" + name + "' is not defined in the selected chart.");
     return renderSimpleTemplate(body, context, namedTemplates);
   });
   // Resolve simple if/else blocks before evaluating values.
   for (let pass = 0; pass < 20; pass++) {
-    const next = source.replace(/{{-?\\s*if\\s+([^}]+?)\\s*-?}}([\\s\\S]*?)(?:{{-?\\s*else\\s*-?}}([\\s\\S]*?))?{{-?\\s*end\\s*-?}}/g, (_, condition, yes, no = "") => {
+    const next = source.replace(/{{-?\s*if\s+([^}]+?)\s*-?}}([\s\S]*?)(?:{{-?\s*else\s*-?}}([\s\S]*?))?{{-?\s*end\s*-?}}/g, (_, condition, yes, no = "") => {
       const value = lookup(context, condition.trim());
       return value && value !== false && value !== 0 ? yes : no;
     });
     if (next === source) break;
     source = next;
   }
-  source = source.replace(/{{-?\\s*\\.Release.Name\\s*-?}}/g, String(context.Release.Name));
-  source = source.replace(/{{-?\\s*\\.Release.Namespace\\s*-?}}/g, String(context.Release.Namespace));
-  source = source.replace(/{{-?\\s*\\.Chart.Name\\s*-?}}/g, String(context.Chart.Name));
-  source = source.replace(/{{-?\\s*\\.Chart.Version\\s*-?}}/g, String(context.Chart.Version));
-  source = source.replace(/{{-?\\s*([^{}]+?)\\s*-?}}/g, (_, expression) => {
+  source = source.replace(/{{-?\s*\.Release.Name\s*-?}}/g, String(context.Release.Name));
+  source = source.replace(/{{-?\s*\.Release.Namespace\s*-?}}/g, String(context.Release.Namespace));
+  source = source.replace(/{{-?\s*\.Chart.Name\s*-?}}/g, String(context.Chart.Name));
+  source = source.replace(/{{-?\s*\.Chart.Version\s*-?}}/g, String(context.Chart.Version));
+  source = source.replace(/{{-?\s*([^{}]+?)\s*-?}}/g, (_, expression) => {
     const expr = expression.trim();
-    if (/^(?:-?\\s*)?(?:else|end|\/\*|\*)/.test(expr)) return "";
+    if (/^(?:-?\s*)?(?:else|end|\/\*|\*)/.test(expr)) return "";
     return helmValue(expr, context);
   });
-  if (/{{[\\s\\S]*?}}/.test(source)) throw new Error("The selected Helm chart uses template features not supported by Sketchizi's browser renderer. No diagram was created; the existing canvas is unchanged.");
+  if (/{{[\s\S]*?}}/.test(source)) throw new Error("The selected Helm chart uses template features not supported by Sketchizi's browser renderer. No diagram was created; the existing canvas is unchanged.");
   return source;
 }
 
@@ -201,10 +201,10 @@ export function renderHelmBundle(bundleFiles, chartFilePath, valuesFilePath = ""
     Release: { Name: releaseName, Namespace: "default", Service: "Helm", IsInstall: true, IsUpgrade: false },
     Chart: { Name: String(chart.name || basename(chartDir)), Version: String(chart.version || "0.1.0"), AppVersion: String(chart.appVersion || "") },
   };
-  const templates = [...fileMap.entries()].filter(([path]) => path.startsWith(join(chartDir, "templates") + "/") && /\\.(?:ya?ml|tpl)$/i.test(path));
+  const templates = [...fileMap.entries()].filter(([path]) => path.startsWith(join(chartDir, "templates") + "/") && /\.(?:ya?ml|tpl)$/i.test(path));
   if (!templates.length) throw new Error("No Helm templates were found in " + chartDir + "/templates.");
   const namedTemplates = new Map();
-  const rendered = templates.sort(([a], [b]) => a.localeCompare(b)).map(([path, template]) => renderSimpleTemplate(template, context, namedTemplates)).filter((text) => text.trim() && !/^\\s*# Source:/m.test(text) || text.trim());
+  const rendered = templates.sort(([a], [b]) => a.localeCompare(b)).map(([path, template]) => renderSimpleTemplate(template, context, namedTemplates)).filter((text) => text.trim() && !/^\s*# Source:/m.test(text) || text.trim());
   const yaml = rendered.join("\n---\n");
   const docs = documents(yaml, "Rendered Helm chart");
   if (!docs.length) throw new Error("The Helm chart rendered no Kubernetes resources.");
