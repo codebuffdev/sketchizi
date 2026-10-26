@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 import { analyzeArchitectureGraph } from "../src/features/architecture/architectureGraphService.js";
 import { validateArchitectureWithProviderRules } from "../src/features/architecture/architectureValidationComposition.js";
 import { applyKubernetesRelationshipSuggestion } from "../src/features/architecture/kubernetesDiagnosticFixService.js";
+import { validateKubernetesResources } from "../src/features/kubernetes-studio/ui/KubernetesStudio.jsx";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -274,4 +275,38 @@ test("K8s Studio validates HPA metrics and scaling behavior policies", async () 
   assert.match(studio, /selectPolicy must be Max, Min, or Disabled/);
   assert.match(studio, /policies must be a list/);
   assert.match(studio, /periodSeconds must be an integer from 1 to 1800/);
+});
+
+
+test("K8s Studio integration: a complete multi-resource application has no broken core references", () => {
+  const resources = [
+    { id: "ns", kind: "Namespace", name: "production", namespace: "default", manifest: { apiVersion: "v1", kind: "Namespace", metadata: { name: "production" } } },
+    { id: "config", kind: "ConfigMap", name: "web-config", namespace: "production", manifest: { apiVersion: "v1", kind: "ConfigMap", metadata: { name: "web-config", namespace: "production" }, data: { MODE: "production" } } },
+    { id: "secret", kind: "Secret", name: "web-tls", namespace: "production", manifest: { apiVersion: "v1", kind: "Secret", metadata: { name: "web-tls", namespace: "production" }, type: "kubernetes.io/tls", data: {} } },
+    { id: "pvc", kind: "PersistentVolumeClaim", name: "web-data", namespace: "production", manifest: { apiVersion: "v1", kind: "PersistentVolumeClaim", metadata: { name: "web-data", namespace: "production" }, spec: { accessModes: ["ReadWriteOnce"], resources: { requests: { storage: "2Gi" } } } } },
+    { id: "deployment", kind: "Deployment", name: "web", namespace: "production", manifest: { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "web", namespace: "production" }, spec: { replicas: 2, selector: { matchLabels: { app: "web" } }, template: { metadata: { labels: { app: "web", tier: "frontend" } }, spec: { containers: [{ name: "web", image: "nginx:1.27", ports: [{ name: "http", containerPort: 8080 }], resources: { requests: { cpu: "100m", memory: "64Mi" }, limits: { cpu: "500m", memory: "256Mi" } }, envFrom: [{ configMapRef: { name: "web-config" } }] }] } } } } },
+    { id: "service", kind: "Service", name: "web", namespace: "production", manifest: { apiVersion: "v1", kind: "Service", metadata: { name: "web", namespace: "production" }, spec: { selector: { app: "web" }, ports: [{ name: "http", port: 80, targetPort: "http" }] } } },
+    { id: "ingress", kind: "Ingress", name: "web", namespace: "production", manifest: { apiVersion: "networking.k8s.io/v1", kind: "Ingress", metadata: { name: "web", namespace: "production" }, spec: { tls: [{ hosts: ["app.example.com"], secretName: "web-tls" }], rules: [{ host: "app.example.com", http: { paths: [{ path: "/", pathType: "Prefix", backend: { service: { name: "web", port: { number: 80 } } } }] } }] } } },
+    { id: "hpa", kind: "HorizontalPodAutoscaler", name: "web", namespace: "production", manifest: { apiVersion: "autoscaling/v2", kind: "HorizontalPodAutoscaler", metadata: { name: "web", namespace: "production" }, spec: { minReplicas: 2, maxReplicas: 8, scaleTargetRef: { apiVersion: "apps/v1", kind: "Deployment", name: "web" }, metrics: [{ type: "Resource", resource: { name: "cpu", target: { type: "Utilization", averageUtilization: 70 } } }] } } },
+    { id: "pdb", kind: "PodDisruptionBudget", name: "web", namespace: "production", manifest: { apiVersion: "policy/v1", kind: "PodDisruptionBudget", metadata: { name: "web", namespace: "production" }, spec: { minAvailable: 1, selector: { matchExpressions: [{ key: "app", operator: "In", values: ["web"] }] } } } },
+    { id: "network-policy", kind: "NetworkPolicy", name: "web", namespace: "production", manifest: { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy", metadata: { name: "web", namespace: "production" }, spec: { podSelector: { matchExpressions: [{ key: "tier", operator: "In", values: ["frontend"] }] }, policyTypes: ["Ingress"], ingress: [{}] } } },
+    { id: "quota", kind: "ResourceQuota", name: "production", namespace: "production", manifest: { apiVersion: "v1", kind: "ResourceQuota", metadata: { name: "production", namespace: "production" }, spec: { hard: { pods: "20", "requests.cpu": "4", "requests.memory": "8Gi" } } } },
+    { id: "limits", kind: "LimitRange", name: "production", namespace: "production", manifest: { apiVersion: "v1", kind: "LimitRange", metadata: { name: "production", namespace: "production" }, spec: { limits: [{ type: "Container", min: { cpu: "50m", memory: "32Mi" }, max: { cpu: "1", memory: "512Mi" }, defaultRequest: { cpu: "100m", memory: "64Mi" } }] } } },
+  ];
+  const issues = validateKubernetesResources(resources);
+  const brokenReferences = issues.filter((issue) => /not present in this manifest set|does not match a workload|No workload in this manifest set|not declared by Service|not declared by a matching workload container|is not listed in this Ingress TLS configuration|may be undefined/.test(issue.message));
+  assert.deepEqual(brokenReferences, []);
+  assert.equal(issues.some((issue) => issue.severity === "error"), false, JSON.stringify(issues, null, 2));
+});
+
+test("K8s Studio integration: missing service, ingress backend, config and HPA target are reported together", () => {
+  const resources = [
+    { id: "deployment", kind: "Deployment", name: "api", namespace: "default", manifest: { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "api" }, spec: { selector: { matchLabels: { app: "api" } }, template: { metadata: { labels: { app: "api" } }, spec: { containers: [{ name: "api", image: "example/api:1", envFrom: [{ configMapRef: { name: "missing-config" } }] }] } } } } },
+    { id: "ingress", kind: "Ingress", name: "api", namespace: "default", manifest: { apiVersion: "networking.k8s.io/v1", kind: "Ingress", metadata: { name: "api" }, spec: { rules: [{ host: "api.example.com", http: { paths: [{ path: "/", pathType: "Prefix", backend: { service: { name: "missing-service", port: { number: 80 } } } }] } }] } } },
+    { id: "hpa", kind: "HorizontalPodAutoscaler", name: "api", namespace: "default", manifest: { apiVersion: "autoscaling/v2", kind: "HorizontalPodAutoscaler", metadata: { name: "api" }, spec: { minReplicas: 1, maxReplicas: 3, scaleTargetRef: { apiVersion: "apps/v1", kind: "Deployment", name: "missing-deployment" }, metrics: [{ type: "Resource", resource: { name: "cpu", target: { type: "Utilization", averageUtilization: 70 } } }] } } },
+  ];
+  const issues = validateKubernetesResources(resources);
+  assert.ok(issues.some((issue) => issue.message.includes("missing-service") && issue.message.includes("Ingress backend Service")));
+  assert.ok(issues.some((issue) => issue.message.includes("missing-config") && issue.message.includes("ConfigMap")));
+  assert.ok(issues.some((issue) => issue.message.includes("missing-deployment") && issue.message.includes("HPA target")));
 });

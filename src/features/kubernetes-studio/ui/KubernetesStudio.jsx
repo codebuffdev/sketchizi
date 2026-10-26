@@ -208,7 +208,7 @@ function KubernetesResourceIcon({ kind }) {
   return <svg className={"k8s-resource-icon k8s-resource-icon-" + kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")} viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">{artwork}</svg>;
 }
 
-function validateKubernetesResources(resources) {
+export function validateKubernetesResources(resources) {
   const issues = [];
   const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", PodDisruptionBudget: "policy/v1", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
   const add = (resource, severity, message) => issues.push({ id: resource.id + ":" + severity + ":" + message, resource: resource.name, kind: resource.kind, severity, message });
