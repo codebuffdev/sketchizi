@@ -9,7 +9,7 @@ const reader = await readFile(resolve(root, "src/features/kubernetes-studio/zipB
 const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
 
 test("ZIP bundle reader retains YAML and Helm helper text files by extension", () => {
-  assert.ok(reader.includes(String.raw\`/\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(name)\`), "ZIP imports must retain Helm helper and text files");
+  assert.ok(reader.includes("/\\\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(name)"), "ZIP imports must retain Helm helper and text files");
 });
 
 test("K8s Studio accepts ZIP files and provides a separate folder picker", () => {
