@@ -147,8 +147,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const selected = composeDoc?.services?.[selectedService];
   const volumes = Object.keys(composeDoc?.volumes || {});
   const networks = Object.keys(composeDoc?.networks || {});
-  const validation = useMemo(() => document ? validateComposeDocument(document) : { valid: false, findings: [] }, [document]);
-  const readiness = useMemo(() => document ? analyzeComposeReadiness(document) : null, [document]);
+  const validation = useMemo(() => composeDoc ? validateComposeDocument(composeDoc) : { valid: false, findings: [] }, [composeDoc]);
+  const readiness = useMemo(() => composeDoc ? analyzeComposeReadiness(composeDoc) : null, [composeDoc]);
   const edges = serviceEntries.flatMap(([from, service]) => dependenciesOf(service).map((to) => ({ from, to, exists: serviceNames.has(to) })));
   const dirty = yamlText !== savedYaml;
   const close = () => { if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return; onClose?.(); };
@@ -227,7 +227,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   };
   const exportReport = () => {
     if (!composeDoc) { setError(parsed.error || "Fix YAML before exporting a report."); return; }
-    const blob = new Blob([exportComposeReadinessReport(document)], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([exportComposeReadinessReport(composeDoc)], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
     anchor.href = url; anchor.download = (composeDoc.name || "compose") + "-preflight-report.md"; anchor.click(); URL.revokeObjectURL(url);
     setNotice("Static preflight report exported. No containers were started.");
@@ -235,7 +235,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const createDiagram = async () => {
     if (!composeDoc) { setError(parsed.error || "Fix YAML before creating a diagram."); return; }
     if (validation.findings.some((finding) => finding.severity === "error")) { setShowValidation(true); setError("Resolve blocking Compose validation errors before creating the diagram."); return; }
-    try { await onCreateDiagram?.(document); setSavedYaml(yamlText); setError(""); setNotice("Diagram created from the current Compose YAML."); onClose?.(); }
+    try { await onCreateDiagram?.(composeDoc); setSavedYaml(yamlText); setError(""); setNotice("Diagram created from the current Compose YAML."); onClose?.(); }
     catch (cause) { setError(cause?.message || "Could not create the Compose diagram."); }
   };
   const addService = () => {
@@ -256,7 +256,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   return <div className="docker-studio-overlay docker-studio-k8s-layout" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
     <section className="docker-studio docker-studio-yaml-first" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
       <header className="docker-studio-header"><div className="docker-studio-brand-mark" aria-hidden="true">▦</div><div className="docker-studio-heading"><span className="docker-studio-eyebrow">INFRASTRUCTURE WORKSPACE</span><h1 id="docker-studio-title">Docker Compose Studio</h1><p>Edit Compose YAML and inspect its containers and relationships.</p></div><button type="button" className="docker-studio-close" onClick={close} aria-label="Close Docker Compose Studio">×</button></header>
-      <div className="docker-studio-toolbar"><div className="docker-studio-toolbar-context"><strong>{composeDoc?.name || "Compose project"}</strong><span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>{dirty && <em>Unsaved edits</em>}</div><div className="docker-studio-toolbar-actions"><input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/><button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button><button type="button" className="docker-studio-secondary" onClick={addService} disabled={!composeDoc}>+ Service</button><button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!composeDoc}>Preflight report</button><button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!composeDoc}>Export YAML</button><button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!document || Boolean(parsed.error)}>Create diagram</button></div></div>
+      <div className="docker-studio-toolbar"><div className="docker-studio-toolbar-context"><strong>{composeDoc?.name || "Compose project"}</strong><span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>{dirty && <em>Unsaved edits</em>}</div><div className="docker-studio-toolbar-actions"><input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/><button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button><button type="button" className="docker-studio-secondary" onClick={addService} disabled={!composeDoc}>+ Service</button><button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!composeDoc}>Preflight report</button><button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!composeDoc}>Export YAML</button><button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!composeDoc || Boolean(parsed.error)}>Create diagram</button></div></div>
       <div className="docker-studio-k8s-workspace">
         <section className="docker-studio-yaml-pane" aria-label="Compose YAML editor">
           <div className="docker-studio-pane-heading"><div><span>01</span><h2>Compose YAML</h2></div><div className="docker-studio-font-controls"><button type="button" onClick={() => setFontSize((size) => Math.max(10, size - 1))} disabled={fontSize <= 10} aria-label="Decrease YAML font size">A−</button><output>{fontSize}px</output><button type="button" onClick={() => setFontSize((size) => Math.min(20, size + 1))} disabled={fontSize >= 20} aria-label="Increase YAML font size">A+</button></div></div>
