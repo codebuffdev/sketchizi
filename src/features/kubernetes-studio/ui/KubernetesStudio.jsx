@@ -544,7 +544,6 @@ spec:
       targetPort: 8080`);
   const [savedYamlText, setSavedYamlText] = useState(yamlText);
   const [importedFileNames, setImportedFileNames] = useState([]);
-  const [hasInspectedEdits, setHasInspectedEdits] = useState(false);
   const hasUnsavedChanges = yamlText !== savedYamlText;
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -699,7 +698,6 @@ spec:
       }
       setYamlText(nextYaml);
       setSavedYamlText(nextYaml);
-      setHasInspectedEdits(true);
       setInspectorOpen(false);
       setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Revalidate the manifest set before creating the diagram.");
       setError("");
@@ -759,7 +757,6 @@ spec:
       setYamlText(combinedText);
       setSavedYamlText(combinedText);
       setImportedFileNames(importedFiles.map((file) => file.name));
-      setHasInspectedEdits(false);
       setNotice("Loaded " + importedFiles.length + " YAML file(s) and " + normalized.filter(Boolean).length + " resource(s). Review cross-resource checks before creating the diagram.");
       setError("");
     } catch (cause) {
@@ -809,7 +806,7 @@ spec:
           <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
           <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
           <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import one or more YAML files; documents separated by --- are supported."}</span>
-          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setHasInspectedEdits(false); setNotice(""); setError(""); }}>Clear</button>
+          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setNotice(""); setError(""); }}>Clear</button>
         </div>
 
         <div className="k8s-studio-workspace" ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
