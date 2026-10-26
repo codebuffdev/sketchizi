@@ -328,6 +328,18 @@ spec:
     }
   }, [yamlText]);
 
+  const exportYaml = () => {
+    if (!yamlText.trim() || parsed.parseError) { setError(parsed.parseError || "Add valid YAML before exporting."); return; }
+    const blob = new Blob([yamlText], { type: "application/yaml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "kubernetes-manifests.yaml";
+    link.click();
+    URL.revokeObjectURL(url);
+    setNotice("Exported the complete manifest set.");
+  };
+
   const importFile = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
