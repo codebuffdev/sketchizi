@@ -52,8 +52,15 @@ function buildCompletions(text, caret, force = false) {
   const line = text.slice(lineStart, lineEnd);
   const beforeCaret = text.slice(lineStart, caret);
   const indent = (line.match(/^\s*/) || [""])[0];
-  const previousLines = text.slice(0, lineStart).split("\n").reverse();
-  const previousLine = previousLines.find((value) => value.trim())?.trim() || "";
+  const previousLines = text.slice(0, lineStart).split("\n");
+  const currentIndent = indent.length;
+  const previousLine = [...previousLines].reverse().find((value) => value.trim())?.trim() || "";
+  const parentLine = [...previousLines].reverse().find((value) => {
+    if (!value.trim()) return false;
+    const lineIndent = (value.match(/^\s*/) || [""])[0].length;
+    return lineIndent < currentIndent && /^[\s-]*[A-Za-z_][\w.-]*\s*:\s*(?:#.*)?$/.test(value);
+  }) || "";
+  const parent = (parentLine.trim().match(/(?:^|-\s*)([A-Za-z_][\w.-]*)\s*:/) || [])[1] || "";
   const currentDocument = text.slice(0, caret).split(/^---\s*$/m).pop() || "";
   const kind = currentDocument.match(/^kind:\s*([A-Za-z]+)/m)?.[1] || "";
   let items = [];
@@ -92,7 +99,6 @@ function buildCompletions(text, caret, force = false) {
   } else if (/^\s*kind:\s*[^\s]+/.test(line) && beforeCaret.includes("kind:")) {
     return { items: [], replaceStart, replaceEnd };
   } else {
-    const parent = previousLine.replace(/:.*$/, "").trim();
     const fieldGroups = {
       root: ["apiVersion:", "kind:", "metadata:", "spec:", "data:", "type:"],
       metadata: ["name:", "namespace:", "labels:", "annotations:"],
@@ -120,6 +126,22 @@ function buildCompletions(text, caret, force = false) {
       data: ["APP_ENV:", "LOG_LEVEL:"],
     };
     let choices = fieldGroups[parent] || fieldGroups.root;
+    // Avoid suggesting keys already present at this same YAML nesting level.
+    // Only inspect siblings before the current line, so editing a key doesn't hide itself.
+    const siblingKeys = new Set(
+      previousLines
+        .filter((value) => {
+          if (!value.trim()) return false;
+          const lineIndent = (value.match(/^\s*/) || [""])[0].length;
+          return lineIndent === currentIndent;
+        })
+        .map((value) => (value.trim().match(/^[- ]*([A-Za-z_][\w.-]*)\s*:/) || [])[1])
+        .filter(Boolean)
+    );
+    choices = choices.filter((entry) => {
+      const key = (entry.match(/^[- ]*([A-Za-z_][\w.-]*)\s*:/) || [])[1];
+      return !key || !siblingKeys.has(key);
+    });
     if (beforeCaret.trim()) {
       const partial = beforeCaret.trim();
       if (/^[A-Za-z][\w-]*$/.test(partial)) {
@@ -236,6 +258,9 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+  const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 24 });
+  const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
+
   const [manifestFontSize, setManifestFontSize] = useState(12);
   const [yamlScrollTop, setYamlScrollTop] = useState(0);
   const [previewSplit, setPreviewSplit] = useState(50);
@@ -282,6 +307,22 @@ spec:
   ports:
     - port: 80
       targetPort: 8080`);
+  useEffect(() => {
+    if (!completion.items.length) return undefined;
+    const dismissOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+      const editor = yamlEditorRef.current;
+      const caret = editor?.selectionStart ?? 0;
+      const lineStart = yamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+      setDismissedCompletionLine(lineStart);
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+    };
+    window.addEventListener("keydown", dismissOnEscape, true);
+    return () => window.removeEventListener("keydown", dismissOnEscape, true);
+  }, [completion.items.length, yamlText]);
   const [savedYamlText, setSavedYamlText] = useState(yamlText);
   const [importedFileNames, setImportedFileNames] = useState([]);
   const hasUnsavedChanges = yamlText !== savedYamlText;
@@ -314,6 +355,30 @@ spec:
   };
 
   const updateCompletions = (text, caret, force = false) => {
+    const editor = yamlEditorRef.current;
+    if (editor) {
+      const beforeCaret = text.slice(0, caret);
+      const lineIndex = beforeCaret.split("\n").length - 1;
+      const column = beforeCaret.length - beforeCaret.lastIndexOf("\n") - 1;
+      const lineHeight = manifestFontSize * 1.65;
+      const charWidth = manifestFontSize * 0.602;
+      const shell = editor.parentElement;
+      const shellWidth = shell?.clientWidth || editor.clientWidth;
+      const popupWidth = Math.min(390, Math.max(220, shellWidth - 16));
+      const desiredLeft = 16 + column * charWidth - editor.scrollLeft;
+      setCompletionPosition({
+        top: Math.max(8, 16 + (lineIndex + 1) * lineHeight - editor.scrollTop),
+        left: Math.max(8, Math.min(shellWidth - popupWidth - 8, desiredLeft))
+      });
+    }
+    const lineStart = text.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+    if (force) setDismissedCompletionLine(null);
+    else if (dismissedCompletionLine === lineStart) {
+      setCompletion({ items: [], replaceStart: lineStart, replaceEnd: caret, selectedIndex: 0 });
+      return;
+    } else if (dismissedCompletionLine !== null) {
+      setDismissedCompletionLine(null);
+    }
     const next = buildCompletions(text, caret, force);
     setCompletion({ ...next, selectedIndex: 0 });
   };
@@ -350,6 +415,11 @@ spec:
       return;
     }
     if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      const caret = event.currentTarget.selectionStart;
+      const lineStart = yamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+      setDismissedCompletionLine(lineStart);
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
       return;
     }
@@ -717,6 +787,9 @@ spec:
                 }}
                 onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)}
                 onKeyUp={(event) => {
+                  // ArrowUp/ArrowDown navigate the visible suggestion list; do not
+                  // recompute completions on keyup or the selection jumps back to item 1.
+                  if (completion.items.length && ["ArrowUp", "ArrowDown"].includes(event.key)) return;
                   if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart);
                 }}
                 onKeyDown={handleYamlKeyDown}
@@ -732,7 +805,7 @@ spec:
                 placeholder="Paste Kubernetes YAML here…"
               />
               {completion.items.length > 0 && (
-                <div className="k8s-yaml-completions" role="listbox" aria-label="YAML completions">
+                <div className="k8s-yaml-completions" style={{ top: completionPosition.top, left: completionPosition.left }} role="listbox" aria-label="YAML completions">
                   <div className="k8s-yaml-completion-heading">Kubernetes suggestions <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></div>
                   {completion.items.map((item, index) => (
                     <button type="button" role="option" aria-selected={index === completion.selectedIndex} className={index === completion.selectedIndex ? "k8s-yaml-completion active" : "k8s-yaml-completion"} key={item.label} onMouseDown={(event) => event.preventDefault()} onClick={() => applyCompletion(item)}>
