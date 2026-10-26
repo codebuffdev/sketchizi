@@ -597,8 +597,8 @@ spec:
       if (invalidDocuments.length) throw new Error("Rendered document(s) " + invalidDocuments.join(", ") + " do not include kind and metadata.name.");
       const resources = normalized.filter(Boolean);
       if (!resources.length) throw new Error("The selected source rendered no Kubernetes resources.");
-      setYamlText(renderedYaml + "\\n");
-      setSavedYamlText(renderedYaml + "\\n");
+      setYamlText(renderedYaml + "\n");
+      setSavedYamlText(renderedYaml + "\n");
       setImportedFileNames([source.label + " (rendered)"]);
       setBundleSources([]);
       setSelectedBundleSource("");
