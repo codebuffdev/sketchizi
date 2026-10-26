@@ -217,7 +217,7 @@ test("K8s Studio validates direct env references, optional dependencies, storage
 
 
 test("K8s Studio validates rollout strategy and PodDisruptionBudget availability rules", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8");
   assert.match(studio, /Deployment strategy\.type must be Recreate or RollingUpdate/);
   assert.match(studio, /rollingUpdate\." \+ field \+ " must be a non-negative integer or a percentage/);
   assert.match(studio, /cannot set both maxSurge and maxUnavailable to zero/);
@@ -230,7 +230,7 @@ test("K8s Studio validates rollout strategy and PodDisruptionBudget availability
 
 
 test("K8s Studio checks resource request/limit quantities and quota policies", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8");
   assert.match(studio, /has an invalid /);
   assert.match(studio, /quantity/);
   assert.match(studio, /above its configured limit/);
@@ -243,7 +243,7 @@ test("K8s Studio checks resource request/limit quantities and quota policies", a
 
 
 test("K8s Studio checks Ingress TLS, StatefulSet services, NetworkPolicy selectors and HPA CPU readiness", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8");
   assert.match(studio, /Ingress TLS entry .* does not list any hosts/);
   assert.match(studio, /does not define a TLS Secret name/);
   assert.match(studio, /is not listed in this Ingress TLS configuration/);
@@ -254,7 +254,7 @@ test("K8s Studio checks Ingress TLS, StatefulSet services, NetworkPolicy selecto
 
 
 test("K8s Studio evaluates Kubernetes matchExpressions for PDB and NetworkPolicy selectors", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8");
   assert.match(studio, /const matchesKubernetesSelector = \(selector, labels\) =>/);
   assert.match(studio, /expression\.operator === "In"/);
   assert.match(studio, /expression\.operator === "NotIn"/);
@@ -266,7 +266,7 @@ test("K8s Studio evaluates Kubernetes matchExpressions for PDB and NetworkPolicy
 
 
 test("K8s Studio validates HPA metrics and scaling behavior policies", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8");
   assert.match(studio, /HPA should define at least one spec\.metrics target/);
   assert.match(studio, /is missing its metric source/);
   assert.match(studio, /must define metric\.name/);
@@ -293,7 +293,7 @@ test("K8s Studio integration: a complete multi-resource application has no broke
     { id: "quota", kind: "ResourceQuota", name: "production", namespace: "production", manifest: { apiVersion: "v1", kind: "ResourceQuota", metadata: { name: "production", namespace: "production" }, spec: { hard: { pods: "20", "requests.cpu": "4", "requests.memory": "8Gi" } } } },
     { id: "limits", kind: "LimitRange", name: "production", namespace: "production", manifest: { apiVersion: "v1", kind: "LimitRange", metadata: { name: "production", namespace: "production" }, spec: { limits: [{ type: "Container", min: { cpu: "50m", memory: "32Mi" }, max: { cpu: "1", memory: "512Mi" }, defaultRequest: { cpu: "100m", memory: "64Mi" } }] } } },
   ];
-  const issues = validateKubernetesResources(resources);
+  const issues = validateKubernetesResources(resources.map((item) => ({ ...item, apiVersion: item.manifest.apiVersion })));
   const brokenReferences = issues.filter((issue) => /not present in this manifest set|does not match a workload|No workload in this manifest set|not declared by Service|not declared by a matching workload container|is not listed in this Ingress TLS configuration|may be undefined/.test(issue.message));
   assert.deepEqual(brokenReferences, []);
   assert.equal(issues.some((issue) => issue.severity === "error"), false, JSON.stringify(issues, null, 2));
