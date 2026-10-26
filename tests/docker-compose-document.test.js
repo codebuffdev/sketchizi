@@ -297,7 +297,7 @@ test("Compose Studio supports adding services and creating diagrams from valid Y
   const { readFile } = await import("node:fs/promises");
   const ui = await readFile(new URL("../src/features/docker-compose/ui/DockerComposeStudio.jsx", import.meta.url), "utf8");
   assert.match(ui, /const addService = \(\) =>/);
-  assert.match(ui, /onClick=\{addService\}>\+ Service<\/button>/);
+  assert.match(ui, /onClick=\{addService\}[^>]*>\+ Service<\/button>/);
   assert.match(ui, /Canvas changes only after Create diagram/);
 });
 
