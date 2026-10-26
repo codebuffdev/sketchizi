@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
+import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -7,7 +8,7 @@ const COMPLETION_KINDS = [
   ["PersistentVolume", "v1"], ["PersistentVolumeClaim", "v1"], ["ServiceAccount", "v1"],
   ["Deployment", "apps/v1"], ["StatefulSet", "apps/v1"], ["DaemonSet", "apps/v1"], ["ReplicaSet", "apps/v1"],
   ["Job", "batch/v1"], ["CronJob", "batch/v1"], ["Ingress", "networking.k8s.io/v1"],
-  ["NetworkPolicy", "networking.k8s.io/v1"], ["Role", "rbac.authorization.k8s.io/v1"],
+  ["NetworkPolicy", "networking.k8s.io/v1"], ["PodDisruptionBudget", "policy/v1"], ["Role", "rbac.authorization.k8s.io/v1"],
   ["RoleBinding", "rbac.authorization.k8s.io/v1"], ["ClusterRole", "rbac.authorization.k8s.io/v1"],
   ["ClusterRoleBinding", "rbac.authorization.k8s.io/v1"], ["HorizontalPodAutoscaler", "autoscaling/v2"],
   ["StorageClass", "storage.k8s.io/v1"], ["ResourceQuota", "v1"], ["LimitRange", "v1"],
@@ -208,272 +209,7 @@ function KubernetesResourceIcon({ kind }) {
   return <svg className={"k8s-resource-icon k8s-resource-icon-" + kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")} viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">{artwork}</svg>;
 }
 
-function validateKubernetesResources(resources) {
-  const issues = [];
-  const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
-  const add = (resource, severity, message) => issues.push({ id: resource.id + ":" + severity + ":" + message, resource: resource.name, kind: resource.kind, severity, message });
-  const matches = (selector, labels) => Boolean(selector && labels && Object.keys(selector).length && Object.entries(selector).every(([key, value]) => labels[key] === value));
-  const workloads = resources.filter((resource) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod"].includes(resource.kind));
-  const seen = new Set();
-  for (const resource of resources) {
-    const manifest = resource.manifest || {};
-    const spec = manifest.spec || {};
-    const expected = expectedApiVersions[resource.kind];
-    if (expected && resource.apiVersion !== expected) add(resource, "error", "Expected apiVersion " + expected + ", found " + resource.apiVersion + ".");
-    if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind)) {
-      const selector = spec.selector?.matchLabels;
-      const labels = spec.template?.metadata?.labels;
-      if (!selector || !Object.keys(selector).length) add(resource, "error", "spec.selector.matchLabels is required.");
-      else if (!matches(selector, labels)) add(resource, "error", "Selector labels must match spec.template.metadata.labels.");
-      const containers = spec.template?.spec?.containers;
-      if (!Array.isArray(containers) || !containers.length) add(resource, "error", "At least one container is required in the pod template.");
-      else containers.forEach((container, index) => { if (!container.image) add(resource, "error", "Container " + (container.name || index + 1) + " is missing an image."); });
-    }
-    if (resource.kind === "Pod") {
-      const containers = spec.containers;
-      if (!Array.isArray(containers) || !containers.length) add(resource, "error", "At least one container is required.");
-      else containers.forEach((container, index) => { if (!container.image) add(resource, "error", "Container " + (container.name || index + 1) + " is missing an image."); });
-    }
-    const key = resource.namespace + "/" + resource.kind + "/" + resource.name;
-    if (seen.has(key)) add(resource, "error", "Duplicate resource name and kind in the same namespace.");
-    seen.add(key);
 
-    const podSpec = resource.kind === "Pod" ? spec : spec.template?.spec;
-    const containers = [...(podSpec?.initContainers || []), ...(podSpec?.containers || []), ...(podSpec?.ephemeralContainers || [])];
-    const containerNames = new Set();
-    for (const container of containers) {
-      if (container.name && containerNames.has(container.name)) add(resource, "error", "Container name '" + container.name + "' is duplicated.");
-      if (container.name) containerNames.add(container.name);
-      if (container.image && /:latest$/.test(container.image)) add(resource, "warning", "Image '" + container.image + "' uses the mutable latest tag; pin a version or digest for repeatable deployments.");
-      if (container.image && !container.image.includes(":") && !container.image.includes("@")) add(resource, "warning", "Image '" + container.image + "' has no explicit tag or digest.");
-      if (container.securityContext?.privileged === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' runs in privileged mode.");
-      if (!container.resources?.requests?.cpu && !container.resources?.requests?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory requests.");
-      if (!container.resources?.limits?.cpu && !container.resources?.limits?.memory) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no CPU or memory limits.");
-      if (!container.readinessProbe) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has no readiness probe.");
-    }
-
-    if (podSpec) {
-      const podSecurityContext = podSpec.securityContext || {};
-      if (podSecurityContext.runAsUser === 0) add(resource, "warning", "Pod securityContext explicitly runs as root (runAsUser: 0). Use a non-root user where possible.");
-      const volumeNames = new Set();
-      for (const volume of podSpec.volumes || []) {
-        if (volume.name && volumeNames.has(volume.name)) add(resource, "error", "Pod volume name '" + volume.name + "' is duplicated.");
-        if (volume.name) volumeNames.add(volume.name);
-      }
-      for (const container of containers) {
-        const mountedNames = new Set();
-        for (const mount of container.volumeMounts || []) {
-          if (!mount.name || !volumeNames.has(mount.name)) add(resource, "error", "Container '" + (container.name || "unnamed") + "' mounts volume '" + (mount.name || "(missing name)") + "', but that volume is not declared in the pod spec.");
-          if (mount.name && mountedNames.has(mount.name) && !mount.mountPath) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has a repeated volume mount for '" + mount.name + "'.");
-          if (mount.name) mountedNames.add(mount.name);
-        }
-        const declaredPorts = new Set();
-        for (const port of container.ports || []) {
-          if (!Number.isInteger(port.containerPort) || port.containerPort < 1 || port.containerPort > 65535) add(resource, "error", "Container '" + (container.name || "unnamed") + "' has a containerPort outside the valid 1–65535 range.");
-          const portKey = String(port.containerPort) + "/" + String(port.protocol || "TCP");
-          if (declaredPorts.has(portKey)) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' declares container port " + portKey + " more than once.");
-          declaredPorts.add(portKey);
-        }
-      }
-      for (const volume of podSpec.volumes || []) {
-        if (volume.hostPath) add(resource, "warning", "Volume '" + (volume.name || "unnamed") + "' uses hostPath, which exposes node filesystem paths to the workload.");
-      }
-      for (const container of containers) {
-        if (container.securityContext?.allowPrivilegeEscalation === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' allows privilege escalation.");
-        if (container.securityContext?.runAsUser === 0) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' explicitly runs as root (runAsUser: 0).");
-        if (container.securityContext?.runAsNonRoot !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not enforce runAsNonRoot.");
-        if (container.securityContext?.readOnlyRootFilesystem !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not use a read-only root filesystem.");
-      }
-    }
-
-    if (["Role", "ClusterRole"].includes(resource.kind)) {
-      const rules = Array.isArray(manifest.rules) ? manifest.rules : [];
-      for (const rule of rules) {
-        if ((rule.verbs || []).includes("*")) add(resource, "warning", "RBAC rule grants wildcard verbs (*); restrict permissions to the actions required.");
-        if ((rule.resources || []).includes("*")) add(resource, "warning", "RBAC rule grants access to all resources (*); enumerate only the required resources.");
-        if ((rule.apiGroups || []).includes("*")) add(resource, "warning", "RBAC rule spans all API groups (*); restrict it to the required API groups.");
-        if ((rule.resources || []).includes("secrets") && (rule.verbs || []).some((verb) => ["*", "get", "list", "watch"].includes(verb))) {
-          add(resource, "warning", "RBAC rule can read Secrets; grant this only when the workload explicitly requires it.");
-        }
-      }
-    }
-    if (resource.kind === "ClusterRoleBinding" && manifest.roleRef?.name === "cluster-admin") {
-      add(resource, "warning", "This binding grants the cluster-admin ClusterRole; use a narrower role whenever possible.");
-    }
-    if (resource.kind === "RoleBinding" && manifest.roleRef?.name === "cluster-admin") {
-      add(resource, "warning", "This binding references cluster-admin; verify that cluster-wide administrator permissions are truly required.");
-    }
-
-    if (resource.kind === "Service") {
-      if (!Array.isArray(spec.ports) || !spec.ports.length) add(resource, "error", "A Service must define at least one port.");
-      if (spec.selector && Object.keys(spec.selector).length) {
-        const matchingWorkload = workloads.some((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
-        if (!matchingWorkload) add(resource, "warning", "No workload in this manifest set matches the Service selector.");
-      }
-      const seenServicePorts = new Set();
-      const matchingWorkloads = workloads.filter((workload) => workload.namespace === resource.namespace && matches(spec.selector, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
-      for (const port of spec.ports || []) {
-        const protocol = String(port.protocol || "TCP").toUpperCase();
-        const portKey = String(port.port) + "/" + protocol;
-        if (seenServicePorts.has(portKey)) add(resource, "error", "Service contains a duplicate port/protocol pair for " + port.port + "/" + protocol + ".");
-        seenServicePorts.add(portKey);
-        if (!Number.isInteger(port.port) || port.port < 1 || port.port > 65535) add(resource, "error", "Service port must be an integer between 1 and 65535.");
-        if (port.name && !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(port.name)) add(resource, "error", "Service port name '" + port.name + "' must be a lowercase alphanumeric name with optional internal hyphens.");
-        if (typeof port.targetPort === "number" && (!Number.isInteger(port.targetPort) || port.targetPort < 1 || port.targetPort > 65535)) add(resource, "error", "Numeric targetPort must be an integer between 1 and 65535.");
-        if (typeof port.targetPort === "string" && matchingWorkloads.length) {
-          const namedPortExists = matchingWorkloads.some((workload) => {
-            const workloadPodSpec = workload.kind === "Pod" ? workload.manifest?.spec : workload.manifest?.spec?.template?.spec;
-            return [...(workloadPodSpec?.initContainers || []), ...(workloadPodSpec?.containers || [])].some((container) =>
-              (container.ports || []).some((containerPort) => containerPort.name === port.targetPort && String(containerPort.protocol || "TCP").toUpperCase() === protocol)
-            );
-          });
-          if (!namedPortExists) add(resource, "warning", "Named targetPort '" + port.targetPort + "' is not declared by a matching workload container for protocol " + protocol + ".");
-        }
-        if (port.nodePort != null && (!Number.isInteger(port.nodePort) || port.nodePort < 30000 || port.nodePort > 32767)) add(resource, "warning", "NodePort " + port.nodePort + " is outside the default 30000–32767 range.");
-        if (port.targetPort == null) add(resource, "info", "Service port " + port.port + " omits targetPort; Kubernetes defaults it to port.");
-      }
-    }
-
-    if (resource.kind === "Ingress") {
-      const rules = Array.isArray(spec.rules) ? spec.rules : [];
-      const backends = rules.flatMap((rule) => rule.http?.paths || []).map((path) => path.backend?.service).filter(Boolean);
-      if (spec.defaultBackend?.service) backends.push(spec.defaultBackend.service);
-      if (!backends.length && !spec.defaultBackend) add(resource, "warning", "Ingress has no HTTP service backend configured.");
-      for (const rule of rules) {
-        for (const path of rule.http?.paths || []) {
-          if (!path.path || typeof path.path !== "string" || !path.path.startsWith("/")) add(resource, "error", "Ingress HTTP paths must specify a path beginning with '/'.");
-          if (path.pathType && !["Exact", "Prefix", "ImplementationSpecific"].includes(path.pathType)) add(resource, "error", "Ingress pathType must be Exact, Prefix, or ImplementationSpecific.");
-          if (!path.pathType) add(resource, "warning", "Ingress path '" + (path.path || "(missing)") + "' does not declare pathType.");
-          if (!path.backend?.service?.name) add(resource, "error", "Each Ingress HTTP path must reference a backend Service name.");
-          if (path.backend?.service && path.backend.service.port?.number == null && !path.backend.service.port?.name) add(resource, "error", "Ingress backend Service '" + (path.backend.service.name || "(unnamed)") + "' must specify a port number or port name.");
-        }
-      }
-      for (const backend of backends) {
-        const service = resources.find((candidate) => candidate.kind === "Service" && candidate.name === backend.name && candidate.namespace === resource.namespace);
-        if (!service) add(resource, "warning", "Ingress backend Service '" + backend.name + "' is not present in this manifest set.");
-        else {
-          const servicePorts = service.manifest?.spec?.ports || [];
-          if (backend.port?.number != null && !servicePorts.some((port) => port.port === backend.port.number)) add(resource, "warning", "Ingress backend port " + backend.port.number + " is not declared by Service '" + backend.name + "'.");
-          if (backend.port?.name && !servicePorts.some((port) => port.name === backend.port.name)) add(resource, "warning", "Ingress backend port name '" + backend.port.name + "' is not declared by Service '" + backend.name + "'.");
-        }
-      }
-    }
-
-    if (resource.kind === "PersistentVolumeClaim" && !spec.resources?.requests?.storage) add(resource, "error", "PersistentVolumeClaim must request storage in spec.resources.requests.storage.");
-    if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
-    if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) && spec.replicas != null && (!Number.isInteger(spec.replicas) || spec.replicas < 0)) add(resource, "error", "spec.replicas must be a non-negative integer.");
-    if (resource.kind === "StatefulSet" && !spec.serviceName) add(resource, "error", "StatefulSet must define spec.serviceName for its governing Service.");
-    if (resource.kind === "CronJob" && !spec.schedule) add(resource, "error", "CronJob must define spec.schedule.");
-    if (resource.kind === "CronJob" && spec.concurrencyPolicy != null && !["Allow", "Forbid", "Replace"].includes(spec.concurrencyPolicy)) add(resource, "error", "CronJob concurrencyPolicy must be Allow, Forbid, or Replace.");
-    if (resource.kind === "HorizontalPodAutoscaler") {
-      if (!spec.scaleTargetRef?.name || !spec.scaleTargetRef?.kind) add(resource, "error", "HPA must define scaleTargetRef.kind and scaleTargetRef.name.");
-      if (spec.minReplicas != null && (!Number.isInteger(spec.minReplicas) || spec.minReplicas < 1)) add(resource, "error", "HPA minReplicas must be a positive integer.");
-      if (spec.maxReplicas != null && (!Number.isInteger(spec.maxReplicas) || spec.maxReplicas < 1)) add(resource, "error", "HPA maxReplicas must be a positive integer.");
-      if (Number.isInteger(spec.minReplicas) && Number.isInteger(spec.maxReplicas) && spec.minReplicas > spec.maxReplicas) add(resource, "error", "HPA minReplicas cannot exceed maxReplicas.");
-      if (spec.scaleTargetRef?.kind && !["Deployment", "StatefulSet", "ReplicaSet"].includes(spec.scaleTargetRef.kind)) add(resource, "warning", "HPA scaleTargetRef.kind is not a commonly supported scalable workload kind.");
-    }
-    if (resource.kind === "NetworkPolicy") {
-      if (!spec.podSelector || typeof spec.podSelector !== "object") add(resource, "error", "NetworkPolicy must define spec.podSelector (use an empty object to select all pods in the namespace).");
-      if (spec.policyTypes != null && (!Array.isArray(spec.policyTypes) || spec.policyTypes.some((type) => !["Ingress", "Egress"].includes(type)))) add(resource, "error", "NetworkPolicy policyTypes entries must be Ingress or Egress.");
-      for (const [direction, rules] of [["ingress", spec.ingress], ["egress", spec.egress]]) {
-        if (rules != null && !Array.isArray(rules)) add(resource, "error", "NetworkPolicy spec." + direction + " must be a list.");
-        for (const [index, rule] of (Array.isArray(rules) ? rules : []).entries()) {
-          if (!rule || typeof rule !== "object") add(resource, "error", "NetworkPolicy " + direction + " rule " + (index + 1) + " must be an object.");
-          else if (rule.ports != null && !Array.isArray(rule.ports)) add(resource, "error", "NetworkPolicy " + direction + " rule " + (index + 1) + " ports must be a list.");
-        }
-      }
-    }
-  }
-
-  const addDependencyIssue = (resource, severity, code, message) => {
-    issues.push({ id: resource.id + ":" + severity + ":" + code, resource: resource.name, kind: resource.kind, severity, message });
-  };
-  const hasResource = (kind, name, namespace) => resources.some((candidate) =>
-    candidate.kind === kind && candidate.name === name && (namespace == null || candidate.namespace === namespace)
-  );
-
-  for (const resource of resources) {
-    const podSpec = resource.kind === "Pod" ? resource.manifest?.spec : resource.manifest?.spec?.template?.spec;
-    if (!podSpec) continue;
-    if (podSpec.serviceAccountName && !hasResource("ServiceAccount", podSpec.serviceAccountName, resource.namespace)) {
-      addDependencyIssue(resource, "warning", "service-account:" + podSpec.serviceAccountName, "References ServiceAccount '" + podSpec.serviceAccountName + "', which is not present in this manifest set (it may be created separately).");
-    }
-    for (const imagePullSecret of podSpec.imagePullSecrets || []) {
-      if (imagePullSecret.name && !hasResource("Secret", imagePullSecret.name, resource.namespace)) {
-        addDependencyIssue(resource, "warning", "image-pull-secret:" + imagePullSecret.name, "Image pull credentials reference Secret '" + imagePullSecret.name + "', which is not present in this manifest set.");
-      }
-    }
-    for (const volume of podSpec.volumes || []) {
-      const claimName = volume.persistentVolumeClaim?.claimName;
-      if (claimName && !hasResource("PersistentVolumeClaim", claimName, resource.namespace)) {
-        addDependencyIssue(resource, "warning", "pvc:" + claimName, "Volume references PersistentVolumeClaim '" + claimName + "', which is not present in this manifest set.");
-      }
-      const configMapName = volume.configMap?.name;
-      if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
-        addDependencyIssue(resource, "warning", "configmap:" + configMapName, "Volume references ConfigMap '" + configMapName + "', which is not present in this manifest set.");
-      }
-      const secretName = volume.secret?.secretName;
-      if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
-        addDependencyIssue(resource, "warning", "secret:" + secretName, "Volume references Secret '" + secretName + "', which is not present in this manifest set.");
-      }
-      const projected = volume.projected?.sources || [];
-      for (const source of projected) {
-        const projectedConfigMap = source.configMap?.name;
-        const projectedSecret = source.secret?.name;
-        if (projectedConfigMap && !hasResource("ConfigMap", projectedConfigMap, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "projected-configmap:" + projectedConfigMap, "Projected volume references ConfigMap '" + projectedConfigMap + "', which is not present in this manifest set.");
-        }
-        if (projectedSecret && !hasResource("Secret", projectedSecret, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "projected-secret:" + projectedSecret, "Projected volume references Secret '" + projectedSecret + "', which is not present in this manifest set.");
-        }
-      }
-    }
-    for (const container of [...(podSpec.initContainers || []), ...(podSpec.containers || []), ...(podSpec.ephemeralContainers || [])]) {
-      for (const envFrom of container.envFrom || []) {
-        const configMapName = envFrom.configMapRef?.name;
-        const secretName = envFrom.secretRef?.name;
-        if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "env-configmap:" + configMapName, "Container environment references ConfigMap '" + configMapName + "', which is not present in this manifest set.");
-        }
-        if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "env-secret:" + secretName, "Container environment references Secret '" + secretName + "', which is not present in this manifest set.");
-        }
-      }
-      for (const env of container.env || []) {
-        const configMapName = env.valueFrom?.configMapKeyRef?.name;
-        const secretName = env.valueFrom?.secretKeyRef?.name;
-        if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "env-key-configmap:" + configMapName, "Environment variable '" + env.name + "' references ConfigMap '" + configMapName + "', which is not present in this manifest set.");
-        }
-        if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "env-key-secret:" + secretName, "Environment variable '" + env.name + "' references Secret '" + secretName + "', which is not present in this manifest set.");
-        }
-      }
-    }
-  }
-
-  for (const resource of resources) {
-    const spec = resource.manifest?.spec || {};
-    if (resource.kind === "HorizontalPodAutoscaler" && spec.scaleTargetRef?.name) {
-      const targetKind = spec.scaleTargetRef.kind || "Deployment";
-      if (!hasResource(targetKind, spec.scaleTargetRef.name, resource.namespace)) {
-        addDependencyIssue(resource, "warning", "hpa-target:" + spec.scaleTargetRef.name, "HPA target " + targetKind + "/" + spec.scaleTargetRef.name + " is not present in this manifest set.");
-      }
-    }
-    if (resource.kind === "RoleBinding" || resource.kind === "ClusterRoleBinding") {
-      const roleRef = spec.roleRef;
-      if (roleRef?.name && !hasResource(roleRef.kind, roleRef.name, resource.namespace)) {
-        addDependencyIssue(resource, "warning", "role-ref:" + roleRef.name, "Role binding references " + roleRef.kind + "/" + roleRef.name + ", which is not present in this manifest set.");
-      }
-      for (const subject of spec.subjects || []) {
-        if (subject.kind === "ServiceAccount" && subject.name && !hasResource("ServiceAccount", subject.name, subject.namespace || resource.namespace)) {
-          addDependencyIssue(resource, "warning", "rbac-service-account:" + subject.name, "Role binding references ServiceAccount '" + subject.name + "', which is not present in this manifest set.");
-        }
-      }
-    }
-  }
-  return issues;
-}
 
 function normalizeManifest(value, index) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -543,6 +279,7 @@ spec:
     - port: 80
       targetPort: 8080`);
   const [savedYamlText, setSavedYamlText] = useState(yamlText);
+  const [importedFileNames, setImportedFileNames] = useState([]);
   const hasUnsavedChanges = yamlText !== savedYamlText;
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -675,16 +412,44 @@ spec:
       if (normalized.kind !== inspectedResource.kind || normalized.documentIndex !== inspectedResource.documentIndex) {
         throw new Error("Changing the resource kind is not supported in the inspector. Edit its fields and try again.");
       }
+      if (normalized.name !== inspectedResource.name || normalized.namespace !== inspectedResource.namespace) {
+        const collision = parsed.resources.find((candidate) =>
+          candidate.id !== inspectedResource.id &&
+          candidate.kind === normalized.kind &&
+          candidate.name === normalized.name &&
+          candidate.namespace === normalized.namespace
+        );
+        if (collision) throw new Error("A " + normalized.kind + " named '" + normalized.name + "' already exists in namespace '" + normalized.namespace + "'. Choose a unique name before applying.");
+      }
       const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
       const targetDocument = documents[inspectedResource.documentIndex];
       if (!targetDocument) throw new Error("The original YAML document could not be located. Reopen the inspector and try again.");
-      targetDocument.contents = editedDocument.contents;
-      onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
-      const nextYaml = documents.map((document) => document.toString().trimEnd()).filter(Boolean).join("\n---\n") + "\n";
+      // Replace only the edited document's source range. Serializing every
+      // document here silently reformatted unrelated manifests and comments.
+      const sourceRange = targetDocument.range;
+      if (!Array.isArray(sourceRange) || sourceRange.length < 3
+        || !Number.isInteger(sourceRange[0]) || !Number.isInteger(sourceRange[2])
+        || sourceRange[0] < 0 || sourceRange[2] < sourceRange[0] || sourceRange[2] > yamlText.length) {
+        throw new Error("The original YAML document boundaries could not be preserved. Reopen the inspector and try again.");
+      }
+      const replacementText = stringify(editedManifest).trimEnd();
+      const suffix = yamlText.slice(sourceRange[2]);
+      const hasFollowingDocuments = documents.length > inspectedResource.documentIndex + 1;
+      // Some YAML parser ranges include the document separator. Restore one
+      // only when replacing the source range consumed it.
+      const suffixHasSeparator = /^\s*(?:#.*\n)*---(?:\s|#|$)/.test(suffix);
+      const separator = hasFollowingDocuments ? (suffixHasSeparator ? (replacementText.endsWith("\n") ? "" : "\n") : "\n---\n") : "";
+      const nextYaml = yamlText.slice(0, sourceRange[0]) + replacementText + separator + suffix;
+      const previousYaml = yamlText;
+      try {
+        onApplyResourceYaml?.({ ...normalized, id: inspectedResource.id });
+      } catch (callbackError) {
+        throw new Error("The editor could not apply this resource change. The original YAML remains unchanged. " + (callbackError?.message || ""));
+      }
       setYamlText(nextYaml);
       setSavedYamlText(nextYaml);
       setInspectorOpen(false);
-      setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Review validation before creating the diagram.");
+      setNotice("Applied changes to " + normalized.kind + "/" + normalized.name + ". Revalidate the manifest set before creating the diagram.");
       setError("");
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
     } catch (cause) {
@@ -693,33 +458,80 @@ spec:
   };
   const exportYaml = () => {
     if (!yamlText.trim() || parsed.parseError) { setError(parsed.parseError || "Add valid YAML before exporting."); return; }
+    const blockingIssues = parsed.issues.filter((issue) => issue.severity === "error");
+    if (blockingIssues.length && !window.confirm("This manifest set has " + blockingIssues.length + " validation error(s). Export the YAML anyway without rewriting it?")) return;
     const blob = new Blob([yamlText], { type: "application/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "kubernetes-manifests.yaml";
+    link.download = importedFileNames.length === 1
+      ? importedFileNames[0].replace(/\.ya?ml$/i, "") + "-export.yaml"
+      : "kubernetes-manifests.yaml";
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     setSavedYamlText(yamlText);
-    setNotice("Exported the complete manifest set.");
+    setError("");
+    setNotice("Exported the original manifest text. Validation does not rewrite your YAML.");
   };
 
   const importFile = async (event) => {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!file) return;
-    if (!/\.ya?ml$/i.test(file.name)) {
-      setError("Choose a .yaml or .yml file.");
+    if (!files.length) return;
+
+    // Kustomize overlays and Helm charts are source projects, not Kubernetes
+    // API manifests. Detect them before extension checks so they never get
+    // mistaken for deployable resources or overwrite the current editor.
+    const paths = files.map((file) => String(file.webkitRelativePath || file.name).replace(/\\/g, "/"));
+    const kustomizeFiles = paths.filter((path) => /(^|\/)(?:kustomization\.ya?ml|Kustomization)$/i.test(path));
+    const helmCharts = paths.filter((path) => /(^|\/)Chart\.yaml$/i.test(path));
+    if (kustomizeFiles.length) {
+      const source = kustomizeFiles[0];
+      const overlayDirectory = source.slice(0, source.lastIndexOf("/")) || "<overlay-directory>";
+      setError("");
+      setNotice("Kustomize source detected (" + kustomizeFiles.length + " kustomization file(s)). Render the selected overlay first, then import the output: kubectl kustomize " + overlayDirectory + " > rendered-kustomize.yaml. This keeps patches, generators, and transformations accurate; K8s Studio does not silently approximate Kustomize rendering.");
+      return;
+    }
+    if (helmCharts.length) {
+      const chartFile = helmCharts[0];
+      const chartDirectory = chartFile.slice(0, chartFile.lastIndexOf("/")) || "<chart-directory>";
+      setError("");
+      setNotice("Helm chart source detected. Render templates with helm template <release-name> " + chartDirectory + " -f <values.yaml> > rendered-helm.yaml, then import rendered-helm.yaml. This preserves Helm values and template functions; K8s Studio does not pretend raw templates are deployable manifests.");
+      return;
+    }
+    const invalidFiles = files.filter((file) => !/\.ya?ml$/i.test(file.name));
+    if (invalidFiles.length) {
+      setError("Choose only .yaml or .yml files. Invalid: " + invalidFiles.map((file) => file.name).join(", "));
       return;
     }
     try {
-      const importedText = await file.text();
-      setYamlText(importedText);
-      setSavedYamlText(importedText);
-      setNotice(`Loaded ${file.name}. Review the resources before creating the diagram.`);
+      const importedFiles = await Promise.all(files.map(async (file) => ({
+        name: file.name,
+        text: await file.text(),
+      })));
+      const combinedText = importedFiles.map((file) => file.text.trim()).filter(Boolean).join("\n---\n") + "\n";
+      if (!combinedText.trim()) throw new Error("The selected YAML files are empty.");
+      const documents = parseAllDocuments(combinedText, { prettyErrors: true, uniqueKeys: true });
+      const parseFailure = documents.find((document) => document.errors.length);
+      if (parseFailure) throw parseFailure.errors[0];
+      const normalized = documents.map((document, index) => document.toJSON() == null ? null : normalizeManifest(document.toJSON(), index + 1));
+      const invalidDocuments = normalized.flatMap((resource, index) => resource ? [] : [index + 1]);
+      if (invalidDocuments.length) throw new Error("Document(s) " + invalidDocuments.join(", ") + " must include kind and metadata.name.");
+      const distinctNames = new Set();
+      const collisions = [];
+      for (const resource of normalized.filter(Boolean)) {
+        const key = resource.namespace + "/" + resource.kind + "/" + resource.name;
+        if (distinctNames.has(key)) collisions.push(key);
+        distinctNames.add(key);
+      }
+      if (collisions.length) throw new Error("The imported files contain duplicate resources: " + [...new Set(collisions)].join(", "));
+      setYamlText(combinedText);
+      setSavedYamlText(combinedText);
+      setImportedFileNames(importedFiles.map((file) => file.name));
+      setNotice("Loaded " + importedFiles.length + " YAML file(s) and " + normalized.filter(Boolean).length + " resource(s). Review cross-resource checks before creating the diagram.");
       setError("");
-    } catch {
-      setError("The selected file could not be read.");
+    } catch (cause) {
+      setError(cause?.message || "The selected YAML file(s) could not be read.");
     }
   };
 
@@ -728,9 +540,19 @@ spec:
       setError(parsed.parseError || "Add at least one Kubernetes resource with kind and metadata.name.");
       return;
     }
+    if (parsed.parseError) {
+      setError(parsed.parseError);
+      return;
+    }
+    const blockingIssues = parsed.issues.filter((issue) => issue.severity === "error");
+    if (blockingIssues.length) {
+      setError("Resolve " + blockingIssues.length + " manifest error(s) before creating the diagram. Warnings can be reviewed and accepted.");
+      return;
+    }
     try {
       await onCreateDiagram?.(parsed.resources);
       setError("");
+      setSavedYamlText(yamlText);
       setNotice(`Added ${parsed.resources.length} Kubernetes resource(s) to the canvas.`);
       onClose?.();
     } catch (cause) {
@@ -753,9 +575,11 @@ spec:
 
         <div className="k8s-studio-actions">
           <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
-          <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importFile} />
-          <span>Supports multiple YAML documents separated by <code>---</code></span>
-          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setNotice(""); setError(""); }}>Clear</button>
+          <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
+          <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Kustomize / Helm bundle</button>
+          <input id="k8s-studio-source-bundle" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
+          <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import Kubernetes YAML, or choose a source bundle for render instructions."}</span>
+          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setNotice(""); setError(""); }}>Clear</button>
         </div>
 
         <div className="k8s-studio-workspace" ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
