@@ -462,9 +462,107 @@ function App() {
         updated: Date.now(),
       };
     });
-    api.updateScene({ elements: updated, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || updated, api.getAppState?.() || {});
-    showToast(`Updated canvas card for ${kind}/${name}. Existing generated relationships for this resource were cleared; regenerate the diagram to rebuild them.`);
+    // Rebuild the supported generated relationships from the current canvas manifests.
+    // Keep card coordinates and authored connectors; only regenerate Kubernetes-tagged arrows.
+    const liveElements = updated.filter((element) => !element.isDeleted);
+    const cards = new Map();
+    liveElements.forEach((element) => {
+      const metadata = element.customData?.kubernetesManifestResource;
+      const resourceId = metadata?.properties?.manifestResourceId;
+      if (!resourceId || element.type !== "rectangle") return;
+      cards.set(resourceId, {
+        id: resourceId,
+        kind: metadata.manifest?.kind || metadata.resourceType,
+        name: metadata.manifest?.metadata?.name || metadata.properties?.name,
+        namespace: metadata.manifest?.metadata?.namespace || metadata.properties?.namespace || "default",
+        manifest: metadata.manifest || {},
+        element,
+      });
+    });
+    const allResources = [...cards.values()];
+    const byName = (kind, name, namespace) => allResources.find((item) => item.kind === kind && item.name === name && item.namespace === (namespace || "default"));
+    const matches = (selector, labels) => Boolean(selector && labels && Object.entries(selector).every(([key, value]) => labels[key] === value));
+    const labelsFor = (item) => item.kind === "Pod" ? item.manifest.metadata?.labels
+      : item.manifest.spec?.template?.metadata?.labels || item.manifest.spec?.selector?.matchLabels || {};
+    const relationships = [];
+    const addLink = (from, to, label, color = "#22a6b9") => {
+      if (!from || !to || from.id === to.id || relationships.some((link) => link.from.id === from.id && link.to.id === to.id && link.label === label)) return;
+      relationships.push({ from, to, label, color });
+    };
+    const workloads = allResources.filter((item) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(item.kind));
+    const services = allResources.filter((item) => item.kind === "Service");
+    services.forEach((service) => {
+      const selector = service.manifest.spec?.selector;
+      if (!selector || !Object.keys(selector).length) return;
+      workloads.filter((workload) => workload.namespace === service.namespace && matches(selector, labelsFor(workload)))
+        .forEach((workload) => addLink(service, workload, "routes to"));
+    });
+    allResources.filter((item) => item.kind === "Ingress").forEach((ingress) => {
+      const names = new Set((ingress.manifest.spec?.rules || []).flatMap((rule) => (rule.http?.paths || []).map((path) => path.backend?.service?.name).filter(Boolean)));
+      const defaultName = ingress.manifest.spec?.defaultBackend?.service?.name;
+      if (defaultName) names.add(defaultName);
+      names.forEach((serviceName) => addLink(ingress, byName("Service", serviceName, ingress.namespace), "routes to", "#9b78ef"));
+    });
+    allResources.filter((item) => item.kind === "Namespace").forEach((namespace) => {
+      allResources.filter((item) => item.id !== namespace.id && item.namespace === namespace.name
+        && ["Ingress", "Service", "Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(item.kind))
+        .forEach((item) => addLink(namespace, item, "contains", "#6e91c9"));
+    });
+    workloads.forEach((workload) => {
+      const podSpec = workload.manifest.spec?.template?.spec || workload.manifest.spec || {};
+      const refs = new Map();
+      const remember = (resourceKind, resourceName) => { if (resourceName) refs.set(resourceKind + "/" + resourceName, resourceKind); };
+      (podSpec.volumes || []).forEach((volume) => {
+        remember("PersistentVolumeClaim", volume.persistentVolumeClaim?.claimName);
+        remember("ConfigMap", volume.configMap?.name);
+        remember("Secret", volume.secret?.secretName);
+        (volume.projected?.sources || []).forEach((source) => { remember("ConfigMap", source.configMap?.name); remember("Secret", source.secret?.name); });
+      });
+      [...(podSpec.initContainers || []), ...(podSpec.containers || [])].forEach((container) => {
+        (container.envFrom || []).forEach((entry) => { remember("ConfigMap", entry.configMapRef?.name); remember("Secret", entry.secretRef?.name); });
+        (container.env || []).forEach((entry) => { remember("ConfigMap", entry.valueFrom?.configMapKeyRef?.name); remember("Secret", entry.valueFrom?.secretKeyRef?.name); });
+      });
+      refs.forEach((resourceKind, key) => {
+        const resourceName = key.slice(resourceKind.length + 1);
+        const target = byName(resourceKind, resourceName, workload.namespace);
+        if (target) addLink(workload, target, resourceKind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d");
+      });
+    });
+    const relationshipArrows = relationships.map(({ from, to, label, color }) => {
+      const source = from.element;
+      const target = to.element;
+      const sx = source.x + source.width / 2;
+      const sy = source.y + source.height / 2;
+      const tx = target.x + target.width / 2;
+      const ty = target.y + target.height / 2;
+      const dx = tx - sx;
+      const dy = ty - sy;
+      const sourceScale = 1 / Math.max(Math.abs(dx) / Math.max(source.width / 2, 1), Math.abs(dy) / Math.max(source.height / 2, 1), 1);
+      const targetScale = 1 / Math.max(Math.abs(dx) / Math.max(target.width / 2, 1), Math.abs(dy) / Math.max(target.height / 2, 1), 1);
+      const startPoint = { x: sx + dx * sourceScale, y: sy + dy * sourceScale };
+      const endPoint = { x: tx - dx * targetScale, y: ty - dy * targetScale };
+      const x = Math.min(startPoint.x, endPoint.x);
+      const y = Math.min(startPoint.y, endPoint.y);
+      const id = `k8s-link-${Math.random().toString(36).slice(2, 13)}`;
+      source.boundElements = [...(source.boundElements || []), { id, type: "arrow" }];
+      target.boundElements = [...(target.boundElements || []), { id, type: "arrow" }];
+      return {
+        id, type: "arrow", x, y, width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y),
+        points: [[startPoint.x - x, startPoint.y - y], [endPoint.x - x, endPoint.y - y]],
+        start: { id: source.id }, end: { id: target.id },
+        startBinding: { elementId: source.id, focus: 0, gap: 8 }, endBinding: { elementId: target.id, focus: 0, gap: 8 },
+        strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
+        customData: { kubernetesRelationship: { fromResourceId: from.id, toResourceId: to.id, label } },
+        label: { text: label, fontSize: 11 },
+        version: 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now(), isDeleted: false,
+        fillStyle: "solid", strokeStyle: "solid", roundness: { type: 2 }, opacity: 100, angle: 0,
+        groupIds: [], frameId: null, boundElements: null, link: null, locked: false,
+      };
+    });
+    const finalElements = [...updated, ...relationshipArrows];
+    api.updateScene({ elements: finalElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || finalElements, api.getAppState?.() || {});
+    showToast(`Updated ${kind}/${name} and rebuilt ${relationshipArrows.length} generated Kubernetes relationships.`);
   }, [collaborationCanEdit, queueSketchSave, showToast]);
 
   const createKubernetesDiagram = useCallback(async (resources) => {
