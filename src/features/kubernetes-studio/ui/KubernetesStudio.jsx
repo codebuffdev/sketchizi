@@ -710,7 +710,7 @@ spec:
       // Some YAML parser ranges include the document separator. Restore one
       // only when replacing the source range consumed it.
       const suffixHasSeparator = /^\s*(?:#.*\n)*---(?:\s|#|$)/.test(suffix);
-      const separator = hasFollowingDocuments && !suffixHasSeparator ? "\n---\n" : "";
+      const separator = hasFollowingDocuments ? (suffixHasSeparator ? (replacementText.endsWith("\n") ? "" : "\n") : "\n---\n") : "";
       const nextYaml = yamlText.slice(0, sourceRange[0]) + replacementText + separator + suffix;
       const previousYaml = yamlText;
       try {

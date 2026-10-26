@@ -101,7 +101,7 @@ test("source-range replacement preserves unrelated manifest text and comments by
   const range = documents[0].range;
   const suffix = original.slice(range[2]);
   const suffixHasSeparator = /^\s*(?:#.*\n)*---(?:\s|#|$)/.test(suffix);
-  const separator = documents.length > 1 && !suffixHasSeparator ? "\n---\n" : "";
+  const separator = documents.length > 1 ? (suffixHasSeparator ? (replacement.endsWith("\n") ? "" : "\n") : "\n---\n") : "";
   const next = original.slice(0, range[0]) + replacement + separator + suffix;
   assert.ok(next.includes(untouchedText), "the untouched document's source range must remain byte-for-byte");
   assert.ok(next.includes("# preserve this comment exactly"));
