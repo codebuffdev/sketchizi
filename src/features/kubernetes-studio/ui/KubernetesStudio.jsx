@@ -439,10 +439,10 @@ function validateKubernetesResources(resources) {
       for (const field of ["minAvailable", "maxUnavailable"]) {
         if (spec[field] != null && !validDisruptionValue(spec[field])) add(resource, "error", "PodDisruptionBudget " + field + " must be a non-negative integer or a percentage from 0% to 100%.");
       }
-      if (!spec.selector || typeof spec.selector !== "object" || !Object.keys(spec.selector).length) add(resource, "warning", "PodDisruptionBudget should define a non-empty selector to identify protected workloads.");
-      else {
+      if (!spec.selector || typeof spec.selector !== "object") add(resource, "warning", "PodDisruptionBudget has no selector and will not protect any workloads.");
+      else if (spec.selector.matchLabels && Object.keys(spec.selector.matchLabels).length && !spec.selector.matchExpressions?.length) {
         const selectedWorkload = workloads.some((workload) => workload.namespace === resource.namespace
-          && matches(spec.selector.matchLabels || {}, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
+          && matches(spec.selector.matchLabels, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
         if (!selectedWorkload) add(resource, "warning", "PodDisruptionBudget selector does not match a workload in this manifest set.");
       }
       if (spec.maxUnavailable === 0 || spec.maxUnavailable === "0%") add(resource, "warning", "PodDisruptionBudget maxUnavailable is zero and may block voluntary disruptions.");
