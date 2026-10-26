@@ -137,6 +137,18 @@ test("the correction service has no provider-generic mutation path", async () =>
 });
 
 
+test("K8s Studio security checks cover host namespaces, service-account tokens and container hardening", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /Pod uses hostNetwork/);
+  assert.match(studio, /Pod uses hostPID/);
+  assert.match(studio, /Pod uses hostIPC/);
+  assert.match(studio, /explicitly automounts its ServiceAccount token/);
+  assert.match(studio, /does not declare a seccomp profile/);
+  assert.match(studio, /does not explicitly disable privilege escalation/);
+  assert.match(studio, /adds high-risk Linux capability/);
+  assert.match(studio, /does not drop all Linux capabilities/);
+});
+
 test("K8s Studio validates StatefulSet, HPA, CronJob and NetworkPolicy invariants", async () => {
   const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
   assert.match(studio, /StatefulSet must define spec\.serviceName/);

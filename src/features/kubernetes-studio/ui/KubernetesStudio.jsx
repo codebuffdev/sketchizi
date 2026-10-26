@@ -255,6 +255,11 @@ function validateKubernetesResources(resources) {
     if (podSpec) {
       const podSecurityContext = podSpec.securityContext || {};
       if (podSecurityContext.runAsUser === 0) add(resource, "warning", "Pod securityContext explicitly runs as root (runAsUser: 0). Use a non-root user where possible.");
+      if (podSpec.hostNetwork === true) add(resource, "warning", "Pod uses hostNetwork, reducing network isolation from the node.");
+      if (podSpec.hostPID === true) add(resource, "warning", "Pod uses hostPID, exposing the node process namespace to the workload.");
+      if (podSpec.hostIPC === true) add(resource, "warning", "Pod uses hostIPC, exposing the node IPC namespace to the workload.");
+      if (podSpec.automountServiceAccountToken === true) add(resource, "warning", "Pod explicitly automounts its ServiceAccount token; disable it when Kubernetes API access is not required.");
+      if (!podSecurityContext.seccompProfile?.type) add(resource, "info", "Pod does not declare a seccomp profile; consider RuntimeDefault or a tailored profile.");
       const volumeNames = new Set();
       for (const volume of podSpec.volumes || []) {
         if (volume.name && volumeNames.has(volume.name)) add(resource, "error", "Pod volume name '" + volume.name + "' is duplicated.");
@@ -279,10 +284,19 @@ function validateKubernetesResources(resources) {
         if (volume.hostPath) add(resource, "warning", "Volume '" + (volume.name || "unnamed") + "' uses hostPath, which exposes node filesystem paths to the workload.");
       }
       for (const container of containers) {
-        if (container.securityContext?.allowPrivilegeEscalation === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' allows privilege escalation.");
-        if (container.securityContext?.runAsUser === 0) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' explicitly runs as root (runAsUser: 0).");
-        if (container.securityContext?.runAsNonRoot !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not enforce runAsNonRoot.");
-        if (container.securityContext?.readOnlyRootFilesystem !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not use a read-only root filesystem.");
+        const containerSecurityContext = container.securityContext || {};
+        if (containerSecurityContext.allowPrivilegeEscalation === true) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' allows privilege escalation.");
+        else if (containerSecurityContext.allowPrivilegeEscalation !== false) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not explicitly disable privilege escalation.");
+        if (containerSecurityContext.runAsUser === 0) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' explicitly runs as root (runAsUser: 0).");
+        if (containerSecurityContext.runAsNonRoot !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not enforce runAsNonRoot.");
+        if (containerSecurityContext.readOnlyRootFilesystem !== true) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not use a read-only root filesystem.");
+        const addedCapabilities = containerSecurityContext.capabilities?.add || [];
+        const droppedCapabilities = containerSecurityContext.capabilities?.drop || [];
+        for (const capability of addedCapabilities) {
+          if (["SYS_ADMIN", "NET_ADMIN", "SYS_PTRACE", "DAC_OVERRIDE"].includes(capability)) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' adds high-risk Linux capability " + capability + ".");
+        }
+        if (!droppedCapabilities.some((capability) => String(capability).toUpperCase() === "ALL")) add(resource, "info", "Container '" + (container.name || "unnamed") + "' does not drop all Linux capabilities.");
+        if (!containerSecurityContext.seccompProfile?.type && !podSecurityContext.seccompProfile?.type) add(resource, "info", "Container '" + (container.name || "unnamed") + "' has no seccomp profile at pod or container level.");
       }
     }
 
