@@ -131,72 +131,165 @@ function deepMerge(left, right) {
 }
 
 function lookup(context, expression) {
-  const expr = expression.trim().replace(/^\$/, "");
-  if (!expr || expr === ".") return context;
-  const parts = expr.replace(/^\./, "").split(".");
-  let value = context;
-  for (const part of parts) value = value == null ? undefined : value[part];
+  const expr = String(expression || "").trim();
+  if (!expr || expr === ".") return context.__dot ?? context;
+  if (expr.startsWith("$")) {
+    const parts = expr.slice(1).split(".");
+    let value = context[parts.shift()];
+    for (const part of parts) value = value == null ? undefined : value[part];
+    return value;
+  }
+  if (expr.startsWith(".")) {
+    const parts = expr.slice(1).split(".");
+    const first = parts.shift();
+    let value = ["Values", "Release", "Chart"].includes(first) ? context[first] : (context.__dot ?? context);
+    if (!["Values", "Release", "Chart"].includes(first)) parts.unshift(first);
+    for (const part of parts) value = value == null ? undefined : value[part];
+    return value;
+  }
+  if (/^-?\d+(?:\.\d+)?$/.test(expr)) return Number(expr);
+  if (expr === "true") return true;
+  if (expr === "false") return false;
+  if (expr === "nil" || expr === "null") return null;
+  if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) return expr.slice(1, -1);
+  return context[expr];
+}
+
+function truthy(value) {
+  return !(value == null || value === false || value === 0 || value === "");
+}
+
+function parseArgs(source, context) {
+  const tokens = String(source || "").match(/"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+/g) || [];
+  return tokens.map((token) => {
+    if (token.startsWith('"') && token.endsWith('"')) { try { return JSON.parse(token); } catch { return token.slice(1, -1); } }
+    if (token.startsWith("'") && token.endsWith("'")) return token.slice(1, -1);
+    if (token === ".") return lookup(context, ".");
+    if (token.startsWith(".") || token.startsWith("$") || token === "true" || token === "false" || token === "nil" || token === "null" || /^-?\d+(?:\.\d+)?$/.test(token)) return lookup(context, token);
+    return token;
+  });
+}
+
+function callTemplateFunction(name, args) {
+  const [a, b, d] = args;
+  switch (name) {
+    case "default": return truthy(b) ? b : a;
+    case "quote": return JSON.stringify(String(a ?? ""));
+    case "toYaml": return stringify(a).trimEnd();
+    case "toJson": return JSON.stringify(a);
+    case "indent":
+    case "nindent": {
+      const indent = " ".repeat(Math.min(80, Math.max(0, Number(a || 0))));
+      const result = String(b ?? "").split("\n").map((line) => indent + line).join("\n");
+      return name === "nindent" ? "\n" + result : result;
+    }
+    case "upper": return String(a ?? "").toUpperCase();
+    case "lower": return String(a ?? "").toLowerCase();
+    case "trim": return String(a ?? "").trim();
+    case "trimSuffix": return String(b ?? "").endsWith(String(a)) ? String(b ?? "").slice(0, -String(a).length) : String(b ?? "");
+    case "trimPrefix": return String(b ?? "").startsWith(String(a)) ? String(b ?? "").slice(String(a).length) : String(b ?? "");
+    case "trunc": return String(b ?? "").slice(0, Math.max(0, Number(a || 0)));
+    case "contains": return String(b ?? "").includes(String(a ?? ""));
+    case "hasKey": return a != null && Object.prototype.hasOwnProperty.call(a, b);
+    case "not": return !truthy(a);
+    case "and": return args.every(truthy);
+    case "or": return args.find(truthy) ?? args[args.length - 1];
+    case "eq": return args.every((value) => value === args[0]);
+    case "ne": return args.length > 1 && args[0] !== args[1];
+    case "printf": {
+      const format = String(a ?? "");
+      let index = 1;
+      return format.replace(/%[sdvqx]/g, (token) => {
+        const value = args[index++];
+        if (token === "%q") return JSON.stringify(String(value ?? ""));
+        if (token === "%d") return String(Number(value));
+        if (token === "%x") return Number(value).toString(16);
+        return String(value ?? "");
+      });
+    }
+    case "replace": return String(d ?? "").split(String(a ?? "")).join(String(b ?? ""));
+    case "required": if (!truthy(b)) throw new Error("Required Helm value is missing: " + String(a ?? "")); return b;
+    default: throw new Error("The Helm chart uses unsupported template function '" + name + "'. No diagram was created; the existing canvas is unchanged.");
+  }
+}
+
+function evaluateExpression(expression, context) {
+  const stages = String(expression || "").split(/\s+\|\s+/);
+  const first = stages.shift() || "";
+  const tokens = first.trim().match(/"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+/g) || [];
+  let value;
+  const functions = new Set(["default", "quote", "toYaml", "toJson", "indent", "nindent", "upper", "lower", "trim", "trimSuffix", "trimPrefix", "trunc", "contains", "hasKey", "not", "and", "or", "eq", "ne", "printf", "replace", "required"]);
+  if (tokens.length > 1 && functions.has(tokens[0])) value = callTemplateFunction(tokens[0], parseArgs(tokens.slice(1).join(" "), context));
+  else if (tokens.length === 1 && functions.has(tokens[0])) value = callTemplateFunction(tokens[0], []);
+  else value = lookup(context, first.trim());
+  for (const stage of stages) {
+    const tokens = stage.trim().match(/"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^\s]+/g) || [];
+    const name = tokens.shift();
+    value = callTemplateFunction(name, [...parseArgs(tokens.join(" "), context), value]);
+  }
   return value;
 }
 
-function helmValue(expression, context) {
-  const tokens = expression.trim().split(/\s+\|\s+/);
-  let value = lookup(context, tokens.shift() || "");
-  for (const token of tokens) {
-    const [fn, ...args] = token.trim().split(/\s+/);
-    const arg = args.join(" ").replace(/^["']|["']$/g, "");
-    if (fn === "quote") value = JSON.stringify(String(value ?? ""));
-    else if (fn === "upper") value = String(value ?? "").toUpperCase();
-    else if (fn === "lower") value = String(value ?? "").toLowerCase();
-    else if (fn === "default") value = value == null || value === "" || value === false ? arg : value;
-    else if (fn === "trim") value = String(value ?? "").trim();
-    else if (fn === "toString") value = String(value ?? "");
-    else if (fn === "toYaml") value = stringify(value).trimEnd();
-    else if (fn === "indent" || fn === "nindent") {
-      const count = Number(args[0] || 0);
-      const indent = " ".repeat(Math.min(80, Math.max(0, count)));
-      value = String(value ?? "").split("\n").map((line) => indent + line).join("\n");
-      if (fn === "nindent") value = "\n" + value;
-    } else if (fn === "required") {
-      if (value == null || value === "") throw new Error("Helm required value missing: " + arg);
-    } else throw new Error("This Helm template uses unsupported function '" + fn + "'. Use a chart that does not require this function or render it with the full Helm CLI.");
+function findBlock(source, opening) {
+  const directives = /{{-?\s*(if|with|range|else(?:\s+if)?|end)\b([^}]*)-?}}/g;
+  directives.lastIndex = opening.end;
+  let depth = 1;
+  let firstElse = null;
+  let token;
+  while ((token = directives.exec(source))) {
+    const kind = token[1].split(/\s+/)[0];
+    if (["if", "with", "range"].includes(kind)) depth += 1;
+    else if (kind === "end") {
+      depth -= 1;
+      if (depth === 0) return { endStart: token.index, end: directives.lastIndex, elseToken: firstElse };
+    } else if (kind === "else" && depth === 1 && !firstElse) firstElse = { start: token.index, end: directives.lastIndex, expression: token[2].replace(/^\s*if\s+/, "").trim(), isElseIf: /^\s*if\b/.test(token[2]) };
   }
-  if (value == null) return "";
-  if (typeof value === "object") return stringify(value).trimEnd();
-  return String(value);
+  throw new Error("A Helm template block is missing its closing {{ end }}.");
 }
 
-function stripTemplateDefinitions(source, namedTemplates) {
-  const directive = /{{-?\s*(define|if|range|with|end)\b(?:\s+"([^"]+)")?[^}]*-?}}/g;
-  let output = "";
-  let cursor = 0;
-  while (true) {
-    const opening = directive.exec(source);
-    if (!opening) break;
-    if (opening[1] !== "define") continue;
-    output += source.slice(cursor, opening.index);
-    const bodyStart = directive.lastIndex;
-    const scanner = /{{-?\s*(define|if|range|with|end)\b(?:\s+"([^"]+)")?[^}]*-?}}/g;
-    scanner.lastIndex = bodyStart;
-    let depth = 1;
-    let closing = null;
-    let token;
-    while ((token = scanner.exec(source))) {
-      if (["define", "if", "range", "with"].includes(token[1])) depth += 1;
-      else if (token[1] === "end") depth -= 1;
-      if (depth === 0) { closing = token; break; }
+function renderBlocks(source, context, namedTemplates) {
+  for (let pass = 0; pass < 100; pass++) {
+    const match = /{{(-?)\s*(if|with|range)\s+([^}]+?)\s*(-?)}}/.exec(source);
+    if (!match) break;
+    const opening = { index: match.index, end: match.index + match[0].length, leftTrim: Boolean(match[1]), rightTrim: Boolean(match[4]), kind: match[2], expression: match[3].trim() };
+    const block = findBlock(source, opening);
+    let body = source.slice(opening.end, block.elseToken ? block.elseToken.start : block.endStart);
+    let otherwise = block.elseToken ? source.slice(block.elseToken.end, block.endStart) : "";
+    if (opening.rightTrim) body = body.replace(/^\s+/, "");
+    const closingTag = source.slice(block.endStart, block.end);
+    if (/^{{-/.test(closingTag)) body = body.replace(/\s+$/, "");
+    if (opening.kind === "if") {
+      const condition = opening.expression.startsWith("not ") ? !truthy(evaluateExpression(opening.expression.slice(4), context)) : truthy(evaluateExpression(opening.expression, context));
+      if (block.elseToken?.isElseIf && !condition) otherwise = "{{ if " + block.elseToken.expression + " }}" + otherwise + "{{ end }}";
+      body = condition ? renderBlocks(body, context, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
+    } else if (opening.kind === "with") {
+      const value = evaluateExpression(opening.expression, context);
+      body = truthy(value) ? renderBlocks(body, { ...context, __dot: value }, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
+    } else {
+      const rangeMatch = opening.expression.match(/^(?:(\$[\w]+)(?:\s*,\s*(\$[\w]+))?\s*:=\s*)?(.+)$/);
+      const value = evaluateExpression(rangeMatch?.[3] || opening.expression, context);
+      const entries = Array.isArray(value) ? value.map((item, index) => [index, item]) : value && typeof value === "object" ? Object.entries(value) : [];
+      body = entries.map(([key, item]) => {
+        const scoped = { ...context, __dot: item };
+        if (item && typeof item === "object" && !Array.isArray(item)) Object.assign(scoped, item);
+        if (rangeMatch?.[1] && rangeMatch?.[2]) { scoped[rangeMatch[1].slice(1)] = key; scoped[rangeMatch[2].slice(1)] = item; }
+        else if (rangeMatch?.[1]) scoped[rangeMatch[1].slice(1)] = item;
+        return renderBlocks(body, scoped, namedTemplates);
+      }).join("");
     }
-    if (!closing) throw new Error("Helm helper '" + opening[2] + "' has an unterminated template block.");
-    namedTemplates.set(opening[2], source.slice(bodyStart, closing.index));
-    cursor = scanner.lastIndex;
-    directive.lastIndex = cursor;
+    let prefix = source.slice(0, opening.index);
+    let suffix = source.slice(block.end);
+    if (opening.leftTrim) prefix = prefix.replace(/\s+$/, "");
+    if (/{{[^}]*-}}$/.test(closingTag)) suffix = suffix.replace(/^\s+/, "");
+    source = prefix + body + suffix;
   }
-  output += source.slice(cursor);
-  return output;
+  if (/{{-?\s*(?:if|with|range|else|end)\b/.test(source)) throw new Error("The Helm chart uses nested or advanced template directives that this browser renderer cannot safely resolve. No diagram was created; the existing canvas is unchanged.");
+  return source;
 }
 
 function renderSimpleTemplate(template, context, namedTemplates) {
   let source = stripTemplateDefinitions(template, namedTemplates);
+  source = source.replace(/\s*{{-/g, "{{-").replace(/-}}\s*/g, "-}}");
   source = source.replace(/{{-?\s*(?:include|template)\s+"([^"]+)"(?:\s+\.)?([^}]*)-?}}/g, (_, name, tail = "") => {
     const body = namedTemplates.get(name);
     if (body === undefined) throw new Error("Helm helper '" + name + "' is not defined in the selected chart.");
@@ -204,51 +297,19 @@ function renderSimpleTemplate(template, context, namedTemplates) {
     const stages = tail.split("|").map((stage) => stage.trim()).filter(Boolean);
     for (const stage of stages) {
       const [fn, ...args] = stage.split(/\s+/);
-      const arg = args.join(" ").replace(/^["']|["']$/g, "");
-      if (fn === "nindent" || fn === "indent") {
-        const indent = " ".repeat(Math.min(80, Math.max(0, Number(args[0] || 0))));
-        value = String(value).trimEnd().split("\n").map((line) => indent + line).join("\n");
-        if (fn === "nindent") value = "\n" + value;
-      } else if (fn === "trim") value = String(value).trim();
-      else if (fn === "upper") value = String(value).toUpperCase();
-      else if (fn === "lower") value = String(value).toLowerCase();
-      else if (fn === "quote") value = JSON.stringify(String(value));
-      else if (fn === "default" && !value) value = arg;
-      else throw new Error("This Helm helper uses unsupported pipeline function '" + fn + "'.");
+      value = callTemplateFunction(fn, [...parseArgs(args.join(" "), context), value]);
     }
     return value;
   });
-  source = source.replace(/{{-?\s*range\s+(?:(\$[\w]+)(?:\s*,\s*(\$[\w]+))?\s*:=\s*)?([^}]+?)\s*-?}}([\s\S]*?){{-?\s*end\s*-?}}/g, (_, firstVar, secondVar, expression, body) => {
-    const value = lookup(context, expression.trim());
-    const entries = Array.isArray(value) ? value.map((item, index) => [index, item]) : value && typeof value === "object" ? Object.entries(value) : [];
-    return entries.map(([key, item]) => {
-      const scoped = { ...context };
-      if (item && typeof item === "object" && !Array.isArray(item)) Object.assign(scoped, item);
-      if (firstVar && secondVar) { scoped[firstVar.slice(1)] = key; scoped[secondVar.slice(1)] = item; }
-      else if (firstVar) scoped[firstVar.slice(1)] = item;
-      return renderSimpleTemplate(body, scoped, namedTemplates);
-    }).join("");
+  source = renderBlocks(source, context, namedTemplates);
+  source = source.replace(/{{-?\s*(\$\w+)\s*:=\s*([^}]+?)\s*-?}}/g, (_, variable, expression) => {
+    context[variable.slice(1)] = evaluateExpression(expression, context);
+    return "";
   });
-  // Resolve simple if/else blocks before evaluating values.
-  for (let pass = 0; pass < 20; pass++) {
-    const next = source.replace(/{{-?\s*if\s+([^}]+?)\s*-?}}([\s\S]*?)(?:{{-?\s*else\s*-?}}([\s\S]*?))?{{-?\s*end\s*-?}}/g, (_, condition, yes, no = "") => {
-      const value = lookup(context, condition.trim());
-      return value && value !== false && value !== 0 ? yes : no;
-    });
-    if (next === source) break;
-    source = next;
-  }
-  if (/{{-?\s*(?:if|range|with|else|end|block|tpl|lookup)\b/.test(source)) {
-    throw new Error("The selected Helm chart uses nested or advanced template directives that the browser renderer cannot safely resolve. No diagram was created; the existing canvas is unchanged.");
-  }
-  source = source.replace(/{{-?\s*\.Release.Name\s*-?}}/g, String(context.Release.Name));
-  source = source.replace(/{{-?\s*\.Release.Namespace\s*-?}}/g, String(context.Release.Namespace));
-  source = source.replace(/{{-?\s*\.Chart.Name\s*-?}}/g, String(context.Chart.Name));
-  source = source.replace(/{{-?\s*\.Chart.Version\s*-?}}/g, String(context.Chart.Version));
   source = source.replace(/{{-?\s*([^{}]+?)\s*-?}}/g, (_, expression) => {
     const expr = expression.trim();
-    if (/^(?:-?\s*)?(?:else|end|\/\*|\*)/.test(expr)) return "";
-    return helmValue(expr, context);
+    if (/^(?:else|end|\/\*|\*)/.test(expr)) return "";
+    return evaluateExpression(expr, context) ?? "";
   });
   if (/{{[\s\S]*?}}/.test(source)) throw new Error("The selected Helm chart uses template features not supported by Sketchizi's browser renderer. No diagram was created; the existing canvas is unchanged.");
   return source;
