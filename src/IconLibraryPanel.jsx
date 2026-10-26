@@ -128,6 +128,10 @@ export default function IconLibraryPanel({
       setActiveCategory("Kubernetes");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
+    } else if (source === "networking") {
+      setActiveCategory("Networking");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
     }
   };
 
@@ -153,7 +157,7 @@ export default function IconLibraryPanel({
           : visibleIcons;
       return collectionItems.filter((icon) => !query || iconSearchText(icon).includes(query));
     }
-    if (activeSource === "aws" || activeSource === "kubernetes") return visibleIcons;
+    if (activeSource === "aws" || activeSource === "kubernetes" || activeSource === "networking") return visibleIcons;
     return visibleIcons;
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
@@ -175,6 +179,7 @@ export default function IconLibraryPanel({
     { id: "eraser", label: "Essentials" },
     { id: "aws", label: "AWS" },
     { id: "kubernetes", label: "Kubernetes" },
+    { id: "networking", label: "Networking" },
   ];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
