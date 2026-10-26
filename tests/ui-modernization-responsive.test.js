@@ -42,5 +42,5 @@ test('narrow desktop has one authoritative shell layout', () => {
   assert.match(finalShell, /\.app\s*\{[^}]*display:\s*flex/s);
   assert.match(finalShell, /\.desktop-workspace\s*\{[^}]*display:\s*block/s);
   assert.doesNotMatch(desktopShell, /@media\s*\(min-width:\s*761px\)\s*and\s*\(max-width:\s*1024px\)\s*\{[^}]*\.app\s*\{[^}]*grid-template-rows/s);
-  assert.match(desktopShell, /\\.desktop-app-header\\.is-constrained\\s*\\{/);
+  assert.match(desktopShell, /\.desktop-app-header\.is-constrained\s*\{/);
 });
