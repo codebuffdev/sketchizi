@@ -528,6 +528,58 @@ function App() {
         if (target) addLink(workload, target, resourceKind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d");
       });
     });
+    allResources.filter((item) => item.kind === "NetworkPolicy").forEach((policy) => {
+      const selector = policy.manifest.spec?.podSelector?.matchLabels || {};
+      workloads.filter((workload) => workload.namespace === policy.namespace && (!Object.keys(selector).length || matches(selector, labelsFor(workload))))
+        .forEach((workload) => addLink(policy, workload, "applies to", "#b68bea"));
+    });
+    allResources.filter((item) => item.kind === "ServiceMonitor").forEach((monitor) => {
+      const selector = monitor.manifest.spec?.selector?.matchLabels || {};
+      services.filter((service) => service.namespace === monitor.namespace && (!Object.keys(selector).length || matches(selector, service.manifest.metadata?.labels || {})))
+        .forEach((service) => addLink(monitor, service, "monitors", "#b68bea"));
+    });
+    allResources.filter((claim) => claim.kind === "PersistentVolumeClaim").forEach((claim) => {
+      const volume = allResources.find((item) => item.kind === "PersistentVolume" && item.manifest.spec?.claimRef?.name === claim.name
+        && (!item.manifest.spec.claimRef.namespace || item.manifest.spec.claimRef.namespace === claim.namespace));
+      if (volume) addLink(claim, volume, "bound to", "#c59b4d");
+    });
+    workloads.forEach((workload) => {
+      const podSpec = workload.manifest.spec?.template?.spec || workload.manifest.spec || {};
+      const templateLabels = workload.manifest.spec?.template?.metadata?.labels || workload.manifest.metadata?.labels || {};
+      const account = podSpec.serviceAccountName && byName("ServiceAccount", podSpec.serviceAccountName, workload.namespace);
+      if (account) addLink(workload, account, "uses identity", "#b68bea");
+      const hpa = allResources.find((item) => item.kind === "HorizontalPodAutoscaler" && item.namespace === workload.namespace
+        && item.manifest.spec?.scaleTargetRef?.name === workload.name
+        && (!item.manifest.spec.scaleTargetRef.kind || item.manifest.spec.scaleTargetRef.kind === workload.kind));
+      if (hpa) addLink(hpa, workload, "scales", "#b68bea");
+      const pdb = allResources.find((item) => item.kind === "PodDisruptionBudget" && item.namespace === workload.namespace
+        && matches(item.manifest.spec?.selector?.matchLabels || {}, templateLabels));
+      if (pdb) addLink(pdb, workload, "protects", "#b68bea");
+      if (workload.kind === "CronJob") {
+        const jobSpec = workload.manifest.spec?.jobTemplate?.spec?.template?.spec || {};
+        const names = new Set([
+          ...(jobSpec.volumes || []).flatMap((volume) => [volume.configMap?.name, volume.secret?.secretName, volume.persistentVolumeClaim?.claimName].filter(Boolean)),
+          ...(jobSpec.containers || []).flatMap((container) => [
+            ...(container.envFrom || []).flatMap((entry) => [entry.configMapRef?.name, entry.secretRef?.name].filter(Boolean)),
+            ...(container.env || []).flatMap((entry) => [entry.valueFrom?.configMapKeyRef?.name, entry.valueFrom?.secretKeyRef?.name].filter(Boolean)),
+          ]),
+        ]);
+        allResources.filter((item) => names.has(item.name) && item.namespace === workload.namespace && ["ConfigMap", "Secret", "PersistentVolumeClaim"].includes(item.kind))
+          .forEach((item) => addLink(workload, item, item.kind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d"));
+      }
+    });
+    allResources.filter((binding) => ["RoleBinding", "ClusterRoleBinding"].includes(binding.kind)).forEach((binding) => {
+      const roleRef = binding.manifest.roleRef;
+      if (roleRef?.name) {
+        const role = allResources.find((item) => item.kind === roleRef.kind && item.name === roleRef.name
+          && (binding.kind === "ClusterRoleBinding" || item.namespace === binding.namespace));
+        if (role) addLink(binding, role, "grants role", "#b68bea");
+      }
+      (binding.manifest.subjects || []).filter((subject) => subject.kind === "ServiceAccount").forEach((subject) => {
+        const account = byName("ServiceAccount", subject.name, subject.namespace || binding.namespace);
+        if (account) addLink(binding, account, "binds identity", "#b68bea");
+      });
+    });
     const relationshipArrows = relationships.map(({ from, to, label, color }) => {
       const source = from.element;
       const target = to.element;
