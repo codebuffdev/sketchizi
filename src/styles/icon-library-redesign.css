@@ -971,3 +971,51 @@
   .app .library-panel-redesign .library-selected-action { align-items: stretch; flex-direction: column; }
   .app .library-panel-redesign .library-selected-add { width: 100%; }
 }
+
+
+/* Search affordance and compact navigation behavior. */
+.app .library-panel-redesign .library-search-wrap .search { padding-right: 70px; }
+.app .library-panel-redesign .library-search-clear {
+  position: absolute;
+  z-index: 2;
+  right: 34px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #aab4cd;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.app .library-panel-redesign .library-search-clear:hover {
+  background: rgba(139, 92, 246, .18);
+  color: #fff;
+}
+.app .library-panel-redesign .library-search-clear:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 1px;
+}
+.app .library-panel-redesign .library-filter-row { min-width: 0; }
+.app .library-panel-redesign .library-source-tabs {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #5d438e transparent;
+}
+.app .library-panel-redesign .library-source-chip { flex: 0 0 auto; }
+.app .library-panel-redesign .library-source-tabs::-webkit-scrollbar { height: 4px; }
+.app .library-panel-redesign .library-source-tabs::-webkit-scrollbar-thumb { border-radius: 4px; background: #5d438e; }
+.app.theme-light .library-panel-redesign .library-search-clear { color: #69718b; }
+.app.theme-light .library-panel-redesign .library-search-clear:hover { color: #39206c; }
+@media (max-width: 520px) {
+  .app .library-panel-redesign .library-recent-searches { padding-block: 7px; }
+  .app .library-panel-redesign .library-recent-chips { flex-wrap: nowrap; overflow-x: auto; }
+  .app .library-panel-redesign .library-recent-chip { flex: 0 0 auto; }
+}
