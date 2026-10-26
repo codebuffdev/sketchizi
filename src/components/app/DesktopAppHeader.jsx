@@ -305,7 +305,7 @@ export default function DesktopAppHeader({
       <div
         className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName}${currentDocumentFileBacked ? (currentDocumentDirty ? " — file changes not saved" : " — linked file") : ` — ${saveStateLabel.toLowerCase()}`}`}
-        aria-label={`Current document: ${currentDocumentName}. ${currentDocumentFileBacked ? (currentDocumentDirty ? "File changes are not saved." : "Connected to a file.") : saveStateLabel + "."}`}
+        aria-label={`Current document: ${currentDocumentName}. ${currentDocumentFileBacked ? (currentDocumentDirty ? "Changes not saved to file." : "Linked file.") : ( "Local canvas. " + saveStateLabel + "." )}`}
       >
         <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M6 3.75h8l4 4v12.5H6z" />
@@ -403,7 +403,7 @@ export default function DesktopAppHeader({
           type="button"
           className="desktop-app-header-icon-button desktop-app-search-button"
           onClick={() => { setOpenMenu(null); openCommandPalette?.(); }}
-          aria-label="Search commands (Ctrl+Shift+P)"
+          aria-label="Search commands"
           title="Search commands (Ctrl+Shift+P or Ctrl+K)"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
