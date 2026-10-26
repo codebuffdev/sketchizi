@@ -521,10 +521,10 @@ spec:
       setBundleSources(sourceOptions);
       setSelectedBundleSource(sourceOptions[0]?.path || "");
       setBundleFile(originalZipFile || { name: "folder-import" });
-      const bundleContents = zipImportedFiles || await Promise.all(files.map(async (file, index) => ({
-        name: paths[index],
-        text: await file.text(),
-      })));
+      const bundleContents = zipImportedFiles || await Promise.all(files
+        .map((file, index) => ({ file, index }))
+        .filter(({ index }) => /\\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(paths[index]))
+        .map(async ({ file, index }) => ({ name: paths[index], text: await file.text() })));
       setBundleFiles(bundleContents);
       const valuesFiles = paths.filter((path) => /(^|\/)values[^/]*\.ya?ml$/i.test(path)).sort((a, b) => {
         const rank = (value) => /production/i.test(value) ? 0 : /staging/i.test(value) ? 1 : /(^|\/)values\.ya?ml$/i.test(value) ? 2 : 3;
