@@ -3,7 +3,106 @@ import { parseDocument, stringify } from "yaml";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
 import "./docker-compose-studio.css";
 
-const STARTER = "name: ecommerce\nservices:\n  web:\n    image: nginx:1.27\n    ports:\n      - \"8080:80\"\n    depends_on:\n      api:\n        condition: service_healthy\n    networks: [frontend]\n  api:\n    build:\n      context: ./api\n    environment:\n      NODE_ENV: production\n      DATABASE_URL: ${DATABASE_URL}\n    depends_on:\n      database:\n        condition: service_healthy\n    networks: [frontend, backend]\n  database:\n    image: postgres:17\n    environment:\n      POSTGRES_DB: ecommerce\n      POSTGRES_USER: app\n      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}\n    volumes:\n      - database-data:/var/lib/postgresql/data\n    healthcheck:\n      test: [CMD-SHELL, \"pg_isready -U app -d ecommerce\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n    networks: [backend]\nvolumes:\n  database-data: {}\nnetworks:\n  frontend: {}\n  backend:\n    internal: true\n";
+
+const COMPOSE_COMPLETION_GROUPS = {
+  root: ["name:", "services:", "networks:", "volumes:", "configs:", "secrets:", "include:", "profiles:"],
+  service: ["image:", "build:", "container_name:", "command:", "entrypoint:", "ports:", "expose:", "environment:", "env_file:", "depends_on:", "healthcheck:", "volumes:", "networks:", "restart:", "working_dir:", "user:", "read_only:", "privileged:", "cap_add:", "cap_drop:", "security_opt:", "labels:", "logging:", "deploy:", "profiles:", "hostname:", "extra_hosts:", "dns:", "ulimits:", "sysctls:", "stop_grace_period:", "init:"],
+  build: ["context:", "dockerfile:", "dockerfile_inline:", "args:", "target:", "cache_from:", "cache_to:", "network:", "ssh:", "secrets:", "additional_contexts:", "pull:", "no_cache:"],
+  depends_on: ["condition:", "restart:", "required:"],
+  healthcheck: ["test:", "interval:", "timeout:", "retries:", "start_period:", "start_interval:", "disable:"],
+  networks: ["aliases:", "ipv4_address:", "ipv6_address:", "priority:", "gw_priority:", "interface_name:", "mac_address:"],
+  volumes: ["type:", "source:", "target:", "read_only:", "bind:", "volume:", "tmpfs:", "consistency:"],
+  ports: ["target:", "published:", "host_ip:", "protocol:", "mode:", "name:", "app_protocol:"],
+  deploy: ["mode:", "replicas:", "endpoint_mode:", "labels:", "resources:", "restart_policy:", "placement:", "update_config:", "rollback_config:", "depends_on:", "replicas:"],
+  resources: ["limits:", "reservations:"],
+  limits: ["cpus:", "memory:", "pids:"],
+  reservations: ["cpus:", "memory:", "devices:"],
+  restart_policy: ["condition:", "delay:", "max_attempts:", "window:"],
+  logging: ["driver:", "options:"],
+  options: ["max-size:", "max-file:", "labels:", "env:"],
+  configs: ["source:", "target:", "uid:", "gid:", "mode:"],
+  secrets: ["source:", "target:", "uid:", "gid:", "mode:"],
+  networks_root: ["driver:", "driver_opts:", "attachable:", "internal:", "ipam:", "enable_ipv6:", "external:", "name:", "labels:"],
+  volumes_root: ["driver:", "driver_opts:", "external:", "name:", "labels:"],
+  ipam: ["driver:", "config:", "options:"],
+  environment: ["NODE_ENV:", "PORT:", "LOG_LEVEL:", "DATABASE_URL:", "REDIS_URL:"],
+};
+const COMPOSE_VALUE_COMPLETIONS = {
+  restart: [["no", "Do not restart"], ["always", "Always restart"], ["on-failure", "Restart on failure"], ["unless-stopped", "Restart unless manually stopped"]],
+  condition: [["service_started", "Dependency has started"], ["service_healthy", "Dependency is healthy"], ["service_completed_successfully", "Dependency completed successfully"]],
+  driver: [["bridge", "Bridge network"], ["overlay", "Swarm overlay"], ["host", "Host network"], ["none", "No network driver"]],
+  mode: [["replicated", "Replicated service"], ["global", "One task per node"], ["host", "Publish ports on each node"], ["ingress", "Swarm ingress routing"]],
+  protocol: [["tcp", "TCP"], ["udp", "UDP"], ["sctp", "SCTP"]],
+  read_only: [["true", "Read-only filesystem"], ["false", "Writable filesystem"]],
+  privileged: [["true", "Privileged container"], ["false", "Unprivileged container"]],
+  internal: [["true", "Internal network"], ["false", "External connectivity allowed"]],
+  external: [["true", "Use an externally managed resource"], ["false", "Manage resource in this project"]],
+  required: [["true", "Required dependency"], ["false", "Optional dependency"]],
+  disable: [["true", "Disable healthcheck"], ["false", "Enable healthcheck"]],
+  init: [["true", "Run an init process"], ["false", "No init process"]],
+  pull: [["true", "Always pull image"], ["false", "Use local image if available"]],
+  no_cache: [["true", "Disable build cache"], ["false", "Use build cache"]],
+  endpoint_mode: [["vip", "Virtual IP"], ["dnsrr", "DNS round-robin"]],
+};
+function buildComposeCompletions(text, caret, force = false) {
+  const lineStart = text.lastIndexOf("\\n", Math.max(0, caret - 1)) + 1;
+  const lineEndIndex = text.indexOf("\\n", caret);
+  const lineEnd = lineEndIndex < 0 ? text.length : lineEndIndex;
+  const line = text.slice(lineStart, lineEnd);
+  const before = text.slice(lineStart, caret);
+  const indent = (line.match(/^\\s*/) || [""])[0];
+  const previous = text.slice(0, lineStart).split("\\n").reverse().find((value) => value.trim())?.trim() || "";
+  const parent = previous.replace(/:\\s*.*$/, "").replace(/^[- ]+/, "").trim();
+  const trimmed = before.trim();
+  let items = [];
+  let replaceStart = lineStart + indent.length;
+  let replaceEnd = caret;
+  const add = (label, detail, insert = label) => items.push({ label, detail, insert });
+  const valueKey = before.match(/^\\s*([A-Za-z_][\\w-]*):\\s*(.*)$/);
+  if (valueKey && COMPOSE_VALUE_COMPLETIONS[valueKey[1]]) {
+    const key = valueKey[1];
+    const valueStart = lineStart + before.indexOf(":") + 1 + (before.slice(before.indexOf(":") + 1).match(/^\\s*/) || [""])[0].length;
+    replaceStart = valueStart;
+    COMPOSE_VALUE_COMPLETIONS[key].forEach(([value, detail]) => add(value, detail, value));
+  } else {
+    let choices;
+    if (!indent && !trimmed) choices = COMPOSE_COMPLETION_GROUPS.root;
+    else if (parent === "services") choices = ["# service-name:", "web:", "api:", "worker:", "database:", "redis:", "frontend:", "backend:"];
+    else if (parent === "networks" && indent.length <= 2) choices = COMPOSE_COMPLETION_GROUPS.networks_root;
+    else if (parent === "volumes" && indent.length <= 2) choices = COMPOSE_COMPLETION_GROUPS.volumes_root;
+    else if (parent === "build") choices = COMPOSE_COMPLETION_GROUPS.build;
+    else if (parent === "depends_on") choices = COMPOSE_COMPLETION_GROUPS.depends_on;
+    else if (parent === "healthcheck") choices = COMPOSE_COMPLETION_GROUPS.healthcheck;
+    else if (parent === "deploy") choices = COMPOSE_COMPLETION_GROUPS.deploy;
+    else if (parent === "resources") choices = COMPOSE_COMPLETION_GROUPS.resources;
+    else if (parent === "limits" || parent === "reservations") choices = COMPOSE_COMPLETION_GROUPS[parent];
+    else if (parent === "restart_policy") choices = COMPOSE_COMPLETION_GROUPS.restart_policy;
+    else if (parent === "logging") choices = COMPOSE_COMPLETION_GROUPS.logging;
+    else if (parent === "options") choices = COMPOSE_COMPLETION_GROUPS.options;
+    else if (parent === "ipam") choices = COMPOSE_COMPLETION_GROUPS.ipam;
+    else if (parent === "environment") choices = COMPOSE_COMPLETION_GROUPS.environment;
+    else if (parent === "networks" && indent.length > 2) choices = COMPOSE_COMPLETION_GROUPS.networks;
+    else if (parent === "volumes" && indent.length > 2) choices = COMPOSE_COMPLETION_GROUPS.volumes;
+    else if (parent === "ports") choices = COMPOSE_COMPLETION_GROUPS.ports;
+    else if (parent === "configs") choices = COMPOSE_COMPLETION_GROUPS.configs;
+    else if (parent === "secrets") choices = COMPOSE_COMPLETION_GROUPS.secrets;
+    else {
+      choices = COMPOSE_COMPLETION_GROUPS.service;
+      if (!indent && trimmed) choices = COMPOSE_COMPLETION_GROUPS.root;
+    }
+    choices.forEach((entry) => add(entry, parent ? "Compose " + parent + " option" : "Docker Compose option", entry));
+    if (!force && !trimmed && !previous.endsWith(":")) items = [];
+  }
+  const query = valueKey && COMPOSE_VALUE_COMPLETIONS[valueKey[1]] ? valueKey[2].trim() : trimmed.replace(/^[- ]+/, "");
+  if (query) {
+    items = items.filter((item) => item.label.toLowerCase().startsWith(query.toLowerCase()));
+    if (!(valueKey && COMPOSE_VALUE_COMPLETIONS[valueKey[1]])) replaceStart = lineStart + indent.length;
+    if (!force && items.some((item) => item.label.toLowerCase() === query.toLowerCase())) items = [];
+  }
+  if (!force && !items.length) return { items: [], replaceStart, replaceEnd };
+  return { items: items.slice(0, 12), replaceStart, replaceEnd };
+}
+\nconst STARTER = "name: ecommerce\nservices:\n  web:\n    image: nginx:1.27\n    ports:\n      - \"8080:80\"\n    depends_on:\n      api:\n        condition: service_healthy\n    networks: [frontend]\n  api:\n    build:\n      context: ./api\n    environment:\n      NODE_ENV: production\n      DATABASE_URL: ${DATABASE_URL}\n    depends_on:\n      database:\n        condition: service_healthy\n    networks: [frontend, backend]\n  database:\n    image: postgres:17\n    environment:\n      POSTGRES_DB: ecommerce\n      POSTGRES_USER: app\n      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}\n    volumes:\n      - database-data:/var/lib/postgresql/data\n    healthcheck:\n      test: [CMD-SHELL, \"pg_isready -U app -d ecommerce\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n    networks: [backend]\nvolumes:\n  database-data: {}\nnetworks:\n  frontend: {}\n  backend:\n    internal: true\n";
 const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const namesOf = (value) => Array.isArray(value) ? value.map((item) => typeof item === "string" ? item : item?.source).filter(Boolean) : isRecord(value) ? Object.keys(value) : [];
 const imageOf = (service) => typeof service?.image === "string" ? service.image : typeof service?.build === "string" ? "build: " + service.build : isRecord(service?.build) ? "build: " + (service.build.context || ".") : "Image/build not configured";
@@ -27,7 +126,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [scrollTop, setScrollTop] = useState(0);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [showValidation, setShowValidation] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);\n  const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
   const parsed = useMemo(() => {
@@ -52,7 +151,59 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const dirty = yamlText !== savedYaml;
   const close = () => { if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return; onClose?.(); };
 
-  const importYaml = async (event) => {
+
+  const updateCompletions = (text, caret, force = false) => {
+    const next = buildComposeCompletions(text, caret, force);
+    setCompletion({ ...next, selectedIndex: 0 });
+  };
+  const applyCompletion = (item) => {
+    const editor = editorRef.current;
+    if (!editor || !item) return;
+    const start = completion.replaceStart;
+    const nextText = yamlText.slice(0, start) + item.insert + yamlText.slice(completion.replaceEnd);
+    const nextCaret = start + item.insert.length;
+    setYamlText(nextText);
+    setError("");
+    setNotice("");
+    setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+    requestAnimationFrame(() => { editor.focus(); editor.setSelectionRange(nextCaret, nextCaret); });
+  };
+  const handleYamlKeyDown = (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.code === "Space") {
+      event.preventDefault();
+      updateCompletions(yamlText, event.currentTarget.selectionStart, true);
+      return;
+    }
+    if (completion.items.length && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      setCompletion((current) => ({ ...current, selectedIndex: (current.selectedIndex + (event.key === "ArrowDown" ? 1 : current.items.length - 1)) % current.items.length }));
+      return;
+    }
+    if (completion.items.length && (event.key === "Enter" || event.key === "Tab")) {
+      event.preventDefault();
+      applyCompletion(completion.items[completion.selectedIndex]);
+      return;
+    }
+    if (event.key === "Escape") {
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      return;
+    }
+    if (event.key === "Enter") {
+      const editor = event.currentTarget;
+      const before = yamlText.slice(0, editor.selectionStart);
+      const line = before.slice(before.lastIndexOf("\\n") + 1);
+      const indentation = (line.match(/^\\s*/) || [""])[0];
+      const extraIndent = line.trim().endsWith(":") ? "  " : "";
+      event.preventDefault();
+      const inserted = "\\n" + indentation + extraIndent;
+      const nextText = yamlText.slice(0, editor.selectionStart) + inserted + yamlText.slice(editor.selectionEnd);
+      const nextCaret = editor.selectionStart + inserted.length;
+      setYamlText(nextText);
+      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      requestAnimationFrame(() => { editor.focus(); editor.setSelectionRange(nextCaret, nextCaret); updateCompletions(nextText, nextCaret); });
+    }
+  };
+\n  const importYaml = async (event) => {
     const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
     try {
       const text = await file.text();
@@ -107,7 +258,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
       <div className="docker-studio-k8s-workspace">
         <section className="docker-studio-yaml-pane" aria-label="Compose YAML editor">
           <div className="docker-studio-pane-heading"><div><span>01</span><h2>Compose YAML</h2></div><div className="docker-studio-font-controls"><button type="button" onClick={() => setFontSize((size) => Math.max(10, size - 1))} disabled={fontSize <= 10} aria-label="Decrease YAML font size">A−</button><output>{fontSize}px</output><button type="button" onClick={() => setFontSize((size) => Math.min(20, size + 1))} disabled={fontSize >= 20} aria-label="Increase YAML font size">A+</button></div></div>
-          <div className="docker-studio-yaml-shell"><div className="docker-studio-yaml-gutter" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + scrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split("\n").length) }, (_, i) => <span key={i}>{i + 1}</span>)}</div></div><pre className="docker-studio-yaml-highlight" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}>{yamlText.split("\n").map((line, i) => <span className="docker-yaml-line" key={i}>{highlightLine(line)}{"\n"}</span>)}</pre><textarea ref={editorRef} className="docker-studio-yaml-input" aria-label="Docker Compose YAML" spellCheck="false" autoCapitalize="off" autoCorrect="off" value={yamlText} style={{ fontSize: fontSize + "px", lineHeight: 1.65 }} onChange={(event) => { setYamlText(event.target.value); setError(""); setNotice(""); }} onScroll={(event) => { setScrollTop(event.currentTarget.scrollTop); const pre = event.currentTarget.parentElement?.querySelector(".docker-studio-yaml-highlight"); if (pre) { pre.scrollTop = event.currentTarget.scrollTop; pre.scrollLeft = event.currentTarget.scrollLeft; } }} placeholder="Paste compose.yaml here…"/></div>
+          <div className="docker-studio-yaml-shell"><div className="docker-studio-yaml-gutter" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + scrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split("\n").length) }, (_, i) => <span key={i}>{i + 1}</span>)}</div></div><pre className="docker-studio-yaml-highlight" aria-hidden="true" style={{ fontSize: fontSize + "px", lineHeight: 1.65 }}>{yamlText.split("\n").map((line, i) => <span className="docker-yaml-line" key={i}>{highlightLine(line)}{"\n"}</span>)}</pre><textarea ref={editorRef} className="docker-studio-yaml-input" aria-label="Docker Compose YAML" spellCheck="false" autoCapitalize="off" autoCorrect="off" value={yamlText} style={{ fontSize: fontSize + "px", lineHeight: 1.65 }} onChange={(event) => { const nextText = event.target.value; setYamlText(nextText); setError(""); setNotice(""); updateCompletions(nextText, event.target.selectionStart); }} onKeyDown={handleYamlKeyDown} onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)} onScroll={(event) => { setScrollTop(event.currentTarget.scrollTop); const pre = event.currentTarget.parentElement?.querySelector(".docker-studio-yaml-highlight"); if (pre) { pre.scrollTop = event.currentTarget.scrollTop; pre.scrollLeft = event.currentTarget.scrollLeft; } }} placeholder="Paste compose.yaml here…"/></div>
           <div className="docker-studio-yaml-status"><span>YAML</span><span>{yamlText.split("\n").length} lines</span><span>{yamlText.length.toLocaleString()} characters</span></div><p className="docker-studio-editor-help">YAML is the source of truth. Imports and exports keep the complete document, including fields the visual preview does not yet interpret.</p>
         </section>
         <aside className="docker-studio-resource-pane" aria-label="Live service preview">
