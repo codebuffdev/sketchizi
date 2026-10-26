@@ -28,6 +28,10 @@ function iconSearchText(icon) {
     .filter(Boolean).join(" ").toLowerCase();
 }
 
+function iconSelectionKey(icon) {
+  return `${icon?.source || icon?.catalog || "local"}:${icon?.category || ""}:${icon?.id || icon?.name || ""}`;
+}
+
 export default function IconLibraryPanel({
   searchRef, search, setSearch, activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, favorites, recentIcons,
   eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
@@ -148,10 +152,10 @@ export default function IconLibraryPanel({
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
   // Keep the selected asset available while the user browses other sources or searches.
   // Resolve from the full catalog first so changing filters does not hide the add action.
-  const selectedIcon = allIcons.find((icon) => icon.id === selectedIconId)
-    || favorites.find((icon) => icon.id === selectedIconId)
-    || recentIcons.find((icon) => icon.id === selectedIconId)
-    || displayedIcons.find((icon) => icon.id === selectedIconId)
+  const selectedIcon = allIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
+    || favorites.find((icon) => iconSelectionKey(icon) === selectedIconId)
+    || recentIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
+    || displayedIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
     || null;
   const withSelectedEssentialColor = (icon) => (icon?.source === "eraser" || icon?.source === "essentials" || icon?.category === "Eraser Icons")
     ? { ...icon, tintColor: selectedEssentialColor }
@@ -256,7 +260,7 @@ export default function IconLibraryPanel({
           }}>
             {shownIcons.map((icon) => {
               const favorite = isFavorite(icon);
-              return <div key={`${icon.category || icon.source}-${icon.id}`} role="button" tabIndex={0} className={`icon-card library-icon-card ${draggingIcon?.icon?.id === icon.id ? "is-drag-source" : ""} ${selectedIconId === icon.id ? "is-selected" : ""} ${favorite ? "has-favorite" : ""}`} onClick={() => setSelectedIconId(icon.id)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setSelectedIconId(icon.id); } }} onPointerDown={(event) => handleIconPointerDown(event, withSelectedEssentialColor(icon))} onMouseDown={(event) => handleIconMouseDown(event, withSelectedEssentialColor(icon))} onDragStart={(event) => handleDragStart(event, withSelectedEssentialColor(icon))} title={`Select ${icon.name}; drag onto the canvas to place`} aria-label={`Select ${icon.name}; drag onto the canvas to place`}>
+              return <div key={`${icon.category || icon.source}-${icon.id}`} role="button" tabIndex={0} className={`icon-card library-icon-card ${draggingIcon?.icon?.id === icon.id ? "is-drag-source" : ""} ${selectedIconId === iconSelectionKey(icon) ? "is-selected" : ""} ${favorite ? "has-favorite" : ""}`} onClick={() => setSelectedIconId(iconSelectionKey(icon))} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setSelectedIconId(iconSelectionKey(icon)); } }} onPointerDown={(event) => handleIconPointerDown(event, withSelectedEssentialColor(icon))} onMouseDown={(event) => handleIconMouseDown(event, withSelectedEssentialColor(icon))} onDragStart={(event) => handleDragStart(event, withSelectedEssentialColor(icon))} title={`Select ${icon.name}; drag onto the canvas to place`} aria-label={`Select ${icon.name}; drag onto the canvas to place`}>
                 <span className="icon-preview library-icon-preview"><img src={icon.src} alt="" draggable={false} /></span>
                 <span className="library-icon-card-content"><span className="icon-name">{icon.name}</span><span className="icon-subtitle">{getIconSubtitle(icon)}</span><span className="library-icon-tags">{iconTags(icon).map((tag) => <span key={tag} className="library-icon-tag">{tag}</span>)}</span></span>
                 <span className="library-icon-card-actions">
