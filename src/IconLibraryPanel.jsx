@@ -207,11 +207,7 @@ export default function IconLibraryPanel({
         {(activeSource === "aws" && !search.trim()) && <div className="library-subcategory-row"><label htmlFor="aws-icon-subcategory">AWS category</label><select id="aws-icon-subcategory" value={activeAwsCategory} onChange={(event) => { setActiveAwsCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">All AWS categories</option>{awsCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>}
         {(activeSource === "kubernetes" && !search.trim()) && <div className="library-subcategory-row"><label htmlFor="kubernetes-icon-subcategory">Kubernetes category</label><select id="kubernetes-icon-subcategory" value={activeKubernetesCategory} onChange={(event) => { setActiveKubernetesCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">All Kubernetes categories</option>{kubernetesCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>}
         {activeSource === "eraser" && !search.trim() && eraserSyncError && <div className="library-inline-status" role="status">{eraserSyncError}</div>}
-        {activeSource === "eraser" && <div className="library-color-picker" role="group" aria-label="Essential icon color">
-          <span className="library-color-picker-label">Icon color</span>
-          <div className="library-color-swatches">{essentialColors.map((color) => <button key={color.value} type="button" className={`library-color-swatch${selectedEssentialColor === color.value ? " active" : ""}`} style={{ "--swatch-color": color.value }} onClick={() => setSelectedEssentialColor(color.value)} aria-label={`${color.label} icon color`} aria-pressed={selectedEssentialColor === color.value} title={color.label}><span /></button>)}</div><label className="library-custom-color-label" title="Choose a custom icon color"><input type="color" value={selectedEssentialColor} onChange={(event) => setSelectedEssentialColor(event.target.value)} aria-label="Custom icon color" /><span>Custom</span></label>
-          <span className="library-color-picker-value">{essentialColors.find((color) => color.value === selectedEssentialColor)?.label || "Custom"}</span>
-        </div>}
+
 
         <section className="icons library-results" aria-label="Icon results">
           <div className="section-heading library-results-heading">
