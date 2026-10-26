@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
 import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
+import { readZipTextFiles } from "../zipBundleReader.js";
+import { renderHelmBundle, renderKustomizeBundle } from "../browserBundleRenderer.js";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -282,6 +284,13 @@ spec:
   const [importedFileNames, setImportedFileNames] = useState([]);
   const hasUnsavedChanges = yamlText !== savedYamlText;
   const [notice, setNotice] = useState("");
+  const [bundleSources, setBundleSources] = useState([]);
+  const [selectedBundleSource, setSelectedBundleSource] = useState("");
+  const [bundleFile, setBundleFile] = useState(null);
+  const [bundleFiles, setBundleFiles] = useState([]);
+  const [bundleValuesFiles, setBundleValuesFiles] = useState([]);
+  const [selectedValuesFile, setSelectedValuesFile] = useState("");
+  const [renderingBundle, setRenderingBundle] = useState(false);
   const [error, setError] = useState("");
   const [inspectedResourceId, setInspectedResourceId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -475,9 +484,22 @@ spec:
   };
 
   const importFile = async (event) => {
-    const files = Array.from(event.target.files || []);
+    const selectedFiles = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!files.length) return;
+    if (!selectedFiles.length) return;
+    let files = selectedFiles;
+    let zipImportedFiles = null;
+    const originalZipFile = selectedFiles.length === 1 && /\.zip$/i.test(selectedFiles[0].name) ? selectedFiles[0] : null;
+    try {
+      if (selectedFiles.length === 1 && /\.zip$/i.test(selectedFiles[0].name)) {
+        zipImportedFiles = await readZipTextFiles(selectedFiles[0]);
+        files = zipImportedFiles.map((entry) => ({ name: entry.name, text: entry.text }));
+      }
+    } catch (cause) {
+      setError(cause?.message || "The selected ZIP bundle could not be read.");
+      setNotice("");
+      return;
+    }
 
     // Kustomize overlays and Helm charts are source projects, not Kubernetes
     // API manifests. Detect them before extension checks so they never get
@@ -485,18 +507,33 @@ spec:
     const paths = files.map((file) => String(file.webkitRelativePath || file.name).replace(/\\/g, "/"));
     const kustomizeFiles = paths.filter((path) => /(^|\/)(?:kustomization\.ya?ml|Kustomization)$/i.test(path));
     const helmCharts = paths.filter((path) => /(^|\/)Chart\.yaml$/i.test(path));
-    if (kustomizeFiles.length) {
-      const source = kustomizeFiles[0];
-      const overlayDirectory = source.slice(0, source.lastIndexOf("/")) || "<overlay-directory>";
+    if (kustomizeFiles.length || helmCharts.length) {
+      const sourceOptions = [
+        ...kustomizeFiles.map((path) => ({ type: "kustomize", path, directory: path.slice(0, path.lastIndexOf("/")) || ".", label: "Kustomize · " + (path.slice(0, path.lastIndexOf("/")) || ".") })),
+        ...helmCharts.map((path) => ({ type: "helm", path, directory: path.slice(0, path.lastIndexOf("/")) || ".", label: "Helm chart · " + (path.slice(0, path.lastIndexOf("/")) || ".") })),
+      ].sort((a, b) => {
+        const rank = (entry) => entry.type === "kustomize" && /overlays?\/(staging|production)/i.test(entry.directory) ? 0 : entry.type === "kustomize" && /overlays?\//i.test(entry.directory) ? 1 : entry.type === "helm" ? 2 : 3;
+        return rank(a) - rank(b) || a.directory.localeCompare(b.directory);
+      });
+      setYamlText("");
+      setSavedYamlText("");
+      setImportedFileNames(paths);
+      setBundleSources(sourceOptions);
+      setSelectedBundleSource(sourceOptions[0]?.path || "");
+      setBundleFile(originalZipFile || { name: "folder-import" });
+      const bundleContents = zipImportedFiles || await Promise.all(files
+        .map((file, index) => ({ file, index }))
+        .filter(({ index }) => /\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(paths[index]))
+        .map(async ({ file, index }) => ({ name: paths[index], text: await file.text() })));
+      setBundleFiles(bundleContents);
+      const valuesFiles = paths.filter((path) => /(^|\/)values[^/]*\.ya?ml$/i.test(path)).sort((a, b) => {
+        const rank = (value) => /production/i.test(value) ? 0 : /staging/i.test(value) ? 1 : /(^|\/)values\.ya?ml$/i.test(value) ? 2 : 3;
+        return rank(a) - rank(b) || a.localeCompare(b);
+      });
+      setBundleValuesFiles(valuesFiles);
+      setSelectedValuesFile(valuesFiles[0] || "");
       setError("");
-      setNotice("Kustomize source detected (" + kustomizeFiles.length + " kustomization file(s)). Render the selected overlay first, then import the output: kubectl kustomize " + overlayDirectory + " > rendered-kustomize.yaml. This keeps patches, generators, and transformations accurate; K8s Studio does not silently approximate Kustomize rendering.");
-      return;
-    }
-    if (helmCharts.length) {
-      const chartFile = helmCharts[0];
-      const chartDirectory = chartFile.slice(0, chartFile.lastIndexOf("/")) || "<chart-directory>";
-      setError("");
-      setNotice("Helm chart source detected. Render templates with helm template <release-name> " + chartDirectory + " -f <values.yaml> > rendered-helm.yaml, then import rendered-helm.yaml. This preserves Helm values and template functions; K8s Studio does not pretend raw templates are deployable manifests.");
+      setNotice(originalZipFile ? "Bundle loaded. Select an environment and render it to populate the resource preview." : "Folder loaded. Select a source and render it directly in K8s Studio.");
       return;
     }
     const invalidFiles = files.filter((file) => !/\.ya?ml$/i.test(file.name));
@@ -504,8 +541,13 @@ spec:
       setError("Choose only .yaml or .yml files. Invalid: " + invalidFiles.map((file) => file.name).join(", "));
       return;
     }
+    setBundleFile(null);
+    setBundleFiles([]);
+    setBundleValuesFiles([]);
+    setSelectedValuesFile("");
+    setBundleSources([]);
     try {
-      const importedFiles = await Promise.all(files.map(async (file) => ({
+      const importedFiles = zipImportedFiles || await Promise.all(files.map(async (file) => ({
         name: file.name,
         text: await file.text(),
       })));
@@ -532,6 +574,44 @@ spec:
       setError("");
     } catch (cause) {
       setError(cause?.message || "The selected YAML file(s) could not be read.");
+    }
+  };
+
+  const renderSelectedBundle = async () => {
+    const source = bundleSources.find((entry) => entry.path === selectedBundleSource);
+    if (!source) { setError("Choose a Kustomize source or Helm chart first."); return; }
+    if (!bundleFiles.length) { setError("No bundle files are available. Import the ZIP or folder again."); return; }
+    setRenderingBundle(true);
+    setError("");
+    setNotice("Rendering " + source.label + " in your browser…");
+    try {
+      const renderedYaml = source.type === "kustomize"
+        ? renderKustomizeBundle(bundleFiles, source.path)
+        : renderHelmBundle(bundleFiles, source.path, selectedValuesFile, "sketchizi");
+      const documents = parseAllDocuments(renderedYaml, { prettyErrors: true, uniqueKeys: true });
+      const parseFailure = documents.find((document) => document.errors.length);
+      if (parseFailure) throw new Error("Rendered YAML could not be parsed: " + parseFailure.errors[0].message);
+      const normalized = documents.map((document, index) => document.toJSON() == null ? null : normalizeManifest(document.toJSON(), index + 1));
+      const invalidDocuments = normalized.flatMap((resource, index) => resource ? [] : [index + 1]);
+      if (invalidDocuments.length) throw new Error("Rendered document(s) " + invalidDocuments.join(", ") + " do not include kind and metadata.name.");
+      const resources = normalized.filter(Boolean);
+      if (!resources.length) throw new Error("The selected source rendered no Kubernetes resources.");
+      const nextYaml = renderedYaml.endsWith("\n") ? renderedYaml : renderedYaml + "\n";
+      setYamlText(nextYaml);
+      setSavedYamlText(nextYaml);
+      setImportedFileNames([source.label + " (rendered)"]);
+      setBundleSources([]);
+      setSelectedBundleSource("");
+      setBundleFile(null);
+      setBundleFiles([]);
+      setBundleValuesFiles([]);
+      setSelectedValuesFile("");
+      setNotice("Rendered " + resources.length + " Kubernetes resource(s) locally in your browser. Review validation, then create the diagram.");
+    } catch (cause) {
+      setError(cause?.message || "Could not render the selected source bundle.");
+      setNotice("");
+    } finally {
+      setRenderingBundle(false);
     }
   };
 
@@ -577,10 +657,31 @@ spec:
           <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
           <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
           <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Kustomize / Helm bundle</button>
-          <input id="k8s-studio-source-bundle" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
+          <input id="k8s-studio-source-bundle" type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden onChange={importFile} aria-label="Choose a ZIP containing a Kustomize bundle or Helm chart" />
+          <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-folder")?.click()}>Import folder</button>
+          <input id="k8s-studio-source-folder" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
           <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import Kubernetes YAML, or choose a source bundle for render instructions."}</span>
-          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setNotice(""); setError(""); }}>Clear</button>
+          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setBundleSources([]); setSelectedBundleSource(""); setBundleFile(null); setBundleFiles([]); setBundleValuesFiles([]); setSelectedValuesFile(""); setNotice(""); setError(""); }}>Clear</button>
         </div>
+
+        {bundleSources.length > 0 && (
+          <section className="k8s-studio-bundle-panel" aria-label="Bundle source selection">
+            <label htmlFor="k8s-studio-bundle-source">Detected source</label>
+            <select id="k8s-studio-bundle-source" value={selectedBundleSource} onChange={(event) => setSelectedBundleSource(event.target.value)}>
+              {bundleSources.map((source) => <option key={source.path} value={source.path}>{source.label}</option>)}
+            </select>
+            <p>{(() => {
+              const source = bundleSources.find((entry) => entry.path === selectedBundleSource);
+              if (!source) return "Select a source to see its render command.";
+              return source.type === "kustomize"
+                ? "K8s Studio resolves selected Kustomize resources and common transforms locally in this browser."
+                : "K8s Studio renders supported Helm template expressions locally. Charts using advanced Go-template functions may require a fuller renderer.";
+            })()}</p>
+            {(() => { const source = bundleSources.find((entry) => entry.path === selectedBundleSource); return source?.type === "helm" ? <div className="k8s-studio-values-row"><label htmlFor="k8s-studio-values-file">Values file</label><select id="k8s-studio-values-file" value={selectedValuesFile} onChange={(event) => setSelectedValuesFile(event.target.value)}><option value="">Chart defaults</option>{bundleValuesFiles.map((path) => <option key={path} value={path}>{path}</option>)}</select></div> : null; })()}
+            <button type="button" className="k8s-studio-primary k8s-studio-render-button" onClick={renderSelectedBundle} disabled={renderingBundle || !bundleFile || !selectedBundleSource}>{renderingBundle ? "Rendering…" : "Render selected source"}</button>
+            <p>{"Rendering runs locally in your browser. The current canvas is not changed until you choose Create diagram."}</p>
+          </section>
+        )}
 
         <div className="k8s-studio-workspace" ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
           <section className="k8s-studio-editor">
@@ -594,7 +695,7 @@ spec:
               </div>
             </div>
             <div className={yamlText ? "k8s-yaml-editor-shell has-content" : "k8s-yaml-editor-shell"}>
-              <div className="k8s-yaml-line-numbers" aria-hidden="true"><div style={{ transform: "translateY(-" + yamlScrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split(String.fromCharCode(10)).length) }, (_, index) => <span key={index}>{index + 1}</span>)}</div></div>
+              <div className="k8s-yaml-line-numbers" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + yamlScrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split(String.fromCharCode(10)).length) }, (_, index) => <span key={index}>{index + 1}</span>)}</div></div>
               <pre className="k8s-yaml-highlight" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}>{highlightYaml(yamlText)}</pre>
               <textarea
                 ref={yamlEditorRef}
