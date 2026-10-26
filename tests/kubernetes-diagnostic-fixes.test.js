@@ -310,3 +310,30 @@ test("K8s Studio integration: missing service, ingress backend, config and HPA t
   assert.ok(issues.some((issue) => issue.message.includes("missing-config") && issue.message.includes("ConfigMap")));
   assert.ok(issues.some((issue) => issue.message.includes("missing-deployment") && issue.message.includes("HPA target")));
 });
+
+
+test("K8s Studio integration: storage and RBAC dependencies resolve across a valid manifest set", () => {
+  const resources = [
+    { id: "sc", kind: "StorageClass", name: "fast", namespace: "", apiVersion: "storage.k8s.io/v1", manifest: { apiVersion: "storage.k8s.io/v1", kind: "StorageClass", metadata: { name: "fast" }, provisioner: "kubernetes.io/no-provisioner" } },
+    { id: "pvc", kind: "PersistentVolumeClaim", name: "data", namespace: "production", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolumeClaim", metadata: { name: "data", namespace: "production" }, spec: { storageClassName: "fast", accessModes: ["ReadWriteOnce"], resources: { requests: { storage: "1Gi" } } } } },
+    { id: "pv", kind: "PersistentVolume", name: "data-pv", namespace: "", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolume", metadata: { name: "data-pv" }, spec: { storageClassName: "fast", capacity: { storage: "1Gi" }, accessModes: ["ReadWriteOnce"], claimRef: { name: "data", namespace: "production" }, persistentVolumeReclaimPolicy: "Retain" } } },
+    { id: "sa", kind: "ServiceAccount", name: "app", namespace: "production", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "ServiceAccount", metadata: { name: "app", namespace: "production" } } },
+    { id: "role", kind: "Role", name: "read-config", namespace: "production", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role", metadata: { name: "read-config", namespace: "production" }, rules: [{ apiGroups: [""], resources: ["configmaps"], verbs: ["get"] }] } },
+    { id: "binding", kind: "RoleBinding", name: "app-read-config", namespace: "production", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding", metadata: { name: "app-read-config", namespace: "production" }, spec: { roleRef: { apiGroup: "rbac.authorization.k8s.io", kind: "Role", name: "read-config" }, subjects: [{ kind: "ServiceAccount", name: "app", namespace: "production" }] } } },
+  ];
+  const issues = validateKubernetesResources(resources);
+  assert.equal(issues.some((issue) => /StorageClass|claimRef references PersistentVolumeClaim|Role binding references/.test(issue.message)), false, JSON.stringify(issues, null, 2));
+});
+
+test("K8s Studio integration: reports unresolved storage and RBAC dependencies", () => {
+  const resources = [
+    { id: "pvc", kind: "PersistentVolumeClaim", name: "data", namespace: "production", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolumeClaim", metadata: { name: "data", namespace: "production" }, spec: { storageClassName: "missing-fast", accessModes: ["ReadWriteOnce"], resources: { requests: { storage: "1Gi" } } } } },
+    { id: "pv", kind: "PersistentVolume", name: "data-pv", namespace: "", apiVersion: "v1", manifest: { apiVersion: "v1", kind: "PersistentVolume", metadata: { name: "data-pv" }, spec: { storageClassName: "missing-fast", capacity: { storage: "1Gi" }, accessModes: ["ReadWriteOnce"], claimRef: { name: "missing-data", namespace: "production" } } } },
+    { id: "binding", kind: "RoleBinding", name: "broken-binding", namespace: "production", apiVersion: "rbac.authorization.k8s.io/v1", manifest: { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding", metadata: { name: "broken-binding", namespace: "production" }, spec: { roleRef: { apiGroup: "rbac.authorization.k8s.io", kind: "Role", name: "missing-role" }, subjects: [{ kind: "ServiceAccount", name: "missing-app", namespace: "production" }] } } },
+  ];
+  const issues = validateKubernetesResources(resources);
+  assert.ok(issues.some((issue) => issue.message.includes("StorageClass 'missing-fast'")));
+  assert.ok(issues.some((issue) => issue.message.includes("PersistentVolumeClaim 'missing-data'")));
+  assert.ok(issues.some((issue) => issue.message.includes("Role/missing-role")));
+  assert.ok(issues.some((issue) => issue.message.includes("ServiceAccount 'missing-app'")));
+});
