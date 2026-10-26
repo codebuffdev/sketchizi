@@ -471,7 +471,7 @@ spec:
             <div className="k8s-studio-resource-list">
               {parsed.resources.map((resource) => <article className="k8s-studio-resource" key={resource.id}>
                 <span className="k8s-studio-resource-glyph">{resource.kind.slice(0, 2).toUpperCase()}</span>
-                <div><strong>{resource.name}</strong><small>{resource.kind} · {resource.namespace}</small></div>
+                <div><strong>{resource.name}</strong><small>{resource.kind} · {resource.namespace}</small></div><button type="button" className="k8s-studio-resource-inspect" onClick={() => inspectResource(resource)}>Inspect</button>
                 {!resource.supported && <em>Generic</em>}
               </article>)}
             </div>
