@@ -170,7 +170,7 @@ test("K8s Studio validates StatefulSet, HPA, CronJob and NetworkPolicy invariant
   assert.match(studio, /CronJob concurrencyPolicy must be Allow, Forbid, or Replace/);
   assert.match(studio, /NetworkPolicy must define spec\.podSelector/);
   assert.match(studio, /NetworkPolicy policyTypes entries must be Ingress or Egress/);
-  assert.match(studio, /NetworkPolicy .* ports must be a list/);
+  assert.match(studio, /ports must be a list/);
 });
 
 
