@@ -656,6 +656,7 @@ function App() {
         startBinding: { elementId: fromElementId, focus: 0, gap: 8 },
         endBinding: { elementId: toElementId, focus: 0, gap: 8 },
         strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
+        customData: { kubernetesRelationship: { fromResourceId: fromResource.id, toResourceId: toResource.id, label } },
         label: { text: label, fontSize: 11 },
       });
     };
