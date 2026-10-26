@@ -208,9 +208,9 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 
 /* Rainbow indentation guides, similar to IDE YAML editors. */
 .k8s-yaml-highlight .yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--yaml-indent-bg);border-radius:2px}
-.k8s-yaml-highlight .yaml-indent-level-0{--yaml-indent-bg:rgba(248,113,113,.11)}
-.k8s-yaml-highlight .yaml-indent-level-1{--yaml-indent-bg:rgba(251,191,36,.11)}
-.k8s-yaml-highlight .yaml-indent-level-2{--yaml-indent-bg:rgba(74,222,128,.10)}
-.k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.12)}
-.k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.12)}
-.k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.11)}
+.k8s-yaml-highlight .yaml-indent-level-0{--yaml-indent-bg:rgba(248,113,113,.035)}
+.k8s-yaml-highlight .yaml-indent-level-1{--yaml-indent-bg:rgba(251,191,36,.035)}
+.k8s-yaml-highlight .yaml-indent-level-2{--yaml-indent-bg:rgba(74,222,128,.03)}
+.k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.04)}
+.k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.04)}
+.k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.035)}
