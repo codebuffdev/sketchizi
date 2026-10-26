@@ -270,10 +270,10 @@ function renderBlocks(source, context, namedTemplates) {
     if (opening.kind === "if") {
       const condition = opening.expression.startsWith("not ") ? !truthy(evaluateExpression(opening.expression.slice(4), context, namedTemplates)) : truthy(evaluateExpression(opening.expression, context, namedTemplates));
       if (block.elseToken?.isElseIf && !condition) otherwise = "{{ if " + block.elseToken.expression + " }}" + otherwise + "{{ end }}";
-      body = condition ? renderBlocks(body, context, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
+      body = condition ? renderSimpleTemplate(body, context, namedTemplates) : renderSimpleTemplate(otherwise, context, namedTemplates);
     } else if (opening.kind === "with") {
       const value = evaluateExpression(opening.expression, context, namedTemplates);
-      body = truthy(value) ? renderBlocks(body, { ...context, __dot: value }, namedTemplates) : renderBlocks(otherwise, context, namedTemplates);
+      body = truthy(value) ? renderSimpleTemplate(body, { ...context, __dot: value }, namedTemplates) : renderSimpleTemplate(otherwise, context, namedTemplates);
     } else {
       const rangeMatch = opening.expression.match(/^(?:(\$[\w]+)(?:\s*,\s*(\$[\w]+))?\s*:=\s*)?(.+)$/);
       const value = evaluateExpression(rangeMatch?.[3] || opening.expression, context, namedTemplates);
@@ -283,7 +283,7 @@ function renderBlocks(source, context, namedTemplates) {
         if (item && typeof item === "object" && !Array.isArray(item)) Object.assign(scoped, item);
         if (rangeMatch?.[1] && rangeMatch?.[2]) { scoped[rangeMatch[1].slice(1)] = key; scoped[rangeMatch[2].slice(1)] = item; }
         else if (rangeMatch?.[1]) scoped[rangeMatch[1].slice(1)] = item;
-        return renderBlocks(body, scoped, namedTemplates);
+        return renderSimpleTemplate(body, scoped, namedTemplates);
       }).join("");
     }
     let prefix = source.slice(0, opening.index);
