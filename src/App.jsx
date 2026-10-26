@@ -457,6 +457,11 @@ function App() {
     const maxPerRow = 3;
     let nextLayoutY = 90;
     [...buckets.entries()].sort((a, b) => a[0] - b[0]).forEach(([rank, items]) => {
+      // Stable ordering makes regenerated diagrams easier to compare and groups
+      // similarly named resources instead of following YAML document order.
+      items.sort((a, b) => String(a.namespace || "default").localeCompare(String(b.namespace || "default"))
+        || String(a.kind).localeCompare(String(b.kind))
+        || String(a.name).localeCompare(String(b.name)));
       const rowCount = Math.ceil(items.length / maxPerRow);
       items.forEach((resource, index) => {
         const row = Math.floor(index / maxPerRow);
