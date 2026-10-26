@@ -487,7 +487,7 @@ spec:
     if (!selectedFiles.length) return;
     let files = selectedFiles;
     let zipImportedFiles = null;
-    const originalZipFile = selectedFiles.length === 1 && /\\.zip$/i.test(selectedFiles[0].name) ? selectedFiles[0] : null;
+    const originalZipFile = selectedFiles.length === 1 && /\.zip$/i.test(selectedFiles[0].name) ? selectedFiles[0] : null;
     try {
       if (selectedFiles.length === 1 && /\.zip$/i.test(selectedFiles[0].name)) {
         zipImportedFiles = await readZipTextFiles(selectedFiles[0]);
@@ -519,8 +519,8 @@ spec:
       setBundleSources(sourceOptions);
       setSelectedBundleSource(sourceOptions[0]?.path || "");
       setBundleFile(originalZipFile);
-      const valuesFiles = paths.filter((path) => /(^|\\/)values[^/]*\\.ya?ml$/i.test(path)).sort((a, b) => {
-        const rank = (value) => /production/i.test(value) ? 0 : /staging/i.test(value) ? 1 : /(^|\\/)values\\.ya?ml$/i.test(value) ? 2 : 3;
+      const valuesFiles = paths.filter((path) => /(^|\/)values[^/]*\.ya?ml$/i.test(path)).sort((a, b) => {
+        const rank = (value) => /production/i.test(value) ? 0 : /staging/i.test(value) ? 1 : /(^|\/)values\.ya?ml$/i.test(value) ? 2 : 3;
         return rank(a) - rank(b) || a.localeCompare(b);
       });
       setBundleValuesFiles(valuesFiles);
@@ -584,7 +584,7 @@ spec:
       form.append("kind", source.type);
       form.append("sourcePath", source.path);
       if (source.type === "helm" && selectedValuesFile) form.append("valuesFile", selectedValuesFile);
-      const response = await fetch(rendererUrl.replace(/\\/$/, "") + "/render", { method: "POST", body: form });
+      const response = await fetch(rendererUrl.replace(/\/$/, "") + "/render", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "The selected source could not be rendered.");
       const renderedYaml = String(result.yaml || "").trim();
