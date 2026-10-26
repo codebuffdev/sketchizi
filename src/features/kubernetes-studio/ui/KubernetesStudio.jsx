@@ -724,21 +724,43 @@ spec:
   };
 
   const importFile = async (event) => {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!file) return;
-    if (!/\.ya?ml$/i.test(file.name)) {
-      setError("Choose a .yaml or .yml file.");
+    if (!files.length) return;
+    const invalidFiles = files.filter((file) => !/\.ya?ml$/i.test(file.name));
+    if (invalidFiles.length) {
+      setError("Choose only .yaml or .yml files. Invalid: " + invalidFiles.map((file) => file.name).join(", "));
       return;
     }
     try {
-      const importedText = await file.text();
-      setYamlText(importedText);
-      setSavedYamlText(importedText);
-      setNotice(`Loaded ${file.name}. Review the resources before creating the diagram.`);
+      const importedFiles = await Promise.all(files.map(async (file) => ({
+        name: file.name,
+        text: await file.text(),
+      })));
+      const combinedText = importedFiles.map((file) => file.text.trim()).filter(Boolean).join("\n---\n") + "\n";
+      if (!combinedText.trim()) throw new Error("The selected YAML files are empty.");
+      const documents = parseAllDocuments(combinedText, { prettyErrors: true, uniqueKeys: true });
+      const parseFailure = documents.find((document) => document.errors.length);
+      if (parseFailure) throw parseFailure.errors[0];
+      const normalized = documents.map((document, index) => document.toJSON() == null ? null : normalizeManifest(document.toJSON(), index + 1));
+      const invalidDocuments = normalized.flatMap((resource, index) => resource ? [] : [index + 1]);
+      if (invalidDocuments.length) throw new Error("Document(s) " + invalidDocuments.join(", ") + " must include kind and metadata.name.");
+      const distinctNames = new Set();
+      const collisions = [];
+      for (const resource of normalized.filter(Boolean)) {
+        const key = resource.namespace + "/" + resource.kind + "/" + resource.name;
+        if (distinctNames.has(key)) collisions.push(key);
+        distinctNames.add(key);
+      }
+      if (collisions.length) throw new Error("The imported files contain duplicate resources: " + [...new Set(collisions)].join(", "));
+      setYamlText(combinedText);
+      setSavedYamlText(combinedText);
+      setImportedFileNames(importedFiles.map((file) => file.name));
+      setHasInspectedEdits(false);
+      setNotice("Loaded " + importedFiles.length + " YAML file(s) and " + normalized.filter(Boolean).length + " resource(s). Review cross-resource checks before creating the diagram.");
       setError("");
-    } catch {
-      setError("The selected file could not be read.");
+    } catch (cause) {
+      setError(cause?.message || "The selected YAML file(s) could not be read.");
     }
   };
 
