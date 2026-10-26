@@ -139,10 +139,10 @@ test("the correction service has no provider-generic mutation path", async () =>
 
 test("K8s Studio validates StatefulSet, HPA, CronJob and NetworkPolicy invariants", async () => {
   const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
-  assert.match(studio, /StatefulSet must define spec\\.serviceName/);
+  assert.match(studio, /StatefulSet must define spec\.serviceName/);
   assert.match(studio, /HPA minReplicas cannot exceed maxReplicas/);
   assert.match(studio, /CronJob concurrencyPolicy must be Allow, Forbid, or Replace/);
-  assert.match(studio, /NetworkPolicy must define spec\\.podSelector/);
+  assert.match(studio, /NetworkPolicy must define spec\.podSelector/);
   assert.match(studio, /NetworkPolicy policyTypes entries must be Ingress or Egress/);
   assert.match(studio, /NetworkPolicy .* ports must be a list/);
 });
