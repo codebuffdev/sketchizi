@@ -42,7 +42,7 @@ export async function readZipTextFiles(file) {
     cursor += 46 + nameLength + extraLength + commentLength;
     if (!name || name.endsWith("/") || name.startsWith("/") || name.split("/").includes("..")) continue;
     if (flags & 1) throw new Error("Encrypted ZIP archives are not supported.");
-    if (!/\.(?:ya?ml)$/i.test(name)) continue;
+    if (!/\.(?:ya?ml|tpl|json|txt|properties|conf)$/i.test(name)) continue;
     if (localOffset + 30 > bytes.length || view.getUint32(localOffset, true) !== ZIP_LOCAL) {
       throw new Error("A file in the ZIP archive has an invalid header: " + name);
     }
