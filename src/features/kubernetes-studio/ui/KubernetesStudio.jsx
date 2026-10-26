@@ -280,9 +280,14 @@ function validateKubernetesResources(resources) {
       }
       for (const container of containers) {
         const mountedNames = new Set();
+        const mountPaths = new Set();
         for (const mount of container.volumeMounts || []) {
           if (!mount.name || !volumeNames.has(mount.name)) add(resource, "error", "Container '" + (container.name || "unnamed") + "' mounts volume '" + (mount.name || "(missing name)") + "', but that volume is not declared in the pod spec.");
-          if (mount.name && mountedNames.has(mount.name) && !mount.mountPath) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' has a repeated volume mount for '" + mount.name + "'.");
+          if (mount.name && mountedNames.has(mount.name)) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' mounts volume '" + mount.name + "' more than once.");
+          if (!mount.mountPath || typeof mount.mountPath !== "string") add(resource, "error", "Container '" + (container.name || "unnamed") + "' volumeMount must define mountPath.");
+          else if (mountPaths.has(mount.mountPath)) add(resource, "error", "Container '" + (container.name || "unnamed") + "' mounts more than one volume at path '" + mount.mountPath + "'.");
+          if (mount.mountPath) mountPaths.add(mount.mountPath);
+          if (mount.subPathExpr && mount.subPath) add(resource, "warning", "Container '" + (container.name || "unnamed") + "' volumeMount defines both subPath and subPathExpr; use only one.");
           if (mount.name) mountedNames.add(mount.name);
         }
         const declaredPorts = new Set();
@@ -399,6 +404,15 @@ function validateKubernetesResources(resources) {
       else if (spec.accessModes.some((mode) => !["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"].includes(mode))) add(resource, "error", "PersistentVolumeClaim contains an unsupported access mode.");
     }
     if (resource.kind === "PersistentVolume" && !spec.capacity?.storage) add(resource, "error", "PersistentVolume must define spec.capacity.storage.");
+    if (resource.kind === "PersistentVolumeClaim" && spec.storageClassName && !hasResource("StorageClass", spec.storageClassName, null)) {
+      add(resource, "warning", "PersistentVolumeClaim references StorageClass '" + spec.storageClassName + "', which is not present in this manifest set (it may be provided by the cluster).");
+    }
+    if (resource.kind === "PersistentVolume" && spec.storageClassName && !hasResource("StorageClass", spec.storageClassName, null)) {
+      add(resource, "warning", "PersistentVolume references StorageClass '" + spec.storageClassName + "', which is not present in this manifest set (it may be provided by the cluster).");
+    }
+    if (resource.kind === "PersistentVolume" && spec.claimRef?.name && !hasResource("PersistentVolumeClaim", spec.claimRef.name, spec.claimRef.namespace || "default")) {
+      add(resource, "warning", "PersistentVolume claimRef references PersistentVolumeClaim '" + spec.claimRef.name + "', which is not present in this manifest set.");
+    }
     if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) && spec.replicas != null && (!Number.isInteger(spec.replicas) || spec.replicas < 0)) add(resource, "error", "spec.replicas must be a non-negative integer.");
     if (resource.kind === "StatefulSet" && !spec.serviceName) add(resource, "error", "StatefulSet must define spec.serviceName for its governing Service.");
     if (resource.kind === "CronJob" && !spec.schedule) add(resource, "error", "CronJob must define spec.schedule.");
@@ -488,11 +502,15 @@ function validateKubernetesResources(resources) {
       for (const env of container.env || []) {
         const configMapName = env.valueFrom?.configMapKeyRef?.name;
         const secretName = env.valueFrom?.secretKeyRef?.name;
-        if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "env-key-configmap:" + configMapName, "Environment variable '" + env.name + "' references ConfigMap '" + configMapName + "', which is not present in this manifest set.");
+        if (env.valueFrom?.configMapKeyRef && !configMapName) {
+          addDependencyIssue(resource, "error", "env-key-configmap-name:" + (env.name || "unnamed"), "Environment variable '" + (env.name || "unnamed") + "' has configMapKeyRef without a ConfigMap name.");
+        } else if (configMapName && !hasResource("ConfigMap", configMapName, resource.namespace)) {
+          addDependencyIssue(resource, env.valueFrom.configMapKeyRef.optional === true ? "info" : "warning", "env-key-configmap:" + configMapName, "Environment variable '" + env.name + "' references ConfigMap '" + configMapName + "', which is not present in this manifest set" + (env.valueFrom.configMapKeyRef.optional === true ? " (the reference is optional)." : "."));
         }
-        if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
-          addDependencyIssue(resource, "warning", "env-key-secret:" + secretName, "Environment variable '" + env.name + "' references Secret '" + secretName + "', which is not present in this manifest set.");
+        if (env.valueFrom?.secretKeyRef && !secretName) {
+          addDependencyIssue(resource, "error", "env-key-secret-name:" + (env.name || "unnamed"), "Environment variable '" + (env.name || "unnamed") + "' has secretKeyRef without a Secret name.");
+        } else if (secretName && !hasResource("Secret", secretName, resource.namespace)) {
+          addDependencyIssue(resource, env.valueFrom.secretKeyRef.optional === true ? "info" : "warning", "env-key-secret:" + secretName, "Environment variable '" + env.name + "' references Secret '" + secretName + "', which is not present in this manifest set" + (env.valueFrom.secretKeyRef.optional === true ? " (the reference is optional)." : "."));
         }
       }
     }

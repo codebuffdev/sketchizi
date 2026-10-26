@@ -200,3 +200,16 @@ test("K8s Studio detects Kustomize and Helm source bundles before treating files
   assert.match(studio, /webkitdirectory/);
   assert.match(studio, /This keeps patches, generators, and transformations accurate/);
 });
+
+test("K8s Studio validates direct env references, optional dependencies, storage classes and mount paths", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /has configMapKeyRef without a ConfigMap name/);
+  assert.match(studio, /has secretKeyRef without a Secret name/);
+  assert.match(studio, /the reference is optional/);
+  assert.match(studio, /PersistentVolumeClaim references StorageClass/);
+  assert.match(studio, /PersistentVolume references StorageClass/);
+  assert.match(studio, /PersistentVolume claimRef references PersistentVolumeClaim/);
+  assert.match(studio, /volumeMount must define mountPath/);
+  assert.match(studio, /mounts more than one volume at path/);
+  assert.match(studio, /defines both subPath and subPathExpr/);
+});
