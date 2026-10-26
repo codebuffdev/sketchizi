@@ -166,8 +166,37 @@ function helmValue(expression, context) {
   return String(value);
 }
 
+function stripTemplateDefinitions(source, namedTemplates) {
+  const directive = /{{-?\s*(define|if|range|with|end)\b(?:\s+"([^"]+)")?[^}]*-?}}/g;
+  let output = "";
+  let cursor = 0;
+  while (true) {
+    const opening = directive.exec(source);
+    if (!opening) break;
+    if (opening[1] !== "define") continue;
+    output += source.slice(cursor, opening.index);
+    const bodyStart = directive.lastIndex;
+    const scanner = /{{-?\s*(define|if|range|with|end)\b(?:\s+"([^"]+)")?[^}]*-?}}/g;
+    scanner.lastIndex = bodyStart;
+    let depth = 1;
+    let closing = null;
+    let token;
+    while ((token = scanner.exec(source))) {
+      if (["define", "if", "range", "with"].includes(token[1])) depth += 1;
+      else if (token[1] === "end") depth -= 1;
+      if (depth === 0) { closing = token; break; }
+    }
+    if (!closing) throw new Error("Helm helper '" + opening[2] + "' has an unterminated template block.");
+    namedTemplates.set(opening[2], source.slice(bodyStart, closing.index));
+    cursor = scanner.lastIndex;
+    directive.lastIndex = cursor;
+  }
+  output += source.slice(cursor);
+  return output;
+}
+
 function renderSimpleTemplate(template, context, namedTemplates) {
-  let source = template.replace(/{{-?\s*define\s+"([^"]+)"\s*-?}}([\s\S]*?){{-?\s*end\s*-?}}/g, (_, name, body) => { namedTemplates.set(name, body); return ""; });
+  let source = stripTemplateDefinitions(template, namedTemplates);
   source = source.replace(/{{-?\s*(?:include|template)\s+"([^"]+)"(?:\s+\.)?([^}]*)-?}}/g, (_, name, tail = "") => {
     const body = namedTemplates.get(name);
     if (body === undefined) throw new Error("Helm helper '" + name + "' is not defined in the selected chart.");
@@ -208,6 +237,9 @@ function renderSimpleTemplate(template, context, namedTemplates) {
     });
     if (next === source) break;
     source = next;
+  }
+  if (/{{-?\s*(?:if|range|with|else|end|block|tpl|lookup)\b/.test(source)) {
+    throw new Error("The selected Helm chart uses nested or advanced template directives that the browser renderer cannot safely resolve. No diagram was created; the existing canvas is unchanged.");
   }
   source = source.replace(/{{-?\s*\.Release.Name\s*-?}}/g, String(context.Release.Name));
   source = source.replace(/{{-?\s*\.Release.Namespace\s*-?}}/g, String(context.Release.Namespace));
