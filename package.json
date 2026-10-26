@@ -77,7 +77,7 @@
     "test:ui-modernization-responsive": "node --test tests/ui-modernization-responsive.test.js",
     "test:ui-design-tokens": "node --test tests/ui-modernization-design-tokens.test.js",
     "audit:ui-visual": "node scripts/ui-visual-audit.mjs",
-    "test:docker-compose": "node --test tests/docker-compose-document.test.js",
+    "test:docker-compose": "node --test tests/docker-compose-document.test.js tests/docker-compose-studio-workflow.test.js",
     "compose-runner": "node server/compose-runner.mjs",
     "test:compose-runner": "node --test tests/compose-runner.test.js",
     "test:kubernetes-studio-workflow": "node --test tests/kubernetes-studio-integrated-workflow.test.js tests/kubernetes-studio-browser-renderer.test.js tests/kubernetes-studio-helm-template-coverage.test.js tests/kubernetes-studio-bundle-import.test.js tests/kubernetes-resource-validation.test.js tests/kubernetes-relationships.test.js",
