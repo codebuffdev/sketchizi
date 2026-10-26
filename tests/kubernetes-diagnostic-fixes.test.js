@@ -139,7 +139,7 @@ test("the correction service has no provider-generic mutation path", async () =>
 
 
 test("K8s Studio security checks cover host namespaces, service-account tokens and container hardening", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /Pod uses hostNetwork/);
   assert.match(studio, /Pod uses hostPID/);
   assert.match(studio, /Pod uses hostIPC/);
@@ -151,7 +151,7 @@ test("K8s Studio security checks cover host namespaces, service-account tokens a
 });
 
 test("K8s Studio validates image policies, probes, Service types, Ingress routes and PVC access modes", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /invalid imagePullPolicy/);
   assert.match(studio, /references named port/);
   assert.match(studio, /HTTP probe does not declare a path/);
@@ -164,7 +164,7 @@ test("K8s Studio validates image policies, probes, Service types, Ingress routes
 });
 
 test("K8s Studio validates StatefulSet, HPA, CronJob and NetworkPolicy invariants", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /StatefulSet must define spec\.serviceName/);
   assert.match(studio, /HPA minReplicas cannot exceed maxReplicas/);
   assert.match(studio, /CronJob concurrencyPolicy must be Allow, Forbid, or Replace/);
@@ -175,7 +175,7 @@ test("K8s Studio validates StatefulSet, HPA, CronJob and NetworkPolicy invariant
 
 
 test("K8s Studio validates Service routing against matching workload ports", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /duplicate port\/protocol pair/);
   assert.match(studio, /Named targetPort .* is not declared by a matching workload container/);
   assert.match(studio, /Service port name .* must be a lowercase alphanumeric name/);
@@ -184,14 +184,14 @@ test("K8s Studio validates Service routing against matching workload ports", asy
 
 
 test("cross-resource validation resolves cluster-scoped dependencies independent of namespace", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /const CLUSTER_SCOPED_KINDS = new Set/);
   assert.match(studio, /CLUSTER_SCOPED_KINDS\.has\(kind\) \|\| namespace == null \|\| candidate\.namespace === namespace/);
   assert.match(studio, /Role binding references .* which is not present in this manifest set/);
 });
 
 test("K8s Studio detects Kustomize and Helm source bundles before treating files as Kubernetes manifests", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /kustomization\\\.ya\?ml\|Kustomization/);
   assert.match(studio, /Chart\\\.yaml/);
   assert.match(studio, /kubectl kustomize .*rendered-kustomize\.yaml/);
@@ -203,7 +203,7 @@ test("K8s Studio detects Kustomize and Helm source bundles before treating files
 });
 
 test("K8s Studio validates direct env references, optional dependencies, storage classes and mount paths", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  const studio = (await Promise.all([readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8"), readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8")])).join("\n");
   assert.match(studio, /has configMapKeyRef without a ConfigMap name/);
   assert.match(studio, /has secretKeyRef without a Secret name/);
   assert.match(studio, /the reference is optional/);
