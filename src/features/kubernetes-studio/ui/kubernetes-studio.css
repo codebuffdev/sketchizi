@@ -160,3 +160,8 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 /* Keep the YAML editor focus state restrained; line numbers are informational, not a selection highlight. */
 .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus{border-color:#31435d!important;box-shadow:none!important;outline:none!important}
 .k8s-yaml-editor-shell .k8s-yaml-line-numbers{background:#0a111d;color:#65748b;border-right-color:#1b2737}
+
+
+/* Final override: keep editor focus and active shell free of violet/blue outlines. */
+.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible{border-color:#31435d!important;box-shadow:none!important;outline:none!important}
+.k8s-studio-editor .k8s-yaml-editor-shell:focus-within,.k8s-studio-editor .k8s-yaml-editor-shell:focus-within textarea{box-shadow:none!important;outline:none!important}
