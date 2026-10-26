@@ -1,3 +1,8 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { parseAllDocuments } from "yaml";
+import { renderHelmBundle } from "../src/features/kubernetes-studio/browserBundleRenderer.js";
+
 test("Helm browser renderer supports helper functions, nested conditionals, with, and range", () => {
   const files = [
     { name: "chart/Chart.yaml", text: "apiVersion: v2\nname: storefront\nversion: 1.0.0\nappVersion: 2.3.4\n" },
