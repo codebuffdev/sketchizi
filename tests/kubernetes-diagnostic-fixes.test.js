@@ -416,3 +416,29 @@ test("K8s Studio validates Ingress path types, backend port values and duplicate
   assert.ok(messages.some((message) => message.includes("must specify either number or name, not both")));
   assert.ok(messages.some((message) => message.includes("TLS host 'EXAMPLE.TEST' is declared more than once")));
 });
+
+
+test("K8s Studio validates NetworkPolicy peers, protocols and port ranges", () => {
+  const resources = [{
+    id: "network-policy-bad", kind: "NetworkPolicy", name: "restricted", namespace: "production", apiVersion: "networking.k8s.io/v1",
+    manifest: { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy", metadata: { name: "restricted", namespace: "production" }, spec: {
+      podSelector: {},
+      policyTypes: ["Ingress", "Ingress", "Sideways"],
+      ingress: [{
+        from: [{}, { ipBlock: { except: [""] } }],
+        ports: [{ protocol: "ICMP", port: 70000 }, { protocol: "TCP", port: 8080, endPort: 80 }, { port: "Bad_Name" }],
+      }],
+      egress: [{ to: "not-a-list", ports: [{ port: 80, endPort: 90 }] }],
+    } },
+  }];
+  const messages = validateKubernetesResources(resources).map((issue) => issue.message);
+  assert.ok(messages.some((message) => message.includes("policyTypes entries must be Ingress or Egress")));
+  assert.ok(messages.some((message) => message.includes("policyTypes must not contain duplicates")));
+  assert.ok(messages.some((message) => message.includes("peer 1 must define a valid")));
+  assert.ok(messages.some((message) => message.includes("ipBlock.except must be a list")));
+  assert.ok(messages.some((message) => message.includes("protocol must be TCP, UDP, or SCTP")));
+  assert.ok(messages.some((message) => message.includes("numeric port must be an integer from 1 to 65535")));
+  assert.ok(messages.some((message) => message.includes("endPort requires a numeric port")));
+  assert.ok(messages.some((message) => message.includes("named port must be a valid lowercase port name")));
+  assert.ok(messages.some((message) => message.includes("egress rule 1 to must be a list")));
+});

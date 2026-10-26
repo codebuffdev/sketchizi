@@ -421,11 +421,48 @@ export function validateKubernetesResources(resources) {
         if (!selectedWorkload) add(resource, "warning", "NetworkPolicy selector does not match a workload in this manifest set.");
       }
       if (spec.policyTypes != null && (!Array.isArray(spec.policyTypes) || spec.policyTypes.some((type) => !["Ingress", "Egress"].includes(type)))) add(resource, "error", "NetworkPolicy policyTypes entries must be Ingress or Egress.");
+      if (Array.isArray(spec.policyTypes) && new Set(spec.policyTypes).size !== spec.policyTypes.length) add(resource, "error", "NetworkPolicy policyTypes must not contain duplicates.");
       for (const [direction, rules] of [["ingress", spec.ingress], ["egress", spec.egress]]) {
         if (rules != null && !Array.isArray(rules)) add(resource, "error", "NetworkPolicy spec." + direction + " must be a list.");
         for (const [index, rule] of (Array.isArray(rules) ? rules : []).entries()) {
-          if (!rule || typeof rule !== "object") add(resource, "error", "NetworkPolicy " + direction + " rule " + (index + 1) + " must be an object.");
-          else if (rule.ports != null && !Array.isArray(rule.ports)) add(resource, "error", "NetworkPolicy " + direction + " rule " + (index + 1) + " ports must be a list.");
+          const ruleLabel = "NetworkPolicy " + direction + " rule " + (index + 1);
+          if (!rule || typeof rule !== "object" || Array.isArray(rule)) {
+            add(resource, "error", ruleLabel + " must be an object.");
+            continue;
+          }
+          const peersKey = direction === "ingress" ? "from" : "to";
+          if (rule[peersKey] != null && !Array.isArray(rule[peersKey])) add(resource, "error", ruleLabel + " " + peersKey + " must be a list.");
+          for (const [peerIndex, peer] of (Array.isArray(rule[peersKey]) ? rule[peersKey] : []).entries()) {
+            if (!peer || typeof peer !== "object" || Array.isArray(peer)) {
+              add(resource, "error", ruleLabel + " peer " + (peerIndex + 1) + " must be an object.");
+              continue;
+            }
+            const hasPodSelector = peer.podSelector != null;
+            const hasNamespaceSelector = peer.namespaceSelector != null;
+            const hasIpBlock = peer.ipBlock != null;
+            if (Number(hasPodSelector) + Number(hasNamespaceSelector) + Number(hasIpBlock) !== 1 && !(hasPodSelector && hasNamespaceSelector && !hasIpBlock)) {
+              add(resource, "error", ruleLabel + " peer " + (peerIndex + 1) + " must define a valid podSelector/namespaceSelector combination or ipBlock.");
+            }
+            if (hasIpBlock) {
+              if (typeof peer.ipBlock !== "object" || !peer.ipBlock.cidr || typeof peer.ipBlock.cidr !== "string") add(resource, "error", ruleLabel + " peer " + (peerIndex + 1) + " ipBlock must define a CIDR string.");
+              if (peer.ipBlock?.except != null && (!Array.isArray(peer.ipBlock.except) || peer.ipBlock.except.some((cidr) => typeof cidr !== "string" || !cidr.trim()))) add(resource, "error", ruleLabel + " ipBlock.except must be a list of non-empty CIDR strings.");
+            }
+          }
+          if (rule.ports != null && !Array.isArray(rule.ports)) {
+            add(resource, "error", ruleLabel + " ports must be a list.");
+            continue;
+          }
+          for (const [portIndex, port] of (Array.isArray(rule.ports) ? rule.ports : []).entries()) {
+            const portLabel = ruleLabel + " port " + (portIndex + 1);
+            if (!port || typeof port !== "object" || Array.isArray(port)) {
+              add(resource, "error", portLabel + " must be an object.");
+              continue;
+            }
+            if (port.protocol != null && !["TCP", "UDP", "SCTP"].includes(port.protocol)) add(resource, "error", portLabel + " protocol must be TCP, UDP, or SCTP.");
+            if (port.port != null && typeof port.port === "number" && (!Number.isInteger(port.port) || port.port < 1 || port.port > 65535)) add(resource, "error", portLabel + " numeric port must be an integer from 1 to 65535.");
+            if (port.port != null && typeof port.port !== "number" && (typeof port.port !== "string" || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(port.port))) add(resource, "error", portLabel + " named port must be a valid lowercase port name.");
+            if (port.endPort != null && (!Number.isInteger(port.endPort) || typeof port.port !== "number" || port.endPort < port.port || port.endPort > 65535)) add(resource, "error", portLabel + " endPort requires a numeric port and must be between port and 65535.");
+          }
         }
       }
     }
