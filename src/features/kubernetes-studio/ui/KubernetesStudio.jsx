@@ -328,6 +328,16 @@ spec:
     }
   }, [yamlText]);
 
+  const inspectedResource = parsed.resources.find((resource) => resource.id === inspectedResourceId) || null;
+  const inspectResource = (resource) => { setInspectedResourceId(resource.id); setInspectorOpen(true); };
+  const loadInspectedResource = () => {
+    if (!inspectedResource) return;
+    if (yamlText.trim() && !window.confirm("Loading one resource replaces the editor contents. Continue?")) return;
+    setYamlText(stringify(inspectedResource.manifest));
+    setInspectorOpen(false);
+    setNotice("Loaded " + inspectedResource.kind + "/" + inspectedResource.name + " into the editor. Other documents are not included in this editor view.");
+    setError("");
+  };
   const exportYaml = () => {
     if (!yamlText.trim() || parsed.parseError) { setError(parsed.parseError || "Add valid YAML before exporting."); return; }
     const blob = new Blob([yamlText], { type: "application/yaml;charset=utf-8" });
