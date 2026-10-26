@@ -712,15 +712,20 @@ spec:
   };
   const exportYaml = () => {
     if (!yamlText.trim() || parsed.parseError) { setError(parsed.parseError || "Add valid YAML before exporting."); return; }
+    const blockingIssues = parsed.issues.filter((issue) => issue.severity === "error");
+    if (blockingIssues.length && !window.confirm("This manifest set has " + blockingIssues.length + " validation error(s). Export the YAML anyway without rewriting it?")) return;
     const blob = new Blob([yamlText], { type: "application/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "kubernetes-manifests.yaml";
+    link.download = importedFileNames.length === 1
+      ? importedFileNames[0].replace(/\.ya?ml$/i, "") + "-export.yaml"
+      : "kubernetes-manifests.yaml";
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     setSavedYamlText(yamlText);
-    setNotice("Exported the complete manifest set.");
+    setError("");
+    setNotice("Exported the original manifest text. Validation does not rewrite your YAML.");
   };
 
   const importFile = async (event) => {
