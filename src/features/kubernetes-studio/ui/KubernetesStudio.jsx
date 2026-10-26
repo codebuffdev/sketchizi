@@ -337,6 +337,16 @@ spec:
     setInspectorOpen(true);
     setError("");
   };
+  const copyInspectedResource = async () => {
+    if (!inspectedResource) return;
+    try {
+      await navigator.clipboard.writeText(inspectorDraft);
+      setNotice("Copied " + inspectedResource.kind + "/" + inspectedResource.name + " YAML.");
+      setError("");
+    } catch {
+      setError("Clipboard access was blocked. Select the YAML and copy it manually.");
+    }
+  };
   const applyInspectedResource = () => {
     if (!inspectedResource) return;
     try {
@@ -510,7 +520,7 @@ spec:
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
           <div><button type="button" className="k8s-studio-secondary" onClick={onClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
         </footer>
-      {inspectorOpen && inspectedResource && <div className="k8s-studio-inspector-backdrop"><section className="k8s-studio-inspector" role="dialog" aria-modal="true"><header><div><strong>{inspectedResource.kind}/{inspectedResource.name}</strong><small>{inspectedResource.namespace} · {inspectedResource.apiVersion}</small></div><button type="button" onClick={() => setInspectorOpen(false)}>Close</button></header><textarea className="k8s-studio-inspector-editor" aria-label={"Edit YAML for " + inspectedResource.kind + "/" + inspectedResource.name} spellCheck="false" value={inspectorDraft} onChange={(event) => { setInspectorDraft(event.target.value); setError(""); }} /><footer><span>Changes apply to this document only</span><button type="button" className="k8s-studio-secondary" onClick={() => setInspectorOpen(false)}>Cancel</button><button type="button" className="k8s-studio-primary" onClick={applyInspectedResource}>Apply changes</button></footer></section></div>}
+      {inspectorOpen && inspectedResource && <div className="k8s-studio-inspector-backdrop"><section className="k8s-studio-inspector" role="dialog" aria-modal="true"><header><div><strong>{inspectedResource.kind}/{inspectedResource.name}</strong><small>{inspectedResource.namespace} · {inspectedResource.apiVersion}</small></div><button type="button" onClick={() => setInspectorOpen(false)}>Close</button></header><textarea className="k8s-studio-inspector-editor" aria-label={"Edit YAML for " + inspectedResource.kind + "/" + inspectedResource.name} spellCheck="false" value={inspectorDraft} onChange={(event) => { setInspectorDraft(event.target.value); setError(""); }} /><footer><span>Changes apply to this document only</span><button type="button" className="k8s-studio-secondary" onClick={copyInspectedResource}>Copy YAML</button><button type="button" className="k8s-studio-secondary" onClick={() => setInspectorOpen(false)}>Cancel</button><button type="button" className="k8s-studio-primary" onClick={applyInspectedResource}>Apply changes</button></footer></section></div>}
       </section>
     </div>
   );
