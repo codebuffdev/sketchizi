@@ -418,11 +418,23 @@ function App() {
     const namespace = String(manifest.metadata?.namespace || (kind === "Namespace" ? name : "default"));
     const apiVersion = String(manifest.apiVersion || resource.apiVersion);
     const spec = manifest.spec || {};
+    const workloadKinds = ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"];
+    const podSpec = kind === "CronJob" ? spec.jobTemplate?.spec?.template?.spec
+      : kind === "Job" ? spec.template?.spec
+      : ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(kind) ? spec.template?.spec
+      : spec;
+    const images = (podSpec?.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2);
+    const ports = (spec.ports || []).map((port) => `${port.port}${port.targetPort ? `→${port.targetPort}` : ""}/${port.protocol || "TCP"}`).slice(0, 3);
+    const selector = Object.entries(spec.selector?.matchLabels || spec.selector || {}).map(([key, value]) => `${key}=${value}`).slice(0, 2);
     const details = [
       `Namespace: ${namespace}`,
-      ["Deployment", "StatefulSet", "DaemonSet"].includes(kind) ? `Replicas: ${spec.replicas ?? (kind === "DaemonSet" ? "node-managed" : 1)}` : "",
+      workloadKinds.includes(kind) ? `Replicas: ${spec.replicas ?? (kind === "DaemonSet" ? "node-managed" : 1)}` : "",
+      images.length ? `Images: ${images.join(", ")}` : "",
       kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
-      kind === "Pod" ? (spec.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2).join(", ") : "",
+      ports.length ? `Ports: ${ports.join(", ")}` : "",
+      selector.length ? `Selector: ${selector.join(", ")}` : "",
+      kind === "Ingress" ? `Hosts: ${(spec.rules || []).map((rule) => rule.host).filter(Boolean).slice(0, 2).join(", ") || "default backend"}` : "",
+      kind === "ConfigMap" ? `Keys: ${Object.keys(manifest.data || {}).slice(0, 3).join(", ")}` : "",
       apiVersion,
     ].filter(Boolean).join("\n");
     // Remove generated connectors involving this resource before its metadata changes.
