@@ -35,7 +35,7 @@
 .k8s-yaml-editor-shell.has-content textarea{background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent;caret-color:#f0f6ff;position:relative;z-index:1}
 .k8s-yaml-editor-shell.has-content textarea::selection{background:#467ac866;-webkit-text-fill-color:transparent}
 .k8s-yaml-highlight .yaml-token-key{color:#83baff}.k8s-yaml-highlight .yaml-token-punctuation{color:#a4b4ca}.k8s-yaml-highlight .yaml-token-value{color:#d6e6fa}.k8s-yaml-highlight .yaml-token-string{color:#b8e5a4}.k8s-yaml-highlight .yaml-token-number{color:#e8bd86}.k8s-yaml-highlight .yaml-token-literal{color:#d4a6ff}.k8s-yaml-highlight .yaml-token-type{color:#f3cc8a}.k8s-yaml-highlight .yaml-token-comment{color:#71839b;font-style:italic}
-.k8s-yaml-highlight .yaml-highlight-line{display:block;min-height:1.65em}
+.k8s-yaml-highlight .yaml-highlight-line{display:block;min-height:1.65em;background:transparent;border:0;box-shadow:none}
 
 
 .k8s-studio-manifest-title{flex-wrap:wrap}
