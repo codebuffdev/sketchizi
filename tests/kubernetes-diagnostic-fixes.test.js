@@ -250,3 +250,15 @@ test("K8s Studio checks Ingress TLS, StatefulSet services, NetworkPolicy selecto
   assert.match(studio, /NetworkPolicy selector does not match a workload/);
   assert.match(studio, /HPA uses CPU utilization, but at least one target container has no CPU request/);
 });
+
+
+test("K8s Studio evaluates Kubernetes matchExpressions for PDB and NetworkPolicy selectors", async () => {
+  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
+  assert.match(studio, /const matchesKubernetesSelector = \(selector, labels\) =>/);
+  assert.match(studio, /expression\.operator === "In"/);
+  assert.match(studio, /expression\.operator === "NotIn"/);
+  assert.match(studio, /expression\.operator === "Exists"/);
+  assert.match(studio, /expression\.operator === "DoesNotExist"/);
+  assert.match(studio, /matchesKubernetesSelector\(spec\.selector, workloadLabels\(workload\)\)/);
+  assert.match(studio, /matchesKubernetesSelector\(spec\.podSelector, workloadLabels\(workload\)\)/);
+});

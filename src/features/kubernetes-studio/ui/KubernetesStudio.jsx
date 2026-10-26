@@ -213,6 +213,23 @@ function validateKubernetesResources(resources) {
   const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", PodDisruptionBudget: "policy/v1", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
   const add = (resource, severity, message) => issues.push({ id: resource.id + ":" + severity + ":" + message, resource: resource.name, kind: resource.kind, severity, message });
   const matches = (selector, labels) => Boolean(selector && labels && Object.keys(selector).length && Object.entries(selector).every(([key, value]) => labels[key] === value));
+  const matchesKubernetesSelector = (selector, labels) => {
+    if (!selector || typeof selector !== "object" || !labels || typeof labels !== "object") return false;
+    if (!Object.entries(selector.matchLabels || {}).every(([key, value]) => labels[key] === value)) return false;
+    for (const expression of selector.matchExpressions || []) {
+      const values = Array.isArray(expression.values) ? expression.values : [];
+      const exists = Object.prototype.hasOwnProperty.call(labels, expression.key);
+      if (expression.operator === "In" && (!exists || !values.includes(labels[expression.key]))) return false;
+      if (expression.operator === "NotIn" && exists && values.includes(labels[expression.key])) return false;
+      if (expression.operator === "Exists" && !exists) return false;
+      if (expression.operator === "DoesNotExist" && exists) return false;
+      if (!["In", "NotIn", "Exists", "DoesNotExist"].includes(expression.operator)) return false;
+    }
+    return true;
+  };
+  const workloadLabels = (workload) => workload.kind === "Pod"
+    ? workload.manifest?.metadata?.labels
+    : workload.manifest?.spec?.template?.metadata?.labels;
   const workloads = resources.filter((resource) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod"].includes(resource.kind));
   const seen = new Set();
   for (const resource of resources) {
@@ -510,9 +527,9 @@ function validateKubernetesResources(resources) {
         if (spec[field] != null && !validDisruptionValue(spec[field])) add(resource, "error", "PodDisruptionBudget " + field + " must be a non-negative integer or a percentage from 0% to 100%.");
       }
       if (!spec.selector || typeof spec.selector !== "object") add(resource, "warning", "PodDisruptionBudget has no selector and will not protect any workloads.");
-      else if (spec.selector.matchLabels && Object.keys(spec.selector.matchLabels).length && !spec.selector.matchExpressions?.length) {
+      else {
         const selectedWorkload = workloads.some((workload) => workload.namespace === resource.namespace
-          && matches(spec.selector.matchLabels, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
+          && matchesKubernetesSelector(spec.selector, workloadLabels(workload)));
         if (!selectedWorkload) add(resource, "warning", "PodDisruptionBudget selector does not match a workload in this manifest set.");
       }
       if (spec.maxUnavailable === 0 || spec.maxUnavailable === "0%") add(resource, "warning", "PodDisruptionBudget maxUnavailable is zero and may block voluntary disruptions.");
@@ -532,9 +549,9 @@ function validateKubernetesResources(resources) {
     }
     if (resource.kind === "NetworkPolicy") {
       if (!spec.podSelector || typeof spec.podSelector !== "object") add(resource, "error", "NetworkPolicy must define spec.podSelector (use an empty object to select all pods in the namespace).");
-      else if (Object.keys(spec.podSelector).length && spec.podSelector.matchLabels && Object.keys(spec.podSelector.matchLabels).length && !spec.podSelector.matchExpressions?.length) {
+      else {
         const selectedWorkload = workloads.some((workload) => workload.namespace === resource.namespace
-          && matches(spec.podSelector.matchLabels, workload.kind === "Pod" ? workload.manifest?.metadata?.labels : workload.manifest?.spec?.template?.metadata?.labels));
+          && matchesKubernetesSelector(spec.podSelector, workloadLabels(workload)));
         if (!selectedWorkload) add(resource, "warning", "NetworkPolicy selector does not match a workload in this manifest set.");
       }
       if (spec.policyTypes != null && (!Array.isArray(spec.policyTypes) || spec.policyTypes.some((type) => !["Ingress", "Egress"].includes(type)))) add(resource, "error", "NetworkPolicy policyTypes entries must be Ingress or Egress.");
@@ -645,9 +662,6 @@ function validateKubernetesResources(resources) {
           }
         }
       }
-    }
-    if (resource.kind === "StatefulSet" && spec.serviceName && !hasResource("Service", spec.serviceName, resource.namespace)) {
-      addDependencyIssue(resource, "warning", "statefulset-service:" + spec.serviceName, "StatefulSet governing Service '" + spec.serviceName + "' is not present in this manifest set.");
     }
     if (resource.kind === "RoleBinding" || resource.kind === "ClusterRoleBinding") {
       const roleRef = spec.roleRef;
