@@ -140,3 +140,14 @@ test("desktop header action controls render without boxed backgrounds", async ()
   assert.match(frameless, /\.desktop-app-header-panel-actions,[\s\S]*?background: transparent !important/);
   assert.match(frameless, /\.desktop-app-nav-button:hover/);
 });
+
+
+test("desktop header is canvas-native with no strip or idle control containers", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  const frameless = css.slice(css.lastIndexOf("/* True canvas-native header"));
+  assert.match(frameless, /\.desktop-app-header,[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /border: 0 !important/);
+  assert.match(frameless, /\.desktop-app-header button,[\s\S]*?box-shadow: none !important/);
+  assert.match(frameless, /button:hover[\s\S]*?background: rgb\(148 163 184 \/ 9%\) !important/);
+  assert.match(frameless, /button:focus-visible[\s\S]*?outline: 2px solid/);
+});
