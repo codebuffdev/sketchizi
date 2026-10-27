@@ -7,7 +7,7 @@ import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
-import { getContextualDockModel } from "../../features/canvas/contextualDockModel.js";
+import { getContextualDockModel, reorderElementsBySelection } from "../../features/canvas/contextualDockModel.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -235,12 +235,8 @@ export default function SketchiziCanvas({
         const selectedIds = new Set(selectedElements
           .filter((element) => element && !element.isDeleted && !element.deleted)
           .map((element) => element.id));
-        const moving = scene.filter((element) => selectedIds.has(element.id));
-        if (!moving.length) return;
-        const remaining = scene.filter((element) => !selectedIds.has(element.id));
-        const elements = direction === "front"
-          ? [...remaining, ...moving]
-          : [...moving, ...remaining];
+        if (!scene.some((element) => selectedIds.has(element.id))) return;
+        const elements = reorderElementsBySelection(scene, selectedIds, direction);
         api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
       });
       group.appendChild(button);
