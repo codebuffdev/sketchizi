@@ -15,6 +15,14 @@ test("file management menu separates workspace actions from quick access", () =>
   assert.match(menu, /aria-controls="sketchizi-recent-folders-panel"/);
 });
 
+test("read-only fallback folders offer reconnect when writable directory access is supported", () => {
+  assert.match(menu, /data-reconnect-current-folder hidden/);
+  assert.match(menu, /currentFolder\?\.fallback && typeof window\.showDirectoryPicker === "function"/);
+  assert.match(menu, /bind\(reconnectFolderButton, "bound", \(\) => fileActionsRef\.current\.openFolderFromDisk\?\.\(\)\)/);
+  assert.match(styles, /\.sketchizi-folder-reconnect/);
+  assert.match(styles, /\.sketchizi-folder-reconnect\[hidden\]/);
+});
+
 test("phase 25 preserves recent-file, recent-folder, and folder refresh workflows", () => {
   for (const selector of [
     "data-sketchizi-open-folder", "data-sketchizi-new-file", "data-refresh-current-folder",
