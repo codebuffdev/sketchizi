@@ -131,3 +131,12 @@ test("desktop header uses a frameless transparent surface", async () => {
   assert.match(frameless, /box-shadow: none !important/);
   assert.match(frameless, /@media \(min-width: 1025px\)/);
 });
+
+
+test("desktop header action controls render without boxed backgrounds", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  const frameless = css.slice(css.lastIndexOf("/* Frameless header controls"));
+  assert.match(frameless, /\.desktop-app-header-panel-actions button[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /\.desktop-app-header-panel-actions,[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /\.desktop-app-nav-button:hover/);
+});
