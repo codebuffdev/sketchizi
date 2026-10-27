@@ -82,3 +82,9 @@ test("Desktop Icon Library is a compact floating panel rather than a full-height
   assert.match(styles, /height:\s*min\(650px, calc\(100dvh - var\(--sketchizi-desktop-header-height, 58px\) - 32px\)\) !important/);
   assert.match(styles, /border-radius:\s*16px/);
 });
+
+test("Compact mobile Icon Library uses single-column cards with readable labels", () => {
+  assert.match(styles, /library-icon-grid \{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) !important/);
+  assert.match(styles, /library-icon-grid \.library-icon-card \{[\s\S]*?grid-template-columns:\s*64px minmax\(0, 1fr\) 34px !important/);
+  assert.match(styles, /icon-name[\s\S]*?white-space:\s*nowrap/);
+});
