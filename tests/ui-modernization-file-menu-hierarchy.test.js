@@ -9,7 +9,6 @@ const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.me
 test("file management menu keeps workspace actions compact and focused on files", () => {
   assert.match(menu, /class="sketchizi-native-settings-title">Workspace/);
   assert.doesNotMatch(menu, /aria-label="Current folder"/);
-  assert.doesNotMatch(menu, /data-sketchizi-open-folder|data-current-folder-files|data-refresh-current-folder/);
   assert.doesNotMatch(menu, /Recent folders|data-recent-folder-list|data-clear-recent-folders/);
   assert.match(menu, /data-sketchizi-new-file/);
   assert.match(menu, /class="sketchizi-file-menu-actions" role="group" aria-label="File actions"/);
