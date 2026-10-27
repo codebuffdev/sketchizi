@@ -1224,3 +1224,35 @@
 .app .library-panel-redesign .mobile-panel-close:focus-visible {
   outline-color: #9baac0 !important;
 }
+
+
+/* Compact mobile library: keep it to roughly two-thirds of the viewport and put search at the top. */
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12px;
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px));
+    box-sizing: border-box;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    align-self: center;
+    width: 100%;
+    height: min(66dvh, 620px);
+    min-height: 0;
+    max-height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px);
+    border: 1px solid #2b3243;
+    border-radius: 14px;
+  }
+  .app .library-panel-redesign .library-panel-header-compact {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 8px 4px;
+    border-bottom: 0;
+  }
+  .app .library-panel-redesign-body {
+    min-height: 0;
+    overflow: hidden;
+    padding: 4px 11px 10px;
+  }
+}
