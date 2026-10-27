@@ -26,6 +26,8 @@ export async function runUiVisualAudit({ url = baseURL, playwright, screenshotsD
   const viewports = [
     { name: "desktop", width: 1440, height: 1000 },
     { name: "laptop", width: 1280, height: 800 },
+    { name: "split-screen-1024", width: 1024, height: 900 },
+    { name: "compact-desktop-900", width: 900, height: 900 },
     { name: "tablet", width: 768, height: 1024 },
     { name: "mobile", width: 390, height: 844 },
     { name: "mobile-landscape", width: 844, height: 390 },
