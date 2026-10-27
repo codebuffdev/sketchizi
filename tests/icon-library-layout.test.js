@@ -95,3 +95,10 @@ test("Compact mobile icon cards have large previews and non-overlapping readable
   assert.match(styles, /grid-auto-rows:\s*minmax\(84px, auto\)/);
   assert.match(styles, /text-overflow:\s*ellipsis !important/);
 });
+
+test("Floating Icon Library switches to readable single-column cards based on panel width", () => {
+  assert.match(styles, /container-type:\s*inline-size/);
+  assert.match(styles, /@container icon-library-panel \(max-width:\s*460px\)/);
+  assert.match(styles, /grid-template-columns:\s*72px minmax\(0, 1fr\) 34px !important/);
+  assert.match(styles, /icon-name[\s\S]*?word-break:\s*normal !important/);
+});
