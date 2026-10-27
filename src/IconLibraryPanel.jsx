@@ -203,19 +203,6 @@ export default function IconLibraryPanel({
 
 
         <section className="icons library-results" aria-label="Icon results">
-          <div className="section-heading library-results-heading">
-            <div className="library-results-title-wrap"><div className="section-title">{search.trim() ? "Search results" : activeSource === "all" ? "All icons" : activeSource === "eraser" ? "Essentials" : activeCategory}</div><div className="icon-total">{displayedIcons.length.toLocaleString()} icons</div></div>
-            <div className="library-results-controls">
-              {activeSource === "eraser" && !search.trim() && <button type="button" className="library-sync-button" onClick={syncEraserLibrary} disabled={eraserSyncing || !eraserCatalog.length} title={eraserSyncing ? "Synchronizing icons" : "Make icons available offline"}>{eraserSyncing ? `Syncing ${eraserSyncProgress.done}/${eraserSyncProgress.total}` : eraserCachedCount > 0 ? "Offline ready" : "Make offline"}</button>}
-              {activeCategory === "Mind Maps" && <button type="button" className="library-sync-button" onClick={createStarterMindMap}>Starter mind map</button>}
-              {activeSource === "aws" && !search.trim() && <select className="library-layout-select" aria-label="AWS category" value={activeAwsCategory} onChange={(event) => { setActiveAwsCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">AWS: All categories</option>{awsCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select>}{activeSource === "kubernetes" && !search.trim() && <select className="library-layout-select" aria-label="Kubernetes category" value={activeKubernetesCategory} onChange={(event) => { setActiveKubernetesCategory(event.target.value); setIconDisplayLimit(120); }}><option value="All">Kubernetes: All categories</option>{kubernetesCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select>}<label className="library-layout-select-label"><select aria-label="Card layout" title="Card layout" className="library-layout-select" value={cardLayout} onChange={(event) => setCardLayout(event.target.value)}><option value="two-column">Two-column cards</option><option value="compact">Compact cards</option></select></label>
-              <div className="library-view-toggle" role="group" aria-label="Result layout">
-                <button type="button" className={effectiveViewMode === "cards" ? "active" : ""} onClick={() => setViewMode("cards")} aria-label="Two-column card view" aria-pressed={effectiveViewMode === "cards"}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
-                <button type="button" className={effectiveViewMode === "list" ? "active" : ""} onClick={() => setViewMode("list")} aria-label="List view" aria-pressed={effectiveViewMode === "list"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5h.01M4 12h.01M4 19h.01"/></svg></button>
-              </div>
-            </div>
-          </div>
-
           {remoteLoading && activeSource === "eraser" && displayedIcons.length === 0 ? <div className="empty">Loading icons…</div> : shownIcons.length > 0 ? <div ref={iconListRef} className={`icon-grid library-icon-grid ${effectiveViewMode === "list" ? "is-list-view" : ""} ${cardLayout === "compact" ? "is-compact-layout" : ""}`} onScroll={(event) => {
             const el = event.currentTarget;
             if (el.scrollTop + el.clientHeight >= el.scrollHeight - 240) setIconDisplayLimit((limit) => Math.min(limit + 120, displayedIcons.length));
