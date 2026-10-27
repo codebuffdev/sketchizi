@@ -106,11 +106,13 @@ test("narrow desktop uses the flex shell while preserving the base desktop grid"
 });
 
 
-test("constrained header selectors override legacy app-scoped header styles", async () => {
+test("constrained header keeps fixed actions visible when the document title must shrink", async () => {
   const css = await read("../src/styles/header-redesign.css");
   const responsive = css.slice(css.indexOf("/* Width-driven responsive header states."));
   assert.match(responsive, /\.app \.desktop-app-header\.is-constrained\s*\{/);
+  assert.match(responsive, /grid-template-columns:\s*30px 30px minmax\(0, 1fr\) auto 30px 34px 32px/);
   assert.match(responsive, /\.app \.desktop-app-header\.is-constrained > \.desktop-app-header-panel-actions/);
+  assert.match(responsive, /\.app \.desktop-app-header\.is-constrained \.desktop-app-document-identity-name[\s\S]*?text-overflow:\s*ellipsis/);
 });
 
 
