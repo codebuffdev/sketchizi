@@ -16,8 +16,12 @@ test("repository picker loads repository metadata through same-origin backend ga
   assert.match(source, /defaultBranch/);
 });
 
-test("repository picker reports that opening/cloning is not falsely marked complete", () => {
-  assert.match(source, /Repository file browsing and workspace creation are the next implementation step/);
+test("repository picker browses authenticated repository contents and opens supported drawings", () => {
+  assert.match(source, /\/api\/github\/repository-contents/);
+  assert.match(source, /entry\.type === "dir"/);
+  assert.match(source, /\\\.(sketchizi\|excalidraw)\$/i);
+  assert.match(source, /loadDrawingFromText/);
+  assert.doesNotMatch(source, /Repository file browsing and workspace creation are the next implementation step/);
 });
 
 test("repository picker styles are scoped", () => {
