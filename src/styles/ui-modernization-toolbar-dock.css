@@ -603,3 +603,60 @@
   cursor: default;
   opacity: .45;
 }
+
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: 0 0 20px;
+  padding: 0;
+  border: 2px solid var(--sk-toolbar-surface, #1b1e27);
+  border-radius: 50%;
+  background: var(--contextual-color);
+  box-shadow: 0 0 0 1px rgb(127 135 155 / 42%);
+  cursor: pointer;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px #8b80ff;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color[aria-label="No fill"] {
+  background: linear-gradient(135deg, transparent 45%, #d25555 46%, #d25555 54%, transparent 55%);
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-widths {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 3px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button {
+  width: 26px;
+  min-width: 26px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button[aria-pressed="true"] {
+  border-color: #8075ec;
+  background: rgb(101 88 211 / 18%);
+  color: var(--sk-toolbar-ink, #e7e9f2);
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:focus-visible {
+  outline: 2px solid #8b80ff;
+  outline-offset: 2px;
+}
