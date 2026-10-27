@@ -108,3 +108,11 @@ test('contextual dock wraps and scrolls within narrow desktop workspaces', () =>
   assert.match(dockStyles, /@media \(max-width: 900px\)[\s\S]*?overflow: auto/);
   assert.match(dockStyles, /@media \(max-width: 520px\)/);
 });
+
+test('layer-order controls revalidate and synchronize both directions after each reorder', () => {
+  assert.match(canvas, /const layerButtons = new Map\(\)/);
+  assert.match(canvas, /const syncLayerButtonStates = \(scene\) =>/);
+  assert.match(canvas, /layerButtons\.forEach\(\(button, direction\) =>/);
+  assert.match(canvas, /if \(!canReorderSelection\(currentScene, selectedIds, direction\)\)/);
+  assert.match(canvas, /syncLayerButtonStates\(elements\)/);
+});
