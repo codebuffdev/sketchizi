@@ -607,26 +607,6 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has([data-sketchizi-custom-menu
 }
 
 /* GitHub repository picker: scoped to the hamburger repository workflow. */
-.sketchizi-git-repository-section .sketchizi-repository-status { display: block; padding: 5px 8px 8px; color: var(--ui-text-muted, #9295a3); font-size: 11px; line-height: 1.45; }
-.sketchizi-repository-picker-backdrop { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; padding: 18px; background: rgb(0 0 0 / 58%); }
-.sketchizi-repository-picker { display: flex; flex-direction: column; gap: 12px; width: min(560px, 100%); max-height: min(680px, 85vh); overflow: hidden; padding: 18px; color: var(--ui-text, #f2f2f5); background: var(--ui-bg, #1e2029); border: 1px solid var(--ui-border, #393c49); border-radius: 14px; box-shadow: 0 18px 70px rgb(0 0 0 / 38%); }
-.sketchizi-repository-picker header { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; }
-.sketchizi-repository-picker header button { width: 32px; height: 32px; border: 0; border-radius: 8px; color: inherit; background: transparent; font-size: 22px; cursor: pointer; }
-.sketchizi-repository-picker-hint, .sketchizi-repository-picker-message { margin: 0; color: var(--ui-text-muted, #a0a3b0); font-size: 12px; line-height: 1.5; }
-.sketchizi-repository-picker-search { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 12px; color: var(--ui-text-muted, #a0a3b0); background: var(--ui-panel, #252833); border: 1px solid var(--ui-border, #393c49); border-radius: 9px; }
-.sketchizi-repository-picker-search:focus-within { border-color: var(--ui-accent, #7777ff); }
-.sketchizi-repository-picker-search-icon { font-size: 21px; line-height: 1; }
-.sketchizi-repository-picker-search input { flex: 1; min-width: 0; padding: 9px 0; color: var(--ui-text, #f2f2f5); background: transparent; border: 0; outline: 0; font: inherit; font-size: 13px; }
-.sketchizi-repository-picker-search input::placeholder { color: var(--ui-text-muted, #a0a3b0); }
-.sketchizi-repository-picker-search input:disabled { opacity: .6; }
-.sketchizi-repository-picker-empty { padding: 12px 4px; color: var(--ui-text-muted, #a0a3b0); font-size: 12px; }
-.sketchizi-repository-picker-list { display: flex; flex-direction: column; gap: 6px; min-height: 70px; overflow: auto; }
-.sketchizi-repository-picker-item { display: flex; flex-direction: column; gap: 4px; padding: 11px 12px; text-align: left; color: inherit; background: var(--ui-panel, #252833); border: 1px solid var(--ui-border, #393c49); border-radius: 9px; cursor: pointer; }
-.sketchizi-repository-picker-item[hidden] { display: none !important; }
-.sketchizi-repository-picker-item:hover, .sketchizi-repository-picker-item.is-selected { border-color: var(--ui-accent, #7777ff); }
-.sketchizi-repository-picker-item:disabled { opacity: .75; cursor: default; }
-.sketchizi-repository-picker-name { font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
-.sketchizi-repository-picker-meta { color: var(--ui-text-muted, #a0a3b0); font-size: 11px; }
 
 
 /* Phase 25 — clearer file-management hierarchy and consistent interactions. */
