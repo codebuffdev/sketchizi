@@ -92,10 +92,13 @@ export function getContextualDockModel(selectedElements = [], { canEdit = true }
  * relative order of all unselected elements.
  */
 export function reorderElementsBySelection(elements = [], selectedIds = new Set(), direction = "front") {
-  const isSelected = (element) => selectedIds.has(element?.id);
-  const moving = elements.filter(isSelected);
+  // Deleted/missing scene entries must never be moved just because their IDs
+  // are present in a stale selection. Keep them with the non-moving entries.
+  const isLiveSelected = (element) =>
+    Boolean(element && !element.isDeleted && !element.deleted && selectedIds.has(element.id));
+  const moving = elements.filter(isLiveSelected);
   if (moving.length === 0) return [...elements];
-  const remaining = elements.filter((element) => !isSelected(element));
+  const remaining = elements.filter((element) => !isLiveSelected(element));
   return direction === "back"
     ? [...moving, ...remaining]
     : [...remaining, ...moving];
