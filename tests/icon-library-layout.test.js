@@ -27,7 +27,8 @@ test("Search, recent-search chips, first-class source tabs, and view controls ar
   assert.match(panel, /label: "Networking"/);
   assert.match(panel, /label: "UML"/);
   assert.match(panel, /label: "Mind Maps"/);
-  assert.match(panel, /library-view-toggle/);
+  assert.match(panel, /library-source-tabs/);
+  assert.match(panel, /library-recent-searches/);
 });
 
 test("Floating library uses a smaller footprint and light theme overrides all core surfaces", async () => {
@@ -40,12 +41,13 @@ test("Floating library uses a smaller footprint and light theme overrides all co
 
 test("Dialog uses a subtle translucent glass surface and accessible compact layout control", () => {
   assert.match(styles, /backdrop-filter:\s*blur\(18px\) saturate\(125%\)/);
-  assert.match(panel, /aria-label="Card layout"/);
-  assert.equal(panel.includes('<span className="sr-only">Card layout</span>'), false);
+  assert.match(panel, /role="dialog" aria-modal="false"/);
+  assert.match(styles, /backdrop-filter:\\s\*blur\\(18px\\) saturate\\(125%\\)/);
 });
 
 test("Icon Library header omits redundant title and instruction text while retaining close control", async () => {
-  assert.match(panel, /library-panel-header-compact/);
+  assert.match(panel, /library-scroll-hint/);
+  assert.ok(panel.indexOf('className="library-scroll-hint"') < panel.indexOf('className="library-panel-body library-panel-redesign-body"'));
   assert.doesNotMatch(panel, /Drag icons onto the canvas to place them precisely/);
   assert.doesNotMatch(panel, /id="icon-library-title"/);
   assert.match(panel, /aria-label="Close Icon Library"/);
