@@ -1283,3 +1283,11 @@
     overflow: hidden;
   }
 }
+
+
+/* No standalone header: start the search row at the top of the library panel. */
+.app .library-panel-redesign .library-panel-header-compact { display: none !important; }
+.app .library-panel-redesign .library-panel-redesign-body { padding-top: 12px; }
+@media (max-width: 760px) {
+  .app .library-panel-redesign .library-panel-redesign-body { padding-top: 10px; }
+}
