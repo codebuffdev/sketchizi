@@ -31,6 +31,16 @@ test('native dock receives contextual selection state without replacing native c
   assert.match(styles, /data-sketchizi-context="shape"/);
 });
 
+test('text selection mounts font-size controls directly in the native dock', () => {
+  assert.match(canvas, /sketchizi-contextual-controls/);
+  assert.match(canvas, /aria-label", "Text formatting"/);
+  assert.match(canvas, /Decrease text size/);
+  assert.match(canvas, /Increase text size/);
+  assert.match(canvas, /applyToSelected\(\{ fontSize: nextSize \}\)/);
+  assert.match(canvas, /model\.showTextControls/);
+  assert.match(styles, /\.sketchizi-contextual-size-button/);
+});
+
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
