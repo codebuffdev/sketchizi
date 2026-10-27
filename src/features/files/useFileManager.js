@@ -635,7 +635,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // they use the file-handle based implementation above.
 
   // Keep stable entry points for the DOM-injected menu and global listeners.
-  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, updateRecentFileStatus, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, updateRecentFolderStatus, markRecentFolderOpened, refreshCurrentFolderFiles, getCurrentFolder: () => currentFolderRef.current, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
+  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, loadDrawingFromText: (text, name) => { const signature = loadDrawingIntoCanvas(text); setCurrentFile({ id: `github-${Date.now()}`, name, handle: null, fallback: true }, signature); return signature; }, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, updateRecentFileStatus, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, updateRecentFolderStatus, markRecentFolderOpened, refreshCurrentFolderFiles, getCurrentFolder: () => currentFolderRef.current, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
   return {
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,

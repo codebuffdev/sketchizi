@@ -16,8 +16,12 @@ test("repository picker loads repository metadata through same-origin backend ga
   assert.match(source, /defaultBranch/);
 });
 
-test("repository picker reports that opening/cloning is not falsely marked complete", () => {
-  assert.match(source, /Repository file browsing and workspace creation are the next implementation step/);
+test("repository picker browses authenticated repository contents and opens supported drawings", () => {
+  assert.match(source, /\/api\/github\/repository-contents/);
+  assert.match(source, /entry\.type === "dir"/);
+  assert.match(source, /excalidraw\)\$\/i\.test/);
+  assert.match(source, /loadDrawingFromText/);
+  assert.doesNotMatch(source, /Repository file browsing and workspace creation are the next implementation step/);
 });
 
 test("repository picker styles are scoped", () => {
@@ -28,7 +32,7 @@ test("repository picker styles are scoped", () => {
 test("repository picker includes a search field and filters repository metadata client-side", () => {
   assert.match(source, /data-repository-picker-search/);
   assert.match(source, /Search repositories by name/);
-  assert.match(source, /repositoryItems\.filter\(\(\{ searchableText \}\) => searchableText\.includes\(query\)\)/);
-  assert.match(source, /No repositories match your search/);
+  assert.match(source, /search\.addEventListener\("input"/);
+  assert.match(source, /item\.hidden = !item\.textContent\.toLocaleLowerCase\(\)\.includes\(query\)/);
   assert.match(styles, /\.sketchizi-repository-picker-search/);
 });
