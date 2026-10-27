@@ -15,6 +15,13 @@ test("file management menu separates workspace actions from quick access", () =>
   assert.match(menu, /aria-controls="sketchizi-recent-folders-panel"/);
 });
 
+test("custom hamburger file menu remains scrollable within the dynamic viewport", () => {
+  assert.match(styles, /max-height: calc\(100vh - 24px\) !important/);
+  assert.match(styles, /max-height: calc\(100dvh - 24px\) !important/);
+  assert.match(styles, /overflow-y: auto !important/);
+  assert.match(styles, /overscroll-behavior-y: contain/);
+});
+
 test("phase 25 preserves recent-file, recent-folder, and folder refresh workflows", () => {
   for (const selector of [
     "data-sketchizi-open-folder", "data-sketchizi-new-file", "data-refresh-current-folder",
