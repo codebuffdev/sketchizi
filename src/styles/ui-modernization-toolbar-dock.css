@@ -809,3 +809,113 @@
     min-height: 24px !important;
   }
 }
+
+
+/* Contextual formatting controls must remain legible on both canvas themes.
+   The toolbar itself stays frameless; only the individual controls get
+   deliberate contrast and visible color swatches. */
+.app.theme-light .contextual-formatting-toolbar {
+  --contextual-ink: #20242c;
+  --contextual-muted: #505866;
+  --contextual-border: rgb(31 41 55 / 28%);
+  --contextual-hover: rgb(79 70 229 / 10%);
+  --contextual-selected: rgb(79 70 229 / 16%);
+}
+
+.app.theme-dark .contextual-formatting-toolbar {
+  --contextual-ink: #f3f4f8;
+  --contextual-muted: #c0c5d1;
+  --contextual-border: rgb(226 232 240 / 34%);
+  --contextual-hover: rgb(167 139 250 / 16%);
+  --contextual-selected: rgb(167 139 250 / 24%);
+}
+
+.app .contextual-formatting-toolbar {
+  color: var(--contextual-ink, #f3f4f8) !important;
+  z-index: 30 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  border-right-color: var(--contextual-border, rgb(148 163 184 / 35%)) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  color: var(--contextual-ink, #f3f4f8) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover {
+  background: var(--contextual-hover, rgb(139 129 255 / 16%)) !important;
+  border-color: var(--contextual-border, rgb(148 163 184 / 35%)) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button[aria-pressed="true"] {
+  background: var(--contextual-selected, rgb(139 129 255 / 24%)) !important;
+  border-color: #8276f4 !important;
+  box-shadow: inset 0 0 0 1px rgb(130 118 244 / 25%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch {
+  position: relative !important;
+  width: 27px !important;
+  min-width: 27px !important;
+  height: 27px !important;
+  min-height: 27px !important;
+  padding: 0 !important;
+  background-color: var(--swatch-color, transparent) !important;
+  border: 1px solid var(--contextual-border, rgb(148 163 184 / 35%)) !important;
+  border-radius: 6px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch.is-selected,
+.app .contextual-formatting-toolbar .contextual-color-swatch[aria-pressed="true"] {
+  outline: 2px solid #8276f4 !important;
+  outline-offset: 2px !important;
+  border-color: #ffffff !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch.is-transparent {
+  background-color: transparent !important;
+  background-image: linear-gradient(135deg, transparent 45%, #e05252 46%, #e05252 53%, transparent 54%) !important;
+  color: var(--contextual-ink, #f3f4f8) !important;
+}
+
+.app .theme-light .contextual-formatting-toolbar .contextual-color-swatch.is-transparent {
+  color: #20242c !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-line-width > button span {
+  display: block !important;
+  width: 14px !important;
+  min-width: 14px !important;
+  background: currentColor !important;
+  border-radius: 2px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity,
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  color: var(--contextual-muted, #c0c5d1) !important;
+}
+
+.app .contextual-formatting-toolbar input[type="range"] {
+  accent-color: #8276f4 !important;
+  cursor: pointer;
+}
+
+.app .contextual-formatting-toolbar button:focus-visible,
+.app .contextual-formatting-toolbar input:focus-visible {
+  outline: 2px solid #8276f4 !important;
+  outline-offset: 2px !important;
+}
+
+@media (max-width: 700px) {
+  .app .contextual-formatting-toolbar .contextual-color-swatch {
+    width: 25px !important;
+    min-width: 25px !important;
+    height: 25px !important;
+    min-height: 25px !important;
+  }
+}
