@@ -124,6 +124,12 @@ function buildCompletions(text, caret, force = false) {
       volumes: ["- name:", "persistentVolumeClaim:", "configMap:", "secret:"],
       persistentVolumeClaim: ["claimName:"],
       data: ["APP_ENV:", "LOG_LEVEL:"],
+      env: ["- name:", "value:", "valueFrom:"],
+      valueFrom: ["configMapKeyRef:", "secretKeyRef:", "fieldRef:", "resourceFieldRef:"],
+      configMapKeyRef: ["name:", "key:", "optional:"],
+      secretKeyRef: ["name:", "key:", "optional:"],
+      fieldRef: ["fieldPath:", "apiVersion:"],
+      resourceFieldRef: ["containerName:", "resource:", "divisor:"],
     };
     let choices = fieldGroups[parent] || fieldGroups.root;
     // Avoid suggesting keys already present at this same YAML nesting level.
@@ -149,9 +155,8 @@ function buildCompletions(text, caret, force = false) {
         if (match.length) choices = match;
       }
     }
-    if (parent === "containers" && (!beforeCaret.trim() || beforeCaret.trim() === "-")) {
-      choices = ["- name: app", "- name: web"];
-    }
+    // Keep the full container-field completion set available instead of limiting
+    // an empty container item to two example names.
     choices.forEach((entry) => add(entry, parent ? `Kubernetes ${parent} field` : "Kubernetes manifest field", entry));
     if (!force && !beforeCaret.trim() && !previousLine.endsWith(":")) items = [];
   }
