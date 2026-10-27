@@ -342,7 +342,8 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         const text = await fileEntry.file.text();
         if (!confirmCanvasReplacement(`open “${fileEntry.file.name}”`)) return;
         const loadedSignature = loadDrawingIntoCanvas(text);
-        setCurrentFile({ id: null, name: fileEntry.file.name, handle: null, fallback: true }, loadedSignature);
+        setCurrentFile({ id: null, name: fileEntry.file.name, handle: null, fallback: true, readOnlySource: true }, loadedSignature);
+        showToast(`Read-only copy opened: ${fileEntry.file.name}. Use Save to… to save an editable copy; the original will not be changed.`);
         const record = await saveRecentSketch({
           id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name: fileEntry.file.name,
