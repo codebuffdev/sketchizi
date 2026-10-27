@@ -31,3 +31,16 @@ test('compact landscape and reduced-motion modes are covered', () => {
   assert.match(css, /max-height:\s*520px/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
+
+
+const desktopShell = readFileSync(new URL('../src/styles/responsive-desktop.css', import.meta.url), 'utf8');
+const finalShell = readFileSync(new URL('../src/styles/responsive-final.css', import.meta.url), 'utf8');
+
+test('narrow desktop has one authoritative shell layout', () => {
+  assert.ok(styles.indexOf('responsive-desktop.css') < styles.indexOf('responsive-final.css'));
+  assert.match(finalShell, /@media\s*\(min-width:\s*521px\)\s*and\s*\(max-width:\s*1024px\)/);
+  assert.match(finalShell, /\.app\s*\{[^}]*display:\s*flex/s);
+  assert.match(finalShell, /\.desktop-workspace\s*\{[^}]*display:\s*block/s);
+  assert.doesNotMatch(desktopShell, /@media\s*\(min-width:\s*761px\)\s*and\s*\(max-width:\s*1024px\)\s*\{[^}]*\.app\s*\{[^}]*grid-template-rows/s);
+  assert.match(desktopShell, /\.desktop-app-header\.is-constrained\s*\{/);
+});

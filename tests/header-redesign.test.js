@@ -93,13 +93,16 @@ test("header layout responds to measured available width rather than viewport br
 });
 
 
-test("narrow desktop retains the structural workspace grid until the mobile breakpoint", async () => {
+test("narrow desktop uses the flex shell while preserving the base desktop grid", async () => {
   const css = await read("../src/styles/responsive-desktop.css");
+  const finalShell = await read("../src/styles/responsive-final.css");
   assert.match(css, /@media \(min-width: 761px\) \{[\s\S]*?\.desktop-workspace \{[\s\S]*?display: grid/);
   assert.match(css, /@media \(max-width: 760px\) \{[\s\S]*?\.desktop-app-header \{[\s\S]*?display: contents/);
-  assert.match(css, /@media \(min-width: 761px\) and \(max-width: 1024px\)/);
-  assert.match(css, /--sketchizi-desktop-resources-width: 220px/);
-  assert.match(css, /--sketchizi-desktop-context-width: 280px/);
+  assert.match(finalShell, /@media \(min-width: 521px\) and \(max-width: 1024px\)/);
+  assert.match(finalShell, /\.app \{[\s\S]*?display: flex/);
+  assert.match(finalShell, /\.desktop-workspace \{[\s\S]*?display: block/);
+  assert.doesNotMatch(css, /--sketchizi-desktop-resources-width: 220px/);
+  assert.doesNotMatch(css, /--sketchizi-desktop-context-width: 280px/);
 });
 
 
