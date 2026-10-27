@@ -1755,3 +1755,17 @@
   font-weight: 700 !important;
   box-shadow: none !important;
 }
+
+
+/* Keep the floating Icon Library at the top of the viewport instead of vertically centering it. */
+.app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
+  padding-bottom: 16px !important;
+  box-sizing: border-box !important;
+}
+.app .desktop-workspace-library-open .desktop-resources-region > .library-panel.library-panel-redesign {
+  margin-top: 0 !important;
+  align-self: flex-start !important;
+}
