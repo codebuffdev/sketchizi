@@ -1665,7 +1665,16 @@
 }
 
 
-/* Keep the Escape hint in the panel footer flow; never overlay the final icon row. */
+/* The Escape hint is a direct panel child, so it cannot cover or be clipped by the scrolling results. */
+.app .library-panel-redesign {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign .library-panel-redesign-body {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
 .app .library-panel-redesign .library-results {
   flex: 1 1 0% !important;
   min-height: 0 !important;
@@ -1674,17 +1683,12 @@
   flex: 1 1 0% !important;
   min-height: 0 !important;
 }
-.app .library-panel-redesign .library-scroll-hint {
+.app .library-panel-redesign > .library-scroll-hint {
   position: static !important;
   inset: auto !important;
   flex: 0 0 auto !important;
-  width: auto !important;
-  margin: 0 -18px -15px !important;
+  width: 100% !important;
+  margin: 0 !important;
   padding: 6px 9px !important;
   box-sizing: border-box !important;
-}
-@media (max-width: 760px) {
-  .app .library-panel-redesign .library-scroll-hint {
-    margin: 0 -10px -10px !important;
-  }
 }
