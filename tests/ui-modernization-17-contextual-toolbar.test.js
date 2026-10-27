@@ -6,6 +6,7 @@ const toolbar = readFileSync(new URL('../src/components/app/ContextualFormatting
 const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+const dockStyles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
 
 test('contextual toolbar is rendered only for editable selections', () => {
   assert.match(toolbar, /if \(!canEdit \|\| liveSelection\.length === 0 \|\| !position\) return null/);
@@ -24,11 +25,11 @@ test('contextual formatting exposes selection mode and uses model-driven control
 
 test('native dock receives contextual selection state without replacing native controls', () => {
   assert.match(canvas, /getContextualDockModel\(selectedElements, \{/);
-  assert.match(canvas, /data-sketchizi-context/);
-  assert.match(canvas, /data-sketchizi-selection-count/);
-  assert.match(canvas, /data-sketchizi-preserve-artwork/);
-  assert.match(styles, /data-sketchizi-context="text"/);
-  assert.match(styles, /data-sketchizi-context="shape"/);
+  assert.match(canvas, /dataset\\.sketchiziContext/);
+  assert.match(canvas, /dataset\\.sketchiziSelectionCount/);
+  assert.match(canvas, /dataset\\.sketchiziPreserveArtwork/);
+  assert.match(dockStyles, /data-sketchizi-context="text"/);
+  assert.match(dockStyles, /data-sketchizi-context="shape"/);
 });
 
 test('text selection mounts font-size controls directly in the native dock', () => {
