@@ -51,3 +51,10 @@ test("Icon Library header omits redundant title and instruction text while retai
   assert.match(panel, /aria-label="Close Icon Library"/);
   assert.match(styles, /library-panel-header-compact[\s\S]*?height:\s*34px/);
 });
+
+test("Mobile Icon Library is a compact two-thirds-height panel with search near the top", () => {
+  assert.match(styles, /height:\s*min\(66dvh, 620px\)/);
+  assert.match(styles, /align-items:\s*flex-start/);
+  assert.match(styles, /library-panel-header-compact[\s\S]*?height:\s*30px/);
+  assert.match(styles, /library-panel-redesign-body[\s\S]*?padding:\s*4px 11px 10px/);
+});
