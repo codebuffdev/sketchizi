@@ -22,6 +22,13 @@ test("custom hamburger file menu stays within the dynamic viewport without chang
   assert.doesNotMatch(styles, /bottom: max\(48px, env\(safe-area-inset-bottom, 0px\)\) !important/);
 });
 
+test("hamburger catalog exposes a visible scrollbar for its constrained content", () => {
+  assert.match(styles, /scrollbar-width: auto !important/);
+  assert.match(styles, /scrollbar-color: #66758b/);
+  assert.match(styles, /\.dropdown-menu:has\(\[data-sketchizi-custom-menu-block\]\)::-webkit-scrollbar/);
+  assert.match(styles, /\.dropdown-menu:has\(\[data-sketchizi-custom-menu-block\]\) > \.dropdown-menu-container \{[\s\S]*overflow: visible !important/);
+});
+
 test("phase 25 preserves recent-file, recent-folder, and folder refresh workflows", () => {
   for (const selector of [
     "data-sketchizi-open-folder", "data-sketchizi-new-file", "data-refresh-current-folder",
