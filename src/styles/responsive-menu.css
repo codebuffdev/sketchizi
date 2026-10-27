@@ -748,7 +748,8 @@ html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-men
 }
 
 
-/* Keep the hamburger menu inside the viewport while preserving its anchored layout. */
+/* Ensure the catalog's scroll area is visible and does not get clipped by
+   the custom menu shell. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) {
   box-sizing: border-box;
   max-height: calc(100vh - 24px) !important;
@@ -757,7 +758,24 @@ html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-men
   overflow-y: auto !important;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  scrollbar-width: auto !important;
+  scrollbar-color: #66758b rgba(128, 140, 160, .14) !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block])::-webkit-scrollbar {
+  width: 10px;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block])::-webkit-scrollbar-track {
+  background: rgba(128, 140, 160, .14);
+  border-radius: 8px;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block])::-webkit-scrollbar-thumb {
+  background: #66758b;
+  border: 2px solid #111722;
+  border-radius: 8px;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) > .dropdown-menu-container {
+  max-height: inherit;
+  overflow: visible !important;
 }
 /* Phase 27 — announce recent-item changes without adding visual menu clutter. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-announcement {
