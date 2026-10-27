@@ -8,6 +8,15 @@ import { parseAllDocuments, stringify } from "yaml";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = await readFile(resolve(root, "src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), "utf8");
 
+test("container completions expose manifest fields instead of only two example names", () => {
+  const completionStart = source.indexOf('const fieldGroups = {');
+  const completionEnd = source.indexOf('choices.forEach((entry) => add(entry, parent ?', completionStart);
+  assert.ok(completionStart >= 0 && completionEnd > completionStart, "context-aware field groups should exist");
+  const containerGroup = source.slice(completionStart, completionEnd);
+  assert.match(containerGroup, /containers:\s*\["- name: app", "image:", "ports:", "env:", "resources:", "volumeMounts:", "command:", "args:"\]/);
+  assert.doesNotMatch(source, /choices = \["- name: app", "- name: web"\]/);
+});
+
 test("K8s Studio offers multi-select YAML import and validates the complete file set", () => {
   assert.match(source, /type="file" accept="\.yaml,\.yml,application\/yaml,text\/yaml" multiple hidden onChange=\{importFile\}/);
   assert.match(source, /Promise\.all\(files\.map\(async \(file\) =>/);
