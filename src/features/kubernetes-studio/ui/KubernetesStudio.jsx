@@ -149,9 +149,8 @@ function buildCompletions(text, caret, force = false) {
         if (match.length) choices = match;
       }
     }
-    if (parent === "containers" && (!beforeCaret.trim() || beforeCaret.trim() === "-")) {
-      choices = ["- name: app", "- name: web"];
-    }
+    // Keep the full container-field completion set available instead of limiting
+    // an empty container item to two example names.
     choices.forEach((entry) => add(entry, parent ? `Kubernetes ${parent} field` : "Kubernetes manifest field", entry));
     if (!force && !beforeCaret.trim() && !previousLine.endsWith(":")) items = [];
   }
