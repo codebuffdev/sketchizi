@@ -82,3 +82,18 @@ test('dock hides inline shortcut hints without disabling keyboard shortcuts', ()
   assert.match(dockCss, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding[\s\S]*?display: none !important/);
   assert.match(dockCss, /Keyboard shortcuts themselves remain available and unchanged/);
 });
+
+
+test('contextual toolbar exposes fill, line, roughness and opacity controls on canvas', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /aria-label="Fill style"/);
+  assert.match(toolbar, /aria-label="Line style"/);
+  assert.match(toolbar, /aria-label="Roughness"/);
+  assert.match(toolbar, /aria-label="Opacity"/);
+  assert.match(toolbar, /applyToSelected\(\{ fillStyle: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ strokeStyle: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ roughness: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ opacity: Number\(event.target.value\) \}\)/);
+  assert.match(dockCss, /\.contextual-formatting-toolbar[\s\S]*?max-width: min\(760px, calc\(100vw - 20px\)\)/);
+});
