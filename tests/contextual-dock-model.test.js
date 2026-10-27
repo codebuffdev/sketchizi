@@ -146,3 +146,51 @@ test("layer boundary checks ignore deleted elements", () => {
   const elements = [{ id: "deleted", isDeleted: true }, { id: "a" }];
   assert.equal(canReorderSelection(elements, new Set(["a"]), "back"), false);
 });
+
+test("layer reordering ignores deleted selected entries and preserves their relative order", () => {
+  const elements = [
+    { id: "a" },
+    { id: "deleted-selected", isDeleted: true },
+    { id: "b" },
+    { id: "deleted-legacy", deleted: true },
+    { id: "c" },
+  ];
+  const reordered = reorderElementsBySelection(
+    elements,
+    new Set(["deleted-selected", "b", "deleted-legacy"]),
+    "front",
+  );
+  assert.deepEqual(
+    reordered.map((element) => element.id),
+    ["a", "deleted-selected", "deleted-legacy", "c", "b"],
+  );
+});
+
+test("layer reordering keeps missing IDs inert and preserves selected and unselected order", () => {
+  const elements = [
+    { id: "a" },
+    { id: "b" },
+    { id: "c" },
+    { id: "d" },
+    { id: "e" },
+  ];
+  const selected = new Set(["b", "d", "no-longer-in-scene"]);
+  assert.deepEqual(
+    reorderElementsBySelection(elements, selected, "front").map((element) => element.id),
+    ["a", "c", "e", "b", "d"],
+  );
+  assert.deepEqual(
+    reorderElementsBySelection(elements, selected, "back").map((element) => element.id),
+    ["b", "d", "a", "c", "e"],
+  );
+});
+
+test("layer reordering leaves scene unchanged when selection contains only deleted or missing IDs", () => {
+  const elements = [
+    { id: "deleted", type: "rectangle", isDeleted: true },
+    { id: "live", type: "rectangle" },
+  ];
+  const selected = new Set(["deleted", "missing"]);
+  assert.deepEqual(reorderElementsBySelection(elements, selected, "front"), elements);
+});
+
