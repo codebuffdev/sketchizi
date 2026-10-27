@@ -530,39 +530,134 @@ export function useNativeSketchiziMenu({
           const repositories = Array.isArray(payload.repositories) ? payload.repositories : [];
           list.setAttribute("aria-busy", "false");
           if (!repositories.length) { list.textContent = "No repositories found for this GitHub account."; search.disabled = true; return; }
-          const repositoryItems = repositories.map((repo) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "sketchizi-repository-picker-item";
-            button.setAttribute("role", "listitem");
-            button.innerHTML = `<span class="sketchizi-repository-picker-name"></span><span class="sketchizi-repository-picker-meta"></span>`;
-            const fullName = repo.fullName || repo.name || "Repository";
-            const searchableText = `${fullName} ${repo.name || ""} ${repo.owner || ""} ${repo.private ? "private" : "public"} ${repo.defaultBranch || ""}`.toLocaleLowerCase();
-            button.querySelector(".sketchizi-repository-picker-name").textContent = fullName;
-            button.querySelector(".sketchizi-repository-picker-meta").textContent = `${repo.private ? "Private" : "Public"} · default branch: ${repo.defaultBranch || "unknown"}`;
-            button.addEventListener("click", () => {
-              message.textContent = `${fullName} selected. Repository file browsing and workspace creation are the next implementation step.`;
-              list.querySelectorAll("button").forEach((item) => { item.disabled = true; });
-              button.disabled = false;
-              button.classList.add("is-selected");
-            });
-            return { button, searchableText };
-          });
-          const renderFilteredRepositories = () => {
-            const query = search.value.trim().toLocaleLowerCase();
-            const matches = repositoryItems.filter(({ searchableText }) => searchableText.includes(query));
-            list.replaceChildren();
-            if (!matches.length) {
-              const empty = document.createElement("span");
-              empty.className = "sketchizi-repository-picker-empty";
-              empty.textContent = "No repositories match your search.";
-              list.append(empty);
-              return;
-            }
-            matches.forEach(({ button }) => list.append(button));
+          let selectedRepository = null;
+          let currentPath = "";
+          let currentRef = "";
+          const setBusy = (busy) => { list.setAttribute("aria-busy", String(busy)); };
+          const showMessage = (text) => { message.textContent = text || ""; };
+          const decodeBase64 = (value) => {
+            const binary = atob(String(value || "").replace(/\s/g, ""));
+            const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+            return new TextDecoder().decode(bytes);
           };
-          search.addEventListener("input", renderFilteredRepositories);
-          renderFilteredRepositories();
+          const renderRepositories = () => {
+            search.hidden = false;
+            search.value = "";
+            list.replaceChildren();
+            repositories.forEach((repo) => {
+              const button = document.createElement("button");
+              button.type = "button";
+              button.className = "sketchizi-repository-picker-item";
+              button.setAttribute("role", "listitem");
+              const name = document.createElement("span");
+              name.className = "sketchizi-repository-picker-name";
+              name.textContent = repo.fullName || repo.name || "Repository";
+              const meta = document.createElement("span");
+              meta.className = "sketchizi-repository-picker-meta";
+              meta.textContent = `${repo.private ? "Private" : "Public"} · default branch: ${repo.defaultBranch || "unknown"}`;
+              button.append(name, meta);
+              button.addEventListener("click", () => {
+                selectedRepository = repo;
+                currentPath = "";
+                currentRef = repo.defaultBranch || "main";
+                showRepositoryContents();
+              });
+              list.append(button);
+            });
+            search.addEventListener("input", () => {
+              const query = search.value.trim().toLocaleLowerCase();
+              [...list.querySelectorAll(".sketchizi-repository-picker-item")].forEach((item) => {
+                item.hidden = !item.textContent.toLocaleLowerCase().includes(query);
+              });
+            }, { once: true });
+          };
+          const showRepositoryContents = async () => {
+            if (!selectedRepository) return;
+            setBusy(true);
+            showMessage("");
+            search.hidden = true;
+            list.replaceChildren();
+            const toolbar = document.createElement("div");
+            toolbar.className = "sketchizi-repository-picker-toolbar";
+            const back = document.createElement("button");
+            back.type = "button";
+            back.textContent = "← Repositories";
+            back.addEventListener("click", () => { selectedRepository = null; currentPath = ""; renderRepositories(); showMessage(""); });
+            const location = document.createElement("span");
+            location.textContent = `${selectedRepository.fullName || selectedRepository.name}${currentPath ? "/" + currentPath : ""}`;
+            toolbar.append(back, location);
+            list.append(toolbar);
+            const endpoint = new URL("/api/github/repository-contents", window.location.origin);
+            endpoint.searchParams.set("repository", selectedRepository.fullName || selectedRepository.name);
+            endpoint.searchParams.set("path", currentPath);
+            endpoint.searchParams.set("ref", currentRef);
+            try {
+              const response = await fetch(endpoint.toString(), { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+              const data = await response.json().catch(() => ({}));
+              if (!response.ok) throw new Error(data.error || "Could not load repository contents.");
+              if (data.type === "directory" && Array.isArray(data.entries)) {
+                if (currentPath) {
+                  const parent = document.createElement("button");
+                  parent.type = "button";
+                  parent.className = "sketchizi-repository-picker-item";
+                  parent.textContent = "↑ ..";
+                  parent.addEventListener("click", () => { currentPath = currentPath.split("/").slice(0, -1).join("/"); showRepositoryContents(); });
+                  list.append(parent);
+                }
+                const entries = data.entries.filter((entry) => entry.type === "dir" || /\.(sketchizi|excalidraw)$/i.test(entry.name || ""));
+                if (!entries.length) {
+                  const empty = document.createElement("span");
+                  empty.className = "sketchizi-repository-picker-empty";
+                  empty.textContent = "No folders or supported drawings in this directory.";
+                  list.append(empty);
+                }
+                entries.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === "dir" ? -1 : 1));
+                entries.forEach((entry) => {
+                  const item = document.createElement("button");
+                  item.type = "button";
+                  item.className = "sketchizi-repository-picker-item";
+                  const name = document.createElement("span");
+                  name.className = "sketchizi-repository-picker-name";
+                  name.textContent = `${entry.type === "dir" ? "📁 " : "▤ "}${entry.name}`;
+                  const meta = document.createElement("span");
+                  meta.className = "sketchizi-repository-picker-meta";
+                  meta.textContent = entry.type === "dir" ? "Folder" : "Drawing";
+                  item.append(name, meta);
+                  item.addEventListener("click", async () => {
+                    if (entry.type === "dir") { currentPath = entry.path; showRepositoryContents(); return; }
+                    item.disabled = true;
+                    showMessage(`Loading ${entry.name}…`);
+                    try {
+                      const fileUrl = new URL("/api/github/repository-contents", window.location.origin);
+                      fileUrl.searchParams.set("repository", selectedRepository.fullName || selectedRepository.name);
+                      fileUrl.searchParams.set("path", entry.path);
+                      fileUrl.searchParams.set("ref", currentRef);
+                      const fileResponse = await fetch(fileUrl.toString(), { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+                      const fileData = await fileResponse.json().catch(() => ({}));
+                      if (!fileResponse.ok) throw new Error(fileData.error || "Could not load drawing.");
+                      const text = fileData.encoding === "base64" ? decodeBase64(fileData.content) : fileData.content;
+                      if (typeof text !== "string" || !text.trim()) throw new Error("The selected file has no readable drawing content.");
+                      if (typeof fileActionsRef.current.loadDrawingFromText !== "function") throw new Error("Drawing import is not available yet.");
+                      fileActionsRef.current.loadDrawingFromText(text, entry.name);
+                      showMessage(`Opened ${entry.name} from ${selectedRepository.fullName || selectedRepository.name}.`);
+                      close();
+                    } catch (error) {
+                      showMessage(error.message || "Could not open this drawing.");
+                      item.disabled = false;
+                    }
+                  });
+                  list.append(item);
+                });
+              } else {
+                throw new Error("GitHub returned an unsupported repository response.");
+              }
+            } catch (error) {
+              showMessage(error.message || "Could not load repository contents.");
+            } finally {
+              setBusy(false);
+            }
+          };
+          renderRepositories();
         } catch (error) {
           list.setAttribute("aria-busy", "false");
           list.textContent = error.message || "Could not load GitHub repositories.";
