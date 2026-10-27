@@ -827,3 +827,108 @@
     bottom: calc(var(--sketchizi-dock-clearance, 56px) + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+
+/* Keep contextual controls readable even when the canvas theme class is
+   applied by Excalidraw rather than the outer application wrapper. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  min-height: 38px !important;
+  padding: 4px 6px !important;
+  gap: 5px !important;
+  border: 1px solid rgb(127 127 127 / 28%) !important;
+  border-radius: 8px !important;
+  background: var(--contextual-toolbar-surface, rgb(248 249 252 / 96%)) !important;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 12%) !important;
+  color: #20242c !important;
+  isolation: isolate !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  border-right-color: rgb(55 65 81 / 24%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  flex: 0 0 auto !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  color: #20242c !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  opacity: 1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover {
+  background: rgb(79 70 229 / 12%) !important;
+  border-color: rgb(79 70 229 / 45%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button[aria-pressed="true"] {
+  background: rgb(99 102 241 / 18%) !important;
+  border-color: #6366f1 !important;
+  box-shadow: inset 0 0 0 1px rgb(99 102 241 / 22%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch {
+  border: 1px solid rgb(31 41 55 / 35%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch.is-selected,
+.app .contextual-formatting-toolbar .contextual-color-swatch[aria-pressed="true"] {
+  outline: 2px solid #6366f1 !important;
+  outline-offset: 1px !important;
+  border-color: #ffffff !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  color: #4b5563 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity input[type="range"] {
+  min-width: 54px !important;
+  accent-color: #6366f1 !important;
+}
+
+/* Explicit dark-canvas selectors; avoid depending on a theme class on .app. */
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar,
+.app.theme-dark .contextual-formatting-toolbar,
+.app[data-theme="dark"] .contextual-formatting-toolbar {
+  --contextual-toolbar-surface: rgb(28 31 40 / 98%);
+  color: #f3f4f8 !important;
+  border-color: rgb(226 232 240 / 28%) !important;
+  background: var(--contextual-toolbar-surface) !important;
+  box-shadow: 0 3px 14px rgb(0 0 0 / 35%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button {
+  color: #f3f4f8 !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group {
+  border-right-color: rgb(226 232 240 / 30%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-opacity label,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-opacity label,
+.app.theme-dark .contextual-formatting-toolbar .contextual-opacity label,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-opacity label {
+  color: #cbd5e1 !important;
+}
+
+.app .contextual-formatting-toolbar button:focus-visible,
+.app .contextual-formatting-toolbar input:focus-visible {
+  outline: 2px solid #8276f4 !important;
+  outline-offset: 2px !important;
+}
