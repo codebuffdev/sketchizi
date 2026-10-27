@@ -91,6 +91,18 @@ export default function ContextualFormattingToolbar({
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
   const currentFontSize = Number(first?.fontSize) || 20;
   const currentOpacity = Number(first?.opacity ?? 100);
+  const reorderSelection = (direction) => {
+    const api = apiRef?.current;
+    if (!api || liveSelection.length === 0) return;
+    const scene = api.getSceneElements?.() || [];
+    const selectedIds = new Set(liveSelection.map((element) => element.id));
+    const isSelectedLive = (element) => element && !element.isDeleted && !element.deleted && selectedIds.has(element.id);
+    const moving = scene.filter(isSelectedLive);
+    if (!moving.length) return;
+    const remaining = scene.filter((element) => !isSelectedLive(element));
+    const nextElements = direction === "back" ? [...moving, ...remaining] : [...remaining, ...moving];
+    api.updateScene({ elements: nextElements });
+  };
   const showShapeStyle = liveSelection.some((element) => SHAPE_TYPES.has(element.type) || element.type === "line" || element.type === "arrow" || element.type === "freedraw");
 
   return (
@@ -193,6 +205,11 @@ export default function ContextualFormattingToolbar({
           </div>
         </>
       )}
+
+      <div className="contextual-formatting-group contextual-layer-actions" role="group" aria-label="Layer order">
+        <button type="button" aria-label="Send selection to back" title="Send to back" onClick={() => reorderSelection("back")}>↓</button>
+        <button type="button" aria-label="Bring selection to front" title="Bring to front" onClick={() => reorderSelection("front")}>↑</button>
+      </div>
 
       <div className="contextual-formatting-group contextual-properties-action">
         <button type="button" className="contextual-properties-button" onClick={onOpenProperties} title="More formatting options" aria-label="More formatting options">
