@@ -1263,7 +1263,8 @@
 
 .app .desktop-app-header.is-constrained {
   display: grid;
-  grid-template-columns: 30px 30px minmax(72px, 1fr) auto 30px 34px 32px;
+  /* Let the document identity shrink before the fixed action controls do. */
+  grid-template-columns: 30px 30px minmax(0, 1fr) auto 30px 34px 32px;
   grid-template-areas:
     "menu library document account save collab search"
     "features features features features features features features";
