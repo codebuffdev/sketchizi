@@ -189,6 +189,73 @@ export default function SketchiziCanvas({
     };
   }, [selectedElements, applyToSelected, canEdit, viewModeEnabled, canvasRevision]);
 
+  // Selection feedback and layer ordering are additive controls. Reorder the
+  // existing scene array so Excalidraw keeps its normal element/update lifecycle.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const dock = root?.querySelector(".App-toolbar");
+    if (!dock) return undefined;
+    dock.querySelector(".sketchizi-selection-controls")?.remove();
+
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    if (!model.selectedCount) return undefined;
+
+    const group = document.createElement("div");
+    group.className = "sketchizi-contextual-controls sketchizi-selection-controls";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Selection actions");
+
+    const separator = document.createElement("span");
+    separator.className = "sketchizi-dock-separator";
+    separator.setAttribute("aria-hidden", "true");
+    group.appendChild(separator);
+
+    const count = document.createElement("span");
+    count.className = "sketchizi-selection-count";
+    count.textContent = model.selectedCount === 1 ? "1 selected" : `${model.selectedCount} selected`;
+    count.setAttribute("aria-live", "polite");
+    group.appendChild(count);
+
+    const addLayerButton = (label, direction) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "sketchizi-dock-quick-tool sketchizi-layer-button";
+      button.textContent = label;
+      button.title = direction === "front" ? "Bring to front" : "Send to back";
+      button.setAttribute("aria-label", button.title);
+      button.disabled = !model.canEdit || typeof apiRef?.current?.updateScene !== "function";
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const api = apiRef?.current;
+        if (!api || typeof api.getSceneElements !== "function" || typeof api.updateScene !== "function") return;
+        const scene = api.getSceneElements();
+        const selectedIds = new Set(selectedElements
+          .filter((element) => element && !element.isDeleted && !element.deleted)
+          .map((element) => element.id));
+        const moving = scene.filter((element) => selectedIds.has(element.id));
+        if (!moving.length) return;
+        const remaining = scene.filter((element) => !selectedIds.has(element.id));
+        const elements = direction === "front"
+          ? [...remaining, ...moving]
+          : [...moving, ...remaining];
+        api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      });
+      group.appendChild(button);
+    };
+
+    if (model.canEdit && model.showLayerControls) {
+      addLayerButton("Front", "front");
+      addLayerButton("Back", "back");
+    }
+    dock.appendChild(group);
+    return () => {
+      if (group.isConnected) group.remove();
+    };
+  }, [selectedElements, apiRef, canEdit, viewModeEnabled, canvasRevision]);
+
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
