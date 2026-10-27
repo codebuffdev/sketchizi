@@ -321,10 +321,28 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     closeNativeMenu();
     try {
       if (fileEntry?.file) {
+        // Folder input fallbacks provide File objects without write access. In
+        // browsers that support the file picker, let the user reselect this
+        // exact file to acquire a persistent handle for direct Ctrl+S saves.
+        if (getFileSystemSupport().open) {
+          showToast(`Select “${fileEntry.file.name}” in the file picker to enable saving to the original file.`);
+          const handle = await pickDrawingToOpen();
+          if (handle.name !== fileEntry.file.name) {
+            showToast(`Please select “${fileEntry.file.name}” to open it with edit access.`, "error");
+            return;
+          }
+          const { name, text } = await readDrawingFromHandle(handle);
+          if (!confirmCanvasReplacement(`open “${name}”`)) return;
+          const loadedSignature = loadDrawingIntoCanvas(text);
+          await registerFile(handle, name, loadedSignature, Date.now());
+          logger.info("Document opened with writable handle", { category: "file", fileName: name, source: "folder-fallback-reselect" });
+          showToast(`Opened ${name}; changes can be saved to the original file`);
+          return;
+        }
         const text = await fileEntry.file.text();
         if (!confirmCanvasReplacement(`open “${fileEntry.file.name}”`)) return;
         const loadedSignature = loadDrawingIntoCanvas(text);
-        setCurrentFile({ id: null, name: fileEntry.file.name, handle: null }, loadedSignature);
+        setCurrentFile({ id: null, name: fileEntry.file.name, handle: null, fallback: true }, loadedSignature);
         const record = await saveRecentSketch({
           id: `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name: fileEntry.file.name,
