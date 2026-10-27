@@ -45,8 +45,8 @@ test('text selection mounts font-size controls directly in the native dock', () 
 test('shape and connector selections mount native-dock appearance controls', () => {
   assert.match(canvas, /sketchizi-appearance-controls/);
   assert.match(canvas, /Shape and connector appearance/);
+  assert.match(canvas, /model\.showStrokeControls/);
   assert.match(canvas, /model\.showShapeControls/);
-  assert.match(canvas, /model\.showConnectorControls/);
   assert.match(canvas, /applyToSelected\(\{ \[property\]: color \}\)/);
   assert.match(canvas, /applyToSelected\(\{ strokeWidth: width \}\)/);
   assert.match(canvas, /model\.preserveImageArtwork/);
