@@ -74,7 +74,8 @@ test("hamburger menu keeps file management at the top without duplicate header c
 test("hamburger removes duplicate Help and labels the file action Open file", async () => {
   const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   assert.match(source, /toLowerCase\(\) === "help"/);
-  assert.match(source, /replaceExactTextNode\(item, "Open", "Open file"\)/);
+  assert.match(source, /The custom Workspace section already provides Open file/);
+  assert.match(source, /if \(item && item !== menu\) item\.remove\(\)/);
   assert.match(source, /openDrawingFromDisk/);
 });
 
@@ -87,7 +88,7 @@ test("canvas follows Day/Night and hamburger menu has no pin control", async () 
   const menuSource = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   assert.doesNotMatch(menuSource, /data-sketchizi-menu-pin/);
   assert.doesNotMatch(menuSource, /sketchizi-menu-pinned/);
-  assert.match(menuSource, /sketchizi-native-open-file-icon/);
+  assert.doesNotMatch(menuSource, /sketchizi-native-open-file-icon/);
   assert.doesNotMatch(menuSource, /data-sketchizi-theme-background-default/);
   assert.doesNotMatch(menuSource, /observer\.__reopenScheduled/);
   const header = await readFile(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");

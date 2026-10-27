@@ -142,29 +142,15 @@ export function useNativeSketchiziMenu({
         }
 
         const openLabel = exactLeaves.find(
-          (node) => node.textContent?.replace(/\s+/g, " ").trim() === "Open"
+          (node) => node.textContent?.replace(/\\s+/g, " ").trim() === "Open"
         );
         if (openLabel) {
           const item = openLabel.closest(
             "li, [role='menuitem'], .dropdown-menu-item, .context-menu-item, .menu-item, button, a"
           ) || openLabel.parentElement;
-          if (item && item !== menu) {
-            replaceExactTextNode(item, "Open", "Open file");
-            item.classList.add("sketchizi-native-open-file-item");
-            if (!item.querySelector(".sketchizi-native-open-file-icon")) {
-              const icon = document.createElement("span");
-              icon.className = "sketchizi-native-open-file-icon";
-              icon.setAttribute("aria-hidden", "true");
-              icon.textContent = "▤";
-              item.prepend(icon);
-            }
-            // The native Excalidraw Open item already has a folder glyph.
-            // Replace it with a single file glyph to avoid contradictory icons.
-            const existingFolderIcon = item.querySelector("svg, .dropdown-menu-item-icon, .context-menu-item-icon, .menu-item-icon");
-            if (existingFolderIcon && !existingFolderIcon.classList.contains("sketchizi-native-open-file-icon")) {
-              existingFolderIcon.remove();
-            }
-          }
+          // The custom Workspace section already provides Open file. Remove
+          // Excalidraw's duplicate native Open entry, including its Ctrl+O hint.
+          if (item && item !== menu) item.remove();
         }
       });
       document.querySelectorAll("body *").forEach((node) => {
