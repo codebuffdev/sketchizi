@@ -747,3 +747,40 @@
     min-height: 28px;
   }
 }
+
+
+/* Contextual dock accessibility: consistent keyboard focus and disabled states. */
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-layer-button:focus-visible {
+  outline: 2px solid #8b80ff !important;
+  outline-offset: 2px !important;
+  position: relative;
+  z-index: 3;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:disabled,
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:disabled,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:disabled,
+.app .excalidraw .App-toolbar .sketchizi-layer-button:disabled {
+  opacity: 0.42 !important;
+  cursor: not-allowed !important;
+  box-shadow: none;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:disabled:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:disabled:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:disabled:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-layer-button:disabled:focus-visible {
+  outline-color: #a6a0d9 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .excalidraw .App-toolbar .sketchizi-contextual-size-button,
+  .app .excalidraw .App-toolbar .sketchizi-contextual-color,
+  .app .excalidraw .App-toolbar .sketchizi-contextual-width-button,
+  .app .excalidraw .App-toolbar .sketchizi-layer-button {
+    transition: none !important;
+  }
+}
