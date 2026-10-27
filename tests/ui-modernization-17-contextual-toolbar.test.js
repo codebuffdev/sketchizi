@@ -89,3 +89,11 @@ test('Library icon images remain untouched by shape formatting until safe recolo
   assert.doesNotMatch(canvasTools, /recolorSvgDataUrl/);
   assert.doesNotMatch(toolbar, /recolorableIconSelection/);
 });
+
+
+test('contextual dock wraps and scrolls within narrow desktop workspaces', () => {
+  assert.match(dockStyles, /max-width: calc\(100vw - 24px\)/);
+  assert.match(dockStyles, /flex-wrap: wrap/);
+  assert.match(dockStyles, /@media \(max-width: 900px\)[\s\S]*?overflow: auto/);
+  assert.match(dockStyles, /@media \(max-width: 520px\)/);
+});
