@@ -117,3 +117,11 @@ test("Essentials collection exposes an accessible icon color selector", () => {
   assert.match(panel, /aria-pressed=\{selectedEssentialColor === color\.value\}/);
   assert.match(styles, /library-essential-color-swatch\.active/);
 });
+
+test("Essentials icon colors use a softer matte palette suitable for light theme", () => {
+  assert.match(panel, /#94a3b8/);
+  assert.match(panel, /#60a5fa/);
+  assert.match(panel, /#5eead4/);
+  assert.match(panel, /#c4b5fd/);
+  assert.match(styles, /library-essential-color-swatch\.active[\s\S]*?box-shadow:\s*0 0 0 2px #cbd5e1/);
+});
