@@ -1256,3 +1256,30 @@
     padding: 4px 11px 10px;
   }
 }
+
+
+/* Narrow mobile view: let the icon catalog expand upward into the available blank area. */
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    align-items: stretch;
+    justify-content: center;
+    padding: 0 12px;
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px));
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 12px);
+    max-height: none;
+    min-height: 0;
+  }
+  .app .library-panel-redesign .library-panel-header-compact {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 8px 4px;
+    flex: 0 0 30px;
+  }
+  .app .library-panel-redesign-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
