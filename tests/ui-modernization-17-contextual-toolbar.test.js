@@ -22,6 +22,15 @@ test('contextual formatting exposes selection mode and uses model-driven control
   assert.match(toolbar, /dockModel\.showShapeControls/);
 });
 
+test('native dock receives contextual selection state without replacing native controls', () => {
+  assert.match(canvas, /getContextualDockModel\(selectedElements, \{/);
+  assert.match(canvas, /data-sketchizi-context/);
+  assert.match(canvas, /data-sketchizi-selection-count/);
+  assert.match(canvas, /data-sketchizi-preserve-artwork/);
+  assert.match(styles, /data-sketchizi-context="text"/);
+  assert.match(styles, /data-sketchizi-context="shape"/);
+});
+
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
