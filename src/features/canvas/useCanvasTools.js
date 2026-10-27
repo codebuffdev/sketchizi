@@ -52,13 +52,13 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
       if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) {
         if (patch.strokeColor && isRecolorableEssentialIcon(element)) {
           const file = api.getFiles?.()?.[element.fileId];
-          const originalDataURL = element.customData?.iconOriginalDataURL || file?.dataURL;
-          const recoloredDataURL = recolorSvgDataUrl(originalDataURL, patch.strokeColor);
+          const sourceDataURL = file?.dataURL;
+          const recoloredDataURL = recolorSvgDataUrl(sourceDataURL, patch.strokeColor);
           if (recoloredDataURL && element.fileId) {
             api.addFiles([{ id: element.fileId, dataURL: recoloredDataURL, mimeType: "image/svg+xml", created: file?.created || Date.now(), lastRetrieved: Date.now() }]);
             return {
               ...element,
-              customData: { ...element.customData, iconOriginalDataURL: originalDataURL, iconColor: patch.strokeColor },
+              customData: { ...element.customData, iconColor: patch.strokeColor },
               version: element.version + 1,
               versionNonce: Math.floor(Math.random() * 2147483647),
               updated: now,
