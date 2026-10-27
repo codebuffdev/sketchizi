@@ -66,3 +66,12 @@ test('zoom and undo redo navigation controls use compact dimensions', () => {
   assert.match(dockCss, /\.undo-redo-buttons button/);
   assert.match(dockCss, /@media \(max-width: 700px\)[\s\S]*?width: 31px !important/);
 });
+
+
+test('floating dock has no enclosing background shell', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?background: transparent !important/);
+  assert.match(dockCss, /border-radius: 0 !important/);
+  assert.match(dockCss, /box-shadow: none !important/);
+  assert.match(dockCss, /backdrop-filter: none !important/);
+});
