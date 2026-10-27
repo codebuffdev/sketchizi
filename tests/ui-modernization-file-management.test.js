@@ -40,6 +40,14 @@ test("fallback folder files can be reopened with a writable handle when supporte
   assert.match(fileManager, /setCurrentFile\(\{ id: null, name: fileEntry\.file\.name, handle: null, fallback: true \}/);
 });
 
+test("read-only folder fallback clearly offers Save As without changing the source", () => {
+  assert.match(fileManager, /readOnlySource: true/);
+  assert.match(fileManager, /Read-only copy opened:[\s\S]*Use Save to… to save an editable copy; the original will not be changed/);
+  assert.match(fileManager, /if \(!file\?\.handle\)[\s\S]*return saveDrawingAs\(\)/);
+  assert.match(readFileSync(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8"), /Read-only · Save As/);
+  assert.match(readFileSync(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8"), /\.sketchizi-folder-file-status/);
+});
+
 test("new/open transitions warn before replacing an unsaved or browser-local working canvas", () => {
   assert.match(fileManager, /const confirmCanvasReplacement = \(actionLabel\)/);
   assert.match(fileManager, /window\.confirm\(\`\$\{reason\}/);
