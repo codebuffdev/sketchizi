@@ -41,5 +41,5 @@ export function isRecolorableEssentialIcon(element) {
   const customData = element.customData || {};
   const source = String(customData.iconSource || "").toLowerCase();
   const category = String(customData.iconCategory || "").toLowerCase();
-  return source === "eraser" || category === "essentials" || category === "eraser icons" || (!source && Boolean(customData.iconId));
+  return source === "eraser" || category === "essentials" || category === "eraser icons";
 }
