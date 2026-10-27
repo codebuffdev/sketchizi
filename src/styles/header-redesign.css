@@ -1439,3 +1439,21 @@
   min-width: 0;
   max-width: 100%;
 }
+
+
+/* Frameless header treatment to match the minimalist drawing dock: remove
+   the header strip's filled surface while retaining its divider and controls. */
+@media (min-width: 1025px) {
+  .app .desktop-app-header {
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .app.theme-dark .desktop-app-header,
+  .app.theme-light .desktop-app-header {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
