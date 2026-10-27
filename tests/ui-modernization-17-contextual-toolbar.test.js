@@ -75,3 +75,10 @@ test('floating dock has no enclosing background shell', () => {
   assert.match(dockCss, /box-shadow: none !important/);
   assert.match(dockCss, /backdrop-filter: none !important/);
 });
+
+
+test('dock hides inline shortcut hints without disabling keyboard shortcuts', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding[\s\S]*?display: none !important/);
+  assert.match(dockCss, /Keyboard shortcuts themselves remain available and unchanged/);
+});
