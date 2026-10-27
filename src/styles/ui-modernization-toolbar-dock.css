@@ -598,3 +598,49 @@
     min-height: 31px !important;
   }
 }
+
+
+/* Compact navigation cluster: zoom and history controls should match the
+   reduced drawing dock rather than retaining Excalidraw's larger defaults. */
+.app .excalidraw .zoom-actions,
+.app .excalidraw .undo-redo-buttons {
+  gap: 3px !important;
+}
+
+.app .excalidraw .zoom-actions button,
+.app .excalidraw .undo-redo-buttons button,
+.app .excalidraw .zoom-actions .ToolIcon__icon,
+.app .excalidraw .undo-redo-buttons .ToolIcon__icon {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 5px !important;
+  border-radius: 9px !important;
+}
+
+.app .excalidraw .zoom-actions .reset-zoom,
+.app .excalidraw .zoom-actions button[aria-label*="zoom"],
+.app .excalidraw .zoom-actions button[title*="zoom"] {
+  min-width: 34px !important;
+}
+
+.app .excalidraw .zoom-actions,
+.app .excalidraw .undo-redo-buttons {
+  min-height: 42px !important;
+  padding: 4px !important;
+  border-radius: 12px !important;
+}
+
+@media (max-width: 700px) {
+  .app .excalidraw .zoom-actions button,
+  .app .excalidraw .undo-redo-buttons button,
+  .app .excalidraw .zoom-actions .ToolIcon__icon,
+  .app .excalidraw .undo-redo-buttons .ToolIcon__icon {
+    width: 31px !important;
+    min-width: 31px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+  }
+}
