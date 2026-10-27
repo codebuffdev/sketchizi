@@ -17,6 +17,15 @@ test("container completions expose manifest fields instead of only two example n
   assert.doesNotMatch(source, /choices = \["- name: app", "- name: web"\]/);
 });
 
+test("env completion offers environment-variable fields instead of root manifest fields", () => {
+  const completionStart = source.indexOf('const fieldGroups = {');
+  const completionEnd = source.indexOf('choices.forEach((entry) => add(entry, parent ?', completionStart);
+  const groups = source.slice(completionStart, completionEnd);
+  assert.match(groups, /env:\s*\["- name:", "value:", "valueFrom:"\]/);
+  assert.match(groups, /valueFrom:\s*\["configMapKeyRef:", "secretKeyRef:", "fieldRef:", "resourceFieldRef:"\]/);
+  assert.doesNotMatch(groups, /env:\s*\["apiVersion:", "kind:", "metadata:", "spec:", "data:", "type:"\]/);
+});
+
 test("K8s Studio offers multi-select YAML import and validates the complete file set", () => {
   assert.match(source, /type="file" accept="\.yaml,\.yml,application\/yaml,text\/yaml" multiple hidden onChange=\{importFile\}/);
   assert.match(source, /Promise\.all\(files\.map\(async \(file\) =>/);
