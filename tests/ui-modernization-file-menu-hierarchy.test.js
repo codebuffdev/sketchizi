@@ -15,11 +15,11 @@ test("file management menu separates workspace actions from quick access", () =>
   assert.match(menu, /aria-controls="sketchizi-recent-folders-panel"/);
 });
 
-test("custom hamburger file menu stays above the taskbar and scrolls its inner content", () => {
-  assert.match(styles, /bottom: max\(48px, env\(safe-area-inset-bottom, 0px\)\) !important/);
-  assert.match(styles, /\.dropdown-menu:has\(\[data-sketchizi-custom-menu-block\]\) > \.dropdown-menu-container \{[\s\S]*max-height: calc\(100dvh - 112px\) !important/);
+test("custom hamburger file menu stays within the dynamic viewport without changing its anchor", () => {
+  assert.match(styles, /\.dropdown-menu:has\(\[data-sketchizi-custom-menu-block\]\) \{[\s\S]*max-height: calc\(100dvh - 24px\) !important/);
   assert.match(styles, /overflow-y: auto !important/);
   assert.match(styles, /overscroll-behavior-y: contain/);
+  assert.doesNotMatch(styles, /bottom: max\(48px, env\(safe-area-inset-bottom, 0px\)\) !important/);
 });
 
 test("phase 25 preserves recent-file, recent-folder, and folder refresh workflows", () => {
