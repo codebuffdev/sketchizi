@@ -707,3 +707,11 @@
   border-color: transparent !important;
   box-shadow: none !important;
 }
+
+
+/* Hide inline keyboard shortcut hints (V, R, D, O, etc.) from the dock.
+   Keyboard shortcuts themselves remain available and unchanged. */
+.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding {
+  display: none !important;
+}
