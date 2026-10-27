@@ -46,14 +46,14 @@ export default function IconLibraryPanel({
   const [selectedEssentialColor, setSelectedEssentialColor] = useState("#7c5cff");
   const [selectedIconId, setSelectedIconId] = useState(null);
   const essentialColors = [
-    { value: "#1f2937", label: "Graphite" },
-    { value: "#64748b", label: "Slate" },
-    { value: "#2563eb", label: "Blue" },
-    { value: "#0d9488", label: "Teal" },
-    { value: "#16a34a", label: "Green" },
-    { value: "#e59a22", label: "Amber" },
-    { value: "#e05252", label: "Red" },
-    { value: "#7c5cff", label: "Violet" },
+    { value: "#64748b", label: "Graphite" },
+    { value: "#94a3b8", label: "Slate" },
+    { value: "#60a5fa", label: "Blue" },
+    { value: "#5eead4", label: "Teal" },
+    { value: "#86efac", label: "Green" },
+    { value: "#fcd34d", label: "Amber" },
+    { value: "#fca5a5", label: "Red" },
+    { value: "#c4b5fd", label: "Violet" },
   ];
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
