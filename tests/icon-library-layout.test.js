@@ -20,7 +20,7 @@ test("Only the icon result grid owns vertical scrolling and has a visible purple
   assert.match(styles, /library-icon-grid::\-webkit-scrollbar-thumb/);
 });
 
-test("Search, recent-search chips, first-class source tabs, and view controls are present", () => {
+test("Search, recent-search chips, and first-class source tabs are present", () => {
   assert.match(panel, /Search icons, tags, or categories/);
   assert.match(panel, /library-recent-searches/);
   assert.match(panel, /library-source-tabs/);
@@ -39,10 +39,10 @@ test("Floating library uses a smaller footprint and light theme overrides all co
   assert.match(appStyles, /desktop-workspace-library-open::before[\s\S]*?background: rgba\(30, 34, 52, \.20\) !important/);
 });
 
-test("Dialog uses a subtle translucent glass surface and accessible compact layout control", () => {
+test("Dialog uses a subtle translucent glass surface and a non-modal accessible panel role", () => {
   assert.match(styles, /backdrop-filter:\s*blur\(18px\) saturate\(125%\)/);
   assert.match(panel, /role="dialog" aria-modal="false"/);
-  assert.match(styles, /backdrop-filter:\\s\*blur\\(18px\\) saturate\\(125%\\)/);
+
 });
 
 test("Icon Library header omits redundant title and instruction text while retaining close control", async () => {
