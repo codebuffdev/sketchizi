@@ -41,31 +41,10 @@ test('contextual toolbar has light, dark, responsive, and focus-visible styling'
 });
 
 
-test('Essentials SVG icons expose contextual color swatches and recolor stored SVG artwork', () => {
-  assert.match(toolbar, /recolorableIconSelection/);
-  assert.match(toolbar, /aria-label="Icon color"/);
-  assert.match(toolbar, /aria-label=\{\x60Icon color \$\{label\}\x60\}/);
-  const colorService = readFileSync(new URL('../src/features/icon-library/iconColorService.js', import.meta.url), 'utf8');
+test('Library icon images remain untouched by shape formatting until safe recoloring is supported', () => {
   const canvasTools = readFileSync(new URL('../src/features/canvas/useCanvasTools.js', import.meta.url), 'utf8');
-  assert.match(colorService, /export function recolorSvgMarkup/);
-  assert.match(colorService, /PRESERVED_PAINT/);
-  assert.match(colorService, /export function isRecolorableEssentialIcon/);
-  assert.match(canvasTools, /recolorSvgDataUrl\(sourceDataURL, patch\.strokeColor\)/);
-  assert.match(canvasTools, /iconColor: patch\.strokeColor/);
-  assert.match(canvasTools, /id: element\.fileId, dataURL: recoloredDataURL/);
-  assert.doesNotMatch(canvasTools, /fileId: recoloredFileId/);
-});
-
-test('SVG recoloring updates white artwork while preserving transparent and unpainted areas', () => {
-  const colorService = readFileSync(new URL('../src/features/icon-library/iconColorService.js', import.meta.url), 'utf8');
-  assert.match(colorService, /PRESERVED_PAINT/);
-  assert.match(colorService, /export function recolorSvgDataUrl/);
-  assert.match(colorService, /category === "eraser icons"/);
-});
-
-test('SVG recoloring assigns the selected color to paths with implicit default fill', () => {
-  const colorService = readFileSync(new URL('../src/features/icon-library/iconColorService.js', import.meta.url), 'utf8');
-  assert.match(colorService, /Some catalog SVGs omit fill entirely/);
-  assert.match(colorService, /hasFill \|\| hasStroke/);
-  assert.match(colorService, /fill="\$\{color\}"/);
+  assert.match(canvasTools, /Keep library image assets untouched/);
+  assert.match(canvasTools, /if \(element\.type === "image" && \(element\.customData\?\.iconId \|\| element\.customData\?\.diagramIcon\)\) return element/);
+  assert.doesNotMatch(canvasTools, /recolorSvgDataUrl/);
+  assert.doesNotMatch(toolbar, /recolorableIconSelection/);
 });
