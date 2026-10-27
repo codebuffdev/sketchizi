@@ -1597,3 +1597,58 @@
   font: inherit;
   font-weight: 700;
 }
+
+
+/* Visible Essentials icon tint selector. */
+.app .library-panel-redesign .library-essential-colors {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--library-border, #273246);
+}
+.app .library-panel-redesign .library-essential-colors-label {
+  color: var(--library-muted, #aab4cd);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-essential-color-options {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.app .library-panel-redesign .library-essential-color-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border: 1px solid #4a566b;
+  border-radius: 50%;
+  background: #1a2230;
+  cursor: pointer;
+}
+.app .library-panel-redesign .library-essential-color-swatch > span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--essential-color);
+}
+.app .library-panel-redesign .library-essential-color-swatch.active {
+  border: 2px solid #f3f6fc;
+  box-shadow: 0 0 0 2px #7c5cff;
+}
+.app .library-panel-redesign .library-essential-color-swatch:focus-visible {
+  outline: 2px solid #bca6ff;
+  outline-offset: 2px;
+}
+@media (max-width: 420px) {
+  .app .library-panel-redesign .library-essential-colors { gap: 6px; }
+  .app .library-panel-redesign .library-essential-color-options { gap: 4px; }
+  .app .library-panel-redesign .library-essential-color-swatch { width: 20px; height: 20px; }
+  .app .library-panel-redesign .library-essential-colors-label { font-size: 10px; }
+}
