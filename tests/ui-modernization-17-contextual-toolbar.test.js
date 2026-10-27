@@ -25,9 +25,9 @@ test('contextual formatting exposes selection mode and uses model-driven control
 
 test('native dock receives contextual selection state without replacing native controls', () => {
   assert.match(canvas, /getContextualDockModel\(selectedElements, \{/);
-  assert.match(canvas, /dataset\\.sketchiziContext/);
-  assert.match(canvas, /dataset\\.sketchiziSelectionCount/);
-  assert.match(canvas, /dataset\\.sketchiziPreserveArtwork/);
+  assert.match(canvas, /dataset\.sketchiziContext/);
+  assert.match(canvas, /dataset\.sketchiziSelectionCount/);
+  assert.match(canvas, /dataset\.sketchiziPreserveArtwork/);
   assert.match(dockStyles, /data-sketchizi-context="text"/);
   assert.match(dockStyles, /data-sketchizi-context="shape"/);
 });
@@ -39,7 +39,7 @@ test('text selection mounts font-size controls directly in the native dock', () 
   assert.match(canvas, /Increase text size/);
   assert.match(canvas, /applyToSelected\(\{ fontSize: nextSize \}\)/);
   assert.match(canvas, /model\.showTextControls/);
-  assert.match(styles, /\.sketchizi-contextual-size-button/);
+  assert.match(dockStyles, /\.sketchizi-contextual-size-button/);
 });
 
 test('shape and connector selections mount native-dock appearance controls', () => {
