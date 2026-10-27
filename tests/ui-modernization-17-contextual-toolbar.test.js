@@ -54,6 +54,17 @@ test('shape and connector selections mount native-dock appearance controls', () 
   assert.match(dockStyles, /\.sketchizi-contextual-width-button/);
 });
 
+test('native dock exposes selection count and working layer-order actions', () => {
+  assert.match(canvas, /sketchizi-selection-controls/);
+  assert.match(canvas, /model\.selectedCount === 1 \? "1 selected"/);
+  assert.match(canvas, /Bring to front/);
+  assert.match(canvas, /Send to back/);
+  assert.match(canvas, /api\.getSceneElements\(\)/);
+  assert.match(canvas, /api\.updateScene\(\{ elements, captureUpdate: CaptureUpdateAction\.IMMEDIATELY \}\)/);
+  assert.match(dockStyles, /\.sketchizi-selection-count/);
+  assert.match(dockStyles, /\.sketchizi-layer-button/);
+});
+
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
