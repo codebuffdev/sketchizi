@@ -86,3 +86,17 @@ export function getContextualDockModel(selectedElements = [], { canEdit = true }
     preserveImageArtwork: hasLibraryImage,
   };
 }
+
+/**
+ * Reorder selected elements while preserving their relative order and the
+ * relative order of all unselected elements.
+ */
+export function reorderElementsBySelection(elements = [], selectedIds = new Set(), direction = "front") {
+  const isSelected = (element) => selectedIds.has(element?.id);
+  const moving = elements.filter(isSelected);
+  if (moving.length === 0) return [...elements];
+  const remaining = elements.filter((element) => !isSelected(element));
+  return direction === "back"
+    ? [...moving, ...remaining]
+    : [...remaining, ...moving];
+}
