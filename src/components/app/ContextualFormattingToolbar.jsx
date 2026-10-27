@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { getContextualDockModel } from "../../features/canvas/contextualDockModel.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -66,12 +67,13 @@ export default function ContextualFormattingToolbar({
   onOpenProperties,
   canEdit = true,
 }) {
-  const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
+  const liveSelection = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const dockModel = getContextualDockModel(liveSelection, { canEdit });
   const first = liveSelection[0];
   const elementTypes = liveSelection.map((element) => element.type);
-  const showFill = elementTypes.some((type) => SHAPE_TYPES.has(type));
-  const showStrokeWidth = elementTypes.some((type) => LINE_TYPES.has(type));
-  const showTextSize = elementTypes.includes("text");
+  const showFill = dockModel.showShapeControls && elementTypes.some((type) => SHAPE_TYPES.has(type));
+  const showStrokeWidth = (dockModel.showShapeControls || dockModel.showConnectorControls) && elementTypes.some((type) => LINE_TYPES.has(type));
+  const showTextSize = dockModel.showTextControls;
   const position = useMemo(
     () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
@@ -93,6 +95,9 @@ export default function ContextualFormattingToolbar({
       className="contextual-formatting-toolbar"
       role="toolbar"
       aria-label="Selected object formatting"
+      data-contextual-mode={dockModel.mode}
+      data-selected-count={dockModel.selectedCount}
+      data-preserve-image-artwork={dockModel.preserveImageArtwork ? "true" : "false"}
       style={position}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
