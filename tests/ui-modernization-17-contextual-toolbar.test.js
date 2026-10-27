@@ -29,6 +29,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.scrollY/);
   assert.match(toolbar, /Math\.min\(rootHeight - 54/);
   assert.match(toolbar, /canvasRevision/);
+  assert.match(toolbar, /const belowTop = bottomY \+ 12/);
 });
 
 test('contextual toolbar has light, dark, responsive, and focus-visible styling', () => {
@@ -47,16 +48,17 @@ test('Essentials SVG icons expose contextual color swatches and recolor stored S
   const colorService = readFileSync(new URL('../src/features/icon-library/iconColorService.js', import.meta.url), 'utf8');
   const canvasTools = readFileSync(new URL('../src/features/canvas/useCanvasTools.js', import.meta.url), 'utf8');
   assert.match(colorService, /export function recolorSvgMarkup/);
-  assert.match(colorService, /WHITE_COLORS/);
+  assert.match(colorService, /PRESERVED_PAINT/);
   assert.match(colorService, /export function isRecolorableEssentialIcon/);
-  assert.match(canvasTools, /recolorSvgDataUrl\(originalDataURL, patch\.strokeColor\)/);
+  assert.match(canvasTools, /recolorSvgDataUrl\(sourceDataURL, patch\.strokeColor\)/);
   assert.match(canvasTools, /iconColor: patch\.strokeColor/);
+  assert.match(canvasTools, /fileId: recoloredFileId/);
+  assert.match(canvasTools, /recoloredFileId =/);
 });
 
-test('SVG recoloring preserves white negative space and non-painted areas', () => {
+test('SVG recoloring updates white artwork while preserving transparent and unpainted areas', () => {
   const colorService = readFileSync(new URL('../src/features/icon-library/iconColorService.js', import.meta.url), 'utf8');
   assert.match(colorService, /PRESERVED_PAINT/);
-  assert.match(colorService, /WHITE_COLORS/);
   assert.match(colorService, /export function recolorSvgDataUrl/);
   assert.match(colorService, /category === "eraser icons"/);
 });
