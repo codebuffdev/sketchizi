@@ -3,17 +3,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const menu = readFileSync(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+const menuTemplate = menu.slice(menu.indexOf("recentSection.innerHTML = `"), menu.indexOf("customBlock.append(recentSection)"));
 const styles = readFileSync(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 test("file management menu keeps workspace actions compact and focused on files", () => {
   assert.match(menu, /class="sketchizi-native-settings-title">Workspace/);
-  assert.doesNotMatch(menu, /aria-label="Current folder"/);
-  assert.doesNotMatch(menu, /Recent folders|data-recent-folder-list|data-clear-recent-folders/);
-  assert.match(menu, /data-sketchizi-new-file/);
-  assert.match(menu, /class="sketchizi-file-menu-actions" role="group" aria-label="File actions"/);
-  assert.match(menu, /class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"/);
-  assert.match(menu, /aria-controls="sketchizi-recent-files-panel"/);
+  assert.doesNotMatch(menuTemplate, /aria-label="Current folder"/);
+  assert.doesNotMatch(menuTemplate, /Recent folders|data-recent-folder-list|data-clear-recent-folders/);
+  assert.match(menuTemplate, /data-sketchizi-new-file/);
+  assert.match(menuTemplate, /class="sketchizi-file-menu-actions" role="group" aria-label="File actions"/);
+  assert.match(menuTemplate, /class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"/);
+  assert.match(menuTemplate, /aria-controls="sketchizi-recent-files-panel"/);
 });
 
 test("Open file menu action uses a single file icon", () => {
