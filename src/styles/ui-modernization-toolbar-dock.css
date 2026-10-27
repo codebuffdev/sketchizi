@@ -567,3 +567,39 @@
 .app .excalidraw .Island.App-toolbar[data-sketchizi-can-edit="false"] {
   opacity: .88;
 }
+
+
+/* Inline contextual controls mounted into the native dock for text selections. */
+.app .excalidraw .App-toolbar .sketchizi-contextual-controls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 42px;
+  margin-left: 2px;
+  padding-left: 6px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size {
+  min-width: 24px;
+  color: var(--sk-toolbar-ink, #e7e9f2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:disabled {
+  cursor: default;
+  opacity: .45;
+}
