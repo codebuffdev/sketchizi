@@ -122,3 +122,12 @@ test("header width measurement is clamped to visible viewport in split-window la
   assert.match(header, /document\.documentElement\.clientWidth \|\| window\.innerWidth/);
   assert.match(header, /window\.addEventListener\("resize", updateWidth\)/);
 });
+
+
+test("desktop header uses a frameless transparent surface", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  const frameless = css.slice(css.indexOf("/* Frameless header treatment"));
+  assert.match(frameless, /\.app \.desktop-app-header\s*\{[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /box-shadow: none !important/);
+  assert.match(frameless, /@media \(min-width: 1025px\)/);
+});
