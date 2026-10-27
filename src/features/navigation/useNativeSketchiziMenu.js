@@ -564,13 +564,14 @@ export function useNativeSketchiziMenu({
               });
               list.append(button);
             });
-            search.addEventListener("input", () => {
-              const query = search.value.trim().toLocaleLowerCase();
-              [...list.querySelectorAll(".sketchizi-repository-picker-item")].forEach((item) => {
-                item.hidden = !item.textContent.toLocaleLowerCase().includes(query);
-              });
-            }, { once: true });
           };
+          search.addEventListener("input", () => {
+            if (selectedRepository) return;
+            const query = search.value.trim().toLocaleLowerCase();
+            [...list.querySelectorAll(".sketchizi-repository-picker-item")].forEach((item) => {
+              item.hidden = !item.textContent.toLocaleLowerCase().includes(query);
+            });
+          });
           const showRepositoryContents = async () => {
             if (!selectedRepository) return;
             setBusy(true);
