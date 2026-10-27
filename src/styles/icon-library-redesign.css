@@ -1312,3 +1312,65 @@
     border-radius: 14px;
   }
 }
+
+
+/* Floating compact catalog: preserve the canvas as the primary workspace. */
+@media (min-width: 761px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    position: fixed !important;
+    inset: calc(var(--sketchizi-desktop-header-height, 58px) + 16px) auto auto 16px !important;
+    z-index: 400;
+    display: flex !important;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: min(390px, calc(100vw - 32px)) !important;
+    height: min(650px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 32px)) !important;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    display: flex !important;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border: 1px solid #2b3243;
+    border-radius: 16px;
+    box-shadow: 0 18px 54px rgba(0, 0, 0, .32);
+    pointer-events: auto;
+  }
+}
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    position: fixed !important;
+    inset: calc(var(--sketchizi-desktop-header-height, 58px) + 8px) 12px auto !important;
+    width: auto !important;
+    height: min(78dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    max-height: none;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+    pointer-events: none;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 14px;
+    border: 1px solid #2b3243;
+    pointer-events: auto;
+  }
+}
