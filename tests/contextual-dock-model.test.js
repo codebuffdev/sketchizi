@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getContextualDockModel } from "../src/features/canvas/contextualDockModel.js";
+import { getContextualDockModel, reorderElementsBySelection } from "../src/features/canvas/contextualDockModel.js";
 
 test("empty selection shows tools without formatting controls", () => {
   assert.deepEqual(getContextualDockModel([]), {
@@ -114,4 +114,22 @@ test("mixed selection containing text does not expose shape stroke controls", ()
 test("read-only and empty selections never expose shared stroke controls", () => {
   assert.equal(getContextualDockModel([]).showStrokeControls, false);
   assert.equal(getContextualDockModel([{ type: "arrow" }], { canEdit: false }).showStrokeControls, false);
+});
+
+test("layer ordering moves selected elements together and preserves relative order", () => {
+  const elements = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }];
+  const selected = new Set(["b", "d"]);
+  assert.deepEqual(
+    reorderElementsBySelection(elements, selected, "front").map((element) => element.id),
+    ["a", "c", "b", "d"],
+  );
+  assert.deepEqual(
+    reorderElementsBySelection(elements, selected, "back").map((element) => element.id),
+    ["b", "d", "a", "c"],
+  );
+});
+
+test("layer ordering leaves the scene unchanged when no selected ids match", () => {
+  const elements = [{ id: "a" }, { id: "b" }];
+  assert.deepEqual(reorderElementsBySelection(elements, new Set(["missing"]), "front"), elements);
 });
