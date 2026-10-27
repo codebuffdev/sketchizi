@@ -1720,3 +1720,38 @@
   background: transparent !important;
   box-shadow: none !important;
 }
+
+
+/* Always-visible, centered Escape hint: transparent surface, readable text and keycap. */
+.app .library-panel-redesign > .library-scroll-hint {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 28px !important;
+  padding: 6px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #d1d7e5 !important;
+  text-align: center !important;
+  opacity: 1 !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  color: #d1d7e5 !important;
+  white-space: nowrap !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  display: inline-block !important;
+  padding: 1px 5px !important;
+  border: 1px solid #8792a8 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
