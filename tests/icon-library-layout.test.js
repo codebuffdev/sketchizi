@@ -153,3 +153,10 @@ test("Escape-to-close hint always renders even when icon results are capped", ()
   assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
   assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
 });
+
+
+test("Floating Icon Library is top-aligned rather than vertically centered", () => {
+  assert.match(styles, /desktop-workspace-library-open > \.desktop-resources-region\.mobile-resource-open[\s\S]*?align-items:\s*flex-start !important/);
+  assert.match(styles, /desktop-workspace-library-open > \.desktop-resources-region\.mobile-resource-open[\s\S]*?padding-top:\s*max\(16px, env\(safe-area-inset-top, 0px\)\) !important/);
+  assert.match(styles, /desktop-workspace-library-open \.desktop-resources-region > \.library-panel\.library-panel-redesign[\s\S]*?align-self:\s*flex-start !important/);
+});
