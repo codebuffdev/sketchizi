@@ -1484,3 +1484,77 @@
     overflow-wrap: anywhere;
   }
 }
+
+
+/* Responsive card layout must follow the floating panel width, not viewport width. */
+.app .desktop-resources-region > .library-panel.library-panel-redesign {
+  container-type: inline-size;
+  container-name: icon-library-panel;
+}
+@container icon-library-panel (max-width: 460px) {
+  .app .library-panel-redesign .library-icon-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-rows: auto !important;
+    gap: 8px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: 2px 6px 10px 2px !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card {
+    display: grid !important;
+    grid-template-columns: 72px minmax(0, 1fr) 34px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 82px !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 8px !important;
+    overflow: hidden !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview {
+    display: flex !important;
+    width: 68px !important;
+    height: 66px !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview img {
+    width: 54px !important;
+    height: 54px !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name {
+    display: block !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    display: block !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .library-icon-card-actions {
+    min-width: 0 !important;
+    width: 34px !important;
+  }
+}
