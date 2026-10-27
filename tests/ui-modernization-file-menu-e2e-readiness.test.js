@@ -15,5 +15,6 @@ test("file menu reports cancellation and unexpected failures without false succe
   assert.match(menu, /error\?\.name === "AbortError" \|\| error\?\.kind === "cancelled"/);
   assert.match(menu, /Could not finish opening/);
   assert.match(menu, /Opening \$\{label\} was cancelled/);
-  assert.match(menu, /Do not overwrite useful error\/cancellation feedback with a success claim/);
+  assert.match(menu, /!announcement\.startsWith\("Could not finish"\)/);
+  assert.match(menu, /!announcement\.startsWith\(\x60Opening \$\{label\} was cancelled\.\x60\)/);
 });
