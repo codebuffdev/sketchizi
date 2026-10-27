@@ -16,7 +16,8 @@ test("file management menu separates workspace actions from quick access", () =>
 });
 
 test("folder browsing is collapsed by default to keep the hamburger menu compact", () => {
-  assert.match(menu, /<details class="sketchizi-folder-browser"><summary class="sketchizi-folder-browser-summary">Current folder/);
+  assert.match(menu, /<details class="sketchizi-folder-browser"><summary class="sketchizi-folder-browser-summary"><span data-folder-browser-name>Current folder<\/span>/);
+  assert.match(menu, /folderBrowserName\.textContent = currentFolder\?\.name \|\| "Current folder"/);
   assert.doesNotMatch(menu, /<details class="sketchizi-folder-browser" open>/);
   assert.match(styles, /\.sketchizi-folder-browser-summary/);
   assert.match(styles, /\.sketchizi-folder-browser\[open\] \.sketchizi-folder-browser-summary::after/);
