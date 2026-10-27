@@ -34,5 +34,7 @@ test("repository picker includes a search field and filters repository metadata 
   assert.match(source, /Search repositories by name/);
   assert.match(source, /search\.addEventListener\("input"/);
   assert.match(source, /item\.hidden = !item\.textContent\.toLocaleLowerCase\(\)\.includes\(query\)/);
+  assert.match(source, /No repositories match your search/);
+  assert.match(styles, /\.sketchizi-repository-picker-item\[hidden\] \{ display: none !important; \}/);
   assert.match(styles, /\.sketchizi-repository-picker-search/);
 });
