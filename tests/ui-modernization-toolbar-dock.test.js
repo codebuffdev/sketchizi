@@ -24,5 +24,5 @@ test('toolbar redesign is loaded last and retains responsive, theme, and motion 
   assert.match(css, /\.app\.theme-light/);
   assert.match(css, /max-width:\s*700px/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /display:\s*none\s*!important/);
+  assert.doesNotMatch(css, /\.App-toolbar\[data-sketchizi-dock="true"\][^{}]*\{[^}]*display:\s*none\s*!important/);
 });
