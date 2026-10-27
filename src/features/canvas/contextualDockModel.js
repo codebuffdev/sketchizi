@@ -26,6 +26,7 @@ export function getContextualDockModel(selectedElements = [], { canEdit = true }
       showTextControls: false,
       showShapeControls: false,
       showConnectorControls: false,
+      showStrokeControls: false,
       showLayerControls: false,
       showSpecializedProperties: elements.length > 0,
       preserveImageArtwork: elements.some(isLibraryImage),
@@ -52,6 +53,7 @@ export function getContextualDockModel(selectedElements = [], { canEdit = true }
   const onlyText = types.size === 1 && types.has("text");
   const onlyShapes = [...types].every((type) => SHAPE_TYPES.has(type));
   const onlyConnectors = [...types].every((type) => CONNECTOR_TYPES.has(type));
+  const strokeCompatible = [...types].every((type) => SHAPE_TYPES.has(type) || CONNECTOR_TYPES.has(type));
   const hasLibraryImage = elements.some(isLibraryImage);
   const hasMixedTypes = types.size > 1;
   const mode = hasMixedTypes
@@ -75,6 +77,7 @@ export function getContextualDockModel(selectedElements = [], { canEdit = true }
     showTextControls: onlyText,
     showShapeControls: onlyShapes,
     showConnectorControls: onlyConnectors,
+    showStrokeControls: onlyShapes || onlyConnectors || strokeCompatible,
     showLayerControls: true,
     // Specialized architecture/resource properties remain available to the
     // dock even when the selection is not a standard Excalidraw shape.
