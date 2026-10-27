@@ -45,12 +45,11 @@ test("Dialog uses a subtle translucent glass surface and a non-modal accessible 
 
 });
 
-test("Icon Library header omits redundant title and instruction text while retaining close control", async () => {
+test("Icon Library omits redundant title and instruction text and keeps the Escape hint at the top", async () => {
   assert.match(panel, /library-scroll-hint/);
   assert.ok(panel.indexOf('className="library-scroll-hint"') < panel.indexOf('className="library-panel-body library-panel-redesign-body"'));
   assert.doesNotMatch(panel, /Drag icons onto the canvas to place them precisely/);
   assert.doesNotMatch(panel, /id="icon-library-title"/);
-  assert.match(panel, /aria-label="Close Icon Library"/);
   assert.match(styles, /library-panel-header-compact[\s\S]*?height:\s*34px/);
 });
 
