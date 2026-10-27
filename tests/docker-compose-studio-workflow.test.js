@@ -203,5 +203,5 @@ test("YAML editor, syntax overlay and line-number gutter share scrolling and typ
   assert.match(component, /pre\.scrollTop = event\.currentTarget\.scrollTop/);
   assert.match(component, /pre\.scrollLeft = event\.currentTarget\.scrollLeft/);
   assert.match(css, /\.docker-studio-yaml-gutter span\{display:block;height:1\.65em\}/);
-  assert.match(css, /\.docker-studio-yaml-highlight,\.docker-studio-yaml-input\{[^}]*line-height/);
+  assert.match(css, /\.docker-studio \.docker-studio-yaml-input\{[^}]*line-height:1\.65/);
 });
