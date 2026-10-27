@@ -106,3 +106,12 @@ test('contextual toolbar provides canvas layer ordering actions', () => {
   assert.match(toolbar, /aria-label="Bring selection to front"/);
   assert.match(toolbar, /api\.updateScene\(\{ elements: nextElements \}\)/);
 });
+
+
+test('scroll-back-to-content control is offset above the bottom dock', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  const rules = dockCss.slice(dockCss.lastIndexOf('/* Keep Excalidraw\'s "Scroll back to content"'));
+  assert.match(rules, /\.scroll-back-to-content[\s\S]*?bottom: calc\(var\(--sketchizi-dock-clearance, 64px\)/);
+  assert.match(rules, /z-index: 20 !important/);
+  assert.match(rules, /@media \(max-height: 620px\)/);
+});
