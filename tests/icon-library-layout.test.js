@@ -43,3 +43,11 @@ test("Dialog uses a subtle translucent glass surface and accessible compact layo
   assert.match(panel, /aria-label="Card layout"/);
   assert.equal(panel.includes('<span className="sr-only">Card layout</span>'), false);
 });
+
+test("Icon Library header omits redundant title and instruction text while retaining close control", async () => {
+  assert.match(panel, /library-panel-header-compact/);
+  assert.doesNotMatch(panel, /Drag icons onto the canvas to place them precisely/);
+  assert.doesNotMatch(panel, /id="icon-library-title"/);
+  assert.match(panel, /aria-label="Close Icon Library"/);
+  assert.match(styles, /library-panel-header-compact[\s\S]*?height:\s*34px/);
+});
