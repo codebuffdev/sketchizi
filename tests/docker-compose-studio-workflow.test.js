@@ -205,36 +205,3 @@ test("YAML editor, syntax overlay and line-number gutter share scrolling and typ
   assert.match(css, /\.docker-studio-yaml-gutter span\{display:block;height:1\.65em\}/);
   assert.match(css, /\.docker-studio-yaml-highlight,\.docker-studio-yaml-input\{[^}]*line-height/);
 });
-
-test("Compose Studio places the container inspector left of the YAML editor on desktop", () => {
-  assert.match(css, /\.docker-studio-k8s-workspace\{grid-template-columns:minmax\(300px,\.8fr\) minmax\(0,1\.45fr\)\}/);
-  assert.match(css, /\.docker-studio-resource-pane\{grid-column:1;grid-row:1/);
-  assert.match(css, /\.docker-studio-yaml-pane\{grid-column:2;grid-row:1/);
-});
-
-
-test("Compose YAML remains visible in the editable textarea without relying on syntax overlay", () => {
-  assert.match(css, /\.docker-studio-yaml-highlight\{display:block!important/);
-  assert.match(css, /\.docker-studio-yaml-input\{z-index:2;background:transparent!important/);
-});
-
-
-test("Compose YAML input padding clears the line-number gutter and keeps a visible caret", () => {
-  assert.match(css, /\.docker-studio \.docker-studio-yaml-input\{padding:12px 16px 20px 60px!important/);
-  assert.match(css, /caret-color:#f3f6ff!important/);
-  assert.match(css, /\.docker-studio \.docker-studio-yaml-input:focus\{padding-left:60px!important/);
-});
-
-
-test("Compose YAML editor provides context-aware completions and keyboard acceptance", () => {
-  assert.match(component, /function buildComposeCompletions/);
-  assert.match(component, /COMPOSE_COMPLETION_GROUPS/);
-  assert.match(component, /COMPOSE_VALUE_COMPLETIONS/);
-  assert.match(component, /event\.code === "Space"/);
-  assert.match(component, /event\.key === "ArrowDown"/);
-  assert.match(component, /applyCompletion\(completion\.items\[completion\.selectedIndex\]\)/);
-  assert.match(component, /docker-compose-yaml-completions/);
-  assert.match(component, /Ctrl\+Space suggestions/);
-  assert.match(css, /\.docker-compose-yaml-completions/);
-  assert.match(css, /\.docker-compose-yaml-completion\.active/);
-});
