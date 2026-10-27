@@ -114,7 +114,7 @@ export default function SketchiziCanvas({
       canEdit: canEdit && !viewModeEnabled,
     });
     if (!model.canEdit || !model.showFormatting || model.preserveImageArtwork ||
-        (!model.showShapeControls && !model.showConnectorControls) ||
+        !model.showStrokeControls ||
         typeof applyToSelected !== "function") return undefined;
 
     const selected = selectedElements.filter(
@@ -160,7 +160,7 @@ export default function SketchiziCanvas({
       fills.forEach(([color, label]) => addColor(color, label, "backgroundColor", first.backgroundColor));
     }
 
-    if (model.showShapeControls || model.showConnectorControls) {
+    if (model.showStrokeControls) {
       const widthGroup = document.createElement("span");
       widthGroup.className = "sketchizi-contextual-widths";
       widthGroup.setAttribute("role", "group");
