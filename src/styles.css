@@ -855,3 +855,13 @@
   background: transparent !important;
   box-shadow: none !important;
 }
+
+
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  color: #4d5572 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  border-color: #9aa3ba !important;
+  color: #4d5572 !important;
+}
