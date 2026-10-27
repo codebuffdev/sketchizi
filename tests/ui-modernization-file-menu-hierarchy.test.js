@@ -6,23 +6,21 @@ const menu = readFileSync(new URL("../src/features/navigation/useNativeSketchizi
 const styles = readFileSync(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
-test("file management menu separates workspace actions from quick access", () => {
+test("file management menu keeps workspace actions compact and focused on files", () => {
   assert.match(menu, /class="sketchizi-native-settings-title">Workspace/);
-  assert.match(menu, /class="sketchizi-file-menu-group" aria-label="Current folder"/);
+  assert.doesNotMatch(menu, /aria-label="Current folder"/);
+  assert.doesNotMatch(menu, /data-sketchizi-open-folder|data-current-folder-files|data-refresh-current-folder/);
+  assert.doesNotMatch(menu, /Recent folders|data-recent-folder-list|data-clear-recent-folders/);
+  assert.match(menu, /data-sketchizi-new-file/);
   assert.match(menu, /class="sketchizi-file-menu-actions" role="group" aria-label="File actions"/);
   assert.match(menu, /class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"/);
   assert.match(menu, /aria-controls="sketchizi-recent-files-panel"/);
-  assert.match(menu, /aria-controls="sketchizi-recent-folders-panel"/);
 });
 
-test("phase 25 preserves recent-file, recent-folder, and folder refresh workflows", () => {
+test("file menu preserves new-file and recent-file workflows after removing folder browsing", () => {
   for (const selector of [
-    "data-sketchizi-open-folder", "data-sketchizi-new-file", "data-refresh-current-folder",
-    "data-folder-refresh-status", "data-current-folder-files", "data-recent-id",
-    "data-recent-folder-id", "data-clear-recent-files", "data-clear-recent-folders",
+    "data-sketchizi-new-file", "data-recent-id", "data-clear-recent-files",
   ]) assert.ok(menu.includes(selector), `expected existing workflow selector ${selector}`);
-  assert.match(menu, /Permission needed — reopen the folder to allow access/);
-  assert.match(menu, /Folder unavailable — reopen the folder to reconnect/);
 });
 
 test("file menu has keyboard focus, disabled-state, theme, and reduced-motion polish", () => {
