@@ -145,3 +145,11 @@ test("Light theme keeps the Icon Library frameless and its Escape hint centered 
   assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
   assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
 });
+
+
+test("Escape-to-close hint always renders even when icon results are capped", () => {
+  assert.match(panel, /<div className="library-scroll-hint"><span className="library-escape-hint"><kbd>Esc<\/kbd> to close<\/span><\/div>/);
+  assert.doesNotMatch(panel, /displayedIcons\.length > iconDisplayLimit && <div className="library-scroll-hint"/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
+});
