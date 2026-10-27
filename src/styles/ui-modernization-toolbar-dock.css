@@ -644,3 +644,42 @@
     min-height: 31px !important;
   }
 }
+
+
+/* Final compactness pass: tighter shell and group spacing, with readable 34px
+   targets and unchanged active/focus states. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  min-height: 42px !important;
+  padding: 3px 6px !important;
+  gap: 1px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tools {
+  margin-inline: 0 !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-separator {
+  margin-inline: 2px !important;
+  min-height: 20px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-grip {
+  height: 18px !important;
+  min-height: 18px !important;
+}
+
+.app .excalidraw .zoom-actions,
+.app .excalidraw .undo-redo-buttons {
+  gap: 2px !important;
+  min-height: 38px !important;
+  padding: 3px !important;
+}
+
+@media (max-width: 700px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+    min-height: 38px !important;
+    padding: 3px 5px !important;
+    gap: 1px !important;
+  }
+}
