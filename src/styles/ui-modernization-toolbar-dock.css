@@ -809,3 +809,21 @@
     min-height: 24px !important;
   }
 }
+
+
+/* Keep Excalidraw's "Scroll back to content" action clear of the compact
+   bottom-centered tool dock. The control remains available above the dock. */
+.app .excalidraw .scroll-back-to-content,
+.app .excalidraw .Island.scroll-back-to-content,
+.app .excalidraw [class*="scroll-back-to-content"] {
+  bottom: calc(var(--sketchizi-dock-clearance, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 20 !important;
+}
+
+@media (max-height: 620px) {
+  .app .excalidraw .scroll-back-to-content,
+  .app .excalidraw .Island.scroll-back-to-content,
+  .app .excalidraw [class*="scroll-back-to-content"] {
+    bottom: calc(var(--sketchizi-dock-clearance, 56px) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
