@@ -123,8 +123,10 @@ test("library icon insertion preserves original SVG artwork without applying a l
 });
 
 
-test("Icon Library Escape footer stays at the panel edge without covering the final icon row", () => {
-  assert.match(panel, /<\/section>\s*<\/div>\s*\{displayedIcons\.length > iconDisplayLimit && <div className="library-scroll-hint"/);
+test("Icon Library Escape hint stays above results and does not cover the final icon row", () => {
+  const footer = panel.indexOf('<div className="library-scroll-hint"><span className="library-escape-hint"><kbd>Esc</kbd> to close</span></div>');
+  const body = panel.indexOf('<div className="library-panel-body library-panel-redesign-body">');
+  assert.ok(footer >= 0 && body > footer);
   assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?position:\s*static !important/);
   assert.match(styles, /library-scroll-hint[\s\S]*?flex:\s*0 0 auto !important/);
   assert.match(styles, /library-icon-grid[\s\S]*?min-height:\s*0 !important/);
