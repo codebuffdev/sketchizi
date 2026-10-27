@@ -368,7 +368,7 @@ export function useNativeSketchiziMenu({
         if (folderFilesList.dataset.signature !== signature) {
           folderFilesList.dataset.signature = signature;
           folderFilesList.innerHTML = currentFolderFiles.length
-            ? currentFolderFiles.map((item) => `<button type="button" class="sketchizi-folder-file" data-current-folder-file="${escapeHtml(item.name)}" title="Open ${escapeHtml(item.name)}">${escapeHtml(item.name)}</button>`).join("")
+            ? currentFolderFiles.map((item) => `<button type="button" class="sketchizi-folder-file${item.file ? " is-read-only" : ""}" data-current-folder-file="${escapeHtml(item.name)}" title="${item.file ? "Read-only copy. Open, then use Save to… to create an editable copy." : `Open ${escapeHtml(item.name)}`}" aria-label="${escapeHtml(item.name)}${item.file ? ", read-only source; Save As available" : ""}"><span class="sketchizi-folder-file-name">${escapeHtml(item.name)}</span>${item.file ? `<span class="sketchizi-folder-file-status">Read-only · Save As</span>` : ""}</button>`).join("")
             : `<div class="sketchizi-recent-empty">${currentFolder ? "No .sketchizi or .excalidraw drawings" : "No folder selected"}</div>`;
         }
         bind(folderFilesList, "bound", (event) => {
