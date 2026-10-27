@@ -711,3 +711,39 @@
     min-height: 30px;
   }
 }
+
+
+/* Contextual selection feedback and layer actions. */
+.app .excalidraw .App-toolbar .sketchizi-selection-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--sk-toolbar-border, #353a49);
+  border-radius: 9px;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-layer-button {
+  min-width: 42px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-layer-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .app .excalidraw .App-toolbar .sketchizi-selection-controls {
+    flex-wrap: wrap;
+  }
+  .app .excalidraw .App-toolbar .sketchizi-selection-count {
+    min-height: 28px;
+  }
+}
