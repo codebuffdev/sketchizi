@@ -1409,3 +1409,78 @@
     white-space: normal;
   }
 }
+
+
+/* Final compact-panel card sizing: keep icon previews prominent and prevent card overlap. */
+@media (max-width: 760px) {
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    width: min(390px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    height: min(72dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    max-height: min(72dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    padding: 10px !important;
+    box-sizing: border-box;
+  }
+  .app .library-panel-redesign .library-panel-redesign-body {
+    gap: 10px !important;
+    padding: 4px 6px 8px !important;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .app .library-panel-redesign .library-icon-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-rows: minmax(84px, auto);
+    gap: 8px !important;
+    padding: 2px 5px 8px 2px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card {
+    display: grid !important;
+    grid-template-columns: 76px minmax(0, 1fr) 32px !important;
+    min-height: 88px !important;
+    height: auto !important;
+    gap: 10px !important;
+    padding: 8px !important;
+    align-items: center !important;
+    overflow: hidden;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview {
+    width: 72px !important;
+    height: 72px !important;
+    flex: 0 0 72px;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview img,
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview svg {
+    width: 56px !important;
+    height: 56px !important;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    width: 100%;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name {
+    width: 100% !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    text-overflow: ellipsis !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere;
+  }
+}
