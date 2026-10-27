@@ -32,14 +32,12 @@ test('native dock receives contextual selection state without replacing native c
   assert.match(dockStyles, /data-sketchizi-context="shape"/);
 });
 
-test('text selection mounts font-size controls directly in the native dock', () => {
-  assert.match(canvas, /sketchizi-contextual-controls/);
-  assert.match(canvas, /aria-label", "Text formatting"/);
-  assert.match(canvas, /Decrease text size/);
-  assert.match(canvas, /Increase text size/);
-  assert.match(canvas, /applyToSelected\(\{ fontSize: nextSize \}\)/);
+test('font-size controls are selection-specific and remain outside the native drawing dock', () => {
+  assert.match(toolbar, /const showTextSize = dockModel\.showTextControls/);
+  assert.match(toolbar, /showTextSize &&/);
+  assert.match(toolbar, /applyToSelected\(\{ fontSize:/);
   assert.match(canvas, /model\.showTextControls/);
-  assert.match(dockStyles, /\.sketchizi-contextual-size-button/);
+  assert.match(dockStyles, /\.sketchizi-contextual-controls \{[\s\S]*?display: none !important/);
 });
 
 test('shape and connector selections mount native-dock appearance controls', () => {
@@ -102,11 +100,11 @@ test('Library icon images remain untouched by shape formatting until safe recolo
 });
 
 
-test('contextual dock wraps and scrolls within narrow desktop workspaces', () => {
-  assert.match(dockStyles, /max-width: calc\(100vw - 24px\)/);
-  assert.match(dockStyles, /flex-wrap: wrap/);
-  assert.match(dockStyles, /@media \(max-width: 900px\)[\s\S]*?overflow: auto/);
-  assert.match(dockStyles, /@media \(max-width: 520px\)/);
+test('native drawing dock stays on one row and scrolls horizontally in narrow workspaces', () => {
+  assert.match(dockStyles, /flex-wrap: nowrap !important/);
+  assert.match(dockStyles, /overflow-x: auto !important/);
+  assert.match(dockStyles, /\.App-toolbar\[data-sketchizi-dock="true"\] > \.sketchizi-contextual-controls/);
+  assert.match(toolbar, /const preferredTop = topY - toolbarHeight - 12/);
 });
 
 test('layer-order controls revalidate and synchronize both directions after each reorder', () => {
