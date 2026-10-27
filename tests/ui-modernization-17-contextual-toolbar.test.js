@@ -42,6 +42,18 @@ test('text selection mounts font-size controls directly in the native dock', () 
   assert.match(styles, /\.sketchizi-contextual-size-button/);
 });
 
+test('shape and connector selections mount native-dock appearance controls', () => {
+  assert.match(canvas, /sketchizi-appearance-controls/);
+  assert.match(canvas, /Shape and connector appearance/);
+  assert.match(canvas, /model\.showShapeControls/);
+  assert.match(canvas, /model\.showConnectorControls/);
+  assert.match(canvas, /applyToSelected\(\{ \[property\]: color \}\)/);
+  assert.match(canvas, /applyToSelected\(\{ strokeWidth: width \}\)/);
+  assert.match(canvas, /model\.preserveImageArtwork/);
+  assert.match(dockStyles, /\.sketchizi-contextual-color/);
+  assert.match(dockStyles, /\.sketchizi-contextual-width-button/);
+});
+
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
