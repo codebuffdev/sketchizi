@@ -151,3 +151,14 @@ test("desktop header is canvas-native with no strip or idle control containers",
   assert.match(frameless, /button:hover[\s\S]*?background: rgb\(148 163 184 \/ 9%\) !important/);
   assert.match(frameless, /button:focus-visible[\s\S]*?outline: 2px solid/);
 });
+
+
+test("collaboration dialog stays fully visible and scrollable within viewport", async () => {
+  const css = await read("../src/styles/ui-modernization.css");
+  const rules = css.slice(css.lastIndexOf("/* Collaboration creation/join dialogs"));
+  assert.match(rules, /\.collaboration-backdrop\s*\{[\s\S]*?position: fixed !important/);
+  assert.match(rules, /inset: 0 !important/);
+  assert.match(rules, /z-index: 2400 !important/);
+  assert.match(rules, /\.collaboration-dialog\s*\{[\s\S]*?max-height: calc\(100dvh/);
+  assert.match(rules, /overflow-y: auto !important/);
+});
