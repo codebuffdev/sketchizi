@@ -622,6 +622,7 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has([data-sketchizi-custom-menu
 .sketchizi-repository-picker-empty { padding: 12px 4px; color: var(--ui-text-muted, #a0a3b0); font-size: 12px; }
 .sketchizi-repository-picker-list { display: flex; flex-direction: column; gap: 6px; min-height: 70px; overflow: auto; }
 .sketchizi-repository-picker-item { display: flex; flex-direction: column; gap: 4px; padding: 11px 12px; text-align: left; color: inherit; background: var(--ui-panel, #252833); border: 1px solid var(--ui-border, #393c49); border-radius: 9px; cursor: pointer; }
+.sketchizi-repository-picker-item[hidden] { display: none !important; }
 .sketchizi-repository-picker-item:hover, .sketchizi-repository-picker-item.is-selected { border-color: var(--ui-accent, #7777ff); }
 .sketchizi-repository-picker-item:disabled { opacity: .75; cursor: default; }
 .sketchizi-repository-picker-name { font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
