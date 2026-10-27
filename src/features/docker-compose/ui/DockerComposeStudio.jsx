@@ -87,6 +87,7 @@ function buildComposeCompletions(text, caret, force = false) {
     else if (parent === "logging") choices = COMPOSE_COMPLETION_GROUPS.logging;
     else if (parent === "options") choices = COMPOSE_COMPLETION_GROUPS.options;
     else if (parent === "ipam") choices = COMPOSE_COMPLETION_GROUPS.ipam;
+    else if (parent === "environment" && /^-/.test(trimmed)) choices = ["- NODE_ENV=production", "- PORT=3000", "- DATABASE_URL=${DATABASE_URL}", "- REDIS_URL=${REDIS_URL}"];
     else if (parent === "environment") choices = COMPOSE_COMPLETION_GROUPS.environment;
     else if (parent === "networks" && indent.length > 2) choices = COMPOSE_COMPLETION_GROUPS.networks;
     else if (parent === "volumes" && indent.length > 2) choices = COMPOSE_COMPLETION_GROUPS.volumes;

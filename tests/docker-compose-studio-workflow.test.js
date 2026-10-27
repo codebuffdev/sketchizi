@@ -104,6 +104,12 @@ test("Compose YAML editor provides context-aware completions and keyboard accept
 });
 
 
+test("Compose environment completions match mapping and list YAML styles", () => {
+  assert.match(component, /parent === "environment" && \/\^-/);
+  assert.match(component, /"- NODE_ENV=production", "- PORT=3000", "- DATABASE_URL=/);
+  assert.match(component, /else if \(parent === "environment"\) choices = COMPOSE_COMPLETION_GROUPS\.environment/);
+});
+
 test("Compose YAML completions use indentation-aware parent context and filter existing sibling keys", () => {
   assert.match(component, /const parentLine = \[\.\.\.previousLines\]\.reverse\(\)\.find/);
   assert.match(component, /lineIndent < currentIndent/);
