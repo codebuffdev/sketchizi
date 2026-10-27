@@ -194,6 +194,13 @@ export default function IconLibraryPanel({
             {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.id === "eraser" && <svg className="library-source-chip-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2 8 1.5Z" /><path d="m12.4 1 .7 1.9L15 3.6l-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" /></svg>}{tab.label}</button>)}          </nav>
         </div>
 
+        {activeSource === "eraser" && <div className="library-essential-colors" role="group" aria-label="Essentials icon color">
+          <span className="library-essential-colors-label">Icon color</span>
+          <div className="library-essential-color-options">
+            {essentialColors.map((color) => <button key={color.value} type="button" className={`library-essential-color-swatch${selectedEssentialColor === color.value ? " active" : ""}`} style={{ "--essential-color": color.value }} onClick={() => setSelectedEssentialColor(color.value)} aria-label={color.label} aria-pressed={selectedEssentialColor === color.value} title={color.label}><span /></button>)}
+          </div>
+        </div>}
+
         {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
           <div className="library-recent-heading"><span>Recent searches</span><button type="button" onClick={() => setRecentSearches([])}>Clear all</button></div>
           <div className="library-recent-chips">{recentSearches.map((term) => <button type="button" key={term} className="library-recent-chip" onClick={() => { setActiveSource("all"); setActiveCategory("Eraser Icons"); setSearch(term); setIconDisplayLimit(120); }}><span aria-hidden="true">◷</span>{term}</button>)}</div>
