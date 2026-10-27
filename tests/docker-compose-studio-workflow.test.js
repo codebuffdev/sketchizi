@@ -125,3 +125,83 @@ test("Compose YAML completions support line dismissal, explicit reopen, and curs
   assert.match(component, /completionPosition\.left/);
   assert.match(component, /onKeyUp=\{/);
 });
+
+test("complex Compose document round-trips without dropping operational configuration", () => {
+  const source = [
+    "name: commerce",
+    "services:",
+    "  web:",
+    "    image: nginx:1.27",
+    "    environment:",
+    "      APP_MODE: production",
+    "      API_URL: ${API_URL:-http://api:8080}",
+    "    depends_on:",
+    "      api:",
+    "        condition: service_healthy",
+    "    volumes:",
+    "      - web-cache:/var/cache/nginx",
+    "    networks: [edge]",
+    "    healthcheck:",
+    "      test: [CMD-SHELL, 'curl -fsS http://localhost/health || exit 1']",
+    "      interval: 15s",
+    "      timeout: 4s",
+    "      retries: 4",
+    "  api:",
+    "    image: example/api:2.4.1",
+    "    environment:",
+    "      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}",
+    "    depends_on:",
+    "      db:",
+    "        condition: service_healthy",
+    "    volumes:",
+    "      - ./config:/app/config:ro",
+    "    networks: [edge, private]",
+    "    healthcheck:",
+    "      test: [CMD, /app/healthcheck]",
+    "      interval: 10s",
+    "      retries: 5",
+    "  db:",
+    "    image: postgres:17",
+    "    environment:",
+    "      POSTGRES_DB: commerce",
+    "      POSTGRES_PASSWORD: ${DB_PASSWORD}",
+    "    volumes: [db-data:/var/lib/postgresql/data]",
+    "    networks: [private]",
+    "    healthcheck:",
+    "      test: [CMD-SHELL, 'pg_isready -U postgres']",
+    "      interval: 5s",
+    "      retries: 12",
+    "volumes:",
+    "  web-cache: {}",
+    "  db-data: {}",
+    "networks:",
+    "  edge: {}",
+    "  private:",
+    "    internal: true",
+    ""
+  ].join("\n");
+  const parsed = parseDocument(source, { uniqueKeys: true });
+  assert.equal(parsed.errors.length, 0);
+  const doc = parsed.toJS();
+  assert.equal(doc.services.web.depends_on.api.condition, "service_healthy");
+  assert.equal(doc.services.api.depends_on.db.condition, "service_healthy");
+  assert.equal(doc.services.api.environment.DATABASE_URL, "${DATABASE_URL:?DATABASE_URL is required}");
+  assert.deepEqual(doc.services.web.volumes, ["web-cache:/var/cache/nginx"]);
+  assert.deepEqual(doc.services.api.networks, ["edge", "private"]);
+  assert.equal(doc.services.db.healthcheck.retries, 12);
+  assert.equal(doc.networks.private.internal, true);
+  // The editor's export path downloads the source text rather than rebuilding
+  // YAML from the parsed object, preserving comments, ordering, and formatting.
+  assert.match(component, /new Blob\(\[yamlText\.endsWith/);
+  assert.match(component, /anchor\.download = "compose\.yaml"/);
+});
+
+test("YAML editor, syntax overlay and line-number gutter share scrolling and typography", () => {
+  assert.match(component, /docker-studio-yaml-gutter/);
+  assert.match(component, /lineHeight: 1\.65/);
+  assert.match(component, /setScrollTop\(event\.currentTarget\.scrollTop\)/);
+  assert.match(component, /pre\.scrollTop = event\.currentTarget\.scrollTop/);
+  assert.match(component, /pre\.scrollLeft = event\.currentTarget\.scrollLeft/);
+  assert.match(css, /\.docker-studio-yaml-gutter span\{display:block;height:1\.65em\}/);
+  assert.match(css, /\.docker-studio \.docker-studio-yaml-input\{[^}]*line-height:1\.65/);
+});
