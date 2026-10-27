@@ -100,3 +100,19 @@ export function reorderElementsBySelection(elements = [], selectedIds = new Set(
     ? [...moving, ...remaining]
     : [...remaining, ...moving];
 }
+
+/**
+ * Determine whether a selection can change its stacking order in a direction.
+ * Deleted elements are ignored, matching Excalidraw's live scene semantics.
+ */
+export function canReorderSelection(elements = [], selectedIds = new Set(), direction = "front") {
+  const liveElements = elements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const selectedIndexes = liveElements
+    .map((element, index) => selectedIds.has(element.id) ? index : -1)
+    .filter((index) => index >= 0);
+  if (selectedIndexes.length === 0) return false;
+  if (direction === "back") {
+    return selectedIndexes[0] > 0;
+  }
+  return selectedIndexes[selectedIndexes.length - 1] < liveElements.length - 1;
+}
