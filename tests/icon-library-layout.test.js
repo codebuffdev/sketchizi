@@ -110,18 +110,13 @@ test("Icon Library footer clearly shows scroll status and Escape-to-close shortc
   assert.match(styles, /library-scroll-hint > span:first-child[\s\S]*?color:\s*#f3f6fc !important/);
 });
 
-test("Essentials collection exposes an accessible icon color selector", () => {
-  assert.match(panel, /library-essential-colors/);
-  assert.match(panel, /aria-label="Essentials icon color"/);
-  assert.match(panel, /essentialColors\.map/);
-  assert.match(panel, /aria-pressed=\{selectedEssentialColor === color\.value\}/);
-  assert.match(styles, /library-essential-color-swatch\.active/);
+test("Icon Library does not expose icon color controls before insertion", () => {
+  assert.doesNotMatch(panel, /library-essential-colors/);
+  assert.doesNotMatch(panel, /selectedEssentialColor|essentialColors|tintColor/);
 });
 
-test("Essentials icon colors use a softer matte palette suitable for light theme", () => {
-  assert.match(panel, /#94a3b8/);
-  assert.match(panel, /#60a5fa/);
-  assert.match(panel, /#5eead4/);
-  assert.match(panel, /#c4b5fd/);
-  assert.match(styles, /library-essential-color-swatch\.active[\s\S]*?box-shadow:\s*0 0 0 2px #cbd5e1/);
+test("library icon insertion preserves original SVG artwork without applying a library tint", async () => {
+  const insertion = await readFile(new URL("../src/features/icon-library/iconInsertionService.js", import.meta.url), "utf8");
+  assert.doesNotMatch(insertion, /tintMonochromeSvg|icon\.tintColor/);
+  assert.match(insertion, /encodeURIComponent\(svg\)/);
 });
