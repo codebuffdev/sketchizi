@@ -1652,3 +1652,14 @@
   .app .library-panel-redesign .library-essential-color-swatch { width: 20px; height: 20px; }
   .app .library-panel-redesign .library-essential-colors-label { font-size: 10px; }
 }
+
+
+/* Neutral, theme-aware swatches for the softer Essentials palette. */
+.app .library-panel-redesign .library-essential-color-swatch {
+  border-color: #d5dbe5;
+  background: #ffffff;
+}
+.app .library-panel-redesign .library-essential-color-swatch.active {
+  border-color: #64748b;
+  box-shadow: 0 0 0 2px #cbd5e1;
+}
