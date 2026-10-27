@@ -115,3 +115,16 @@ test('scroll-back-to-content control is offset above the bottom dock', () => {
   assert.match(rules, /z-index: 20 !important/);
   assert.match(rules, /@media \(max-height: 620px\)/);
 });
+
+
+test('contextual toolbar stays above bottom dock and keeps frameless high-contrast controls', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /bottomDockClearance = 88/);
+  assert.match(toolbar, /usableBottom - toolbarHeight/);
+  const frameless = dockCss.slice(dockCss.lastIndexOf('/* Preserve the canvas-native'));
+  assert.match(frameless, /background: transparent !important/);
+  assert.match(frameless, /border: 0 !important/);
+  assert.match(frameless, /\.contextual-formatting-group > button[\s\S]*?border: 1px solid rgb\(71 85 105 \/ 34%\) !important/);
+  assert.match(frameless, /\.app:has\(\.excalidraw\.theme--dark\)[\s\S]*?color: #f8fafc !important/);
+});
