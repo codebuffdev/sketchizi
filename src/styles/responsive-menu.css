@@ -748,16 +748,32 @@ html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-men
 }
 
 
-/* Keep the full file menu inside the visible viewport on short/tall-narrow screens. */
+/* Keep the hamburger catalog above the bottom edge and scroll its content,
+   rather than allowing the menu surface to extend behind the OS taskbar. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) {
   box-sizing: border-box;
-  max-height: calc(100vh - 24px) !important;
-  max-height: calc(100dvh - 24px) !important;
+  bottom: max(48px, env(safe-area-inset-bottom, 0px)) !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) > .dropdown-menu-container {
+  box-sizing: border-box;
+  max-height: calc(100vh - 112px) !important;
+  max-height: calc(100dvh - 112px) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+}
+@media (max-width: 620px) {
+  .dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+    bottom: max(48px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .dropdown-menu:has([data-sketchizi-custom-menu-block]) > .dropdown-menu-container {
+    max-height: calc(100vh - 104px) !important;
+    max-height: calc(100dvh - 104px) !important;
+  }
 }
 /* Phase 27 — announce recent-item changes without adding visual menu clutter. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-announcement {
