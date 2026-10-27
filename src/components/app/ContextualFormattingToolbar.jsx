@@ -50,13 +50,20 @@ function getSelectionPosition(api, elements, root) {
   const rootHeight = root.clientHeight || viewportHeight;
   const preferredWidth = Math.min(350, Math.max(240, rootWidth - 16));
   const left = Math.max(8, Math.min(rootWidth - preferredWidth - 8, centerX - preferredWidth / 2));
-  // Keep the formatting controls directly below the selected object whenever
-  // there is room; move above it only when the selection is near the canvas bottom.
-  const belowTop = bottomY + 12;
-  const top = belowTop + 54 <= rootHeight - 8 ? belowTop : Math.max(8, topY - 54);
+  // Reserve space for Excalidraw's bottom controls and the compact dock.
+  // Prefer below the selection, but flip above it before the toolbar reaches
+  // the dock/scroll-back area. Clamp the final position to the usable canvas.
+  const toolbarHeight = 42;
+  const bottomDockClearance = 88;
+  const usableBottom = Math.max(8, rootHeight - bottomDockClearance);
+  const belowTop = bottomY + 10;
+  const aboveTop = topY - toolbarHeight - 10;
+  const top = belowTop + toolbarHeight <= usableBottom
+    ? belowTop
+    : Math.max(8, aboveTop);
   return {
     left: `${left}px`,
-    top: `${Math.max(8, Math.min(rootHeight - 54, top))}px`,
+    top: `${Math.max(8, Math.min(usableBottom - toolbarHeight, top))}px`,
   };
 }
 
