@@ -52,8 +52,8 @@ test('Essentials SVG icons expose contextual color swatches and recolor stored S
   assert.match(colorService, /export function isRecolorableEssentialIcon/);
   assert.match(canvasTools, /recolorSvgDataUrl\(sourceDataURL, patch\.strokeColor\)/);
   assert.match(canvasTools, /iconColor: patch\.strokeColor/);
-  assert.match(canvasTools, /fileId: recoloredFileId/);
-  assert.match(canvasTools, /recoloredFileId =/);
+  assert.match(canvasTools, /id: element\.fileId, dataURL: recoloredDataURL/);
+  assert.doesNotMatch(canvasTools, /fileId: recoloredFileId/);
 });
 
 test('SVG recoloring updates white artwork while preserving transparent and unpainted areas', () => {
