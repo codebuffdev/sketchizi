@@ -62,3 +62,10 @@ test('SVG recoloring updates white artwork while preserving transparent and unpa
   assert.match(colorService, /export function recolorSvgDataUrl/);
   assert.match(colorService, /category === "eraser icons"/);
 });
+
+test('SVG recoloring assigns the selected color to paths with implicit default fill', () => {
+  const colorService = readFileSync(new URL('../src/features/icon-library/iconColorService.js', import.meta.url), 'utf8');
+  assert.match(colorService, /Some catalog SVGs omit fill entirely/);
+  assert.match(colorService, /hasFill \|\| hasStroke/);
+  assert.match(colorService, /fill="\$\{color\}"/);
+});
