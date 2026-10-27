@@ -48,13 +48,15 @@ function getSelectionPosition(api, elements, root) {
   const rootHeight = root.clientHeight || viewportHeight;
   const preferredWidth = Math.min(350, Math.max(240, rootWidth - 16));
   const left = Math.max(8, Math.min(rootWidth - preferredWidth - 8, centerX - preferredWidth / 2));
-  // Keep the formatting controls directly below the selected object whenever
-  // there is room; move above it only when the selection is near the canvas bottom.
-  const belowTop = bottomY + 12;
-  const top = belowTop + 54 <= rootHeight - 8 ? belowTop : Math.max(8, topY - 54);
+  // Anchor contextual formatting above the selected object, matching the
+  // object-focused editing pattern and keeping the main tool dock compact.
+  const toolbarHeight = 48;
+  const preferredTop = topY - toolbarHeight - 12;
+  const fallbackTop = bottomY + 12;
+  const top = preferredTop >= 8 ? preferredTop : fallbackTop;
   return {
     left: `${left}px`,
-    top: `${Math.max(8, Math.min(rootHeight - 54, top))}px`,
+    top: `${Math.max(8, Math.min(rootHeight - toolbarHeight - 8, top))}px`,
   };
 }
 
