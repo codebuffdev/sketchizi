@@ -64,3 +64,9 @@ test("Mobile Icon Library fills available vertical space instead of leaving a bl
   assert.match(styles, /library-panel-redesign-body[\s\S]*?flex:\s*1 1 auto/);
   assert.match(styles, /library-panel-header-compact[\s\S]*?flex:\s*0 0 30px/);
 });
+
+test("Icon Library removes the standalone close icon header and its blank space", () => {
+  assert.doesNotMatch(panel, /className="mobile-panel-close"/);
+  assert.match(styles, /library-panel-header-compact \{ display: none !important; \}/);
+  assert.match(styles, /library-panel-redesign-body \{ padding-top: 12px; \}/);
+});
