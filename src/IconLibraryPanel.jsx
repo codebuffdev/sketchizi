@@ -204,7 +204,7 @@ export default function IconLibraryPanel({
               </div>;
             })}
           </div> : <div className="empty library-empty">{activeCategory === "Favorites" ? "No favorite icons yet. Click ☆ on an icon to save it." : activeCategory === "Recently Used" ? "No recently used icons yet." : remoteError || "No matching icons."}</div>}
-          {displayedIcons.length > iconDisplayLimit && <div className="library-scroll-hint"><span>Showing {Math.min(iconDisplayLimit, displayedIcons.length).toLocaleString()} of {displayedIcons.length.toLocaleString()} · scroll for more</span><span className="library-escape-hint"><kbd>Esc</kbd> to close</span></div>}
+          {displayedIcons.length > iconDisplayLimit && <div className="library-scroll-hint"><span className="library-escape-hint"><kbd>Esc</kbd> to close</span></div>}
         </section>
       </div>
     </aside>
