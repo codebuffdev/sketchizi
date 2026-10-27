@@ -19,7 +19,7 @@ test("repository picker loads repository metadata through same-origin backend ga
 test("repository picker browses authenticated repository contents and opens supported drawings", () => {
   assert.match(source, /\/api\/github\/repository-contents/);
   assert.match(source, /entry\.type === "dir"/);
-  assert.match(source, /excalidraw\\\)\\\$\\\/i\\\.test/);
+  assert.match(source, /excalidraw\)\$\/i\.test/);
   assert.match(source, /loadDrawingFromText/);
   assert.doesNotMatch(source, /Repository file browsing and workspace creation are the next implementation step/);
 });
