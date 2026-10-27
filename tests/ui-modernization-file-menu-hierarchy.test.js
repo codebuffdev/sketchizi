@@ -44,8 +44,8 @@ test("phase 25 menu tests are included in the UI modernization suite", () => {
 
 
 test("hamburger catalog stays within the viewport and exposes a scrollbar", () => {
-  assert.match(styles, /max-height: calc\\(100vh - 24px\\) !important/);
-  assert.match(styles, /max-height: calc\\(100dvh - 24px\\) !important/);
+  assert.ok(styles.includes("max-height: calc(100vh - 24px) !important"));
+  assert.ok(styles.includes("max-height: calc(100dvh - 24px) !important"));
   assert.match(styles, /overflow-y: auto !important/);
   assert.match(styles, /scrollbar-width: auto !important/);
   assert.match(styles, /::-webkit-scrollbar/);
@@ -53,7 +53,7 @@ test("hamburger catalog stays within the viewport and exposes a scrollbar", () =
 
 test("workspace menu offers Open file and improved community action icons", () => {
   assert.match(menuTemplate, /data-sketchizi-open-file/);
-  assert.match(menuTemplate, /Open file <kbd>Ctrl\\+O<\\/kbd>/);
+  assert.ok(menuTemplate.includes("Open file <kbd>Ctrl+O</kbd>"));
   assert.match(menu, /sketchizi-review-icon/);
   assert.match(menu, /sketchizi-git-icon/);
 });
