@@ -547,3 +547,276 @@
   visibility: visible;
   opacity: 1;
 }
+
+
+/* Context-aware dock states: selection context is exposed by SketchiziCanvas. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="text"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="shape"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="connector"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="mixed-selection"] {
+  border-color: #7569d8 !important;
+}
+
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="text"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="shape"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="connector"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="mixed-selection"] {
+  border-color: #aaa3ee !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-can-edit="false"] {
+  opacity: .88;
+}
+
+
+/* Inline contextual controls mounted into the native dock for text selections. */
+.app .excalidraw .App-toolbar .sketchizi-contextual-controls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 42px;
+  margin-left: 2px;
+  padding-left: 6px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size {
+  min-width: 24px;
+  color: var(--sk-toolbar-ink, #e7e9f2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: 0 0 20px;
+  padding: 0;
+  border: 2px solid var(--sk-toolbar-surface, #1b1e27);
+  border-radius: 50%;
+  background: var(--contextual-color);
+  box-shadow: 0 0 0 1px rgb(127 135 155 / 42%);
+  cursor: pointer;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px #8b80ff;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color[aria-label="No fill"] {
+  background: linear-gradient(135deg, transparent 45%, #d25555 46%, #d25555 54%, transparent 55%);
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-widths {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 3px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button {
+  width: 26px;
+  min-width: 26px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button[aria-pressed="true"] {
+  border-color: #8075ec;
+  background: rgb(101 88 211 / 18%);
+  color: var(--sk-toolbar-ink, #e7e9f2);
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:focus-visible {
+  outline: 2px solid #8b80ff;
+  outline-offset: 2px;
+}
+
+
+/* Contextual controls must stay inside the native dock on narrow desktop splits. */
+.app .excalidraw .App-toolbar {
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-controls {
+  display: inline-flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-controls button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .app .excalidraw .App-toolbar {
+    max-width: calc(100vw - 16px);
+    max-height: min(42vh, 220px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app .excalidraw .App-toolbar .sketchizi-contextual-controls {
+    flex-basis: 100%;
+    padding-top: 4px;
+    border-top: 1px solid var(--sk-toolbar-border, #353a49);
+  }
+}
+
+@media (max-width: 520px) {
+  .app .excalidraw .App-toolbar {
+    max-width: calc(100vw - 12px);
+    padding: 5px 7px !important;
+    gap: 3px;
+  }
+
+  .app .excalidraw .App-toolbar .sketchizi-contextual-controls button {
+    min-width: 30px;
+    min-height: 30px;
+  }
+}
+
+
+/* Contextual selection feedback and layer actions. */
+.app .excalidraw .App-toolbar .sketchizi-selection-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--sk-toolbar-border, #353a49);
+  border-radius: 9px;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-layer-button {
+  min-width: 42px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-layer-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .app .excalidraw .App-toolbar .sketchizi-selection-controls {
+    flex-wrap: wrap;
+  }
+  .app .excalidraw .App-toolbar .sketchizi-selection-count {
+    min-height: 28px;
+  }
+}
+
+
+/* Contextual dock accessibility: consistent keyboard focus and disabled states. */
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-layer-button:focus-visible {
+  outline: 2px solid #8b80ff !important;
+  outline-offset: 2px !important;
+  position: relative;
+  z-index: 3;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:disabled,
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:disabled,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:disabled,
+.app .excalidraw .App-toolbar .sketchizi-layer-button:disabled {
+  opacity: 0.42 !important;
+  cursor: not-allowed !important;
+  box-shadow: none;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-size-button:disabled:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-color:disabled:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-contextual-width-button:disabled:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-layer-button:disabled:focus-visible {
+  outline-color: #a6a0d9 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .excalidraw .App-toolbar .sketchizi-contextual-size-button,
+  .app .excalidraw .App-toolbar .sketchizi-contextual-color,
+  .app .excalidraw .App-toolbar .sketchizi-contextual-width-button,
+  .app .excalidraw .App-toolbar .sketchizi-layer-button {
+    transition: none !important;
+  }
+}
+
+
+/* Phase 1 polish: keep the native drawing dock to a single tool row.
+   Object-specific formatting belongs in the contextual toolbar above selection. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-contextual-controls {
+  display: none !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-grip {
+  align-self: center;
+}
+
+.app .excalidraw .App-toolbar-container {
+  width: max-content !important;
+  max-width: calc(100vw - 16px) !important;
+}
+
+@media (max-width: 900px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none;
+  }
+
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-contextual-controls {
+    display: none !important;
+  }
+}

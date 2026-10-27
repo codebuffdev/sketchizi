@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { getContextualDockModel } from "../../features/canvas/contextualDockModel.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -47,13 +48,15 @@ function getSelectionPosition(api, elements, root) {
   const rootHeight = root.clientHeight || viewportHeight;
   const preferredWidth = Math.min(350, Math.max(240, rootWidth - 16));
   const left = Math.max(8, Math.min(rootWidth - preferredWidth - 8, centerX - preferredWidth / 2));
-  // Keep the formatting controls directly below the selected object whenever
-  // there is room; move above it only when the selection is near the canvas bottom.
-  const belowTop = bottomY + 12;
-  const top = belowTop + 54 <= rootHeight - 8 ? belowTop : Math.max(8, topY - 54);
+  // Anchor contextual formatting above the selected object, matching the
+  // object-focused editing pattern and keeping the main tool dock compact.
+  const toolbarHeight = 48;
+  const preferredTop = topY - toolbarHeight - 12;
+  const fallbackTop = bottomY + 12;
+  const top = preferredTop >= 8 ? preferredTop : fallbackTop;
   return {
     left: `${left}px`,
-    top: `${Math.max(8, Math.min(rootHeight - 54, top))}px`,
+    top: `${Math.max(8, Math.min(rootHeight - toolbarHeight - 8, top))}px`,
   };
 }
 
@@ -66,12 +69,13 @@ export default function ContextualFormattingToolbar({
   onOpenProperties,
   canEdit = true,
 }) {
-  const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
+  const liveSelection = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const dockModel = getContextualDockModel(liveSelection, { canEdit });
   const first = liveSelection[0];
   const elementTypes = liveSelection.map((element) => element.type);
-  const showFill = elementTypes.some((type) => SHAPE_TYPES.has(type));
-  const showStrokeWidth = elementTypes.some((type) => LINE_TYPES.has(type));
-  const showTextSize = elementTypes.includes("text");
+  const showFill = dockModel.showShapeControls && elementTypes.some((type) => SHAPE_TYPES.has(type));
+  const showStrokeWidth = (dockModel.showShapeControls || dockModel.showConnectorControls) && elementTypes.some((type) => LINE_TYPES.has(type));
+  const showTextSize = dockModel.showTextControls;
   const position = useMemo(
     () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
@@ -93,6 +97,9 @@ export default function ContextualFormattingToolbar({
       className="contextual-formatting-toolbar"
       role="toolbar"
       aria-label="Selected object formatting"
+      data-contextual-mode={dockModel.mode}
+      data-selected-count={dockModel.selectedCount}
+      data-preserve-image-artwork={dockModel.preserveImageArtwork ? "true" : "false"}
       style={position}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}

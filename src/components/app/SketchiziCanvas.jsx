@@ -7,6 +7,7 @@ import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
+import { canReorderSelection, getContextualDockModel, reorderElementsBySelection } from "../../features/canvas/contextualDockModel.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -20,6 +21,255 @@ export default function SketchiziCanvas({
   const fitContentButtonRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
   const gridSnapBaselineRef = useRef(null);
+
+  // Keep the native Excalidraw dock aware of selection context without
+  // replacing its native buttons or event handlers.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const toolbar = root?.querySelector(".App-toolbar");
+    if (!toolbar) return;
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    toolbar.dataset.sketchiziContext = model.mode;
+    toolbar.dataset.sketchiziSelectionCount = String(model.selectedCount);
+    toolbar.dataset.sketchiziCanEdit = String(model.canEdit);
+    toolbar.dataset.sketchiziPreserveArtwork = String(model.preserveImageArtwork);
+    return () => {
+      delete toolbar.dataset.sketchiziContext;
+      delete toolbar.dataset.sketchiziSelectionCount;
+      delete toolbar.dataset.sketchiziCanEdit;
+      delete toolbar.dataset.sketchiziPreserveArtwork;
+    };
+  }, [selectedElements, canEdit, viewModeEnabled, canvasRevision]);
+  // Text formatting lives inside the native dock while text is selected.
+  // The controls delegate mutations to the existing selection callback.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const dock = root?.querySelector(".App-toolbar");
+    if (!dock) return undefined;
+    dock.querySelector(".sketchizi-text-controls")?.remove();
+
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    if (!model.showTextControls || !model.canEdit || typeof applyToSelected !== "function") {
+      return undefined;
+    }
+
+    const selectedText = selectedElements.find(
+      (element) => element && !element.isDeleted && !element.deleted && element.type === "text",
+    );
+    const currentSize = Math.min(96, Math.max(8, Number(selectedText?.fontSize) || 20));
+    const group = document.createElement("div");
+    group.className = "sketchizi-contextual-controls sketchizi-text-controls";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Text formatting");
+
+    const separator = document.createElement("span");
+    separator.className = "sketchizi-dock-separator";
+    separator.setAttribute("aria-hidden", "true");
+    group.appendChild(separator);
+
+    const sizeLabel = document.createElement("span");
+    sizeLabel.className = "sketchizi-contextual-size";
+    sizeLabel.textContent = String(currentSize);
+    sizeLabel.setAttribute("aria-label", `Font size ${currentSize}`);
+    group.appendChild(sizeLabel);
+
+    const addButton = (label, title, nextSize) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "sketchizi-dock-quick-tool sketchizi-contextual-size-button";
+      button.textContent = label;
+      button.title = title;
+      button.setAttribute("aria-label", title);
+      button.disabled = nextSize === currentSize;
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyToSelected({ fontSize: nextSize });
+      });
+      group.appendChild(button);
+    };
+
+    addButton("A−", "Decrease text size", Math.max(8, currentSize - 2));
+    addButton("A+", "Increase text size", Math.min(96, currentSize + 2));
+    dock.appendChild(group);
+
+    return () => {
+      if (group.isConnected) group.remove();
+    };
+  }, [selectedElements, applyToSelected, canEdit, viewModeEnabled, canvasRevision]);
+
+  // Add compact appearance controls for standard shapes and connectors.
+  // Library artwork is intentionally excluded from recoloring controls.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const dock = root?.querySelector(".App-toolbar");
+    if (!dock) return undefined;
+    dock.querySelector(".sketchizi-appearance-controls")?.remove();
+
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    if (!model.canEdit || !model.showFormatting || model.preserveImageArtwork ||
+        !model.showStrokeControls ||
+        typeof applyToSelected !== "function") return undefined;
+
+    const selected = selectedElements.filter(
+      (element) => element && !element.isDeleted && !element.deleted,
+    );
+    if (!selected.length) return undefined;
+    const first = selected[0];
+    const group = document.createElement("div");
+    group.className = "sketchizi-contextual-controls sketchizi-appearance-controls";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Shape and connector appearance");
+
+    const separator = document.createElement("span");
+    separator.className = "sketchizi-dock-separator";
+    separator.setAttribute("aria-hidden", "true");
+    group.appendChild(separator);
+
+    const colors = [
+      ["#2f2f33", "Ink"], ["#d25555", "Red"], ["#3f9b57", "Green"],
+      ["#3d79b9", "Blue"], ["#d98a27", "Orange"], ["#7c3aed", "Violet"],
+    ];
+    const addColor = (color, label, property, selectedColor) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "sketchizi-contextual-color";
+      button.style.setProperty("--contextual-color", color);
+      button.title = label;
+      button.setAttribute("aria-label", label);
+      button.setAttribute("aria-pressed", String(String(selectedColor || "").toLowerCase() === color));
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyToSelected({ [property]: color });
+      });
+      group.appendChild(button);
+    };
+
+    const stroke = first.customData?.iconColor || first.strokeColor;
+    colors.forEach(([color, label]) => addColor(color, `Stroke ${label}`, "strokeColor", stroke));
+
+    if (model.showShapeControls) {
+      const fills = [["transparent", "No fill"], ["#e7bfc1", "Rose fill"], ["#b9dfc0", "Mint fill"], ["#a8c7e5", "Blue fill"]];
+      fills.forEach(([color, label]) => addColor(color, label, "backgroundColor", first.backgroundColor));
+    }
+
+    if (model.showStrokeControls) {
+      const widthGroup = document.createElement("span");
+      widthGroup.className = "sketchizi-contextual-widths";
+      widthGroup.setAttribute("role", "group");
+      widthGroup.setAttribute("aria-label", "Stroke width");
+      [1, 2, 4].forEach((width) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "sketchizi-contextual-width-button";
+        button.textContent = String(width);
+        button.title = `Stroke width ${width}`;
+        button.setAttribute("aria-label", `Stroke width ${width}`);
+        button.setAttribute("aria-pressed", String(Number(first.strokeWidth) === width));
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          applyToSelected({ strokeWidth: width });
+        });
+        widthGroup.appendChild(button);
+      });
+      group.appendChild(widthGroup);
+    }
+
+    dock.appendChild(group);
+    return () => {
+      if (group.isConnected) group.remove();
+    };
+  }, [selectedElements, applyToSelected, canEdit, viewModeEnabled, canvasRevision]);
+
+  // Selection feedback and layer ordering are additive controls. Reorder the
+  // existing scene array so Excalidraw keeps its normal element/update lifecycle.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const dock = root?.querySelector(".App-toolbar");
+    if (!dock) return undefined;
+    dock.querySelector(".sketchizi-selection-controls")?.remove();
+
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    if (!model.selectedCount) return undefined;
+
+    const group = document.createElement("div");
+    group.className = "sketchizi-contextual-controls sketchizi-selection-controls";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Selection actions");
+
+    const separator = document.createElement("span");
+    separator.className = "sketchizi-dock-separator";
+    separator.setAttribute("aria-hidden", "true");
+    group.appendChild(separator);
+
+    const count = document.createElement("span");
+    count.className = "sketchizi-selection-count";
+    count.textContent = model.selectedCount === 1 ? "1 selected" : `${model.selectedCount} selected`;
+    count.setAttribute("aria-live", "polite");
+    group.appendChild(count);
+
+    const layerButtons = new Map();
+    const selectedIds = new Set(selectedElements
+      .filter((element) => element && !element.isDeleted && !element.deleted)
+      .map((element) => element.id));
+    const syncLayerButtonStates = (scene) => {
+      const api = apiRef?.current;
+      layerButtons.forEach((button, direction) => {
+        button.disabled = !model.canEdit ||
+          typeof api?.updateScene !== "function" ||
+          !canReorderSelection(scene, selectedIds, direction);
+      });
+    };
+    const addLayerButton = (label, direction) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "sketchizi-dock-quick-tool sketchizi-layer-button";
+      button.textContent = label;
+      button.title = direction === "front" ? "Bring to front" : "Send to back";
+      button.setAttribute("aria-label", button.title);
+      layerButtons.set(direction, button);
+      const api = apiRef?.current;
+      const scene = typeof api?.getSceneElements === "function" ? api.getSceneElements() : [];
+      syncLayerButtonStates(scene);
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const api = apiRef?.current;
+        if (!model.canEdit || !api || typeof api.getSceneElements !== "function" || typeof api.updateScene !== "function") return;
+        const currentScene = api.getSceneElements();
+        if (!canReorderSelection(currentScene, selectedIds, direction)) {
+          syncLayerButtonStates(currentScene);
+          return;
+        }
+        const elements = reorderElementsBySelection(currentScene, selectedIds, direction);
+        api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+        // Update both buttons immediately; onChange may not have delivered the
+        // reordered scene yet, so don't leave stale enabled actions in the dock.
+        syncLayerButtonStates(elements);
+      });
+      group.appendChild(button);
+    };
+
+    if (model.canEdit && model.showLayerControls) {
+      addLayerButton("Front", "front");
+      addLayerButton("Back", "back");
+    }
+    dock.appendChild(group);
+    return () => {
+      if (group.isConnected) group.remove();
+    };
+  }, [selectedElements, apiRef, canEdit, viewModeEnabled, canvasRevision]);
+
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;

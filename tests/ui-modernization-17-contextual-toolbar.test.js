@@ -6,11 +6,61 @@ const toolbar = readFileSync(new URL('../src/components/app/ContextualFormatting
 const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+const dockStyles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
 
 test('contextual toolbar is rendered only for editable selections', () => {
   assert.match(toolbar, /if \(!canEdit \|\| liveSelection\.length === 0 \|\| !position\) return null/);
   assert.match(canvas, /<ContextualFormattingToolbar[\s\S]*?selectedElements=\{selectedElements\}/);
   assert.match(canvas, /canEdit=\{canEdit && !viewModeEnabled\}/);
+});
+
+test('contextual formatting exposes selection mode and uses model-driven controls', () => {
+  assert.match(toolbar, /getContextualDockModel\(liveSelection, \{ canEdit \}\)/);
+  assert.match(toolbar, /data-contextual-mode=\{dockModel\.mode\}/);
+  assert.match(toolbar, /data-selected-count=\{dockModel\.selectedCount\}/);
+  assert.match(toolbar, /data-preserve-image-artwork=\{dockModel\.preserveImageArtwork \? "true" : "false"\}/);
+  assert.match(toolbar, /const showTextSize = dockModel\.showTextControls/);
+  assert.match(toolbar, /dockModel\.showShapeControls/);
+});
+
+test('native dock receives contextual selection state without replacing native controls', () => {
+  assert.match(canvas, /getContextualDockModel\(selectedElements, \{/);
+  assert.match(canvas, /dataset\.sketchiziContext/);
+  assert.match(canvas, /dataset\.sketchiziSelectionCount/);
+  assert.match(canvas, /dataset\.sketchiziPreserveArtwork/);
+  assert.match(dockStyles, /data-sketchizi-context="text"/);
+  assert.match(dockStyles, /data-sketchizi-context="shape"/);
+});
+
+test('font-size controls are selection-specific and remain outside the native drawing dock', () => {
+  assert.match(toolbar, /const showTextSize = dockModel\.showTextControls/);
+  assert.match(toolbar, /showTextSize &&/);
+  assert.match(toolbar, /applyToSelected\(\{ fontSize:/);
+  assert.match(canvas, /model\.showTextControls/);
+  assert.match(dockStyles, /\.sketchizi-contextual-controls \{[\s\S]*?display: none !important/);
+});
+
+test('shape and connector selections mount native-dock appearance controls', () => {
+  assert.match(canvas, /sketchizi-appearance-controls/);
+  assert.match(canvas, /Shape and connector appearance/);
+  assert.match(canvas, /model\.showStrokeControls/);
+  assert.match(canvas, /model\.showShapeControls/);
+  assert.match(canvas, /applyToSelected\(\{ \[property\]: color \}\)/);
+  assert.match(canvas, /applyToSelected\(\{ strokeWidth: width \}\)/);
+  assert.match(canvas, /model\.preserveImageArtwork/);
+  assert.match(dockStyles, /\.sketchizi-contextual-color/);
+  assert.match(dockStyles, /\.sketchizi-contextual-width-button/);
+});
+
+test('native dock exposes selection count and working layer-order actions', () => {
+  assert.match(canvas, /sketchizi-selection-controls/);
+  assert.match(canvas, /model\.selectedCount === 1 \? "1 selected"/);
+  assert.match(canvas, /Bring to front/);
+  assert.match(canvas, /Send to back/);
+  assert.match(canvas, /api\.getSceneElements\(\)/);
+  assert.match(canvas, /api\.updateScene\(\{ elements, captureUpdate: CaptureUpdateAction\.IMMEDIATELY \}\)/);
+  assert.match(dockStyles, /\.sketchizi-selection-count/);
+  assert.match(dockStyles, /\.sketchizi-layer-button/);
 });
 
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
@@ -47,4 +97,33 @@ test('Library icon images remain untouched by shape formatting until safe recolo
   assert.match(canvasTools, /if \(element\.type === "image" && \(element\.customData\?\.iconId \|\| element\.customData\?\.diagramIcon\)\) return element/);
   assert.doesNotMatch(canvasTools, /recolorSvgDataUrl/);
   assert.doesNotMatch(toolbar, /recolorableIconSelection/);
+});
+
+
+test('native drawing dock stays on one row and scrolls horizontally in narrow workspaces', () => {
+  assert.match(dockStyles, /flex-wrap: nowrap !important/);
+  assert.match(dockStyles, /overflow-x: auto !important/);
+  assert.match(dockStyles, /\.App-toolbar\[data-sketchizi-dock="true"\] > \.sketchizi-contextual-controls/);
+  assert.match(toolbar, /const preferredTop = topY - toolbarHeight - 12/);
+});
+
+test('layer-order controls revalidate and synchronize both directions after each reorder', () => {
+  assert.match(canvas, /const layerButtons = new Map\(\)/);
+  assert.match(canvas, /const syncLayerButtonStates = \(scene\) =>/);
+  assert.match(canvas, /layerButtons\.forEach\(\(button, direction\) =>/);
+  assert.match(canvas, /if \(!canReorderSelection\(currentScene, selectedIds, direction\)\)/);
+  assert.match(canvas, /syncLayerButtonStates\(elements\)/);
+});
+
+
+test('contextual dock controls expose keyboard focus and clear disabled states', () => {
+  assert.match(canvas, /button\.type = "button"/);
+  assert.match(canvas, /button\.setAttribute\("aria-label", button\.title\)/);
+  assert.match(canvas, /count\.setAttribute\("aria-live", "polite"\)/);
+  assert.match(dockStyles, /\.sketchizi-contextual-size-button:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-contextual-color:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-contextual-width-button:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-layer-button:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-layer-button:disabled[\s\S]*?cursor: not-allowed/);
+  assert.match(dockStyles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.sketchizi-layer-button/);
 });
