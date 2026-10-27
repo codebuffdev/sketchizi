@@ -7,7 +7,7 @@ import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
-import { getContextualDockModel, reorderElementsBySelection } from "../../features/canvas/contextualDockModel.js";
+import { canReorderSelection, getContextualDockModel, reorderElementsBySelection } from "../../features/canvas/contextualDockModel.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -225,7 +225,14 @@ export default function SketchiziCanvas({
       button.textContent = label;
       button.title = direction === "front" ? "Bring to front" : "Send to back";
       button.setAttribute("aria-label", button.title);
-      button.disabled = !model.canEdit || typeof apiRef?.current?.updateScene !== "function";
+      const api = apiRef?.current;
+      const selectedIds = new Set(selectedElements
+        .filter((element) => element && !element.isDeleted && !element.deleted)
+        .map((element) => element.id));
+      const scene = typeof api?.getSceneElements === "function" ? api.getSceneElements() : [];
+      button.disabled = !model.canEdit ||
+        typeof api?.updateScene !== "function" ||
+        !canReorderSelection(scene, selectedIds, direction);
       button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
