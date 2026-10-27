@@ -48,3 +48,61 @@ test('Library icon images remain untouched by shape formatting until safe recolo
   assert.doesNotMatch(canvasTools, /recolorSvgDataUrl/);
   assert.doesNotMatch(toolbar, /recolorableIconSelection/);
 });
+
+
+test('compact dock constrains overall width and reduces tool button dimensions', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /min-height: 48px !important/);
+  assert.match(dockCss, /padding: 5px 8px !important/);
+  assert.match(dockCss, /width: 34px !important/);
+  assert.match(dockCss, /max-width: calc\(100vw - 16px\) !important/);
+  assert.match(dockCss, /@media \(max-width: 700px\)[\s\S]*?width: 31px !important/);
+});
+
+
+test('zoom and undo redo navigation controls use compact dimensions', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.zoom-actions button,[\s\S]*?width: 34px !important/);
+  assert.match(dockCss, /\.undo-redo-buttons button/);
+  assert.match(dockCss, /@media \(max-width: 700px\)[\s\S]*?width: 31px !important/);
+});
+
+
+test('floating dock has no enclosing background shell', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?background: transparent !important/);
+  assert.match(dockCss, /border-radius: 0 !important/);
+  assert.match(dockCss, /box-shadow: none !important/);
+  assert.match(dockCss, /backdrop-filter: none !important/);
+});
+
+
+test('dock hides inline shortcut hints without disabling keyboard shortcuts', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding[\s\S]*?display: none !important/);
+  assert.match(dockCss, /Keyboard shortcuts themselves remain available and unchanged/);
+});
+
+
+test('contextual toolbar exposes fill, line, roughness and opacity controls on canvas', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /aria-label="Fill style"/);
+  assert.match(toolbar, /aria-label="Line style"/);
+  assert.match(toolbar, /aria-label="Roughness"/);
+  assert.match(toolbar, /aria-label="Opacity"/);
+  assert.match(toolbar, /applyToSelected\(\{ fillStyle: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ strokeStyle: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ roughness: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ opacity: Number\(event.target.value\) \}\)/);
+  assert.match(dockCss, /\.contextual-formatting-toolbar[\s\S]*?max-width: min\(760px, calc\(100vw - 20px\)\)/);
+});
+
+
+test('contextual toolbar provides canvas layer ordering actions', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbar, /aria-label="Layer order"/);
+  assert.match(toolbar, /aria-label="Send selection to back"/);
+  assert.match(toolbar, /aria-label="Bring selection to front"/);
+  assert.match(toolbar, /api\.updateScene\(\{ elements: nextElements \}\)/);
+});

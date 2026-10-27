@@ -122,3 +122,43 @@ test("header width measurement is clamped to visible viewport in split-window la
   assert.match(header, /document\.documentElement\.clientWidth \|\| window\.innerWidth/);
   assert.match(header, /window\.addEventListener\("resize", updateWidth\)/);
 });
+
+
+test("desktop header uses a frameless transparent surface", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  const frameless = css.slice(css.indexOf("/* Frameless header treatment"));
+  assert.match(frameless, /\.app \.desktop-app-header\s*\{[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /box-shadow: none !important/);
+  assert.match(frameless, /@media \(min-width: 1025px\)/);
+});
+
+
+test("desktop header action controls render without boxed backgrounds", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  const frameless = css.slice(css.lastIndexOf("/* Frameless header controls"));
+  assert.match(frameless, /\.desktop-app-header-panel-actions button[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /\.desktop-app-header-panel-actions,[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /\.desktop-app-nav-button:hover/);
+});
+
+
+test("desktop header is canvas-native with no strip or idle control containers", async () => {
+  const css = await read("../src/styles/header-redesign.css");
+  const frameless = css.slice(css.lastIndexOf("/* True canvas-native header"));
+  assert.match(frameless, /\.desktop-app-header,[\s\S]*?background: transparent !important/);
+  assert.match(frameless, /border: 0 !important/);
+  assert.match(frameless, /\.desktop-app-header button,[\s\S]*?box-shadow: none !important/);
+  assert.match(frameless, /button:hover[\s\S]*?background: rgb\(148 163 184 \/ 9%\) !important/);
+  assert.match(frameless, /button:focus-visible[\s\S]*?outline: 2px solid/);
+});
+
+
+test("collaboration dialog stays fully visible and scrollable within viewport", async () => {
+  const css = await read("../src/styles/ui-modernization.css");
+  const rules = css.slice(css.lastIndexOf("/* Collaboration creation/join dialogs"));
+  assert.match(rules, /\.collaboration-backdrop\s*\{[\s\S]*?position: fixed !important/);
+  assert.match(rules, /inset: 0 !important/);
+  assert.match(rules, /z-index: 2400 !important/);
+  assert.match(rules, /\.collaboration-dialog\s*\{[\s\S]*?max-height: calc\(100dvh/);
+  assert.match(rules, /overflow-y: auto !important/);
+});
