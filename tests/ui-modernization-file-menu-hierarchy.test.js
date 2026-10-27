@@ -17,10 +17,10 @@ test("file management menu keeps workspace actions compact and focused on files"
   assert.match(menuTemplate, /aria-controls="sketchizi-recent-files-panel"/);
 });
 
-test("Open file menu action uses a single file icon", () => {
-  assert.match(menu, /sketchizi-native-open-file-icon/);
-  assert.match(menu, /const existingFolderIcon = item\.querySelector\("svg, \.dropdown-menu-item-icon, \.context-menu-item-icon, \.menu-item-icon"\)/);
-  assert.match(menu, /existingFolderIcon\.remove\(\)/);
+test("duplicate native Open file menu item is removed", () => {
+  assert.match(menu, /The custom Workspace section already provides Open file/);
+  assert.match(menu, /if \(item && item !== menu\) item\.remove\(\)/);
+  assert.doesNotMatch(menu, /sketchizi-native-open-file-icon/);
 });
 
 test("file menu preserves new-file and recent-file workflows after removing folder browsing", () => {
