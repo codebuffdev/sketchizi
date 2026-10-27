@@ -1497,3 +1497,73 @@
     color: inherit !important;
   }
 }
+
+
+/* True canvas-native header: remove the header strip, section separators and
+   all idle control surfaces so labels/icons appear directly on the canvas.
+   Hover/focus feedback remains subtle for discoverability and accessibility. */
+@media (min-width: 1025px) {
+  .app .desktop-app-header,
+  .app .desktop-app-header::before,
+  .app .desktop-app-header::after {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .app .desktop-app-header > *,
+  .app .desktop-app-header > *::before,
+  .app .desktop-app-header > *::after,
+  .app .desktop-app-header .desktop-app-document-identity,
+  .app .desktop-app-header .desktop-app-nav,
+  .app .desktop-app-header .desktop-app-header-panel-actions,
+  .app .desktop-app-header .desktop-app-header-account-zone,
+  .app .desktop-app-header .desktop-app-save-status-wrap,
+  .app .desktop-app-header .desktop-app-header-actions,
+  .app .desktop-app-header .desktop-app-header-spacer {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .app .desktop-app-header .desktop-app-document-identity,
+  .app .desktop-app-header .desktop-app-nav,
+  .app .desktop-app-header .desktop-app-header-panel-actions,
+  .app .desktop-app-header .desktop-app-header-account-zone,
+  .app .desktop-app-header .desktop-app-header-actions {
+    border-left: 0 !important;
+    border-right: 0 !important;
+    outline: 0 !important;
+  }
+
+  .app .desktop-app-header button,
+  .app .desktop-app-header [role="button"],
+  .app .desktop-app-header .desktop-app-dropdown-trigger,
+  .app .desktop-app-header .desktop-app-nav-button,
+  .app .desktop-app-header .desktop-app-document-identity,
+  .app .desktop-app-header .desktop-app-search-button {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    outline-offset: 2px;
+  }
+
+  .app .desktop-app-header button:hover,
+  .app .desktop-app-header [role="button"]:hover,
+  .app .desktop-app-header .desktop-app-dropdown-trigger:hover,
+  .app .desktop-app-header .desktop-app-document-identity:hover {
+    background: rgb(148 163 184 / 9%) !important;
+  }
+
+  .app .desktop-app-header button:focus-visible,
+  .app .desktop-app-header [role="button"]:focus-visible {
+    outline: 2px solid rgb(139 129 255 / 80%) !important;
+    outline-offset: 2px;
+  }
+
+  .app .desktop-app-header .desktop-app-header-panel-actions > *,
+  .app .desktop-app-header .desktop-app-header-account-zone > * {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}
