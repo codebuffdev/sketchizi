@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getContextualDockModel, reorderElementsBySelection } from "../src/features/canvas/contextualDockModel.js";
+import { canReorderSelection, getContextualDockModel, reorderElementsBySelection } from "../src/features/canvas/contextualDockModel.js";
 
 test("empty selection shows tools without formatting controls", () => {
   assert.deepEqual(getContextualDockModel([]), {
@@ -132,4 +132,17 @@ test("layer ordering moves selected elements together and preserves relative ord
 test("layer ordering leaves the scene unchanged when no selected ids match", () => {
   const elements = [{ id: "a" }, { id: "b" }];
   assert.deepEqual(reorderElementsBySelection(elements, new Set(["missing"]), "front"), elements);
+});
+
+test("layer actions are disabled when selected elements are already at a scene boundary", () => {
+  const elements = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  assert.equal(canReorderSelection(elements, new Set(["c"]), "front"), false);
+  assert.equal(canReorderSelection(elements, new Set(["a"]), "back"), false);
+  assert.equal(canReorderSelection(elements, new Set(["b"]), "front"), true);
+  assert.equal(canReorderSelection(elements, new Set(["b"]), "back"), true);
+});
+
+test("layer boundary checks ignore deleted elements", () => {
+  const elements = [{ id: "deleted", isDeleted: true }, { id: "a" }];
+  assert.equal(canReorderSelection(elements, new Set(["a"]), "back"), false);
 });
