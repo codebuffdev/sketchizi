@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { isRecolorableEssentialIcon } from "../../features/icon-library/iconColorService.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -83,7 +82,6 @@ export default function ContextualFormattingToolbar({
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
-  const recolorableIconSelection = liveSelection.every(isRecolorableEssentialIcon);
   const onlyTextSelection = liveSelection.every((element) => element.type === "text");
   const currentStroke = (first?.customData?.iconColor || first?.strokeColor)?.toLowerCase();
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
@@ -114,20 +112,7 @@ export default function ContextualFormattingToolbar({
         ))}
       </div>}
 
-      {recolorableIconSelection && <div className="contextual-formatting-group" role="group" aria-label="Icon color">
-        {STROKE_COLORS.map(([color, label]) => (
-          <button
-            key={color}
-            type="button"
-            className={`contextual-color-swatch${currentStroke === color ? " is-selected" : ""}`}
-            style={{ "--swatch-color": color }}
-            aria-label={`Icon color ${label}`}
-            aria-pressed={currentStroke === color}
-            title={`Icon color: ${label}`}
-            onClick={() => applyToSelected({ strokeColor: color })}
-          />
-        ))}
-      </div>}
+
 
       {!hasImageSelection && !onlyTextSelection && <div className="contextual-formatting-group" role="group" aria-label="Stroke color">
         {STROKE_COLORS.map(([color, label]) => (
