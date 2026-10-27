@@ -14,8 +14,10 @@ test('visual audit accepts absolute HTTP and HTTPS URLs only', () => {
   assert.throws(() => validateVisualAuditUrl('https://user:pass@example.test'), /embedded credentials/);
 });
 
-test('visual audit captures creation screen across five viewport classes', () => {
-  for (const viewport of ['desktop', 'laptop', 'tablet', 'mobile', 'mobile-landscape']) assert.ok(script.includes(`name: "${viewport}"`));
+test('visual audit captures creation screen across desktop split-screen and mobile viewport classes', () => {
+  for (const viewport of ['desktop', 'laptop', 'split-screen-1024', 'compact-desktop-900', 'tablet', 'mobile', 'mobile-landscape']) assert.ok(script.includes(`name: "${viewport}"`));
+  assert.match(script, /name: \"split-screen-1024\", width: 1024/);
+  assert.match(script, /name: \"compact-desktop-900\", width: 900/);
   assert.match(script, /horizontal overflow/);
   assert.match(script, /fullPage: true/);
 });
