@@ -1021,3 +1021,49 @@
     transition: none;
   }
 }
+
+
+/* Collaboration creation/join dialogs must remain fully visible over the
+   canvas-native header, including when the viewport is short. */
+.app .collaboration-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2400 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(20px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-y: auto !important;
+}
+
+.app .collaboration-backdrop .collaboration-dialog {
+  position: relative !important;
+  flex: 0 1 auto !important;
+  width: min(540px, 100%) !important;
+  max-width: calc(100vw - 32px) !important;
+  max-height: calc(100dvh - max(40px, env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))) !important;
+  margin: auto !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+.app .collaboration-backdrop .collaboration-dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: inherit;
+}
+
+@media (max-width: 640px) {
+  .app .collaboration-backdrop {
+    padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .app .collaboration-backdrop .collaboration-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
