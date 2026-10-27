@@ -15,6 +15,13 @@ test("file management menu separates workspace actions from quick access", () =>
   assert.match(menu, /aria-controls="sketchizi-recent-folders-panel"/);
 });
 
+test("folder browsing is collapsed by default to keep the hamburger menu compact", () => {
+  assert.match(menu, /<details class="sketchizi-folder-browser"><summary class="sketchizi-folder-browser-summary">Current folder/);
+  assert.doesNotMatch(menu, /<details class="sketchizi-folder-browser" open>/);
+  assert.match(styles, /\.sketchizi-folder-browser-summary/);
+  assert.match(styles, /\.sketchizi-folder-browser\[open\] \.sketchizi-folder-browser-summary::after/);
+});
+
 test("phase 25 preserves recent-file, recent-folder, and folder refresh workflows", () => {
   for (const selector of [
     "data-sketchizi-open-folder", "data-sketchizi-new-file", "data-refresh-current-folder",
