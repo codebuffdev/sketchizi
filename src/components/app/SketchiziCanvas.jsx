@@ -7,6 +7,7 @@ import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
+import { getContextualDockModel } from "../../features/canvas/contextualDockModel.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -27,32 +28,13 @@ export default function SketchiziCanvas({
     const root = canvasRootRef.current;
     const toolbar = root?.querySelector(".App-toolbar");
     if (!toolbar) return;
-    const liveSelection = selectedElements.filter(
-      (element) => element && !element.isDeleted && !element.deleted,
-    );
-    const types = new Set(liveSelection.map((element) => element.type));
-    const hasLibraryImage = liveSelection.some((element) =>
-      element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon),
-    );
-    const mode = !canEdit || viewModeEnabled
-      ? "read-only"
-      : liveSelection.length === 0
-        ? "tools"
-        : types.size > 1
-          ? "mixed-selection"
-          : types.has("text")
-            ? "text"
-            : ["rectangle", "diamond", "ellipse", "frame"].includes(liveSelection[0]?.type)
-              ? "shape"
-              : ["line", "arrow"].includes(liveSelection[0]?.type)
-                ? "connector"
-                : hasLibraryImage
-                  ? "library-image"
-                  : "element";
-    toolbar.dataset.sketchiziContext = mode;
-    toolbar.dataset.sketchiziSelectionCount = String(liveSelection.length);
-    toolbar.dataset.sketchiziCanEdit = String(canEdit && !viewModeEnabled);
-    toolbar.dataset.sketchiziPreserveArtwork = String(hasLibraryImage);
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    toolbar.dataset.sketchiziContext = model.mode;
+    toolbar.dataset.sketchiziSelectionCount = String(model.selectedCount);
+    toolbar.dataset.sketchiziCanEdit = String(model.canEdit);
+    toolbar.dataset.sketchiziPreserveArtwork = String(model.preserveImageArtwork);
     return () => {
       delete toolbar.dataset.sketchiziContext;
       delete toolbar.dataset.sketchiziSelectionCount;
