@@ -628,6 +628,44 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has([data-sketchizi-custom-menu
 .sketchizi-repository-picker-meta { color: var(--ui-text-muted, #a0a3b0); font-size: 11px; }
 
 
+/* Keep the workspace menu compact; folder contents open only on demand. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-browser {
+  margin: 2px 7px 5px;
+  border: 1px solid rgba(128,128,128,.2);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-browser-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 7px 10px;
+  color: var(--ui-text, #dce3ee);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-browser-summary::-webkit-details-marker { display: none; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-browser-summary::after {
+  content: "+";
+  color: var(--ui-text-muted, #9aa6b8);
+  font-size: 16px;
+  font-weight: 400;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-browser[open] .sketchizi-folder-browser-summary::after { content: "−"; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-browser-summary span {
+  margin-left: auto;
+  color: var(--ui-text-muted, #9aa6b8);
+  font-size: 11px;
+  font-weight: 500;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-browser-summary:focus-visible {
+  outline: 2px solid var(--ui-accent, #7777ff);
+  outline-offset: -2px;
+}
 /* Phase 25 — clearer file-management hierarchy and consistent interactions. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-group {
   min-width: 0;
