@@ -124,6 +124,12 @@ function buildCompletions(text, caret, force = false) {
       volumes: ["- name:", "persistentVolumeClaim:", "configMap:", "secret:"],
       persistentVolumeClaim: ["claimName:"],
       data: ["APP_ENV:", "LOG_LEVEL:"],
+      env: ["- name:", "value:", "valueFrom:"],
+      valueFrom: ["configMapKeyRef:", "secretKeyRef:", "fieldRef:", "resourceFieldRef:"],
+      configMapKeyRef: ["name:", "key:", "optional:"],
+      secretKeyRef: ["name:", "key:", "optional:"],
+      fieldRef: ["fieldPath:", "apiVersion:"],
+      resourceFieldRef: ["containerName:", "resource:", "divisor:"],
     };
     let choices = fieldGroups[parent] || fieldGroups.root;
     // Avoid suggesting keys already present at this same YAML nesting level.
