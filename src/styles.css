@@ -570,6 +570,12 @@
   position: relative;
 }
 
+
+/* The contextual toolbar is positioned in canvas-local coordinates. */
+.app .canvas {
+  position: relative;
+}
+
 .app .contextual-formatting-toolbar {
   position: absolute;
   z-index: 30;
