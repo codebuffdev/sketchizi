@@ -58,3 +58,11 @@ test('compact dock constrains overall width and reduces tool button dimensions',
   assert.match(dockCss, /max-width: calc\(100vw - 16px\) !important/);
   assert.match(dockCss, /@media \(max-width: 700px\)[\s\S]*?width: 31px !important/);
 });
+
+
+test('zoom and undo redo navigation controls use compact dimensions', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.zoom-actions button,[\s\S]*?width: 34px !important/);
+  assert.match(dockCss, /\.undo-redo-buttons button/);
+  assert.match(dockCss, /@media \(max-width: 700px\)[\s\S]*?width: 31px !important/);
+});
