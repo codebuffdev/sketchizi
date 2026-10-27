@@ -50,7 +50,7 @@ test('Essentials SVG icons expose contextual color swatches and recolor stored S
   assert.match(colorService, /WHITE_COLORS/);
   assert.match(colorService, /export function isRecolorableEssentialIcon/);
   assert.match(canvasTools, /recolorSvgDataUrl\(originalDataURL, patch\.strokeColor\)/);
-  assert.match(canvasTools, /iconOriginalDataURL: originalDataURL/);
+  assert.match(canvasTools, /iconColor: patch\.strokeColor/);
 });
 
 test('SVG recoloring preserves white negative space and non-painted areas', () => {
