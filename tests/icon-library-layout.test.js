@@ -58,3 +58,9 @@ test("Mobile Icon Library is a compact two-thirds-height panel with search near 
   assert.match(styles, /library-panel-header-compact[\s\S]*?height:\s*30px/);
   assert.match(styles, /library-panel-redesign-body[\s\S]*?padding:\s*4px 11px 10px/);
 });
+
+test("Mobile Icon Library fills available vertical space instead of leaving a blank area above", () => {
+  assert.match(styles, /height:\s*calc\(100dvh - var\(--sketchizi-desktop-header-height, 58px\) - 12px\)/);
+  assert.match(styles, /library-panel-redesign-body[\s\S]*?flex:\s*1 1 auto/);
+  assert.match(styles, /library-panel-header-compact[\s\S]*?flex:\s*0 0 30px/);
+});
