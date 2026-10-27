@@ -20,6 +20,46 @@ export default function SketchiziCanvas({
   const fitContentButtonRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
   const gridSnapBaselineRef = useRef(null);
+
+  // Keep the native Excalidraw dock aware of selection context without
+  // replacing its native buttons or event handlers.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const toolbar = root?.querySelector(".App-toolbar");
+    if (!toolbar) return;
+    const liveSelection = selectedElements.filter(
+      (element) => element && !element.isDeleted && !element.deleted,
+    );
+    const types = new Set(liveSelection.map((element) => element.type));
+    const hasLibraryImage = liveSelection.some((element) =>
+      element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon),
+    );
+    const mode = !canEdit || viewModeEnabled
+      ? "read-only"
+      : liveSelection.length === 0
+        ? "tools"
+        : types.size > 1
+          ? "mixed-selection"
+          : types.has("text")
+            ? "text"
+            : ["rectangle", "diamond", "ellipse", "frame"].includes(liveSelection[0]?.type)
+              ? "shape"
+              : ["line", "arrow"].includes(liveSelection[0]?.type)
+                ? "connector"
+                : hasLibraryImage
+                  ? "library-image"
+                  : "element";
+    toolbar.dataset.sketchiziContext = mode;
+    toolbar.dataset.sketchiziSelectionCount = String(liveSelection.length);
+    toolbar.dataset.sketchiziCanEdit = String(canEdit && !viewModeEnabled);
+    toolbar.dataset.sketchiziPreserveArtwork = String(hasLibraryImage);
+    return () => {
+      delete toolbar.dataset.sketchiziContext;
+      delete toolbar.dataset.sketchiziSelectionCount;
+      delete toolbar.dataset.sketchiziCanEdit;
+      delete toolbar.dataset.sketchiziPreserveArtwork;
+    };
+  }, [selectedElements, canEdit, viewModeEnabled, canvasRevision]);
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
