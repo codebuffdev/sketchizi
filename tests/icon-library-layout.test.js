@@ -108,7 +108,7 @@ test("Icon Library footer keeps Escape-to-close and removes redundant scroll-cou
   assert.match(panel, /<kbd>Esc<\/kbd> to close/);
   assert.doesNotMatch(panel, /Showing \{Math\.min\(iconDisplayLimit/);
   assert.doesNotMatch(panel, /scroll for more/);
-  assert.match(styles, /library-scroll-hint[\s\S]*?background:\s*#343f53 !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
 });
 
 test("Icon Library does not expose icon color controls before insertion", () => {
@@ -124,8 +124,16 @@ test("library icon insertion preserves original SVG artwork without applying a l
 
 
 test("Icon Library Escape footer stays at the panel edge without covering the final icon row", () => {
-  assert.match(panel, /<\/section>\s*<\/div>\s*\{displayedIcons\.length > iconDisplayLimit && <div className="library-scroll-hint"/);\n  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?position:\s*static !important/);
+  assert.match(panel, /<\/section>\s*<\/div>\s*\{displayedIcons\.length > iconDisplayLimit && <div className="library-scroll-hint"/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?position:\s*static !important/);
   assert.match(styles, /library-scroll-hint[\s\S]*?flex:\s*0 0 auto !important/);
   assert.match(styles, /library-icon-grid[\s\S]*?min-height:\s*0 !important/);
   assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?margin:\s*0 !important/);
+});
+
+
+test("Icon Library outer card is transparent and Escape hint is centered without a background", () => {
+  assert.match(styles, /\.desktop-resources-region > \.library-panel\.library-panel-redesign[\s\S]*?background:\s*transparent !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
 });
