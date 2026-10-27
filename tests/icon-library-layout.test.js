@@ -121,3 +121,11 @@ test("library icon insertion preserves original SVG artwork without applying a l
   assert.doesNotMatch(insertion, /tintMonochromeSvg|icon\.tintColor/);
   assert.match(insertion, /encodeURIComponent\(svg\)/);
 });
+
+
+test("Icon Library Escape footer stays at the panel edge without covering the final icon row", () => {
+  assert.match(styles, /library-scroll-hint[\s\S]*?position:\s*static !important/);
+  assert.match(styles, /library-scroll-hint[\s\S]*?flex:\s*0 0 auto !important/);
+  assert.match(styles, /library-icon-grid[\s\S]*?min-height:\s*0 !important/);
+  assert.match(styles, /margin:\s*0 -18px -15px !important/);
+});
