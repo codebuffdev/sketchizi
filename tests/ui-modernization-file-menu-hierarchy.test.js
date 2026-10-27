@@ -53,7 +53,10 @@ test("hamburger catalog stays within the viewport and exposes a scrollbar", () =
 
 test("workspace menu offers Open file and improved community action icons", () => {
   assert.match(menuTemplate, /data-sketchizi-open-file/);
-  assert.ok(menuTemplate.includes("Open file <kbd>Ctrl+O</kbd>"));
+  assert.match(menuTemplate, /data-sketchizi-new-file>New file<\/button>/);
+  assert.match(menuTemplate, /data-sketchizi-open-file><span aria-hidden="true">↗<\/span> Open file<\/button>/);
+  assert.doesNotMatch(menuTemplate, /data-sketchizi-new-file><span aria-hidden="true">▤<\/span>/);
+  assert.doesNotMatch(menuTemplate, /data-sketchizi-open-file[^<]*<kbd>Ctrl\+O<\/kbd>/);
   assert.match(menu, /sketchizi-review-icon/);
   assert.match(menu, /sketchizi-git-icon/);
 });
