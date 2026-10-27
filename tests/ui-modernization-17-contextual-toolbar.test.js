@@ -106,3 +106,13 @@ test('contextual toolbar provides canvas layer ordering actions', () => {
   assert.match(toolbar, /aria-label="Bring selection to front"/);
   assert.match(toolbar, /api\.updateScene\(\{ elements: nextElements \}\)/);
 });
+
+
+test('contextual toolbar controls have visible contrast in light and dark themes', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.app\.theme-light \.contextual-formatting-toolbar[\s\S]*?--contextual-ink: #20242c/);
+  assert.match(dockCss, /\.app\.theme-dark \.contextual-formatting-toolbar[\s\S]*?--contextual-ink: #f3f4f8/);
+  assert.match(dockCss, /\.contextual-color-swatch[\s\S]*?background-color: var\(--swatch-color, transparent\) !important/);
+  assert.match(dockCss, /\.contextual-color-swatch\.is-selected[\s\S]*?outline: 2px solid #8276f4/);
+  assert.match(dockCss, /\.contextual-formatting-toolbar button:focus-visible/);
+});
