@@ -48,7 +48,10 @@ function getSelectionPosition(api, elements, root) {
   const rootHeight = root.clientHeight || viewportHeight;
   const preferredWidth = Math.min(350, Math.max(240, rootWidth - 16));
   const left = Math.max(8, Math.min(rootWidth - preferredWidth - 8, centerX - preferredWidth / 2));
-  const top = topY >= 62 ? topY - 54 : bottomY + 10;
+  // Keep the formatting controls directly below the selected object whenever
+  // there is room; move above it only when the selection is near the canvas bottom.
+  const belowTop = bottomY + 12;
+  const top = belowTop + 54 <= rootHeight - 8 ? belowTop : Math.max(8, topY - 54);
   return {
     left: `${left}px`,
     top: `${Math.max(8, Math.min(rootHeight - 54, top))}px`,
