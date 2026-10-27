@@ -94,7 +94,7 @@ test("Kubernetes catalog remains wired into existing search and insertion flows"
   );
   assert.match(catalogHook, /import \{ kubernetesIcons \} from "\.\.\/\.\.\/kubernetesArchitectureLibrary"/);
   assert.match(catalogHook, /activeCategory === "Kubernetes"/);
-  assert.match(panel, /activeSource === "kubernetes"/);
+  assert.match(panel, /\["aws", "kubernetes", "networking", "uml", "mindmaps"\]\.includes\(activeSource\)/);
   assert.match(panel, /activeKubernetesCategory/);
   assert.match(insertion, /insertKubernetesResource/);
   assert.match(insertion, /isIntelligentKubernetesResourceIcon/);

@@ -29,6 +29,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.scrollY/);
   assert.match(toolbar, /Math\.min\(rootHeight - 54/);
   assert.match(toolbar, /canvasRevision/);
+  assert.match(toolbar, /const belowTop = bottomY \+ 12/);
 });
 
 test('contextual toolbar has light, dark, responsive, and focus-visible styling', () => {
@@ -37,4 +38,13 @@ test('contextual toolbar has light, dark, responsive, and focus-visible styling'
   assert.match(styles, /\.app\.theme-light \.contextual-formatting-toolbar/);
   assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?contextual-formatting-toolbar/);
   assert.match(styles, /:focus-visible/);
+});
+
+
+test('Library icon images remain untouched by shape formatting until safe recoloring is supported', () => {
+  const canvasTools = readFileSync(new URL('../src/features/canvas/useCanvasTools.js', import.meta.url), 'utf8');
+  assert.match(canvasTools, /Keep library image assets untouched/);
+  assert.match(canvasTools, /if \(element\.type === "image" && \(element\.customData\?\.iconId \|\| element\.customData\?\.diagramIcon\)\) return element/);
+  assert.doesNotMatch(canvasTools, /recolorSvgDataUrl/);
+  assert.doesNotMatch(toolbar, /recolorableIconSelection/);
 });

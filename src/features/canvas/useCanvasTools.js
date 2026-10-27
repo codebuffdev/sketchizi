@@ -48,15 +48,9 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     const now = Date.now();
     const updatedElements = api.getSceneElements().map((element) => {
       if (!selectedIds.has(element.id)) return element;
-      // Library images retain their original artwork; native text and shapes use Excalidraw properties.
+      // Keep library image assets untouched until recoloring can preserve Excalidraw file references safely.
       if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
-      return {
-        ...element,
-        ...patch,
-        version: element.version + 1,
-        versionNonce: Math.floor(Math.random() * 2147483647),
-        updated: now,
-      };
+      return { ...element, ...patch, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now };
     });
 
     api.updateScene({

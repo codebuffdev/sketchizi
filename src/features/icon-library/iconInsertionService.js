@@ -3,15 +3,6 @@ import { logger } from "../../logging/logger";
 import { insertAwsResource, isIntelligentAwsResourceIcon } from "../aws-resources/awsResourceService";
 import { insertKubernetesResource, isIntelligentKubernetesResourceIcon } from "../kubernetes-resources/kubernetesResourceService";
 import { insertNetworkingResource, isIntelligentNetworkingResourceIcon } from "../networking/networkingResourceService.js";
-function tintMonochromeSvg(svg, tintColor) {
-  if (!/^#[0-9a-f]{6}$/i.test(String(tintColor || ""))) return svg;
-  const color = tintColor;
-  return String(svg)
-    .replace(/\b(fill|stroke)\s*=\s*(["'])(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))\2/gi, (_, property, quote) => property + "=" + quote + color + quote)
-    .replace(/\b(fill|stroke)\s*:\s*(?:#000(?:000)?|#111(?:111)?|#1e1e1e|black|currentColor|rgb\(0\s*,\s*0\s*,\s*0\))/gi, (_, property) => property + ":" + color);
-}
-
-
 export function createEditableLibraryElements(icon, x, y) {
     const source = icon?.source;
     const id = icon?.id || "";
@@ -367,8 +358,7 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
         return response.text();
       })
       .then((svg) => {
-        const preparedSvg = icon.tintColor ? tintMonochromeSvg(svg, icon.tintColor) : svg;
-        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(preparedSvg)))}`;
+        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
         addImage(dataURL);
       })
       .catch((error) => {

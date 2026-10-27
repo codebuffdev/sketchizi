@@ -1663,3 +1663,144 @@
   border-color: #64748b;
   box-shadow: 0 0 0 2px #cbd5e1;
 }
+
+
+/* The Escape hint is a direct panel child, so it cannot cover or be clipped by the scrolling results. */
+.app .library-panel-redesign {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign .library-panel-redesign-body {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign .library-results {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign .library-icon-grid {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign > .library-scroll-hint {
+  position: static !important;
+  inset: auto !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 6px 9px !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Minimal floating library: retain content layout, remove the outer card treatment. */
+.app .desktop-resources-region > .library-panel.library-panel-redesign {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.app .library-panel-redesign > .library-scroll-hint {
+  justify-content: center !important;
+  text-align: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  padding: 6px 0 !important;
+}
+.app .library-panel-redesign > .library-scroll-hint > .library-escape-hint {
+  justify-content: center !important;
+  color: inherit !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+/* Always-visible, centered Escape hint: transparent surface, readable text and keycap. */
+.app .library-panel-redesign > .library-scroll-hint {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 28px !important;
+  padding: 6px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #d1d7e5 !important;
+  text-align: center !important;
+  opacity: 1 !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  color: #d1d7e5 !important;
+  white-space: nowrap !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  display: inline-block !important;
+  padding: 1px 5px !important;
+  border: 1px solid #8792a8 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+
+/* Keep the floating Icon Library at the top of the viewport instead of vertically centering it. */
+.app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
+  padding-bottom: 16px !important;
+  box-sizing: border-box !important;
+}
+.app .desktop-workspace-library-open .desktop-resources-region > .library-panel.library-panel-redesign {
+  margin-top: 0 !important;
+  align-self: flex-start !important;
+}
+
+
+/* Keep the Escape hint at the top; give the remaining height to the complete, scrollable icon list. */
+.app .library-panel-redesign {
+  height: min(78vh, 760px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign > .library-scroll-hint {
+  order: 0 !important;
+  flex: 0 0 auto !important;
+  min-height: 28px !important;
+  padding: 6px 0 10px !important;
+}
+.app .library-panel-redesign > .library-panel-redesign-body {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign .library-results {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign .library-icon-grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}

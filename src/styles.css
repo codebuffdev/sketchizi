@@ -570,6 +570,12 @@
   position: relative;
 }
 
+
+/* The contextual toolbar is positioned in canvas-local coordinates. */
+.app .canvas {
+  position: relative;
+}
+
 .app .contextual-formatting-toolbar {
   position: absolute;
   z-index: 30;
@@ -822,4 +828,46 @@
 .app .App-toolbar .ToolIcon_type_button--selected svg,
 .app .App-toolbar .ToolIcon--selected svg {
   color: inherit;
+}
+
+
+/* Match the frameless Icon Library treatment in both themes. Keep light-theme
+   controls/cards themed, but never restore a white shell around the whole panel. */
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign {
+  border: 0 !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-redesign-body {
+  background: transparent !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint {
+  justify-content: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #4d5572 !important;
+  text-align: center !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  justify-content: center !important;
+  color: #4d5572 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint kbd {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  color: #4d5572 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  border-color: #9aa3ba !important;
+  color: #4d5572 !important;
 }

@@ -20,14 +20,15 @@ test("Only the icon result grid owns vertical scrolling and has a visible purple
   assert.match(styles, /library-icon-grid::\-webkit-scrollbar-thumb/);
 });
 
-test("Search, recent-search chips, first-class source tabs, and view controls are present", () => {
+test("Search, recent-search chips, and first-class source tabs are present", () => {
   assert.match(panel, /Search icons, tags, or categories/);
   assert.match(panel, /library-recent-searches/);
   assert.match(panel, /library-source-tabs/);
   assert.match(panel, /label: "Networking"/);
   assert.match(panel, /label: "UML"/);
   assert.match(panel, /label: "Mind Maps"/);
-  assert.match(panel, /library-view-toggle/);
+  assert.match(panel, /library-source-tabs/);
+  assert.match(panel, /library-recent-searches/);
 });
 
 test("Floating library uses a smaller footprint and light theme overrides all core surfaces", async () => {
@@ -38,17 +39,17 @@ test("Floating library uses a smaller footprint and light theme overrides all co
   assert.match(appStyles, /desktop-workspace-library-open::before[\s\S]*?background: rgba\(30, 34, 52, \.20\) !important/);
 });
 
-test("Dialog uses a subtle translucent glass surface and accessible compact layout control", () => {
+test("Dialog uses a subtle translucent glass surface and a non-modal accessible panel role", () => {
   assert.match(styles, /backdrop-filter:\s*blur\(18px\) saturate\(125%\)/);
-  assert.match(panel, /aria-label="Card layout"/);
-  assert.equal(panel.includes('<span className="sr-only">Card layout</span>'), false);
+  assert.match(panel, /role="dialog" aria-modal="false"/);
+
 });
 
-test("Icon Library header omits redundant title and instruction text while retaining close control", async () => {
-  assert.match(panel, /library-panel-header-compact/);
+test("Icon Library omits redundant title and instruction text and keeps the Escape hint at the top", async () => {
+  assert.match(panel, /library-scroll-hint/);
+  assert.ok(panel.indexOf('className="library-scroll-hint"') < panel.indexOf('className="library-panel-body library-panel-redesign-body"'));
   assert.doesNotMatch(panel, /Drag icons onto the canvas to place them precisely/);
   assert.doesNotMatch(panel, /id="icon-library-title"/);
-  assert.match(panel, /aria-label="Close Icon Library"/);
   assert.match(styles, /library-panel-header-compact[\s\S]*?height:\s*34px/);
 });
 
@@ -103,25 +104,72 @@ test("Floating Icon Library switches to readable single-column cards based on pa
   assert.match(styles, /icon-name[\s\S]*?word-break:\s*normal !important/);
 });
 
-test("Icon Library footer clearly shows scroll status and Escape-to-close shortcut", () => {
+test("Icon Library footer keeps Escape-to-close and removes redundant scroll-count text", () => {
   assert.match(panel, /library-escape-hint/);
   assert.match(panel, /<kbd>Esc<\/kbd> to close/);
-  assert.match(styles, /library-scroll-hint[\s\S]*?background:\s*#343f53 !important/);
-  assert.match(styles, /library-scroll-hint > span:first-child[\s\S]*?color:\s*#f3f6fc !important/);
+  assert.doesNotMatch(panel, /Showing \{Math\.min\(iconDisplayLimit/);
+  assert.doesNotMatch(panel, /scroll for more/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
 });
 
-test("Essentials collection exposes an accessible icon color selector", () => {
-  assert.match(panel, /library-essential-colors/);
-  assert.match(panel, /aria-label="Essentials icon color"/);
-  assert.match(panel, /essentialColors\.map/);
-  assert.match(panel, /aria-pressed=\{selectedEssentialColor === color\.value\}/);
-  assert.match(styles, /library-essential-color-swatch\.active/);
+test("Icon Library does not expose icon color controls before insertion", () => {
+  assert.doesNotMatch(panel, /library-essential-colors/);
+  assert.doesNotMatch(panel, /selectedEssentialColor|essentialColors|tintColor/);
 });
 
-test("Essentials icon colors use a softer matte palette suitable for light theme", () => {
-  assert.match(panel, /#94a3b8/);
-  assert.match(panel, /#60a5fa/);
-  assert.match(panel, /#5eead4/);
-  assert.match(panel, /#c4b5fd/);
-  assert.match(styles, /library-essential-color-swatch\.active[\s\S]*?box-shadow:\s*0 0 0 2px #cbd5e1/);
+test("library icon insertion preserves original SVG artwork without applying a library tint", async () => {
+  const insertion = await readFile(new URL("../src/features/icon-library/iconInsertionService.js", import.meta.url), "utf8");
+  assert.doesNotMatch(insertion, /tintMonochromeSvg|icon\.tintColor/);
+  assert.match(insertion, /encodeURIComponent\(svg\)/);
+});
+
+
+test("Icon Library Escape hint stays above results and does not cover the final icon row", () => {
+  const footer = panel.indexOf('<div className="library-scroll-hint"><span className="library-escape-hint"><kbd>Esc</kbd> to close</span></div>');
+  const body = panel.indexOf('<div className="library-panel-body library-panel-redesign-body">');
+  assert.ok(footer >= 0 && body > footer);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?position:\s*static !important/);
+  assert.match(styles, /library-scroll-hint[\s\S]*?flex:\s*0 0 auto !important/);
+  assert.match(styles, /library-icon-grid[\s\S]*?min-height:\s*0 !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?margin:\s*0 !important/);
+});
+
+
+test("Icon Library outer card is transparent and Escape hint is centered without a background", () => {
+  assert.match(styles, /\.desktop-resources-region > \.library-panel\.library-panel-redesign[\s\S]*?background:\s*transparent !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
+});
+
+
+test("Light theme keeps the Icon Library frameless and its Escape hint centered and transparent", async () => {
+  const appStyles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign[\s\S]*?background:\s*transparent !important/);
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
+});
+
+
+test("Escape-to-close hint always renders even when icon results are capped", () => {
+  assert.match(panel, /<div className="library-scroll-hint"><span className="library-escape-hint"><kbd>Esc<\/kbd> to close<\/span><\/div>/);
+  assert.doesNotMatch(panel, /displayedIcons\.length > iconDisplayLimit && <div className="library-scroll-hint"/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
+  assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
+});
+
+
+test("Floating Icon Library is top-aligned rather than vertically centered", () => {
+  assert.match(styles, /desktop-workspace-library-open > \.desktop-resources-region\.mobile-resource-open[\s\S]*?align-items:\s*flex-start !important/);
+  assert.match(styles, /desktop-workspace-library-open > \.desktop-resources-region\.mobile-resource-open[\s\S]*?padding-top:\s*max\(16px, env\(safe-area-inset-top, 0px\)\) !important/);
+  assert.match(styles, /desktop-workspace-library-open \.desktop-resources-region > \.library-panel\.library-panel-redesign[\s\S]*?align-self:\s*flex-start !important/);
+});
+
+
+test("Escape hint appears above the search and the icon list owns the remaining panel height", () => {
+  const footer = panel.indexOf('<div className="library-scroll-hint"><span className="library-escape-hint"><kbd>Esc</kbd> to close</span></div>');
+  const body = panel.indexOf('<div className="library-panel-body library-panel-redesign-body">');
+  assert.ok(footer >= 0 && body > footer, "Escape hint must render before the search and icon results");
+  assert.match(styles, /library-panel-redesign \{[\s\S]*?max-height:\s*calc\(100dvh - 32px\) !important/);
+  assert.match(styles, /library-panel-redesign > \.library-panel-redesign-body[\s\S]*?overflow:\s*hidden !important/);
+  assert.match(styles, /library-panel-redesign \.library-icon-grid[\s\S]*?overflow-y:\s*auto !important/);
 });
