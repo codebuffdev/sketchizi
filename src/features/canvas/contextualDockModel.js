@@ -43,6 +43,7 @@ export function getContextualDockModel(selectedElements = [], { canEdit = true }
       showTextControls: false,
       showShapeControls: false,
       showConnectorControls: false,
+      showStrokeControls: false,
       showLayerControls: false,
       showSpecializedProperties: false,
       preserveImageArtwork: false,
