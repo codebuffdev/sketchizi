@@ -1374,3 +1374,38 @@
     pointer-events: auto;
   }
 }
+
+
+/* Repair narrow-panel card geometry: one column prevents names and categories wrapping character by character. */
+@media (max-width: 760px) {
+  .app .library-panel-redesign .library-icon-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card {
+    grid-template-columns: 64px minmax(0, 1fr) 34px !important;
+    align-items: center;
+    min-height: 82px;
+    gap: 10px !important;
+    padding: 8px 10px !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview {
+    width: 60px;
+    height: 62px;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card-content,
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name,
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    white-space: normal;
+  }
+}
