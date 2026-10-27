@@ -13,6 +13,15 @@ test('contextual toolbar is rendered only for editable selections', () => {
   assert.match(canvas, /canEdit=\{canEdit && !viewModeEnabled\}/);
 });
 
+test('contextual formatting exposes selection mode and uses model-driven controls', () => {
+  assert.match(toolbar, /getContextualDockModel\(liveSelection, \{ canEdit \}\)/);
+  assert.match(toolbar, /data-contextual-mode=\{dockModel\.mode\}/);
+  assert.match(toolbar, /data-selected-count=\{dockModel\.selectedCount\}/);
+  assert.match(toolbar, /data-preserve-image-artwork=\{dockModel\.preserveImageArtwork \? "true" : "false"\}/);
+  assert.match(toolbar, /const showTextSize = dockModel\.showTextControls/);
+  assert.match(toolbar, /dockModel\.showShapeControls/);
+});
+
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
