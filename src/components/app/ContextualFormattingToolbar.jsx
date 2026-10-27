@@ -19,6 +19,9 @@ const FILL_COLORS = [
 
 const SHAPE_TYPES = new Set(["rectangle", "diamond", "ellipse"]);
 const LINE_TYPES = new Set(["line", "arrow", "rectangle", "diamond", "ellipse"]);
+const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]];
+const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— —"], ["dotted", "Dotted", "· · ·"]];
+const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
 
 function getSelectionPosition(api, elements, root) {
   if (!api || !root || !elements.length) return null;
@@ -87,6 +90,8 @@ export default function ContextualFormattingToolbar({
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
   const currentFontSize = Number(first?.fontSize) || 20;
+  const currentOpacity = Number(first?.opacity ?? 100);
+  const showShapeStyle = liveSelection.some((element) => SHAPE_TYPES.has(element.type) || element.type === "line" || element.type === "arrow" || element.type === "freedraw");
 
   return (
     <div
@@ -170,6 +175,23 @@ export default function ContextualFormattingToolbar({
           <span aria-label={`Font size ${currentFontSize}`}>{currentFontSize}</span>
           <button type="button" aria-label="Increase text size" title="Increase text size" onClick={() => applyToSelected({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
         </div>
+      )}
+
+      {showShapeStyle && !hasImageSelection && (
+        <>
+          {showFill && <div className="contextual-formatting-group" role="group" aria-label="Fill style">
+            {FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={first?.fillStyle === value ? "is-selected" : ""} aria-label={label} aria-pressed={first?.fillStyle === value} title={label} onClick={() => applyToSelected({ fillStyle: value })}>{glyph}</button>)}
+          </div>}
+          <div className="contextual-formatting-group" role="group" aria-label="Line style">
+            {STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={first?.strokeStyle === value ? "is-selected" : ""} aria-label={label} aria-pressed={first?.strokeStyle === value} title={label} onClick={() => applyToSelected({ strokeStyle: value })}>{glyph}</button>)}
+          </div>
+          <div className="contextual-formatting-group" role="group" aria-label="Roughness">
+            {ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={Number(first?.roughness ?? 1) === value ? "is-selected" : ""} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} title={label} onClick={() => applyToSelected({ roughness: value })}>{label.slice(0, 1)}</button>)}
+          </div>
+          <div className="contextual-formatting-group contextual-opacity" role="group" aria-label="Opacity">
+            <label title="Opacity"><span>O</span><input aria-label="Opacity" type="range" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })}/><span>{currentOpacity}</span></label>
+          </div>
+        </>
       )}
 
       <div className="contextual-formatting-group contextual-properties-action">
