@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
-import { isRecolorableEssentialIcon, recolorSvgDataUrl } from "../icon-library/iconColorService.js";
 
 export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit = true }) {
   const getSelectedElements = useCallback(() => {
@@ -49,25 +48,8 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     const now = Date.now();
     const updatedElements = api.getSceneElements().map((element) => {
       if (!selectedIds.has(element.id)) return element;
-      if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) {
-        if (patch.strokeColor && isRecolorableEssentialIcon(element)) {
-          const file = api.getFiles?.()?.[element.fileId];
-          const sourceDataURL = file?.dataURL;
-          const recoloredDataURL = recolorSvgDataUrl(sourceDataURL, patch.strokeColor);
-          if (recoloredDataURL && element.fileId) {
-            // Keep the original file ID so saved scenes and image references remain valid.
-            api.addFiles([{ id: element.fileId, dataURL: recoloredDataURL, mimeType: "image/svg+xml", created: file?.created || Date.now(), lastRetrieved: Date.now() }]);
-            return {
-              ...element,
-              customData: { ...element.customData, iconColor: patch.strokeColor },
-              version: element.version + 1,
-              versionNonce: Math.floor(Math.random() * 2147483647),
-              updated: now,
-            };
-          }
-        }
-        return element;
-      }
+      // Keep library image assets untouched until recoloring can preserve Excalidraw file references safely.
+      if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
       return { ...element, ...patch, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now };
     });
 
