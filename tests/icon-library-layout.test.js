@@ -109,3 +109,11 @@ test("Icon Library footer clearly shows scroll status and Escape-to-close shortc
   assert.match(styles, /library-scroll-hint[\s\S]*?background:\s*#343f53 !important/);
   assert.match(styles, /library-scroll-hint > span:first-child[\s\S]*?color:\s*#f3f6fc !important/);
 });
+
+test("Essentials collection exposes an accessible icon color selector", () => {
+  assert.match(panel, /library-essential-colors/);
+  assert.match(panel, /aria-label="Essentials icon color"/);
+  assert.match(panel, /essentialColors\.map/);
+  assert.match(panel, /aria-pressed=\{selectedEssentialColor === color\.value\}/);
+  assert.match(styles, /library-essential-color-swatch\.active/);
+});
