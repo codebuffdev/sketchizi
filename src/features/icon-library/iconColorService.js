@@ -18,6 +18,15 @@ export function recolorSvgMarkup(svg, color) {
     return `${property}=${quote}${recolorPaint(value, color)}${quote}`;
   });
   result = recolorDeclarations(result, color);
+  // Some catalog SVGs omit fill entirely and rely on SVG defaults (black fill).
+  // Give those drawable nodes an explicit selected color without filling shapes
+  // that are intentionally stroke-only or have fill="none".
+  result = result.replace(/<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>/gi, (tag, name, attributes) => {
+    const hasFill = /\bfill\s*=|\bfill\s*:/i.test(attributes);
+    const hasStroke = /\bstroke\s*=|\bstroke\s*:/i.test(attributes);
+    if (hasFill || hasStroke) return tag;
+    return `<${name}${attributes} fill="${color}">`;
+  });
   return result;
 }
 
