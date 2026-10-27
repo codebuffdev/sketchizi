@@ -181,14 +181,7 @@ export default function IconLibraryPanel({
 
   return (
     <aside className="library-panel library-panel-redesign" aria-label="Icon Library" role="dialog" aria-modal="false" aria-labelledby="icon-library-title">
-      <div className="library-panel-header">
-        <div className="library-brand-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 5-5 3 3 2-2 4 4"/></svg>
-        </div>
-        <div className="library-panel-heading">
-          <div className="label"><span id="icon-library-title">Icon Library</span></div>
-          <div className="library-panel-subtitle">Drag icons onto the canvas to place them precisely</div>
-        </div>
+      <div className="library-panel-header library-panel-header-compact">
         <div className="library-panel-header-actions">
           <button type="button" className="mobile-panel-close" onClick={onClose} aria-label="Close Icon Library" title="Close Icon Library">×</button>
         </div>
