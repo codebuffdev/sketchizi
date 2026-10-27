@@ -42,6 +42,66 @@ export default function SketchiziCanvas({
       delete toolbar.dataset.sketchiziPreserveArtwork;
     };
   }, [selectedElements, canEdit, viewModeEnabled, canvasRevision]);
+  // Text formatting lives inside the native dock while text is selected.
+  // The controls delegate mutations to the existing selection callback.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const dock = root?.querySelector(".App-toolbar");
+    if (!dock) return undefined;
+    dock.querySelector(".sketchizi-contextual-controls")?.remove();
+
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    if (!model.showTextControls || !model.canEdit || typeof applyToSelected !== "function") {
+      return undefined;
+    }
+
+    const selectedText = selectedElements.find(
+      (element) => element && !element.isDeleted && !element.deleted && element.type === "text",
+    );
+    const currentSize = Math.min(96, Math.max(8, Number(selectedText?.fontSize) || 20));
+    const group = document.createElement("div");
+    group.className = "sketchizi-contextual-controls";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Text formatting");
+
+    const separator = document.createElement("span");
+    separator.className = "sketchizi-dock-separator";
+    separator.setAttribute("aria-hidden", "true");
+    group.appendChild(separator);
+
+    const sizeLabel = document.createElement("span");
+    sizeLabel.className = "sketchizi-contextual-size";
+    sizeLabel.textContent = String(currentSize);
+    sizeLabel.setAttribute("aria-label", `Font size ${currentSize}`);
+    group.appendChild(sizeLabel);
+
+    const addButton = (label, title, nextSize) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "sketchizi-dock-quick-tool sketchizi-contextual-size-button";
+      button.textContent = label;
+      button.title = title;
+      button.setAttribute("aria-label", title);
+      button.disabled = nextSize === currentSize;
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyToSelected({ fontSize: nextSize });
+      });
+      group.appendChild(button);
+    };
+
+    addButton("A−", "Decrease text size", Math.max(8, currentSize - 2));
+    addButton("A+", "Increase text size", Math.min(96, currentSize + 2));
+    dock.appendChild(group);
+
+    return () => {
+      if (group.isConnected) group.remove();
+    };
+  }, [selectedElements, applyToSelected, canEdit, viewModeEnabled, canvasRevision]);
+
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
