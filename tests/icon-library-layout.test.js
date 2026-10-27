@@ -70,3 +70,9 @@ test("Icon Library removes the standalone close icon header and its blank space"
   assert.match(styles, /library-panel-header-compact \{ display: none !important; \}/);
   assert.match(styles, /library-panel-redesign-body \{ padding-top: 12px; \}/);
 });
+
+test("Icon Library stays compact and centered on narrow viewports", () => {
+  assert.match(styles, /width:\s*min\(440px, 78vw\) !important/);
+  assert.match(styles, /align-items:\s*center/);
+  assert.match(styles, /max-width:\s*calc\(100vw - 24px\) !important/);
+});
