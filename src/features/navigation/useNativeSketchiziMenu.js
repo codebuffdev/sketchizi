@@ -157,6 +157,12 @@ export function useNativeSketchiziMenu({
               icon.textContent = "▤";
               item.prepend(icon);
             }
+            // The native Excalidraw Open item already has a folder glyph.
+            // Replace it with a single file glyph to avoid contradictory icons.
+            const existingFolderIcon = item.querySelector("svg, .dropdown-menu-item-icon, .context-menu-item-icon, .menu-item-icon");
+            if (existingFolderIcon && !existingFolderIcon.classList.contains("sketchizi-native-open-file-icon")) {
+              existingFolderIcon.remove();
+            }
           }
         }
       });
