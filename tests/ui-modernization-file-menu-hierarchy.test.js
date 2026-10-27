@@ -15,9 +15,9 @@ test("file management menu separates workspace actions from quick access", () =>
   assert.match(menu, /aria-controls="sketchizi-recent-folders-panel"/);
 });
 
-test("custom hamburger file menu remains scrollable within the dynamic viewport", () => {
-  assert.match(styles, /max-height: calc\(100vh - 24px\) !important/);
-  assert.match(styles, /max-height: calc\(100dvh - 24px\) !important/);
+test("custom hamburger file menu stays above the taskbar and scrolls its inner content", () => {
+  assert.match(styles, /bottom: max\(48px, env\(safe-area-inset-bottom, 0px\)\) !important/);
+  assert.match(styles, /\.dropdown-menu:has\(\[data-sketchizi-custom-menu-block\]\) > \.dropdown-menu-container \{[\s\S]*max-height: calc\(100dvh - 112px\) !important/);
   assert.match(styles, /overflow-y: auto !important/);
   assert.match(styles, /overscroll-behavior-y: contain/);
 });
