@@ -547,3 +547,54 @@
   visibility: visible;
   opacity: 1;
 }
+
+
+/* Compact dock: reduce the overall shell width and tool dimensions without
+   changing the available tools or their keyboard shortcuts. */
+.app .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  padding: 5px 8px !important;
+  gap: 3px !important;
+  border-radius: 14px !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button {
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  border-radius: 9px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-grip {
+  margin-right: 0 !important;
+}
+
+.app .excalidraw .App-toolbar-container {
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+}
+
+@media (max-width: 700px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+    min-height: 44px !important;
+    padding: 4px 6px !important;
+    gap: 2px !important;
+  }
+
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button {
+    width: 31px !important;
+    min-width: 31px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+  }
+}
