@@ -32,6 +32,14 @@ test("file edits are tracked against the last opened or successfully saved scene
   assert.match(app, /onDocumentSceneChange: markCurrentDocumentChanged/);
 });
 
+test("fallback folder files can be reopened with a writable handle when supported", () => {
+  assert.match(fileManager, /if \(getFileSystemSupport\(\)\.open\) \{[\s\S]*pickDrawingToOpen\(\)/);
+  assert.match(fileManager, /handle\.name !== fileEntry\.file\.name/);
+  assert.match(fileManager, /registerFile\(handle, name, loadedSignature, Date\.now\(\)\)/);
+  assert.match(fileManager, /changes can be saved to the original file/);
+  assert.match(fileManager, /setCurrentFile\(\{ id: null, name: fileEntry\.file\.name, handle: null, fallback: true \}/);
+});
+
 test("new/open transitions warn before replacing an unsaved or browser-local working canvas", () => {
   assert.match(fileManager, /const confirmCanvasReplacement = \(actionLabel\)/);
   assert.match(fileManager, /window\.confirm\(\`\$\{reason\}/);
