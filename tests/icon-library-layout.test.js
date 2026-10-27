@@ -88,3 +88,10 @@ test("Compact mobile Icon Library uses single-column cards with readable labels"
   assert.match(styles, /library-icon-grid \.library-icon-card \{[\s\S]*?grid-template-columns:\s*64px minmax\(0, 1fr\) 34px !important/);
   assert.match(styles, /icon-name[\s\S]*?white-space:\s*nowrap/);
 });
+
+test("Compact mobile icon cards have large previews and non-overlapping readable content", () => {
+  assert.match(styles, /library-icon-preview \{[\s\S]*?width:\s*72px !important;[\s\S]*?height:\s*72px !important/);
+  assert.match(styles, /grid-template-columns:\s*76px minmax\(0, 1fr\) 32px !important/);
+  assert.match(styles, /grid-auto-rows:\s*minmax\(84px, auto\)/);
+  assert.match(styles, /text-overflow:\s*ellipsis !important/);
+});
