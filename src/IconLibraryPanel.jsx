@@ -180,7 +180,7 @@ export default function IconLibraryPanel({
   const getIconSubtitle = (icon) => sourceLabel(icon);
 
   return (
-    <aside className="library-panel library-panel-redesign" aria-label="Icon Library" role="dialog" aria-modal="false" aria-labelledby="icon-library-title">
+    <aside className="library-panel library-panel-redesign" aria-label="Icon Library" role="dialog" aria-modal="false">
       <div className="library-panel-header library-panel-header-compact">
         <div className="library-panel-header-actions">
           <button type="button" className="mobile-panel-close" onClick={onClose} aria-label="Close Icon Library" title="Close Icon Library">×</button>
