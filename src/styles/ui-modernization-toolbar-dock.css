@@ -932,3 +932,63 @@
   outline: 2px solid #8276f4 !important;
   outline-offset: 2px !important;
 }
+
+
+/* Preserve the canvas-native, frameless treatment: contrast belongs to each
+   control, not to a surrounding card. */
+.app .contextual-formatting-toolbar {
+  min-height: 38px !important;
+  padding: 3px 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  background: rgb(100 116 139 / 10%) !important;
+  border: 1px solid rgb(71 85 105 / 34%) !important;
+  border-radius: 5px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover {
+  background: rgb(99 102 241 / 18%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button[aria-pressed="true"] {
+  background: rgb(99 102 241 / 22%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar,
+.app.theme-dark .contextual-formatting-toolbar,
+.app[data-theme="dark"] .contextual-formatting-toolbar {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button {
+  background: rgb(226 232 240 / 9%) !important;
+  border-color: rgb(226 232 240 / 35%) !important;
+  color: #f8fafc !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected {
+  background: rgb(167 139 250 / 24%) !important;
+  border-color: #a78bfa !important;
+}
