@@ -137,3 +137,11 @@ test("Icon Library outer card is transparent and Escape hint is centered without
   assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
   assert.match(styles, /\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
 });
+
+
+test("Light theme keeps the Icon Library frameless and its Escape hint centered and transparent", async () => {
+  const appStyles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign[\s\S]*?background:\s*transparent !important/);
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign > \.library-scroll-hint[\s\S]*?justify-content:\s*center !important/);
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign > \.library-scroll-hint[\s\S]*?background:\s*transparent !important/);
+});
