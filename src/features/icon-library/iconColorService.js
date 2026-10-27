@@ -1,9 +1,8 @@
-const WHITE_COLORS = new Set(["white", "#fff", "#ffffff", "#ffff", "#ffffffff", "rgb(255,255,255)", "rgb(255, 255, 255)"]);
 const PRESERVED_PAINT = new Set(["none", "transparent", "inherit", "initial", "unset", "context-fill", "context-stroke"]);
 
 function recolorPaint(value, color) {
   const normalized = String(value || "").trim().toLowerCase();
-  if (!normalized || PRESERVED_PAINT.has(normalized) || WHITE_COLORS.has(normalized) || normalized.startsWith("url(")) return value;
+  if (!normalized || PRESERVED_PAINT.has(normalized) || normalized.startsWith("url(")) return value;
   return color;
 }
 
