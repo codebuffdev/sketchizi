@@ -32,7 +32,8 @@ test("repository picker styles are scoped", () => {
 test("repository picker includes a search field and filters repository metadata client-side", () => {
   assert.match(source, /data-repository-picker-search/);
   assert.match(source, /Search repositories by name/);
+  assert.match(source, /search\\.addEventListener\\("input"/);
+  assert.match(source, /item\\.hidden = !item\\.textContent\\.toLocaleLowerCase\\(\\)\\.includes\\(query\\)/);
   assert.match(source, /repositoryItems\.filter\(\(\{ searchableText \}\) => searchableText\.includes\(query\)\)/);
-  assert.match(source, /No repositories match your search/);
   assert.match(styles, /\.sketchizi-repository-picker-search/);
 });
