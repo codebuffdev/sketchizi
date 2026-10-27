@@ -458,6 +458,24 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has(.sketchizi-sidebar-rail) > 
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-save,
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-clear,
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-item,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-reconnect {
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-accent-border, rgba(113, 139, 255, .4));
+  border-radius: 7px;
+  background: var(--ui-accent-subtle, rgba(80, 110, 220, .12));
+  color: var(--ui-text, #dce3ee);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-reconnect[hidden] { display: none; }
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-reconnect:focus-visible {
+  outline: 2px solid var(--ui-accent, #7777ff);
+  outline-offset: 2px;
+}
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-file,
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-folder-item,
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-sidebar-community-link {
