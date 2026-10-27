@@ -116,3 +116,16 @@ test('layer-order controls revalidate and synchronize both directions after each
   assert.match(canvas, /if \(!canReorderSelection\(currentScene, selectedIds, direction\)\)/);
   assert.match(canvas, /syncLayerButtonStates\(elements\)/);
 });
+
+
+test('contextual dock controls expose keyboard focus and clear disabled states', () => {
+  assert.match(canvas, /button\.type = "button"/);
+  assert.match(canvas, /button\.setAttribute\("aria-label", button\.title\)/);
+  assert.match(canvas, /count\.setAttribute\("aria-live", "polite"\)/);
+  assert.match(dockStyles, /\.sketchizi-contextual-size-button:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-contextual-color:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-contextual-width-button:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-layer-button:focus-visible/);
+  assert.match(dockStyles, /\.sketchizi-layer-button:disabled[\s\S]*?cursor: not-allowed/);
+  assert.match(dockStyles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.sketchizi-layer-button/);
+});
