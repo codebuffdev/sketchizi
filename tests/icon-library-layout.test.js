@@ -102,3 +102,10 @@ test("Floating Icon Library switches to readable single-column cards based on pa
   assert.match(styles, /grid-template-columns:\s*72px minmax\(0, 1fr\) 34px !important/);
   assert.match(styles, /icon-name[\s\S]*?word-break:\s*normal !important/);
 });
+
+test("Icon Library footer clearly shows scroll status and Escape-to-close shortcut", () => {
+  assert.match(panel, /library-escape-hint/);
+  assert.match(panel, /<kbd>Esc<\/kbd> to close/);
+  assert.match(styles, /library-scroll-hint[\s\S]*?background:\s*#343f53 !important/);
+  assert.match(styles, /library-scroll-hint > span:first-child[\s\S]*?color:\s*#f3f6fc !important/);
+});
