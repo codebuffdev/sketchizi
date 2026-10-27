@@ -97,3 +97,12 @@ test('contextual toolbar exposes fill, line, roughness and opacity controls on c
   assert.match(toolbar, /applyToSelected\(\{ opacity: Number\(event.target.value\) \}\)/);
   assert.match(dockCss, /\.contextual-formatting-toolbar[\s\S]*?max-width: min\(760px, calc\(100vw - 20px\)\)/);
 });
+
+
+test('contextual toolbar provides canvas layer ordering actions', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbar, /aria-label="Layer order"/);
+  assert.match(toolbar, /aria-label="Send selection to back"/);
+  assert.match(toolbar, /aria-label="Bring selection to front"/);
+  assert.match(toolbar, /api\.updateScene\(\{ elements: nextElements \}\)/);
+});
