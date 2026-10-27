@@ -8,6 +8,7 @@ import {
 } from "../src/features/files/recentFolderPresentation.js";
 
 const menu = readFileSync(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+const menuTemplate = menu.slice(menu.indexOf("recentSection.innerHTML = `"), menu.indexOf("customBlock.append(recentSection)"));
 const hook = readFileSync(new URL("../src/features/files/useRecentFiles.js", import.meta.url), "utf8");
 const manager = readFileSync(new URL("../src/features/files/useFileManager.js", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/styles/responsive-features.css", import.meta.url), "utf8");
@@ -43,15 +44,11 @@ test("recent folder state persists access failures and successful checks", () =>
   assert.match(manager, /Do not leave a stale file listing visible/);
 });
 
-test("current folder refresh has loading, success and actionable error feedback", () => {
-  assert.match(menu, /data-folder-refresh-status role="status" aria-live="polite"/);
-  assert.match(menu, /Refreshing folder…/);
-  assert.match(menu, /Updated \$\{count\}/);
-  assert.match(menu, /Permission needed — reopen the folder to allow access/);
-  assert.match(menu, /Folder unavailable — reopen the folder to reconnect/);
-  assert.match(menu, /error\?\.kind === "permission"/);
-  assert.match(menu, /error\?\.kind === "not-found"/);
-  assert.match(menu, /button\.disabled = !fileActionsRef\.current\.getCurrentFolder\?\.\(\)\?\.handle/);
+test("folder browser refresh UI is removed from the hamburger menu", () => {
+  assert.doesNotMatch(menuTemplate, /aria-label="Current folder"/);
+  assert.doesNotMatch(menuTemplate, /data-current-folder-files/);
+  assert.doesNotMatch(menuTemplate, /data-folder-refresh-status role="status"/);
+  assert.doesNotMatch(menuTemplate, /Refreshing folder…/);
 });
 
 test("recent folder rows expose accessible activity, type, and status metadata", () => {
