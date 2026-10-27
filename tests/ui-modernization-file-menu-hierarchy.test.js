@@ -23,6 +23,13 @@ test("folder browsing is collapsed by default to keep the hamburger menu compact
   assert.match(styles, /\.sketchizi-folder-browser\[open\] \.sketchizi-folder-browser-summary::after/);
 });
 
+test("folder browser displays a close-folder action and keeps long names readable", () => {
+  assert.match(menu, /class="sketchizi-folder-browser-details-heading"/);
+  assert.match(menu, /data-sketchizi-close-folder title="Close current folder"/);
+  assert.match(styles, /\.sketchizi-folder-browser-summary > span:first-child[\s\S]*-webkit-line-clamp: 2/);
+  assert.match(styles, /\.sketchizi-folder-close/);
+});
+
 test("phase 25 preserves recent-file, recent-folder, and folder refresh workflows", () => {
   for (const selector of [
     "data-sketchizi-open-folder", "data-sketchizi-new-file", "data-refresh-current-folder",
