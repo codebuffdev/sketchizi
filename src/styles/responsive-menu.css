@@ -748,6 +748,17 @@ html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-men
 }
 
 
+/* Keep the full file menu inside the visible viewport on short/tall-narrow screens. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+  box-sizing: border-box;
+  max-height: calc(100vh - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
 /* Phase 27 — announce recent-item changes without adding visual menu clutter. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-announcement {
   position: absolute;
