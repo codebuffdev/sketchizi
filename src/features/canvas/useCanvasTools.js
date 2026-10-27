@@ -55,9 +55,13 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
           const sourceDataURL = file?.dataURL;
           const recoloredDataURL = recolorSvgDataUrl(sourceDataURL, patch.strokeColor);
           if (recoloredDataURL && element.fileId) {
-            api.addFiles([{ id: element.fileId, dataURL: recoloredDataURL, mimeType: "image/svg+xml", created: file?.created || Date.now(), lastRetrieved: Date.now() }]);
+            // Excalidraw caches image resources by fileId; use a fresh ID so the
+            // updated SVG is rendered immediately instead of reusing the old image.
+            const recoloredFileId = `${element.fileId}-color-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            api.addFiles([{ id: recoloredFileId, dataURL: recoloredDataURL, mimeType: "image/svg+xml", created: file?.created || Date.now(), lastRetrieved: Date.now() }]);
             return {
               ...element,
+              fileId: recoloredFileId,
               customData: { ...element.customData, iconColor: patch.strokeColor },
               version: element.version + 1,
               versionNonce: Math.floor(Math.random() * 2147483647),
