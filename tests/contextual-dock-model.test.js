@@ -51,6 +51,7 @@ test("mixed selection exposes common formatting but not type-specific controls",
   assert.equal(model.showTextControls, false);
   assert.equal(model.showShapeControls, false);
   assert.equal(model.showConnectorControls, false);
+  assert.equal(model.showStrokeControls, false);
 });
 
 test("library image selection preserves original artwork", () => {
@@ -84,4 +85,32 @@ test("read-only mode never exposes editing controls", () => {
   assert.equal(model.showFormatting, false);
   assert.equal(model.showLayerControls, false);
   assert.equal(model.showSpecializedProperties, true);
+});
+
+
+test("mixed shape and connector selection exposes only shared stroke controls", () => {
+  const model = getContextualDockModel([
+    { id: "s1", type: "rectangle" },
+    { id: "c1", type: "arrow" },
+  ]);
+  assert.equal(model.mode, "mixed-selection");
+  assert.equal(model.showStrokeControls, true);
+  assert.equal(model.showShapeControls, false);
+  assert.equal(model.showConnectorControls, false);
+});
+
+test("mixed selection containing text does not expose shape stroke controls", () => {
+  const model = getContextualDockModel([
+    { id: "t1", type: "text" },
+    { id: "s1", type: "rectangle" },
+  ]);
+  assert.equal(model.mode, "mixed-selection");
+  assert.equal(model.showStrokeControls, false);
+  assert.equal(model.showShapeControls, false);
+  assert.equal(model.showTextControls, false);
+});
+
+test("read-only and empty selections never expose shared stroke controls", () => {
+  assert.equal(getContextualDockModel([]).showStrokeControls, false);
+  assert.equal(getContextualDockModel([{ type: "arrow" }], { canEdit: false }).showStrokeControls, false);
 });
