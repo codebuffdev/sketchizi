@@ -48,7 +48,7 @@ export default function SketchiziCanvas({
     const root = canvasRootRef.current;
     const dock = root?.querySelector(".App-toolbar");
     if (!dock) return undefined;
-    dock.querySelector(".sketchizi-contextual-controls")?.remove();
+    dock.querySelector(".sketchizi-text-controls")?.remove();
 
     const model = getContextualDockModel(selectedElements, {
       canEdit: canEdit && !viewModeEnabled,
@@ -62,7 +62,7 @@ export default function SketchiziCanvas({
     );
     const currentSize = Math.min(96, Math.max(8, Number(selectedText?.fontSize) || 20));
     const group = document.createElement("div");
-    group.className = "sketchizi-contextual-controls";
+    group.className = "sketchizi-contextual-controls sketchizi-text-controls";
     group.setAttribute("role", "group");
     group.setAttribute("aria-label", "Text formatting");
 
