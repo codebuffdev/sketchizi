@@ -564,13 +564,22 @@ export function useNativeSketchiziMenu({
               });
               list.append(button);
             });
+            list.append(noRepositoryMatches);
+            noRepositoryMatches.hidden = true;
           };
+          const noRepositoryMatches = document.createElement("span");
+          noRepositoryMatches.className = "sketchizi-repository-picker-empty";
+          noRepositoryMatches.textContent = "No repositories match your search.";
+          noRepositoryMatches.hidden = true;
           search.addEventListener("input", () => {
             if (selectedRepository) return;
             const query = search.value.trim().toLocaleLowerCase();
+            let visibleCount = 0;
             [...list.querySelectorAll(".sketchizi-repository-picker-item")].forEach((item) => {
               item.hidden = !item.textContent.toLocaleLowerCase().includes(query);
+              if (!item.hidden) visibleCount += 1;
             });
+            noRepositoryMatches.hidden = visibleCount > 0;
           });
           const showRepositoryContents = async () => {
             if (!selectedRepository) return;
