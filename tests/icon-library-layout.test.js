@@ -160,3 +160,13 @@ test("Floating Icon Library is top-aligned rather than vertically centered", () 
   assert.match(styles, /desktop-workspace-library-open > \.desktop-resources-region\.mobile-resource-open[\s\S]*?padding-top:\s*max\(16px, env\(safe-area-inset-top, 0px\)\) !important/);
   assert.match(styles, /desktop-workspace-library-open \.desktop-resources-region > \.library-panel\.library-panel-redesign[\s\S]*?align-self:\s*flex-start !important/);
 });
+
+
+test("Escape hint appears above the search and the icon list owns the remaining panel height", () => {
+  const footer = panel.indexOf('<div className="library-scroll-hint"><span className="library-escape-hint"><kbd>Esc</kbd> to close</span></div>');
+  const body = panel.indexOf('<div className="library-panel-body library-panel-redesign-body">');
+  assert.ok(footer >= 0 && body > footer, "Escape hint must render before the search and icon results");
+  assert.match(styles, /library-panel-redesign \{[\s\S]*?max-height:\s*calc\(100dvh - 32px\) !important/);
+  assert.match(styles, /library-panel-redesign > \.library-panel-redesign-body[\s\S]*?overflow:\s*hidden !important/);
+  assert.match(styles, /library-panel-redesign \.library-icon-grid[\s\S]*?overflow-y:\s*auto !important/);
+});
