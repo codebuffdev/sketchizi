@@ -628,6 +628,21 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has([data-sketchizi-custom-menu
 .sketchizi-repository-picker-meta { color: var(--ui-text-muted, #a0a3b0); font-size: 11px; }
 
 
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-file.is-read-only {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-file-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-folder-file-status {
+  color: var(--ui-text-muted, #9aa6b8);
+  font-size: 10px;
+  line-height: 1.3;
+}
 /* Phase 25 — clearer file-management hierarchy and consistent interactions. */
 .dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-group {
   min-width: 0;
