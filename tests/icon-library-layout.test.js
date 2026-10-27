@@ -76,3 +76,9 @@ test("Icon Library stays compact and centered on narrow viewports", () => {
   assert.match(styles, /align-items:\s*center/);
   assert.match(styles, /max-width:\s*calc\(100vw - 24px\) !important/);
 });
+
+test("Desktop Icon Library is a compact floating panel rather than a full-height dock", () => {
+  assert.match(styles, /width:\s*min\(390px, calc\(100vw - 32px\)\) !important/);
+  assert.match(styles, /height:\s*min\(650px, calc\(100dvh - var\(--sketchizi-desktop-header-height, 58px\) - 32px\)\) !important/);
+  assert.match(styles, /border-radius:\s*16px/);
+});
