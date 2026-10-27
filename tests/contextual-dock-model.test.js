@@ -12,6 +12,7 @@ test("empty selection shows tools without formatting controls", () => {
     showTextControls: false,
     showShapeControls: false,
     showConnectorControls: false,
+    showStrokeControls: false,
     showLayerControls: false,
     showSpecializedProperties: false,
     preserveImageArtwork: false,
