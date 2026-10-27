@@ -547,3 +547,23 @@
   visibility: visible;
   opacity: 1;
 }
+
+
+/* Context-aware dock states: selection context is exposed by SketchiziCanvas. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="text"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="shape"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="connector"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-context="mixed-selection"] {
+  border-color: #7569d8 !important;
+}
+
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="text"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="shape"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="connector"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-context="mixed-selection"] {
+  border-color: #aaa3ee !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-can-edit="false"] {
+  opacity: .88;
+}
