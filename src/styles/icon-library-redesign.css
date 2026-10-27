@@ -1769,3 +1769,38 @@
   margin-top: 0 !important;
   align-self: flex-start !important;
 }
+
+
+/* Keep the Escape hint at the top; give the remaining height to the complete, scrollable icon list. */
+.app .library-panel-redesign {
+  height: min(78vh, 760px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign > .library-scroll-hint {
+  order: 0 !important;
+  flex: 0 0 auto !important;
+  min-height: 28px !important;
+  padding: 6px 0 10px !important;
+}
+.app .library-panel-redesign > .library-panel-redesign-body {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign .library-results {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign .library-icon-grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
