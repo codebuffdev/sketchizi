@@ -660,3 +660,54 @@
   outline: 2px solid #8b80ff;
   outline-offset: 2px;
 }
+
+
+/* Contextual controls must stay inside the native dock on narrow desktop splits. */
+.app .excalidraw .App-toolbar {
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-controls {
+  display: inline-flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-contextual-controls button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .app .excalidraw .App-toolbar {
+    max-width: calc(100vw - 16px);
+    max-height: min(42vh, 220px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app .excalidraw .App-toolbar .sketchizi-contextual-controls {
+    flex-basis: 100%;
+    padding-top: 4px;
+    border-top: 1px solid var(--sk-toolbar-border, #353a49);
+  }
+}
+
+@media (max-width: 520px) {
+  .app .excalidraw .App-toolbar {
+    max-width: calc(100vw - 12px);
+    padding: 5px 7px !important;
+    gap: 3px;
+  }
+
+  .app .excalidraw .App-toolbar .sketchizi-contextual-controls button {
+    min-width: 30px;
+    min-height: 30px;
+  }
+}
