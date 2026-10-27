@@ -62,7 +62,15 @@
     pointer-events: auto;
   }
 
-  .app .library-panel-redesign .library-panel-header {
+  .app .library-panel-redesign .library-panel-header-compact {
+  min-height: 0;
+  height: 34px;
+  padding: 0 0 8px;
+  justify-content: flex-end;
+  border-bottom: 0;
+  gap: 0;
+}
+.app .library-panel-redesign .library-panel-header {
     align-items: center;
     gap: 13px;
     min-height: 82px;
