@@ -102,6 +102,93 @@ export default function SketchiziCanvas({
     };
   }, [selectedElements, applyToSelected, canEdit, viewModeEnabled, canvasRevision]);
 
+  // Add compact appearance controls for standard shapes and connectors.
+  // Library artwork is intentionally excluded from recoloring controls.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const dock = root?.querySelector(".App-toolbar");
+    if (!dock) return undefined;
+    dock.querySelector(".sketchizi-appearance-controls")?.remove();
+
+    const model = getContextualDockModel(selectedElements, {
+      canEdit: canEdit && !viewModeEnabled,
+    });
+    if (!model.canEdit || !model.showFormatting || model.preserveImageArtwork ||
+        (!model.showShapeControls && !model.showConnectorControls) ||
+        typeof applyToSelected !== "function") return undefined;
+
+    const selected = selectedElements.filter(
+      (element) => element && !element.isDeleted && !element.deleted,
+    );
+    if (!selected.length) return undefined;
+    const first = selected[0];
+    const group = document.createElement("div");
+    group.className = "sketchizi-contextual-controls sketchizi-appearance-controls";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Shape and connector appearance");
+
+    const separator = document.createElement("span");
+    separator.className = "sketchizi-dock-separator";
+    separator.setAttribute("aria-hidden", "true");
+    group.appendChild(separator);
+
+    const colors = [
+      ["#2f2f33", "Ink"], ["#d25555", "Red"], ["#3f9b57", "Green"],
+      ["#3d79b9", "Blue"], ["#d98a27", "Orange"], ["#7c3aed", "Violet"],
+    ];
+    const addColor = (color, label, property, selectedColor) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "sketchizi-contextual-color";
+      button.style.setProperty("--contextual-color", color);
+      button.title = label;
+      button.setAttribute("aria-label", label);
+      button.setAttribute("aria-pressed", String(String(selectedColor || "").toLowerCase() === color));
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyToSelected({ [property]: color });
+      });
+      group.appendChild(button);
+    };
+
+    const stroke = first.customData?.iconColor || first.strokeColor;
+    colors.forEach(([color, label]) => addColor(color, `Stroke ${label}`, "strokeColor", stroke));
+
+    if (model.showShapeControls) {
+      const fills = [["transparent", "No fill"], ["#e7bfc1", "Rose fill"], ["#b9dfc0", "Mint fill"], ["#a8c7e5", "Blue fill"]];
+      fills.forEach(([color, label]) => addColor(color, label, "backgroundColor", first.backgroundColor));
+    }
+
+    if (model.showShapeControls || model.showConnectorControls) {
+      const widthGroup = document.createElement("span");
+      widthGroup.className = "sketchizi-contextual-widths";
+      widthGroup.setAttribute("role", "group");
+      widthGroup.setAttribute("aria-label", "Stroke width");
+      [1, 2, 4].forEach((width) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "sketchizi-contextual-width-button";
+        button.textContent = String(width);
+        button.title = `Stroke width ${width}`;
+        button.setAttribute("aria-label", `Stroke width ${width}`);
+        button.setAttribute("aria-pressed", String(Number(first.strokeWidth) === width));
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          applyToSelected({ strokeWidth: width });
+        });
+        widthGroup.appendChild(button);
+      });
+      group.appendChild(widthGroup);
+    }
+
+    dock.appendChild(group);
+    return () => {
+      if (group.isConnected) group.remove();
+    };
+  }, [selectedElements, applyToSelected, canEdit, viewModeEnabled, canvasRevision]);
+
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
