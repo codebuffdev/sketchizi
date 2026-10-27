@@ -218,6 +218,18 @@ export default function SketchiziCanvas({
     count.setAttribute("aria-live", "polite");
     group.appendChild(count);
 
+    const layerButtons = new Map();
+    const selectedIds = new Set(selectedElements
+      .filter((element) => element && !element.isDeleted && !element.deleted)
+      .map((element) => element.id));
+    const syncLayerButtonStates = (scene) => {
+      const api = apiRef?.current;
+      layerButtons.forEach((button, direction) => {
+        button.disabled = !model.canEdit ||
+          typeof api?.updateScene !== "function" ||
+          !canReorderSelection(scene, selectedIds, direction);
+      });
+    };
     const addLayerButton = (label, direction) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -225,26 +237,25 @@ export default function SketchiziCanvas({
       button.textContent = label;
       button.title = direction === "front" ? "Bring to front" : "Send to back";
       button.setAttribute("aria-label", button.title);
+      layerButtons.set(direction, button);
       const api = apiRef?.current;
-      const selectedIds = new Set(selectedElements
-        .filter((element) => element && !element.isDeleted && !element.deleted)
-        .map((element) => element.id));
       const scene = typeof api?.getSceneElements === "function" ? api.getSceneElements() : [];
-      button.disabled = !model.canEdit ||
-        typeof api?.updateScene !== "function" ||
-        !canReorderSelection(scene, selectedIds, direction);
+      syncLayerButtonStates(scene);
       button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
         const api = apiRef?.current;
-        if (!api || typeof api.getSceneElements !== "function" || typeof api.updateScene !== "function") return;
-        const scene = api.getSceneElements();
-        const selectedIds = new Set(selectedElements
-          .filter((element) => element && !element.isDeleted && !element.deleted)
-          .map((element) => element.id));
-        if (!scene.some((element) => selectedIds.has(element.id))) return;
-        const elements = reorderElementsBySelection(scene, selectedIds, direction);
+        if (!model.canEdit || !api || typeof api.getSceneElements !== "function" || typeof api.updateScene !== "function") return;
+        const currentScene = api.getSceneElements();
+        if (!canReorderSelection(currentScene, selectedIds, direction)) {
+          syncLayerButtonStates(currentScene);
+          return;
+        }
+        const elements = reorderElementsBySelection(currentScene, selectedIds, direction);
         api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+        // Update both buttons immediately; onChange may not have delivered the
+        // reordered scene yet, so don't leave stale enabled actions in the dock.
+        syncLayerButtonStates(elements);
       });
       group.appendChild(button);
     };
