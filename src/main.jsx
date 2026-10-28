@@ -54,6 +54,9 @@ function RootApp() {
     return <main className="cw-startup" role="status">Loading Sketchizi…</main>;
   }
 
+  // The editor is the default app experience. Cloud Workspace is opt-in via /workspace.
+  if (!workspaceRoute) return <PhoneAccessGate><App /></PhoneAccessGate>;
+
   return <WorkspaceDashboard
     user={auth.user}
     onOpenEditor={() => { window.location.assign("/?editor=1"); }}
