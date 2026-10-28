@@ -181,3 +181,14 @@ test("Icon Library outer panel uses the same neutral surface, border, radius, an
   assert.match(appStyles, /\.app\.theme-dark \.desktop-resources-region > \.library-panel\.library-panel-redesign\s*\{[\s\S]*?background:\s*var\(--ui-surface-solid,[\s\S]*?box-shadow:\s*var\(--ui-shadow,/);
   assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign\s*\{[\s\S]*?background:\s*var\(--ui-surface-solid,[\s\S]*?box-shadow:\s*var\(--ui-shadow,/);
 });
+
+
+test("Icon collection filters use compact icon-only buttons with accessible names", () => {
+  assert.match(panel, /function SourceCategoryIcon\(\{ id \}\)/);
+  assert.match(panel, /aria-label=\{tab\.label\} title=\{tab\.label\}/);
+  assert.match(panel, /<SourceCategoryIcon id=\{tab\.id\} \/>/);
+  assert.match(panel, /className="library-source-chip-label"/);
+  assert.match(styles, /\.app \.library-panel-redesign \.library-source-tabs\s*\{\s*display:\s*flex;\s*flex-wrap:\s*nowrap;/);
+  assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip-label\s*\{[\s\S]*?clip:\s*rect\(0, 0, 0, 0\)/);
+  assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip svg\s*\{[\s\S]*?width:\s*18px/);
+});
