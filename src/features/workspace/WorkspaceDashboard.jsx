@@ -4,6 +4,45 @@ import "./workspace.css";
 
 const dateLabel = (value) => value ? new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Recently";
 
+const DiagramThumbnail = ({ diagram }) => {
+  const document = diagram?.document && typeof diagram.document === "object" ? diagram.document : {};
+  const elements = Array.isArray(document.elements) ? document.elements.filter((element) => element && !element.isDeleted) : [];
+  if (!elements.length) return <div className="cw-diagram-preview cw-diagram-preview-empty" aria-label="Empty diagram"><span className="cw-preview-empty-mark">◇</span><small>Empty diagram</small></div>;
+
+  const bounds = elements.reduce((box, element) => {
+    const x = Number(element.x) || 0;
+    const y = Number(element.y) || 0;
+    const width = Math.max(1, Math.abs(Number(element.width) || 1));
+    const height = Math.max(1, Math.abs(Number(element.height) || 1));
+    return { minX: Math.min(box.minX, x), minY: Math.min(box.minY, y), maxX: Math.max(box.maxX, x + width), maxY: Math.max(box.maxY, y + height) };
+  }, { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+  const padding = Math.max(12, Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * 0.06);
+  const viewBox = [bounds.minX - padding, bounds.minY - padding, Math.max(1, bounds.maxX - bounds.minX + padding * 2), Math.max(1, bounds.maxY - bounds.minY + padding * 2)].join(" ");
+  const drawElement = (element) => {
+    const x = Number(element.x) || 0;
+    const y = Number(element.y) || 0;
+    const width = Math.max(1, Math.abs(Number(element.width) || 1));
+    const height = Math.max(1, Math.abs(Number(element.height) || 1));
+    const stroke = element.strokeColor || "#a5b4fc";
+    const fill = element.backgroundColor && element.backgroundColor !== "transparent" ? element.backgroundColor : "none";
+    const common = { key: element.id || `${element.type}-${x}-${y}`, stroke, strokeWidth: Math.max(1, Number(element.strokeWidth) || 1.5), fill, opacity: element.opacity == null ? 1 : element.opacity / 100, vectorEffect: "non-scaling-stroke" };
+    if (["rectangle", "image", "embeddable", "frame"].includes(element.type)) return <rect {...common} x={x} y={y} width={width} height={height} rx={element.roundness ? 4 : 0} />;
+    if (element.type === "ellipse") return <ellipse {...common} cx={x + width / 2} cy={y + height / 2} rx={width / 2} ry={height / 2} />;
+    if (element.type === "diamond") return <polygon {...common} points={`${x + width / 2},${y} ${x + width},${y + height / 2} ${x + width / 2},${y + height} ${x},${y + height / 2}`} />;
+    if (["line", "arrow", "freedraw"].includes(element.type) && Array.isArray(element.points) && element.points.length) {
+      const points = element.points.map((point) => `${x + (Number(point[0]) || 0)},${y + (Number(point[1]) || 0)}`).join(" ");
+      return <polyline {...common} fill="none" points={points} strokeLinecap="round" strokeLinejoin="round" />;
+    }
+    if (element.type === "text") {
+      const text = String(element.originalText || element.text || "").split("\n").slice(0, 3);
+      const fontSize = Math.max(7, Math.min(Number(element.fontSize) || 16, 24));
+      return <text key={common.key} x={x} y={y + fontSize} fill={stroke} fontSize={fontSize} opacity={common.opacity}>{text.map((line, index) => <tspan key={index} x={x} dy={index ? fontSize * 1.15 : 0}>{line.slice(0, 48)}</tspan>)}</text>;
+    }
+    return <rect {...common} x={x} y={y} width={width} height={height} rx="2" />;
+  };
+  return <div className="cw-diagram-preview" aria-label={`Preview of ${diagram.name}`}><svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">{elements.slice(0, 250).map(drawElement)}</svg></div>;
+};
+
 export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   const [projects, setProjects] = useState([]);
   const [activeId, setActiveId] = useState("");
@@ -110,7 +149,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
         <aside className="cw-project-list" aria-label="Projects">{filtered.map((p) => <article className={p.id === activeId ? "cw-project is-active" : "cw-project"} key={p.id}><button className="cw-project-select" onClick={() => setActiveId(p.id)}><span className="cw-project-icon">▦</span><span><b>{p.name}</b><small>{p.diagramCount ?? 0} diagrams · {dateLabel(p.updatedAt)}</small></span></button><div className="cw-project-actions"><button disabled={busy} onClick={() => renameProject(p)}>Rename</button><button disabled={busy} onClick={() => deleteProject(p)}>Delete</button></div></article>)}{!filtered.length && <p className="cw-muted">No matching projects.</p>}</aside>
         <section className="cw-diagrams">{active ? <><div className="cw-diagram-heading"><div><div className="cw-eyebrow">PROJECT</div><h2>{active.name}</h2><p>{active.description || "Diagrams in this project"}</p></div><button className="cw-button cw-primary" disabled={busy || (!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3))} title={!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3) ? "Delete a diagram to create another" : undefined} onClick={() => setDiagramForm(!diagramForm)}>+ New diagram</button></div>
           {diagramForm && <form className="cw-form" onSubmit={createDiagram}><label htmlFor="cw-diagram-name">Diagram name</label><input id="cw-diagram-name" autoFocus maxLength={120} required value={diagramName} onChange={(e) => setDiagramName(e.target.value)} placeholder="e.g. System overview"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setDiagramForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create diagram"}</button></div></form>}
-          {diagramLoading ? <div className="cw-loading">Loading diagrams…</div> : diagrams.length ? <div className="cw-diagram-grid">{diagrams.map((d) => <article className="cw-diagram-card" key={d.id}><div className="cw-diagram-preview"><span/><i/><span/></div><div className="cw-diagram-body"><b>{d.name}</b><small>{d.format} · {dateLabel(d.updatedAt)}</small><div className="cw-diagram-actions"><button disabled={busy} onClick={() => window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`)}>Open</button><button disabled={busy} onClick={() => diagramAction(d,"rename")}>Rename</button><button disabled={busy} onClick={() => diagramAction(d,"duplicate")}>Duplicate</button><button disabled={busy} onClick={() => diagramAction(d,"delete")}>Delete</button></div></div></article>)}</div> : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No diagrams yet</h3><p>Create a diagram to start building this project.</p><button className="cw-button cw-quiet" onClick={() => setDiagramForm(true)}>Create diagram</button></div>}
+          {diagramLoading ? <div className="cw-loading">Loading diagrams…</div> : diagrams.length ? <div className="cw-diagram-grid">{diagrams.map((d) => <article className="cw-diagram-card" key={d.id}><DiagramThumbnail diagram={d} /><div className="cw-diagram-body"><b>{d.name}</b><small>{d.format} · {dateLabel(d.updatedAt)}</small><div className="cw-diagram-actions"><button disabled={busy} onClick={() => window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`)}>Open</button><button disabled={busy} onClick={() => diagramAction(d,"rename")}>Rename</button><button disabled={busy} onClick={() => diagramAction(d,"duplicate")}>Duplicate</button><button disabled={busy} onClick={() => diagramAction(d,"delete")}>Delete</button></div></div></article>)}</div> : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No diagrams yet</h3><p>Create a diagram to start building this project.</p><button className="cw-button cw-quiet" onClick={() => setDiagramForm(true)}>Create diagram</button></div>}
         </> : <div className="cw-empty cw-empty-small"><h3>Select a project</h3></div>}</section></div>}
       <footer className="cw-footnote"><span/> Cloud storage · PostgreSQL · Private to your account</footer>
     </section>
