@@ -8,7 +8,16 @@ test("Cloud Workspace is opt-in and the existing editor remains the default rout
   const source = await read("../src/main.jsx");
   assert.match(source, /get\("workspace"\) === "1"/);
   assert.match(source, /if \(!workspaceRoute \|\| auth\.status === "anonymous"\) return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
+  assert.match(source, /import WorkspaceDashboard from "\.\/features\/workspace\/WorkspaceDashboard\.jsx"/);
   assert.match(source, /<WorkspaceDashboard/);
+});
+
+test("Workspace stylesheet is scoped and imported by the dashboard component", async () => {
+  const component = await read("../src/features/workspace/WorkspaceDashboard.jsx");
+  const stylesheet = await read("../src/features/workspace/workspace.css");
+  assert.match(component, /import "\.\/workspace\.css"/);
+  assert.match(stylesheet, /\.cloud-workspace\{min-height:100vh/);
+  assert.match(stylesheet, /\.cw-layout\{display:grid/);
 });
 
 test("Workspace client does not depend on the separate AI service warm-up", async () => {
