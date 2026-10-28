@@ -38,10 +38,11 @@ function RootApp() {
 
   if (communityRoute) return <CommunityApp />;
 
-  // A direct Workspace navigation should explain an authentication outage
-  // instead of silently dropping the user back into the drawing editor.
-  if (workspaceRoute && auth.status === "unavailable") {
-    return <main className="cw-startup" role="alert"><div><p>Cloud Workspace could not verify your sign-in session.</p><p>Please retry after the authentication service is reachable.</p><button onClick={() => window.location.reload()}>Retry</button> <a href="/?editor=1">Open the editor</a></div></main>;
+  // Anonymous visitors to Cloud Workspace should see the existing Sketchizi
+  // sign-in dialog over the app shell, not a plain error page or the dashboard.
+  // AuthenticationControl opens the shared dialog and returns OAuth to /workspace.
+  if (workspaceRoute && auth.status !== "authenticated") {
+    return <PhoneAccessGate><App /></PhoneAccessGate>;
   }
 
   // The Cloud Workspace is strictly for a verified, authenticated user.
