@@ -33,3 +33,24 @@ test('tooltip portal has theme-aware styling and never intercepts drawing pointe
   assert.match(css, /\.sketchizi-toolbar-tooltip\.theme-light/);
   assert.match(css, /pointer-events:\s*none/);
 });
+
+
+test('duplicate native Scroll back to content tooltip is suppressed', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /const suppressNativeScrollBackTooltip = \(\) => \{/);
+  assert.match(canvas, /tooltip\.classList\.contains\("sketchizi-toolbar-tooltip"\)/);
+  assert.match(canvas, /tooltip\.style\.setProperty\("display", "none", "important"\)/);
+  assert.match(canvas, /tooltipObserver\.observe\(document\.body, \{ childList: true, subtree: true \}\)/);
+});
+
+test('Scroll back to content tooltip is placed below the horizontal dock', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /const scrollBackTooltip = \/scroll back to content\/i\.test\(label\)/);
+  assert.match(canvas, /if \(scrollBackTooltip\) \{[\s\S]*?top = \(toolbar\?\.getBoundingClientRect\(\)\.bottom \?\? buttonRect\.bottom\) \+ 8;/);
+});
+
+test('Scroll back to content uses the dock-aware tooltip instead of a native title tooltip', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /Scroll back to content[\s\S]*?button\.removeAttribute\("title"\)[\s\S]*?bindToolbarTooltip\(button\)/);
+  assert.match(canvas, /if \(!\/scroll back to content\/i\.test\(label\)\) return;/);
+});

@@ -78,9 +78,10 @@ export default function SketchiziCanvas({
       toolbarTooltip.style.opacity = "0";
       const buttonRect = button.getBoundingClientRect();
       const tipRect = toolbarTooltip.getBoundingClientRect();
-      const toolbar = button.closest(".App-toolbar");
+      const toolbar = button.closest(".App-toolbar") || root.querySelector(".App-toolbar");
       const vertical = toolbar?.dataset.sketchiziOrientation === "vertical";
       const side = toolbar?.dataset.sketchiziDockSide;
+      const scrollBackTooltip = /scroll back to content/i.test(label);
       let left;
       let top;
       if (vertical) {
@@ -90,8 +91,14 @@ export default function SketchiziCanvas({
         top = buttonRect.top + (buttonRect.height - tipRect.height) / 2;
       } else {
         left = buttonRect.left + (buttonRect.width - tipRect.width) / 2;
-        top = buttonRect.top - tipRect.height - 8;
-        if (top < 8) top = buttonRect.bottom + 8;
+        if (scrollBackTooltip) {
+          // This Excalidraw navigation control sits near the toolbar. Put its
+          // tooltip below the entire horizontal dock, not over the tool row.
+          top = (toolbar?.getBoundingClientRect().bottom ?? buttonRect.bottom) + 8;
+        } else {
+          top = buttonRect.top - tipRect.height - 8;
+          if (top < 8) top = buttonRect.bottom + 8;
+        }
       }
       left = Math.max(8, Math.min(window.innerWidth - tipRect.width - 8, left));
       top = Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, top));
@@ -477,8 +484,18 @@ export default function SketchiziCanvas({
       if (typeof api.setViewport === "function") api.setViewport({ target: elements, fit: "contain" });
       else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
     };
+    const suppressNativeScrollBackTooltip = () => {
+      document.querySelectorAll('[role="tooltip"]').forEach((tooltip) => {
+        if (tooltip.classList.contains("sketchizi-toolbar-tooltip")) return;
+        if (!/scroll back to content/i.test(tooltip.textContent || "")) return;
+        // Excalidraw's own tooltip is the duplicate that overlaps the dock.
+        // Keep our body-level tooltip and the trigger's accessible label.
+        tooltip.style.setProperty("display", "none", "important");
+      });
+    };
     const syncNavigationControls = () => {
       if (disposed) return;
+      suppressNativeScrollBackTooltip();
       const zoomActions = root.querySelector(".zoom-actions");
       if (!zoomActions) return;
       // Excalidraw 0.18 renders ZoomActions as a vertical Stack containing a
@@ -496,6 +513,23 @@ export default function SketchiziCanvas({
         fitButton.addEventListener("click", fitToContent);
         zoomRow.appendChild(fitButton);
       }
+      // Excalidraw's "Scroll back to content" navigation control sits
+      // outside the drawing toolbar, but its native title tooltip can render
+      // on top of the dock. Route it through the same body-level tooltip so
+      // it is placed above the control and never overlaps the dock.
+      root.querySelectorAll("button, [role='button']").forEach((button) => {
+        const label = [
+          button.getAttribute("aria-label"),
+          button.getAttribute("title"),
+          button.textContent,
+        ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
+        if (!/scroll back to content/i.test(label)) return;
+        button.dataset.sketchiziTooltip = "Scroll back to content";
+        if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", "Scroll back to content");
+        button.removeAttribute("title");
+        bindToolbarTooltip(button);
+      });
+
       const visibleElements = (apiRef?.current?.getSceneElements?.() || []).filter((element) => element && !element.isDeleted && !element.deleted);
       fitButton.disabled = !canEdit || viewModeEnabled || visibleElements.length === 0;
       fitContentButtonRef.current = fitButton;
@@ -516,9 +550,13 @@ export default function SketchiziCanvas({
     syncNavigationControls();
     observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
+    const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
+    tooltipObserver.observe(document.body, { childList: true, subtree: true });
+    suppressNativeScrollBackTooltip();
     return () => {
       disposed = true;
       observer?.disconnect();
+      tooltipObserver.disconnect();
       if (fitButton) {
         fitButton.removeEventListener("click", fitToContent);
         fitButton.remove();

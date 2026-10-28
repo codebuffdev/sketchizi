@@ -775,6 +775,36 @@
   gap: 8px;
 }
 
+/* Keep the Workspaces entry as an icon-only header control. */
+.create-design-menu .design-studio-header-toggle {
+  box-sizing: border-box;
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  gap: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ui-muted, #9ba5bb);
+}
+.create-design-menu .design-studio-header-toggle > span,
+.create-design-menu .design-studio-header-toggle .devops-studio-chevron {
+  display: none;
+}
+.create-design-menu .design-studio-header-toggle .workspaces-menu-icon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+.create-design-menu .design-studio-header-toggle:hover,
+.create-design-menu .design-studio-header-toggle.active {
+  border-color: var(--ui-border, #303847);
+  background: var(--ui-hover, #1b2029);
+  color: var(--ui-text, #e6e8ef);
+}
+
 
 /* Keep navigation chevrons small and quiet rather than glyph-like. */
 .create-design-menu .devops-studio-chevron {

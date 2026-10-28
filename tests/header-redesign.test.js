@@ -18,15 +18,48 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /Ctrl\+K/);
 });
 
-test("product feature actions are ordered AI Ask, Validation, then More Tools", async () => {
+test("Workspaces header control is icon-only and exposes a hover tooltip", async () => {
+  const app = await read("../src/App.jsx");
+  const styles = await read("../src/styles.css");
+  const start = app.indexOf("const workspaceToggle =");
+  const end = app.indexOf("const moreToolsToggle =", start);
+  const toggle = app.slice(start, end);
+  assert.match(toggle, /title="Workspaces"/);
+  assert.match(toggle, /aria-label="Design Workspaces"/);
+  assert.match(styles, /\.create-design-menu \.design-studio-header-toggle > span,[\s\S]*?\.devops-studio-chevron\s*\{\s*display:\s*none;/);
+  assert.match(styles, /\.create-design-menu \.design-studio-header-toggle \.workspaces-menu-icon\s*\{\s*width:\s*17px;/);
+});
+
+test("Workspaces is the first header control before the hamburger menu", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  assert.ok(header.indexOf("{workspaceToggle}") < header.indexOf('className={nativeMenuOpen ? "desktop-app-menu-trigger'));
+});
+
+test("header Tool menu is positioned relative to its trigger so it remains visible", async () => {
+  const styles = await read("../src/styles/header-redesign.css");
+  assert.match(styles, /\.desktop-app-header-actions \.sketchizi-more-tools-menu\s*\{\s*position:\s*absolute;/);
+  assert.match(styles, /\.desktop-app-header-actions \.sketchizi-more-tools-header\s*\{[\s\S]*?position:\s*relative;/);
+});
+
+test("Tool control is placed beside command search, outside the feature action group", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  const actions = header.indexOf('<div className="desktop-app-header-actions">');
+  const tool = header.indexOf("{moreToolsToggle}", actions);
+  const search = header.indexOf('className="desktop-app-header-icon-button desktop-app-search-button"', actions);
+  assert.ok(actions >= 0 && tool > actions && search > tool);
+  assert.match(header, /workspaceToggle,/);
+  assert.match(header, /moreToolsToggle,/);
+});
+
+test("product feature actions remain ordered AI Ask then Validation", async () => {
   const app = await read("../src/App.jsx");
   const start = app.indexOf("<DesktopAppHeader");
   const end = app.indexOf("</DesktopAppHeader>", start);
   const headerChildren = app.slice(start, end);
   const ai = headerChildren.indexOf("className={aiAskOpen");
   const validation = headerChildren.indexOf("className={architectureValidationOpen");
-  const moreTools = headerChildren.indexOf("<MoreTools");
-  assert.ok(ai >= 0 && validation > ai && moreTools > validation);
+  assert.ok(ai >= 0 && validation > ai);
+  assert.match(app, /const moreToolsToggle = collaborationCanEdit \?/);
 });
 
 test("collaboration CTA remains actionable and has an icon for compact widths", async () => {
@@ -161,4 +194,11 @@ test("collaboration dialog stays fully visible and scrollable within viewport", 
   assert.match(rules, /z-index: 2400 !important/);
   assert.match(rules, /\.collaboration-dialog\s*\{[\s\S]*?max-height: calc\(100dvh/);
   assert.match(rules, /overflow-y: auto !important/);
+});
+
+
+test("Workspaces dropdown closes whenever another editor panel or native menu opens", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /if \(nativeMenuOpen \|\| activePanel \|\| aiAskOpen \|\| designStudioOpen \|\| dockerStudioOpen \|\| kubernetesStudioOpen\)\s*\{\s*setDevopsStudioMenuOpen\(false\);\s*\}/);
+  assert.match(app, /\}, \[nativeMenuOpen, activePanel, aiAskOpen, designStudioOpen, dockerStudioOpen, kubernetesStudioOpen\]\);/);
 });
