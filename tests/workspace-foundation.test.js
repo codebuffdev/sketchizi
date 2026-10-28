@@ -5,6 +5,20 @@ import { createCloudDocument, sanitizeCloudAppState } from "../src/features/work
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
+test("studio menu uses official Kubernetes and Docker brand artwork", async () => {
+  const app = await read("../src/App.jsx");
+  const kubernetes = await read("../public/icons/kubernetes.svg");
+  const docker = await read("../public/icons/docker.svg");
+  assert.match(app, /src="\/icons\/kubernetes\.svg"/);
+  assert.match(app, /src="\/icons\/docker\.svg"/);
+  assert.match(kubernetes, /<title>Kubernetes<\/title>/);
+  assert.match(kubernetes, /fill="#326ce5"/);
+  assert.match(docker, /<title>Docker<\/title>/);
+  assert.match(docker, /fill="#2496ed"/);
+  assert.doesNotMatch(kubernetes, />KUB<\/text>/);
+  assert.doesNotMatch(docker, />DOC<\/text>/);
+});
+
 test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
   const app = await read("../src/App.jsx");
   assert.match(app, /className="workspaces-menu-icon"[^>]*><path d="M3\.5 7\.5h6l2 2h9/);
