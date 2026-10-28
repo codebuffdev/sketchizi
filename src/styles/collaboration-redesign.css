@@ -31,6 +31,13 @@
 }
 .collaboration-share-trigger:hover,
 .collaboration-share-trigger[aria-expanded="true"] { background:var(--ui-surface-soft, #f2f4f8); border-color:var(--ui-accent, #7c5cff); }
+.collaboration-share-trigger-icon-only {
+  width:34px;
+  min-width:34px;
+  height:34px;
+  padding:0;
+}
+.collaboration-share-trigger-icon-only svg { display:block; width:18px; height:18px; }
 .collaboration-share-trigger:focus-visible { outline:2px solid var(--ui-accent, #7c5cff); outline-offset:2px; }
 .collaboration-share-panel {
   position:absolute;
