@@ -36,6 +36,7 @@ import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
 import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinitions";
 import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
+import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -151,7 +152,105 @@ function App() {
 
   const documentMetadataRef = useRef({ metadata: {}, extensions: {}, format: "excalidraw" });
   const persistence = useSketchPersistence({ apiRef, documentMetadataRef });
-  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave: queueLocalSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const cloudUrlParams = new URLSearchParams(window.location.search);
+  const cloudDiagramId = cloudUrlParams.get("cloudDiagramId") || "";
+  const cloudProjectId = cloudUrlParams.get("cloudProjectId") || "";
+  const cloudSessionRef = useRef({ active: false, diagramId: "", projectId: "", revision: null, name: "" });
+  const cloudSaveTimerRef = useRef(null);
+  const cloudSaveQueueRef = useRef(Promise.resolve());
+  const cloudLoadStartedRef = useRef(false);
+  const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+
+  const queueSketchSave = useCallback((elements, appState) => {
+    if (!cloudDiagramId) {
+      queueLocalSketchSave(elements, appState);
+      return;
+    }
+    // A cloud session must never overwrite the browser-local sketch while its
+    // document is loading or after a failed load.
+    if (!cloudSessionRef.current.active || !apiRef.current) return;
+    setCloudSaveState((current) => ({ ...current, state: "pending", error: "" }));
+    if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+    cloudSaveTimerRef.current = window.setTimeout(() => {
+      cloudSaveTimerRef.current = null;
+      const session = cloudSessionRef.current;
+      const api = apiRef.current;
+      if (!session.active || !api || !Array.isArray(elements)) return;
+      const document = {
+        elements,
+        appState: appState || api.getAppState?.() || {},
+        files: api.getFiles?.() || {},
+        metadata: documentMetadataRef.current?.metadata || {},
+        extensions: documentMetadataRef.current?.extensions || {},
+        format: documentMetadataRef.current?.format || "excalidraw",
+      };
+      setCloudSaveState((current) => ({ ...current, state: "saving", error: "" }));
+      cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
+        const revision = cloudSessionRef.current.revision;
+        const result = await workspaceClient.saveDiagram(session.diagramId, revision, document);
+        if (result && result.revision !== undefined && result.revision !== null) {
+          cloudSessionRef.current.revision = result.revision;
+        } else if (typeof revision === "number") {
+          cloudSessionRef.current.revision = revision + 1;
+        }
+        setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
+      }).catch((error) => {
+        setCloudSaveState({ state: "error", error: error.message || "Could not save this cloud diagram." });
+      });
+    }, 700);
+  }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
+
+  useEffect(() => {
+    if (!cloudDiagramId || !apiReady || !sketchReady || cloudLoadStartedRef.current) return undefined;
+    let cancelled = false;
+    cloudLoadStartedRef.current = true;
+    setCloudSaveState({ state: "loading", error: "" });
+    workspaceClient.getDiagram(cloudDiagramId).then((result) => {
+      if (cancelled) return;
+      const diagram = result?.diagram || result;
+      const document = diagram?.document || diagram?.content;
+      if (!document || !Array.isArray(document.elements)) {
+        throw new Error("The cloud diagram did not contain a valid Sketchizi document.");
+      }
+      const api = apiRef.current;
+      if (!api?.updateScene) throw new Error("The editor is not ready to load this cloud diagram.");
+      const elements = restoreElements(document.elements, null, { repairBindings: true });
+      documentMetadataRef.current = {
+        metadata: document.metadata || {},
+        extensions: document.extensions || {},
+        format: document.format || diagram.format || "excalidraw",
+      };
+      cloudSessionRef.current = {
+        active: true,
+        diagramId: diagram.id || cloudDiagramId,
+        projectId: diagram.projectId || cloudProjectId,
+        revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
+        name: diagram.name || "Cloud diagram",
+      };
+      api.updateScene({
+        elements,
+        appState: { ...api.getAppState(), ...(document.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+      api.history?.clear?.();
+      const files = Object.values(document.files || {});
+      if (files.length) api.addFiles?.(files);
+      setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format: document.format || diagram.format || "excalidraw" });
+      if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
+      setCloudSaveState({ state: "saved", error: "" });
+      document.title = `${diagram.name || "Cloud diagram"} · Sketchizi`;
+    }).catch((error) => {
+      if (cancelled) return;
+      cloudSessionRef.current.active = false;
+      setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
+    });
+    return () => { cancelled = true; };
+  }, [apiReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
+
+  useEffect(() => () => {
+    if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+  }, []);
 
   const createDesignFromStudio = useCallback(({ templateId, name, ruleMode = "guided", templateOptions = {} }) => {
     const api = apiRef.current;
@@ -408,13 +507,14 @@ function App() {
   // predate scene restoration or Excalidraw's internal theme update.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
     handleExcalidrawChange(elements, appState);
+    if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         const activeTheme = document.querySelector(".app")?.dataset.theme;
         applyCanvasThemeBackground(apiRef.current, activeTheme === "dark");
       });
     });
-  }, [apiRef, handleExcalidrawChange]);
+  }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
@@ -1403,6 +1503,10 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
+      {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={cloudSaveState.state === "error" ? "alert" : "status"}>
+        {cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : cloudSaveState.state === "error" ? cloudSaveState.error : ""}
+        <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
+      </div>}
       <DesktopAppHeader
         commands={commands}
         openCommandPalette={commandPalette.openCommandPalette}
