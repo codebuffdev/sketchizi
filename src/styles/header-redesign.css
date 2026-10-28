@@ -216,7 +216,7 @@
     position: static;
     transform: none;
     width: auto;
-    min-width: 92px;
+    min-width: 58px;
     height: 32px;
     min-height: 32px;
     margin: 0;
@@ -226,22 +226,14 @@
     background: var(--ui-surface-soft, #f8f8fc);
     color: var(--ui-text, #3b3d4b);
     box-shadow: none;
-    font-size: 0;
-  }
-
-  .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger::before {
-    content: "⋯";
-    font-size: 17px;
-    line-height: 1;
-    font-weight: 750;
-  }
-
-  .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger::after {
-    content: "More Tools";
-    margin-left: 5px;
-    font-family: inherit;
     font-size: 10px;
-    font-weight: 650;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger::before,
+  .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger::after {
+    content: none;
   }
 
   .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger:hover,
