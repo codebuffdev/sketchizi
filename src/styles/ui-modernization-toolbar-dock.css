@@ -1134,3 +1134,21 @@
     max-width: calc(100vw - 12px) !important;
   }
 }
+
+
+/* A fixed available-width box prevents the control row's intrinsic width from
+   escaping its containing canvas at high zoom or in narrow browser windows. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  width: min(520px, calc(100vw - 16px)) !important;
+  max-width: min(520px, calc(100vw - 16px)) !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  min-width: max-content !important;
+}
