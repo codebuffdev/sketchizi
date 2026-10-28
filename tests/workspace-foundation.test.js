@@ -19,6 +19,22 @@ test("studio menu uses official Kubernetes and Docker brand artwork", async () =
   assert.doesNotMatch(docker, />DOC<\/text>/);
 });
 
+test("Tool menu only contains tools not already on the dock and uses labeled SVG icons", async () => {
+  const menu = await read("../src/components/app/MoreTools.jsx");
+  const styles = await read("../src/styles/header-redesign.css");
+  assert.match(menu, /aria-label="Tool"/);
+  assert.match(menu, /<span>Tool<\/span>/);
+  assert.match(menu, /function ToolIcon\(/);
+  assert.match(menu, /<ToolIcon name=\{tool\} \/>/);
+  assert.match(menu, /\["image", "Insert image", "9"\]/);
+  assert.match(menu, /\["frame", "Frame tool", "F"\]/);
+  assert.match(menu, /\["embeddable", "Web Embed", ""\]/);
+  assert.match(menu, /\["laser", "Laser pointer", "K"\]/);
+  assert.match(menu, /\["lasso", "Lasso selection", ""\]/);
+  assert.doesNotMatch(menu, /Draw to shape|Bucket fill|Text to diagram|Mermaid to Excalidraw|Wireframe to code|more-tools-section-title/);
+  assert.match(styles, /content: none;/);
+});
+
 test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
   const app = await read("../src/App.jsx");
   assert.match(app, /className="workspaces-menu-icon"[^>]*><path d="M3\.5 7\.5h6l2 2h9/);
