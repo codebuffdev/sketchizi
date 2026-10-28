@@ -929,19 +929,6 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     }
   }, [apiRef, persistSketchNow, saveTimerRef, signInBusy]);
 
-  const chooseProvider = (provider) => {
-    updateChat((current) => ({ ...current, provider }));
-    setPanelError("");
-    if (provider === "byok") {
-      usageRequestSequenceRef.current += 1;
-      setUsage(null);
-      setUsageStatus("idle");
-      setUsageError("");
-    } else if (chat.conversationId && auth.user?.id) {
-      refreshUsage(chat.conversationId, auth.user.id);
-    }
-  };
-
   const updateApiKey = (value) => {
     setApiKey(value);
     setKeyApplied(false);
