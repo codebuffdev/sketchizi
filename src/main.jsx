@@ -15,6 +15,7 @@ installGlobalErrorHandlers();
 function RootApp() {
   const [auth, setAuth] = useState({ status: "checking", user: null });
   const editorRoute = new URLSearchParams(window.location.search).get("editor") === "1";
+  const workspaceRoute = window.location.pathname === "/workspace" || window.location.pathname.startsWith("/workspace/");
   const communityRoute = /^\/(reviews|feedback|admin|join-team)(?:\/|$)/.test(window.location.pathname);
 
   useEffect(() => {
@@ -37,10 +38,14 @@ function RootApp() {
 
   if (communityRoute) return <CommunityApp />;
 
+  // A direct Workspace navigation should explain an authentication outage
+  // instead of silently dropping the user back into the drawing editor.
+  if (workspaceRoute && auth.status === "unavailable") {
+    return <main className="cw-startup" role="alert"><div><p>Cloud Workspace could not verify your sign-in session.</p><p>Please retry after the authentication service is reachable.</p><button onClick={() => window.location.reload()}>Retry</button> <a href="/?editor=1">Open the editor</a></div></main>;
+  }
+
   // The Cloud Workspace is strictly for a verified, authenticated user.
-  // If session verification is temporarily unavailable, fail closed for the
-  // private workspace but keep the public drawing editor usable. Never strand
-  // the user on a generic authentication error screen.
+  // The editor remains available without an account or during auth outages.
   if (editorRoute || auth.status === "anonymous" || auth.status === "unavailable") {
     return <PhoneAccessGate><App /></PhoneAccessGate>;
   }
