@@ -202,3 +202,16 @@ test("active Icon Library category filters use neutral meta colors instead of pu
   assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip\.active,[\s\S]*?background-image:\s*none !important;[\s\S]*?color:\s*#f1f4fa !important/);
   assert.match(styles, /\.app\.theme-light \.library-panel-redesign \.library-source-chip\.active,[\s\S]*?background:\s*#e3e7ee !important;[\s\S]*?color:\s*#343b49 !important/);
 });
+
+
+test("category icons follow the requested order and render 15 percent larger", async () => {
+  const component = await readFile(new URL("../src/IconLibraryPanel.jsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../src/styles/icon-library-redesign.css", import.meta.url), "utf8");
+  const start = component.indexOf("const sourceTabs = [");
+  const end = component.indexOf("];", start);
+  const tabs = component.slice(start, end);
+  const ids = [...tabs.matchAll(/\{ id: "([^"]+)", label:/g)].map((match) => match[1]);
+  assert.deepEqual(ids, ["networking", "kubernetes", "mindmaps", "uml", "eraser", "all", "aws"]);
+  assert.match(component, /viewBox: "0 0 20 20", width: 21, height: 21/);
+  assert.match(styles, /\.app \.library-panel-redesign \.library-source-brand-icon\s*\{[\s\S]*?width:\s*23px;[\s\S]*?height:\s*23px;/);
+});
