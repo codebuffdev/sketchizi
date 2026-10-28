@@ -78,9 +78,10 @@ export default function SketchiziCanvas({
       toolbarTooltip.style.opacity = "0";
       const buttonRect = button.getBoundingClientRect();
       const tipRect = toolbarTooltip.getBoundingClientRect();
-      const toolbar = button.closest(".App-toolbar");
+      const toolbar = button.closest(".App-toolbar") || root.querySelector(".App-toolbar");
       const vertical = toolbar?.dataset.sketchiziOrientation === "vertical";
       const side = toolbar?.dataset.sketchiziDockSide;
+      const scrollBackTooltip = /scroll back to content/i.test(label);
       let left;
       let top;
       if (vertical) {
@@ -90,8 +91,14 @@ export default function SketchiziCanvas({
         top = buttonRect.top + (buttonRect.height - tipRect.height) / 2;
       } else {
         left = buttonRect.left + (buttonRect.width - tipRect.width) / 2;
-        top = buttonRect.top - tipRect.height - 8;
-        if (top < 8) top = buttonRect.bottom + 8;
+        if (scrollBackTooltip) {
+          // This Excalidraw navigation control sits near the toolbar. Put its
+          // tooltip below the entire horizontal dock, not over the tool row.
+          top = (toolbar?.getBoundingClientRect().bottom ?? buttonRect.bottom) + 8;
+        } else {
+          top = buttonRect.top - tipRect.height - 8;
+          if (top < 8) top = buttonRect.bottom + 8;
+        }
       }
       left = Math.max(8, Math.min(window.innerWidth - tipRect.width - 8, left));
       top = Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, top));
