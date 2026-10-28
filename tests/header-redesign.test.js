@@ -18,15 +18,30 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /Ctrl\+K/);
 });
 
-test("product feature actions are ordered AI Ask, Validation, then More Tools", async () => {
+test("Workspaces is the first header control before the hamburger menu", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  assert.ok(header.indexOf("{workspaceToggle}") < header.indexOf('className={nativeMenuOpen ? "desktop-app-menu-trigger'));
+});
+
+test("Tool control is placed beside command search, outside the feature action group", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  const actions = header.indexOf('<div className="desktop-app-header-actions">');
+  const tool = header.indexOf("{moreToolsToggle}", actions);
+  const search = header.indexOf('className="desktop-app-header-icon-button desktop-app-search-button"', actions);
+  assert.ok(actions >= 0 && tool > actions && search > tool);
+  assert.match(header, /workspaceToggle,/);
+  assert.match(header, /moreToolsToggle,/);
+});
+
+test("product feature actions remain ordered AI Ask then Validation", async () => {
   const app = await read("../src/App.jsx");
   const start = app.indexOf("<DesktopAppHeader");
   const end = app.indexOf("</DesktopAppHeader>", start);
   const headerChildren = app.slice(start, end);
   const ai = headerChildren.indexOf("className={aiAskOpen");
   const validation = headerChildren.indexOf("className={architectureValidationOpen");
-  const moreTools = headerChildren.indexOf("<MoreTools");
-  assert.ok(ai >= 0 && validation > ai && moreTools > validation);
+  assert.ok(ai >= 0 && validation > ai);
+  assert.match(app, /const moreToolsToggle = collaborationCanEdit \?/);
 });
 
 test("collaboration CTA remains actionable and has an icon for compact widths", async () => {
