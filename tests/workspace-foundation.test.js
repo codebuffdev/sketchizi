@@ -14,6 +14,16 @@ test("only verified authenticated users get Workspace; signed-out or unverifiabl
   assert.doesNotMatch(source, /Could not verify your sign-in session\./);
 });
 
+
+test("Cloud Workspace is reachable from the editor Workspaces menu", async () => {
+  const app = await read("../src/App.jsx");
+  const root = await read("../src/main.jsx");
+  assert.match(app, /Cloud Workspace/);
+  assert.match(app, /window\.location\.assign\("\/workspace"\)/);
+  assert.match(root, /window\.location\.pathname === "\/workspace"/);
+  assert.match(root, /Cloud Workspace could not verify your sign-in session\./);
+});
+
 test("Workspace stylesheet is scoped and imported by the dashboard component", async () => {
   const component = await read("../src/features/workspace/WorkspaceDashboard.jsx");
   const stylesheet = await read("../src/features/workspace/workspace.css");
