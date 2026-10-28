@@ -11,6 +11,12 @@ import { logger } from "../../logging/logger";
 import { serializeDrawing } from "../../fileSystem.js";
 
 export function useSketchPersistence({ apiRef, documentMetadataRef }) {
+  const [persistenceId] = useState(() => {
+    if (typeof window === "undefined") return "main";
+    const params = new URLSearchParams(window.location.search);
+    const diagramId = params.get("workspace") === "editor" ? params.get("diagramId") : null;
+    return diagramId ? `workspace:${diagramId}` : "main";
+  });
   const [savedSketch, setSavedSketch] = useState(null);
   const [sketchReady, setSketchReady] = useState(false);
   const [storageError, setStorageError] = useState(null);
@@ -21,7 +27,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadSketch().then((record) => {
+    loadSketch(persistenceId).then((record) => {
       if (cancelled) return;
       logger.debug("Local sketch restored", { category: "persistence", hasSavedSketch: Boolean(record) });
       if (documentMetadataRef) {
@@ -39,7 +45,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
       setSketchReady(true);
     }).catch((error) => {
       if (cancelled) return;
-      const emergency = loadEmergencyBackup();
+      const emergency = loadEmergencyBackup(persistenceId);
       if (documentMetadataRef) {
         documentMetadataRef.current = {
           metadata: emergency?.metadata || {},
@@ -58,7 +64,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
       cancelled = true;
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, []);
+  }, [persistenceId]);
 
   const persistSketchNow = useCallback((payload, revision = saveRevisionRef.current) => {
     if (!payload) return Promise.resolve(false);
@@ -68,10 +74,10 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     const durablePayload = withDocumentMetadata(payload, documentMetadataRef?.current || {});
     saveRequestRef.current = saveRequestRef.current
       .catch(() => {})
-      .then(() => saveSketch(durablePayload))
+      .then(() => saveSketch(durablePayload, persistenceId))
       .then(() => {
         logger.debug("Local sketch saved", { category: "persistence" });
-        clearEmergencyBackup();
+        clearEmergencyBackup(persistenceId);
         setStorageError(null);
         const savedAt = Date.now();
         if (revision === saveRevisionRef.current && !saveTimerRef.current) {
@@ -82,7 +88,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
         return true;
       })
       .catch((error) => {
-        const emergencySaved = saveEmergencyBackup(durablePayload);
+        const emergencySaved = saveEmergencyBackup(durablePayload, persistenceId);
         logger.error("Local sketch save failed", error, { category: "persistence", errorKind: error?.kind || "write", emergencyBackupSaved: emergencySaved });
         const message = error?.message || "Unable to save the sketch locally.";
         // Don't let a failed older snapshot briefly override the status of a
@@ -98,7 +104,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
         return false;
       });
     return saveRequestRef.current;
-  }, [documentMetadataRef]);
+  }, [documentMetadataRef, persistenceId]);
 
   const queueSketchSave = useCallback((elements, appState) => {
     if (!sketchReady || !apiRef.current) return;
