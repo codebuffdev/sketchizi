@@ -292,11 +292,8 @@ export default function AuthenticationControl() {
           title="Retry checking your sign-in session"
           aria-label="Retry checking your sign-in session"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M20 7v5h-5" />
-            <path d="M19 12a7.5 7.5 0 0 0-13.2-4.9L4 9" />
-            <path d="M4 17v-5h5" />
-            <path d="M5 12a7.5 7.5 0 0 0 13.2 4.9L20 15" />
+          <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M275 0 262 3 257 10 255 64 207 69 158 86 122 108 84 144 64 172 48 204 37 240 32 279 35 324 47 367 64 401 90 436 128 470 164 491 196 503 242 511 295 508 332 498 375 477 404 455 433 424 453 393 472 346 479 305 475 293 466 288 391 290 385 296 373 341 355 369 320 399 274 415 237 415 207 407 175 388 147 357 130 316 128 271 140 231 159 203 177 186 201 171 226 162 255 159 257 213 266 222 278 222 383 116 381 103Z" />
           </svg>
         </button>
       )}
