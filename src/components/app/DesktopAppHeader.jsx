@@ -90,6 +90,9 @@ export default function DesktopAppHeader({
   currentDocumentFileBacked = false,
   onSaveNow,
   onSaveToFile,
+  onSaveToCloud,
+  isCloudDocument = false,
+  cloudSaveState = "inactive",
   onDownloadRecoveryBackup,
   children,
 }) {
@@ -340,6 +343,21 @@ export default function DesktopAppHeader({
         <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
         <AuthenticationControl />
       </div>
+
+      <button
+        type="button"
+        className="desktop-app-save-to-cloud-button"
+        onClick={() => { setOpenMenu(null); onSaveToCloud?.(); }}
+        disabled={cloudSaveState === "loading" || cloudSaveState === "saving" || cloudSaveState === "pending"}
+        title={isCloudDocument ? "Save the current diagram to Cloud Workspace now" : "Save this drawing to Cloud Workspace"}
+        aria-label={isCloudDocument ? "Save current diagram to Cloud Workspace now" : "Save drawing to Cloud Workspace"}
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M7 18.5h10.2a4 4 0 0 0 .4-8A6 6 0 0 0 6.2 9a4.8 4.8 0 0 0 .8 9.5Z" />
+          <path d="M12 12v7m-3-3 3 3 3-3" />
+        </svg>
+        <span>{isCloudDocument ? (cloudSaveState === "saving" || cloudSaveState === "pending" ? "Saving…" : "Save now") : "Save to Cloud"}</span>
+      </button>
 
       <div className="desktop-app-save-status-wrap">
         <button
