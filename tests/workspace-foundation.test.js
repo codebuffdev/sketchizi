@@ -182,3 +182,14 @@ test("cloud document sanitizes Excalidraw runtime appState before persistence an
   assert.equal(Object.hasOwn(appState, "collaborators"), false);
   assert.equal(Object.hasOwn(appState, "selectedElementIds"), false);
 });
+
+
+test("admin cloud-save path bypasses the standard 2 MiB frontend document limit", async () => {
+  const app = await read("../src/App.jsx");
+  const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
+  assert.match(app, /if \(!limits\?\.admin\) \{/);
+  assert.match(app, /standard accounts/);
+  assert.match(dialog, /workspaceClient\.getLimits\(\)/);
+  assert.match(dialog, /Administrator accounts are exempt from the standard 2 MiB application limit/);
+  assert.doesNotMatch(dialog, /MAX_DOCUMENT_BYTES/);
+});
