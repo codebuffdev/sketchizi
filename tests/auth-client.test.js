@@ -95,7 +95,8 @@ test("AI Ask marks authentication before waiting for conversation creation", asy
 
 test("auth status timeout allows for a Render cold start instead of failing after eight seconds", async () => {
   const source = await readFile(new URL("../src/features/auth/authClient.js", import.meta.url), "utf8");
-  assert.match(source, /AUTH_CHECK_TIMEOUT_MS = 120_000/);
+  assert.match(source, /AUTH_CHECK_TIMEOUT_MS = 12_000/);
+  assert.match(source, /await ensureBackendReady\(\);[\s\S]*?Promise\.race\(\[check, timeout\]\)/);
   assert.match(source, /AUTHENTICATED_CACHE_MS = 60_000/);
 });
 
