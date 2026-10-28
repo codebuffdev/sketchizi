@@ -12,7 +12,7 @@ export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
-  selectedElements = [], applyToSelected, onOpenProperties, canEdit = true,
+  selectedElements = [], applyToSelected, onOpenProperties, propertiesOpen = false, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridVisible = false, gridSize = 20, gridSnappingEnabled = false,
 }) {
@@ -586,6 +586,7 @@ export default function SketchiziCanvas({
         selectedElements={selectedElements}
         applyToSelected={applyToSelected}
         onOpenProperties={onOpenProperties}
+        propertiesOpen={propertiesOpen}
         canEdit={canEdit && !viewModeEnabled}
       />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />

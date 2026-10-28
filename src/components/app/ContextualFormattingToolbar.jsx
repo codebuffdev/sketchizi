@@ -74,6 +74,7 @@ export default function ContextualFormattingToolbar({
   selectedElements = [],
   applyToSelected,
   onOpenProperties,
+  propertiesOpen = false,
   canEdit = true,
 }) {
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
@@ -89,6 +90,7 @@ export default function ContextualFormattingToolbar({
     [apiRef, canvasRootRef, canvasRevision, selectedElements],
   );
 
+  // Keep the primary contextual toolbar visible; More opens the secondary Properties panel.
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));

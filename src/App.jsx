@@ -1580,6 +1580,7 @@ function App() {
             collaborationSelfId={collaborationClientId}
             updateCollaborationCursor={updateCollaborationCursor}
             onViewportChange={markLocalViewportNavigation}
+            propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
             onOpenProperties={() => openPanel("properties")}
@@ -1610,7 +1611,7 @@ function App() {
           className={`desktop-context-region ${propertiesOpen ? "properties-state-open" : "properties-state-closed"} ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
           aria-label="Properties and architecture validation"
         >
-          {collaborationCanEdit && selectedCount > 0 && (propertiesOpen || architectureValidationOpen) && (
+          {collaborationCanEdit && selectedCount > 0 && propertiesOpen && (
             <div className={`desktop-properties-host ${propertiesOpen ? "is-open" : "is-closed"}`}>
               <PropertiesPanel
                 selectedCount={selectedCount} propertiesOpen={propertiesOpen}

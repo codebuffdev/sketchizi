@@ -9,6 +9,10 @@ const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8
 
 test('contextual toolbar is rendered only for editable selections', () => {
   assert.match(toolbar, /if \(!canEdit \|\| liveSelection\.length === 0 \|\| !position\) return null/);
+  assert.doesNotMatch(toolbar, /if \(!canEdit \|\| propertiesOpen \|\|/);
+  assert.match(app, /collaborationCanEdit && selectedCount > 0 && propertiesOpen && \(/);
+  assert.match(canvas, /propertiesOpen=\{propertiesOpen\}/);
+  assert.match(app, /propertiesOpen=\{propertiesOpen\}[\s\S]*?selectedElements=\{selectedElements\}/);
   assert.match(canvas, /<ContextualFormattingToolbar[\s\S]*?selectedElements=\{selectedElements\}/);
   assert.match(canvas, /canEdit=\{canEdit && !viewModeEnabled\}/);
 });
