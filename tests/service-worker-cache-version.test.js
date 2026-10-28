@@ -11,3 +11,10 @@ test('service-worker application cache version matches the application version',
     'Bump APP_CACHE when the app version changes so deployed clients discard stale cached assets.',
   );
 });
+
+test('service-worker application assets are network-first with cached offline fallback', () => {
+  assert.match(serviceWorker, /App scripts, styles, and other same-origin assets use network-first/);
+  assert.match(serviceWorker, /const response = await fetch\(event\.request\)/);
+  assert.match(serviceWorker, /const cached = await caches\.match\(event\.request\)/);
+  assert.doesNotMatch(serviceWorker, /return cached \|\| network/);
+});
