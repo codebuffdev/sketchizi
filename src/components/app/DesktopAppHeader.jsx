@@ -82,6 +82,8 @@ export default function DesktopAppHeader({
   createCollaboration,
   dismissCollaborationCreationFailure,
   libraryToggle,
+  workspaceToggle,
+  moreToolsToggle,
   setThemeMode,
   isDarkTheme,
   saveStatus = { state: "ready", lastSavedAt: null },
@@ -218,6 +220,7 @@ export default function DesktopAppHeader({
 
   return (
     <header ref={headerRef} className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}`}>
+      {workspaceToggle}
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
@@ -417,6 +420,7 @@ export default function DesktopAppHeader({
       <div className="desktop-app-header-spacer" />
 
       <div className="desktop-app-header-actions">
+        {moreToolsToggle}
         <button
           type="button"
           className="desktop-app-header-icon-button desktop-app-search-button"
