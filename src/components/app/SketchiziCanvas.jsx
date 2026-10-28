@@ -496,6 +496,23 @@ export default function SketchiziCanvas({
         fitButton.addEventListener("click", fitToContent);
         zoomRow.appendChild(fitButton);
       }
+      // Excalidraw's "Scroll back to content" navigation control sits
+      // outside the drawing toolbar, but its native title tooltip can render
+      // on top of the dock. Route it through the same body-level tooltip so
+      // it is placed above the control and never overlaps the dock.
+      root.querySelectorAll("button, [role='button']").forEach((button) => {
+        const label = [
+          button.getAttribute("aria-label"),
+          button.getAttribute("title"),
+          button.textContent,
+        ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
+        if (!/scroll back to content/i.test(label)) return;
+        button.dataset.sketchiziTooltip = "Scroll back to content";
+        if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", "Scroll back to content");
+        button.removeAttribute("title");
+        bindToolbarTooltip(button);
+      });
+
       const visibleElements = (apiRef?.current?.getSceneElements?.() || []).filter((element) => element && !element.isDeleted && !element.deleted);
       fitButton.disabled = !canEdit || viewModeEnabled || visibleElements.length === 0;
       fitContentButtonRef.current = fitButton;
