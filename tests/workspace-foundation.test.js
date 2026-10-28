@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createCloudDocument } from "../src/features/workspace/cloudDocument.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -98,7 +99,7 @@ test("editor exposes an explicit Save to Cloud action and creates a cloud diagra
   assert.match(header, /desktop-app-save-to-cloud-button/);
   assert.match(header, /Save to Cloud/);
   assert.match(app, /workspaceClient\.createDiagram\(/);
-  assert.match(app, /files: api\.getFiles\?\.\(\) \|\| \{\}/);
+  assert.match(app, /createCloudDocument\(/);
   assert.match(app, /cloudDiagramId=\$\{encodeURIComponent\(diagram\.id\)\}/);
   assert.match(dialog, /workspaceClient\.listProjects\(\)/);
   assert.match(dialog, /Save to Cloud Workspace/);
@@ -115,4 +116,43 @@ test("Workspace API requests time out instead of leaving save operations pending
   assert.match(dialog, /MAX_DOCUMENT_BYTES = 2 \* 1024 \* 1024/);
   assert.match(app, /new TextEncoder\(\)\.encode\(serializedDocument\)\.byteLength/);
   assert.match(app, /above the 2 MiB Cloud Workspace limit/);
+});
+
+
+test("cloud document excludes deleted elements and unreferenced cached files", () => {
+  const api = {
+    getSceneElements: () => [
+      { id: "visible-image", type: "image", fileId: "used-file" },
+      { id: "deleted-image", type: "image", fileId: "deleted-file", isDeleted: true },
+    ],
+    getAppState: () => ({ viewBackgroundColor: "#fff" }),
+    getFiles: () => ({
+      "used-file": { id: "used-file", dataURL: "data:image/png;base64,small" },
+      "deleted-file": { id: "deleted-file", dataURL: "data:image/png;base64,deleted" },
+      "orphan-file": { id: "orphan-file", dataURL: "data:image/png;base64,unused" },
+    }),
+  };
+  const document = createCloudDocument({ api });
+  assert.deepEqual(document.elements.map((element) => element.id), ["visible-image"]);
+  assert.deepEqual(Object.keys(document.files), ["used-file"]);
+});
+
+test("cloud document refuses to save an empty canvas", () => {
+  const api = {
+    getSceneElements: () => [],
+    getAppState: () => ({}),
+    getFiles: () => ({ "stale-file": { id: "stale-file", dataURL: "data:image/png;base64,unused" } }),
+  };
+  assert.throws(() => createCloudDocument({ api }), /canvas is empty/i);
+});
+
+test("existing cloud diagrams can still be saved after all visible elements are deleted", () => {
+  const api = {
+    getSceneElements: () => [],
+    getAppState: () => ({}),
+    getFiles: () => ({ "stale-file": { id: "stale-file", dataURL: "data:image/png;base64,unused" } }),
+  };
+  const document = createCloudDocument({ api, allowEmpty: true });
+  assert.deepEqual(document.elements, []);
+  assert.deepEqual(document.files, {});
 });

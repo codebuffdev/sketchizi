@@ -38,6 +38,7 @@ import { applyKubernetesRelationshipSuggestion } from "./features/architecture/k
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import CloudSaveDialog from "./features/workspace/CloudSaveDialog.jsx";
+import { createCloudDocument } from "./features/workspace/cloudDocument.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -173,14 +174,10 @@ function App() {
     if (!limits?.admin && Number(limits?.diagramCount || 0) >= Number(limits?.diagramLimit || 3)) {
       throw new Error("Your Cloud Workspace diagram limit has been reached. Delete a cloud diagram before saving another.");
     }
-    const document = {
-      elements: api.getSceneElementsIncludingDeleted?.() || api.getSceneElements() || [],
-      appState: api.getAppState?.() || {},
-      files: api.getFiles?.() || {},
-      metadata: documentMetadataRef.current?.metadata || {},
-      extensions: documentMetadataRef.current?.extensions || {},
-      format: documentMetadataRef.current?.format || "excalidraw",
-    };
+    const document = createCloudDocument({
+      api,
+      metadata: documentMetadataRef.current,
+    });
     const serializedDocument = JSON.stringify(document);
     const documentBytes = new TextEncoder().encode(serializedDocument).byteLength;
     if (documentBytes > maxDocumentBytes) {
@@ -214,14 +211,13 @@ function App() {
       const session = cloudSessionRef.current;
       const api = apiRef.current;
       if (!session.active || !api || !Array.isArray(elements)) return;
-      const document = {
+      const document = createCloudDocument({
+        api,
         elements,
         appState: appState || api.getAppState?.() || {},
-        files: api.getFiles?.() || {},
-        metadata: documentMetadataRef.current?.metadata || {},
-        extensions: documentMetadataRef.current?.extensions || {},
-        format: documentMetadataRef.current?.format || "excalidraw",
-      };
+        metadata: documentMetadataRef.current,
+        allowEmpty: true,
+      });
       setCloudSaveState((current) => ({ ...current, state: "saving", error: "" }));
       cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
         const revision = cloudSessionRef.current.revision;
@@ -248,7 +244,7 @@ function App() {
     const api = apiRef.current;
     if (!cloudDiagramId || !cloudSessionRef.current.active || !api) return;
     cloudFlushImmediatelyRef.current = true;
-    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+    queueSketchSave(api.getSceneElements?.() || [], api.getAppState?.() || {});
     cloudFlushImmediatelyRef.current = false;
   }, [apiRef, cloudDiagramId, queueSketchSave]);
 
