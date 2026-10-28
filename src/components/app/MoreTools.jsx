@@ -1,5 +1,17 @@
 import { useEffect } from "react";
 
+function ToolIcon({ name }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round" };
+  const paths = {
+    image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m4.5 17 5-5 3.5 3 2.5-2 4 4" /></>,
+    frame: <><path d="M5 3v18M19 3v18M3 7h18M3 17h18" /></>,
+    embeddable: <><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="m9 10-2 2 2 2m6-4 2 2-2 2m-2-5-2 6" /></>,
+    laser: <><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z" /><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z" /></>,
+    lasso: <><path d="M12 4c5 0 8 2.2 8 5s-3 5-8 5-8-2.2-8-5 3-5 8-5Z" /><path d="M7 13.2c-.7 2.7-.2 4.8 1.6 5.5 1.5.6 3.2-.6 3.2-2.1 0-1.2-1.5-1.8-2.3-.8-.7.8-.2 2.3 1.4 3.2" /></>,
+  };
+  return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" {...common}>{paths[name]}</svg>;
+}
+
 export default function MoreTools({ open, anchor, position, activateTool, toggle, canEdit = true, placement = "canvas" }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -7,9 +19,6 @@ export default function MoreTools({ open, anchor, position, activateTool, toggle
       const target = event.target;
       if (!(target instanceof Element)) return;
       if (target.closest(".sketchizi-more-tools")) return;
-      // The More Tools menu follows the single-catalog policy: any click
-      // elsewhere, including the canvas or another toolbar/catalog button,
-      // dismisses it before the other control handles its own click.
       toggle("more-tools");
     };
     const closeOnEscape = (event) => {
@@ -35,23 +44,26 @@ export default function MoreTools({ open, anchor, position, activateTool, toggle
     window.addEventListener("sketchizi:activate-tool", handleQuickTool);
     return () => window.removeEventListener("sketchizi:activate-tool", handleQuickTool);
   }, [activateTool, canEdit]);
+
   const items = [
-    ["image", "▧", "Insert image", "9"], ["frame", "⌗", "Frame tool", "F"], ["embeddable", "◇", "Web Embed", ""],
-    ["autoshape", "◌", "Draw to shape", "⇧X"], ["laser", "✧", "Laser pointer", "K"], ["bucketfill", "◒", "Bucket fill", "B"], ["lasso", "◌", "Lasso selection", ""],
+    ["image", "Insert image", "9"],
+    ["frame", "Frame tool", "F"],
+    ["embeddable", "Web Embed", ""],
+    ["laser", "Laser pointer", "K"],
+    ["lasso", "Lasso selection", ""],
   ];
+
   return (
     <div className={`sketchizi-more-tools sketchizi-more-tools-${placement} ${open ? "open" : ""}`} style={{ "--sketchizi-more-tools-left": `${anchor.left}px`, "--sketchizi-more-tools-top": `${anchor.top}px` }}>
-      <button type="button" className="sketchizi-more-tools-trigger" aria-label="More tools" aria-haspopup="menu" aria-expanded={open} onClick={(event) => { event.preventDefault(); event.stopPropagation(); position(); toggle("more-tools"); }}><span aria-hidden="true">⋮</span></button>
-      {open && <div className="sketchizi-more-tools-menu" role="menu" aria-label="More tools">
+      <button type="button" className="sketchizi-more-tools-trigger" aria-label="Tool" aria-haspopup="menu" aria-expanded={open} onClick={(event) => { event.preventDefault(); event.stopPropagation(); position(); toggle("more-tools"); }}>
+        <span>Tool</span>
+      </button>
+      {open && <div className="sketchizi-more-tools-menu" role="menu" aria-label="Tool">
         <div className="more-tools-menu-header">
-          <span>More Tools</span>
-          <button type="button" className="more-tools-menu-close" aria-label="Close More Tools" onClick={() => toggle("more-tools")}>×</button>
+          <span>Tool</span>
+          <button type="button" className="more-tools-menu-close" aria-label="Close Tool menu" onClick={() => toggle("more-tools")}>×</button>
         </div>
-        {items.map(([tool, icon, label, key]) => <button key={tool} type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool(tool)}><span className="more-tools-icon">{icon}</span><span>{label}</span><kbd>{key}</kbd></button>)}
-        <div className="more-tools-section-title">Generate</div>
-        <button type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool("text-to-diagram")}><span className="more-tools-icon">✿</span><span>Text to diagram</span><em>AI</em></button>
-        <button type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool("mermaid")}><span className="more-tools-icon">Y</span><span>Mermaid to Excalidraw</span><kbd></kbd></button>
-        <button type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool("magicframe")}><span className="more-tools-icon">✣</span><span>Wireframe to code</span><em>AI</em></button>
+        {items.map(([tool, label, key]) => <button key={tool} type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool(tool)}><span className="more-tools-icon"><ToolIcon name={tool} /></span><span>{label}</span><kbd>{key}</kbd></button>)}
       </div>}
     </div>
   );
