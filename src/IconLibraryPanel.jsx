@@ -33,16 +33,25 @@ function iconSelectionKey(icon) {
 }
 
 function SourceCategoryIcon({ id }) {
-  const positions = {
-    all: 5,
-    eraser: 4,
-    aws: 6,
-    kubernetes: 1,
-    networking: 0,
-    uml: 3,
-    mindmaps: 2,
-  };
-  return <span className={`library-source-art library-source-art-${id}`} style={{ "--category-icon-index": positions[id] }} aria-hidden="true" />;
+  const common = { viewBox: "0 0 24 24", width: 21, height: 21, fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" };
+  switch (id) {
+    case "aws":
+      return <img className="library-source-brand-icon library-source-brand-icon-aws" src="/icons/aws.svg" alt="" aria-hidden="true" />;
+    case "networking":
+      return <svg {...common}><circle cx="12" cy="12" r="3.3" fill="currentColor" /><circle cx="5" cy="5" r="2.2" /><circle cx="19" cy="5" r="2.2" /><circle cx="5" cy="19" r="2.2" /><circle cx="19" cy="19" r="2.2" /><path d="m9.7 9.7-3.1-3.1m7.7 3.1 3.1-3.1m-7.7 7.7-3.1 3.1m7.7-3.1 3.1 3.1" /></svg>;
+    case "kubernetes":
+      return <img className="library-source-brand-icon library-source-brand-icon-kubernetes" src="/icons/k8s-kubernetes.svg" alt="" aria-hidden="true" />;
+    case "mindmaps":
+      return <svg {...common}><path d="M8 21v-2.2c0-1.7 1.4-3.1 3.1-3.1h1.8c1.7 0 3.1 1.4 3.1 3.1V21" /><path d="M8.8 10.2c0-3.3 1.7-5.5 4.1-5.5 2.5 0 4.1 2.1 4.1 5.2 0 2.9-1.7 4.7-4.1 4.7s-4.1-1.8-4.1-4.4Z" /><circle cx="4" cy="5" r="1.5" /><circle cx="20" cy="5" r="1.5" /><path d="m5.5 6 3.7 3m9.3-3-3.1 3" /></svg>;
+    case "uml":
+      return <svg {...common}><rect x="8" y="2.5" width="8" height="5.5" rx=".8" /><path d="M12 8v4M5 12h14M5 12v2M12 12v2M19 12v2" /><rect x="2" y="14" width="6" height="7" rx=".8" /><rect x="9" y="14" width="6" height="7" rx=".8" /><rect x="16" y="14" width="6" height="7" rx=".8" /></svg>;
+    case "eraser":
+      return <svg {...common}><path d="M12 2.5 15 8l6 1-4.3 4.2 1 6-5.7-3-5.7 3 1-6L3 9l6-1 3-5.5Z" /><path d="M8 21h13" /></svg>;
+    case "all":
+      return <svg {...common}><path d="M20.5 8A9 9 0 0 0 5 5.5L3 8" /><path d="M3 3v5h5M3.5 16A9 9 0 0 0 19 18.5l2-2" /><path d="M21 21v-5h-5" /></svg>;
+    default:
+      return null;
+  }
 }
 
 export default function IconLibraryPanel({
