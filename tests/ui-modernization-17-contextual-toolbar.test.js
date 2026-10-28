@@ -26,6 +26,13 @@ test('Properties hides only formatting controls duplicated by the contextual too
   assert.ok(app.includes('hideDuplicateFormattingControls={true}'));
 });
 
+test('More restores the current selection before opening Properties', () => {
+  assert.match(app, /selectedIds = selectedElements\.filter\(\(element\) => element && !element\.isDeleted\)\.map\(\(element\) => element\.id\)/);
+  assert.match(app, /selectedElementIds: Object\.fromEntries\(selectedIds\.map\(\(id\) => \[id, true\]\)\)/);
+  assert.match(app, /onOpenProperties=\{\(\) => \{/);
+  assert.match(app, /openPanel\("properties"\)/);
+});
+
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
