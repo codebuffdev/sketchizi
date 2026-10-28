@@ -153,6 +153,18 @@ export default function ContextualFormattingToolbar({
         ))}
       </div>}
 
+      <div className="contextual-formatting-group contextual-custom-color-group" role="group" aria-label="Custom color">
+        <label className="contextual-custom-color" title="Choose custom color">
+          <span aria-hidden="true">+</span>
+          <input
+            type="color"
+            aria-label="Choose custom color"
+            value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"}
+            onChange={(event) => applyToSelected({ strokeColor: event.target.value })}
+          />
+        </label>
+      </div>
+
       {showFill && !hasImageSelection && (
         <div className="contextual-formatting-group" role="group" aria-label="Fill color">
           {FILL_COLORS.map(([color, label]) => (
