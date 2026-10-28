@@ -93,10 +93,14 @@ function App() {
 
   const closeNativeMenu = useCallback(() => {
     const api = apiRef.current;
-    if (!api || !nativeMenuOpenRef.current) return;
+    // Keep React state, the ref, and Excalidraw's own menu state synchronized.
+    // The native menu can be open even if its outside-click handler already
+    // changed the ref before a different catalog is activated.
     nativeMenuOpenRef.current = false;
     setNativeMenuOpen(false);
-    api.updateScene({ appState: { openMenu: null }, captureUpdate: CaptureUpdateAction.NEVER });
+    if (api?.updateScene) {
+      api.updateScene({ appState: { openMenu: null }, captureUpdate: CaptureUpdateAction.NEVER });
+    }
   }, []);
 
   // Toggle Excalidraw's menu state directly instead of synthesizing a click on
@@ -120,6 +124,12 @@ function App() {
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
+
+  // The native hamburger menu and React-powered floating catalogs are mutually
+  // exclusive. Opening the native menu dismisses any active catalog/panel.
+  useEffect(() => {
+    if (nativeMenuOpen && activePanel) setActivePanel(null);
+  }, [nativeMenuOpen, activePanel, setActivePanel]);
 
   // Workspace menu is transient navigation: Escape and any other open panel/dialog dismiss it.
   useEffect(() => {

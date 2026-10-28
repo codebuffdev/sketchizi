@@ -39,3 +39,11 @@ test('navigation styles load after existing Sketchizi UI layers', () => {
   assert.match(entry, /@import "\.\/styles\/ui-modernization-navigation\.css";/);
   assert.ok(entry.indexOf('ui-modernization-navigation.css') > entry.indexOf('ui-modernization-toolbar-dock.css'));
 });
+
+
+test('native hamburger menu and floating catalogs are mutually exclusive', () => {
+  const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  assert.match(app, /nativeMenuOpenRef\.current = false;[\s\S]*?setNativeMenuOpen\(false\);[\s\S]*?api\.updateScene\(\{ appState: \{ openMenu: null \}/);
+  assert.match(app, /if \(nativeMenuOpen && activePanel\) setActivePanel\(null\)/);
+  assert.match(app, /usePanelState\(\{ apiRef, closeNativeMenu \}\)/);
+});
