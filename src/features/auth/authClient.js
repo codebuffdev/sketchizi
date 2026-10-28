@@ -79,7 +79,9 @@ async function requestCurrentUser() {
     }, AUTH_CHECK_TIMEOUT_MS);
   });
   const check = (async () => {
-    await ensureBackendReady();
+    // Authentication is served by its own backend route. Do not gate this
+    // request on the unrelated AI Ask warm-up endpoint; a sleeping or broken
+    // AI service must not prevent a signed-in user from reaching Workspace.
     const response = await fetch(AUTH_ME_URL, {
       credentials: "same-origin",
       cache: "no-store",
