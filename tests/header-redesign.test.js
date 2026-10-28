@@ -18,6 +18,18 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /Ctrl\+K/);
 });
 
+test("Workspaces header control is icon-only and exposes a hover tooltip", async () => {
+  const app = await read("../src/App.jsx");
+  const styles = await read("../src/styles.css");
+  const start = app.indexOf("const workspaceToggle =");
+  const end = app.indexOf("const moreToolsToggle =", start);
+  const toggle = app.slice(start, end);
+  assert.match(toggle, /title="Workspaces"/);
+  assert.match(toggle, /aria-label="Design Workspaces"/);
+  assert.match(styles, /\.create-design-menu \.design-studio-header-toggle > span,[\s\S]*?\.devops-studio-chevron\s*\{\s*display:\s*none;/);
+  assert.match(styles, /\.create-design-menu \.design-studio-header-toggle \.workspaces-menu-icon\s*\{\s*width:\s*17px;/);
+});
+
 test("Workspaces is the first header control before the hamburger menu", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   assert.ok(header.indexOf("{workspaceToggle}") < header.indexOf('className={nativeMenuOpen ? "desktop-app-menu-trigger'));
