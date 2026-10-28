@@ -11,7 +11,7 @@ Live app: https://sketchizi.pages.dev/
 - **Icon library:** Search and insert architecture and Eraser catalog icons; use favorites and recently used icons.
 - **Kubernetes Studio:** Import Kubernetes YAML manifests, visualize resources and their relationships, inspect resource details, edit manifests, validate cross-resource references, and export YAML.
 - **Docker Compose Studio:** Work with Compose YAML, visualize services and their relationships, edit configuration, and export the Compose file.
-- **Canvas editing:** Use properties and contextual controls, connectors, minimap, themes, keyboard shortcuts, and diagram file import/export.
+- **Canvas editing:** Use the primary contextual formatting toolbar for quick changes to selected objects. The Properties panel stays closed by default and opens on demand with **More**, while the primary toolbar remains visible. Also use connectors, minimap, themes, keyboard shortcuts, and diagram file import/export.
 - **Persistence and files:** Save drawings locally, reopen recent files, and work with Sketchizi's `.sketchizi` format and Excalidraw-compatible `.excalidraw` files.
 - **Collaboration:** Share a room link for real-time editing through the separate WebSocket collaboration service.
 - **Optional account features:** Authentication and related backend features depend on their configured services and deployment environment.
