@@ -17,6 +17,8 @@
 }
 .ai-ask-toggle:hover, .ai-ask-toggle.active { border-color: var(--ui-accent, #5b55c7); background: var(--ui-active, #f0eff9); color: var(--ui-text-strong, #202020); }
 .ai-ask-toggle-icon { color: var(--ui-accent, #5b55c7); font-size: 16px; line-height: 1; }
+.ai-ask-toggle.is-icon-only { width: 36px; min-width: 36px; padding: 0; gap: 0; }
+.ai-ask-toggle.is-icon-only .ai-ask-toggle-icon { width: 18px; height: 18px; flex: 0 0 18px; }
 .ai-ask-panel {
   position: fixed;
   z-index: 1200;
