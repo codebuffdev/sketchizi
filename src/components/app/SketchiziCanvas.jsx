@@ -91,7 +91,10 @@ export default function SketchiziCanvas({
       } else {
         left = buttonRect.left + (buttonRect.width - tipRect.width) / 2;
         top = buttonRect.top - tipRect.height - 8;
-        if (top < 8) top = buttonRect.bottom + 8;
+        // Never place a dock tooltip below its trigger: that puts it over
+        // neighboring dock controls when the toolbar is near the top edge.
+        // Clamp above the toolbar instead, even if this leaves extra space.
+        if (top < 8) top = 8;
       }
       left = Math.max(8, Math.min(window.innerWidth - tipRect.width - 8, left));
       top = Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, top));
