@@ -113,7 +113,8 @@ test("Workspace API requests time out instead of leaving save operations pending
   assert.match(client, /REQUEST_TIMEOUT_MS = 12000/);
   assert.match(client, /signal: timeoutSignal\(\)/);
   assert.match(client, /Cloud Workspace request timed out/);
-  assert.match(dialog, /MAX_DOCUMENT_BYTES = 2 \* 1024 \* 1024/);
+  assert.match(app, /if \(!limits\?\.admin\) \{/);
+  assert.doesNotMatch(dialog, /MAX_DOCUMENT_BYTES/);
   assert.match(app, /new TextEncoder\(\)\.encode\(serializedDocument\)\.byteLength/);
   assert.match(app, /above the 2 MiB Cloud Workspace limit/);
 });
@@ -181,4 +182,15 @@ test("cloud document sanitizes Excalidraw runtime appState before persistence an
   });
   assert.equal(Object.hasOwn(appState, "collaborators"), false);
   assert.equal(Object.hasOwn(appState, "selectedElementIds"), false);
+});
+
+
+test("admin cloud-save path bypasses the standard 2 MiB frontend document limit", async () => {
+  const app = await read("../src/App.jsx");
+  const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
+  assert.match(app, /if \(!limits\?\.admin\) \{/);
+  assert.match(app, /standard accounts/);
+  assert.match(dialog, /workspaceClient\.getLimits\(\)/);
+  assert.match(dialog, /Administrator accounts are exempt from the standard 2 MiB application limit/);
+  assert.doesNotMatch(dialog, /MAX_DOCUMENT_BYTES/);
 });

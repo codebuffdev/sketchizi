@@ -167,7 +167,7 @@ function App() {
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
-  const saveDrawingToCloud = useCallback(async ({ projectId, name, maxDocumentBytes = 2 * 1024 * 1024 }) => {
+  const saveDrawingToCloud = useCallback(async ({ projectId, name }) => {
     const api = apiRef.current;
     if (!api?.getSceneElements) throw new Error("The editor is not ready to save this drawing.");
     const limits = await workspaceClient.getLimits();
@@ -178,10 +178,13 @@ function App() {
       api,
       metadata: documentMetadataRef.current,
     });
-    const serializedDocument = JSON.stringify(document);
-    const documentBytes = new TextEncoder().encode(serializedDocument).byteLength;
-    if (documentBytes > maxDocumentBytes) {
-      throw new Error(`This drawing is ${(documentBytes / (1024 * 1024)).toFixed(2)} MiB, above the 2 MiB Cloud Workspace limit. Remove large embedded images or simplify the drawing, then try again.`);
+    if (!limits?.admin) {
+      const serializedDocument = JSON.stringify(document);
+      const documentBytes = new TextEncoder().encode(serializedDocument).byteLength;
+      const maxDocumentBytes = 2 * 1024 * 1024;
+      if (documentBytes > maxDocumentBytes) {
+        throw new Error(`This drawing is ${(documentBytes / (1024 * 1024)).toFixed(2)} MiB, above the 2 MiB Cloud Workspace limit for standard accounts. Administrator accounts are exempt from this application-level limit.`);
+      }
     }
     const result = await workspaceClient.createDiagram({
       projectId,

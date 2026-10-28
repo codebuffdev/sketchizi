@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { workspaceClient } from "./workspaceClient.js";
 
-const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
 
 export default function CloudSaveDialog({ initialName, onClose, onSave }) {
   const [projects, setProjects] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [projectId, setProjectId] = useState("");
   const [name, setName] = useState(() => (initialName || "Untitled drawing").replace(/\.(excalidraw|sketchizi)$/i, ""));
   const [loading, setLoading] = useState(true);
@@ -24,6 +24,9 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
         if (active) setError(cause.message || "Could not load Cloud Workspace projects.");
       })
       .finally(() => { if (active) setLoading(false); });
+    workspaceClient.getLimits()
+      .then((limits) => { if (active) setIsAdmin(Boolean(limits?.admin)); })
+      .catch(() => { if (active) setIsAdmin(false); });
     return () => { active = false; };
   }, []);
 
@@ -33,7 +36,7 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
     setSaving(true);
     setError("");
     try {
-      await onSave({ projectId, name: name.trim(), maxDocumentBytes: MAX_DOCUMENT_BYTES });
+      await onSave({ projectId, name: name.trim() });
     } catch (cause) {
       setError(cause.message || "Could not save this drawing to Cloud Workspace.");
       setSaving(false);
@@ -46,7 +49,7 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
         <div className="cloud-save-dialog-header">
           <div>
             <h2 id="cloud-save-dialog-title">Save to Cloud Workspace</h2>
-            <p>Save this drawing and its embedded assets to a cloud project.</p>
+            <p>{isAdmin ? "Save this drawing and its embedded assets to a cloud project. Administrator accounts are exempt from the standard 2 MiB application limit." : "Save this drawing and its embedded assets to a cloud project. Standard accounts have a 2 MiB document limit."}</p>
           </div>
           <button type="button" className="cloud-save-dialog-close" aria-label="Close dialog" disabled={saving} onClick={onClose}>×</button>
         </div>
