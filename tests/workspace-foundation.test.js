@@ -113,7 +113,8 @@ test("Workspace API requests time out instead of leaving save operations pending
   assert.match(client, /REQUEST_TIMEOUT_MS = 12000/);
   assert.match(client, /signal: timeoutSignal\(\)/);
   assert.match(client, /Cloud Workspace request timed out/);
-  assert.match(dialog, /MAX_DOCUMENT_BYTES = 2 \* 1024 \* 1024/);
+  assert.match(app, /if \(!limits\?\.admin\) \{/);
+  assert.doesNotMatch(dialog, /MAX_DOCUMENT_BYTES/);
   assert.match(app, /new TextEncoder\(\)\.encode\(serializedDocument\)\.byteLength/);
   assert.match(app, /above the 2 MiB Cloud Workspace limit/);
 });
