@@ -1682,7 +1682,7 @@ function App() {
             aria-haspopup="menu"
             aria-expanded={devopsStudioMenuOpen}
           >
-            <svg className="workspaces-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="7" height="7" rx="1.5"/><rect x="13.5" y="4" width="7" height="7" rx="1.5"/><rect x="3.5" y="13" width="7" height="7" rx="1.5"/><rect x="13.5" y="13" width="7" height="7" rx="1.5"/></svg>
+            <svg className="workspaces-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v9.25a1.75 1.75 0 0 1-1.75 1.75H5.25a1.75 1.75 0 0 1-1.75-1.75Z"/><path d="M3.5 7.5V5.75A1.75 1.75 0 0 1 5.25 4h4l2 2h4.25"/></svg>
             <span>Workspaces</span>
             <svg className="devops-studio-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4.5 6 3.5 3.5L11.5 6" /></svg>
           </button>
@@ -1716,7 +1716,7 @@ function App() {
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
         >
-          <span className="ai-ask-toggle-icon" aria-hidden="true">✳</span>
+          <svg className="ai-ask-toggle-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-3.5 2v-6A7.5 7.5 0 1 1 20 11.5Z"/><path d="m12.5 6.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8Z"/></svg>
           <span>AI Ask</span>
         </button>
 
@@ -1728,7 +1728,7 @@ function App() {
           aria-label="Architecture validation"
           aria-expanded={architectureValidationOpen}
         >
-          <span className="architecture-validation-toggle-icon">✓</span>
+          <svg className="architecture-validation-toggle-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 20 6v5.5c0 4.7-3.2 7.8-8 9.5-4.8-1.7-8-4.8-8-9.5V6Z"/><path d="m8.5 12 2.3 2.3 4.8-5"/></svg>
           <span>Validation</span>
         </button>
 
