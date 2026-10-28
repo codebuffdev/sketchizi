@@ -1,4 +1,4 @@
-const APP_CACHE = "sketchizi-v1.10.86";
+const APP_CACHE = "sketchizi-v1.10.87";
 const ERASER_CACHE = "sketchizi-eraser-icons-v4";
 const APP_SHELL = ["/manifest.webmanifest", "/sketchizi-favicon.svg"];
 const LOCAL_ICON_PATH = "/api/eraser-icon";
@@ -58,16 +58,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request).then((response) => {
-        if (response?.ok) {
-          const responseForCache = response.clone();
-          caches.open(APP_CACHE).then((cache) => cache.put(event.request, responseForCache));
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || network;
-    })
-  );
+  // App scripts, styles, and other same-origin assets use network-first so
+  // deployments cannot remain hidden behind a previously cached bundle.
+  // Keep the current response cached for offline fallback only.
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
+      if (response?.ok) {
+        const cache = await caches.open(APP_CACHE);
+        await cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch (error) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      throw error;
+    }
+  })());
 });
