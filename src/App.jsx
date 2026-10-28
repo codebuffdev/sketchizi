@@ -1485,6 +1485,10 @@ function App() {
           </button>
           {devopsStudioMenuOpen && (
             <div className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Design Workspaces">
+              <button type="button" role="menuitem" className="cloud-workspace-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); window.location.assign("/workspace"); }} title="Open your private cloud projects and diagrams">
+                <span className="create-design-menu-icon" aria-hidden="true">☁</span>
+                <span><strong>Cloud Workspace</strong><small>Your saved projects and diagrams</small></span>
+              </button>
               <button type="button" role="menuitem" className="design-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDesignStudioOpen(true); }} title="Create an architecture or diagram from a template">
                 <span className="create-design-menu-icon" aria-hidden="true">◇</span>
                 <span><strong>Design Studio</strong><small>Architecture and diagram templates</small></span>
