@@ -32,8 +32,19 @@ test("Workspace stylesheet is scoped and imported by the dashboard component", a
   const component = await read("../src/features/workspace/WorkspaceDashboard.jsx");
   const stylesheet = await read("../src/features/workspace/workspace.css");
   assert.match(component, /import "\.\/workspace\.css"/);
-  assert.match(stylesheet, /\.cloud-workspace\{min-height:100vh/);
+  assert.match(stylesheet, /\.cloud-workspace\{height:100vh;min-height:100vh;overflow-y:auto/);
   assert.match(stylesheet, /\.cw-layout\{display:grid/);
+});
+
+test("Cloud Workspace thumbnails use each saved diagram's elements and the dashboard remains scrollable", async () => {
+  const dashboard = await read("../src/features/workspace/WorkspaceDashboard.jsx");
+  const stylesheet = await read("../src/features/workspace/workspace.css");
+  assert.match(dashboard, /workspaceClient\.getDiagram\(diagram\.id\)/);
+  assert.match(dashboard, /<DiagramThumbnail diagram=\{\{ \.\.\.d, elements: diagramDocuments\[d\.id\] \|\| \[\] \}\} \/>/);
+  assert.match(dashboard, /element\.type === "ellipse"/);
+  assert.match(dashboard, /element\.type === "diamond"/);
+  assert.match(stylesheet, /\.cloud-workspace\{height:100vh;min-height:100vh;overflow-y:auto;overflow-x:hidden/);
+  assert.match(stylesheet, /\.cw-diagram-preview svg\{display:block;width:100%;height:100%/);
 });
 
 test("Workspace client does not depend on the separate AI service warm-up", async () => {
