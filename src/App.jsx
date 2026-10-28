@@ -1586,7 +1586,7 @@ function App() {
     type="button"
     className={devopsStudioMenuOpen ? "design-studio-header-toggle active" : "design-studio-header-toggle"}
     onClick={() => setDevopsStudioMenuOpen((open) => !open)}
-    title="Open design workspaces"
+    title="Workspaces"
     aria-label="Design Workspaces"
     aria-haspopup="menu"
     aria-expanded={devopsStudioMenuOpen}
