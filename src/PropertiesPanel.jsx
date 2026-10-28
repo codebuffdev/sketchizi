@@ -7,8 +7,15 @@ export default function PropertiesPanel({
   architectureRelationship = null, architectureRelationshipTypes = [], updateArchitectureRelationshipType = () => {},
   awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
   kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {}, kubernetesRelationshipGuidance = null,
-  readOnly = false, authorship = {}, participants = [],
+  readOnly = false, authorship = {}, participants = [], contextualSelectionElements = [],
 }) {
+  const contextualSelection = contextualSelectionElements.filter((element) => element && !element.isDeleted);
+  const hasContextualLibraryImage = contextualSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+  const hasContextualText = contextualSelection.some((element) => element.type === "text");
+  const hasContextualShapeStyle = contextualSelection.some((element) => ["rectangle", "diamond", "ellipse", "frame", "line", "arrow", "freedraw"].includes(element.type));
+  const hideContextualStrokeControls = contextualSelection.length > 0 && !hasContextualLibraryImage;
+  const hideContextualTextSize = contextualSelection.length > 0 && hasContextualText;
+  const hideContextualOpacity = contextualSelection.length > 0 && hasContextualShapeStyle && !hasContextualLibraryImage;
   return (
   <section className={`properties-panel${readOnly ? " read-only" : ""}`} aria-label="Properties and style">
     <div className="properties-header">
@@ -182,7 +189,7 @@ export default function PropertiesPanel({
 
       {hasShapeSelection && (
         <>
-          <div className="style-group">
+          {!hideContextualStrokeControls && <div className="style-group">
             <div className="style-group-label">Stroke</div>
             <div className="swatch-row">
               {[
@@ -204,9 +211,9 @@ export default function PropertiesPanel({
                 />
               ))}
             </div>
-          </div>
+          </div>}
 
-          <div className="style-group">
+          {!hideContextualStrokeControls && <div className="style-group">
             <div className="style-group-label">Background</div>
             <div className="swatch-row">
               {[
@@ -228,9 +235,9 @@ export default function PropertiesPanel({
                 >{color === "transparent" ? "" : null}</button>
               ))}
             </div>
-          </div>
+          </div>}
 
-          <div className="style-group">
+          {!hideContextualStrokeControls && <div className="style-group">
             <div className="style-group-label">Fill</div>
             <div className="style-options three">
               {[
@@ -248,9 +255,9 @@ export default function PropertiesPanel({
                 ><span>{glyph}</span></button>
               ))}
             </div>
-          </div>
+          </div>}
 
-          <div className="style-group">
+          {!hideContextualStrokeControls && <div className="style-group">
             <div className="style-group-label">Stroke width</div>
             <div className="style-options three">
               {[1, 2, 4].map((value) => (
@@ -264,7 +271,7 @@ export default function PropertiesPanel({
                 ><span className={`stroke-preview width-${value}`} /></button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {firstSelected?.type === "freedraw" && (
             <div className="style-group">
@@ -287,7 +294,7 @@ export default function PropertiesPanel({
             </div>
           )}
 
-          <div className="style-group">
+          {!hideContextualStrokeControls && <div className="style-group">
             <div className="style-group-label">Line style</div>
             <div className="style-options three">
               {[
@@ -305,7 +312,7 @@ export default function PropertiesPanel({
                 ><span>{glyph}</span></button>
               ))}
             </div>
-          </div>
+          </div>}
 
           <div className="style-group">
             <div className="style-group-label">Roughness</div>
@@ -320,7 +327,7 @@ export default function PropertiesPanel({
         </>
       )}
 
-      <div className="style-group opacity-group">
+      {!(hideContextualOpacity) && <div className="style-group opacity-group">
         <div className="property-label-line">
           <div className="style-group-label">Opacity</div>
           <span>{Math.round(firstSelected?.opacity ?? 100)}</span>
@@ -335,7 +342,7 @@ export default function PropertiesPanel({
           value={firstSelected?.opacity ?? 100}
           onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })}
         />
-      </div>
+      </div>}
     </div>
 
     {hasArrowSelection && (
@@ -372,7 +379,7 @@ export default function PropertiesPanel({
     {hasTextSelection && selectedCount === 1 && firstSelected?.type === "text" && (
       <div className="properties-section">
         <div className="properties-section-title">Text</div>
-        <div className="property-row">
+        {!hideContextualTextSize && <div className="property-row">
           <label>Font size</label>
           <input
             className="property-number"
@@ -382,7 +389,7 @@ export default function PropertiesPanel({
             value={firstSelected.fontSize || 20}
             onChange={(event) => updateSingleSelected({ fontSize: Math.max(8, Number(event.target.value) || 20) })}
           />
-        </div>
+        </div>}
         <div className="property-row">
           <label>Align</label>
           <select value={firstSelected.textAlign || "left"} onChange={(event) => updateSingleSelected({ textAlign: event.target.value })}>
