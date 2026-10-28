@@ -5,6 +5,46 @@ import { createCloudDocument, sanitizeCloudAppState } from "../src/features/work
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
+test("studio menu uses official Kubernetes and Docker brand artwork", async () => {
+  const app = await read("../src/App.jsx");
+  const kubernetes = await read("../public/icons/kubernetes.svg");
+  const docker = await read("../public/icons/docker.svg");
+  assert.match(app, /src="\/icons\/kubernetes\.svg"/);
+  assert.match(app, /src="\/icons\/docker\.svg"/);
+  assert.match(kubernetes, /<title>Kubernetes<\/title>/);
+  assert.match(kubernetes, /fill="#326ce5"/);
+  assert.match(docker, /<title>Docker<\/title>/);
+  assert.match(docker, /fill="#2496ed"/);
+  assert.doesNotMatch(kubernetes, />KUB<\/text>/);
+  assert.doesNotMatch(docker, />DOC<\/text>/);
+});
+
+test("Tool menu only contains tools not already on the dock and uses labeled SVG icons", async () => {
+  const menu = await read("../src/components/app/MoreTools.jsx");
+  const styles = await read("../src/styles/header-redesign.css");
+  assert.match(menu, /aria-label="Tool"/);
+  assert.match(menu, /className="tool-trigger-icon"/);
+  assert.match(menu, /<span>Tool<\/span>/);
+  assert.match(menu, /function ToolIcon\(/);
+  assert.match(menu, /<ToolIcon name=\{tool\} \/>/);
+  assert.match(menu, /\["image", "Insert image", "9"\]/);
+  assert.match(menu, /\["frame", "Frame tool", "F"\]/);
+  assert.match(menu, /\["embeddable", "Web Embed", ""\]/);
+  assert.match(menu, /\["laser", "Laser pointer", "K"\]/);
+  assert.match(menu, /\["lasso", "Lasso selection", ""\]/);
+  assert.doesNotMatch(menu, /Draw to shape|Bucket fill|Text to diagram|Mermaid to Excalidraw|Wireframe to code|more-tools-section-title/);
+  assert.match(styles, /content: none;/);
+});
+
+test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /className="workspaces-menu-icon"[^>]*><path d="M3\.5 7\.5h6l2 2h9/);
+  assert.match(app, /className="ai-ask-toggle-icon"[^>]*><path d="M20 11\.5a7\.5 7\.5/);
+  assert.match(app, /className="architecture-validation-toggle-icon"[^>]*><path d="M12 3 20 6/);
+  assert.doesNotMatch(app, /<span className="ai-ask-toggle-icon" aria-hidden="true">✳<\/span>/);
+  assert.doesNotMatch(app, /<span className="architecture-validation-toggle-icon">✓<\/span>/);
+});
+
 test("Cloud Workspace opens the existing sign-in dialog for anonymous or unavailable sessions", async () => {
   const source = await read("../src/main.jsx");
   const auth = await read("../src/features/auth/AuthenticationControl.jsx");
