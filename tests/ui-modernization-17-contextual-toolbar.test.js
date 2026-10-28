@@ -162,3 +162,16 @@ test('contextual toolbar clamps to viewport and scrolls its controls on narrow s
   assert.match(rules, /flex-wrap: nowrap !important/);
   assert.match(rules, /\.contextual-formatting-group > button,[\s\S]*?flex-shrink: 0 !important/);
 });
+
+
+test('text selection exposes a font-family selector in the contextual toolbar', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /aria-label="Font family"/);
+  assert.match(toolbar, /aria-label="Change font family"/);
+  assert.match(toolbar, /applyToSelected\(\{ fontFamily: Number\(event\.target\.value\) \}\)/);
+  assert.match(toolbar, /\[1, "Virgil"\]/);
+  assert.match(toolbar, /\[5, "Excalifont"\]/);
+  assert.match(toolbar, /\[9, "Liberation Sans"\]/);
+  assert.match(dockCss, /\.contextual-font-family select/);
+});
