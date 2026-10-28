@@ -56,6 +56,17 @@ test("service worker always sends Workspace API requests to the network", async 
   assert.match(source, /Personalized APIs must always reach the network/);
 });
 
+test("New file detaches from an open Cloud Workspace diagram before clearing the canvas", async () => {
+  const files = await read("../src/features/files/useFileManager.js");
+  const app = await read("../src/App.jsx");
+  assert.match(files, /dispatchEvent\(new CustomEvent\("sketchizi:detach-cloud-document"\)\)/);
+  assert.match(files, /searchParams\.delete\("cloudDiagramId"\)/);
+  assert.match(files, /searchParams\.delete\("cloudProjectId"\)/);
+  assert.match(app, /addEventListener\("sketchizi:detach-cloud-document", detachCloudDocument\)/);
+  assert.match(app, /cloudSessionRef\.current = \{ active: false, diagramId: "", projectId: "", revision: null, name: "" \}/);
+  assert.match(app, /setCloudSaveState\(\{ state: "inactive", error: "" \}\)/);
+});
+
 test("cloud diagrams open in the existing editor and autosave with revision protection", async () => {
   const app = await read("../src/App.jsx");
   const dashboard = await read("../src/features/workspace/WorkspaceDashboard.jsx");
