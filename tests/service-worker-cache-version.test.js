@@ -6,9 +6,8 @@ const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.me
 const serviceWorker = readFileSync(new URL('../public/service-worker.js', import.meta.url), 'utf8');
 
 test('service-worker application cache version matches the application version', () => {
-  assert.match(
-    serviceWorker,
-    new RegExp('const APP_CACHE = "sketchizi-v' + packageJson.version.replaceAll('.', '\\\\.') + '";'),
+  assert.ok(
+    serviceWorker.includes(`const APP_CACHE = "sketchizi-v${packageJson.version}";`),
     'Bump APP_CACHE when the app version changes so deployed clients discard stale cached assets.',
   );
 });
