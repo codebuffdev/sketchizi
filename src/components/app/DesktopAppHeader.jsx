@@ -355,9 +355,8 @@ export default function DesktopAppHeader({
         title={isCloudDocument ? "Save the current diagram to Cloud Workspace now" : "Save this drawing to Cloud Workspace"}
         aria-label={isCloudDocument ? "Save current diagram to Cloud Workspace now" : "Save drawing to Cloud Workspace"}
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 21V10m-4 4 4-4 4 4" />
-          <path d="M7 16.5H6a4 4 0 0 1-.3-8A6.5 6.5 0 0 1 18 10h.5a3.5 3.5 0 0 1 0 7H17" />
+        <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" fillRule="evenodd" aria-hidden="true">
+          <path d="M257 247 153 347 175 369 242 302 243 447 272 447 272 303 336 369 358 347Z M39 193 39 232 54 265 86 292 126 302 127 274 133 252 148 227 173 206 208 194 244 195 270 205 301 233 317 264 336 257 365 261 389 280 400 302 426 300 448 289 465 270 474 242 469 213 448 185 427 174 399 171 391 121 366 80 330 52 285 38 240 40 203 55 171 83 149 123 140 120 107 122 71 140 52 161Z" />
         </svg>
       </button>
 
