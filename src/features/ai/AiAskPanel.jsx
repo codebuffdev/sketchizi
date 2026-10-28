@@ -12,7 +12,7 @@ const STARTER_PROMPTS = [
   "What architectural risks do you see?",
   "What important components might be missing?",
 ];
-const EMPTY_STATE = { schemaVersion: 1, accountId: null, conversationId: null, messages: [], provider: "builtin", draft: "", pendingRequest: null, retryAttempt: null, newAnswerQuestion: null };
+const EMPTY_STATE = { schemaVersion: 1, accountId: null, conversationId: null, messages: [], provider: "byok", draft: "", pendingRequest: null, retryAttempt: null, newAnswerQuestion: null };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function readTranscript() {
@@ -71,7 +71,7 @@ function readTranscript() {
       accountId: typeof parsed.accountId === "string" ? parsed.accountId : null,
       conversationId: typeof parsed.conversationId === "string" ? parsed.conversationId : null,
       messages,
-      provider: parsed.provider === "byok" ? "byok" : "builtin",
+      provider: "byok",
       draft: typeof parsed.draft === "string" ? parsed.draft.slice(0, 4000) : "",
       pendingRequest,
       retryAttempt,
@@ -929,19 +929,6 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     }
   }, [apiRef, persistSketchNow, saveTimerRef, signInBusy]);
 
-  const chooseProvider = (provider) => {
-    updateChat((current) => ({ ...current, provider }));
-    setPanelError("");
-    if (provider === "byok") {
-      usageRequestSequenceRef.current += 1;
-      setUsage(null);
-      setUsageStatus("idle");
-      setUsageError("");
-    } else if (chat.conversationId && auth.user?.id) {
-      refreshUsage(chat.conversationId, auth.user.id);
-    }
-  };
-
   const updateApiKey = (value) => {
     setApiKey(value);
     setKeyApplied(false);
@@ -1014,7 +1001,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         <div className="ai-ask-signin-state">
           <div className="ai-ask-signin-icon" aria-hidden="true">✦</div>
           <h3>Sign in to use AI Ask</h3>
-          <p>AI Ask requires your existing Google sign-in for Built-in GPT-OSS 120B and BYOK. Drawing and collaboration remain available without signing in.</p>
+          <p>AI Ask requires your existing Google sign-in and your own Gemini API key (BYOK). Drawing and collaboration remain available without signing in.</p>
           <button className="ai-ask-primary" type="button" onClick={beginSignIn} disabled={signInBusy}>{signInBusy ? "Starting Sketchizi services…" : "Continue with Google"}</button>
           <p className="ai-ask-muted">Your current canvas is saved before sign-in and restored when you return.</p>
         </div>
@@ -1024,44 +1011,18 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         <>
           <div className={`ai-ask-provider-disclosure ${providerSettingsOpen ? "is-open" : ""}`}>
             <button type="button" className="ai-ask-provider-summary" aria-expanded={providerSettingsOpen} aria-controls="ai-ask-provider-settings" onClick={() => setProviderSettingsOpen((value) => !value)}>
-              <span className={`ai-ask-provider-status ${chat.provider === "byok" && !keyApplied ? "is-warning" : "is-ready"}`} aria-hidden="true">{chat.provider === "byok" && !keyApplied ? "!" : "✓"}</span>
-              <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Built-in GPT-OSS 120B"}</strong><small>{chat.provider === "byok" ? (keyApplied ? "Gemini · Key ready" : "Gemini · API key required") : "GPT-OSS 120B · Groq"}</small></span>
+              <span className={`ai-ask-provider-status ${keyApplied ? "is-ready" : "is-warning"}`} aria-hidden="true">{keyApplied ? "✓" : "!"}</span>
+              <span className="ai-ask-provider-summary-text"><strong>Bring Your Own Key (BYOK)</strong><small>{keyApplied ? "Gemini · Key ready" : "Gemini · API key required"}</small></span>
               <span className="ai-ask-provider-manage">{providerSettingsOpen ? "Done" : "Manage"}</span>
               <span className="ai-ask-provider-chevron" aria-hidden="true">⌄</span>
             </button>
             {providerSettingsOpen && <div className="ai-ask-provider-settings" id="ai-ask-provider-settings">
-              <div className="ai-ask-provider-row">
-                <label htmlFor="ai-ask-provider">Provider</label>
-                <select id="ai-ask-provider" value={chat.provider} onChange={(event) => chooseProvider(event.target.value)} disabled={busy || Boolean(pendingRequest)}>
-                  <option value="builtin">Built-in GPT-OSS 120B</option>
-                  <option value="byok">Bring Your Own Key (BYOK)</option>
-                </select>
+              <div className="ai-ask-byok-settings">
+                <label htmlFor="ai-ask-api-key">Gemini API key</label>
+                <div className="ai-ask-key-row"><input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} /><button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button></div>
+                <div className="ai-ask-key-actions"><button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button><button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button></div>
+                <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
               </div>
-              {chat.provider === "builtin" ? (
-                <div className="ai-ask-usage" aria-live="polite">
-                  {!chat.conversationId && conversationStatus === "creating" && <span>Preparing your AI conversation…</span>}
-                  {!chat.conversationId && conversationStatus === "error" && <><span>Could not prepare your AI conversation: {conversationError || "Please try again."}</span><button type="button" onClick={() => ensureConversation(auth.user.id).catch(() => {})} disabled={busy}>Retry conversation</button></>}
-                  {chat.conversationId && usageStatus === "loading" && <span>Loading usage allowance…</span>}
-                  {chat.conversationId && usageStatus === "error" && <><span>Usage allowance unavailable: {usageError || "Could not load usage."}</span><button type="button" onClick={() => refreshUsage(chat.conversationId, auth.user.id)} disabled={busy || !chat.conversationId}>Retry usage</button></>}
-                  {chat.conversationId && usageStatus === "idle" && <span>Usage allowance will load when ready.</span>}
-                  {chat.conversationId && usageStatus === "loaded" && usage && <>
-                    <span>Conversation: <strong>{usage.conversationRemaining ?? "—"}</strong> questions left</span>
-                    <span>Rolling 12 hours: <strong>{usage.accountRemaining ?? "—"}</strong> left</span>
-                    {usage.accountRemaining <= 0 && <div className="ai-ask-quota-exhausted" role="status">
-                      <strong>Built-in AI allowance exhausted</strong>
-                      <span>Your 10-question rolling 12-hour account limit has been reached. You still have questions left in this conversation, but the account limit takes priority. You can use built-in AI again when a slot becomes available.</span>
-                      {usage.nextAvailableAt && <small>Next question expected to be available: {new Date(usage.nextAvailableAt).toLocaleString()}.</small>}
-                    </div>}
-                  </>}
-                </div>
-              ) : (
-                <div className="ai-ask-byok-settings">
-                  <label htmlFor="ai-ask-api-key">Gemini API key</label>
-                  <div className="ai-ask-key-row"><input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} /><button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button></div>
-                  <div className="ai-ask-key-actions"><button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button><button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button></div>
-                  <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
-                </div>
-              )}
             </div>}
           </div>
 
@@ -1074,7 +1035,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               </div>
             ) : chat.messages.map((message, index) => (
               <article key={`${message.requestId || message.timestamp || index}-${message.role}-${index}`} className={`ai-ask-message ${message.role}`}>
-                <div className="ai-ask-message-role"><span className="ai-ask-message-author">{message.role === "user" ? "You" : <><span className="ai-ask-assistant-mark" aria-hidden="true">✳</span>{message.provider === "byok" ? "Gemini" : message.provider === "builtin" ? "GPT-OSS 120B" : (chat.provider === "byok" ? "Gemini" : "GPT-OSS 120B")}</>}</span><time>{timeLabel(message.timestamp)}</time></div>
+                <div className="ai-ask-message-role"><span className="ai-ask-message-author">{message.role === "user" ? "You" : <><span className="ai-ask-assistant-mark" aria-hidden="true">✳</span>{"AI Ask"}</>}</span><time>{timeLabel(message.timestamp)}</time></div>
                 {message.role === "assistant" ? <MarkdownResponse content={message.text} /> : <div className="ai-ask-user-text">{message.text}</div>}
                 {message.role === "assistant" && <div className="ai-ask-message-actions"><button type="button" onClick={() => copyAssistantResponse(message)} title="Copy response">{copiedMessageId === (message.messageId || message.requestId || String(message.timestamp || "response")) ? "Copied" : "Copy"}</button>{message.question && <button type="button" onClick={() => sendQuestion(message.question)} disabled={busy || Boolean(pendingRequest)} title="Generate another answer to this question">Regenerate</button>}</div>}
               </article>
@@ -1095,7 +1056,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             <textarea id="ai-ask-question" value={chat.draft} onChange={(event) => updateChat((current) => ({ ...current, draft: event.target.value.slice(0, 4000) }))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(); } }} placeholder="Ask about your diagram…" rows={3} maxLength={4000} disabled={busy || Boolean(pendingRequest) || !chat.conversationId || (chat.provider === "builtin" && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))} />
             <div className="ai-ask-composer-footer"><span>Enter to send · Shift+Enter for a new line</span><button className="ai-ask-primary" type="submit" disabled={busy || Boolean(pendingRequest) || !chat.draft.trim() || !chat.conversationId || (chat.provider === "builtin" && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))}> {busy ? "Thinking…" : "Ask"} </button></div>
           </form>
-          <div className="ai-ask-privacy-note">Diagram content and recent chat are sent to the selected AI provider ({chat.provider === "byok" ? "Gemini using your key" : "GPT-OSS 120B via Groq"}). The AI service stores usage metadata, not prompts, responses, or diagram snapshots.</div>
+          <div className="ai-ask-privacy-note">Diagram content and recent chat are sent to Gemini using your API key. The AI service stores usage metadata, not prompts, responses, or diagram snapshots.</div>
         </>
       )}
       <span className="ai-ask-sr-only" role="status">{announcement}</span>
