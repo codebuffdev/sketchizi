@@ -1,5 +1,21 @@
 const EMPTY_CANVAS_MESSAGE = "This canvas is empty. Add at least one element before saving to Cloud Workspace.";
 
+// Excalidraw appState contains runtime-only values (for example, collaborators
+// is a Map). Persist only the stable, JSON-safe presentation settings.
+export function sanitizeCloudAppState(appState = {}) {
+  const safe = {};
+  if (typeof appState.viewBackgroundColor === "string") safe.viewBackgroundColor = appState.viewBackgroundColor;
+  if (Number.isFinite(appState.scrollX)) safe.scrollX = appState.scrollX;
+  if (Number.isFinite(appState.scrollY)) safe.scrollY = appState.scrollY;
+  const zoom = Number(appState.zoom?.value ?? appState.zoom);
+  if (Number.isFinite(zoom) && zoom > 0) safe.zoom = { value: zoom };
+  if (typeof appState.gridModeEnabled === "boolean") safe.gridModeEnabled = appState.gridModeEnabled;
+  if (Number.isFinite(appState.currentItemFontFamily)) safe.currentItemFontFamily = appState.currentItemFontFamily;
+  if (Number.isFinite(appState.gridSize)) safe.gridSize = appState.gridSize;
+  if (Number.isFinite(appState.gridStep)) safe.gridStep = appState.gridStep;
+  return safe;
+}
+
 export function createCloudDocument({
   api,
   elements,
@@ -33,7 +49,7 @@ export function createCloudDocument({
 
   return {
     elements: liveElements,
-    appState: appState || api.getAppState?.() || {},
+    appState: sanitizeCloudAppState(appState || api.getAppState?.() || {}),
     files,
     metadata: metadata.metadata || {},
     extensions: metadata.extensions || {},

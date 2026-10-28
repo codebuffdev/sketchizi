@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { createCloudDocument } from "../src/features/workspace/cloudDocument.js";
+import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -155,4 +155,30 @@ test("existing cloud diagrams can still be saved after all visible elements are 
   const document = createCloudDocument({ api, allowEmpty: true });
   assert.deepEqual(document.elements, []);
   assert.deepEqual(document.files, {});
+});
+
+
+test("cloud document sanitizes Excalidraw runtime appState before persistence and restore", () => {
+  const collaborators = new Map([["user-1", { username: "Example" }]]);
+  const appState = sanitizeCloudAppState({
+    viewBackgroundColor: "#fff",
+    scrollX: 12,
+    scrollY: -8,
+    zoom: { value: 1.25 },
+    gridModeEnabled: true,
+    currentItemFontFamily: 3,
+    collaborators,
+    selectedElementIds: { element1: true },
+    openMenu: "canvas",
+  });
+  assert.deepEqual(appState, {
+    viewBackgroundColor: "#fff",
+    scrollX: 12,
+    scrollY: -8,
+    zoom: { value: 1.25 },
+    gridModeEnabled: true,
+    currentItemFontFamily: 3,
+  });
+  assert.equal(Object.hasOwn(appState, "collaborators"), false);
+  assert.equal(Object.hasOwn(appState, "selectedElementIds"), false);
 });
