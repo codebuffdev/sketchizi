@@ -33,7 +33,7 @@ function iconSelectionKey(icon) {
 }
 
 function SourceCategoryIcon({ id }) {
-  const common = { viewBox: "0 0 20 20", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" };
+  const common = { viewBox: "0 0 20 20", width: 21, height: 21, fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" };
   switch (id) {
     case "all":
       return <svg {...common}><rect x="3" y="3" width="5" height="5" rx="1" /><rect x="12" y="3" width="5" height="5" rx="1" /><rect x="3" y="12" width="5" height="5" rx="1" /><rect x="12" y="12" width="5" height="5" rx="1" /></svg>;
@@ -176,13 +176,13 @@ export default function IconLibraryPanel({
     || null;
   const activeChip = activeSource;
   const sourceTabs = [
-    { id: "all", label: "All" },
-    { id: "eraser", label: "Essentials" },
-    { id: "aws", label: "AWS" },
-    { id: "kubernetes", label: "Kubernetes" },
     { id: "networking", label: "Networking" },
-    { id: "uml", label: "UML" },
+    { id: "kubernetes", label: "Kubernetes" },
     { id: "mindmaps", label: "Mind Maps" },
+    { id: "uml", label: "UML" },
+    { id: "eraser", label: "Essentials" },
+    { id: "all", label: "All" },
+    { id: "aws", label: "AWS" },
   ];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
