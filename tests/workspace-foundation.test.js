@@ -54,3 +54,17 @@ test("service worker always sends Workspace API requests to the network", async 
   assert.match(source, /"\/api\/workspace"/);
   assert.match(source, /Personalized APIs must always reach the network/);
 });
+
+test("cloud diagrams open in the existing editor and autosave with revision protection", async () => {
+  const app = await read("../src/App.jsx");
+  const dashboard = await read("../src/features/workspace/WorkspaceDashboard.jsx");
+  const client = await read("../src/features/workspace/workspaceClient.js");
+  assert.match(app, /cloudDiagramId/);
+  assert.match(app, /workspaceClient\.getDiagram\(cloudDiagramId\)/);
+  assert.match(app, /workspaceClient\.saveDiagram\(session\.diagramId, revision, document\)/);
+  assert.match(app, /Saving to Cloud Workspace/);
+  assert.match(dashboard, /cloudDiagramId=/);
+  assert.doesNotMatch(dashboard, /Cloud editor integration is the next phase/);
+  assert.match(client, /saveDiagram: \(diagramId, revision, document\)/);
+  assert.match(client, /"if-match": String\(revision\)/);
+});
