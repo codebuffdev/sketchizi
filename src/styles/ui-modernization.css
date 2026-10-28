@@ -369,6 +369,14 @@
     transition: background-color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
   }
 
+  .app .desktop-app-save-to-cloud-button.is-icon-only {
+    width: 36px;
+    min-width: 36px;
+    justify-content: center;
+    gap: 0;
+    padding-inline: 0;
+  }
+
   .app .desktop-app-start-collaboration-button:hover {
     border-color: #594ac4;
     background: #594ac4;
