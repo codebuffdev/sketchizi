@@ -6,3 +6,6 @@
 .cloud-editor-save-status-error{border-color:#854047;color:#ffc7cd}
 .cloud-editor-save-status-conflict{border-color:#9a6a32;color:#ffe0b2}
 @media(max-width:600px){.cloud-editor-save-status{top:auto;right:8px;bottom:8px;left:8px;justify-content:space-between;max-width:none}}
+
+/* Routine cloud-save states stay out of the toolbar; only actionable failures are surfaced. */
+.cloud-editor-save-status:not(.cloud-editor-save-status-error):not(.cloud-editor-save-status-conflict){display:none!important}
