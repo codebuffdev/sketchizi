@@ -406,8 +406,10 @@ export default function DesktopAppHeader({
           aria-label={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
           title={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
         >
-          <svg className="desktop-app-start-collaboration-icon" viewBox="0 0 512 512" width="17" height="17" fill="currentColor" fillRule="evenodd" aria-hidden="true">
-            <path d="M159 385 167 374 176 369 190 369 203 377 213 373 214 310 258 310 257 333 263 348 274 359 294 366 310 364 331 348 337 334 336 310 380 310 381 477 215 478 212 413 203 411 189 419 172 417 160 405Z M106 256 124 256 138 269 140 286 131 301 134 309 198 311 198 355 180 353 162 359 151 369 143 387 145 408 157 425 176 434 198 433 197 478 31 477 31 311 95 309 98 301 90 288 89 277 94 265Z M31 129 197 128 199 191 207 195 224 186 241 189 252 201 252 222 245 231 233 237 220 236 208 228 199 232 197 295 154 295 155 273 149 258 140 248 123 240 103 241 85 252 75 270 76 295 32 295Z M19 114 16 118 17 489 23 493 392 492 396 487 395 299 390 295 317 296 314 305 323 324 320 337 307 349 287 349 272 332 272 319 280 306 277 296 213 294 213 251 234 252 253 244 267 225 269 207 261 187 247 175 234 171 213 172 213 117 209 113Z M436 35 478 197 419 212 415 221 428 236 429 255 416 270 399 272 390 268 380 255 383 228 379 224 319 238 315 236 305 195 324 192 342 179 350 162 349 141 342 128 326 116 305 113 287 120 275 77Z M444 18 264 63 259 67 276 140 285 143 296 132 314 128 324 132 335 147 334 163 324 175 315 179 292 175 287 179 302 246 308 255 363 242 367 263 378 278 397 287 416 286 431 278 443 261 445 241 438 224 494 207 495 200 450 23Z" />
+          <svg className="desktop-app-start-collaboration-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
           <span className="desktop-app-start-collaboration-label">{collaborationCreationState === "creating" ? "Creating…" : "Collab"}</span>
         </button>
