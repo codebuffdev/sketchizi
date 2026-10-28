@@ -49,6 +49,7 @@ import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 import "./features/design/design.css";
+import { useCloudWorkspaceSync } from "./features/workspace/useCloudWorkspaceSync.js";
 
 function App() {
   const iconCatalog = useIconCatalog();
@@ -151,7 +152,13 @@ function App() {
 
   const documentMetadataRef = useRef({ metadata: {}, extensions: {}, format: "excalidraw" });
   const persistence = useSketchPersistence({ apiRef, documentMetadataRef });
-  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave: queueLocalSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const cloudSync = useCloudWorkspaceSync({ apiRef, documentMetadataRef });
+  const cloudSaveStatus = cloudSync.state;
+  const queueSketchSave = useCallback((elements, appState) => {
+    queueLocalSketchSave(elements, appState);
+    cloudSync.queueCloudSave(elements, appState);
+  }, [queueLocalSketchSave, cloudSync.queueCloudSave]);
 
   const createDesignFromStudio = useCallback(({ templateId, name, ruleMode = "guided", templateOptions = {} }) => {
     const api = apiRef.current;
@@ -1417,6 +1424,9 @@ function App() {
         setThemeMode={setThemeMode}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
+        cloudSaveStatus={cloudSaveStatus}
+        onRetryCloudSave={cloudSync.retryCloudSave}
+        onOpenWorkspace={() => window.location.assign("/workspace")}
         currentDocumentName={currentFile?.name || "Untitled drawing"}
         currentDocumentDirty={documentDirty}
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
