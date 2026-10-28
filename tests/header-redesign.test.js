@@ -23,6 +23,12 @@ test("Workspaces is the first header control before the hamburger menu", async (
   assert.ok(header.indexOf("{workspaceToggle}") < header.indexOf('className={nativeMenuOpen ? "desktop-app-menu-trigger'));
 });
 
+test("header Tool menu is positioned relative to its trigger so it remains visible", async () => {
+  const styles = await read("../src/styles/header-redesign.css");
+  assert.match(styles, /\.desktop-app-header-actions \.sketchizi-more-tools-menu\s*\{\s*position:\s*absolute;/);
+  assert.match(styles, /\.desktop-app-header-actions \.sketchizi-more-tools-header\s*\{[\s\S]*?position:\s*relative;/);
+});
+
 test("Tool control is placed beside command search, outside the feature action group", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const actions = header.indexOf('<div className="desktop-app-header-actions">');
