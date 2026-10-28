@@ -94,7 +94,7 @@ function SourceCategoryIcon({ id }) {
     case "eraser":
       return <svg {...common}><path d="M12 2.5 15 8l6 1-4.3 4.2 1 6-5.7-3-5.7 3 1-6L3 9l6-1 3-5.5Z" /><path d="M8 21h13" /></svg>;
     case "all":
-      return <svg {...common}><path d="M20.5 8A9 9 0 0 0 5 5.5L3 8" /><path d="M3 3v5h5M3.5 16A9 9 0 0 0 19 18.5l2-2" /><path d="M21 21v-5h-5" /></svg>;
+      return <svg {...common}><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="14" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="3.5" y="14" width="6.5" height="6.5" rx="1" /><rect x="14" y="14" width="6.5" height="6.5" rx="1" /></svg>;
     default:
       return null;
   }
