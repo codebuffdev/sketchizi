@@ -222,3 +222,15 @@ test('duplicate suppression falls back to panel selection flags and preserves im
   assert.match(panel, /const hideContextualTextSize = hasContextualText/);
   assert.match(panel, /const hideContextualOpacity = hasContextualShapeStyle && !hasOnlyContextualImages/);
 });
+
+
+test('More opens the full Properties formatting controls while the compact toolbar stays available', () => {
+  const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const panel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
+  assert.match(app, /onOpenProperties=\{\(\) => openPanel\("properties"\)\}/);
+  assert.match(app, /showFullFormatting=\{propertiesOpen\}/);
+  assert.match(panel, /showFullFormatting = false/);
+  assert.match(panel, /!showFullFormatting && hasContextualStyleSelection/);
+  assert.match(panel, /!showFullFormatting && hasContextualText/);
+  assert.match(panel, /!showFullFormatting && hasContextualShapeStyle/);
+});
