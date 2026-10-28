@@ -18,6 +18,7 @@ export function useCloudWorkspaceSync({ apiRef, documentMetadataRef }) {
   const sequenceRef = useRef(0);
   const timerRef = useRef(null);
   const savingRef = useRef(false);
+  const blockedRef = useRef(false);
   const readyRef = useRef(false);
   const [state, setState] = useState({
     enabled: Boolean(diagramId), status: diagramId ? "loading" : "local",
@@ -65,6 +66,7 @@ export function useCloudWorkspaceSync({ apiRef, documentMetadataRef }) {
       }
     } catch (error) {
       latestSnapshotRef.current = latestSnapshotRef.current || snapshot;
+      blockedRef.current = true;
       setState((current) => ({
         ...current,
         status: error.code === "revision_conflict" ? "conflict" : "error",
@@ -72,7 +74,7 @@ export function useCloudWorkspaceSync({ apiRef, documentMetadataRef }) {
       }));
     } finally {
       savingRef.current = false;
-      if (latestSnapshotRef.current && readyRef.current) {
+      if (latestSnapshotRef.current && readyRef.current && !blockedRef.current) {
         clearTimer();
         timerRef.current = window.setTimeout(() => { timerRef.current = null; flush(); }, DEBOUNCE_MS);
       }
@@ -118,6 +120,7 @@ export function useCloudWorkspaceSync({ apiRef, documentMetadataRef }) {
     // Excalidraw can emit a transient empty scene during initialization. Keep a
     // previously non-empty cloud document intact during the initial restore window.
     if (baselineVisibleCountRef.current > 0 && visibleCount === 0 && Date.now() - loadedAtRef.current < 2000) return;
+    blockedRef.current = false;
     sequenceRef.current += 1;
     latestSnapshotRef.current = {
       sequence: sequenceRef.current,
@@ -145,6 +148,7 @@ export function useCloudWorkspaceSync({ apiRef, documentMetadataRef }) {
 
   const retryCloudSave = useCallback(() => {
     if (!diagramId || !latestSnapshotRef.current || !readyRef.current) return;
+    blockedRef.current = false;
     clearTimer();
     timerRef.current = window.setTimeout(() => { timerRef.current = null; flush(); }, 0);
   }, [clearTimer, diagramId, flush]);
