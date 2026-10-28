@@ -1898,13 +1898,13 @@
    All, AWS; the component maps categories to their matching tile. */
 .app .library-panel-redesign .library-source-art {
   display: block;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
   background-image: url("/icons/category-icons.png");
   background-repeat: no-repeat;
-  background-size: 196px 28px;
-  background-position: calc(var(--category-icon-index) * -28px) 0;
+  background-size: 168px 24px;
+  background-position: calc(var(--category-icon-index) * -24px) 0;
 }
 .app .library-panel-redesign .library-source-chip-networking .library-source-art,
 .app .library-panel-redesign .library-source-chip-kubernetes .library-source-art,
