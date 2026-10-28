@@ -32,6 +32,28 @@ function iconSelectionKey(icon) {
   return `${icon?.source || icon?.catalog || "local"}:${icon?.category || ""}:${icon?.id || icon?.name || ""}`;
 }
 
+function SourceCategoryIcon({ id }) {
+  const common = { viewBox: "0 0 20 20", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" };
+  switch (id) {
+    case "all":
+      return <svg {...common}><rect x="3" y="3" width="5" height="5" rx="1" /><rect x="12" y="3" width="5" height="5" rx="1" /><rect x="3" y="12" width="5" height="5" rx="1" /><rect x="12" y="12" width="5" height="5" rx="1" /></svg>;
+    case "eraser":
+      return <svg {...common}><path d="m10 2 2.1 5.1L17 9l-4.9 1.9L10 16l-2.1-5.1L3 9l4.9-1.9L10 2Z" /><path d="m16.5 12.5.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" /></svg>;
+    case "aws":
+      return <svg {...common}><path d="M3 7.5 10 3l7 4.5v6L10 18l-7-4.5v-6Z" /><path d="M6 9.5h8M6 12h8M7.5 7.5v7M12.5 7.5v7" /></svg>;
+    case "kubernetes":
+      return <svg {...common}><path d="m10 2.2 6.8 3.9v7.8L10 17.8l-6.8-3.9V6.1L10 2.2Z" /><circle cx="10" cy="10" r="2.3" /><path d="M10 5.2v2.4M10 12.4v2.4M5.8 7.6l2.1 1.2M12.1 11.2l2.1 1.2M14.2 7.6l-2.1 1.2M7.9 11.2l-2.1 1.2" /></svg>;
+    case "networking":
+      return <svg {...common}><circle cx="10" cy="4" r="2" /><circle cx="4" cy="15" r="2" /><circle cx="16" cy="15" r="2" /><circle cx="10" cy="11" r="2" /><path d="m9 5.8-3.8 7.3M11 5.8l3.8 7.3M6 15h8" /></svg>;
+    case "uml":
+      return <svg {...common}><path d="m10 2.5 7.5 7.5-7.5 7.5L2.5 10 10 2.5Z" /><path d="M7 8h6v4H7zM8.5 6v2M11.5 6v2M8.5 12v2M11.5 12v2" /></svg>;
+    case "mindmaps":
+      return <svg {...common}><circle cx="10" cy="10" r="2.3" /><circle cx="4" cy="4" r="1.7" /><circle cx="16" cy="4" r="1.7" /><circle cx="4" cy="16" r="1.7" /><circle cx="16" cy="16" r="1.7" /><path d="m8.4 8.4-3-3M11.6 8.4l3-3M8.4 11.6l-3 3M11.6 11.6l3 3" /></svg>;
+    default:
+      return null;
+  }
+}
+
 export default function IconLibraryPanel({
   searchRef, search, setSearch, activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, favorites, recentIcons,
   eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
@@ -178,7 +200,7 @@ export default function IconLibraryPanel({
 
         <div className="library-filter-row">
           <nav className="library-source-tabs" aria-label="Icon collections">
-            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.id === "eraser" && <svg className="library-source-chip-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2 8 1.5Z" /><path d="m12.4 1 .7 1.9L15 3.6l-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" /></svg>}{tab.label}</button>)}          </nav>
+            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-label={tab.label} title={tab.label} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}><SourceCategoryIcon id={tab.id} /><span className="library-source-chip-label">{tab.label}</span></button>)}</nav>
         </div>
         {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
           <div className="library-recent-heading"><span>Recent searches</span><button type="button" onClick={() => setRecentSearches([])}>Clear all</button></div>
