@@ -33,25 +33,16 @@ function iconSelectionKey(icon) {
 }
 
 function SourceCategoryIcon({ id }) {
-  const common = { viewBox: "0 0 20 20", width: 21, height: 21, fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" };
-  switch (id) {
-    case "all":
-      return <svg {...common}><rect x="3" y="3" width="5" height="5" rx="1" /><rect x="12" y="3" width="5" height="5" rx="1" /><rect x="3" y="12" width="5" height="5" rx="1" /><rect x="12" y="12" width="5" height="5" rx="1" /></svg>;
-    case "eraser":
-      return <svg {...common}><path d="m10 2 2.1 5.1L17 9l-4.9 1.9L10 16l-2.1-5.1L3 9l4.9-1.9L10 2Z" /><path d="m16.5 12.5.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" /></svg>;
-    case "aws":
-      return <img className="library-source-brand-icon library-source-brand-icon-aws" src="/icons/aws.svg" alt="" aria-hidden="true" />;
-    case "kubernetes":
-      return <img className="library-source-brand-icon library-source-brand-icon-kubernetes" src="/icons/k8s-kubernetes.svg" alt="" aria-hidden="true" />;
-    case "networking":
-      return <img className="library-source-brand-icon library-source-brand-icon-networking" src="/icons/net-internet.svg" alt="" aria-hidden="true" />;
-    case "uml":
-      return <svg {...common}><path d="m10 2.5 7.5 7.5-7.5 7.5L2.5 10 10 2.5Z" /><path d="M7 8h6v4H7zM8.5 6v2M11.5 6v2M8.5 12v2M11.5 12v2" /></svg>;
-    case "mindmaps":
-      return <svg {...common}><circle cx="10" cy="10" r="2.3" /><circle cx="4" cy="4" r="1.7" /><circle cx="16" cy="4" r="1.7" /><circle cx="4" cy="16" r="1.7" /><circle cx="16" cy="16" r="1.7" /><path d="m8.4 8.4-3-3M11.6 8.4l3-3M8.4 11.6l-3 3M11.6 11.6l3 3" /></svg>;
-    default:
-      return null;
-  }
+  const positions = {
+    all: 5,
+    eraser: 4,
+    aws: 6,
+    kubernetes: 1,
+    networking: 0,
+    uml: 3,
+    mindmaps: 2,
+  };
+  return <span className={`library-source-art library-source-art-${id}`} style={{ "--category-icon-index": positions[id] }} aria-hidden="true" />;
 }
 
 export default function IconLibraryPanel({
@@ -176,13 +167,13 @@ export default function IconLibraryPanel({
     || null;
   const activeChip = activeSource;
   const sourceTabs = [
-    { id: "networking", label: "Networking" },
-    { id: "kubernetes", label: "Kubernetes" },
-    { id: "mindmaps", label: "Mind Maps" },
-    { id: "uml", label: "UML" },
-    { id: "eraser", label: "Essentials" },
     { id: "all", label: "All" },
+    { id: "eraser", label: "Essentials" },
     { id: "aws", label: "AWS" },
+    { id: "kubernetes", label: "Kubernetes" },
+    { id: "networking", label: "Networking" },
+    { id: "uml", label: "UML" },
+    { id: "mindmaps", label: "Mind Maps" },
   ];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
