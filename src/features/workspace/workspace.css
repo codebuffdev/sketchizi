@@ -4,4 +4,5 @@
 .cloud-editor-save-status button:hover{background:#313b4e}
 .cloud-editor-save-status-saved{border-color:#285b4b;color:#b9ead6}
 .cloud-editor-save-status-error{border-color:#854047;color:#ffc7cd}
+.cloud-editor-save-status-conflict{border-color:#9a6a32;color:#ffe0b2}
 @media(max-width:600px){.cloud-editor-save-status{top:auto;right:8px;bottom:8px;left:8px;justify-content:space-between;max-width:none}}
