@@ -62,9 +62,9 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(app, /cloudDiagramId/);
   assert.match(app, /workspaceClient\.getDiagram\(cloudDiagramId\)/);
   assert.match(app, /workspaceClient\.saveDiagram\(session\.diagramId, revision, document\)/);
-  assert.match(app, /error\\?\\.status === 409 \\|\\| error\\?\\.status === 412/);
-  assert.match(app, /state: conflict \\? "conflict" : "error"/);
-  assert.match(app, />Reload latest version<\\/button>/);
+  assert.ok(app.includes("error?.status === 409 || error?.status === 412"));
+  assert.ok(app.includes('state: conflict ? "conflict" : "error"'));
+  assert.ok(app.includes(">Reload latest version</button>"));
   assert.match(app, /Saving to Cloud Workspace/);
   assert.match(app, />Retry save<\/button>/);
   assert.match(app, />Download backup<\/button>/);
