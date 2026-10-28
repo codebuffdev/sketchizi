@@ -196,3 +196,9 @@ test("Icon collection filters use compact icon-only buttons with accessible name
   assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip-label\s*\{[\s\S]*?clip:\s*rect\(0, 0, 0, 0\)/);
   assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip svg\s*\{[\s\S]*?width:\s*18px/);
 });
+
+
+test("active Icon Library category filters use neutral meta colors instead of purple", () => {
+  assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip\.active,[\s\S]*?background-image:\s*none !important;[\s\S]*?color:\s*#f1f4fa !important/);
+  assert.match(styles, /\.app\.theme-light \.library-panel-redesign \.library-source-chip\.active,[\s\S]*?background:\s*#e3e7ee !important;[\s\S]*?color:\s*#343b49 !important/);
+});
