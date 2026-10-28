@@ -50,7 +50,7 @@ export default function WorkspaceEntryGate() {
           metadata: document.metadata || {},
           extensions: document.extensions || {},
           format: diagram.format || document.format || "excalidraw",
-        });
+        }, `workspace:${diagramId}`);
         if (!cancelled) setEntry({ status: "ready", page: "editor", user: null, error: "" });
       }).catch((error) => {
         if (!cancelled) setEntry({ status: "error", page: "editor", user: null, error: error.message || "Could not load this cloud diagram." });
