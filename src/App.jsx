@@ -1583,7 +1583,20 @@ function App() {
             propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
-            onOpenProperties={() => openPanel("properties")}
+            onOpenProperties={() => {
+               const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
+               if (selectedIds.length && apiRef.current?.updateScene) {
+                 apiRef.current.updateScene({
+                   appState: {
+                     selectedElementIds: Object.fromEntries(selectedIds.map((id) => [id, true])),
+                     selectedGroupIds: {},
+                     selectedGroupForOperation: null,
+                   },
+                   captureUpdate: CaptureUpdateAction.NEVER,
+                 });
+               }
+               openPanel("properties");
+             }}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
             gridVisible={gridVisible}
