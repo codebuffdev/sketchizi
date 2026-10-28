@@ -81,7 +81,8 @@
     "compose-runner": "node server/compose-runner.mjs",
     "test:compose-runner": "node --test tests/compose-runner.test.js",
     "test:kubernetes-studio-workflow": "node --test tests/kubernetes-studio-integrated-workflow.test.js tests/kubernetes-studio-browser-renderer.test.js tests/kubernetes-studio-helm-template-coverage.test.js tests/kubernetes-studio-bundle-import.test.js tests/kubernetes-resource-validation.test.js tests/kubernetes-relationships.test.js",
-    "test:kubernetes-diagnostic-fixes": "node --test tests/kubernetes-diagnostic-fixes.test.js tests/kubernetes-relationships.test.js tests/kubernetes-validation-guidance.test.js"
+    "test:kubernetes-diagnostic-fixes": "node --test tests/kubernetes-diagnostic-fixes.test.js tests/kubernetes-relationships.test.js tests/kubernetes-validation-guidance.test.js",
+    "test:workspace-gateway": "node --test tests/workspace-gateway.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
