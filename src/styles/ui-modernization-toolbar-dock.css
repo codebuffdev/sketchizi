@@ -1152,3 +1152,58 @@
   width: max-content !important;
   min-width: max-content !important;
 }
+
+
+/* Compact font-family selector shown only when text is selected. */
+.app .contextual-formatting-toolbar .contextual-font-family {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 0 4px !important;
+  color: var(--contextual-ink, #20242c) !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-font-family select {
+  box-sizing: border-box !important;
+  width: 112px !important;
+  max-width: 112px !important;
+  height: 30px !important;
+  padding: 0 22px 0 7px !important;
+  border: 1px solid rgb(100 116 139 / 55%) !important;
+  border-radius: 5px !important;
+  background: rgb(100 116 139 / 10%) !important;
+  color: inherit !important;
+  font: inherit !important;
+  font-size: 11px !important;
+  cursor: pointer !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-font-family select:focus-visible {
+  outline: 2px solid #a78bfa !important;
+  outline-offset: 1px !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-font-family,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-font-family,
+.app.theme-dark .contextual-formatting-toolbar .contextual-font-family,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-font-family {
+  color: #f8fafc !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-font-family select,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-font-family select,
+.app.theme-dark .contextual-formatting-toolbar .contextual-font-family select,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-font-family select {
+  background: #20242c !important;
+  border-color: rgb(226 232 240 / 35%) !important;
+  color: #f8fafc !important;
+}
+
+@media (max-width: 480px) {
+  .app .contextual-formatting-toolbar .contextual-font-family select {
+    width: 96px !important;
+    max-width: 96px !important;
+  }
+}
