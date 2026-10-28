@@ -4,10 +4,47 @@ import "./workspace.css";
 
 const dateLabel = (value) => value ? new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Recently";
 
+function DiagramThumbnail({ diagram }) {
+  const elements = Array.isArray(diagram?.elements)
+    ? diagram.elements.filter((element) => element && !element.isDeleted && Number.isFinite(element.x) && Number.isFinite(element.y))
+    : [];
+  if (!elements.length) {
+    return <div className="cw-diagram-preview cw-diagram-preview-empty" aria-label="Empty diagram"><span className="cw-preview-empty-mark">◇</span></div>;
+  }
+  const bounds = elements.reduce((box, element) => ({
+    minX: Math.min(box.minX, element.x),
+    minY: Math.min(box.minY, element.y),
+    maxX: Math.max(box.maxX, element.x + Math.max(1, Number(element.width) || 1)),
+    maxY: Math.max(box.maxY, element.y + Math.max(1, Number(element.height) || 1)),
+  }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+  const width = Math.max(1, bounds.maxX - bounds.minX);
+  const height = Math.max(1, bounds.maxY - bounds.minY);
+  const pad = Math.max(width, height) * 0.08;
+  return <div className="cw-diagram-preview" aria-label={`Preview of ${diagram.name || "diagram"}`}>
+    <svg viewBox={`${bounds.minX - pad} ${bounds.minY - pad} ${width + pad * 2} ${height + pad * 2}`} role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+      {elements.map((element) => {
+        const x = element.x;
+        const y = element.y;
+        const w = Math.max(1, Number(element.width) || 1);
+        const h = Math.max(1, Number(element.height) || 1);
+        const stroke = element.strokeColor || "#9d91ff";
+        const fill = element.backgroundColor && element.backgroundColor !== "transparent" ? element.backgroundColor : "#242339";
+        const common = { key: element.id, stroke, strokeWidth: Math.max(0.5, Math.min(3, Number(element.strokeWidth) || 1)), fill, opacity: element.opacity == null ? 1 : element.opacity / 100 };
+        if (element.type === "ellipse") return <ellipse {...common} cx={x + w / 2} cy={y + h / 2} rx={w / 2} ry={h / 2} />;
+        if (element.type === "diamond") return <polygon {...common} points={`${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}`} />;
+        if (["line", "arrow"].includes(element.type)) return <line {...common} x1={x} y1={y} x2={x + (Number(element.width) || 0)} y2={y + (Number(element.height) || 0)} fill="none" />;
+        if (["rectangle", "image", "text", "freedraw", "frame"].includes(element.type)) return <rect {...common} x={x} y={y} width={w} height={h} rx={element.roundness ? 3 : 0} />;
+        return <rect {...common} x={x} y={y} width={w} height={h} rx="2" />;
+      })}
+    </svg>
+  </div>;
+}
+
 export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   const [projects, setProjects] = useState([]);
   const [activeId, setActiveId] = useState("");
   const [diagrams, setDiagrams] = useState([]);
+  const [diagramDocuments, setDiagramDocuments] = useState({});
   const [limits, setLimits] = useState({ diagramCount: 0, diagramLimit: 3, admin: false });
   const [loading, setLoading] = useState(true);
   const [diagramLoading, setDiagramLoading] = useState(false);
@@ -75,6 +112,27 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
       await reloadProjects(active.id); setNotice("Diagram created. Open it to begin editing.");
     } catch (e) { setError(e.message || "Could not create diagram."); } finally { setBusy(false); }
   };
+  useEffect(() => {
+    let cancelled = false;
+    if (!diagrams.length) {
+      setDiagramDocuments({});
+      return undefined;
+    }
+    Promise.all(diagrams.map(async (diagram) => {
+      try {
+        const result = await workspaceClient.getDiagram(diagram.id);
+        const record = result?.diagram || result;
+        const document = record?.document || record?.content;
+        return [diagram.id, Array.isArray(document?.elements) ? document.elements : []];
+      } catch {
+        return [diagram.id, []];
+      }
+    })).then((entries) => {
+      if (!cancelled) setDiagramDocuments(Object.fromEntries(entries));
+    });
+    return () => { cancelled = true; };
+  }, [diagrams]);
+
   const renameProject = async (p) => {
     const name = window.prompt("Project name", p.name); if (name === null || !name.trim() || name.trim() === p.name) return;
     setBusy(true); setError("");
@@ -110,7 +168,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
         <aside className="cw-project-list" aria-label="Projects">{filtered.map((p) => <article className={p.id === activeId ? "cw-project is-active" : "cw-project"} key={p.id}><button className="cw-project-select" onClick={() => setActiveId(p.id)}><span className="cw-project-icon">▦</span><span><b>{p.name}</b><small>{p.diagramCount ?? 0} diagrams · {dateLabel(p.updatedAt)}</small></span></button><div className="cw-project-actions"><button disabled={busy} onClick={() => renameProject(p)}>Rename</button><button disabled={busy} onClick={() => deleteProject(p)}>Delete</button></div></article>)}{!filtered.length && <p className="cw-muted">No matching projects.</p>}</aside>
         <section className="cw-diagrams">{active ? <><div className="cw-diagram-heading"><div><div className="cw-eyebrow">PROJECT</div><h2>{active.name}</h2><p>{active.description || "Diagrams in this project"}</p></div><button className="cw-button cw-primary" disabled={busy || (!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3))} title={!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3) ? "Delete a diagram to create another" : undefined} onClick={() => setDiagramForm(!diagramForm)}>+ New diagram</button></div>
           {diagramForm && <form className="cw-form" onSubmit={createDiagram}><label htmlFor="cw-diagram-name">Diagram name</label><input id="cw-diagram-name" autoFocus maxLength={120} required value={diagramName} onChange={(e) => setDiagramName(e.target.value)} placeholder="e.g. System overview"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setDiagramForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create diagram"}</button></div></form>}
-          {diagramLoading ? <div className="cw-loading">Loading diagrams…</div> : diagrams.length ? <div className="cw-diagram-grid">{diagrams.map((d) => <article className="cw-diagram-card" key={d.id}><div className="cw-diagram-preview"><span/><i/><span/></div><div className="cw-diagram-body"><b>{d.name}</b><small>{d.format} · {dateLabel(d.updatedAt)}</small><div className="cw-diagram-actions"><button disabled={busy} onClick={() => window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`)}>Open</button><button disabled={busy} onClick={() => diagramAction(d,"rename")}>Rename</button><button disabled={busy} onClick={() => diagramAction(d,"duplicate")}>Duplicate</button><button disabled={busy} onClick={() => diagramAction(d,"delete")}>Delete</button></div></div></article>)}</div> : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No diagrams yet</h3><p>Create a diagram to start building this project.</p><button className="cw-button cw-quiet" onClick={() => setDiagramForm(true)}>Create diagram</button></div>}
+          {diagramLoading ? <div className="cw-loading">Loading diagrams…</div> : diagrams.length ? <div className="cw-diagram-grid">{diagrams.map((d) => <article className="cw-diagram-card" key={d.id}><DiagramThumbnail diagram={{ ...d, elements: diagramDocuments[d.id] || [] }} /><div className="cw-diagram-body"><b>{d.name}</b><small>{d.format} · {dateLabel(d.updatedAt)}</small><div className="cw-diagram-actions"><button disabled={busy} onClick={() => window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`)}>Open</button><button disabled={busy} onClick={() => diagramAction(d,"rename")}>Rename</button><button disabled={busy} onClick={() => diagramAction(d,"duplicate")}>Duplicate</button><button disabled={busy} onClick={() => diagramAction(d,"delete")}>Delete</button></div></div></article>)}</div> : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No diagrams yet</h3><p>Create a diagram to start building this project.</p><button className="cw-button cw-quiet" onClick={() => setDiagramForm(true)}>Create diagram</button></div>}
         </> : <div className="cw-empty cw-empty-small"><h3>Select a project</h3></div>}</section></div>}
       <footer className="cw-footnote"><span/> Cloud storage · PostgreSQL · Private to your account</footer>
     </section>
