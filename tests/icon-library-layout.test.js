@@ -187,12 +187,13 @@ test("Icon collection filters use compact icon-only buttons with accessible name
   assert.match(panel, /function SourceCategoryIcon\(\{ id \}\)/);
   assert.match(panel, /aria-label=\{tab\.label\} title=\{tab\.label\}/);
   assert.match(panel, /<SourceCategoryIcon id=\{tab\.id\} \/>/);
-  assert.match(panel, /library-source-art-\$\{id\}/);
-  assert.match(styles, /background-image:\s*url\("\/icons\/category-icons\.png"\)/);
+  assert.match(panel, /case "networking":[\s\S]*?circle cx="12" cy="12"/);
+  assert.match(panel, /src="\/icons\/aws\.svg"/);
+  assert.match(panel, /src="\/icons\/k8s-kubernetes\.svg"/);
   assert.match(panel, /className="library-source-chip-label"/);
   assert.match(styles, /\.app \.library-panel-redesign \.library-source-tabs\s*\{\s*display:\s*flex;\s*flex-wrap:\s*nowrap;/);
   assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip-label\s*\{[\s\S]*?clip:\s*rect\(0, 0, 0, 0\)/);
-  assert.match(styles, /\.app \.library-panel-redesign \.library-source-art\s*\{[\s\S]*?width:\s*24px;[\s\S]*?height:\s*24px;[\s\S]*?background-size:\s*168px 24px/);
+  assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip > svg\s*\{[\s\S]*?width:\s*21px;[\s\S]*?height:\s*21px;/);
 });
 
 
@@ -209,7 +210,7 @@ test("category icons follow the requested order and render 15 percent larger", a
   const end = component.indexOf("];", start);
   const tabs = component.slice(start, end);
   const ids = [...tabs.matchAll(/\{ id: "([^"]+)", label:/g)].map((match) => match[1]);
-  assert.deepEqual(ids, ["all", "eraser", "aws", "kubernetes", "networking", "uml", "mindmaps"]);
-  assert.match(component, /library-source-art/);
-  assert.match(styles, /background-size:\s*168px 24px/);
+  assert.deepEqual(ids, ["aws", "networking", "kubernetes", "mindmaps", "uml", "eraser", "all"]);
+  assert.match(component, /width: 21, height: 21/);
+  assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip > svg\s*\{[\s\S]*?width:\s*21px/);
 });
