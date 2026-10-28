@@ -79,28 +79,6 @@ function iconSelectionKey(icon) {
   return `${icon?.source || icon?.catalog || "local"}:${icon?.category || ""}:${icon?.id || icon?.name || ""}`;
 }
 
-function SourceCategoryIcon({ id }) {
-  const common = { viewBox: "0 0 24 24", width: 21, height: 21, fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" };
-  switch (id) {
-    case "aws":
-      return <img className="library-source-brand-icon library-source-brand-icon-aws" src="/icons/aws.svg" alt="" aria-hidden="true" />;
-    case "networking":
-      return <svg {...common}><circle cx="12" cy="12" r="3.3" fill="currentColor" /><circle cx="5" cy="5" r="2.2" /><circle cx="19" cy="5" r="2.2" /><circle cx="5" cy="19" r="2.2" /><circle cx="19" cy="19" r="2.2" /><path d="m9.7 9.7-3.1-3.1m7.7 3.1 3.1-3.1m-7.7 7.7-3.1 3.1m7.7-3.1 3.1 3.1" /></svg>;
-    case "kubernetes":
-      return <img className="library-source-brand-icon library-source-brand-icon-kubernetes" src="/icons/k8s-kubernetes.svg" alt="" aria-hidden="true" />;
-    case "mindmaps":
-      return <svg {...common}><path d="M8 21v-2.2c0-1.7 1.4-3.1 3.1-3.1h1.8c1.7 0 3.1 1.4 3.1 3.1V21" /><path d="M8.8 10.2c0-3.3 1.7-5.5 4.1-5.5 2.5 0 4.1 2.1 4.1 5.2 0 2.9-1.7 4.7-4.1 4.7s-4.1-1.8-4.1-4.4Z" /><circle cx="4" cy="5" r="1.5" /><circle cx="20" cy="5" r="1.5" /><path d="m5.5 6 3.7 3m9.3-3-3.1 3" /></svg>;
-    case "uml":
-      return <svg {...common}><rect x="8" y="2.5" width="8" height="5.5" rx=".8" /><path d="M12 8v4M5 12h14M5 12v2M12 12v2M19 12v2" /><rect x="2" y="14" width="6" height="7" rx=".8" /><rect x="9" y="14" width="6" height="7" rx=".8" /><rect x="16" y="14" width="6" height="7" rx=".8" /></svg>;
-    case "eraser":
-      return <svg {...common}><path d="M12 2.5 15 8l6 1-4.3 4.2 1 6-5.7-3-5.7 3 1-6L3 9l6-1 3-5.5Z" /><path d="M8 21h13" /></svg>;
-    case "all":
-      return <svg {...common}><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="14" y="3.5" width="6.5" height="6.5" rx="1" /><rect x="3.5" y="14" width="6.5" height="6.5" rx="1" /><rect x="14" y="14" width="6.5" height="6.5" rx="1" /></svg>;
-    default:
-      return null;
-  }
-}
-
 export default function IconLibraryPanel({
   searchRef, search, setSearch, activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, favorites, recentIcons,
   eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
@@ -168,38 +146,6 @@ export default function IconLibraryPanel({
     setRecentSearches((current) => [normalized, ...current.filter((item) => item.toLowerCase() !== normalized.toLowerCase())].slice(0, 5));
   };
 
-  const chooseSource = (source) => {
-    setActiveSource(source);
-    setIconDisplayLimit(120);
-    if (source !== "kubernetes") setActiveKubernetesCategory("All");
-    if (source !== "aws") setActiveAwsCategory("All");
-    if (source === "all" || source === "eraser") {
-      setActiveCategory("Eraser Icons");
-      if (source === "all") { setActiveAwsCategory("All"); setActiveKubernetesCategory("All"); }
-    } else if (source === "aws") {
-      setActiveCategory("AWS Architecture");
-      setActiveAwsCategory("All");
-      setActiveKubernetesCategory("All");
-    } else if (source === "kubernetes") {
-      setActiveCategory("Kubernetes");
-      setActiveKubernetesCategory("All");
-      setActiveAwsCategory("All");
-    } else if (source === "networking") {
-      setActiveCategory("Networking");
-      setActiveKubernetesCategory("All");
-      setActiveAwsCategory("All");
-    } else if (source === "uml") {
-      setActiveCategory("UML Diagrams");
-      setActiveKubernetesCategory("All");
-      setActiveAwsCategory("All");
-    } else if (source === "mindmaps") {
-      setActiveCategory("Mind Maps");
-      setActiveKubernetesCategory("All");
-      setActiveAwsCategory("All");
-    }
-  };
-
-
   const displayedIcons = useMemo(() => {
     const query = search.trim();
     if (activeSource === "all") return rankIconSearchResults(allIcons, query);
@@ -219,11 +165,6 @@ export default function IconLibraryPanel({
     || recentIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
     || displayedIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
     || null;
-  const activeChip = activeSource;
-  // Keep the library in one unified category. Users can discover icons through
-  // search instead of having to choose a source-specific category first.
-  const sourceTabs = [{ id: "all", label: "All icons" }];
-
   const getIconSubtitle = (icon) => sourceLabel(icon);
 
   return (
@@ -237,10 +178,6 @@ export default function IconLibraryPanel({
           <kbd>/</kbd>
         </div>
 
-        <div className="library-filter-row">
-          <nav className="library-source-tabs" aria-label="Icon collections">
-            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-label={tab.label} title={tab.label} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}><SourceCategoryIcon id={tab.id} /><span className="library-source-chip-label">{tab.label}</span></button>)}</nav>
-        </div>
         {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
           <div className="library-recent-heading"><span>Recent searches</span><button type="button" onClick={() => setRecentSearches([])}>Clear all</button></div>
           <div className="library-recent-chips">{recentSearches.map((term) => <button type="button" key={term} className="library-recent-chip" onClick={() => { setActiveSource("all"); setActiveCategory("Eraser Icons"); setSearch(term); setIconDisplayLimit(120); }}><span aria-hidden="true">◷</span>{term}</button>)}</div>
