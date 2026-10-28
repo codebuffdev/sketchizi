@@ -1746,10 +1746,8 @@ function App() {
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
         >
-          <svg className="ai-ask-toggle-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M19.5 11V6.5a3.5 3.5 0 0 0-3.5-3.5H6.5A3.5 3.5 0 0 0 3 6.5v11A3.5 3.5 0 0 0 6.5 21h5.2" />
-            <path d="m7 15 2.2-6 2.2 6m-3.6-2h2.8M14 9v6" />
-            <path d="m18.5 13 1.1 2.5 2.4 1-2.4 1-1.1 2.5-1-2.5-2.5-1 2.5-1Z" fill="currentColor" stroke="none" />
+          <svg className="ai-ask-toggle-icon" viewBox="0 0 512 512" width="18" height="18" fill="currentColor" fillRule="evenodd" aria-hidden="true">
+            <path d="M400 304 374 357 361 368 318 385 316 391 365 412 380 429 396 470 402 473 424 423 440 409 481 393 485 388 430 361 421 350Z M215 203 240 279 190 280Z M319 171 316 174 316 328 319 331 336 331 339 328 339 174 336 171Z M202 171 151 329 171 331 182 303 247 303 256 329 275 331 279 325 231 175 227 171Z M120 87 93 110 80 144 80 367 87 391 110 418 138 430 288 431 293 421 271 392 147 392 133 386 123 375 119 364 121 140 133 125 147 119 371 121 386 133 392 147 392 257 398 263 427 268 431 263 431 143 425 122 401 93 367 80 144 80Z" />
           </svg>
         </button>
 
