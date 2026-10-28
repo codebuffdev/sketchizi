@@ -4,12 +4,12 @@ import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("Cloud Workspace is opt-in and the existing editor remains the default route", async () => {
+test("authenticated users get Workspace by default and signed-out users keep the editor", async () => {
   const source = await read("../src/main.jsx");
-  assert.match(source, /get\("workspace"\) === "1"/);
-  assert.match(source, /if \(!workspaceRoute \|\| auth\.status === "anonymous"\) return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
-  assert.match(source, /import WorkspaceDashboard from "\.\/features\/workspace\/WorkspaceDashboard\.jsx"/);
+  assert.match(source, /get\("editor"\) === "1"/);
+  assert.match(source, /if \(editorRoute \|\| auth\.status === "anonymous"\) return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
   assert.match(source, /<WorkspaceDashboard/);
+  assert.match(source, /onOpenEditor=\{\(\) => \{ window\.location\.assign\("\/\?editor=1"\); \}\}/);
 });
 
 test("Workspace stylesheet is scoped and imported by the dashboard component", async () => {
