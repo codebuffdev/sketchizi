@@ -128,3 +128,14 @@ test('contextual toolbar stays above bottom dock and keeps frameless high-contra
   assert.match(frameless, /\.contextual-formatting-group > button[\s\S]*?border: 1px solid rgb\(71 85 105 \/ 34%\) !important/);
   assert.match(frameless, /\.app:has\(\.excalidraw\.theme--dark\)[\s\S]*?color: #f8fafc !important/);
 });
+
+
+test('contextual stroke and fill swatches keep their real colors in both themes', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  const swatches = dockCss.slice(dockCss.lastIndexOf('/* Color controls must retain'));
+  assert.match(swatches, /button\.contextual-color-swatch[\s\S]*?background: var\(--swatch-color, transparent\) !important/);
+  assert.match(swatches, /background-color: var\(--swatch-color, transparent\) !important/);
+  assert.match(swatches, /button\.contextual-color-swatch\.is-transparent[\s\S]*?linear-gradient/);
+  assert.match(swatches, /\.app:has\(\.excalidraw\.theme--dark\)[\s\S]*?button\.contextual-color-swatch/);
+  assert.match(swatches, /button\.contextual-color-swatch\.is-selected[\s\S]*?border: 2px solid #6366f1/);
+});
