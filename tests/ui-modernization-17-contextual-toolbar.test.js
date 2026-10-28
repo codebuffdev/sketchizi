@@ -164,14 +164,19 @@ test('contextual toolbar clamps to viewport and scrolls its controls on narrow s
 });
 
 
-test('text selection exposes a font-family selector in the contextual toolbar', () => {
+test('text selection exposes a clickable minimal font picker with an underlined A', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.match(toolbar, /aria-label="Font family"/);
   assert.match(toolbar, /aria-label="Change font family"/);
-  assert.match(toolbar, /applyToSelected\(\{ fontFamily: Number\(event\.target\.value\) \}\)/);
+  assert.match(toolbar, /aria-haspopup="menu"/);
+  assert.match(toolbar, /setFontMenuOpen\(\(open\) => !open\)/);
+  assert.match(toolbar, /role="menuitemradio"/);
+  assert.match(toolbar, /applyToSelected\(\{ fontFamily: Number\(id\) \}\)/);
   assert.match(toolbar, /\[1, "Virgil"\]/);
   assert.match(toolbar, /\[5, "Excalifont"\]/);
   assert.match(toolbar, /\[9, "Liberation Sans"\]/);
-  assert.match(dockCss, /\.contextual-font-family select/);
+  assert.match(dockCss, /\.contextual-font-trigger/);
+  assert.match(dockCss, /\.contextual-font-underline[\s\S]*?width: 24px/);
+  assert.match(dockCss, /\.contextual-font-menu/);
 });
