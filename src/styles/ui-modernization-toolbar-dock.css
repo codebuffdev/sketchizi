@@ -1318,3 +1318,61 @@
   --contextual-ink: #f8fafc;
   --contextual-border: #3b4050;
 }
+
+
+/* The native select overlays the minimalist A control so its menu stays clickable
+   and is not clipped by the horizontally scrollable toolbar. */
+.app .contextual-formatting-toolbar .contextual-font-trigger {
+  position: relative !important;
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  padding: 3px 5px 2px !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: var(--contextual-ink, #20242c) !important;
+  cursor: pointer !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-font-trigger > span:first-child {
+  font-family: Georgia, serif !important;
+  font-size: 21px !important;
+  font-weight: 600 !important;
+  line-height: 22px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-font-underline {
+  display: block !important;
+  width: 26px !important;
+  height: 2px !important;
+  border-radius: 2px !important;
+  background: currentColor !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-font-trigger select {
+  position: absolute !important;
+  z-index: 2 !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-font-trigger:focus-within {
+  outline: 2px solid #a78bfa !important;
+  outline-offset: 2px !important;
+  color: #8b78ff !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-font-trigger:hover {
+  background: rgb(124 58 237 / 13%) !important;
+  color: #8b78ff !important;
+}
