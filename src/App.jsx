@@ -166,7 +166,7 @@ function App() {
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
-  const saveDrawingToCloud = useCallback(async ({ projectId, name }) => {
+  const saveDrawingToCloud = useCallback(async ({ projectId, name, maxDocumentBytes = 2 * 1024 * 1024 }) => {
     const api = apiRef.current;
     if (!api?.getSceneElements) throw new Error("The editor is not ready to save this drawing.");
     const limits = await workspaceClient.getLimits();

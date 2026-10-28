@@ -1,5 +1,17 @@
 const PREFIX = "/api/workspace";
 const CSRF_URL = "/api/auth/csrf";
+const REQUEST_TIMEOUT_MS = 12000;
+
+function timeoutSignal() {
+  return AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+}
+
+function requestFailure(error, fallback) {
+  if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+    return new Error("The Cloud Workspace request timed out. Check your connection and whether the diagram appeared in Cloud Workspace before trying again.");
+  }
+  return error instanceof Error ? error : new Error(fallback);
+}
 
 async function getCsrfHeaders() {
   // Workspace persistence is served by the authenticated backend, not AI Ask.

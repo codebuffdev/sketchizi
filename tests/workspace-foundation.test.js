@@ -103,3 +103,16 @@ test("editor exposes an explicit Save to Cloud action and creates a cloud diagra
   assert.match(dialog, /workspaceClient\.listProjects\(\)/);
   assert.match(dialog, /Save to Cloud Workspace/);
 });
+
+
+test("Workspace API requests time out instead of leaving save operations pending forever", async () => {
+  const client = await read("../src/features/workspace/workspaceClient.js");
+  const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
+  const app = await read("../src/App.jsx");
+  assert.match(client, /REQUEST_TIMEOUT_MS = 12000/);
+  assert.match(client, /signal: timeoutSignal\(\)/);
+  assert.match(client, /Cloud Workspace request timed out/);
+  assert.match(dialog, /MAX_DOCUMENT_BYTES = 2 \* 1024 \* 1024/);
+  assert.match(app, /new TextEncoder\(\)\.encode\(serializedDocument\)\.byteLength/);
+  assert.match(app, /above the 2 MiB Cloud Workspace limit/);
+});
