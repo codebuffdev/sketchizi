@@ -9,13 +9,20 @@ export default function PropertiesPanel({
   kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {}, kubernetesRelationshipGuidance = null,
   readOnly = false, authorship = {}, participants = [], contextualSelectionElements = [],
 }) {
-  const contextualSelection = contextualSelectionElements.filter((element) => element && !element.isDeleted);
+  const contextualSelection = contextualSelectionElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const hasContextualLibraryImage = contextualSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
-  const hasContextualText = contextualSelection.some((element) => element.type === "text");
-  const hasContextualShapeStyle = contextualSelection.some((element) => ["rectangle", "diamond", "ellipse", "frame", "line", "arrow", "freedraw"].includes(element.type));
-  const hideContextualStrokeControls = contextualSelection.length > 0 && !hasContextualLibraryImage;
-  const hideContextualTextSize = contextualSelection.length > 0 && hasContextualText;
-  const hideContextualOpacity = contextualSelection.length > 0 && hasContextualShapeStyle && !hasContextualLibraryImage;
+  const hasOnlyContextualImages = contextualSelection.length > 0 && contextualSelection.every((element) => element.type === "image");
+  const hasContextualText = contextualSelection.some((element) => element.type === "text") || (contextualSelection.length === 0 && hasTextSelection && selectedCount > 0);
+  const hasContextualShapeStyle = contextualSelection.some((element) => ["rectangle", "diamond", "ellipse", "frame", "line", "arrow", "freedraw"].includes(element.type))
+    || (contextualSelection.length === 0 && (hasShapeSelection || hasArrowSelection) && selectedCount > 0);
+  // Only leave image-only formatting in Properties. Mixed selections must still
+  // avoid repeating the shared controls shown by the contextual toolbar.
+  const hasContextualStyleSelection = contextualSelection.length > 0
+    ? contextualSelection.some((element) => ["text", "rectangle", "diamond", "ellipse", "frame", "line", "arrow", "freedraw"].includes(element.type))
+    : (hasTextSelection || hasShapeSelection || hasArrowSelection) && selectedCount > 0;
+  const hideContextualStrokeControls = hasContextualStyleSelection && !hasOnlyContextualImages;
+  const hideContextualTextSize = hasContextualText;
+  const hideContextualOpacity = hasContextualShapeStyle && !hasOnlyContextualImages;
   return (
   <section className={`properties-panel${readOnly ? " read-only" : ""}`} aria-label="Properties and style">
     <div className="properties-header">
