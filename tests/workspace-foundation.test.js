@@ -24,7 +24,7 @@ test("Tool menu only contains tools not already on the dock and uses labeled SVG
   const styles = await read("../src/styles/header-redesign.css");
   assert.match(menu, /aria-label="Tool"/);
   assert.match(menu, /className="tool-trigger-icon"/);
-  assert.doesNotMatch(menu, /<span>Tool<\/span>/);
+  assert.match(menu, /<span>Tool<\/span>/);
   assert.match(menu, /function ToolIcon\(/);
   assert.match(menu, /<ToolIcon name=\{tool\} \/>/);
   assert.match(menu, /\["image", "Insert image", "9"\]/);
