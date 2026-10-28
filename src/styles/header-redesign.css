@@ -480,6 +480,58 @@
     border-left: 1px solid var(--ui-border, #e3e5eb);
   }
 
+  /* The Tool menu now lives beside Search instead of in the feature-action group. */
+  .desktop-app-header-actions .sketchizi-more-tools-header {
+    position: relative;
+    display: block;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 32px;
+    z-index: 540;
+    margin-right: 6px;
+  }
+
+  .desktop-app-header-actions .sketchizi-more-tools-trigger {
+    display: inline-flex;
+    position: static;
+    transform: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    min-width: 36px;
+    height: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 5px;
+    border: 1px solid var(--ui-border, #e0e3eb);
+    border-radius: 8px;
+    background: var(--ui-surface-soft, #f8f8fc);
+    color: var(--ui-text, #3b3d4b);
+    box-shadow: none;
+  }
+
+  .desktop-app-header-actions .sketchizi-more-tools-trigger::before,
+  .desktop-app-header-actions .sketchizi-more-tools-trigger::after {
+    content: none;
+  }
+
+  .desktop-app-header-actions .sketchizi-more-tools-trigger:hover,
+  .desktop-app-header-actions .sketchizi-more-tools-header.open .sketchizi-more-tools-trigger {
+    border-color: #cdc2ff;
+    background: #f3efff;
+    color: #5536c0;
+  }
+
+  .desktop-app-header-actions .sketchizi-more-tools-menu {
+    top: calc(100% + 7px);
+    right: 0;
+    left: auto;
+    width: 258px;
+    border-color: var(--ui-border, #e1e3eb);
+    border-radius: 11px;
+    box-shadow: 0 16px 40px rgba(20, 22, 40, .17);
+  }
+
   .desktop-app-search-button {
     display: inline-flex;
     align-items: center;
