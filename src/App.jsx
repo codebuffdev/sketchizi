@@ -38,7 +38,7 @@ import { applyKubernetesRelationshipSuggestion } from "./features/architecture/k
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import CloudSaveDialog from "./features/workspace/CloudSaveDialog.jsx";
-import { createCloudDocument } from "./features/workspace/cloudDocument.js";
+import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -277,7 +277,7 @@ function App() {
       };
       api.updateScene({
         elements,
-        appState: { ...api.getAppState(), ...(document.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+        appState: { ...api.getAppState(), ...sanitizeCloudAppState(document.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
       api.history?.clear?.();
