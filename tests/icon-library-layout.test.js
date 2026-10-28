@@ -173,3 +173,11 @@ test("Escape hint appears above the search and the icon list owns the remaining 
   assert.match(styles, /library-panel-redesign > \.library-panel-redesign-body[\s\S]*?overflow:\s*hidden !important/);
   assert.match(styles, /library-panel-redesign \.library-icon-grid[\s\S]*?overflow-y:\s*auto !important/);
 });
+
+
+test("Icon Library outer panel uses the same neutral surface, border, radius, and shadow as the hamburger menu", async () => {
+  const appStyles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(appStyles, /\.app \.desktop-resources-region > \.library-panel\.library-panel-redesign\s*\{[\s\S]*?border:\s*1px solid var\(--ui-border,[\s\S]*?border-radius:\s*14px !important;[\s\S]*?background:\s*var\(--ui-surface-solid,[\s\S]*?box-shadow:\s*var\(--ui-shadow,/);
+  assert.match(appStyles, /\.app\.theme-dark \.desktop-resources-region > \.library-panel\.library-panel-redesign\s*\{[\s\S]*?background:\s*var\(--ui-surface-solid,[\s\S]*?box-shadow:\s*var\(--ui-shadow,/);
+  assert.match(appStyles, /\.app\.theme-light \.desktop-resources-region > \.library-panel\.library-panel-redesign\s*\{[\s\S]*?background:\s*var\(--ui-surface-solid,[\s\S]*?box-shadow:\s*var\(--ui-shadow,/);
+});
