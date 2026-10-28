@@ -89,13 +89,7 @@ export async function onRequest({ request, env }) {
     if (value) headers.set(name, value);
   }
   const cookieHeader = request.headers.get("cookie") || "";
-  const session = getCookie(cookieHeader, "SESSION");
-  const xsrf = getCookie(cookieHeader, "XSRF-TOKEN");
-  const forwardedCookies = [
-    session ? `SESSION=${encodeURIComponent(session)}` : "",
-    xsrf ? `XSRF-TOKEN=${encodeURIComponent(xsrf)}` : "",
-  ].filter(Boolean).join("; ");
-  if (forwardedCookies) headers.set("cookie", forwardedCookies);
+  if (cookieHeader) headers.set("cookie", cookieHeader);
   headers.set("x-request-id", requestId);
 
   try {
