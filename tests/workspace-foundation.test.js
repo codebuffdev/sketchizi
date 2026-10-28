@@ -36,7 +36,7 @@ test("Cloud Workspace thumbnails reflect saved diagram elements and the diagram 
   assert.match(dashboard, /document\.elements/);
   assert.match(dashboard, /<DiagramThumbnail diagram=\{d\} \/>/);
   assert.doesNotMatch(dashboard, /<div className="cw-diagram-preview"><span\/><i\/><span\/><\/div>/);
-  assert.match(stylesheet, /\.cw-diagram-grid\{[^}]*max-height:calc\(100vh - 330px\)[^}]*overflow-y:auto/);
+  assert.match(stylesheet, /\.cw-diagram-grid\{[^}]*max-height:max\(120px,calc\(100vh - 410px\)\)[^}]*overflow-y:auto/);
   assert.match(stylesheet, /\.cw-diagram-grid::-webkit-scrollbar-thumb/);
 });
 
