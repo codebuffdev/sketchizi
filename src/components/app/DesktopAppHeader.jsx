@@ -85,7 +85,11 @@ export default function DesktopAppHeader({
   setThemeMode,
   isDarkTheme,
   saveStatus = { state: "ready", lastSavedAt: null },
+  cloudSaveStatus = { enabled: false, status: "local", revision: null, error: "" },
+  onRetryCloudSave,
+  onOpenWorkspace,
   currentDocumentName = "Untitled drawing",
+  cloudDocumentName = "",
   currentDocumentDirty = false,
   currentDocumentFileBacked = false,
   onSaveNow,
@@ -312,9 +316,17 @@ export default function DesktopAppHeader({
           <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
         </svg>
         <span className="desktop-app-document-identity-copy">
-          <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
+          <span className="desktop-app-document-identity-name">{cloudDocumentName || currentDocumentName}</span>
         </span>
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        {cloudSaveStatus?.enabled && (
+          <span className={`desktop-app-cloud-save-status is-${cloudSaveStatus.status}`} role="status" aria-live="polite" title={cloudSaveStatus.error || "Cloud Workspace save status"}>
+            <span className="desktop-app-cloud-save-dot" aria-hidden="true" />
+            <span>{cloudSaveStatus.status === "loading" ? "Loading cloud diagram" : cloudSaveStatus.status === "saving" ? "Saving to cloud" : cloudSaveStatus.status === "pending" ? "Changes pending" : cloudSaveStatus.status === "saved" ? "Saved to cloud" : cloudSaveStatus.status === "conflict" ? "Save conflict — recovery saved locally" : cloudSaveStatus.status === "error" ? "Cloud save failed" : "Cloud connected"}</span>
+            {cloudSaveStatus.status === "error" && <button type="button" onClick={onRetryCloudSave} title="Retry cloud save">Retry</button>}
+          </span>
+        )}
+        {cloudSaveStatus?.enabled && <button type="button" className="desktop-app-workspace-link" onClick={onOpenWorkspace} title="Return to Workspace dashboard">Workspace</button>}
       </div>
 
       <div className="desktop-app-header-panel-actions">{children}</div>

@@ -80,7 +80,7 @@ function openDatabase() {
   });
 }
 
-export async function loadSketch() {
+export async function loadSketch(documentId = DOCUMENT_ID) {
   try {
     const db = await openDatabase();
     return await new Promise((resolve, reject) => {
@@ -95,7 +95,7 @@ export async function loadSketch() {
       let transaction;
       try {
         transaction = db.transaction(STORE_NAME, "readonly");
-        const request = transaction.objectStore(STORE_NAME).get(DOCUMENT_ID);
+        const request = transaction.objectStore(STORE_NAME).get(documentId);
         request.onsuccess = () => finish(resolve, request.result || null);
         request.onerror = () => finish(reject, toPersistenceError(request.error, "Unable to restore the saved sketch.", "read"));
         transaction.onerror = () => finish(reject, toPersistenceError(transaction.error, "Unable to restore the saved sketch.", "read"));
@@ -122,9 +122,9 @@ export function withDocumentMetadata(payload, documentMetadata = {}) {
 
 /** Build the record stored for the active autosaved document. Keep extension data
  * verbatim so Sketchizi metadata and unrelated vendor extensions survive reloads. */
-export function buildSketchPersistenceRecord({ elements, appState, files, metadata = {}, extensions = {}, format = "excalidraw" } = {}) {
+export function buildSketchPersistenceRecord({ id = DOCUMENT_ID, elements, appState, files, metadata = {}, extensions = {}, format = "excalidraw" } = {}) {
   return {
-    id: DOCUMENT_ID,
+    id,
     savedAt: Date.now(),
     format,
     metadata: metadata && typeof metadata === "object" && !Array.isArray(metadata) ? structuredClone(metadata) : {},
@@ -156,7 +156,7 @@ export function buildRecentSketchPersistenceRecord({ id, name, elements, appStat
   };
 }
 
-export async function saveSketch({ elements, appState, files, metadata = {}, extensions = {}, format = "excalidraw" }) {
+export async function saveSketch({ elements, appState, files, metadata = {}, extensions = {}, format = "excalidraw" }, documentId = DOCUMENT_ID) {
   let db;
   try {
     db = await openDatabase();
@@ -169,12 +169,12 @@ export async function saveSketch({ elements, appState, files, metadata = {}, ext
         fn(value);
       };
 
-      const record = buildSketchPersistenceRecord({ elements, appState, files, metadata, extensions, format });
+      const record = buildSketchPersistenceRecord({ id: documentId, elements, appState, files, metadata, extensions, format });
 
       let transaction;
       try {
         transaction = db.transaction(STORE_NAME, "readwrite");
-        const request = transaction.objectStore(STORE_NAME).put(record, DOCUMENT_ID);
+        const request = transaction.objectStore(STORE_NAME).put(record, documentId);
         request.onerror = () => finish(reject, toPersistenceError(request.error, "Unable to save the sketch locally.", "write"));
         transaction.onerror = () => finish(reject, toPersistenceError(transaction.error, "Unable to save the sketch locally.", "write"));
         transaction.onabort = () => finish(reject, toPersistenceError(transaction.error, "Unable to save the sketch locally.", "write"));
@@ -191,26 +191,30 @@ export async function saveSketch({ elements, appState, files, metadata = {}, ext
 // Small emergency fallback. It is only used after IndexedDB fails, and may
 // itself be unavailable or too small. The caller still receives the original
 // IndexedDB failure so the UI can warn the user when neither storage works.
-export function saveEmergencyBackup(payload) {
+function emergencyBackupKey(documentId = DOCUMENT_ID) {
+  return documentId === DOCUMENT_ID ? EMERGENCY_KEY : `${EMERGENCY_KEY}:${documentId}`;
+}
+
+export function saveEmergencyBackup(payload, documentId = DOCUMENT_ID) {
   try {
-    localStorage.setItem(EMERGENCY_KEY, JSON.stringify({ ...payload, savedAt: Date.now() }));
+    localStorage.setItem(emergencyBackupKey(documentId), JSON.stringify({ ...payload, id: documentId, savedAt: Date.now() }));
     return true;
   } catch {
     return false;
   }
 }
 
-export function loadEmergencyBackup() {
+export function loadEmergencyBackup(documentId = DOCUMENT_ID) {
   try {
-    const raw = localStorage.getItem(EMERGENCY_KEY);
+    const raw = localStorage.getItem(emergencyBackupKey(documentId));
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-export function clearEmergencyBackup() {
-  try { localStorage.removeItem(EMERGENCY_KEY); } catch {}
+export function clearEmergencyBackup(documentId = DOCUMENT_ID) {
+  try { localStorage.removeItem(emergencyBackupKey(documentId)); } catch {}
 }
 
 export async function saveRecentSketch({ id, name, elements, appState, files, metadata = {}, extensions = {}, format } = {}) {

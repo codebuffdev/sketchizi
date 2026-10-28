@@ -871,3 +871,59 @@
   border-color: #9aa3ba !important;
   color: #4d5572 !important;
 }
+
+
+/* Cloud Workspace save state is deliberately quieter than the primary document title. */
+.app .desktop-app-cloud-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 240px;
+  margin-left: 9px;
+  color: var(--ui-muted, #848b99);
+  font-size: 10px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.app .desktop-app-cloud-save-dot {
+  display: inline-block;
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9aa2b1;
+}
+.app .desktop-app-cloud-save-status.is-saved .desktop-app-cloud-save-dot { background: #2f9b6b; }
+.app .desktop-app-cloud-save-status.is-saving .desktop-app-cloud-save-dot,
+.app .desktop-app-cloud-save-status.is-pending .desktop-app-cloud-save-dot,
+.app .desktop-app-cloud-save-status.is-loading .desktop-app-cloud-save-dot { background: #c08b35; }
+.app .desktop-app-cloud-save-status.is-error .desktop-app-cloud-save-dot,
+.app .desktop-app-cloud-save-status.is-conflict .desktop-app-cloud-save-dot { background: #d04b56; }
+.app .desktop-app-cloud-save-status button {
+  border: 0;
+  background: transparent;
+  color: var(--ui-accent, #7663df);
+  font: inherit;
+  font-weight: 700;
+  padding: 1px 2px;
+}
+.app .desktop-app-cloud-save-status button:hover { text-decoration: underline; }
+.app .desktop-app-workspace-link {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  border: 1px solid var(--ui-border, #dfe3eb);
+  border-radius: 7px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--ui-text, inherit);
+  font-size: 10px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+.app .desktop-app-workspace-link:hover { border-color: var(--ui-accent, #9e93ee); }
+@media (max-width: 920px) {
+  .app .desktop-app-cloud-save-status { max-width: 125px; overflow: hidden; }
+  .app .desktop-app-cloud-save-status > span:not(.desktop-app-cloud-save-dot) { overflow: hidden; text-overflow: ellipsis; }
+  .app .desktop-app-workspace-link { padding: 4px 6px; }
+}
