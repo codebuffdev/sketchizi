@@ -176,13 +176,13 @@ export default function IconLibraryPanel({
     || null;
   const activeChip = activeSource;
   const sourceTabs = [
-    { id: "all", label: "All" },
-    { id: "eraser", label: "Essentials" },
     { id: "aws", label: "AWS" },
-    { id: "kubernetes", label: "Kubernetes" },
     { id: "networking", label: "Networking" },
-    { id: "uml", label: "UML" },
+    { id: "kubernetes", label: "Kubernetes" },
     { id: "mindmaps", label: "Mind Maps" },
+    { id: "uml", label: "UML" },
+    { id: "eraser", label: "Essentials" },
+    { id: "all", label: "All" },
   ];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
