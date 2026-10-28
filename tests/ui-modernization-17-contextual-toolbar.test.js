@@ -139,3 +139,14 @@ test('contextual stroke and fill swatches keep their real colors in both themes'
   assert.match(swatches, /\.app:has\(\.excalidraw\.theme--dark\)[\s\S]*?button\.contextual-color-swatch/);
   assert.match(swatches, /button\.contextual-color-swatch\.is-selected[\s\S]*?border: 2px solid #6366f1/);
 });
+
+
+test('contextual toolbar offers a native custom stroke and text color picker', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /aria-label="Custom color"/);
+  assert.match(toolbar, /type="color"/);
+  assert.match(toolbar, /aria-label="Choose custom color"/);
+  assert.match(toolbar, /applyToSelected\(\{ strokeColor: event\.target\.value \}\)/);
+  assert.match(dockCss, /\.contextual-custom-color input\[type="color"\]/);
+});
