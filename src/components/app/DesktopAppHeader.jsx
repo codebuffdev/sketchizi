@@ -89,6 +89,7 @@ export default function DesktopAppHeader({
   onRetryCloudSave,
   onOpenWorkspace,
   currentDocumentName = "Untitled drawing",
+  cloudDocumentName = "",
   currentDocumentDirty = false,
   currentDocumentFileBacked = false,
   onSaveNow,
@@ -315,7 +316,7 @@ export default function DesktopAppHeader({
           <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
         </svg>
         <span className="desktop-app-document-identity-copy">
-          <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
+          <span className="desktop-app-document-identity-name">{cloudDocumentName || currentDocumentName}</span>
         </span>
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
         {cloudSaveStatus?.enabled && (
