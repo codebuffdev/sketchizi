@@ -364,6 +364,14 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     const api = apiRef.current;
     if (!api) return;
     if (!confirmCanvasReplacement("create a new drawing")) return;
+    // Starting a new local drawing must detach it from any cloud diagram
+    // currently open in the editor before the canvas is cleared.
+    window.dispatchEvent(new CustomEvent("sketchizi:detach-cloud-document"));
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete("cloudDiagramId");
+    currentUrl.searchParams.delete("cloudProjectId");
+    currentUrl.searchParams.set("editor", "1");
+    window.history.replaceState(window.history.state, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
     if (saveTimerRef.current) {
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
