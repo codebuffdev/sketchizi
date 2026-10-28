@@ -1035,7 +1035,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               </div>
             ) : chat.messages.map((message, index) => (
               <article key={`${message.requestId || message.timestamp || index}-${message.role}-${index}`} className={`ai-ask-message ${message.role}`}>
-                <div className="ai-ask-message-role"><span className="ai-ask-message-author">{message.role === "user" ? "You" : <><span className="ai-ask-assistant-mark" aria-hidden="true">✳</span>{message.provider === "byok" ? "Gemini" : message.provider === "builtin" ? "GPT-OSS 120B" : (chat.provider === "byok" ? "Gemini" : "GPT-OSS 120B")}</>}</span><time>{timeLabel(message.timestamp)}</time></div>
+                <div className="ai-ask-message-role"><span className="ai-ask-message-author">{message.role === "user" ? "You" : <><span className="ai-ask-assistant-mark" aria-hidden="true">✳</span>{"AI Ask"}</>}</span><time>{timeLabel(message.timestamp)}</time></div>
                 {message.role === "assistant" ? <MarkdownResponse content={message.text} /> : <div className="ai-ask-user-text">{message.text}</div>}
                 {message.role === "assistant" && <div className="ai-ask-message-actions"><button type="button" onClick={() => copyAssistantResponse(message)} title="Copy response">{copiedMessageId === (message.messageId || message.requestId || String(message.timestamp || "response")) ? "Copied" : "Copy"}</button>{message.question && <button type="button" onClick={() => sendQuestion(message.question)} disabled={busy || Boolean(pendingRequest)} title="Generate another answer to this question">Regenerate</button>}</div>}
               </article>
@@ -1056,7 +1056,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             <textarea id="ai-ask-question" value={chat.draft} onChange={(event) => updateChat((current) => ({ ...current, draft: event.target.value.slice(0, 4000) }))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(); } }} placeholder="Ask about your diagram…" rows={3} maxLength={4000} disabled={busy || Boolean(pendingRequest) || !chat.conversationId || (chat.provider === "builtin" && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))} />
             <div className="ai-ask-composer-footer"><span>Enter to send · Shift+Enter for a new line</span><button className="ai-ask-primary" type="submit" disabled={busy || Boolean(pendingRequest) || !chat.draft.trim() || !chat.conversationId || (chat.provider === "builtin" && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))}> {busy ? "Thinking…" : "Ask"} </button></div>
           </form>
-          <div className="ai-ask-privacy-note">Diagram content and recent chat are sent to the selected AI provider ({chat.provider === "byok" ? "Gemini using your key" : "GPT-OSS 120B via Groq"}). The AI service stores usage metadata, not prompts, responses, or diagram snapshots.</div>
+          <div className="ai-ask-privacy-note">Diagram content and recent chat are sent to Gemini using your API key. The AI service stores usage metadata, not prompts, responses, or diagram snapshots.</div>
         </>
       )}
       <span className="ai-ask-sr-only" role="status">{announcement}</span>
