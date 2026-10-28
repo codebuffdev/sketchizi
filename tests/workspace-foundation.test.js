@@ -89,3 +89,17 @@ test("cloud-opened diagrams use their saved name in the editor identity", async 
   const stylesheet = await read("../src/features/workspace/workspace.css");
   assert.match(stylesheet, /cloud-editor-save-status:not\(\.cloud-editor-save-status-error\):not\(\.cloud-editor-save-status-conflict\)\{display:none!important\}/);
 });
+
+
+test("editor exposes an explicit Save to Cloud action and creates a cloud diagram from the current document", async () => {
+  const app = await read("../src/App.jsx");
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
+  assert.match(header, /desktop-app-save-to-cloud-button/);
+  assert.match(header, /Save to Cloud/);
+  assert.match(app, /workspaceClient\.createDiagram\(/);
+  assert.match(app, /files: api\.getFiles\?\.\(\) \|\| \{\}/);
+  assert.match(app, /cloudDiagramId=\$\{encodeURIComponent\(diagram\.id\)\}/);
+  assert.match(dialog, /workspaceClient\.listProjects\(\)/);
+  assert.match(dialog, /Save to Cloud Workspace/);
+});

@@ -37,6 +37,7 @@ import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinit
 import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
+import CloudSaveDialog from "./features/workspace/CloudSaveDialog.jsx";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -163,6 +164,35 @@ function App() {
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+  const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
+
+  const saveDrawingToCloud = useCallback(async ({ projectId, name }) => {
+    const api = apiRef.current;
+    if (!api?.getSceneElements) throw new Error("The editor is not ready to save this drawing.");
+    const limits = await workspaceClient.getLimits();
+    if (!limits?.admin && Number(limits?.diagramCount || 0) >= Number(limits?.diagramLimit || 3)) {
+      throw new Error("Your Cloud Workspace diagram limit has been reached. Delete a cloud diagram before saving another.");
+    }
+    const document = {
+      elements: api.getSceneElementsIncludingDeleted?.() || api.getSceneElements() || [],
+      appState: api.getAppState?.() || {},
+      files: api.getFiles?.() || {},
+      metadata: documentMetadataRef.current?.metadata || {},
+      extensions: documentMetadataRef.current?.extensions || {},
+      format: documentMetadataRef.current?.format || "excalidraw",
+    };
+    const result = await workspaceClient.createDiagram({
+      projectId,
+      name: name.trim(),
+      format: document.format,
+      document,
+    });
+    const diagram = result?.diagram || result;
+    if (!diagram?.id) throw new Error("Cloud Workspace did not return the saved diagram ID.");
+    setCloudSaveDialogOpen(false);
+    showToast("Saved to Cloud Workspace", "success");
+    window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(diagram.id)}&cloudProjectId=${encodeURIComponent(projectId)}`);
+  }, [showToast]);
 
   const queueSketchSave = useCallback((elements, appState) => {
     if (!cloudDiagramId) {
@@ -208,6 +238,14 @@ function App() {
       });
     }, cloudFlushImmediatelyRef.current ? 0 : 700);
   }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
+
+  const saveCloudDiagramNow = useCallback(() => {
+    const api = apiRef.current;
+    if (!cloudDiagramId || !cloudSessionRef.current.active || !api) return;
+    cloudFlushImmediatelyRef.current = true;
+    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+    cloudFlushImmediatelyRef.current = false;
+  }, [apiRef, cloudDiagramId, queueSketchSave]);
 
   useEffect(() => {
     if (!cloudDiagramId || !apiReady || !sketchReady || cloudLoadStartedRef.current) return undefined;
@@ -1562,6 +1600,9 @@ function App() {
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
         onSaveToFile={() => fileActionsRef.current.saveCurrentDrawing?.()}
+        isCloudDocument={Boolean(cloudDiagramId)}
+        onSaveToCloud={() => cloudDiagramId ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
+        cloudSaveState={cloudSaveState.state}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
         libraryToggle={collaborationCanEdit ? (
           <button
@@ -1869,6 +1910,7 @@ function App() {
           </div>
         </div>
       )}
+      {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudDiagramId ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
       {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
       {designStudioOpen && (

@@ -871,3 +871,30 @@
   border-color: #9aa3ba !important;
   color: #4d5572 !important;
 }
+
+
+/* Explicit Cloud Workspace save action */
+.desktop-app-save-to-cloud-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:30px;padding:0 10px;border:1px solid #5145a8;border-radius:8px;background:#211e3b;color:#e7e2ff;font:600 11px/1 system-ui,sans-serif;white-space:nowrap;cursor:pointer;flex:0 0 auto}
+.desktop-app-save-to-cloud-button:hover:not(:disabled){border-color:#8f80ff;background:#302a54}
+.desktop-app-save-to-cloud-button:disabled{opacity:.55;cursor:wait}
+.theme-light .desktop-app-save-to-cloud-button{border-color:#c9c1ff;background:#f4f1ff;color:#4935a5}
+.theme-light .desktop-app-save-to-cloud-button:hover:not(:disabled){background:#eae5ff}
+@media(max-width:900px){.desktop-app-save-to-cloud-button{gap:5px;padding:0 7px}.desktop-app-save-to-cloud-button span{font-size:10px}}
+@media(max-width:620px){.desktop-app-save-to-cloud-button span{display:none}.desktop-app-save-to-cloud-button{width:32px;padding:0}}
+
+.cloud-save-dialog-backdrop{position:fixed;inset:0;z-index:5000;display:grid;place-items:center;padding:20px;background:rgba(4,7,12,.68);backdrop-filter:blur(5px)}
+.cloud-save-dialog{width:min(460px,100%);padding:22px;border:1px solid var(--app-border,#303849);border-radius:16px;background:var(--app-panel,#141922);color:var(--app-text,#eef1f8);box-shadow:0 24px 80px rgba(0,0,0,.4)}
+.cloud-save-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.cloud-save-dialog-header h2{margin:0;font-size:19px;letter-spacing:-.025em}
+.cloud-save-dialog-header p{margin:6px 0 0;color:var(--app-muted,#929db0);font-size:12px;line-height:1.5}
+.cloud-save-dialog-close{width:30px;height:30px;border:1px solid var(--app-border,#303849);border-radius:8px;background:transparent;color:inherit;font-size:18px;cursor:pointer}
+.cloud-save-dialog-fields{display:grid;gap:14px}
+.cloud-save-dialog-fields label{display:grid;gap:6px;font-size:12px;font-weight:650}
+.cloud-save-dialog-fields input,.cloud-save-dialog-fields select{width:100%;height:39px;padding:0 11px;border:1px solid var(--app-border,#303849);border-radius:8px;background:var(--app-surface,#0f131a);color:inherit;font:inherit;font-size:13px}
+.cloud-save-dialog-fields input:focus,.cloud-save-dialog-fields select:focus{outline:2px solid #8c7bff66;border-color:#8c7bff}
+.cloud-save-dialog-error{margin:13px 0 0;padding:9px 10px;border:1px solid #81434b;border-radius:8px;background:#2b1a20;color:#ffc7ce;font-size:12px}
+.cloud-save-dialog-empty{padding:14px;border:1px dashed var(--app-border,#303849);border-radius:9px;color:var(--app-muted,#929db0);font-size:12px;line-height:1.5}
+.cloud-save-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.cloud-save-dialog-actions button{min-height:36px;padding:0 13px;border:1px solid var(--app-border,#303849);border-radius:8px;background:transparent;color:inherit;font:600 12px system-ui,sans-serif;cursor:pointer}
+.cloud-save-dialog-actions .primary{border-color:#7865f4;background:#7865f4;color:white}
+.cloud-save-dialog-actions button:disabled{opacity:.5;cursor:not-allowed}
