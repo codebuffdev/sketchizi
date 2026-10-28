@@ -56,7 +56,7 @@ export default function MoreTools({ open, anchor, position, activateTool, toggle
   return (
     <div className={`sketchizi-more-tools sketchizi-more-tools-${placement} ${open ? "open" : ""}`} style={{ "--sketchizi-more-tools-left": `${anchor.left}px`, "--sketchizi-more-tools-top": `${anchor.top}px` }}>
       <button type="button" className="sketchizi-more-tools-trigger" aria-label="Tool" aria-haspopup="menu" aria-expanded={open} onClick={(event) => { event.preventDefault(); event.stopPropagation(); position(); toggle("more-tools"); }}>
-        <span>Tool</span>
+        <svg className="tool-trigger-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.7 6.3a5 5 0 0 0-6.4 6.4L3.5 17.5a2.1 2.1 0 0 0 3 3l4.8-4.8a5 5 0 0 0 6.4-6.4l-3 3-3-3Z"/></svg>
       </button>
       {open && <div className="sketchizi-more-tools-menu" role="menu" aria-label="Tool">
         <div className="more-tools-menu-header">
