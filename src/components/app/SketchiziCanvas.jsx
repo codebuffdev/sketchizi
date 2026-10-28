@@ -484,8 +484,18 @@ export default function SketchiziCanvas({
       if (typeof api.setViewport === "function") api.setViewport({ target: elements, fit: "contain" });
       else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
     };
+    const suppressNativeScrollBackTooltip = () => {
+      document.querySelectorAll('[role="tooltip"]').forEach((tooltip) => {
+        if (tooltip.classList.contains("sketchizi-toolbar-tooltip")) return;
+        if (!/scroll back to content/i.test(tooltip.textContent || "")) return;
+        // Excalidraw's own tooltip is the duplicate that overlaps the dock.
+        // Keep our body-level tooltip and the trigger's accessible label.
+        tooltip.style.setProperty("display", "none", "important");
+      });
+    };
     const syncNavigationControls = () => {
       if (disposed) return;
+      suppressNativeScrollBackTooltip();
       const zoomActions = root.querySelector(".zoom-actions");
       if (!zoomActions) return;
       // Excalidraw 0.18 renders ZoomActions as a vertical Stack containing a
@@ -540,9 +550,13 @@ export default function SketchiziCanvas({
     syncNavigationControls();
     observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
+    const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
+    tooltipObserver.observe(document.body, { childList: true, subtree: true });
+    suppressNativeScrollBackTooltip();
     return () => {
       disposed = true;
       observer?.disconnect();
+      tooltipObserver.disconnect();
       if (fitButton) {
         fitButton.removeEventListener("click", fitToContent);
         fitButton.remove();
