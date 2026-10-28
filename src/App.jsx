@@ -1583,6 +1583,7 @@ function App() {
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
             onOpenProperties={() => openPanel("properties")}
+            contextualToolbarHidden={propertiesOpen}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
             gridVisible={gridVisible}
