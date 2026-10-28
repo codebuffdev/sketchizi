@@ -17,6 +17,15 @@ test('contextual toolbar is rendered only for editable selections', () => {
   assert.match(canvas, /canEdit=\{canEdit && !viewModeEnabled\}/);
 });
 
+test('Properties hides only formatting controls duplicated by the contextual toolbar', () => {
+  const properties = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
+  assert.match(properties, /hasShapeSelection && !hideDuplicateFormattingControls/);
+  assert.match(properties, /hideDuplicateFormattingControls && hasShapeSelection/);
+  assert.match(properties, /!hideDuplicateFormattingControls && <div className="property-row">[\\s\\S]*?<label>Font size<\\/label>/);
+  assert.match(properties, /<label>Align<\\/label>/);
+  assert.match(app, /hideDuplicateFormattingControls=\\{true\\}/);
+});
+
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
