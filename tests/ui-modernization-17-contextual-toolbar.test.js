@@ -29,7 +29,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.scrollY/);
   assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
   assert.match(toolbar, /canvasRevision/);
-  assert.match(toolbar, /const belowTop = bottomY \+ 12/);
+  assert.match(toolbar, /const belowTop = bottomY \\+ 10/);
 });
 
 test('contextual toolbar has light, dark, responsive, and focus-visible styling', () => {
