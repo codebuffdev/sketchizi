@@ -40,11 +40,11 @@ function SourceCategoryIcon({ id }) {
     case "eraser":
       return <svg {...common}><path d="m10 2 2.1 5.1L17 9l-4.9 1.9L10 16l-2.1-5.1L3 9l4.9-1.9L10 2Z" /><path d="m16.5 12.5.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" /></svg>;
     case "aws":
-      return <svg {...common}><path d="M3 7.5 10 3l7 4.5v6L10 18l-7-4.5v-6Z" /><path d="M6 9.5h8M6 12h8M7.5 7.5v7M12.5 7.5v7" /></svg>;
+      return <img className="library-source-brand-icon library-source-brand-icon-aws" src="/icons/aws.svg" alt="" aria-hidden="true" />;
     case "kubernetes":
-      return <svg {...common}><path d="m10 2.2 6.8 3.9v7.8L10 17.8l-6.8-3.9V6.1L10 2.2Z" /><circle cx="10" cy="10" r="2.3" /><path d="M10 5.2v2.4M10 12.4v2.4M5.8 7.6l2.1 1.2M12.1 11.2l2.1 1.2M14.2 7.6l-2.1 1.2M7.9 11.2l-2.1 1.2" /></svg>;
+      return <img className="library-source-brand-icon library-source-brand-icon-kubernetes" src="/icons/k8s-kubernetes.svg" alt="" aria-hidden="true" />;
     case "networking":
-      return <svg {...common}><circle cx="10" cy="4" r="2" /><circle cx="4" cy="15" r="2" /><circle cx="16" cy="15" r="2" /><circle cx="10" cy="11" r="2" /><path d="m9 5.8-3.8 7.3M11 5.8l3.8 7.3M6 15h8" /></svg>;
+      return <img className="library-source-brand-icon library-source-brand-icon-networking" src="/icons/net-internet.svg" alt="" aria-hidden="true" />;
     case "uml":
       return <svg {...common}><path d="m10 2.5 7.5 7.5-7.5 7.5L2.5 10 10 2.5Z" /><path d="M7 8h6v4H7zM8.5 6v2M11.5 6v2M8.5 12v2M11.5 12v2" /></svg>;
     case "mindmaps":
