@@ -7,7 +7,7 @@ export default function PropertiesPanel({
   architectureRelationship = null, architectureRelationshipTypes = [], updateArchitectureRelationshipType = () => {},
   awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
   kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {}, kubernetesRelationshipGuidance = null,
-  readOnly = false, authorship = {}, participants = [], contextualSelectionElements = [],
+  readOnly = false, authorship = {}, participants = [], contextualSelectionElements = [], showFullFormatting = false,
 }) {
   const contextualSelection = contextualSelectionElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const hasContextualLibraryImage = contextualSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
@@ -20,9 +20,9 @@ export default function PropertiesPanel({
   const hasContextualStyleSelection = contextualSelection.length > 0
     ? contextualSelection.some((element) => ["text", "rectangle", "diamond", "ellipse", "frame", "line", "arrow", "freedraw"].includes(element.type))
     : (hasTextSelection || hasShapeSelection || hasArrowSelection) && selectedCount > 0;
-  const hideContextualStrokeControls = hasContextualStyleSelection && !hasOnlyContextualImages;
-  const hideContextualTextSize = hasContextualText;
-  const hideContextualOpacity = hasContextualShapeStyle && !hasOnlyContextualImages;
+  const hideContextualStrokeControls = !showFullFormatting && hasContextualStyleSelection && !hasOnlyContextualImages;
+  const hideContextualTextSize = !showFullFormatting && hasContextualText;
+  const hideContextualOpacity = !showFullFormatting && hasContextualShapeStyle && !hasOnlyContextualImages;
   return (
   <section className={`properties-panel${readOnly ? " read-only" : ""}`} aria-label="Properties and style">
     <div className="properties-header">
