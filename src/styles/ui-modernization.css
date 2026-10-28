@@ -313,6 +313,13 @@
     transition: background-color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
   }
 
+  .app .desktop-app-header-panel-actions .ai-ask-toggle.is-icon-only {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+    gap: 0;
+  }
+
   .app .desktop-app-header-panel-actions .properties-toggle:hover,
   .app .desktop-app-header-panel-actions .properties-toggle.active,
   .app .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
