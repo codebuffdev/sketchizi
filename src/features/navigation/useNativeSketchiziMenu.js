@@ -176,6 +176,15 @@ export function useNativeSketchiziMenu({
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
           recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Workspace</div><div class="sketchizi-file-menu-actions" role="group" aria-label="File actions"><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file>New file</button><button type="button" class="sketchizi-folder-action" data-sketchizi-open-file><span aria-hidden="true">↗</span> Open file</button></div><div class="sketchizi-file-menu-announcement" data-file-menu-announcement role="status" aria-live="polite" aria-atomic="true"></div><section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-files-panel"><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details></section>`;
+          // Remove only the horizontal rules called out in the menu mockup;
+          // retain the existing rows, content, and spacing.
+          recentSection.style.setProperty("border-top", "0", "important");
+          recentSection.style.setProperty("border-bottom", "0", "important");
+          const fileActions = recentSection.querySelector(".sketchizi-file-menu-actions");
+          fileActions?.style.setProperty("border-bottom", "0", "important");
+          const recentsGroup = recentSection.querySelector(".sketchizi-file-menu-recents");
+          recentsGroup?.style.setProperty("border-top", "0", "important");
+          recentsGroup?.style.setProperty("border-bottom", "0", "important");
           customBlock.append(recentSection);
           // Community links live in the expanded navigation panel, not in a separate popup.
           // Remove the native GitHub row; the redesigned panel owns this destination.
@@ -183,6 +192,8 @@ export function useNativeSketchiziMenu({
           const communitySection = document.createElement("section");
           communitySection.className = "sketchizi-native-settings-section sketchizi-community-section";
           communitySection.innerHTML = `<a class="sketchizi-sidebar-community-link" href="/reviews" data-sketchizi-review-link><span class="sketchizi-review-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 14.6 8l5.1 1.1-3.5 3.8.5 5.2-4.7-2.1-4.7 2.1.5-5.2-3.5-3.8L9.4 8 12 3.5Z"/><path d="m9.5 11.7 1.7 1.7 3.5-3.6"/></svg></span><span>Drop a Review</span><span aria-hidden="true">›</span></a><a class="sketchizi-sidebar-community-link" href="${githubUrl}" target="_blank" rel="noreferrer noopener" data-sketchizi-coder-link><span class="sketchizi-git-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M18 17v-2a4 4 0 0 0-4-4H10a4 4 0 0 1-4-4"/></svg></span><span>Connect with Coder</span><span aria-hidden="true">↗</span></a>`;
+          communitySection.style.setProperty("border-top", "0", "important");
+          communitySection.style.setProperty("border-bottom", "0", "important");
           customBlock.append(communitySection);
           // The design uses a compact single navigation surface with a dedicated
           // Canvas background row that opens its own adjacent settings panel.
