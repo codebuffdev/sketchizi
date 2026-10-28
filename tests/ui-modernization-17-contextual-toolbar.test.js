@@ -234,3 +234,13 @@ test('More opens the full Properties formatting controls while the compact toolb
   assert.match(panel, /!showFullFormatting && hasContextualText/);
   assert.match(panel, /!showFullFormatting && hasContextualShapeStyle/);
 });
+
+
+test('More switches to the full Properties panel and hides the contextual dock', () => {
+  const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(app, /contextualToolbarHidden=\{propertiesOpen\}/);
+  assert.match(canvas, /contextualToolbarHidden = false/);
+  assert.match(canvas, /!contextualToolbarHidden && <ContextualFormattingToolbar/);
+  assert.match(app, /showFullFormatting=\{propertiesOpen\}/);
+});
