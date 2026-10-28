@@ -150,3 +150,15 @@ test('contextual toolbar offers a native custom stroke and text color picker', (
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: event\.target\.value \}\)/);
   assert.match(dockCss, /\.contextual-custom-color input\[type="color"\]/);
 });
+
+
+test('contextual toolbar clamps to viewport and scrolls its controls on narrow screens', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
+  const rules = dockCss.slice(dockCss.lastIndexOf('/* Keep the contextual toolbar inside'));
+  assert.match(rules, /max-width: calc\(100vw - 16px\) !important/);
+  assert.match(rules, /overflow-x: auto !important/);
+  assert.match(rules, /flex-wrap: nowrap !important/);
+  assert.match(rules, /\.contextual-formatting-group > button,[\s\S]*?flex-shrink: 0 !important/);
+});
