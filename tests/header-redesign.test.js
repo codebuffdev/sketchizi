@@ -195,3 +195,10 @@ test("collaboration dialog stays fully visible and scrollable within viewport", 
   assert.match(rules, /\.collaboration-dialog\s*\{[\s\S]*?max-height: calc\(100dvh/);
   assert.match(rules, /overflow-y: auto !important/);
 });
+
+
+test("Workspaces dropdown closes whenever another editor panel or native menu opens", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /if \(nativeMenuOpen \|\| activePanel \|\| aiAskOpen \|\| designStudioOpen \|\| dockerStudioOpen \|\| kubernetesStudioOpen\)\s*\{\s*setDevopsStudioMenuOpen\(false\);\s*\}/);
+  assert.match(app, /\}, \[nativeMenuOpen, activePanel, aiAskOpen, designStudioOpen, dockerStudioOpen, kubernetesStudioOpen\]\);/);
+});
