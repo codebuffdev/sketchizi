@@ -21,11 +21,57 @@ function iconTags(icon) {
   return (tags.length ? tags : ["icon"]).slice(0, 3).map((tag) => tag === "Eraser Icons" || tag === "Eraser" ? "Essentials" : tag);
 }
 
+function normalizeSearchValue(value) {
+  return String(value || "").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function iconSearchText(icon) {
   return [icon?.name, icon?.id, icon?.subtitle, icon?.category, icon?.source, icon?.catalog,
     ...(Array.isArray(icon?.searchAliases) ? icon.searchAliases : []),
     ...(Array.isArray(icon?.tags) ? icon.tags : [])]
     .filter(Boolean).join(" ").toLowerCase();
+}
+
+function scoreIconSearchMatch(icon, query) {
+  const normalizedQuery = normalizeSearchValue(query);
+  if (!normalizedQuery) return 0;
+
+  const name = normalizeSearchValue(icon?.name);
+  const id = normalizeSearchValue(icon?.id);
+  const aliases = (Array.isArray(icon?.searchAliases) ? icon.searchAliases : []).map(normalizeSearchValue);
+  const tags = (Array.isArray(icon?.tags) ? icon.tags : []).map(normalizeSearchValue);
+  const words = name.split(" ");
+
+  // Rank the visible icon name first; broad metadata matches should never outrank
+  // an exact or near-exact name match.
+  if (name === normalizedQuery) return 1000;
+  if (id === normalizedQuery) return 950;
+  if (aliases.includes(normalizedQuery)) return 900;
+  if (name.startsWith(normalizedQuery)) return 850;
+  if (words.some((word) => word.startsWith(normalizedQuery))) return 800;
+  if (name.includes(normalizedQuery)) return 750;
+  if (aliases.some((alias) => alias.startsWith(normalizedQuery))) return 700;
+  if (aliases.some((alias) => alias.includes(normalizedQuery))) return 650;
+  if (tags.some((tag) => tag === normalizedQuery)) return 600;
+  if (tags.some((tag) => tag.includes(normalizedQuery))) return 500;
+  const metadata = normalizeSearchValue([icon?.subtitle, icon?.category, icon?.source, icon?.catalog].filter(Boolean).join(" "));
+  if (metadata.includes(normalizedQuery)) return 250;
+
+  // Last-resort similar matches: all query words must appear somewhere in the
+  // searchable text, but only after name and alias matches.
+  const queryWords = normalizedQuery.split(" ").filter(Boolean);
+  const haystack = normalizeSearchValue(iconSearchText(icon));
+  return queryWords.length && queryWords.every((word) => haystack.includes(word)) ? 100 : 0;
+}
+
+function rankIconSearchResults(icons, query) {
+  const normalizedQuery = normalizeSearchValue(query);
+  if (!normalizedQuery) return icons;
+  return icons
+    .map((icon, index) => ({ icon, index, score: scoreIconSearchMatch(icon, normalizedQuery) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((item) => item.icon);
 }
 
 function iconSelectionKey(icon) {
@@ -154,15 +200,13 @@ export default function IconLibraryPanel({
 
 
   const displayedIcons = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (activeSource === "all") {
-      return allIcons.filter((icon) => !query || iconSearchText(icon).includes(query));
+    const query = search.trim();
+    if (activeSource === "all") return rankIconSearchResults(allIcons, query);
+    if (activeSource === "eraser") return rankIconSearchResults(eraserCatalog, query);
+    if (["aws", "kubernetes", "networking", "uml", "mindmaps"].includes(activeSource)) {
+      return query ? rankIconSearchResults(visibleIcons, query) : visibleIcons;
     }
-    if (activeSource === "eraser") {
-      return eraserCatalog.filter((icon) => !query || iconSearchText(icon).includes(query));
-    }
-    if (["aws", "kubernetes", "networking", "uml", "mindmaps"].includes(activeSource)) return visibleIcons;
-    return visibleIcons;
+    return query ? rankIconSearchResults(visibleIcons, query) : visibleIcons;
   }, [activeSource, activeCategory, allIcons, eraserCatalog, favorites, recentIcons, search, visibleIcons]);
 
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
@@ -175,15 +219,9 @@ export default function IconLibraryPanel({
     || displayedIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
     || null;
   const activeChip = activeSource;
-  const sourceTabs = [
-    { id: "aws", label: "AWS" },
-    { id: "networking", label: "Networking" },
-    { id: "kubernetes", label: "Kubernetes" },
-    { id: "mindmaps", label: "Mind Maps" },
-    { id: "uml", label: "UML" },
-    { id: "eraser", label: "Essentials" },
-    { id: "all", label: "All" },
-  ];
+  // Keep the library in one unified category. Users can discover icons through
+  // search instead of having to choose a source-specific category first.
+  const sourceTabs = [{ id: "all", label: "All icons" }];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
 
