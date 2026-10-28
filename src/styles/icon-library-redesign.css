@@ -1804,3 +1804,50 @@
   overflow-y: auto !important;
   overscroll-behavior: contain;
 }
+
+
+/* Compact source/category filters: icon-only controls preserve the panel's
+   horizontal space; title and aria-label retain discoverability. */
+.app .library-panel-redesign .library-source-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 7px;
+}
+.app .library-panel-redesign .library-source-chip {
+  box-sizing: border-box;
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  gap: 0;
+}
+.app .library-panel-redesign .library-source-chip-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.app .library-panel-redesign .library-source-chip svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+@media (max-width: 420px) {
+  .app .library-panel-redesign .library-source-tabs { gap: 5px; }
+  .app .library-panel-redesign .library-source-chip {
+    flex-basis: 32px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+}
