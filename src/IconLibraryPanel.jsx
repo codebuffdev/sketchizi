@@ -48,6 +48,7 @@ function scoreIconSearchMatch(icon, query) {
   if (id === normalizedQuery) return 950;
   if (aliases.includes(normalizedQuery)) return 900;
   if (name.startsWith(normalizedQuery)) return 850;
+  if (words.includes(normalizedQuery)) return 825;
   if (words.some((word) => word.startsWith(normalizedQuery))) return 800;
   if (name.includes(normalizedQuery)) return 750;
   if (aliases.some((alias) => alias.startsWith(normalizedQuery))) return 700;
