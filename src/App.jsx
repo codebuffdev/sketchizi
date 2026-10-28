@@ -207,6 +207,11 @@ function App() {
     // A cloud session must never overwrite the browser-local sketch while its
     // document is loading or after a failed load.
     if (!cloudSessionRef.current.active || !apiRef.current) return;
+    // Excalidraw can emit a transient empty scene while restoring/updating a
+    // scene. Never let that snapshot replace a non-empty cloud document.
+    // Keep any already queued non-empty save intact when an empty callback
+    // arrives during restoration.
+    if (!Array.isArray(elements) || !elements.some((element) => element && !element.isDeleted)) return;
     setCloudSaveState((current) => ({ ...current, state: "pending", error: "" }));
     if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
     cloudSaveTimerRef.current = window.setTimeout(() => {
@@ -219,7 +224,6 @@ function App() {
         elements,
         appState: appState || api.getAppState?.() || {},
         metadata: documentMetadataRef.current,
-        allowEmpty: true,
       });
       setCloudSaveState((current) => ({ ...current, state: "saving", error: "" }));
       cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
