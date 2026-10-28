@@ -5,6 +5,15 @@ import { createCloudDocument, sanitizeCloudAppState } from "../src/features/work
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
+test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /className="workspaces-menu-icon"[^>]*><path d="M3\.5 7\.5h6l2 2h9/);
+  assert.match(app, /className="ai-ask-toggle-icon"[^>]*><path d="M20 11\.5a7\.5 7\.5/);
+  assert.match(app, /className="architecture-validation-toggle-icon"[^>]*><path d="M12 3 20 6/);
+  assert.doesNotMatch(app, /<span className="ai-ask-toggle-icon" aria-hidden="true">✳<\/span>/);
+  assert.doesNotMatch(app, /<span className="architecture-validation-toggle-icon">✓<\/span>/);
+});
+
 test("Cloud Workspace opens the existing sign-in dialog for anonymous or unavailable sessions", async () => {
   const source = await read("../src/main.jsx");
   const auth = await read("../src/features/auth/AuthenticationControl.jsx");
