@@ -192,7 +192,10 @@ test('properties panel hides only controls duplicated by contextual selection fo
   const panel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
   assert.match(app, /contextualSelectionElements=\{selectedElements\}/);
-  assert.match(panel, /const hideContextualStrokeControls = contextualSelection\.length > 0 && !hasContextualLibraryImage/);
+  assert.match(panel, /const hasContextualStyleSelection = contextualSelection\.length > 0/);
+  assert.match(panel, /contextualSelection\.length === 0 && hasTextSelection && selectedCount > 0/);
+  assert.match(panel, /const hasOnlyContextualImages = contextualSelection\.length > 0 && contextualSelection\.every/);
+  assert.match(panel, /const hideContextualStrokeControls = hasContextualStyleSelection && !hasOnlyContextualImages/);
   assert.match(panel, /!hideContextualStrokeControls && <div className="style-group"/);
   assert.match(panel, /!hideContextualTextSize && <div className="property-row">[\s\S]*?Font size/);
   assert.match(panel, /hideContextualOpacity/);
@@ -208,4 +211,14 @@ test('contextual duplicate suppression covers text, shape, connector, image, and
   assert.match(panel, /"rectangle", "diamond", "ellipse", "frame", "line", "arrow", "freedraw"/);
   assert.match(panel, /contextualSelection\.some\(/);
   assert.match(panel, /contextualSelection\.length > 0/);
+});
+
+
+test('duplicate suppression falls back to panel selection flags and preserves image-only controls', () => {
+  const panel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
+  assert.match(panel, /contextualSelection\.length === 0 && hasTextSelection && selectedCount > 0/);
+  assert.match(panel, /contextualSelection\.length === 0 && \(hasShapeSelection \|\| hasArrowSelection\) && selectedCount > 0/);
+  assert.match(panel, /hasOnlyContextualImages/);
+  assert.match(panel, /const hideContextualTextSize = hasContextualText/);
+  assert.match(panel, /const hideContextualOpacity = hasContextualShapeStyle && !hasOnlyContextualImages/);
 });
