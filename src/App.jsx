@@ -181,6 +181,11 @@ function App() {
       extensions: documentMetadataRef.current?.extensions || {},
       format: documentMetadataRef.current?.format || "excalidraw",
     };
+    const serializedDocument = JSON.stringify(document);
+    const documentBytes = new TextEncoder().encode(serializedDocument).byteLength;
+    if (documentBytes > maxDocumentBytes) {
+      throw new Error(`This drawing is ${(documentBytes / (1024 * 1024)).toFixed(2)} MiB, above the 2 MiB Cloud Workspace limit. Remove large embedded images or simplify the drawing, then try again.`);
+    }
     const result = await workspaceClient.createDiagram({
       projectId,
       name: name.trim(),
