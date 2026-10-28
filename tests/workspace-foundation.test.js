@@ -4,12 +4,14 @@ import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("authenticated users get Workspace by default and signed-out users keep the editor", async () => {
+test("only verified authenticated users get Workspace; signed-out or unverifiable sessions keep the editor", async () => {
   const source = await read("../src/main.jsx");
   assert.match(source, /get\("editor"\) === "1"/);
-  assert.match(source, /if \(editorRoute \|\| auth\.status === "anonymous"\) return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
+  assert.match(source, /if \(editorRoute \|\| auth\.status === "anonymous" \|\| auth\.status === "unavailable"\)\s*\{\s*return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
+  assert.match(source, /if \(auth\.status === "checking"\)/);
   assert.match(source, /<WorkspaceDashboard/);
   assert.match(source, /onOpenEditor=\{\(\) => \{ window\.location\.assign\("\/\?editor=1"\); \}\}/);
+  assert.doesNotMatch(source, /Could not verify your sign-in session\./);
 });
 
 test("Workspace stylesheet is scoped and imported by the dashboard component", async () => {
