@@ -3,6 +3,7 @@
 .auth-control-loading { color: var(--ui-text-muted, #777); font-size: 11px; white-space: nowrap; padding: 0 6px; }
 .auth-header-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 11px; border: 1px solid var(--ui-border, #d7d7df); border-radius: 8px; background: var(--ui-surface-solid, #fff); color: var(--ui-text-strong, #222); font: inherit; font-size: 12px; font-weight: 650; white-space: nowrap; cursor: pointer; }
 .auth-header-button:hover { background: var(--ui-surface-hover, #f3f3f6); }
+.auth-header-button.is-icon-only { width: 34px; min-width: 34px; padding: 0; }
 .auth-header-button:disabled { opacity: .6; cursor: wait; }
 .auth-account-control { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
 .auth-account-avatar { width: 25px; height: 25px; flex: 0 0 25px; border-radius: 50%; object-fit: cover; }
