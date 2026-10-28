@@ -25,8 +25,11 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
 
-  // Personalized authentication and AI traffic must always reach the network. Never cache sessions, CSRF tokens, OAuth callbacks, usage quotas, chat responses, or diagram context.
-  if (url.origin === self.location.origin && ((url.pathname === "/api/auth" || url.pathname.startsWith("/api/auth/")) || (url.pathname === "/api/ai" || url.pathname.startsWith("/api/ai/")))) return;
+  // Personalized APIs must always reach the network. Never cache sessions,
+  // CSRF tokens, workspace projects/diagrams, AI responses, or diagram context.
+  if (url.origin === self.location.origin && [
+    "/api/auth", "/api/ai", "/api/workspace",
+  ].some((prefix) => url.pathname === prefix || url.pathname.startsWith(prefix + "/"))) return;
 
   if (url.origin === self.location.origin && url.pathname === LOCAL_ICON_PATH) {
     event.respondWith((async () => {
