@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { workspaceClient } from "./workspaceClient.js";\n\nconst MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
+import { workspaceClient } from "./workspaceClient.js";
+
+const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
 
 export default function CloudSaveDialog({ initialName, onClose, onSave }) {
   const [projects, setProjects] = useState([]);
