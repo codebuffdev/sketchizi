@@ -1,6 +1,17 @@
 import { useMemo } from "react";
 
-const FONT_FAMILIES = [\n  [1, "Virgil"],\n  [2, "Helvetica"],\n  [3, "Cascadia"],\n  [5, "Excalifont"],\n  [6, "Nunito"],\n  [7, "Lilita One"],\n  [8, "Comic Shanns"],\n  [9, "Liberation Sans"],\n];\n\nconst STROKE_COLORS = [
+const FONT_FAMILIES = [
+  [1, "Virgil"],
+  [2, "Helvetica"],
+  [3, "Cascadia"],
+  [5, "Excalifont"],
+  [6, "Nunito"],
+  [7, "Lilita One"],
+  [8, "Comic Shanns"],
+  [9, "Liberation Sans"],
+];
+
+const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
   ["#d25555", "Red"],
   ["#3f9b57", "Green"],
