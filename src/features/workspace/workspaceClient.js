@@ -1,10 +1,9 @@
-import { ensureBackendReady } from "../backend/backendWarmup.js";
-
 const PREFIX = "/api/workspace";
 const CSRF_URL = "/api/auth/csrf";
 
 async function getCsrfHeaders() {
-  await ensureBackendReady();
+  // Workspace persistence is served by the authenticated backend, not AI Ask.
+  // Do not block project operations on the separate AI service warm-up endpoint.
   const response = await fetch(CSRF_URL, {
     credentials: "same-origin",
     cache: "no-store",
@@ -17,7 +16,6 @@ async function getCsrfHeaders() {
 }
 
 async function request(path, { method = "GET", body, headers = {} } = {}) {
-  await ensureBackendReady();
   const requestHeaders = new Headers({ accept: "application/json", ...headers });
   let serialized;
   if (body !== undefined) {
@@ -47,6 +45,7 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
 }
 
 export const workspaceClient = Object.freeze({
+  getLimits: () => request("/limits"),
   listProjects: () => request("/projects"),
   createProject: (project) => request("/projects", { method: "POST", body: project }),
   getProject: (projectId) => request(`/projects/${encodeURIComponent(projectId)}`),

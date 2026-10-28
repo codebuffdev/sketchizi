@@ -7,11 +7,13 @@ function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), { status, headers: { "content-type": "application/json" } });
 }
 
-test("service worker bypasses authentication API cache handling", async () => {
+test("service worker bypasses authentication, AI, and Workspace API cache handling", async () => {
   const source = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
-  assert.match(source, /url\.pathname === "\/api\/auth" \|\| url\.pathname\.startsWith\("\/api\/auth\/"\)/);
-  assert.match(source, /url\.pathname === "\/api\/ai" \|\| url\.pathname\.startsWith\("\/api\/ai\/"\)/);
-  assert.match(source, /Never cache sessions, CSRF tokens, OAuth callbacks, usage quotas, chat responses, or diagram context/);
+  assert.match(source, /"\/api\/auth"/);
+  assert.match(source, /"\/api\/ai"/);
+  assert.match(source, /"\/api\/workspace"/);
+  assert.match(source, /Personalized APIs must always reach the network/);
+  assert.match(source, /Never cache sessions,[\s\S]*?diagram context/);
 });
 
 test("auth client uses same-origin endpoints and does not persist credentials", async () => {
@@ -43,7 +45,6 @@ test("concurrent auth checks share one request and one caller can cancel indepen
     const second = fetchCurrentUser();
     cancelledCaller.abort();
     await assert.rejects(first, (error) => error.name === "AbortError");
-    // The shared health probe completes before the shared auth lookup starts.
     for (let attempt = 0; attempt < 10 && !resolveResponse; attempt += 1) {
       await new Promise((resolve) => setImmediate(resolve));
     }
@@ -94,7 +95,10 @@ test("AI Ask marks authentication before waiting for conversation creation", asy
 
 test("auth status timeout allows for a Render cold start instead of failing after eight seconds", async () => {
   const source = await readFile(new URL("../src/features/auth/authClient.js", import.meta.url), "utf8");
-  assert.match(source, /AUTH_CHECK_TIMEOUT_MS = 120_000/);
+  assert.match(source, /AUTH_CHECK_TIMEOUT_MS = 12_000/);
+  assert.match(source, /Promise\.race\(\[check, timeout\]\)/);
+  const authCheck = source.slice(source.indexOf("async function requestCurrentUser()"), source.indexOf("export function fetchCurrentUser"));
+  assert.doesNotMatch(authCheck, /ensureBackendReady|\/api\/ai\/warmup/);
   assert.match(source, /AUTHENTICATED_CACHE_MS = 60_000/);
 });
 
@@ -108,15 +112,15 @@ test("header exposes a status retry when authentication lookup is unavailable", 
 
 test("a successful authentication check clears a stale OAuth login error", async () => {
   const source = await readFile(new URL("../src/features/auth/AuthenticationControl.jsx", import.meta.url), "utf8");
-  assert.match(source, /if \(authenticated\) setLoginError\(\"\"\)/);
-  assert.match(source, /const handleGoogleSignIn = async \(\) => \{[\s\S]*?setLoginError\(\"\"\);[\s\S]*?await startGoogleSignIn/);
+  assert.match(source, /if \(authenticated\) setLoginError\(""\)/);
+  assert.match(source, /const handleGoogleSignIn = async \(\) => \{[\s\S]*?setLoginError\(""\);[\s\S]*?await startGoogleSignIn/);
 });
 
 
 test("stale OAuth errors are invalidated, cleared on confirmed auth, and hidden for authenticated users", async () => {
   const source = await readFile(new URL("../src/features/auth/AuthenticationControl.jsx", import.meta.url), "utf8");
   assert.match(source, /if \(returnedFromLoginFailure\) \{[\s\S]*?invalidateCurrentUserCache\(\);/);
-  assert.match(source, /useEffect\(\(\) => \{\s*if \(auth\.status === "authenticated"\) setLoginError\(\"\"\);\s*\}, \[auth\.status\]\)/);
+  assert.match(source, /useEffect\(\(\) => \{\s*if \(auth\.status === "authenticated"\) setLoginError\(""\);\s*\}, \[auth\.status\]\)/);
   assert.match(source, /loginError && auth\.status !== "authenticated" && <span className="auth-inline-error"/);
   assert.match(source, /loginError && auth\.status !== "authenticated" && <p className="auth-dialog-notice"/);
 });

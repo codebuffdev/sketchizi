@@ -4,9 +4,9 @@ const AUTH_ME_URL = "/api/auth/me";
 const AUTH_CSRF_URL = "/api/auth/csrf";
 const AUTH_LOGOUT_URL = "/api/auth/logout";
 const AUTH_PROVIDERS_URL = "/api/auth/providers";
-// Render may need substantially longer than a typical request to wake a sleeping auth service.
-// Keep the app usable while it wakes instead of incorrectly declaring the user signed out.
-const AUTH_CHECK_TIMEOUT_MS = 120_000;
+// Bound the entire sign-in check, including backend warm-up. A stalled warm-up
+// must never leave the application stuck on a blank loading screen.
+const AUTH_CHECK_TIMEOUT_MS = 12_000;
 const AUTHENTICATED_CACHE_MS = 60_000;
 const ANONYMOUS_CACHE_MS = 5000;
 
@@ -68,10 +68,20 @@ function waitForCaller(promise, signal) {
 }
 
 async function requestCurrentUser() {
-  await ensureBackendReady();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), AUTH_CHECK_TIMEOUT_MS);
-  try {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      const error = new Error("Checking sign-in status timed out. Please retry or open the editor.");
+      error.code = "auth_status_timeout";
+      reject(error);
+    }, AUTH_CHECK_TIMEOUT_MS);
+  });
+  const check = (async () => {
+    // Authentication is served by its own backend route. Do not gate this
+    // request on the unrelated AI Ask warm-up endpoint; a sleeping or broken
+    // AI service must not prevent a signed-in user from reaching Workspace.
     const response = await fetch(AUTH_ME_URL, {
       credentials: "same-origin",
       cache: "no-store",
@@ -87,13 +97,10 @@ async function requestCurrentUser() {
     }
     const payload = await response.json();
     return { authenticated: Boolean(payload.authenticated), user: payload.user || null };
-  } catch (error) {
-    if (controller.signal.aborted) {
-      const timeoutError = new Error("Checking sign-in status timed out. Please retry.");
-      timeoutError.code = "auth_status_timeout";
-      throw timeoutError;
-    }
-    throw error;
+  })();
+  try {
+    // The timeout covers warm-up as well as the session endpoint itself.
+    return await Promise.race([check, timeout]);
   } finally {
     clearTimeout(timeoutId);
   }

@@ -6,7 +6,9 @@ export default function AuthenticationControl() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [providers, setProviders] = useState({ google: true, github: false });
+  // Keep both sign-in choices visible while provider discovery is unavailable.
+  // A successful provider response below still hides any provider not configured.
+  const [providers, setProviders] = useState({ google: true, github: true });
   const [busy, setBusy] = useState(false);
   const [githubConnection, setGithubConnection] = useState({ loading: false, connected: false, authorizationAvailable: false, githubLogin: "" });
   const [githubConnectionBusy, setGithubConnectionBusy] = useState(false);
@@ -61,10 +63,27 @@ export default function AuthenticationControl() {
         setAuth({ status: authenticated ? "authenticated" : "anonymous", user, error: "" });
         // An old OAuth failure flag can remain in component state after a later
         // successful sign-in. A confirmed authenticated session wins over it.
-        if (authenticated) setLoginError("");
+        if (authenticated) {
+          setLoginError("");
+        } else if (window.location.pathname === "/workspace" || window.location.pathname.startsWith("/workspace/")) {
+          setSignInContext({
+            message: "Sign in to access Cloud Workspace. Your projects and diagrams are saved to your account.",
+            returnTo: window.location.pathname + window.location.search + window.location.hash,
+          });
+          setDialogOpen(true);
+        }
       })
       .catch((error) => {
-        if (error.name !== "AbortError") setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
+        if (error.name !== "AbortError") {
+          setAuth({ status: "unavailable", user: null, error: error.message || "Sign-in status is temporarily unavailable. You can keep using Sketchizi." });
+          if (window.location.pathname === "/workspace" || window.location.pathname.startsWith("/workspace/")) {
+            setSignInContext({
+              message: "Sign in to access Cloud Workspace. Your projects and diagrams are saved to your account.",
+              returnTo: window.location.pathname + window.location.search + window.location.hash,
+            });
+            setDialogOpen(true);
+          }
+        }
       });
     return () => { controller.abort(); window.removeEventListener("sketchizi:auth-required", openForHost); };
   }, []);

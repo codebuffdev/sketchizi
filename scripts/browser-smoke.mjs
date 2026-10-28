@@ -11,7 +11,7 @@ const makePage = async (viewport) => {
 };
 
 const openDesignStudio = async (page) => {
-  await page.getByRole("button", { name: /design workspaces/i }).click();
+  await page.getByRole("button", { name: /workspaces/i }).click();
   await page.getByRole("menuitem", { name: /design studio/i }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
@@ -20,7 +20,7 @@ try {
   // Template journey at desktop width, then verify the creation screen at narrow widths.
   const desktop = await makePage({ width: 1440, height: 1000 });
   const page = desktop.page;
-  await page.goto(baseURL, { waitUntil: "networkidle", timeout: 60000 });
+  await page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await openDesignStudio(page);
   await page.getByRole("tab", { name: "AWS architecture" }).click();
   await page.getByRole("button", { name: /Three-Tier AWS Web Application/i }).waitFor();
@@ -36,7 +36,7 @@ try {
 
   // A fresh browser context validates the independent blank-canvas path.
   const blank = await makePage({ width: 1280, height: 800 });
-  await blank.page.goto(baseURL, { waitUntil: "networkidle", timeout: 60000 });
+  await blank.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await openDesignStudio(blank.page);
   await blank.page.getByRole("button", { name: "Start blank" }).click();
   await blank.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
@@ -45,7 +45,7 @@ try {
 
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
-  await responsive.page.goto(baseURL, { waitUntil: "networkidle", timeout: 60000 });
+  await responsive.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await openDesignStudio(responsive.page);
   await responsive.page.getByRole("button", { name: "Start blank" }).waitFor();
   const overflow = await responsive.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);

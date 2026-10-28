@@ -36,6 +36,7 @@ import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
 import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinitions";
 import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
+import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -49,6 +50,7 @@ import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 import "./features/design/design.css";
+import "./features/workspace/workspace.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
@@ -151,7 +153,128 @@ function App() {
 
   const documentMetadataRef = useRef({ metadata: {}, extensions: {}, format: "excalidraw" });
   const persistence = useSketchPersistence({ apiRef, documentMetadataRef });
-  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave: queueLocalSketchSave, persistSketchNow, retryLocalSave, downloadRecoveryBackup } = persistence;
+  const cloudUrlParams = new URLSearchParams(window.location.search);
+  const cloudDiagramId = cloudUrlParams.get("cloudDiagramId") || "";
+  const cloudProjectId = cloudUrlParams.get("cloudProjectId") || "";
+  const cloudSessionRef = useRef({ active: false, diagramId: "", projectId: "", revision: null, name: "" });
+  const cloudSaveTimerRef = useRef(null);
+  const cloudSaveQueueRef = useRef(Promise.resolve());
+  const cloudFlushImmediatelyRef = useRef(false);
+  const cloudLoadStartedRef = useRef(false);
+  const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+
+  const queueSketchSave = useCallback((elements, appState) => {
+    if (!cloudDiagramId) {
+      queueLocalSketchSave(elements, appState);
+      return;
+    }
+    // A cloud session must never overwrite the browser-local sketch while its
+    // document is loading or after a failed load.
+    if (!cloudSessionRef.current.active || !apiRef.current) return;
+    setCloudSaveState((current) => ({ ...current, state: "pending", error: "" }));
+    if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+    cloudSaveTimerRef.current = window.setTimeout(() => {
+      cloudSaveTimerRef.current = null;
+      const session = cloudSessionRef.current;
+      const api = apiRef.current;
+      if (!session.active || !api || !Array.isArray(elements)) return;
+      const document = {
+        elements,
+        appState: appState || api.getAppState?.() || {},
+        files: api.getFiles?.() || {},
+        metadata: documentMetadataRef.current?.metadata || {},
+        extensions: documentMetadataRef.current?.extensions || {},
+        format: documentMetadataRef.current?.format || "excalidraw",
+      };
+      setCloudSaveState((current) => ({ ...current, state: "saving", error: "" }));
+      cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
+        const revision = cloudSessionRef.current.revision;
+        const result = await workspaceClient.saveDiagram(session.diagramId, revision, document);
+        if (result && result.revision !== undefined && result.revision !== null) {
+          cloudSessionRef.current.revision = result.revision;
+        } else if (typeof revision === "number") {
+          cloudSessionRef.current.revision = revision + 1;
+        }
+        setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
+      }).catch((error) => {
+        const conflict = error?.status === 409 || error?.status === 412 || error?.code === "revision_conflict";
+        setCloudSaveState({
+          state: conflict ? "conflict" : "error",
+          error: conflict
+            ? "This cloud diagram changed in another session. Reload the latest version before continuing; your current edits are still available to download as a backup."
+            : error.message || "Could not save this cloud diagram.",
+        });
+      });
+    }, cloudFlushImmediatelyRef.current ? 0 : 700);
+  }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
+
+  useEffect(() => {
+    if (!cloudDiagramId || !apiReady || !sketchReady || cloudLoadStartedRef.current) return undefined;
+    let cancelled = false;
+    cloudLoadStartedRef.current = true;
+    setCloudSaveState({ state: "loading", error: "" });
+    workspaceClient.getDiagram(cloudDiagramId).then((result) => {
+      if (cancelled) return;
+      const diagram = result?.diagram || result;
+      const document = diagram?.document || diagram?.content;
+      if (!document || !Array.isArray(document.elements)) {
+        throw new Error("The cloud diagram did not contain a valid Sketchizi document.");
+      }
+      const api = apiRef.current;
+      if (!api?.updateScene) throw new Error("The editor is not ready to load this cloud diagram.");
+      const elements = restoreElements(document.elements, null, { repairBindings: true });
+      documentMetadataRef.current = {
+        metadata: document.metadata || {},
+        extensions: document.extensions || {},
+        format: document.format || diagram.format || "excalidraw",
+      };
+      cloudSessionRef.current = {
+        active: true,
+        diagramId: diagram.id || cloudDiagramId,
+        projectId: diagram.projectId || cloudProjectId,
+        revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
+        name: diagram.name || "Cloud diagram",
+      };
+      api.updateScene({
+        elements,
+        appState: { ...api.getAppState(), ...(document.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+      api.history?.clear?.();
+      const files = Object.values(document.files || {});
+      if (files.length) api.addFiles?.(files);
+      setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format: document.format || diagram.format || "excalidraw" });
+      if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
+      setCloudSaveState({ state: "saved", error: "" });
+      document.title = `${diagram.name || "Cloud diagram"} · Sketchizi`;
+    }).catch((error) => {
+      if (cancelled) return;
+      cloudSessionRef.current.active = false;
+      setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
+    });
+    return () => { cancelled = true; };
+  }, [apiReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
+
+  useEffect(() => {
+    const flushPendingCloudSave = () => {
+      if (!cloudDiagramId || !cloudSessionRef.current.active || !apiRef.current) return;
+      const api = apiRef.current;
+      cloudFlushImmediatelyRef.current = true;
+      queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+      cloudFlushImmediatelyRef.current = false;
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flushPendingCloudSave();
+    };
+    window.addEventListener("pagehide", flushPendingCloudSave);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", flushPendingCloudSave);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+    };
+  }, [apiRef, cloudDiagramId, queueSketchSave]);
 
   const createDesignFromStudio = useCallback(({ templateId, name, ruleMode = "guided", templateOptions = {} }) => {
     const api = apiRef.current;
@@ -408,13 +531,14 @@ function App() {
   // predate scene restoration or Excalidraw's internal theme update.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
     handleExcalidrawChange(elements, appState);
+    if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         const activeTheme = document.querySelector(".app")?.dataset.theme;
         applyCanvasThemeBackground(apiRef.current, activeTheme === "dark");
       });
     });
-  }, [apiRef, handleExcalidrawChange]);
+  }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
@@ -1403,6 +1527,22 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
+      {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+        <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
+        {cloudSaveState.state === "error" && <>
+          <button type="button" onClick={() => {
+            const api = apiRef.current;
+            if (!api) return;
+            queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+          }}>Retry save</button>
+          <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
+        </>}
+        {cloudSaveState.state === "conflict" && <>
+          <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
+          <button type="button" onClick={() => window.location.reload()}>Reload latest version</button>
+        </>}
+        <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
+      </div>}
       <DesktopAppHeader
         commands={commands}
         openCommandPalette={commandPalette.openCommandPalette}
@@ -1485,6 +1625,10 @@ function App() {
           </button>
           {devopsStudioMenuOpen && (
             <div className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Design Workspaces">
+              <button type="button" role="menuitem" className="cloud-workspace-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); window.location.assign("/workspace"); }} title="Open your private cloud projects and diagrams">
+                <span className="create-design-menu-icon" aria-hidden="true">☁</span>
+                <span><strong>Cloud Workspace</strong><small>Your saved projects and diagrams</small></span>
+              </button>
               <button type="button" role="menuitem" className="design-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDesignStudioOpen(true); }} title="Create an architecture or diagram from a template">
                 <span className="create-design-menu-icon" aria-hidden="true">◇</span>
                 <span><strong>Design Studio</strong><small>Architecture and diagram templates</small></span>
