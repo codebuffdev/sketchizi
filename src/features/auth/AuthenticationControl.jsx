@@ -284,7 +284,22 @@ export default function AuthenticationControl() {
 
       {loginError && auth.status !== "authenticated" && <span className="auth-inline-error" role="status">{loginError}</span>}
       {auth.error && <span className="auth-inline-error" role="status" title={auth.error}>Auth unavailable</span>}
-      {auth.status === "unavailable" && <button className="auth-header-button" type="button" onClick={retryAuthStatus} title="Retry checking your sign-in session">Retry</button>}
+      {auth.status === "unavailable" && (
+        <button
+          className="auth-header-button is-icon-only"
+          type="button"
+          onClick={retryAuthStatus}
+          title="Retry checking your sign-in session"
+          aria-label="Retry checking your sign-in session"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 7v5h-5" />
+            <path d="M19 12a7.5 7.5 0 0 0-13.2-4.9L4 9" />
+            <path d="M4 17v-5h5" />
+            <path d="M5 12a7.5 7.5 0 0 0 13.2 4.9L20 15" />
+          </svg>
+        </button>
+      )}
       {dialogOpen && (
         <div className="auth-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialogOpen(false); }}>
           <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title">
