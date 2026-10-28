@@ -992,3 +992,57 @@
   background: rgb(167 139 250 / 24%) !important;
   border-color: #a78bfa !important;
 }
+
+
+/* Color controls must retain their actual swatch colors. Generic button
+   surface rules above intentionally style regular controls, but must never
+   overwrite the background of stroke/fill color choices. */
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  background-image: none !important;
+  border: 1px solid rgb(31 41 55 / 40%) !important;
+  opacity: 1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch:hover {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  outline: 2px solid rgb(99 102 241 / 70%) !important;
+  outline-offset: 1px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch[aria-pressed="true"] {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  border: 2px solid #6366f1 !important;
+  outline: 1px solid #ffffff !important;
+  outline-offset: 1px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(135deg, transparent 44%, #dc2626 46%, #dc2626 53%, transparent 55%) !important;
+  color: #20242c !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  border-color: rgb(226 232 240 / 45%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(135deg, transparent 44%, #f87171 46%, #f87171 53%, transparent 55%) !important;
+  color: #f8fafc !important;
+}
