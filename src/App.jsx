@@ -167,6 +167,20 @@ function App() {
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
+  useEffect(() => {
+    const detachCloudDocument = () => {
+      if (cloudSaveTimerRef.current) {
+        window.clearTimeout(cloudSaveTimerRef.current);
+        cloudSaveTimerRef.current = null;
+      }
+      cloudSessionRef.current = { active: false, diagramId: "", projectId: "", revision: null, name: "" };
+      cloudFlushImmediatelyRef.current = false;
+      setCloudSaveState({ state: "inactive", error: "" });
+    };
+    window.addEventListener("sketchizi:detach-cloud-document", detachCloudDocument);
+    return () => window.removeEventListener("sketchizi:detach-cloud-document", detachCloudDocument);
+  }, []);
+
   const saveDrawingToCloud = useCallback(async ({ projectId, name }) => {
     const api = apiRef.current;
     if (!api?.getSceneElements) throw new Error("The editor is not ready to save this drawing.");
