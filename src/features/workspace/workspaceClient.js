@@ -1,14 +1,32 @@
 const PREFIX = "/api/workspace";
 const CSRF_URL = "/api/auth/csrf";
+const REQUEST_TIMEOUT_MS = 12000;
+
+function timeoutSignal() {
+  return AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+}
+
+function requestFailure(error, fallback) {
+  if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+    return new Error("The Cloud Workspace request timed out. Check your connection and whether the diagram appeared in Cloud Workspace before trying again.");
+  }
+  return error instanceof Error ? error : new Error(fallback);
+}
 
 async function getCsrfHeaders() {
   // Workspace persistence is served by the authenticated backend, not AI Ask.
   // Do not block project operations on the separate AI service warm-up endpoint.
-  const response = await fetch(CSRF_URL, {
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: { accept: "application/json" },
-  });
+  let response;
+  try {
+    response = await fetch(CSRF_URL, {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { accept: "application/json" },
+      signal: timeoutSignal(),
+    });
+  } catch (error) {
+    throw requestFailure(error, "Could not obtain a security token. Refresh the page and retry.");
+  }
   if (!response.ok) throw new Error("Could not obtain a security token. Refresh the page and retry.");
   const payload = await response.json();
   if (!payload?.token || !payload?.headerName) throw new Error("The security token response was invalid.");
@@ -25,13 +43,19 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
   if (!["GET", "HEAD"].includes(method)) {
     Object.entries(await getCsrfHeaders()).forEach(([key, value]) => requestHeaders.set(key, value));
   }
-  const response = await fetch(`${PREFIX}${path}`, {
-    method,
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: requestHeaders,
-    body: serialized,
-  });
+  let response;
+  try {
+    response = await fetch(`${PREFIX}${path}`, {
+      method,
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: requestHeaders,
+      body: serialized,
+      signal: timeoutSignal(),
+    });
+  } catch (error) {
+    throw requestFailure(error, "Cloud Workspace is temporarily unavailable.");
+  }
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     const error = new Error(payload?.error || `Workspace request failed (${response.status}).`);
