@@ -10,7 +10,7 @@ const styles = readFileSync(new URL("../src/styles/document-save-status.css", im
 const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 test("header shows current document identity and a distinct unsaved-to-file state", () => {
-  assert.match(app, /currentDocumentName=\{currentFile\?\.name \|\| "Untitled drawing"\}/);
+  assert.match(app, /currentDocumentName=\{cloudDiagramId \? \(cloudSessionRef\.current\.name \|\| "Cloud diagram"\) : \(currentFile\?\.name \|\| "Untitled drawing"\)\}/);
   assert.match(app, /currentDocumentDirty=\{documentDirty\}/);
   assert.match(app, /currentDocumentFileBacked=\{Boolean\(currentFile\?\.handle\)\}/);
   assert.match(header, /desktop-app-document-identity/);

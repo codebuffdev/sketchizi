@@ -1557,7 +1557,7 @@ function App() {
         setThemeMode={setThemeMode}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
-        currentDocumentName={currentFile?.name || "Untitled drawing"}
+        currentDocumentName={cloudDiagramId ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")}
         currentDocumentDirty={documentDirty}
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
