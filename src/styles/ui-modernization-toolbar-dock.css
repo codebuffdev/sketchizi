@@ -1376,3 +1376,11 @@
   background: rgb(124 58 237 / 13%) !important;
   color: #8b78ff !important;
 }
+
+
+/* Full Properties formatting and the compact contextual dock are mutually exclusive.
+   Scope this to the workspace state as a defensive guarantee, even if the dock
+   component remains mounted during a selection update. */
+.app .desktop-workspace-context-open .contextual-formatting-toolbar {
+  display: none !important;
+}
