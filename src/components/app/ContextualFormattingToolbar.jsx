@@ -106,7 +106,8 @@ export default function ContextualFormattingToolbar({
   const currentStroke = (first?.customData?.iconColor || first?.strokeColor)?.toLowerCase();
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
-  const currentFontSize = Number(first?.fontSize) || 20;\n  const currentFontFamily = FONT_FAMILIES.some(([id]) => id === first?.fontFamily) ? first.fontFamily : 5;
+  const currentFontSize = Number(first?.fontSize) || 20;
+  const currentFontFamily = FONT_FAMILIES.some(([id]) => id === first?.fontFamily) ? first.fontFamily : 5;
   const currentOpacity = Number(first?.opacity ?? 100);
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
