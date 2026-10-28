@@ -1740,14 +1740,17 @@ function App() {
 
         <button
           type="button"
-          className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
+          className={aiAskOpen ? "ai-ask-toggle is-icon-only active" : "ai-ask-toggle is-icon-only"}
           onClick={() => setAiAskOpen((value) => !value)}
-          title="Ask AI about this diagram"
+          title="AI Ask"
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
         >
-          <svg className="ai-ask-toggle-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-3.5 2v-6A7.5 7.5 0 1 1 20 11.5Z"/><path d="m12.5 6.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8Z"/></svg>
-          <span>AI Ask</span>
+          <svg className="ai-ask-toggle-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19.5 11V6.5a3.5 3.5 0 0 0-3.5-3.5H6.5A3.5 3.5 0 0 0 3 6.5v11A3.5 3.5 0 0 0 6.5 21h5.2" />
+            <path d="m7 15 2.2-6 2.2 6m-3.6-2h2.8M14 9v6" />
+            <path d="m18.5 13 1.1 2.5 2.4 1-2.4 1-1.1 2.5-1-2.5-2.5-1 2.5-1Z" fill="currentColor" stroke="none" />
+          </svg>
         </button>
 
         <button
