@@ -64,23 +64,30 @@ export default function WorkspaceEntryGate() {
     }
 
     setEntry({ status: "checking", page: "unknown", user: null, error: "" });
-    fetchCurrentUser().then(({ authenticated, user }) => {
-      if (cancelled) return;
-      setEntry({
-        status: "ready",
-        page: authenticated || isExplicitDashboard ? "dashboard" : "editor",
-        user: authenticated ? user : null,
-        error: "",
+    const refreshAuth = () => {
+      fetchCurrentUser().then(({ authenticated, user }) => {
+        if (cancelled) return;
+        setEntry({
+          status: "ready",
+          page: authenticated || isExplicitDashboard ? "dashboard" : "editor",
+          user: authenticated ? user : null,
+          error: "",
+        });
+      }).catch(() => {
+        if (!cancelled) setEntry({
+          status: "ready",
+          page: isExplicitDashboard ? "dashboard" : "editor",
+          user: null,
+          error: "",
+        });
       });
-    }).catch(() => {
-      if (!cancelled) setEntry({
-        status: "ready",
-        page: isExplicitDashboard ? "dashboard" : "editor",
-        user: null,
-        error: "",
-      });
-    });
-    return () => { cancelled = true; };
+    };
+    window.addEventListener("sketchizi:auth-changed", refreshAuth);
+    refreshAuth();
+    return () => {
+      cancelled = true;
+      window.removeEventListener("sketchizi:auth-changed", refreshAuth);
+    };
   }, [diagramId, isExplicitDashboard, shouldInspectLanding]);
 
   const openLocalEditor = () => {
