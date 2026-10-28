@@ -27,9 +27,9 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.zoom\?\.value/);
   assert.match(toolbar, /appState\.scrollX/);
   assert.match(toolbar, /appState\.scrollY/);
-  assert.match(toolbar, /Math\.min\(rootHeight - 54/);
+  assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
   assert.match(toolbar, /canvasRevision/);
-  assert.match(toolbar, /const belowTop = bottomY \+ 12/);
+  assert.match(toolbar, /const belowTop = bottomY \+ 10/);
 });
 
 test('contextual toolbar has light, dark, responsive, and focus-visible styling', () => {
@@ -105,4 +105,60 @@ test('contextual toolbar provides canvas layer ordering actions', () => {
   assert.match(toolbar, /aria-label="Send selection to back"/);
   assert.match(toolbar, /aria-label="Bring selection to front"/);
   assert.match(toolbar, /api\.updateScene\(\{ elements: nextElements \}\)/);
+});
+
+
+test('scroll-back-to-content control is offset above the bottom dock', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  const rules = dockCss.slice(dockCss.lastIndexOf('/* Keep Excalidraw\'s "Scroll back to content"'));
+  assert.match(rules, /\.scroll-back-to-content[\s\S]*?bottom: calc\(var\(--sketchizi-dock-clearance, 64px\)/);
+  assert.match(rules, /z-index: 20 !important/);
+  assert.match(rules, /@media \(max-height: 620px\)/);
+});
+
+
+test('contextual toolbar stays above bottom dock and keeps frameless high-contrast controls', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /bottomDockClearance = 88/);
+  assert.match(toolbar, /usableBottom - toolbarHeight/);
+  const frameless = dockCss.slice(dockCss.lastIndexOf('/* Preserve the canvas-native'));
+  assert.match(frameless, /background: transparent !important/);
+  assert.match(frameless, /border: 0 !important/);
+  assert.match(frameless, /\.contextual-formatting-group > button[\s\S]*?border: 1px solid rgb\(71 85 105 \/ 34%\) !important/);
+  assert.match(frameless, /\.app:has\(\.excalidraw\.theme--dark\)[\s\S]*?color: #f8fafc !important/);
+});
+
+
+test('contextual stroke and fill swatches keep their real colors in both themes', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  const swatches = dockCss.slice(dockCss.lastIndexOf('/* Color controls must retain'));
+  assert.match(swatches, /button\.contextual-color-swatch[\s\S]*?background: var\(--swatch-color, transparent\) !important/);
+  assert.match(swatches, /background-color: var\(--swatch-color, transparent\) !important/);
+  assert.match(swatches, /button\.contextual-color-swatch\.is-transparent[\s\S]*?linear-gradient/);
+  assert.match(swatches, /\.app:has\(\.excalidraw\.theme--dark\)[\s\S]*?button\.contextual-color-swatch/);
+  assert.match(swatches, /button\.contextual-color-swatch\.is-selected[\s\S]*?border: 2px solid #6366f1/);
+});
+
+
+test('contextual toolbar offers a native custom stroke and text color picker', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /aria-label="Custom color"/);
+  assert.match(toolbar, /type="color"/);
+  assert.match(toolbar, /aria-label="Choose custom color"/);
+  assert.match(toolbar, /applyToSelected\(\{ strokeColor: event\.target\.value \}\)/);
+  assert.match(dockCss, /\.contextual-custom-color input\[type="color"\]/);
+});
+
+
+test('contextual toolbar clamps to viewport and scrolls its controls on narrow screens', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
+  const rules = dockCss.slice(dockCss.lastIndexOf('/* Keep the contextual toolbar inside'));
+  assert.match(rules, /max-width: calc\(100vw - 16px\) !important/);
+  assert.match(rules, /overflow-x: auto !important/);
+  assert.match(rules, /flex-wrap: nowrap !important/);
+  assert.match(rules, /\.contextual-formatting-group > button,[\s\S]*?flex-shrink: 0 !important/);
 });

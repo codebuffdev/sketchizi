@@ -809,3 +809,346 @@
     min-height: 24px !important;
   }
 }
+
+
+/* Keep Excalidraw's "Scroll back to content" action clear of the compact
+   bottom-centered tool dock. The control remains available above the dock. */
+.app .excalidraw .scroll-back-to-content,
+.app .excalidraw .Island.scroll-back-to-content,
+.app .excalidraw [class*="scroll-back-to-content"] {
+  bottom: calc(var(--sketchizi-dock-clearance, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 20 !important;
+}
+
+@media (max-height: 620px) {
+  .app .excalidraw .scroll-back-to-content,
+  .app .excalidraw .Island.scroll-back-to-content,
+  .app .excalidraw [class*="scroll-back-to-content"] {
+    bottom: calc(var(--sketchizi-dock-clearance, 56px) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+
+/* Keep contextual controls readable even when the canvas theme class is
+   applied by Excalidraw rather than the outer application wrapper. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  min-height: 38px !important;
+  padding: 4px 6px !important;
+  gap: 5px !important;
+  border: 1px solid rgb(127 127 127 / 28%) !important;
+  border-radius: 8px !important;
+  background: var(--contextual-toolbar-surface, rgb(248 249 252 / 96%)) !important;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 12%) !important;
+  color: #20242c !important;
+  isolation: isolate !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  border-right-color: rgb(55 65 81 / 24%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  flex: 0 0 auto !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  color: #20242c !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  opacity: 1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover {
+  background: rgb(79 70 229 / 12%) !important;
+  border-color: rgb(79 70 229 / 45%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button[aria-pressed="true"] {
+  background: rgb(99 102 241 / 18%) !important;
+  border-color: #6366f1 !important;
+  box-shadow: inset 0 0 0 1px rgb(99 102 241 / 22%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch {
+  border: 1px solid rgb(31 41 55 / 35%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch.is-selected,
+.app .contextual-formatting-toolbar .contextual-color-swatch[aria-pressed="true"] {
+  outline: 2px solid #6366f1 !important;
+  outline-offset: 1px !important;
+  border-color: #ffffff !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  color: #4b5563 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity input[type="range"] {
+  min-width: 54px !important;
+  accent-color: #6366f1 !important;
+}
+
+/* Explicit dark-canvas selectors; avoid depending on a theme class on .app. */
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar,
+.app.theme-dark .contextual-formatting-toolbar,
+.app[data-theme="dark"] .contextual-formatting-toolbar {
+  --contextual-toolbar-surface: rgb(28 31 40 / 98%);
+  color: #f3f4f8 !important;
+  border-color: rgb(226 232 240 / 28%) !important;
+  background: var(--contextual-toolbar-surface) !important;
+  box-shadow: 0 3px 14px rgb(0 0 0 / 35%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button {
+  color: #f3f4f8 !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group {
+  border-right-color: rgb(226 232 240 / 30%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-opacity label,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-opacity label,
+.app.theme-dark .contextual-formatting-toolbar .contextual-opacity label,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-opacity label {
+  color: #cbd5e1 !important;
+}
+
+.app .contextual-formatting-toolbar button:focus-visible,
+.app .contextual-formatting-toolbar input:focus-visible {
+  outline: 2px solid #8276f4 !important;
+  outline-offset: 2px !important;
+}
+
+
+/* Preserve the canvas-native, frameless treatment: contrast belongs to each
+   control, not to a surrounding card. */
+.app .contextual-formatting-toolbar {
+  min-height: 38px !important;
+  padding: 3px 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  background: rgb(100 116 139 / 10%) !important;
+  border: 1px solid rgb(71 85 105 / 34%) !important;
+  border-radius: 5px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover {
+  background: rgb(99 102 241 / 18%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button[aria-pressed="true"] {
+  background: rgb(99 102 241 / 22%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar,
+.app.theme-dark .contextual-formatting-toolbar,
+.app[data-theme="dark"] .contextual-formatting-toolbar {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button {
+  background: rgb(226 232 240 / 9%) !important;
+  border-color: rgb(226 232 240 / 35%) !important;
+  color: #f8fafc !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected {
+  background: rgb(167 139 250 / 24%) !important;
+  border-color: #a78bfa !important;
+}
+
+
+/* Color controls must retain their actual swatch colors. Generic button
+   surface rules above intentionally style regular controls, but must never
+   overwrite the background of stroke/fill color choices. */
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  background-image: none !important;
+  border: 1px solid rgb(31 41 55 / 40%) !important;
+  opacity: 1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch:hover {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  outline: 2px solid rgb(99 102 241 / 70%) !important;
+  outline-offset: 1px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch[aria-pressed="true"] {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  border: 2px solid #6366f1 !important;
+  outline: 1px solid #ffffff !important;
+  outline-offset: 1px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(135deg, transparent 44%, #dc2626 46%, #dc2626 53%, transparent 55%) !important;
+  color: #20242c !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  border-color: rgb(226 232 240 / 45%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(135deg, transparent 44%, #f87171 46%, #f87171 53%, transparent 55%) !important;
+  color: #f8fafc !important;
+}
+
+
+/* Native custom-color picker integrated with the compact swatch row. */
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border: 1px solid rgb(71 85 105 / 42%) !important;
+  border-radius: 5px !important;
+  background: rgb(100 116 139 / 10%) !important;
+  color: var(--contextual-ink, #20242c) !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  overflow: hidden !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-custom-color:hover {
+  background: rgb(99 102 241 / 14%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-custom-color input[type="color"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0.01 !important;
+  cursor: pointer !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-custom-color,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-custom-color,
+.app.theme-dark .contextual-formatting-toolbar .contextual-custom-color,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-custom-color {
+  color: #f8fafc !important;
+  border-color: rgb(226 232 240 / 35%) !important;
+  background: rgb(226 232 240 / 9%) !important;
+}
+
+
+/* Keep the contextual toolbar inside the visible canvas on narrow windows
+   and browser zoom levels. If all controls cannot fit, scroll the control row. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  width: max-content !important;
+  max-width: calc(100vw - 16px) !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgb(148 163 184 / 55%) transparent !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  flex-wrap: nowrap !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  flex-shrink: 0 !important;
+}
+
+.app .contextual-formatting-toolbar::-webkit-scrollbar {
+  height: 4px !important;
+}
+
+.app .contextual-formatting-toolbar::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 55%) !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 480px) {
+  .app .contextual-formatting-toolbar {
+    max-width: calc(100vw - 12px) !important;
+  }
+}
+
+
+/* A fixed available-width box prevents the control row's intrinsic width from
+   escaping its containing canvas at high zoom or in narrow browser windows. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  width: min(520px, calc(100vw - 16px)) !important;
+  max-width: min(520px, calc(100vw - 16px)) !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  min-width: max-content !important;
+}
