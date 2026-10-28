@@ -1618,17 +1618,17 @@ function App() {
 </div>
   );
 
-  const moreToolsToggle = {collaborationCanEdit && (
-  <MoreTools
-    open={moreToolsOpen}
-    anchor={moreToolsAnchor}
-    position={positionMoreToolsButton}
-    activateTool={activateMoreTool}
-    toggle={togglePanel}
-    canEdit={collaborationCanEdit}
-    placement="header"
-  />
-)};
+  const moreToolsToggle = collaborationCanEdit ? (
+    <MoreTools
+      open={moreToolsOpen}
+      anchor={moreToolsAnchor}
+      position={positionMoreToolsButton}
+      activateTool={activateMoreTool}
+      toggle={togglePanel}
+      canEdit={collaborationCanEdit}
+      placement="header"
+    />
+  ) : null;
 
   if (!sketchReady) {
     return (
