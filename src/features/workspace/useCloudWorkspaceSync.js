@@ -35,6 +35,10 @@ export function useCloudWorkspaceSync({ apiRef, documentMetadataRef }) {
     const snapshot = latestSnapshotRef.current;
     latestSnapshotRef.current = null;
     const startedSequence = snapshot.sequence;
+    if (baselineVisibleCountRef.current > 0 && visibleElementCount(snapshot.elements) === 0 && Date.now() - loadedAtRef.current < 2000) {
+      setState((current) => ({ ...current, status: "saved", error: "" }));
+      return;
+    }
     savingRef.current = true;
     setState((current) => ({ ...current, status: "saving", error: "" }));
     const metadata = documentMetadataRef?.current || {};
