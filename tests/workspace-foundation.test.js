@@ -28,6 +28,18 @@ test("Cloud Workspace is reachable from the editor Workspaces menu", async () =>
   assert.match(root, /if \(workspaceRoute && auth\.status !== "authenticated"\)/);
 });
 
+test("Cloud Workspace thumbnails reflect saved diagram elements and the diagram grid scrolls", async () => {
+  const dashboard = await read("../src/features/workspace/WorkspaceDashboard.jsx");
+  const stylesheet = await read("../src/features/workspace/workspace.css");
+  assert.match(dashboard, /const DiagramThumbnail = \(\{ diagram \}\)/);
+  assert.match(dashboard, /diagram\?\.document/);
+  assert.match(dashboard, /document\.elements/);
+  assert.match(dashboard, /<DiagramThumbnail diagram=\{d\} \/>/);
+  assert.doesNotMatch(dashboard, /<div className="cw-diagram-preview"><span\/><i\/><span\/><\/div>/);
+  assert.match(stylesheet, /\.cw-diagram-grid\{[^}]*max-height:calc\(100vh - 330px\)[^}]*overflow-y:auto/);
+  assert.match(stylesheet, /\.cw-diagram-grid::-webkit-scrollbar-thumb/);
+});
+
 test("Workspace stylesheet is scoped and imported by the dashboard component", async () => {
   const component = await read("../src/features/workspace/WorkspaceDashboard.jsx");
   const stylesheet = await read("../src/features/workspace/workspace.css");
