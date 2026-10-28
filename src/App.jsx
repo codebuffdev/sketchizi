@@ -50,6 +50,7 @@ import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 import "./features/design/design.css";
+import "./features/workspace/workspace.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
