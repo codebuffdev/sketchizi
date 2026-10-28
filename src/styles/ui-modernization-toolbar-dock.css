@@ -1091,3 +1091,46 @@
   border-color: rgb(226 232 240 / 35%) !important;
   background: rgb(226 232 240 / 9%) !important;
 }
+
+
+/* Keep the contextual toolbar inside the visible canvas on narrow windows
+   and browser zoom levels. If all controls cannot fit, scroll the control row. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  width: max-content !important;
+  max-width: calc(100vw - 16px) !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgb(148 163 184 / 55%) transparent !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  flex-wrap: nowrap !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  flex-shrink: 0 !important;
+}
+
+.app .contextual-formatting-toolbar::-webkit-scrollbar {
+  height: 4px !important;
+}
+
+.app .contextual-formatting-toolbar::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 55%) !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 480px) {
+  .app .contextual-formatting-toolbar {
+    max-width: calc(100vw - 12px) !important;
+  }
+}
