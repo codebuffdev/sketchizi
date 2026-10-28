@@ -194,14 +194,6 @@ function App() {
     window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(diagram.id)}&cloudProjectId=${encodeURIComponent(projectId)}`);
   }, [showToast]);
 
-  const saveCloudDiagramNow = useCallback(() => {
-    const api = apiRef.current;
-    if (!cloudDiagramId || !cloudSessionRef.current.active || !api) return;
-    cloudFlushImmediatelyRef.current = true;
-    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
-    cloudFlushImmediatelyRef.current = false;
-  }, [apiRef, cloudDiagramId, queueSketchSave]);
-
   const queueSketchSave = useCallback((elements, appState) => {
     if (!cloudDiagramId) {
       queueLocalSketchSave(elements, appState);
@@ -246,6 +238,14 @@ function App() {
       });
     }, cloudFlushImmediatelyRef.current ? 0 : 700);
   }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
+
+  const saveCloudDiagramNow = useCallback(() => {
+    const api = apiRef.current;
+    if (!cloudDiagramId || !cloudSessionRef.current.active || !api) return;
+    cloudFlushImmediatelyRef.current = true;
+    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+    cloudFlushImmediatelyRef.current = false;
+  }, [apiRef, cloudDiagramId, queueSketchSave]);
 
   useEffect(() => {
     if (!cloudDiagramId || !apiReady || !sketchReady || cloudLoadStartedRef.current) return undefined;
