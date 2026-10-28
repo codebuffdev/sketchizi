@@ -36,10 +36,16 @@ function RootApp() {
   }, [communityRoute, editorRoute]);
 
   if (communityRoute) return <CommunityApp />;
-  if (editorRoute || auth.status === "anonymous") return <PhoneAccessGate><App /></PhoneAccessGate>;
-  if (auth.status === "checking") return <main className="cw-startup" role="status">Checking your sign-in session…</main>;
-  if (auth.status === "unavailable") {
-    return <main className="cw-startup" role="alert"><div><p>Could not verify your sign-in session.</p><a href="/?editor=1">Open the editor</a> <button onClick={() => window.location.reload()}>Retry</button></div></main>;
+
+  // The Cloud Workspace is strictly for a verified, authenticated user.
+  // If session verification is temporarily unavailable, fail closed for the
+  // private workspace but keep the public drawing editor usable. Never strand
+  // the user on a generic authentication error screen.
+  if (editorRoute || auth.status === "anonymous" || auth.status === "unavailable") {
+    return <PhoneAccessGate><App /></PhoneAccessGate>;
+  }
+  if (auth.status === "checking") {
+    return <main className="cw-startup" role="status">Loading Sketchizi…</main>;
   }
 
   return <WorkspaceDashboard
