@@ -1917,3 +1917,33 @@
 .app.theme-light .library-panel-redesign .library-source-art {
   filter: none;
 }
+
+
+/* Visible category icons: keep the reference artwork comfortably legible. */
+.app .library-panel-redesign .library-source-chip > svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon {
+  display: block;
+  width: 21px;
+  height: 21px;
+  max-width: 21px;
+  max-height: 21px;
+  flex: 0 0 21px;
+  object-fit: contain;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon-aws {
+  width: 24px;
+  max-width: 24px;
+  flex-basis: 24px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon-kubernetes {
+  width: 21px;
+  height: 21px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-art {
+  background-image: none !important;
+}
