@@ -12,6 +12,65 @@
 .collaboration-header-controls .collaboration-avatar-stack .collaboration-avatar { width:27px; height:27px; }
 .collaboration-header-controls .collaboration-avatar-count { min-width:27px; width:auto; padding:0 5px; }
 .collaboration-header-controls .collaboration-share-trigger { min-height:34px; }
+.collaboration-share-container { position:relative; display:inline-flex; flex:0 0 auto; }
+.collaboration-share-trigger {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:0 10px;
+  border:1px solid var(--ui-border, #d9d9df);
+  border-radius:9px;
+  background:var(--ui-surface-solid, #fff);
+  color:var(--ui-text, #202024);
+  font:inherit;
+  font-size:12px;
+  font-weight:650;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.collaboration-share-trigger:hover,
+.collaboration-share-trigger[aria-expanded="true"] { background:var(--ui-surface-soft, #f2f4f8); border-color:var(--ui-accent, #7c5cff); }
+.collaboration-share-trigger:focus-visible { outline:2px solid var(--ui-accent, #7c5cff); outline-offset:2px; }
+.collaboration-share-panel {
+  position:absolute;
+  z-index:1600;
+  top:calc(100% + 8px);
+  right:0;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  width:min(310px, calc(100vw - 24px));
+  box-sizing:border-box;
+  padding:14px;
+  border:1px solid var(--ui-border, #d9d9df);
+  border-radius:13px;
+  background:var(--ui-surface-solid, #fff);
+  color:var(--ui-text, #202024);
+  box-shadow:0 14px 36px rgb(0 0 0 / 22%);
+}
+.collaboration-share-heading { display:flex; align-items:center; gap:10px; }
+.collaboration-share-heading > div { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.collaboration-share-heading strong { font-size:13px; font-weight:750; }
+.collaboration-share-heading span { color:var(--ui-text-muted, #777); font-size:11px; line-height:1.4; }
+.collaboration-share-header-icon { width:24px; height:24px; flex:0 0 24px; color:var(--ui-accent, #7c5cff); }
+.collaboration-share-copy { display:flex; align-items:center; gap:10px; width:100%; min-height:42px; padding:8px 10px; border:1px solid var(--ui-border, #d9d9df); border-radius:9px; background:var(--ui-surface-soft, #f7f8fb); color:var(--ui-text, #202024); text-align:left; font:inherit; cursor:pointer; }
+.collaboration-share-copy:hover { border-color:var(--ui-accent, #7c5cff); }
+.collaboration-share-copy-leading,.collaboration-share-copy-action { display:flex; align-items:center; justify-content:center; width:20px; height:20px; flex:0 0 20px; }
+.collaboration-share-copy-leading svg,.collaboration-share-copy-action svg { width:18px; height:18px; }
+.collaboration-share-copy-label { flex:1; font-size:12px; font-weight:700; }
+.collaboration-share-services { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:7px; }
+.collaboration-share-services > button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:72px; padding:8px 4px; border:1px solid var(--ui-border-soft, #e7e7ec); border-radius:9px; background:var(--ui-surface-solid, #fff); color:var(--ui-text, #202024); font:inherit; font-size:10px; font-weight:650; cursor:pointer; }
+.collaboration-share-services > button:hover { background:var(--ui-surface-soft, #f2f4f8); border-color:var(--ui-border, #c8cbd4); }
+.collaboration-share-services > button:focus-visible,.collaboration-share-copy:focus-visible { outline:2px solid var(--ui-accent, #7c5cff); outline-offset:2px; }
+.collaboration-share-brand-icon { display:block; width:28px; height:28px; }
+html[data-sketchizi-theme="dark"] .collaboration-share-trigger,
+html[data-sketchizi-theme="dark"] .collaboration-share-panel,
+html[data-sketchizi-theme="dark"] .collaboration-share-services > button { background:var(--ui-surface-solid, #171a21); color:var(--ui-text, #eee); }
+html[data-sketchizi-theme="dark"] .collaboration-share-trigger:hover,
+html[data-sketchizi-theme="dark"] .collaboration-share-trigger[aria-expanded="true"],
+html[data-sketchizi-theme="dark"] .collaboration-share-services > button:hover { background:var(--ui-surface-soft, #252a34); }
+html[data-sketchizi-theme="dark"] .collaboration-share-copy { background:var(--ui-surface-soft, #252a34); color:var(--ui-text, #eee); }
 .collaboration-details-anchor { position:relative; flex:0 0 auto; }
 .collaboration-details-popover { position:absolute; z-index:1300; top:calc(100% + 8px); right:0; display:flex; flex-direction:column; width:min(290px, calc(100vw - 24px)); padding:6px; border:1px solid var(--ui-border, #d9d9df); border-radius:12px; background:var(--ui-surface-solid, #fff); color:var(--ui-text, #202024); box-shadow:0 12px 34px rgb(0 0 0 / 17%); }
 .collaboration-details-popover > button { display:flex; align-items:center; gap:10px; width:100%; min-height:42px; padding:8px 10px; border:0; border-radius:8px; background:transparent; color:inherit; text-align:left; cursor:pointer; font:inherit; font-size:12px; }
