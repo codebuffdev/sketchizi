@@ -1804,3 +1804,146 @@
   overflow-y: auto !important;
   overscroll-behavior: contain;
 }
+
+
+/* Compact source/category filters: icon-only controls preserve the panel's
+   horizontal space; title and aria-label retain discoverability. */
+.app .library-panel-redesign .library-source-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 7px;
+}
+.app .library-panel-redesign .library-source-chip {
+  box-sizing: border-box;
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  gap: 0;
+}
+.app .library-panel-redesign .library-source-chip-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.app .library-panel-redesign .library-source-chip svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+}
+@media (max-width: 420px) {
+  .app .library-panel-redesign .library-source-tabs { gap: 5px; }
+  .app .library-panel-redesign .library-source-chip {
+    flex-basis: 32px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+}
+.app .library-panel-redesign .library-source-brand-icon {
+  display: block;
+  width: 23px;
+  height: 23px;
+  max-width: 23px;
+  max-height: 23px;
+  flex: 0 0 23px;
+  object-fit: contain;
+}
+.app .library-panel-redesign .library-source-brand-icon-aws {
+  width: 26px;
+  max-width: 26px;
+  flex-basis: 26px;
+}
+.app .library-panel-redesign .library-source-brand-icon-kubernetes {
+  width: 23px;
+  height: 23px;
+}
+
+
+/* Category selection should use the same restrained meta palette as the
+   surrounding controls, not the legacy purple Essentials highlight. */
+.app .library-panel-redesign .library-source-chip.active,
+.app .library-panel-redesign .library-source-chip-eraser.active,
+.app.theme-light .library-panel-redesign .library-source-chip.active,
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #65718a !important;
+  background: #30394a !important;
+  background-image: none !important;
+  color: #f1f4fa !important;
+  box-shadow: inset 0 0 0 1px rgba(190, 202, 224, .04) !important;
+}
+.app.theme-light .library-panel-redesign .library-source-chip.active,
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #c6ccd7 !important;
+  background: #e3e7ee !important;
+  background-image: none !important;
+  color: #343b49 !important;
+  box-shadow: inset 0 0 0 1px rgba(58, 69, 88, .04) !important;
+}
+
+
+/* Exact category artwork supplied for the Icon Library filters. The source
+   order in the sprite is Networking, Kubernetes, Mind Map, UML, Essentials,
+   All, AWS; the component maps categories to their matching tile. */
+.app .library-panel-redesign .library-source-art {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  background-image: url("/icons/category-icons.png");
+  background-repeat: no-repeat;
+  background-size: 168px 24px;
+  background-position: calc(var(--category-icon-index) * -24px) 0;
+}
+.app .library-panel-redesign .library-source-chip-networking .library-source-art,
+.app .library-panel-redesign .library-source-chip-kubernetes .library-source-art,
+.app .library-panel-redesign .library-source-chip-uml .library-source-art,
+.app .library-panel-redesign .library-source-chip-mindmaps .library-source-art,
+.app .library-panel-redesign .library-source-chip-eraser .library-source-art,
+.app .library-panel-redesign .library-source-chip-all .library-source-art {
+  filter: invert(1);
+}
+.app.theme-light .library-panel-redesign .library-source-art {
+  filter: none;
+}
+
+
+/* Visible category icons: keep the reference artwork comfortably legible. */
+.app .library-panel-redesign .library-source-chip > svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon {
+  display: block;
+  width: 21px;
+  height: 21px;
+  max-width: 21px;
+  max-height: 21px;
+  flex: 0 0 21px;
+  object-fit: contain;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon-aws {
+  width: 24px;
+  max-width: 24px;
+  flex-basis: 24px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon-kubernetes {
+  width: 21px;
+  height: 21px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-art {
+  background-image: none !important;
+}

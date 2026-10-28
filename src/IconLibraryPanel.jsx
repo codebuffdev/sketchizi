@@ -32,6 +32,28 @@ function iconSelectionKey(icon) {
   return `${icon?.source || icon?.catalog || "local"}:${icon?.category || ""}:${icon?.id || icon?.name || ""}`;
 }
 
+function SourceCategoryIcon({ id }) {
+  const common = { viewBox: "0 0 24 24", width: 21, height: 21, fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" };
+  switch (id) {
+    case "aws":
+      return <img className="library-source-brand-icon library-source-brand-icon-aws" src="/icons/aws.svg" alt="" aria-hidden="true" />;
+    case "networking":
+      return <svg {...common}><circle cx="12" cy="12" r="3.3" fill="currentColor" /><circle cx="5" cy="5" r="2.2" /><circle cx="19" cy="5" r="2.2" /><circle cx="5" cy="19" r="2.2" /><circle cx="19" cy="19" r="2.2" /><path d="m9.7 9.7-3.1-3.1m7.7 3.1 3.1-3.1m-7.7 7.7-3.1 3.1m7.7-3.1 3.1 3.1" /></svg>;
+    case "kubernetes":
+      return <img className="library-source-brand-icon library-source-brand-icon-kubernetes" src="/icons/k8s-kubernetes.svg" alt="" aria-hidden="true" />;
+    case "mindmaps":
+      return <svg {...common}><path d="M8 21v-2.2c0-1.7 1.4-3.1 3.1-3.1h1.8c1.7 0 3.1 1.4 3.1 3.1V21" /><path d="M8.8 10.2c0-3.3 1.7-5.5 4.1-5.5 2.5 0 4.1 2.1 4.1 5.2 0 2.9-1.7 4.7-4.1 4.7s-4.1-1.8-4.1-4.4Z" /><circle cx="4" cy="5" r="1.5" /><circle cx="20" cy="5" r="1.5" /><path d="m5.5 6 3.7 3m9.3-3-3.1 3" /></svg>;
+    case "uml":
+      return <svg {...common}><rect x="8" y="2.5" width="8" height="5.5" rx=".8" /><path d="M12 8v4M5 12h14M5 12v2M12 12v2M19 12v2" /><rect x="2" y="14" width="6" height="7" rx=".8" /><rect x="9" y="14" width="6" height="7" rx=".8" /><rect x="16" y="14" width="6" height="7" rx=".8" /></svg>;
+    case "eraser":
+      return <svg {...common}><path d="M12 2.5 15 8l6 1-4.3 4.2 1 6-5.7-3-5.7 3 1-6L3 9l6-1 3-5.5Z" /><path d="M8 21h13" /></svg>;
+    case "all":
+      return <svg {...common}><path d="M20.5 8A9 9 0 0 0 5 5.5L3 8" /><path d="M3 3v5h5M3.5 16A9 9 0 0 0 19 18.5l2-2" /><path d="M21 21v-5h-5" /></svg>;
+    default:
+      return null;
+  }
+}
+
 export default function IconLibraryPanel({
   searchRef, search, setSearch, activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, favorites, recentIcons,
   eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, syncEraserLibrary, eraserCachedCount,
@@ -154,13 +176,13 @@ export default function IconLibraryPanel({
     || null;
   const activeChip = activeSource;
   const sourceTabs = [
-    { id: "all", label: "All" },
-    { id: "eraser", label: "Essentials" },
     { id: "aws", label: "AWS" },
-    { id: "kubernetes", label: "Kubernetes" },
     { id: "networking", label: "Networking" },
-    { id: "uml", label: "UML" },
+    { id: "kubernetes", label: "Kubernetes" },
     { id: "mindmaps", label: "Mind Maps" },
+    { id: "uml", label: "UML" },
+    { id: "eraser", label: "Essentials" },
+    { id: "all", label: "All" },
   ];
 
   const getIconSubtitle = (icon) => sourceLabel(icon);
@@ -178,7 +200,7 @@ export default function IconLibraryPanel({
 
         <div className="library-filter-row">
           <nav className="library-source-tabs" aria-label="Icon collections">
-            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}>{tab.id === "eraser" && <svg className="library-source-chip-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2 8 1.5Z" /><path d="m12.4 1 .7 1.9L15 3.6l-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" /></svg>}{tab.label}</button>)}          </nav>
+            {sourceTabs.map((tab) => <button key={tab.id} type="button" className={`library-source-chip library-source-chip-${tab.id}${activeChip === tab.id ? " active" : ""}`} aria-label={tab.label} title={tab.label} aria-pressed={activeChip === tab.id} onClick={() => chooseSource(tab.id)}><SourceCategoryIcon id={tab.id} /><span className="library-source-chip-label">{tab.label}</span></button>)}</nav>
         </div>
         {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
           <div className="library-recent-heading"><span>Recent searches</span><button type="button" onClick={() => setRecentSearches([])}>Clear all</button></div>
