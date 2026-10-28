@@ -244,3 +244,11 @@ test('More switches to the full Properties panel and hides the contextual dock',
   assert.match(canvas, /!contextualToolbarHidden && <ContextualFormattingToolbar/);
   assert.match(app, /showFullFormatting=\{propertiesOpen\}/);
 });
+
+
+test('full Properties mode force-hides the compact contextual dock at workspace level', () => {
+  const styles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  assert.match(app, /propertiesOpen \|\| architectureValidationOpen \? "desktop-workspace-context-open"/);
+  assert.match(styles, /\.desktop-workspace-context-open \.contextual-formatting-toolbar\s*\{\s*display:\s*none\s*!important;/);
+});
