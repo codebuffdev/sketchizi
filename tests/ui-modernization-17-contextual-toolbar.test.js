@@ -188,14 +188,14 @@ test('horizontal dock tooltips stay above the dock instead of overlapping neighb
 });
 
 
-test('properties panel hides only controls duplicated by contextual selection formatting', () => {
+test('properties panel hides only duplicated controls in compact contextual mode', () => {
   const panel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
   assert.match(app, /contextualSelectionElements=\{selectedElements\}/);
   assert.match(panel, /const hasContextualStyleSelection = contextualSelection\.length > 0/);
   assert.match(panel, /contextualSelection\.length === 0 && hasTextSelection && selectedCount > 0/);
   assert.match(panel, /const hasOnlyContextualImages = contextualSelection\.length > 0 && contextualSelection\.every/);
-  assert.match(panel, /const hideContextualStrokeControls = hasContextualStyleSelection && !hasOnlyContextualImages/);
+  assert.match(panel, /const hideContextualStrokeControls = !showFullFormatting && hasContextualStyleSelection && !hasOnlyContextualImages/);
   assert.match(panel, /!hideContextualStrokeControls && <div className="style-group"/);
   assert.match(panel, /!hideContextualTextSize && <div className="property-row">[\s\S]*?Font size/);
   assert.match(panel, /hideContextualOpacity/);
@@ -219,12 +219,12 @@ test('duplicate suppression falls back to panel selection flags and preserves im
   assert.match(panel, /contextualSelection\.length === 0 && hasTextSelection && selectedCount > 0/);
   assert.match(panel, /contextualSelection\.length === 0 && \(hasShapeSelection \|\| hasArrowSelection\) && selectedCount > 0/);
   assert.match(panel, /hasOnlyContextualImages/);
-  assert.match(panel, /const hideContextualTextSize = hasContextualText/);
-  assert.match(panel, /const hideContextualOpacity = hasContextualShapeStyle && !hasOnlyContextualImages/);
+  assert.match(panel, /const hideContextualTextSize = !showFullFormatting && hasContextualText/);
+  assert.match(panel, /const hideContextualOpacity = !showFullFormatting && hasContextualShapeStyle && !hasOnlyContextualImages/);
 });
 
 
-test('More opens the full Properties formatting controls while the compact toolbar stays available', () => {
+test('More opens the full Properties formatting controls instead of the compact toolbar', () => {
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
   const panel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
   assert.match(app, /onOpenProperties=\{\(\) => openPanel\("properties"\)\}/);
