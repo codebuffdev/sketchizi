@@ -177,3 +177,12 @@ test('text selection exposes a clickable minimal font picker with an underlined 
   assert.match(dockCss, /\.contextual-font-underline[\s\S]*?width: 26px/);
   assert.match(dockCss, /\.contextual-font-trigger select[\s\S]*?opacity: 0 !important/);
 });
+
+
+test('horizontal dock tooltips stay above the dock instead of overlapping neighboring tools', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /top = buttonRect\.top - tipRect\.height - 8/);
+  assert.match(canvas, /Never place a dock tooltip below its trigger/);
+  assert.match(canvas, /if \(top < 8\) top = 8/);
+  assert.doesNotMatch(canvas, /if \(top < 8\) top = buttonRect\.bottom \+ 8/);
+});
