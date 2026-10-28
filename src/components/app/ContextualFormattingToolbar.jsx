@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 const FONT_FAMILIES = [
   [1, "Virgil"],
@@ -86,7 +86,6 @@ export default function ContextualFormattingToolbar({
   onOpenProperties,
   canEdit = true,
 }) {
-  const [fontMenuOpen, setFontMenuOpen] = useState(false);
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
   const first = liveSelection[0];
   const elementTypes = liveSelection.map((element) => element.type);
@@ -214,38 +213,17 @@ export default function ContextualFormattingToolbar({
 
       {showTextSize && (
         <div className="contextual-formatting-group contextual-font-family" role="group" aria-label="Font family">
-          <button
-            type="button"
-            className="contextual-font-trigger"
-            aria-label="Change font family"
-            title={`Font family: ${FONT_FAMILIES.find(([id]) => id === currentFontFamily)?.[1] || "Excalifont"}`}
-            aria-haspopup="menu"
-            aria-expanded={fontMenuOpen}
-            onClick={() => setFontMenuOpen((open) => !open)}
-          >
+          <label className="contextual-font-trigger" title={`Font family: ${FONT_FAMILIES.find(([id]) => id === currentFontFamily)?.[1] || "Excalifont"}`}>
             <span aria-hidden="true">A</span>
             <span className="contextual-font-underline" aria-hidden="true" />
-          </button>
-          {fontMenuOpen && (
-            <div className="contextual-font-menu" role="menu" aria-label="Choose font family">
-              {FONT_FAMILIES.map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={currentFontFamily === id}
-                  className={`contextual-font-option${currentFontFamily === id ? " is-selected" : ""}`}
-                  onClick={() => {
-                    applyToSelected({ fontFamily: Number(id) });
-                    setFontMenuOpen(false);
-                  }}
-                >
-                  <span>{label}</span>
-                  {currentFontFamily === id ? <span aria-hidden="true">✓</span> : null}
-                </button>
-              ))}
-            </div>
-          )}
+            <select
+              aria-label="Change font family"
+              value={currentFontFamily}
+              onChange={(event) => applyToSelected({ fontFamily: Number(event.target.value) })}
+            >
+              {FONT_FAMILIES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
+          </label>
         </div>
       )}
 
