@@ -160,6 +160,7 @@ function App() {
   const cloudSessionRef = useRef({ active: false, diagramId: "", projectId: "", revision: null, name: "" });
   const cloudSaveTimerRef = useRef(null);
   const cloudSaveQueueRef = useRef(Promise.resolve());
+  const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
 
@@ -199,7 +200,7 @@ function App() {
       }).catch((error) => {
         setCloudSaveState({ state: "error", error: error.message || "Could not save this cloud diagram." });
       });
-    }, 700);
+    }, cloudFlushImmediatelyRef.current ? 0 : 700);
   }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
 
   useEffect(() => {
@@ -249,9 +250,25 @@ function App() {
     return () => { cancelled = true; };
   }, [apiReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
 
-  useEffect(() => () => {
-    if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
-  }, []);
+  useEffect(() => {
+    const flushPendingCloudSave = () => {
+      if (!cloudDiagramId || !cloudSessionRef.current.active || !apiRef.current) return;
+      const api = apiRef.current;
+      cloudFlushImmediatelyRef.current = true;
+      queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+      cloudFlushImmediatelyRef.current = false;
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flushPendingCloudSave();
+    };
+    window.addEventListener("pagehide", flushPendingCloudSave);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", flushPendingCloudSave);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+    };
+  }, [apiRef, cloudDiagramId, queueSketchSave]);
 
   const createDesignFromStudio = useCallback(({ templateId, name, ruleMode = "guided", templateOptions = {} }) => {
     const api = apiRef.current;
