@@ -133,10 +133,12 @@ function App() {
 
   // Workspace menu is transient navigation: Escape and any other open panel/dialog dismiss it.
   useEffect(() => {
-    if (activePanel || aiAskOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen) {
+    // The Workspaces dropdown is mutually exclusive with every other
+    // floating panel, including Excalidraw's native hamburger menu.
+    if (nativeMenuOpen || activePanel || aiAskOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen) {
       setDevopsStudioMenuOpen(false);
     }
-  }, [activePanel, aiAskOpen, designStudioOpen, dockerStudioOpen, kubernetesStudioOpen]);
+  }, [nativeMenuOpen, activePanel, aiAskOpen, designStudioOpen, dockerStudioOpen, kubernetesStudioOpen]);
 
   useEffect(() => {
     if (!devopsStudioMenuOpen) return undefined;
