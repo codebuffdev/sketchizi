@@ -6,7 +6,9 @@ export default function AuthenticationControl() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [providers, setProviders] = useState({ google: true, github: false });
+  // Keep both sign-in choices visible while provider discovery is unavailable.
+  // A successful provider response below still hides any provider not configured.
+  const [providers, setProviders] = useState({ google: true, github: true });
   const [busy, setBusy] = useState(false);
   const [githubConnection, setGithubConnection] = useState({ loading: false, connected: false, authorizationAvailable: false, githubLogin: "" });
   const [githubConnectionBusy, setGithubConnectionBusy] = useState(false);
