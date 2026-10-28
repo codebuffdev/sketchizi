@@ -1522,7 +1522,15 @@ function App() {
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={cloudSaveState.state === "error" ? "alert" : "status"}>
-        {cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : cloudSaveState.state === "error" ? cloudSaveState.error : ""}
+        <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : cloudSaveState.state === "error" ? cloudSaveState.error : ""}</span>
+        {cloudSaveState.state === "error" && <>
+          <button type="button" onClick={() => {
+            const api = apiRef.current;
+            if (!api) return;
+            queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+          }}>Retry save</button>
+          <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
+        </>}
         <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
       </div>}
       <DesktopAppHeader
