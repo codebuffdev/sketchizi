@@ -187,6 +187,10 @@ test("Icon collection filters use compact icon-only buttons with accessible name
   assert.match(panel, /function SourceCategoryIcon\(\{ id \}\)/);
   assert.match(panel, /aria-label=\{tab\.label\} title=\{tab\.label\}/);
   assert.match(panel, /<SourceCategoryIcon id=\{tab\.id\} \/>/);
+  assert.match(panel, /src="\/icons\/aws\.svg"/);
+  assert.match(panel, /src="\/icons\/k8s-kubernetes\.svg"/);
+  assert.match(panel, /src="\/icons\/net-internet\.svg"/);
+  assert.match(styles, /\.library-source-brand-icon\s*\{[\s\S]*?object-fit:\s*contain/);
   assert.match(panel, /className="library-source-chip-label"/);
   assert.match(styles, /\.app \.library-panel-redesign \.library-source-tabs\s*\{\s*display:\s*flex;\s*flex-wrap:\s*nowrap;/);
   assert.match(styles, /\.app \.library-panel-redesign \.library-source-chip-label\s*\{[\s\S]*?clip:\s*rect\(0, 0, 0, 0\)/);
