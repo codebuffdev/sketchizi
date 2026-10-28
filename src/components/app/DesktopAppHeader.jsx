@@ -349,17 +349,16 @@ export default function DesktopAppHeader({
 
       <button
         type="button"
-        className="desktop-app-save-to-cloud-button"
+        className="desktop-app-save-to-cloud-button is-icon-only"
         onClick={() => { setOpenMenu(null); onSaveToCloud?.(); }}
         disabled={cloudSaveState === "loading" || cloudSaveState === "saving" || cloudSaveState === "pending"}
         title={isCloudDocument ? "Save the current diagram to Cloud Workspace now" : "Save this drawing to Cloud Workspace"}
         aria-label={isCloudDocument ? "Save current diagram to Cloud Workspace now" : "Save drawing to Cloud Workspace"}
       >
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M7 18.5h10.2a4 4 0 0 0 .4-8A6 6 0 0 0 6.2 9a4.8 4.8 0 0 0 .8 9.5Z" />
-          <path d="M12 12v7m-3-3 3 3 3-3" />
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 21V10m-4 4 4-4 4 4" />
+          <path d="M7 16.5H6a4 4 0 0 1-.3-8A6.5 6.5 0 0 1 18 10h.5a3.5 3.5 0 0 1 0 7H17" />
         </svg>
-        <span>{isCloudDocument ? (cloudSaveState === "saving" || cloudSaveState === "pending" ? "Saving…" : "Save now") : "Save to Cloud"}</span>
       </button>
 
       <div className="desktop-app-save-status-wrap">
@@ -405,15 +404,13 @@ export default function DesktopAppHeader({
           className="desktop-app-start-collaboration-button"
           onClick={() => { setOpenMenu(null); startCollaboration?.(); }}
           disabled={collaborationCreationState === "creating"}
-          aria-label={collaborationCreationState === "creating" ? "Creating Collaboration" : "Start Collaboration"}
-          title={collaborationCreationState === "creating" ? "Creating collaboration" : "Start collaboration"}
+          aria-label={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
+          title={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
         >
-          <svg className="desktop-app-start-collaboration-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          <svg className="desktop-app-start-collaboration-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 3h7v5.2a2.8 2.8 0 1 0 5.6 0V3H21v7h-5.2a2.8 2.8 0 1 0 0 5.6H21V21h-7v-5.2a2.8 2.8 0 1 0-5.6 0V21H3v-7h5.2a2.8 2.8 0 1 0 0-5.6H3Z" />
           </svg>
-          <span className="desktop-app-start-collaboration-label">{collaborationCreationState === "creating" ? "Creating…" : "Start Collaboration"}</span>
+          <span className="desktop-app-start-collaboration-label">{collaborationCreationState === "creating" ? "Creating…" : "Collab"}</span>
         </button>
       )}
 
