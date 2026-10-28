@@ -13,9 +13,8 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
 
   useEffect(() => {
     let active = true;
-    Promise.all([workspaceClient.listProjects(), workspaceClient.getLimits()])
-      .then(([result, limits]) => {
-        if (active) setIsAdmin(Boolean(limits?.admin));
+    workspaceClient.listProjects()
+      .then((result) => {
         if (!active) return;
         const rows = Array.isArray(result) ? result : result?.projects || [];
         setProjects(rows);
@@ -25,6 +24,9 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
         if (active) setError(cause.message || "Could not load Cloud Workspace projects.");
       })
       .finally(() => { if (active) setLoading(false); });
+    workspaceClient.getLimits()
+      .then((limits) => { if (active) setIsAdmin(Boolean(limits?.admin)); })
+      .catch(() => { if (active) setIsAdmin(false); });
     return () => { active = false; };
   }, []);
 
