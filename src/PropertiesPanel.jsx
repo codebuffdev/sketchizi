@@ -7,7 +7,7 @@ export default function PropertiesPanel({
   architectureRelationship = null, architectureRelationshipTypes = [], updateArchitectureRelationshipType = () => {},
   awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
   kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {}, kubernetesRelationshipGuidance = null,
-  readOnly = false, authorship = {}, participants = [],
+  readOnly = false, authorship = {}, participants = [], hideDuplicateFormattingControls = false,
 }) {
   return (
   <section className={`properties-panel${readOnly ? " read-only" : ""}`} aria-label="Properties and style">
@@ -180,7 +180,7 @@ export default function PropertiesPanel({
     <div className="properties-section properties-appearance">
       <div className="properties-section-title">Appearance</div>
 
-      {hasShapeSelection && (
+      {hasShapeSelection && !hideDuplicateFormattingControls && (
         <>
           <div className="style-group">
             <div className="style-group-label">Stroke</div>
@@ -320,7 +320,7 @@ export default function PropertiesPanel({
         </>
       )}
 
-      <div className="style-group opacity-group">
+      {!(hideDuplicateFormattingControls && hasShapeSelection) && <div className="style-group opacity-group">
         <div className="property-label-line">
           <div className="style-group-label">Opacity</div>
           <span>{Math.round(firstSelected?.opacity ?? 100)}</span>
@@ -335,7 +335,7 @@ export default function PropertiesPanel({
           value={firstSelected?.opacity ?? 100}
           onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })}
         />
-      </div>
+      </div>}
     </div>
 
     {hasArrowSelection && (
@@ -372,7 +372,7 @@ export default function PropertiesPanel({
     {hasTextSelection && selectedCount === 1 && firstSelected?.type === "text" && (
       <div className="properties-section">
         <div className="properties-section-title">Text</div>
-        <div className="property-row">
+        {!hideDuplicateFormattingControls && <div className="property-row">
           <label>Font size</label>
           <input
             className="property-number"
@@ -382,7 +382,7 @@ export default function PropertiesPanel({
             value={firstSelected.fontSize || 20}
             onChange={(event) => updateSingleSelected({ fontSize: Math.max(8, Number(event.target.value) || 20) })}
           />
-        </div>
+        </div>}
         <div className="property-row">
           <label>Align</label>
           <select value={firstSelected.textAlign || "left"} onChange={(event) => updateSingleSelected({ textAlign: event.target.value })}>
