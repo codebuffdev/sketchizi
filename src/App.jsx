@@ -1697,11 +1697,11 @@ function App() {
                 <span><strong>Design Studio</strong><small>Architecture and diagram templates</small></span>
               </button>
               <button type="button" role="menuitem" className="kubernetes-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setKubernetesStudioOpen(true); }} title="Design Kubernetes architectures and import YAML">
-                <span className="create-design-menu-icon" aria-hidden="true">⎈</span>
+                <span className="create-design-menu-icon" aria-hidden="true"><img src="/icons/kubernetes.svg" alt="" width="22" height="22" /></span>
                 <span><strong>K8s Studio</strong><small>Kubernetes manifests and diagrams</small></span>
               </button>
               <button type="button" role="menuitem" className="docker-compose-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDockerStudioOpen(true); }} title="Design Docker Compose applications">
-                <span className="create-design-menu-icon" aria-hidden="true">▦</span>
+                <span className="create-design-menu-icon" aria-hidden="true"><img src="/icons/docker.svg" alt="" width="22" height="22" /></span>
                 <span><strong>Docker Studio</strong><small>Compose files and service diagrams</small></span>
               </button>
             </div>
