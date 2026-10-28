@@ -4,14 +4,17 @@ import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("only verified authenticated users get Workspace; signed-out or unverifiable sessions keep the editor", async () => {
+test("Cloud Workspace opens the existing sign-in dialog for anonymous or unavailable sessions", async () => {
   const source = await read("../src/main.jsx");
+  const auth = await read("../src/features/auth/AuthenticationControl.jsx");
   assert.match(source, /get\("editor"\) === "1"/);
-  assert.match(source, /if \(editorRoute \|\| auth\.status === "anonymous" \|\| auth\.status === "unavailable"\)\s*\{\s*return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
-  assert.match(source, /if \(auth\.status === "checking"\)/);
+  assert.match(source, /if \(workspaceRoute && auth\.status !== "authenticated"\)\s*\{\s*return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
   assert.match(source, /<WorkspaceDashboard/);
   assert.match(source, /onOpenEditor=\{\(\) => \{ window\.location\.assign\("\/\?editor=1"\); \}\}/);
-  assert.doesNotMatch(source, /Could not verify your sign-in session\./);
+  assert.match(auth, /Sign in to access Cloud Workspace/);
+  assert.match(auth, /setDialogOpen\(true\)/);
+  assert.match(auth, /returnTo: window\.location\.pathname \+ window\.location\.search \+ window\.location\.hash/);
+  assert.doesNotMatch(source, /Cloud Workspace could not verify your sign-in session\./);
 });
 
 
@@ -21,7 +24,7 @@ test("Cloud Workspace is reachable from the editor Workspaces menu", async () =>
   assert.match(app, /Cloud Workspace/);
   assert.match(app, /window\.location\.assign\("\/workspace"\)/);
   assert.match(root, /window\.location\.pathname === "\/workspace"/);
-  assert.match(root, /Cloud Workspace could not verify your sign-in session\./);
+  assert.match(root, /if \(workspaceRoute && auth\.status !== "authenticated"\)/);
 });
 
 test("Workspace stylesheet is scoped and imported by the dashboard component", async () => {
