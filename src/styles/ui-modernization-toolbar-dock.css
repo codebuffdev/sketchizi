@@ -1046,3 +1046,48 @@
   background-image: linear-gradient(135deg, transparent 44%, #f87171 46%, #f87171 53%, transparent 55%) !important;
   color: #f8fafc !important;
 }
+
+
+/* Native custom-color picker integrated with the compact swatch row. */
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border: 1px solid rgb(71 85 105 / 42%) !important;
+  border-radius: 5px !important;
+  background: rgb(100 116 139 / 10%) !important;
+  color: var(--contextual-ink, #20242c) !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  overflow: hidden !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-custom-color:hover {
+  background: rgb(99 102 241 / 14%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-custom-color input[type="color"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0.01 !important;
+  cursor: pointer !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-custom-color,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-custom-color,
+.app.theme-dark .contextual-formatting-toolbar .contextual-custom-color,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-custom-color {
+  color: #f8fafc !important;
+  border-color: rgb(226 232 240 / 35%) !important;
+  background: rgb(226 232 240 / 9%) !important;
+}
