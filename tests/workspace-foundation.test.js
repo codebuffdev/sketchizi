@@ -63,6 +63,8 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(app, /workspaceClient\.getDiagram\(cloudDiagramId\)/);
   assert.match(app, /workspaceClient\.saveDiagram\(session\.diagramId, revision, document\)/);
   assert.match(app, /Saving to Cloud Workspace/);
+  assert.match(app, />Retry save<\/button>/);
+  assert.match(app, />Download backup<\/button>/);
   assert.match(dashboard, /cloudDiagramId=/);
   assert.doesNotMatch(dashboard, /Cloud editor integration is the next phase/);
   assert.match(client, /saveDiagram: \(diagramId, revision, document\)/);
