@@ -1891,3 +1891,29 @@
   color: #343b49 !important;
   box-shadow: inset 0 0 0 1px rgba(58, 69, 88, .04) !important;
 }
+
+
+/* Exact category artwork supplied for the Icon Library filters. The source
+   order in the sprite is Networking, Kubernetes, Mind Map, UML, Essentials,
+   All, AWS; the component maps categories to their matching tile. */
+.app .library-panel-redesign .library-source-art {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  background-image: url("/icons/category-icons.png");
+  background-repeat: no-repeat;
+  background-size: 196px 28px;
+  background-position: calc(var(--category-icon-index) * -28px) 0;
+}
+.app .library-panel-redesign .library-source-chip-networking .library-source-art,
+.app .library-panel-redesign .library-source-chip-kubernetes .library-source-art,
+.app .library-panel-redesign .library-source-chip-uml .library-source-art,
+.app .library-panel-redesign .library-source-chip-mindmaps .library-source-art,
+.app .library-panel-redesign .library-source-chip-eraser .library-source-art,
+.app .library-panel-redesign .library-source-chip-all .library-source-art {
+  filter: invert(1);
+}
+.app.theme-light .library-panel-redesign .library-source-art {
+  filter: none;
+}
