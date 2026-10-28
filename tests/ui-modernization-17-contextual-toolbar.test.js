@@ -186,3 +186,26 @@ test('horizontal dock tooltips stay above the dock instead of overlapping neighb
   assert.match(canvas, /if \(top < 8\) top = 8/);
   assert.doesNotMatch(canvas, /if \(top < 8\) top = buttonRect\.bottom \+ 8/);
 });
+
+
+test('properties panel hides only controls duplicated by contextual selection formatting', () => {
+  const panel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  assert.match(app, /contextualSelectionElements=\{selectedElements\}/);
+  assert.match(panel, /const hideContextualStrokeControls = contextualSelection\.length > 0 && !hasContextualLibraryImage/);
+  assert.match(panel, /!hideContextualStrokeControls && <div className="style-group"/);
+  assert.match(panel, /!hideContextualTextSize && <div className="property-row">[\s\S]*?Font size/);
+  assert.match(panel, /hideContextualOpacity/);
+  assert.match(panel, /style-group-label">Roughness/);
+  assert.match(panel, /<label>Align<\/label>/);
+  assert.match(panel, /properties-title">Properties/);
+});
+
+test('contextual duplicate suppression covers text, shape, connector, image, and mixed selections', () => {
+  const panel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
+  assert.match(panel, /element\.type === "text"/);
+  assert.match(panel, /element\.type === "image" && \(element\.customData\?\.iconId \|\| element\.customData\?\.diagramIcon\)/);
+  assert.match(panel, /"rectangle", "diamond", "ellipse", "frame", "line", "arrow", "freedraw"/);
+  assert.match(panel, /contextualSelection\.some\(/);
+  assert.match(panel, /contextualSelection\.length > 0/);
+});
