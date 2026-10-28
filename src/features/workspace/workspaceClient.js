@@ -1,7 +1,10 @@
+import { ensureBackendReady } from "../backend/backendWarmup.js";
+
 const PREFIX = "/api/workspace";
 const CSRF_URL = "/api/auth/csrf";
 
 async function getCsrfHeaders() {
+  await ensureBackendReady();
   const response = await fetch(CSRF_URL, {
     credentials: "same-origin",
     cache: "no-store",
@@ -14,6 +17,7 @@ async function getCsrfHeaders() {
 }
 
 async function request(path, { method = "GET", body, headers = {} } = {}) {
+  await ensureBackendReady();
   const requestHeaders = new Headers({ accept: "application/json", ...headers });
   let serialized;
   if (body !== undefined) {
