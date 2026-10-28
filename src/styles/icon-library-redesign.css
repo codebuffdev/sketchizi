@@ -1869,3 +1869,25 @@
   width: 20px;
   height: 20px;
 }
+
+
+/* Category selection should use the same restrained meta palette as the
+   surrounding controls, not the legacy purple Essentials highlight. */
+.app .library-panel-redesign .library-source-chip.active,
+.app .library-panel-redesign .library-source-chip-eraser.active,
+.app.theme-light .library-panel-redesign .library-source-chip.active,
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #65718a !important;
+  background: #30394a !important;
+  background-image: none !important;
+  color: #f1f4fa !important;
+  box-shadow: inset 0 0 0 1px rgba(190, 202, 224, .04) !important;
+}
+.app.theme-light .library-panel-redesign .library-source-chip.active,
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #c6ccd7 !important;
+  background: #e3e7ee !important;
+  background-image: none !important;
+  color: #343b49 !important;
+  box-shadow: inset 0 0 0 1px rgba(58, 69, 88, .04) !important;
+}
