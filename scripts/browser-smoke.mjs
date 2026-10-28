@@ -11,7 +11,7 @@ const makePage = async (viewport) => {
 };
 
 const openDesignStudio = async (page) => {
-  await page.getByRole("button", { name: /design workspaces/i }).click();
+  await page.getByRole("button", { name: /workspaces/i }).click();
   await page.getByRole("menuitem", { name: /design studio/i }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
