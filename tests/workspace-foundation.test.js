@@ -73,3 +73,19 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(client, /saveDiagram: \(diagramId, revision, document\)/);
   assert.match(client, /"if-match": String\(revision\)/);
 });
+
+
+test("authenticated users keep the editor as the default route; Workspace is opt-in", async () => {
+  const source = await read("../src/main.jsx");
+  assert.match(source, /if \(!workspaceRoute\) return <PhoneAccessGate><App \/><\/PhoneAccessGate>/);
+  assert.match(source, /return <WorkspaceDashboard/);
+  assert.match(source, /const workspaceRoute = window\.location\.pathname === "\/workspace"/);
+});
+
+test("cloud-opened diagrams use their saved name in the editor identity", async () => {
+  const source = await read("../src/App.jsx");
+  assert.match(source, /currentDocumentName=\{cloudDiagramId \? \(cloudSessionRef\.current\.name \|\| "Cloud diagram"\)/);
+  assert.match(source, /name: diagram\.name \|\| "Cloud diagram"/);
+  const stylesheet = await read("../src/features/workspace/workspace.css");
+  assert.match(stylesheet, /cloud-editor-save-status:not\(\.cloud-editor-save-status-error\):not\(\.cloud-editor-save-status-conflict\)\{display:none!important\}/);
+});
