@@ -48,7 +48,7 @@ function getSelectionPosition(api, elements, root) {
   const bottomY = (sceneBounds.bottom + (Number(appState.scrollY) || 0)) * zoom + viewportHeight / 2;
   const rootWidth = root.clientWidth || viewportWidth;
   const rootHeight = root.clientHeight || viewportHeight;
-  const preferredWidth = Math.min(350, Math.max(240, rootWidth - 16));
+  const preferredWidth = Math.max(1, Math.min(520, rootWidth - 16));
   const left = Math.max(8, Math.min(rootWidth - preferredWidth - 8, centerX - preferredWidth / 2));
   // Reserve space for Excalidraw's bottom controls and the compact dock.
   // Prefer below the selection, but flip above it before the toolbar reaches
