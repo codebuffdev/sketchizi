@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-const STROKE_COLORS = [
+const FONT_FAMILIES = [\n  [1, "Virgil"],\n  [2, "Helvetica"],\n  [3, "Cascadia"],\n  [5, "Excalifont"],\n  [6, "Nunito"],\n  [7, "Lilita One"],\n  [8, "Comic Shanns"],\n  [9, "Liberation Sans"],\n];\n\nconst STROKE_COLORS = [
   ["#2f2f33", "Ink"],
   ["#d25555", "Red"],
   ["#3f9b57", "Green"],
@@ -95,7 +95,7 @@ export default function ContextualFormattingToolbar({
   const currentStroke = (first?.customData?.iconColor || first?.strokeColor)?.toLowerCase();
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
-  const currentFontSize = Number(first?.fontSize) || 20;
+  const currentFontSize = Number(first?.fontSize) || 20;\n  const currentFontFamily = FONT_FAMILIES.some(([id]) => id === first?.fontFamily) ? first.fontFamily : 5;
   const currentOpacity = Number(first?.opacity ?? 100);
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
@@ -196,6 +196,21 @@ export default function ContextualFormattingToolbar({
               onClick={() => applyToSelected({ strokeWidth: width })}
             ><span style={{ height: `${Math.min(width + 1, 5)}px` }} /></button>
           ))}
+        </div>
+      )}
+
+      {showTextSize && (
+        <div className="contextual-formatting-group contextual-font-family" role="group" aria-label="Font family">
+          <label htmlFor="contextual-font-family">Font</label>
+          <select
+            id="contextual-font-family"
+            aria-label="Change font family"
+            title="Change font family"
+            value={currentFontFamily}
+            onChange={(event) => applyToSelected({ fontFamily: Number(event.target.value) })}
+          >
+            {FONT_FAMILIES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          </select>
         </div>
       )}
 
