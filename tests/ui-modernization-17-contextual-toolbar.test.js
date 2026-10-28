@@ -40,7 +40,7 @@ test('contextual controls use existing selection update and properties-panel cal
   assert.match(toolbar, /applyToSelected\(\{ fontSize:/);
   assert.match(toolbar, /onClick=\{onOpenProperties\}/);
   assert.match(app, /applyToSelected=\{applyToSelected\}/);
-  assert.match(app, /onOpenProperties=\{\(\) => openPanel\("properties"\)\}/);
+  assert.match(app, /onOpenProperties=\{\(\) => \{[\s\S]*?openPanel\("properties"\);[\s\S]*?\}\}/);
 });
 
 test('selection toolbar placement accounts for zoom, scroll, and canvas bounds', () => {
