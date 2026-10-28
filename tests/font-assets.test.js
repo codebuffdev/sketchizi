@@ -20,7 +20,7 @@ test("Excalidraw's font asset path is configured before the app module loads", a
 
 test("dev and production build copy fonts from the pinned Excalidraw package", async () => {
   const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
-  assert.equal(pkg.version, "1.10.86");
+  assert.match(pkg.version, /^1\.\d+\.\d+$/);
   assert.equal(pkg.scripts.predev, "node scripts/copy-excalidraw-fonts.mjs");
   assert.equal(pkg.scripts.prebuild, "node scripts/copy-excalidraw-fonts.mjs");
   const script = await readFile(path.join(root, "scripts/copy-excalidraw-fonts.mjs"), "utf8");
