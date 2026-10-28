@@ -1580,6 +1580,7 @@ function App() {
             collaborationSelfId={collaborationClientId}
             updateCollaborationCursor={updateCollaborationCursor}
             onViewportChange={markLocalViewportNavigation}
+            propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
             onOpenProperties={() => openPanel("properties")}
