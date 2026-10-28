@@ -198,7 +198,13 @@ function App() {
         }
         setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
       }).catch((error) => {
-        setCloudSaveState({ state: "error", error: error.message || "Could not save this cloud diagram." });
+        const conflict = error?.status === 409 || error?.status === 412 || error?.code === "revision_conflict";
+        setCloudSaveState({
+          state: conflict ? "conflict" : "error",
+          error: conflict
+            ? "This cloud diagram changed in another session. Reload the latest version before continuing; your current edits are still available to download as a backup."
+            : error.message || "Could not save this cloud diagram.",
+        });
       });
     }, cloudFlushImmediatelyRef.current ? 0 : 700);
   }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
@@ -1521,8 +1527,8 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={cloudSaveState.state === "error" ? "alert" : "status"}>
-        <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : cloudSaveState.state === "error" ? cloudSaveState.error : ""}</span>
+      {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+        <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
           <button type="button" onClick={() => {
             const api = apiRef.current;
@@ -1530,6 +1536,10 @@ function App() {
             queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
           }}>Retry save</button>
           <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
+        </>}
+        {cloudSaveState.state === "conflict" && <>
+          <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
+          <button type="button" onClick={() => window.location.reload()}>Reload latest version</button>
         </>}
         <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
       </div>}
