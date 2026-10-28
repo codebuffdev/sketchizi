@@ -27,7 +27,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.zoom\?\.value/);
   assert.match(toolbar, /appState\.scrollX/);
   assert.match(toolbar, /appState\.scrollY/);
-  assert.match(toolbar, /Math\.min\(rootHeight - 54/);
+  assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
   assert.match(toolbar, /canvasRevision/);
   assert.match(toolbar, /const belowTop = bottomY \+ 12/);
 });
