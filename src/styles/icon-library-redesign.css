@@ -1851,3 +1851,21 @@
     min-height: 32px;
   }
 }
+.app .library-panel-redesign .library-source-brand-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  flex: 0 0 20px;
+  object-fit: contain;
+}
+.app .library-panel-redesign .library-source-brand-icon-aws {
+  width: 23px;
+  max-width: 23px;
+  flex-basis: 23px;
+}
+.app .library-panel-redesign .library-source-brand-icon-kubernetes {
+  width: 20px;
+  height: 20px;
+}
