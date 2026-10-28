@@ -74,6 +74,7 @@ export default function ContextualFormattingToolbar({
   selectedElements = [],
   applyToSelected,
   onOpenProperties,
+  propertiesOpen = false,
   canEdit = true,
 }) {
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
@@ -89,7 +90,9 @@ export default function ContextualFormattingToolbar({
     [apiRef, canvasRootRef, canvasRevision, selectedElements],
   );
 
-  if (!canEdit || liveSelection.length === 0 || !position) return null;
+  // The side Properties panel owns the expanded formatting controls while open.
+  // Hide the contextual toolbar to prevent duplicate controls in both surfaces.
+  if (!canEdit || propertiesOpen || liveSelection.length === 0 || !position) return null;
 
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const onlyTextSelection = liveSelection.every((element) => element.type === "text");
