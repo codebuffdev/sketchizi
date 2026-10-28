@@ -1427,7 +1427,8 @@ function App() {
         cloudSaveStatus={cloudSaveStatus}
         onRetryCloudSave={cloudSync.retryCloudSave}
         onOpenWorkspace={() => window.location.assign("/workspace")}
-        currentDocumentName={cloudSaveStatus.enabled ? (cloudSaveStatus.name || currentFile?.name || "Untitled diagram") : (currentFile?.name || "Untitled drawing")}
+        currentDocumentName={currentFile?.name || "Untitled drawing"}
+        cloudDocumentName={cloudSaveStatus.enabled ? cloudSaveStatus.name : ""}
         currentDocumentDirty={documentDirty}
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
