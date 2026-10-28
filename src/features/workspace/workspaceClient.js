@@ -45,6 +45,7 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
 }
 
 export const workspaceClient = Object.freeze({
+  getLimits: () => request("/limits"),
   listProjects: () => request("/projects"),
   createProject: (project) => request("/projects", { method: "POST", body: project }),
   getProject: (projectId) => request(`/projects/${encodeURIComponent(projectId)}`),
