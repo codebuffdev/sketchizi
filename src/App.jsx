@@ -1616,7 +1616,7 @@ function App() {
                 selectedCount={selectedCount} propertiesOpen={propertiesOpen}
                 setPropertiesOpen={(next) => (next ? openPanel("properties") : closePanel("properties"))} firstSelected={firstSelected}
                 hasShapeSelection={hasShapeSelection} hasArrowSelection={hasArrowSelection}
-                hasTextSelection={hasTextSelection} applyToSelected={applyToSelected} contextualSelectionElements={selectedElements}
+                hasTextSelection={hasTextSelection} applyToSelected={applyToSelected} contextualSelectionElements={selectedElements} showFullFormatting={propertiesOpen}
                 applyToSelectedArrow={applyToSelectedArrow} updateSingleSelected={updateSingleSelected}
                 awsResource={selectedAwsResource} awsResourceDefinition={selectedAwsResourceDefinition} updateAwsResource={updateSelectedAwsResource}
                 kubernetesResource={selectedKubernetesResource} kubernetesResourceDefinition={selectedKubernetesResourceDefinition} updateKubernetesResource={updateSelectedKubernetesResource}
