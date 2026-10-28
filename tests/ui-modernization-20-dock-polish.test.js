@@ -35,6 +35,12 @@ test('tooltip portal has theme-aware styling and never intercepts drawing pointe
 });
 
 
+test('Scroll back to content tooltip is placed below the horizontal dock', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /const scrollBackTooltip = \/scroll back to content\/i\.test\(label\)/);
+  assert.match(canvas, /if \(scrollBackTooltip\) \{[\s\S]*?top = \(toolbar\?\.getBoundingClientRect\(\)\.bottom \?\? buttonRect\.bottom\) \+ 8;/);
+});
+
 test('Scroll back to content uses the dock-aware tooltip instead of a native title tooltip', () => {
   const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
   assert.match(canvas, /Scroll back to content[\s\S]*?button\.removeAttribute\("title"\)[\s\S]*?bindToolbarTooltip\(button\)/);
