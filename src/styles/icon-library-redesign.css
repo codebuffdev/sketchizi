@@ -1837,9 +1837,9 @@
 }
 .app .library-panel-redesign .library-source-chip svg {
   display: block;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
 }
 @media (max-width: 420px) {
   .app .library-panel-redesign .library-source-tabs { gap: 5px; }
@@ -1853,21 +1853,21 @@
 }
 .app .library-panel-redesign .library-source-brand-icon {
   display: block;
-  width: 20px;
-  height: 20px;
-  max-width: 20px;
-  max-height: 20px;
-  flex: 0 0 20px;
+  width: 23px;
+  height: 23px;
+  max-width: 23px;
+  max-height: 23px;
+  flex: 0 0 23px;
   object-fit: contain;
 }
 .app .library-panel-redesign .library-source-brand-icon-aws {
-  width: 23px;
-  max-width: 23px;
-  flex-basis: 23px;
+  width: 26px;
+  max-width: 26px;
+  flex-basis: 26px;
 }
 .app .library-panel-redesign .library-source-brand-icon-kubernetes {
-  width: 20px;
-  height: 20px;
+  width: 23px;
+  height: 23px;
 }
 
 
