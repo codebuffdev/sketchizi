@@ -37,6 +37,7 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   if (!api || !root || !elements.length) return null;
   const appState = api.getAppState?.();
   if (!appState) return null;
+
   const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
   const sceneBounds = elements.reduce((bounds, element) => {
     const x = Number(element.x) || 0;
@@ -51,24 +52,50 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
   if (!Number.isFinite(sceneBounds.left) || !Number.isFinite(sceneBounds.top)) return null;
 
-  const viewportWidth = Number(appState.width) || root.clientWidth;
-  const viewportHeight = Number(appState.height) || root.clientHeight;
-  const centerX = ((sceneBounds.left + sceneBounds.right) / 2 + (Number(appState.scrollX) || 0)) * zoom + viewportWidth / 2;
-  const topY = (sceneBounds.top + (Number(appState.scrollY) || 0)) * zoom + viewportHeight / 2;
-  const bottomY = (sceneBounds.bottom + (Number(appState.scrollY) || 0)) * zoom + viewportHeight / 2;
-  const rootWidth = root.clientWidth || viewportWidth;
-  const rootHeight = root.clientHeight || viewportHeight;
-  const barWidth = 48;
-  const left = Math.max(8, Math.min(rootWidth - barWidth - 8, centerX - barWidth / 2));
-  const preferredTop = bottomY + 10 + 42 < rootHeight - 72 ? bottomY + 10 : Math.max(8, topY - 52);
+  const rootWidth = root.clientWidth || Number(appState.width) || 1;
+  const rootHeight = root.clientHeight || Number(appState.height) || 1;
+  // Use the actual overlay dimensions for placement. Excalidraw app-state
+  // dimensions can differ from the root when side panels or browser zoom alter
+  // the canvas viewport, so scale scene coordinates into the overlay's space.
+  const appWidth = Number(appState.width) || rootWidth;
+  const appHeight = Number(appState.height) || rootHeight;
+  const scaleX = (rootWidth / appWidth) * zoom;
+  const scaleY = (rootHeight / appHeight) * zoom;
+  const scrollX = Number(appState.scrollX) || 0;
+  const scrollY = Number(appState.scrollY) || 0;
+  const selectionLeft = (sceneBounds.left + scrollX) * scaleX + rootWidth / 2;
+  const selectionRight = (sceneBounds.right + scrollX) * scaleX + rootWidth / 2;
+  const selectionTop = (sceneBounds.top + scrollY) * scaleY + rootHeight / 2;
+  const selectionBottom = (sceneBounds.bottom + scrollY) * scaleY + rootHeight / 2;
+
+  const railWidth = 44;
+  const railHeight = Math.min(300, elements.length ? 6 * 38 + 12 : 12);
+  const gap = 10;
+  const edge = 8;
+
+  // Keep the rail beside the selected object instead of centering it in the
+  // canvas. Prefer its right edge, then left edge, and only use a clamped
+  // centered fallback when the selection is too close to both viewport edges.
+  const rightCandidate = selectionRight + gap;
+  const leftCandidate = selectionLeft - railWidth - gap;
+  const left = rightCandidate + railWidth <= rootWidth - edge
+    ? rightCandidate
+    : leftCandidate >= edge
+      ? leftCandidate
+      : Math.max(edge, Math.min(rootWidth - railWidth - edge, selectionRight - railWidth / 2));
+
   const popoverHeight = Math.min(520, Math.max(180, rootHeight - 24));
-  const top = isPopoverOpen
-    ? Math.max(8, Math.min(rootHeight - popoverHeight - 8, preferredTop))
-    : Math.max(8, Math.min(rootHeight - 52, preferredTop));
-  const popoverSide = left + barWidth + 340 + 16 <= rootWidth ? "right" : "left";
+  const selectionCenterY = (selectionTop + selectionBottom) / 2;
+  const preferredTop = isPopoverOpen
+    ? selectionCenterY - Math.min(popoverHeight, 300) / 2
+    : selectionCenterY - railHeight / 2;
+  const maxTop = Math.max(edge, rootHeight - (isPopoverOpen ? Math.min(popoverHeight, rootHeight - 16) : railHeight) - edge);
+  const top = Math.max(edge, Math.min(maxTop, preferredTop));
+  const popoverSide = left + railWidth + 320 + 16 <= rootWidth ? "right" : "left";
+
   return {
     left: `${left}px`,
-    top: `${Math.max(8, Math.min(rootHeight - 52, top))}px`,
+    top: `${top}px`,
     "--format-popover-side": popoverSide,
   };
 }
