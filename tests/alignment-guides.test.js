@@ -5,7 +5,7 @@ import { calculateAlignmentGuides } from "../src/features/canvas/alignmentGuides
 test("detects matching vertical and horizontal alignment edges", () => {
   const elements = [
     { id: "moving", x: 98, y: 198, width: 40, height: 40 },
-    { id: "fixed", x: 100, y: 100, width: 40, height: 40 },
+    { id: "fixed", x: 100, y: 160, width: 40, height: 40 },
   ];
   const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 3);
   assert.ok(guides.some((guide) => guide.axis === "x" && Math.abs(guide.position - 100) < 2));
