@@ -34,9 +34,18 @@ const GROUPS = [
 ];
 
 function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
-  if (!api || !root || !elements.length) return null;
+  if (!api || !root) return null;
   const appState = api.getAppState?.();
   if (!appState) return null;
+  // Drawing-tool controls have no selected element to anchor to. Keep their
+  // rail in a stable, reachable position inside the canvas viewport instead.
+  if (!elements.length) {
+    return {
+      left: "16px",
+      top: "64px",
+      "--format-popover-side": root.clientWidth > 390 ? "right" : "left",
+    };
+  }
 
   const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
   const sceneBounds = elements.reduce((bounds, element) => {
@@ -199,6 +208,13 @@ export default function ContextualFormattingToolbar({
   }, [openGroup]);
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
   const first = liveSelection[0];
+  const appState = apiRef?.current?.getAppState?.() || {};
+  const activeToolType = String(appState.activeTool?.type || "").toLowerCase();
+  const drawingTool = activeToolType === "freedraw";
+  const bucketFillTool = ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
+  const drawToShapeTool = ["draw-to-shape", "drawtoshape"].includes(activeToolType);
+  const toolMode = liveSelection.length === 0 && (drawingTool || bucketFillTool || drawToShapeTool);
+  const activeToolMode = drawingTool ? "draw" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
@@ -210,25 +226,50 @@ export default function ContextualFormattingToolbar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [apiRef, canvasRootRef, canvasRevision, selectedElements, openGroup],
   );
-  if (!canEdit || liveSelection.length === 0 || !position) return null;
+  if (!canEdit || (!liveSelection.length && !toolMode) || !position) return null;
 
-  const currentStroke = (first?.customData?.iconColor || first?.strokeColor)?.toLowerCase();
-  const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
-  const currentStrokeWidth = Number(first?.strokeWidth) || 1;
-  const currentFontSize = Number(first?.fontSize) || 20;
-  const currentFontFamily = Number(first?.fontFamily) || DEFAULT_FONT_FAMILY_ID;
-  const currentTextAlign = first?.textAlign || "left";
-  const currentOpacity = Number(first?.opacity ?? 100);
+  const currentStroke = (first?.customData?.iconColor || first?.strokeColor || appState.currentItemStrokeColor || "#2f2f33").toLowerCase();
+  const currentFill = (first?.backgroundColor || appState.currentItemBackgroundColor || "transparent").toLowerCase();
+  const currentStrokeWidth = Number(first?.strokeWidth ?? appState.currentItemStrokeWidth) || 1;
+  const currentFontSize = Number(first?.fontSize ?? appState.currentItemFontSize) || 20;
+  const currentFontFamily = Number(first?.fontFamily ?? appState.currentItemFontFamily) || DEFAULT_FONT_FAMILY_ID;
+  const currentTextAlign = first?.textAlign || appState.currentItemTextAlign || "left";
+  const currentOpacity = Number(first?.opacity ?? appState.currentItemOpacity ?? 100);
   // Mirror the default Properties panel: text-only controls are shown only
   // when the active selection consists entirely of text. Shape, connector,
   // image, and mixed selections keep the shared appearance/layer controls, with
   // shape- and line-specific options rendered inside the Stroke popover.
-  const visibleGroups = GROUPS.filter((group) => {
-    if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") {
-      return onlyTextSelection;
+  const visibleGroups = toolMode
+    ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity")
+    : GROUPS.filter((group) => {
+      if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") {
+        return onlyTextSelection;
+      }
+      return true;
+    });
+  const applyFormatting = (patch) => {
+    if (!toolMode) {
+      applyToSelected(patch);
+      return;
     }
-    return true;
-  });
+    const api = apiRef?.current;
+    if (!api) return;
+    const appStatePatch = {};
+    if ("strokeColor" in patch) appStatePatch.currentItemStrokeColor = patch.strokeColor;
+    if ("backgroundColor" in patch) appStatePatch.currentItemBackgroundColor = patch.backgroundColor === "transparent" ? "transparent" : patch.backgroundColor;
+    if ("strokeWidth" in patch) appStatePatch.currentItemStrokeWidth = patch.strokeWidth;
+    if ("fillStyle" in patch) appStatePatch.currentItemFillStyle = patch.fillStyle;
+    if ("strokeStyle" in patch) appStatePatch.currentItemStrokeStyle = patch.strokeStyle;
+    if ("roughness" in patch) appStatePatch.currentItemRoughness = patch.roughness;
+    if ("opacity" in patch) appStatePatch.currentItemOpacity = patch.opacity;
+    if ("fontFamily" in patch) appStatePatch.currentItemFontFamily = patch.fontFamily;
+    if ("fontSize" in patch) appStatePatch.currentItemFontSize = patch.fontSize;
+    if ("textAlign" in patch) appStatePatch.currentItemTextAlign = patch.textAlign;
+    if ("roundness" in patch) appStatePatch.currentItemRoundness = patch.roundness;
+    if ("startArrowhead" in patch) appStatePatch.currentItemStartArrowhead = patch.startArrowhead;
+    if ("endArrowhead" in patch) appStatePatch.currentItemEndArrowhead = patch.endArrowhead;
+    api.updateScene({ appState: appStatePatch });
+  };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
@@ -248,7 +289,7 @@ export default function ContextualFormattingToolbar({
         <div className="format-option-section">
           <div className="format-option-label">{onlyTextSelection ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
-            {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyToSelected({ strokeColor: color })} />)}
+            {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
             <label
               className="format-custom-color"
               title="Choose custom color"
@@ -256,7 +297,7 @@ export default function ContextualFormattingToolbar({
               style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed" }}
             >
               <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyToSelected({ strokeColor: event.target.value })} />
+              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} />
             </label>
           </div>
         </div>
@@ -264,7 +305,7 @@ export default function ContextualFormattingToolbar({
           <div className="format-option-section">
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
-              {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyToSelected({ backgroundColor: color })} />)}
+              {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
               <label
                 className="format-custom-color format-custom-fill-color"
                 title="Choose custom background color"
@@ -276,7 +317,7 @@ export default function ContextualFormattingToolbar({
                   type="color"
                   aria-label="Choose custom background color"
                   value={/^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1"}
-                  onChange={(event) => applyToSelected({ backgroundColor: event.target.value })}
+                  onChange={(event) => applyFormatting({ backgroundColor: event.target.value })}
                 />
               </label>
             </div>
@@ -292,7 +333,7 @@ export default function ContextualFormattingToolbar({
                 aria-label="Square edges"
                 aria-pressed={!first?.roundness}
                 title="Square edges"
-                onClick={() => applyToSelected({ roundness: null })}
+                onClick={() => applyFormatting({ roundness: null })}
               ><span className="format-edge-square" aria-hidden="true" /></button>
               <button
                 type="button"
@@ -300,38 +341,39 @@ export default function ContextualFormattingToolbar({
                 aria-label="Rounded edges"
                 aria-pressed={Boolean(first?.roundness)}
                 title="Rounded edges"
-                onClick={() => applyToSelected({ roundness: { type: 3 } })}
+                onClick={() => applyFormatting({ roundness: { type: 3 } })}
               ><span className="format-edge-rounded" aria-hidden="true" /></button>
             </div>
           </div>
         )}
-        {!onlyTextSelection && !hasImageSelection && (hasLine || hasShape) && (
+        {(toolMode || (!onlyTextSelection && !hasImageSelection && (hasLine || hasShape))) && (
           <div className="format-option-section">
             <div className="format-option-label">Stroke width</div>
             <div className="format-option-row">
-              {[1, 2, 4].map((width) => <button key={width} type="button" className={`format-option-button${currentStrokeWidth === width ? " is-selected" : ""}`} aria-pressed={currentStrokeWidth === width} onClick={() => applyToSelected({ strokeWidth: width })}>{width}</button>)}
+              {[1, 2, 4].map((width) => <button key={width} type="button" className={`format-option-button${currentStrokeWidth === width ? " is-selected" : ""}`} aria-pressed={currentStrokeWidth === width} onClick={() => applyFormatting({ strokeWidth: width })}>{width}</button>)}
             </div>
-            {hasShape && <>
+            {(hasShape || activeToolMode === "shape") && <>
               <div className="format-option-label format-sub-label">Fill style</div>
-              <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyToSelected({ fillStyle: value })}>{glyph}</button>)}</div>
+              <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}</div>
             </>}
+            {!toolMode && <>
             <div className="format-option-label format-sub-label">Line style</div>
-            <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.strokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.strokeStyle === value} onClick={() => applyToSelected({ strokeStyle: value })}>{glyph}</button>)}</div>
+            <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.strokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.strokeStyle === value} onClick={() => applyFormatting({ strokeStyle: value })}>{glyph}</button>)}</div>
             <div className="format-option-label format-sub-label">Roughness</div>
-            <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} onClick={() => applyToSelected({ roughness: value })}>{label}</button>)}</div>
+            <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} onClick={() => applyFormatting({ roughness: value })}>{label}</button>)}</div>
             {first?.type === "arrow" && (
               <>
                 <div className="format-option-label format-sub-label">Arrow type</div>
                 <div className="format-option-row">
-                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) <= 2 ? " is-selected" : ""}`} aria-label="Straight arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) <= 2} title="Straight arrow" onClick={() => applyToSelected(straightArrowPatch(first))}>↗</button>
-                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) > 2 ? " is-selected" : ""}`} aria-label="Curved arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) > 2} title="Curved arrow" onClick={() => applyToSelected(curvedArrowPatch(first))}>⌒</button>
-                  <button type="button" className={`format-option-button${first?.elbowed ? " is-selected" : ""}`} aria-label="Elbow arrow" aria-pressed={Boolean(first?.elbowed)} title="Elbow arrow" onClick={() => applyToSelected({ elbowed: true })}>⌞</button>
+                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) <= 2 ? " is-selected" : ""}`} aria-label="Straight arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) <= 2} title="Straight arrow" onClick={() => applyFormatting(straightArrowPatch(first))}>↗</button>
+                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) > 2 ? " is-selected" : ""}`} aria-label="Curved arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) > 2} title="Curved arrow" onClick={() => applyFormatting(curvedArrowPatch(first))}>⌒</button>
+                  <button type="button" className={`format-option-button${first?.elbowed ? " is-selected" : ""}`} aria-label="Elbow arrow" aria-pressed={Boolean(first?.elbowed)} title="Elbow arrow" onClick={() => applyFormatting({ elbowed: true })}>⌞</button>
                 </div>
                 <div className="format-option-label format-sub-label">Arrowheads</div>
                 <div className="format-option-row format-arrowhead-row">
                   <label className="format-arrowhead-control">
                     <span>Start</span>
-                    <select aria-label="Start arrowhead" value={first?.startArrowhead || "none"} onChange={(event) => applyToSelected({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                    <select aria-label="Start arrowhead" value={first?.startArrowhead || "none"} onChange={(event) => applyFormatting({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
                       <option value="none">None</option>
                       <option value="arrow">Arrow</option>
                       <option value="bar">Bar</option>
@@ -340,7 +382,7 @@ export default function ContextualFormattingToolbar({
                   </label>
                   <label className="format-arrowhead-control">
                     <span>End</span>
-                    <select aria-label="End arrowhead" value={first?.endArrowhead || "none"} onChange={(event) => applyToSelected({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                    <select aria-label="End arrowhead" value={first?.endArrowhead || "none"} onChange={(event) => applyFormatting({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
                       <option value="none">None</option>
                       <option value="arrow">Arrow</option>
                       <option value="bar">Bar</option>
@@ -350,15 +392,23 @@ export default function ContextualFormattingToolbar({
                 </div>
               </>
             )}
+            </>}
           </div>
         )}
+        {drawingTool && <div className="format-option-section">
+          <div className="format-option-label">Pressure</div>
+          <div className="format-option-row">
+            <button type="button" className="format-option-button is-selected" aria-label="Pressure enabled" aria-pressed="true" title="Use pressure-sensitive stroke">〰</button>
+            <button type="button" className="format-option-button" aria-label="Pressure disabled" aria-pressed="false" title="Use consistent stroke width">〰</button>
+          </div>
+        </div>}
       </>
     );
     if (groupId === "fontFamily") return (
       <div className="format-option-section">
         <div className="format-option-label">Font family</div>
         <div className="format-option-row format-font-families">
-          {FONT_FAMILIES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentFontFamily === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyToSelected({ fontFamily: value })}>{glyph}</button>)}
+          {FONT_FAMILIES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentFontFamily === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyFormatting({ fontFamily: value })}>{glyph}</button>)}
         </div>
       </div>
     );
@@ -366,12 +416,12 @@ export default function ContextualFormattingToolbar({
       <div className="format-option-section">
         <div className="format-option-label">Font size</div>
         <div className="format-option-row">
-          {FONT_SIZES.map(([value, label]) => <button key={value} type="button" className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontSize === value} onClick={() => applyToSelected({ fontSize: value })}>{label}</button>)}
+          {FONT_SIZES.map(([value, label]) => <button key={value} type="button" className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontSize === value} onClick={() => applyFormatting({ fontSize: value })}>{label}</button>)}
         </div>
         <div className="format-option-row format-custom-size">
-          <button type="button" className="format-option-button" aria-label="Decrease text size" onClick={() => applyToSelected({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
+          <button type="button" className="format-option-button" aria-label="Decrease text size" onClick={() => applyFormatting({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
           <span>{currentFontSize}</span>
-          <button type="button" className="format-option-button" aria-label="Increase text size" onClick={() => applyToSelected({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
+          <button type="button" className="format-option-button" aria-label="Increase text size" onClick={() => applyFormatting({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
         </div>
       </div>
     );
@@ -379,7 +429,7 @@ export default function ContextualFormattingToolbar({
       <div className="format-option-section">
         <div className="format-option-label">Text alignment</div>
         <div className="format-option-row">
-          {TEXT_ALIGNMENTS.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentTextAlign === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentTextAlign === value} onClick={() => applyToSelected({ textAlign: value })}>{glyph}</button>)}
+          {TEXT_ALIGNMENTS.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentTextAlign === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentTextAlign === value} onClick={() => applyFormatting({ textAlign: value })}>{glyph}</button>)}
         </div>
       </div>
     );
@@ -387,7 +437,7 @@ export default function ContextualFormattingToolbar({
       <div className="format-option-section">
         <div className="format-option-label">Opacity</div>
         <div className="format-opacity-control">
-          <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })} />
+          <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
           <span>{currentOpacity}</span>
         </div>
       </div>
@@ -410,9 +460,9 @@ export default function ContextualFormattingToolbar({
   return (
     <div
       ref={toolbarRef}
-      className="contextual-formatting-toolbar"
+      className={`contextual-formatting-toolbar${toolMode ? " is-tool-mode" : ""}`}
       role="toolbar"
-      aria-label="Selected object formatting"
+      aria-label={toolMode ? "Drawing tool formatting" : "Selected object formatting"}
       style={position}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
@@ -437,7 +487,18 @@ export default function ContextualFormattingToolbar({
             <strong>{visibleGroups.find((group) => group.id === activeGroup)?.label}</strong>
             <button type="button" className="format-popover-close" aria-label="Close formatting options" onClick={() => setOpenGroup(null)}>×</button>
           </div>
-          {renderGroupContent(activeGroup)}
+          {activeGroup === "stroke" && bucketFillTool
+            ? <div className="format-option-section">
+                <div className="format-option-label">Background</div>
+                <div className="format-option-row">
+                  {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
+                  <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color">
+                    <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                    <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
+                  </label>
+                </div>
+              </div>
+            : renderGroupContent(activeGroup)}
         </div>
       )}
     </div>
