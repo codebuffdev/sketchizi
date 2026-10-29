@@ -49,11 +49,12 @@ function bytesToBase64Url(bytes) {
   return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 
-async function signAssertion(subject, secret) {
+async function signAssertion(subject, email, secret) {
   const now = Math.floor(Date.now() / 1000);
   const header = bytesToBase64Url(new TextEncoder().encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
   const payload = bytesToBase64Url(new TextEncoder().encode(JSON.stringify({
     sub: subject,
+    email,
     aud: "sketchizi-ai",
     iat: now,
     exp: now + ASSERTION_LIFETIME_SECONDS,
@@ -84,7 +85,8 @@ async function inspectSession(authOrigin, request, requestId) {
   if (!response.ok) throw new Error("auth-unavailable");
   const payload = await response.json().catch(() => null);
   const subject = payload?.authenticated === true && typeof payload?.user?.id === "string" ? payload.user.id : "";
-  return subject && subject.length <= 255 ? subject : null;
+  const email = payload?.authenticated === true && typeof payload?.user?.email === "string" ? payload.user.email.trim().toLowerCase() : "";
+  return subject && subject.length <= 255 ? { subject, email } : null;
 }
 
 function requestIsSameOrigin(request, incoming, env) {
@@ -147,14 +149,14 @@ export async function onRequest({ request, env }) {
     if (!authOrigin || typeof secret !== "string" || new TextEncoder().encode(secret).length < 32) {
       return fail(503, "The AI identity gateway is not configured.", "identity_gateway_not_configured");
     }
-    let subject;
+    let identity;
     try {
-      subject = await inspectSession(authOrigin, request, requestId);
+      identity = await inspectSession(authOrigin, request, requestId);
     } catch {
       return fail(502, "Could not verify your Sketchizi sign-in session.", "identity_verification_unavailable");
     }
-    if (!subject) return fail(401, "Sign in with Google to use AI Ask.", "authentication_required");
-    try { assertion = await signAssertion(subject, secret); }
+    if (!identity) return fail(401, "Sign in with Google to use AI Ask.", "authentication_required");
+    try { assertion = await signAssertion(identity.subject, identity.email, secret); }
     catch { return fail(503, "The AI identity gateway is unavailable.", "identity_assertion_failed"); }
   }
 
