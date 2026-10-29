@@ -188,9 +188,9 @@ test('formatting controls are grouped behind compact icon buttons with adjacent 
   assert.match(toolbar, /const GROUPS = \[/);
   assert.match(toolbar, /setOpenGroup\(\(current\) => current === group\.id \? null : group\.id\)/);
   assert.match(toolbar, /className=\{\`format-options-popover side-\$\{position\["--format-popover-side"\]\}\`\}/);
-  assert.match(toolbar, /aria-label="Font family"/);
-  assert.match(toolbar, /aria-label="Font size"/);
-  assert.match(toolbar, /aria-label="Text alignment"/);
+  assert.match(toolbar, /label: "Font family"/);
+  assert.match(toolbar, /label: "Font size"/);
+  assert.match(toolbar, /Text alignment/);
   assert.match(toolbar, /aria-label="Opacity"/);
   assert.match(toolbar, /aria-label="Layer order"/);
   assert.match(toolbar, /event\.key === "Escape"/);
@@ -200,7 +200,7 @@ test('formatting controls are grouped behind compact icon buttons with adjacent 
 test('formatting popovers use compact rail and viewport-constrained surfaces', () => {
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.match(dockCss, /\.format-icon-rail[\s\S]*?flex-direction: column/);
-  assert.match(dockCss, /\.format-options-popover\.side-right[\s\S]*?left: calc\(100% \\+ 10px\)/);
-  assert.match(dockCss, /\.format-options-popover\.side-left[\s\S]*?right: calc\(100% \\+ 10px\)/);
+  assert.match(dockCss, /\.format-options-popover\.side-right[\s\S]*?left: calc\(100% \+ 10px\)/);
+  assert.match(dockCss, /\.format-options-popover\.side-left[\s\S]*?right: calc\(100% \+ 10px\)/);
   assert.match(dockCss, /max-height: min\(520px, calc\(100vh - 32px\)\)/);
 });
