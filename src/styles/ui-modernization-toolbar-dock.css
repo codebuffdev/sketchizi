@@ -1335,22 +1335,43 @@
   background: repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%) 50% / 10px 10px;
 }
 .app .contextual-formatting-toolbar .format-custom-color {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 30px;
+  box-sizing: border-box;
   width: 30px;
+  min-width: 30px;
   height: 30px;
   border: 1px solid #d9dde6;
   border-radius: 7px;
   overflow: hidden;
+  background: var(--custom-color-value, #7c3aed);
+  color: #fff;
   cursor: pointer;
 }
+.app .contextual-formatting-toolbar .format-custom-color-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
 .app .contextual-formatting-toolbar .format-custom-color input {
-  width: 38px;
-  height: 38px;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   padding: 0;
+  margin: 0;
+  opacity: 0;
   border: 0;
-  background: transparent;
   cursor: pointer;
 }
 .app .contextual-formatting-toolbar .format-option-button {
