@@ -31,18 +31,18 @@ function getSelectionPosition(api, elements, root) {
   const appState = api.getAppState?.();
   if (!appState) return null;
 
-  // Match the approved Properties reference: a full, vertically stacked
-  // settings card on the right side of the canvas, not a tiny horizontal strip
-  // hovering over the selected object.
-  const rootWidth = root.clientWidth || Number(appState.width) || window.innerWidth;
-  const rootHeight = root.clientHeight || Number(appState.height) || window.innerHeight;
-  const panelWidth = Math.min(360, rootWidth - 24);
-  const left = Math.max(12, rootWidth - panelWidth - 16);
-  const top = 16;
+  // This is a viewport-anchored settings card, not an object-anchored ribbon.
+  // Use the browser viewport so it cannot be pushed outside the visible canvas
+  // by the canvas wrapper's narrower coordinate system.
+  const viewportWidth = window.innerWidth || root.clientWidth || Number(appState.width) || 1024;
+  const viewportHeight = window.innerHeight || root.clientHeight || Number(appState.height) || 768;
+  const panelWidth = Math.min(360, viewportWidth - 24);
   return {
-    left: `${left}px`,
-    top: `${top}px`,
-    "--contextual-panel-max-height": `${Math.max(220, rootHeight - 32)}px`,
+    position: "fixed",
+    right: "16px",
+    left: "auto",
+    top: "16px",
+    "--contextual-panel-max-height": `${Math.max(220, viewportHeight - 32)}px`,
     "--contextual-panel-width": `${panelWidth}px`,
   };
 }
