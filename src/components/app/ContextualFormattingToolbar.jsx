@@ -165,10 +165,11 @@ export default function ContextualFormattingToolbar({
   const currentFontFamily = Number(first?.fontFamily) || DEFAULT_FONT_FAMILY_ID;
   const currentTextAlign = first?.textAlign || "left";
   const currentOpacity = Number(first?.opacity ?? 100);
-  const visibleGroups = GROUPS.filter((group) => {
-    if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") return hasText;
-    return true;
-  });
+  // Keep every formatting category available for every selected element type.
+  // Some categories (font controls in particular) are most useful for text, but
+  // their popovers should still open consistently rather than disappearing when
+  // a shape, connector, image, or mixed selection is active.
+  const visibleGroups = GROUPS;
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
