@@ -266,3 +266,13 @@ test('arrow floating Stroke popover includes arrow type and start/end arrowheads
   assert.match(toolbar, /<option value="arrow">Arrow<\/option>[\s\S]*?<option value="bar">Bar<\/option>[\s\S]*?<option value="dot">Dot<\/option>/);
   assert.match(styles, /\.format-arrowhead-control select/);
 });
+
+
+test('floating arrow type controls include straight, curved, and elbow paths', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbar, /function curvedArrowPatch\(element\)/);
+  assert.match(toolbar, /function straightArrowPatch\(element\)/);
+  assert.match(toolbar, /aria-label="Straight arrow"[\s\S]*?straightArrowPatch\(first\)/);
+  assert.match(toolbar, /aria-label="Curved arrow"[\s\S]*?curvedArrowPatch\(first\)/);
+  assert.match(toolbar, /aria-label="Elbow arrow"[\s\S]*?elbowed: true/);
+});
