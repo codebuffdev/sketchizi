@@ -1498,3 +1498,21 @@
   color: var(--text-primary, #f2f3f7);
   font: inherit;
 }
+
+
+/*
+ * Zen mode only: keep the contextual formatting rail in a stable position
+ * beside the canvas edge. Its option popovers open beside the rail rather than
+ * following the selected element. Normal mode keeps the existing placement.
+ */
+.app:has(button[aria-label="Exit zen mode"], button[title="Exit zen mode"], button.exit-zen-mode) .contextual-formatting-toolbar {
+  position: fixed !important;
+  left: 16px !important;
+  top: 64px !important;
+  right: auto !important;
+  --format-popover-side: right !important;
+}
+.app:has(button[aria-label="Exit zen mode"], button[title="Exit zen mode"], button.exit-zen-mode) .contextual-formatting-toolbar .format-options-popover {
+  left: calc(100% + 10px) !important;
+  right: auto !important;
+}
