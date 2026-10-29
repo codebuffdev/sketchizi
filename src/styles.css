@@ -854,35 +854,70 @@
 }
 
 
-/* Persistent, restrained active-tool state in the floating Excalidraw dock. */
+/* Toolbar tools use a subtle neutral hover/active state. Scaling is visual
+   only, so the dock layout and neighboring tool positions do not move. */
 .app .App-toolbar .sketchizi-dock-tool-active,
-.app .App-toolbar .sketchizi-dock-quick-tool.sketchizi-dock-tool-active {
-  background: #303b4d !important;
-  border-color: #71819a !important;
-  color: #f0f4fa !important;
-  box-shadow: inset 0 0 0 1px rgba(190, 205, 226, .12) !important;
-}
-.app .App-toolbar .sketchizi-dock-tool-active svg {
-  color: inherit;
-}
-.app .App-toolbar .sketchizi-dock-tool-active:focus-visible {
-  outline: 2px solid #aab9cf !important;
-  outline-offset: 2px;
-}
-
-
-/* Native Excalidraw selected tool is the source of truth for active state. */
+.app .App-toolbar .sketchizi-dock-quick-tool.sketchizi-dock-tool-active,
 .app .App-toolbar .ToolIcon_type_button--selected,
 .app .App-toolbar .ToolIcon--selected,
 .app .App-toolbar button[aria-pressed="true"] {
-  background: #303b4d !important;
-  border-color: #71819a !important;
-  color: #f0f4fa !important;
-  box-shadow: inset 0 0 0 1px rgba(190, 205, 226, .12) !important;
+  background: #e5e7eb !important;
+  border-color: #cbd0d8 !important;
+  color: #252a32 !important;
+  box-shadow: none !important;
+  transform: scale(1.08);
+  transform-origin: center;
+  transition: transform .14s ease, background-color .14s ease, border-color .14s ease, color .14s ease;
+  z-index: 1;
 }
+.app .App-toolbar .sketchizi-dock-tool-active svg,
 .app .App-toolbar .ToolIcon_type_button--selected svg,
 .app .App-toolbar .ToolIcon--selected svg {
   color: inherit;
+}
+.app .App-toolbar .ToolIcon_type_button:hover,
+.app .App-toolbar .ToolIcon_type_button:focus-visible,
+.app .App-toolbar .ToolIcon_type_button--selected:hover,
+.app .App-toolbar .ToolIcon--selected:hover {
+  background: #eef0f3;
+  border-color: #d4d8df;
+  transition: transform .14s ease, background-color .14s ease, border-color .14s ease, color .14s ease;
+}
+.app .App-toolbar .ToolIcon_type_button:hover,
+.app .App-toolbar .ToolIcon_type_button--selected:hover,
+.app .App-toolbar .ToolIcon--selected:hover {
+  transform: scale(1.08);
+  transform-origin: center;
+  z-index: 1;
+}
+.app .App-toolbar .sketchizi-dock-tool-active:focus-visible,
+.app .App-toolbar .ToolIcon_type_button--selected:focus-visible,
+.app .App-toolbar .ToolIcon--selected:focus-visible {
+  outline: 2px solid #9ca3af !important;
+  outline-offset: 2px;
+}
+.app.theme-dark .App-toolbar .sketchizi-dock-tool-active,
+.app.theme-dark .App-toolbar .sketchizi-dock-quick-tool.sketchizi-dock-tool-active,
+.app.theme-dark .App-toolbar .ToolIcon_type_button--selected,
+.app.theme-dark .App-toolbar .ToolIcon--selected,
+.app.theme-dark .App-toolbar button[aria-pressed="true"] {
+  background: #343840 !important;
+  border-color: #555b66 !important;
+  color: #f3f4f6 !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .App-toolbar .ToolIcon_type_button:hover,
+.app.theme-dark .App-toolbar .ToolIcon_type_button:focus-visible,
+.app.theme-dark .App-toolbar .ToolIcon_type_button--selected:hover,
+.app.theme-dark .App-toolbar .ToolIcon--selected:hover {
+  background: #292d34;
+  border-color: #4a505b;
+  color: #f3f4f6;
+}
+.app.theme-dark .App-toolbar .sketchizi-dock-tool-active:focus-visible,
+.app.theme-dark .App-toolbar .ToolIcon_type_button--selected:focus-visible,
+.app.theme-dark .App-toolbar .ToolIcon--selected:focus-visible {
+  outline-color: #9ca3af !important;
 }
 
 
