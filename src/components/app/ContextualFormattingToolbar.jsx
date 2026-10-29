@@ -83,6 +83,19 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   if (!api || !root) return null;
   const appState = api.getAppState?.();
   if (!appState) return null;
+
+  // In Zen Mode the formatting dock is a persistent canvas control, not a
+  // contextual control attached to the selected element. Keep both the rail
+  // and its option popovers anchored to the same viewport-relative position
+  // while selection, zoom, pan, and active dock option change.
+  if (appState.zenModeEnabled === true) {
+    return {
+      left: "16px",
+      top: "64px",
+      "--format-popover-side": root.clientWidth > 390 ? "right" : "left",
+    };
+  }
+
   // Drawing-tool controls have no selected element to anchor to. Keep their
   // rail in a stable, reachable position inside the canvas viewport instead.
   if (!elements.length) {
