@@ -246,3 +246,12 @@ test('rectangle stroke popover includes edge controls and custom background colo
   assert.match(styles, /\.format-edge-square/);
   assert.match(styles, /\.format-edge-rounded/);
 });
+
+
+test('floating toolbar positions selections from the viewport origin without half-canvas offset', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbar, /const selectionLeft = \(sceneBounds\.left \+ scrollX\) \* scaleX;/);
+  assert.match(toolbar, /const selectionTop = \(sceneBounds\.top \+ scrollY\) \* scaleY;/);
+  assert.doesNotMatch(toolbar, /selection(?:Left|Right) = .*\+ rootWidth \/ 2/);
+  assert.doesNotMatch(toolbar, /selection(?:Top|Bottom) = .*\+ rootHeight \/ 2/);
+});
