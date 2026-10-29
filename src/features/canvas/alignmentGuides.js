@@ -45,7 +45,7 @@ export function calculateAlignmentGuides(elements, selectedIds, tolerance = ALIG
       const key = axis + ":" + Math.round(position * 100) / 100;
       if (seen.has(key)) continue;
       seen.add(key);
-      const aligned = movingBounds.concat(stationaryBounds.map(({ bounds }) => bounds));
+      const aligned = movingBounds.concat([target]);
       const start = axis === "x" ? Math.min(...aligned.map((b) => b.top)) - 12 : Math.min(...aligned.map((b) => b.left)) - 12;
       const end = axis === "x" ? Math.max(...aligned.map((b) => b.bottom)) + 12 : Math.max(...aligned.map((b) => b.right)) + 12;
       guides.push({ axis, position, start, end, distance: closest.distance });
