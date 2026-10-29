@@ -300,14 +300,29 @@ export default function ContextualFormattingToolbar({
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
-  const noteSelection = liveSelection.some(isNoteFormattingElement);
+  const sceneElementsForFormatting = apiRef?.current?.getSceneElements?.() || [];
+  const isBoundTextNote = (element) => {
+    if (!element) return false;
+    if (element.type === "text" && element.containerId) {
+      const container = sceneElementsForFormatting.find((candidate) => candidate.id === element.containerId);
+      return Boolean(container?.backgroundColor && container.backgroundColor !== "transparent");
+    }
+    if (element.type !== "text" && element.backgroundColor && element.backgroundColor !== "transparent") {
+      return sceneElementsForFormatting.some((candidate) =>
+        candidate.type === "text" &&
+        (candidate.containerId === element.id || (element.boundElements || []).some((bound) => bound.id === candidate.id && String(bound.type || "").toLowerCase() === "text")),
+      );
+    }
+    return false;
+  };
+  const isNoteSelectionElement = (element) => isNoteFormattingElement(element) || isBoundTextNote(element);
+  const noteSelection = liveSelection.some(isNoteSelectionElement);
   const noteFormattingMode = noteTool || noteSelection;
-  const onlyTextSelection = liveSelection.length > 0 && liveSelection.every(isTextFormattingElement);
+  const onlyTextSelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "text" || isNoteSelectionElement(element));
   // Selected notes must edit their actual scene elements; tool defaults are
   // used only while creating new text/draw/fill/shape content.
   const toolMode = (drawingTool || textTool || bucketFillTool || drawToShapeTool) && !noteSelection && !onlyTextSelection;
-  const sceneElementsForFormatting = apiRef?.current?.getSceneElements?.() || [];
-  const noteContainerIds = new Set(liveSelection.filter((element) => isNoteFormattingElement(element) && element.type !== "text").map((element) => element.id));
+  const noteContainerIds = new Set(liveSelection.filter((element) => isNoteSelectionElement(element) && element.type !== "text").map((element) => element.id));
   const noteTextIds = new Set(liveSelection.filter((element) => element.type === "text").map((element) => element.id));
   for (const element of liveSelection) {
     for (const bound of element.boundElements || []) {
@@ -324,10 +339,10 @@ export default function ContextualFormattingToolbar({
   const firstTextFormattingElement =
     liveSelection.find((element) => element.type === "text") ||
     sceneElementsForFormatting.find((element) => noteTextIds.has(element.id)) ||
-    liveSelection.find(isNoteFormattingElement) ||
+    liveSelection.find(isNoteSelectionElement) ||
     first;
   const firstNoteBackgroundElement =
-    liveSelection.find((element) => isNoteFormattingElement(element) && element.type !== "text" && element.backgroundColor != null) ||
+    liveSelection.find((element) => isNoteSelectionElement(element) && element.type !== "text" && element.backgroundColor != null) ||
     sceneElementsForFormatting.find((element) => noteContainerIds.has(element.id) && element.backgroundColor != null) ||
     firstTextFormattingElement;
   const noteGroupIds = new Set([...liveSelection.map((element) => element.id), ...noteContainerIds, ...noteTextIds]);
