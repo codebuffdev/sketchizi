@@ -284,3 +284,10 @@ test('floating stroke popover exposes edge controls for line selections too', ()
   assert.match(toolbar, /aria-label="Square edges"/);
   assert.match(toolbar, /aria-label="Rounded edges"/);
 });
+
+
+test('floating background color controls are available for line selections', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbar, /!onlyTextSelection && !hasImageSelection && \([\s\S]*?format-option-label">Background/);
+  assert.match(toolbar, /Choose custom background color/);
+});
