@@ -204,3 +204,11 @@ test('formatting popovers use compact rail and viewport-constrained surfaces', (
   assert.match(dockCss, /\.format-options-popover\.side-left[\s\S]*?right: calc\(100% \+ 10px\)/);
   assert.match(dockCss, /max-height: min\(520px, calc\(100vh - 32px\)\)/);
 });
+
+
+test('Properties panel suppresses duplicate formatting groups when the floating toolbar owns them', () => {
+  const propertiesPanel = readFileSync(new URL('../src/PropertiesPanel.jsx', import.meta.url), 'utf8');
+  assert.match(propertiesPanel, /!hideDuplicateFormattingControls && <div className="properties-section properties-appearance">/);
+  assert.match(propertiesPanel, /!hideDuplicateFormattingControls && hasTextSelection && selectedCount === 1/);
+  assert.match(propertiesPanel, /hideDuplicateFormattingControls=\{true\}/);
+});
