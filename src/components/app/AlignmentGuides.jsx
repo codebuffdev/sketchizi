@@ -38,8 +38,8 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const canvasRect = canvas?.getBoundingClientRect() || rootRect;
       const tolerance = 7 / zoom;
       const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
-      const toLocalX = (sceneX) => canvasRect.left - rootRect.left + (sceneX + (Number(appState.scrollX) || 0)) * zoom + (Number(appState.width) || canvasRect.width / zoom) / 2 * (zoom - 1);
-      const toLocalY = (sceneY) => canvasRect.top - rootRect.top + (sceneY + (Number(appState.scrollY) || 0)) * zoom + (Number(appState.height) || canvasRect.height / zoom) / 2 * (zoom - 1);
+      const toLocalX = (sceneX) => canvasRect.left - rootRect.left + (sceneX + (Number(appState.scrollX) || 0)) * zoom + (Number(appState.width) || canvasRect.width) / 2;
+      const toLocalY = (sceneY) => canvasRect.top - rootRect.top + (sceneY + (Number(appState.scrollY) || 0)) * zoom + (Number(appState.height) || canvasRect.height) / 2;
       setGuides(found.map((guide) => ({
         ...guide,
         screenPosition: guide.axis === "x" ? toLocalX(guide.position) : toLocalY(guide.position),
