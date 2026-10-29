@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { calculateAlignmentGuides } from "../../features/canvas/alignmentGuides.js";
+import { snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
 
 const EMPTY_GUIDES = [];
 
@@ -16,10 +17,12 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
     let dragging = false;
     let frame = 0;
     let lastPointer = null;
+    let gesture = null;
 
     const clear = () => {
       dragging = false;
       lastPointer = null;
+      gesture = null;
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       setGuides(EMPTY_GUIDES);
@@ -30,17 +33,28 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       if (!dragging || !lastPointer) return;
       const api = apiRef?.current;
       if (!api) return;
-      const appState = api.getAppState?.() || {};
+      let appState = api.getAppState?.() || {};
+      let elements = api.getSceneElements?.() || [];
       const selectedIds = new Set(Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id));
-      const elements = api.getSceneElements?.() || [];
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+
+      // Apply magnetic snapping during the drag, not just on pointer-up. The
+      // pointer-up grid-snap path remains as a final safety net.
+      if (gesture && selectedIds.size && [...selectedIds].some((id) => gesture.selectedIds.has(id))) {
+        const snapped = snapSceneElementsToSmartGuides(elements, gesture.baseline, gesture.selectedIds, 8 / zoom);
+        if (snapped !== elements) {
+          api.updateScene?.({ elements: snapped });
+          elements = snapped;
+          appState = api.getAppState?.() || appState;
+        }
+      }
+
       const rootRect = root.getBoundingClientRect();
-      const viewport = root.querySelector('.excalidraw');
+      const viewport = root.querySelector(".excalidraw");
       if (!viewport) { setGuides(EMPTY_GUIDES); return; }
       const viewportRect = viewport.getBoundingClientRect();
       setOverlay({ left: viewportRect.left - rootRect.left, top: viewportRect.top - rootRect.top, width: viewportRect.width, height: viewportRect.height });
-      const tolerance = 9 / zoom;
-      const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
+      const found = calculateAlignmentGuides(elements, selectedIds, 9 / zoom);
       const sceneToViewport = api.sceneCoordsToViewportCoords;
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
@@ -67,12 +81,19 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
     const onPointerDown = (event) => {
       const target = event.target instanceof Element ? event.target : null;
       if (event.button !== 0 || !target?.closest(".excalidraw")) return;
-      // Selection handles and interaction overlays receive pointer events too;
-      // listening only for .layer-canvas misses those normal drag gestures.
       if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
-      const appState = apiRef?.current?.getAppState?.() || {};
-      const selectedIds = Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id);
-      if (!selectedIds.length) return;
+      const api = apiRef?.current;
+      const appState = api?.getAppState?.() || {};
+      const selectedIds = new Set(Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id));
+      if (!selectedIds.size || !api) return;
+      const elements = api.getSceneElements?.() || [];
+      gesture = {
+        selectedIds,
+        baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [
+          element.id,
+          { x: element.x, y: element.y, width: element.width, height: element.height, angle: element.angle, type: element.type },
+        ])),
+      };
       dragging = true;
       lastPointer = { x: event.clientX, y: event.clientY };
       scheduleUpdate();
