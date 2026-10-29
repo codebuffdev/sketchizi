@@ -22,6 +22,9 @@ const LINE_TYPES = new Set(["line", "arrow", "rectangle", "diamond", "ellipse"])
 const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]];
 const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— —"], ["dotted", "Dotted", "· · ·"]];
 const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
+const FONT_FAMILIES = [[1, "Hand-drawn"], [2, "Sans"], [3, "Code"], [5, "Excalifont"], [6, "Nunito"], [7, "Lilita"], [8, "Comic"], [9, "Liberation"]];
+const FONT_SIZES = [[12, "XS"], [16, "S"], [20, "M"], [28, "L"], [36, "XL"]];
+const TEXT_ALIGNMENTS = [["left", "Left"], ["center", "Center"], ["right", "Right"]];
 
 function getSelectionPosition(api, elements, root) {
   if (!api || !root || !elements.length) return null;
@@ -99,6 +102,8 @@ export default function ContextualFormattingToolbar({
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
   const currentFontSize = Number(first?.fontSize) || 20;
+  const currentFontFamily = Number(first?.fontFamily) || 5;
+  const currentTextAlign = first?.textAlign || "left";
   const currentOpacity = Number(first?.opacity ?? 100);
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
@@ -203,10 +208,40 @@ export default function ContextualFormattingToolbar({
       )}
 
       {showTextSize && (
+        <div className="contextual-formatting-group contextual-font-family" role="group" aria-label="Font family">
+          {FONT_FAMILIES.map(([value, label]) => (
+            <button key={value} type="button" className={currentFontFamily === value ? "is-selected" : ""} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyToSelected({ fontFamily: value })}>{label === "Hand-drawn" ? "✎" : label === "Code" ? "</>" : label.slice(0, 1)}</button>
+          ))}
+        </div>
+      )}
+
+      {showTextSize && (
+        <div className="contextual-formatting-group contextual-font-presets" role="group" aria-label="Font size">
+          {FONT_SIZES.map(([value, label]) => (
+            <button key={value} type="button" className={currentFontSize === value ? "is-selected" : ""} aria-label={label} aria-pressed={currentFontSize === value} title={label} onClick={() => applyToSelected({ fontSize: value })}>{label}</button>
+          ))}
+        </div>
+      )}
+
+      {showTextSize && (
+        <div className="contextual-formatting-group contextual-text-align" role="group" aria-label="Text align">
+          {TEXT_ALIGNMENTS.map(([value, label]) => (
+            <button key={value} type="button" className={currentTextAlign === value ? "is-selected" : ""} aria-label={label} aria-pressed={currentTextAlign === value} title={label} onClick={() => applyToSelected({ textAlign: value })}>{value === "left" ? "≡" : value === "center" ? "☰" : "≡"}</button>
+          ))}
+        </div>
+      )}
+
+      {showTextSize && (
         <div className="contextual-formatting-group contextual-text-size" role="group" aria-label="Text size">
           <button type="button" aria-label="Decrease text size" title="Decrease text size" onClick={() => applyToSelected({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
           <span aria-label={`Font size ${currentFontSize}`}>{currentFontSize}</span>
           <button type="button" aria-label="Increase text size" title="Increase text size" onClick={() => applyToSelected({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
+        </div>
+      )}
+
+      {!hasImageSelection && (
+        <div className="contextual-formatting-group contextual-opacity" role="group" aria-label="Opacity">
+          <label title="Opacity"><span>Opacity</span><input aria-label="Opacity" type="range" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })}/><span>{currentOpacity}</span></label>
         </div>
       )}
 
@@ -228,8 +263,10 @@ export default function ContextualFormattingToolbar({
       )}
 
       <div className="contextual-formatting-group contextual-layer-actions" role="group" aria-label="Layer order">
-        <button type="button" aria-label="Send selection to back" title="Send to back" onClick={() => reorderSelection("back")}>↓</button>
-        <button type="button" aria-label="Bring selection to front" title="Bring to front" onClick={() => reorderSelection("front")}>↑</button>
+        <button type="button" aria-label="Send selection to back" title="Send to back" onClick={() => reorderSelection("back")}>⇊</button>
+        <button type="button" aria-label="Send selection backward" title="Send backward" onClick={() => reorderSelection("back")}>↓</button>
+        <button type="button" aria-label="Bring selection forward" title="Bring forward" onClick={() => reorderSelection("front")}>↑</button>
+        <button type="button" aria-label="Bring selection to front" title="Bring to front" onClick={() => reorderSelection("front")}>⇈</button>
       </div>
 
       <div className="contextual-formatting-group contextual-properties-action">
