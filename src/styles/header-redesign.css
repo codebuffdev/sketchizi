@@ -1650,3 +1650,95 @@
     margin: 0;
   }
 }
+
+/* Final launch polish: normalize spacing and icon hit areas on the header's
+   right-side actions only. Left/center navigation and document identity stay
+   untouched; no control behavior or order changes. */
+@media (min-width: 1025px) {
+  .app .desktop-app-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .app .desktop-app-header-actions .desktop-app-header-account-zone {
+    gap: 8px;
+    margin: 0;
+    padding-inline: 0;
+  }
+
+  .app .desktop-app-header-actions .desktop-app-header-panel-actions {
+    gap: 8px;
+    margin: 0;
+    padding-inline: 0;
+  }
+
+  .app .desktop-app-header-actions .sketchizi-more-tools-header {
+    margin: 0;
+  }
+
+  .app .desktop-app-header-actions .sketchizi-more-tools-trigger,
+  .app .desktop-app-header-actions .desktop-app-search-button,
+  .app .desktop-app-header-actions .auth-account-trigger {
+    min-height: 36px;
+    height: 36px;
+    box-sizing: border-box;
+  }
+
+  .app .desktop-app-header-actions .sketchizi-more-tools-trigger {
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .app .desktop-app-header-actions .desktop-app-header-panel-actions .ai-ask-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+  }
+
+  .app .desktop-app-header-actions .desktop-app-header-panel-actions .ai-ask-toggle-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .app .desktop-app-header-actions .desktop-app-theme-toggle {
+    flex-basis: 64px;
+    width: 64px;
+    height: 36px;
+    min-height: 36px;
+    box-sizing: border-box;
+  }
+
+  .app .desktop-app-header-actions .desktop-app-theme-toggle .theme-toggle-option {
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .app .desktop-app-header-actions .desktop-app-search-button {
+    width: 36px;
+    min-width: 36px;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1120px) {
+  .app .desktop-app-header.is-constrained .desktop-app-header-actions {
+    gap: 8px;
+  }
+
+  .app .desktop-app-header.is-constrained .desktop-app-header-actions .desktop-app-header-account-zone,
+  .app .desktop-app-header.is-constrained .desktop-app-header-actions .desktop-app-header-panel-actions {
+    gap: 8px;
+  }
+}
+
