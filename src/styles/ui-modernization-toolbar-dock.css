@@ -1449,3 +1449,25 @@
     padding: 12px;
   }
 }
+
+
+/* Custom background color and rectangle edge controls in the floating Stroke popover */
+.app .contextual-formatting-toolbar .format-custom-fill-color {
+  margin-left: 2px;
+}
+.app .contextual-formatting-toolbar .format-edge-button {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+}
+.app .contextual-formatting-toolbar .format-edge-square,
+.app .contextual-formatting-toolbar .format-edge-rounded {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid currentColor;
+  box-sizing: border-box;
+}
+.app .contextual-formatting-toolbar .format-edge-rounded {
+  border-radius: 5px;
+}
