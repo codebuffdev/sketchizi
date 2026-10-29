@@ -242,7 +242,8 @@ test('rectangle and diamond stroke popovers include edge, fill, and custom backg
   const styles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.match(toolbar, /Choose custom background color/);
   assert.match(toolbar, /onChange=\{\(event\) => applyToSelected\(\{ backgroundColor: event\.target\.value \}\)\}/);
-  assert.match(toolbar, /first\?\.type === "rectangle"[\s\S]*?Edges[\s\S]*?Square edges[\s\S]*?roundness: null[\s\S]*?Rounded edges[\s\S]*?roundness: \{ type: 3 \}/);
+  assert.match(toolbar, /first\\?\\.type === "rectangle" \\|\\| first\\?\\.type === "diamond"[\\s\\S]*?Edges[\\s\\S]*?Square edges[\\s\\S]*?roundness: null[\\s\\S]*?Rounded edges[\\s\\S]*?roundness: \\{ type: 3 \\}/);
+  assert.match(toolbar, /\\(hasLine \\|\\| hasShape\\)/);
   assert.match(styles, /\.format-edge-square/);
   assert.match(styles, /\.format-edge-rounded/);
 });
