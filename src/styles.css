@@ -1016,3 +1016,66 @@
 .cloud-save-dialog-actions button{min-height:36px;padding:0 13px;border:1px solid var(--app-border,#303849);border-radius:8px;background:transparent;color:inherit;font:600 12px system-ui,sans-serif;cursor:pointer}
 .cloud-save-dialog-actions .primary{border-color:#7865f4;background:#7865f4;color:white}
 .cloud-save-dialog-actions button:disabled{opacity:.5;cursor:not-allowed}
+
+
+/* Full formatting controls in the floating toolbar: text, opacity and layer presets. */
+.app .contextual-font-family > button,
+.app .contextual-font-presets > button,
+.app .contextual-text-align > button,
+.app .contextual-layer-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0 5px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ui-text-muted, #777);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.app .contextual-font-family > button:hover,
+.app .contextual-font-presets > button:hover,
+.app .contextual-text-align > button:hover,
+.app .contextual-layer-actions > button:hover {
+  background: var(--ui-hover, #f1f1f4);
+  color: var(--ui-text-strong, #202020);
+}
+.app .contextual-font-family > button.is-selected,
+.app .contextual-font-presets > button.is-selected,
+.app .contextual-text-align > button.is-selected {
+  background: var(--ui-accent-soft, #ecebff);
+  color: var(--ui-accent, #5b55c7);
+  border-color: var(--ui-accent, #6d28d9);
+}
+.app .contextual-opacity {
+  min-width: 126px;
+}
+.app .contextual-opacity label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.app .contextual-opacity input[type="range"] {
+  width: 64px;
+  min-width: 48px;
+  accent-color: var(--ui-accent, #756df0);
+}
+.app .contextual-opacity label > span:last-child {
+  min-width: 22px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.app.theme-dark .contextual-font-family > button.is-selected,
+.app.theme-dark .contextual-font-presets > button.is-selected,
+.app.theme-dark .contextual-text-align > button.is-selected {
+  background: #3a365f;
+  color: #cbc6ff;
+}
