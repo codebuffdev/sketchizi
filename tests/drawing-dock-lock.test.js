@@ -17,6 +17,8 @@ test("dragging by pointer or keyboard is disabled until the dock is unlocked", (
   assert.match(canvas, /if \(!dock \|\| dock\.dataset\.sketchiziDockLocked !== "false"\) return/);
   assert.match(canvas, /if \(container\.dataset\.sketchiziDockLocked !== "false" \|\| event\.button !== 0/);
   assert.match(styles, /App-toolbar-container\[data-sketchizi-dock-locked="true"\] \.sketchizi-dock-grip/);
+  assert.match(styles, /data-sketchizi-dock-locked="true"\] \.App-toolbar \.sketchizi-dock-grip \{\s*display: none !important/);
+  assert.match(styles, /data-sketchizi-dock-locked="false"\] \.App-toolbar \.sketchizi-dock-grip \{\s*display: inline-flex !important/);
 });
 
 test("lock state is communicated to the Tools menu", () => {
