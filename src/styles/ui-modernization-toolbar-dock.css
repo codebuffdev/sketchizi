@@ -1185,3 +1185,246 @@
   outline: 2px solid var(--ui-accent, #7968ee) !important;
   outline-offset: 2px !important;
 }
+
+
+/* Icon-triggered formatting popovers: the rail stays compact; only one
+   settings group is shown at a time beside it. */
+.app .contextual-formatting-toolbar {
+  position: absolute !important;
+  display: block !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  isolation: isolate !important;
+}
+.app .contextual-formatting-toolbar .format-icon-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 44px;
+  padding: 6px;
+  border: 1px solid var(--format-rail-border, #dfe3eb);
+  border-radius: 14px;
+  background: var(--format-rail-surface, rgb(255 255 255 / 96%));
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+  backdrop-filter: blur(12px);
+}
+.app .contextual-formatting-toolbar .format-icon-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--format-rail-ink, #343946) !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-icon-button:hover {
+  background: var(--format-rail-hover, #f0f1f6) !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button.is-active,
+.app .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  background: #e5e2ff !important;
+  border-color: #c7c0ff !important;
+  color: #5146b8 !important;
+}
+.app .contextual-formatting-toolbar .format-options-popover {
+  position: absolute;
+  top: 0;
+  z-index: 10040;
+  box-sizing: border-box;
+  width: min(320px, calc(100vw - 72px));
+  max-height: min(520px, calc(100vh - 32px));
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid var(--format-popover-border, #e0e4ec);
+  border-radius: 14px;
+  background: var(--format-popover-surface, #fff);
+  color: var(--format-popover-ink, #292d36);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 18%);
+}
+.app .contextual-formatting-toolbar .format-options-popover.side-right {
+  left: calc(100% + 10px);
+  right: auto;
+}
+.app .contextual-formatting-toolbar .format-options-popover.side-left {
+  right: calc(100% + 10px);
+  left: auto;
+}
+.app .contextual-formatting-toolbar .format-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--format-popover-divider, #eceef3);
+  font-size: 13px;
+}
+.app .contextual-formatting-toolbar .format-popover-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--format-option-surface, #f2f3f7);
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-section + .format-option-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--format-popover-divider, #eceef3);
+}
+.app .contextual-formatting-toolbar .format-option-label {
+  margin: 0 0 8px;
+  color: var(--format-popover-muted, #656b78);
+  font-size: 11px;
+  font-weight: 650;
+}
+.app .contextual-formatting-toolbar .format-sub-label {
+  margin-top: 12px;
+}
+.app .contextual-formatting-toolbar .format-option-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.app .contextual-formatting-toolbar .format-option-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border: 1px solid rgb(31 41 55 / 24%);
+  border-radius: 7px;
+  background: var(--swatch-color, #fff);
+  color: #4b5563;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-swatch.is-selected {
+  outline: 2px solid #7165e8;
+  outline-offset: 2px;
+}
+.app .contextual-formatting-toolbar .format-option-swatch.is-transparent {
+  background: repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%) 50% / 10px 10px;
+}
+.app .contextual-formatting-toolbar .format-custom-color {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d9dde6;
+  border-radius: 7px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-custom-color input {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--format-option-border, #e1e4ec);
+  border-radius: 8px;
+  background: var(--format-option-surface, #f4f5f8);
+  color: var(--format-popover-ink, #292d36);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-button:hover,
+.app .contextual-formatting-toolbar .format-option-button.is-selected {
+  border-color: #8e83f2;
+  background: #e8e5ff;
+  color: #4e43b6;
+}
+.app .contextual-formatting-toolbar .format-font-families .format-option-button {
+  min-width: 34px;
+  padding: 0 8px;
+}
+.app .contextual-formatting-toolbar .format-custom-size {
+  margin-top: 10px;
+  color: var(--format-popover-muted, #656b78);
+  font-size: 12px;
+}
+.app .contextual-formatting-toolbar .format-opacity-control {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+}
+.app .contextual-formatting-toolbar .format-opacity-control input {
+  width: 100%;
+  accent-color: #7165e8;
+}
+.app .contextual-formatting-toolbar .format-more-properties {
+  margin-top: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--format-option-border, #e1e4ec);
+  border-radius: 8px;
+  background: var(--format-option-surface, #f4f5f8);
+  color: inherit;
+  cursor: pointer;
+}
+.app.theme-dark .contextual-formatting-toolbar,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar {
+  --format-rail-surface: #20232c;
+  --format-rail-border: #3b4050;
+  --format-rail-ink: #edf0f7;
+  --format-rail-hover: #303544;
+  --format-popover-surface: #20232c;
+  --format-popover-border: #3b4050;
+  --format-popover-ink: #edf0f7;
+  --format-popover-muted: #b0b6c4;
+  --format-popover-divider: #3b4050;
+  --format-option-surface: #2b303d;
+  --format-option-border: #454b5b;
+}
+.app .contextual-formatting-toolbar button:focus-visible,
+.app .contextual-formatting-toolbar input:focus-visible {
+  outline: 2px solid #8e83f2;
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .app .contextual-formatting-toolbar .format-options-popover {
+    width: min(300px, calc(100vw - 64px));
+    max-height: calc(100vh - 24px);
+    padding: 12px;
+  }
+}
