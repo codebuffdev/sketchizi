@@ -44,12 +44,14 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const sceneToViewport = api.sceneCoordsToViewportCoords;
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
-          const point = sceneToViewport({ x: axis === "x" ? position : 0, y: axis === "y" ? position : 0 });
-          return axis === "x" ? point.x - viewportRect.left : point.y - viewportRect.top;
+          const point = sceneToViewport({
+            sceneX: axis === "x" ? position : 0,
+            sceneY: axis === "y" ? position : 0,
+          });
+          return axis === "x" ? point.x : point.y;
         }
         const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
-        const extent = axis === "x" ? (Number(appState.width) || viewportRect.width) : (Number(appState.height) || viewportRect.height);
-        return (position + offset) * zoom + extent / 2;
+        return (position + offset) * zoom;
       };
       setGuides(found.map((guide) => ({
         ...guide,
