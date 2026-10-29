@@ -92,25 +92,11 @@ export default function SketchiziCanvas({
         top = buttonRect.top + (buttonRect.height - tipRect.height) / 2;
       } else {
         left = buttonRect.left + (buttonRect.width - tipRect.width) / 2;
-        if (scrollBackTooltip && toolbar) {
-          const toolbarRect = toolbar.getBoundingClientRect();
-          const rightCandidate = toolbarRect.right + 12;
-          const leftCandidate = toolbarRect.left - tipRect.width - 12;
-          if (rightCandidate + tipRect.width <= window.innerWidth - 8) {
-            // Preferred placement: outside the dock on its right.
-            left = rightCandidate;
-            top = toolbarRect.top + (toolbarRect.height - tipRect.height) / 2;
-          } else if (leftCandidate >= 8) {
-            // If the right side is too narrow, use the left side of the dock.
-            left = leftCandidate;
-            top = toolbarRect.top + (toolbarRect.height - tipRect.height) / 2;
-          } else {
-            // Narrow windows cannot fit the tooltip beside the dock. Put it
-            // below the dock instead of clamping it over the toolbar controls.
-            left = Math.max(8, Math.min(window.innerWidth - tipRect.width - 8, toolbarRect.right - tipRect.width));
-            top = toolbarRect.bottom + 8;
-            keepOutsideDock = true;
-          }
+        if (scrollBackTooltip) {
+          // The control itself now sits outside the dock, so keep its tooltip
+          // anchored to that control rather than placing it over the toolbar.
+          top = buttonRect.top - tipRect.height - 8;
+          if (top < 8) top = buttonRect.bottom + 8;
         } else {
           top = buttonRect.top - tipRect.height - 8;
           if (top < 8) top = buttonRect.bottom + 8;
