@@ -36,13 +36,13 @@ function getSelectionPosition(api, elements, root) {
   // by the canvas wrapper's narrower coordinate system.
   const viewportWidth = window.innerWidth || root.clientWidth || Number(appState.width) || 1024;
   const viewportHeight = window.innerHeight || root.clientHeight || Number(appState.height) || 768;
-  const panelWidth = Math.min(360, viewportWidth - 24);
+  const panelWidth = Math.min(420, viewportWidth - 32);
   return {
     position: "fixed",
-    right: "16px",
+    right: "20px",
     left: "auto",
-    top: "16px",
-    "--contextual-panel-max-height": `${Math.max(220, viewportHeight - 32)}px`,
+    top: "72px",
+    "--contextual-panel-max-height": `${Math.max(220, viewportHeight - 88)}px`,
     "--contextual-panel-width": `${panelWidth}px`,
   };
 }
