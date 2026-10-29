@@ -235,3 +235,14 @@ test('floating formatting controls follow the selected element type', () => {
   assert.match(toolbar, /onClick=\{\(\) => setOpenGroup\(\(current\) => current === group\.id \? null : group\.id\)\}/);
   assert.match(toolbar, /if \(groupId === "stroke"\)[\s\S]*?hasShape[\s\S]*?hasLine/);
 });
+
+
+test('rectangle stroke popover includes edge controls and custom background color', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /Choose custom background color/);
+  assert.match(toolbar, /onChange=\{\(event\) => applyToSelected\(\{ backgroundColor: event\.target\.value \}\)\}/);
+  assert.match(toolbar, /first\?\.type === "rectangle"[\s\S]*?Edges[\s\S]*?Square edges[\s\S]*?roundness: null[\s\S]*?Rounded edges[\s\S]*?roundness: \{ type: 3 \}/);
+  assert.match(styles, /\.format-edge-square/);
+  assert.match(styles, /\.format-edge-rounded/);
+});
