@@ -1232,3 +1232,47 @@
     padding: 12px;
   }
 }
+
+
+.app .contextual-formatting-toolbar .contextual-custom-color-group {
+  gap: 6px;
+}
+.app .contextual-formatting-toolbar .contextual-hex-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--ui-hover, #30313a);
+  color: var(--ui-text-muted, #a5a8b3);
+  font-size: 13px;
+  font-weight: 700;
+}
+.app .contextual-formatting-toolbar .contextual-hex-input {
+  box-sizing: border-box;
+  width: 118px;
+  height: 32px;
+  min-width: 0;
+  padding: 0 9px;
+  border: 1px solid var(--ui-border, #444956);
+  border-radius: 7px;
+  background: var(--ui-surface-solid, #191a20);
+  color: var(--ui-text, #f1f2f5);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+.app .contextual-formatting-toolbar .contextual-hex-input:focus-visible {
+  outline: 2px solid var(--ui-accent, #7968ee);
+  outline-offset: 1px;
+}
+.app.theme-light .contextual-formatting-toolbar .contextual-hex-prefix {
+  background: #eceef3;
+  color: #515766;
+}
+.app.theme-light .contextual-formatting-toolbar .contextual-hex-input {
+  background: #fff;
+  border-color: #d7dbe5;
+  color: #303440;
+}
