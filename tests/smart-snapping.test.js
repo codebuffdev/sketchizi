@@ -39,3 +39,27 @@ test("does not change elements when nothing is close enough to snap", () => {
   const moved = [{ ...start[0], x: 40, y: 40 }, start[1]];
   assert.equal(snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 5), moved);
 });
+
+test("equalizes vertical gaps when moving an element between two aligned elements", () => {
+  const start = [el("top", 10, 0), el("moving", 10, 55), el("bottom", 10, 120)];
+  const before = baseline(start);
+  const moved = [start[0], { ...start[1], y: 58 }, start[2]];
+  const next = snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 8);
+  assert.equal(next[1].y, 60);
+});
+
+test("snaps centers as well as edges", () => {
+  const start = [el("moving", 10, 10), el("fixed", 100, 10, 60, 40)];
+  const before = baseline(start);
+  const moved = [{ ...start[0], x: 111 }, start[1]];
+  const next = snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 8);
+  assert.equal(next[0].x, 110);
+});
+
+test("ignores deleted elements as snap targets", () => {
+  const start = [el("moving", 10, 10), { ...el("deleted", 100, 10), isDeleted: true }];
+  const before = baseline(start);
+  const moved = [{ ...start[0], x: 97 }, start[1]];
+  const next = snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 8);
+  assert.equal(next, moved);
+});
