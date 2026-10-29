@@ -34,6 +34,31 @@ const GROUPS = [
   { id: "layers", label: "Layers", icon: "▤" },
 ];
 
+function isNoteFormattingElement(element) {
+  const type = String(element?.type || "").toLowerCase();
+  const data = element?.customData || {};
+  if (["note", "sticky-note", "stickynote", "sticky_note"].includes(type)) return true;
+  if (
+    data.isNote === true ||
+    data.isStickyNote === true ||
+    data.kind === "note" ||
+    data.type === "note" ||
+    data.noteId != null ||
+    data.stickyNote === true
+  ) return true;
+  // Some sticky notes are represented as a text-bound shape rather than a
+  // standalone "note" element. Their background and typography must be exposed
+  // together in the floating toolbar.
+  if (Array.isArray(element?.boundElements) && element.boundElements.some((bound) => String(bound?.type || "").toLowerCase() === "text")) return true;
+  return element?.type !== "text" &&
+    element?.backgroundColor != null &&
+    ["fontFamily", "fontSize", "textAlign", "verticalAlign"].some((key) => key in element);
+}
+
+function isTextFormattingElement(element) {
+  return element?.type === "text" || isNoteFormattingElement(element);
+}
+
 function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   if (!api || !root) return null;
   const appState = api.getAppState?.();
@@ -252,7 +277,8 @@ export default function ContextualFormattingToolbar({
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
-  const onlyTextSelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "text");
+  const noteSelection = liveSelection.some(isNoteFormattingElement);
+  const onlyTextSelection = liveSelection.length > 0 && liveSelection.every(isTextFormattingElement);
   const position = useMemo(
     () => getSelectionPosition(apiRef?.current, toolMode ? [] : liveSelection, canvasRootRef?.current, Boolean(openGroup)),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
@@ -272,6 +298,7 @@ export default function ContextualFormattingToolbar({
   const currentFontSize = Number(toolMode ? appState.currentItemFontSize : (first?.fontSize ?? appState.currentItemFontSize)) || 20;
   const currentFontFamily = Number(toolMode ? appState.currentItemFontFamily : (first?.fontFamily ?? appState.currentItemFontFamily)) || DEFAULT_FONT_FAMILY_ID;
   const currentTextAlign = (toolMode ? appState.currentItemTextAlign : first?.textAlign) || appState.currentItemTextAlign || "left";
+  const currentVerticalAlign = (toolMode ? appState.currentItemVerticalAlign : first?.verticalAlign) || "middle";
   const currentOpacity = Number(toolMode ? (appState.currentItemOpacity ?? 100) : (first?.opacity ?? appState.currentItemOpacity ?? 100));
   // Mirror the default Properties panel: text-only controls are shown only
   // when the active selection consists entirely of text. Shape, connector,
@@ -323,6 +350,7 @@ export default function ContextualFormattingToolbar({
     if ("fontFamily" in patch) appStatePatch.currentItemFontFamily = patch.fontFamily;
     if ("fontSize" in patch) appStatePatch.currentItemFontSize = patch.fontSize;
     if ("textAlign" in patch) appStatePatch.currentItemTextAlign = patch.textAlign;
+    if ("verticalAlign" in patch) appStatePatch.currentItemVerticalAlign = patch.verticalAlign;
     if ("roundness" in patch) appStatePatch.currentItemRoundness = patch.roundness;
     if ("startArrowhead" in patch) appStatePatch.currentItemStartArrowhead = patch.startArrowhead;
     if ("endArrowhead" in patch) appStatePatch.currentItemEndArrowhead = patch.endArrowhead;
@@ -360,7 +388,7 @@ export default function ContextualFormattingToolbar({
             </label>
           </div>
         </div>
-        {activeToolMode !== "text" && (!onlyTextSelection || toolMode) && !hasImageSelection && (
+        {(!onlyTextSelection || toolMode || noteSelection) && !hasImageSelection && (
           <div className="format-option-section">
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
@@ -486,10 +514,20 @@ export default function ContextualFormattingToolbar({
     );
     if (groupId === "textAlign") return (
       <div className="format-option-section">
-        <div className="format-option-label">Text alignment</div>
+        <div className="format-option-label">Horizontal align</div>
         <div className="format-option-row">
           {TEXT_ALIGNMENTS.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentTextAlign === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentTextAlign === value} onClick={() => applyFormatting({ textAlign: value })}>{glyph}</button>)}
         </div>
+        {(onlyTextSelection || activeToolMode === "text" || noteSelection) && <>
+          <div className="format-option-label format-sub-label">Vertical align</div>
+          <div className="format-option-row">
+            {[
+              ["top", "Top", "⊤"],
+              ["middle", "Middle", "⊟"],
+              ["bottom", "Bottom", "⊥"],
+            ].map(([value, label, glyph]) => <button key={value} type="button" className={currentVerticalAlign === value ? "format-option-button is-selected" : "format-option-button"} aria-label={label} aria-pressed={currentVerticalAlign === value} title={label} onClick={() => applyFormatting({ verticalAlign: value })}>{glyph}</button>)}
+          </div>
+        </>}
       </div>
     );
     if (groupId === "opacity") return (
