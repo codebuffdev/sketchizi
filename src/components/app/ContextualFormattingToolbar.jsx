@@ -282,7 +282,7 @@ export default function ContextualFormattingToolbar({
             </div>
           </div>
         )}
-        {!onlyTextSelection && !hasImageSelection && (first?.type === "rectangle" || first?.type === "diamond") && (
+        {!onlyTextSelection && !hasImageSelection && (first?.type === "rectangle" || first?.type === "diamond" || first?.type === "line") && (
           <div className="format-option-section">
             <div className="format-option-label">Edges</div>
             <div className="format-option-row">
