@@ -145,7 +145,6 @@ export default function ContextualFormattingToolbar({
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
   const first = liveSelection[0];
   const elementTypes = liveSelection.map((element) => element.type);
-  const hasText = elementTypes.includes("text");
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
