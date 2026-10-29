@@ -192,6 +192,7 @@ export default function ContextualFormattingToolbar({
   const [openGroup, setOpenGroup] = useState(null);
   const [customToolMode, setCustomToolMode] = useState(null);
   const toolbarRef = useRef(null);
+  const wasToolModeRef = useRef(false);
   useEffect(() => {
     const onCustomTool = (event) => {
       const tool = event.detail?.tool;
@@ -250,9 +251,10 @@ export default function ContextualFormattingToolbar({
     [apiRef, canvasRootRef, canvasRevision, selectedElements, openGroup],
   );
   useEffect(() => {
-    if (toolMode && openGroup === null) setOpenGroup("stroke");
+    if (toolMode && !wasToolModeRef.current) setOpenGroup("stroke");
+    wasToolModeRef.current = toolMode;
     if (!toolMode && customToolMode) setCustomToolMode(null);
-  }, [toolMode, openGroup, customToolMode]);
+  }, [toolMode, customToolMode]);
   if (!canEdit || (!liveSelection.length && !toolMode) || !position) return null;
 
   const currentStroke = (first?.customData?.iconColor || first?.strokeColor || appState.currentItemStrokeColor || "#2f2f33").toLowerCase();
