@@ -182,3 +182,11 @@ test('contextual toolbar clamps to viewport and scrolls its controls on narrow s
   assert.match(rules, /flex-wrap: nowrap !important/);
   assert.match(rules, /\.contextual-formatting-group > button,[\s\S]*?flex-shrink: 0 !important/);
 });
+
+test('floating formatting toolbar is primary and hides the duplicate Excalidraw sidebar while active', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(dockCss, /\.app:has\(\.contextual-formatting-toolbar\) \.excalidraw \.App-sidebar\s*\{\s*display: none !important;/);
+  assert.match(toolbar, /aria-label="Selected object formatting"/);
+  assert.match(toolbar, /onClick=\{onOpenProperties\}/);
+  assert.match(app, /hideDuplicateFormattingControls=\{true\}/);
+});
