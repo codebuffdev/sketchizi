@@ -336,3 +336,16 @@ test('note selections expose typography and background controls in the floating 
   assert.match(toolbarSource, /hasSeparateNoteText && textOnlyPatch && element\.type !== "text"/);
   assert.match(toolbarSource, /hasSeparateNoteText && backgroundOnlyPatch && element\.type === "text"/);
 });
+
+
+test('note formatting uses the matching primary-panel palettes and typography choices', () => {
+  const toolbarSource = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  for (const color of ['#d3d3d3', '#ff8383', '#39994b', '#56a2e8', '#b86200', '#4b3000', '#602e40', '#043b0c', '#154162', '#4c2b01']) {
+    assert.ok(toolbarSource.includes(color), `expected note palette to include ${color}`);
+  }
+  assert.match(toolbarSource, /const noteFormattingMode = noteTool \|\| noteSelection/);
+  assert.match(toolbarSource, /const strokePalette = noteFormattingMode \? NOTE_TEXT_COLORS : STROKE_COLORS/);
+  assert.match(toolbarSource, /const backgroundPalette = noteFormattingMode \? NOTE_BACKGROUND_COLORS : FILL_COLORS/);
+  assert.match(toolbarSource, /const fontFamilies = noteFormattingMode \? NOTE_FONT_FAMILIES : FONT_FAMILIES/);
+  assert.match(toolbarSource, /const fontSizes = noteFormattingMode \? FONT_SIZES\.filter\(\(\[value\]\) => value !== 12\) : FONT_SIZES/);
+});
