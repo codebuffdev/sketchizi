@@ -68,7 +68,21 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
         return (position + offset) * zoom;
       };
-      setGuides(found.map((guide) => ({ ...guide, kind: "alignment", screenPosition: toLocal(guide.axis, guide.position), screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start), screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end) })).concat(spacing.map((guide) => ({ ...guide, screenPosition: toLocal(guide.axis === "x" ? "y" : "x", guide.position), screenStart: toLocal(guide.axis, guide.start), screenEnd: toLocal(guide.axis, guide.end) })).filter((guide) => Number.isFinite(guide.screenPosition) && Number.isFinite(guide.screenStart) && Number.isFinite(guide.screenEnd)));
+      const alignmentScreenGuides = found.map((guide) => ({
+        ...guide,
+        kind: "alignment",
+        screenPosition: toLocal(guide.axis, guide.position),
+        screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start),
+        screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end),
+      }));
+      const spacingScreenGuides = spacing.map((guide) => ({
+        ...guide,
+        screenPosition: toLocal(guide.axis === "x" ? "y" : "x", guide.position),
+        screenStart: toLocal(guide.axis, guide.start),
+        screenEnd: toLocal(guide.axis, guide.end),
+      }));
+      setGuides(alignmentScreenGuides.concat(spacingScreenGuides).filter((guide) =>
+        Number.isFinite(guide.screenPosition) && Number.isFinite(guide.screenStart) && Number.isFinite(guide.screenEnd)));
     };
 
     const scheduleUpdate = () => {
