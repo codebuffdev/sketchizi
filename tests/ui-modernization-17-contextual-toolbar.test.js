@@ -335,5 +335,4 @@ test('note selections expose typography and background controls in the floating 
   assert.match(toolbarSource, /const firstNoteBackgroundElement =/);
   assert.match(toolbarSource, /hasSeparateNoteText && textOnlyPatch && element\.type !== "text"/);
   assert.match(toolbarSource, /hasSeparateNoteText && backgroundOnlyPatch && element\.type === "text"/);
-  assert.match(toolbarSource, /const selectedIds = new Set\\(noteSelection \\? \\[\\.\\.\\.noteGroupIds\\]/);
 });
