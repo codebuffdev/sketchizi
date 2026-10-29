@@ -5,6 +5,7 @@ const EMPTY_GUIDES = [];
 
 export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
   const [guides, setGuides] = useState(EMPTY_GUIDES);
+  const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const root = canvasRootRef.current;
@@ -34,6 +35,10 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const elements = api.getSceneElements?.() || [];
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
       const rootRect = root.getBoundingClientRect();
+      const viewport = root.querySelector('.excalidraw');
+      if (!viewport) { setGuides(EMPTY_GUIDES); return; }
+      const viewportRect = viewport.getBoundingClientRect();
+      setOverlay({ left: viewportRect.left - rootRect.left, top: viewportRect.top - rootRect.top, width: viewportRect.width, height: viewportRect.height });
       const tolerance = 9 / zoom;
       const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
       const sceneToViewport = api.sceneCoordsToViewportCoords;
@@ -42,11 +47,9 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
           const point = sceneToViewport({ x: axis === "x" ? position : 0, y: axis === "y" ? position : 0 });
           return axis === "x" ? point.x : point.y;
         }
-        const canvas = root.querySelector(".layer-canvas");
-        const rect = canvas?.getBoundingClientRect() || rootRect;
         const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
-        const extent = axis === "x" ? (Number(appState.width) || rect.width) : (Number(appState.height) || rect.height);
-        return (axis === "x" ? rect.left - rootRect.left : rect.top - rootRect.top) + (position + offset) * zoom + extent / 2;
+        const extent = axis === "x" ? (Number(appState.width) || viewportRect.width) : (Number(appState.height) || viewportRect.height);
+        return (position + offset) * zoom + extent / 2;
       };
       setGuides(found.map((guide) => ({
         ...guide,
@@ -92,7 +95,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
 
   if (!guides.length) return null;
   return (
-    <svg className="sketchizi-alignment-guides" aria-hidden="true" focusable="false">
+    <svg className="sketchizi-alignment-guides" style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }} viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)} aria-hidden="true" focusable="false">
       {guides.map((guide, index) => guide.axis === "x" ? (
         <line key={guide.axis + guide.screenPosition + index} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
       ) : (
