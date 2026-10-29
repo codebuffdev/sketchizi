@@ -12,7 +12,7 @@ export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
-  selectedElements = [], applyToSelected, onOpenProperties, propertiesOpen = false, canEdit = true,
+  selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridVisible = false, gridSize = 20, gridSnappingEnabled = false,
 }) {
@@ -43,74 +43,21 @@ export default function SketchiziCanvas({
     return () => observer.disconnect();
   }, []);
 
-  // The floating formatting toolbar is the primary properties UI. When it is
-  // available, suppress Excalidraw's duplicate native element-properties panel
-  // so selecting tools/elements from the dock never opens two competing panels.
+
+
+  // Selecting any tool from the dock dismisses the legacy Properties panel.
+  // The floating formatting toolbar remains the primary control surface.
   useEffect(() => {
     const root = canvasRootRef.current;
-    if (!root) return undefined;
-    const hiddenPanels = new Map();
-    let frame = 0;
-    let disposed = false;
-
-    const restoreNativePanels = () => {
-      hiddenPanels.forEach((original, panel) => {
-        panel.style.setProperty("display", original.display, original.priority);
-        panel.removeAttribute("data-sketchizi-native-properties-hidden");
-      });
-      hiddenPanels.clear();
+    if (!root || !onToolActivated) return undefined;
+    const handleDockPointerDown = (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target?.closest(".App-toolbar button, .App-toolbar [role='button']")) return;
+      onToolActivated();
     };
-
-    const syncNativePropertiesPanel = () => {
-      if (disposed) return;
-      const floatingToolbar = root.querySelector(".contextual-formatting-toolbar");
-      if (!floatingToolbar || !canEdit || viewModeEnabled) {
-        restoreNativePanels();
-        return;
-      }
-
-      const requiredLabels = ["Stroke width", "Background", "Opacity", "Layers"];
-      const candidates = [...root.querySelectorAll("aside, section, div, [role='complementary'], [role='dialog']")]
-        .filter((node) => {
-          if (node === root || node === floatingToolbar || floatingToolbar.contains(node)) return false;
-          if (node.closest(".contextual-formatting-toolbar")) return false;
-          const text = (node.innerText || node.textContent || "").replace(/\s+/g, " ");
-          if (!requiredLabels.every((label) => text.includes(label))) return false;
-          const rect = node.getBoundingClientRect();
-          return rect.width >= 160 && rect.width <= 360 && rect.height >= 240;
-        })
-        .sort((a, b) => {
-          const ar = a.getBoundingClientRect();
-          const br = b.getBoundingClientRect();
-          return ar.width * ar.height - br.width * br.height;
-        });
-
-      const panel = candidates[0];
-      if (panel && !hiddenPanels.has(panel)) {
-        hiddenPanels.set(panel, {
-          display: panel.style.getPropertyValue("display"),
-          priority: panel.style.getPropertyPriority("display"),
-        });
-        panel.setAttribute("data-sketchizi-native-properties-hidden", "true");
-        panel.style.setProperty("display", "none", "important");
-      }
-    };
-
-    const scheduleSync = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(syncNativePropertiesPanel);
-    };
-
-    const observer = new MutationObserver(scheduleSync);
-    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "aria-label"] });
-    scheduleSync();
-    return () => {
-      disposed = true;
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      restoreNativePanels();
-    };
-  }, [canEdit, viewModeEnabled]);
+    root.addEventListener("pointerdown", handleDockPointerDown, true);
+    return () => root.removeEventListener("pointerdown", handleDockPointerDown, true);
+  }, [onToolActivated]);
 
   // Enhance Excalidraw's own toolbar in place. Buttons and their React handlers
   // stay native; this adds only a grip, separators, and session-only dragging.
