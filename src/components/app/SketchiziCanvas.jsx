@@ -690,16 +690,18 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      <ContextualFormattingToolbar
-        apiRef={apiRef}
-        canvasRootRef={canvasRootRef}
-        canvasRevision={canvasRevision}
-        selectedElements={selectedElements}
-        applyToSelected={applyToSelected}
-        onOpenProperties={onOpenProperties}
-        propertiesOpen={propertiesOpen}
-        canEdit={canEdit && !viewModeEnabled}
-      />
+      {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
+        <ContextualFormattingToolbar
+          apiRef={apiRef}
+          canvasRootRef={canvasRootRef}
+          canvasRevision={canvasRevision}
+          selectedElements={selectedElements}
+          applyToSelected={applyToSelected}
+          onOpenProperties={onOpenProperties}
+          propertiesOpen={propertiesOpen}
+          canEdit={canEdit && !viewModeEnabled}
+        />
+      )}
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />
