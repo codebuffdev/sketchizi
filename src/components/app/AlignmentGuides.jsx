@@ -62,7 +62,13 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
     };
     const onPointerDown = (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      if (event.button !== 0 || !target?.closest(".layer-canvas")) return;
+      if (event.button !== 0 || !target?.closest(".excalidraw")) return;
+      // Selection handles and interaction overlays receive pointer events too;
+      // listening only for .layer-canvas misses those normal drag gestures.
+      if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
+      const appState = apiRef?.current?.getAppState?.() || {};
+      const selectedIds = Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id);
+      if (!selectedIds.length) return;
       dragging = true;
       lastPointer = { x: event.clientX, y: event.clientY };
       scheduleUpdate();
