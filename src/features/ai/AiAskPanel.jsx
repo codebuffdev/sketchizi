@@ -998,8 +998,14 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     <section className="ai-ask-panel" role="dialog" aria-modal="false" aria-labelledby="ai-ask-title">
       <header className="ai-ask-header">
         <div className="ai-ask-heading">
-          <span className="ai-ask-mark" aria-hidden="true">✳</span>
-          <div><h2 id="ai-ask-title">AI Ask</h2><p>Ask questions about your current diagram</p></div>
+          <span className="ai-ask-mark" role="img" aria-label="AI Ask">
+            <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+              <path d="M43 9H20C12.8 9 7 14.8 7 22v20c0 7.2 5.8 13 13 13h18" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M43 9v23" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round"/>
+              <path d="M19 39l7-18 7 18m-11-7h9" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M49 35l3.7 8.3L61 47l-8.3 3.7L49 59l-3.7-8.3L37 47l8.3-3.7L49 35Z" fill="currentColor" stroke="currentColor" strokeLinejoin="round"/>
+            </svg>
+          </span>
         </div>
         {auth.status === "authenticated" && (
                     <div className={`ai-ask-provider-disclosure ${providerSettingsOpen ? "is-open" : ""}`}>
