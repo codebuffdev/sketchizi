@@ -55,6 +55,10 @@ function isNoteFormattingElement(element) {
     ["fontFamily", "fontSize", "textAlign", "verticalAlign"].some((key) => key in element);
 }
 
+function elementsHaveNoteText(elements, noteTextIds) {
+  return elements.some((element) => element?.type === "text" && noteTextIds.has(element.id));
+}
+
 function isTextFormattingElement(element) {
   return element?.type === "text" || isNoteFormattingElement(element);
 }
@@ -271,7 +275,6 @@ export default function ContextualFormattingToolbar({
   const textTool = activeToolType === "text" || noteTool;
   const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
   const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
-  const toolMode = drawingTool || textTool || bucketFillTool || drawToShapeTool;
   const activeToolMode = drawingTool ? "draw" : noteTool ? "text" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
@@ -279,6 +282,33 @@ export default function ContextualFormattingToolbar({
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const noteSelection = liveSelection.some(isNoteFormattingElement);
   const onlyTextSelection = liveSelection.length > 0 && liveSelection.every(isTextFormattingElement);
+  // Selected notes must edit their actual scene elements; tool defaults are
+  // used only while creating new text/draw/fill/shape content.
+  const toolMode = (drawingTool || textTool || bucketFillTool || drawToShapeTool) && !noteSelection && !onlyTextSelection;
+  const sceneElementsForFormatting = apiRef?.current?.getSceneElements?.() || [];
+  const noteContainerIds = new Set(liveSelection.filter((element) => isNoteFormattingElement(element) && element.type !== "text").map((element) => element.id));
+  const noteTextIds = new Set(liveSelection.filter((element) => element.type === "text").map((element) => element.id));
+  for (const element of liveSelection) {
+    for (const bound of element.boundElements || []) {
+      if (String(bound?.type || "").toLowerCase() === "text" && bound.id) noteTextIds.add(bound.id);
+    }
+    if (element.type === "text" && element.containerId) noteContainerIds.add(element.containerId);
+  }
+  for (const element of sceneElementsForFormatting) {
+    if (element.type === "text" && (noteContainerIds.has(element.containerId) || noteTextIds.has(element.id))) {
+      noteTextIds.add(element.id);
+      if (element.containerId) noteContainerIds.add(element.containerId);
+    }
+  }
+  const firstTextFormattingElement =
+    liveSelection.find((element) => element.type === "text") ||
+    sceneElementsForFormatting.find((element) => noteTextIds.has(element.id)) ||
+    liveSelection.find(isNoteFormattingElement) ||
+    first;
+  const firstNoteBackgroundElement =
+    liveSelection.find((element) => isNoteFormattingElement(element) && element.type !== "text" && element.backgroundColor != null) ||
+    sceneElementsForFormatting.find((element) => noteContainerIds.has(element.id) && element.backgroundColor != null) ||
+    firstTextFormattingElement;
   const position = useMemo(
     () => getSelectionPosition(apiRef?.current, toolMode ? [] : liveSelection, canvasRootRef?.current, Boolean(openGroup)),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
@@ -292,13 +322,13 @@ export default function ContextualFormattingToolbar({
   }, [toolMode, customToolMode]);
   if (!canEdit || (!liveSelection.length && !toolMode) || !position) return null;
 
-  const currentStroke = (toolMode ? appState.currentItemStrokeColor : (first?.customData?.iconColor || first?.strokeColor))?.toLowerCase() || "#2f2f33";
-  const currentFill = (toolMode ? appState.currentItemBackgroundColor : first?.backgroundColor)?.toLowerCase() || "transparent";
+  const currentStroke = (toolMode ? appState.currentItemStrokeColor : ((noteSelection ? firstTextFormattingElement?.strokeColor : null) || first?.customData?.iconColor || first?.strokeColor))?.toLowerCase() || "#2f2f33";
+  const currentFill = (toolMode ? appState.currentItemBackgroundColor : (noteSelection ? firstNoteBackgroundElement?.backgroundColor : first?.backgroundColor))?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(toolMode ? appState.currentItemStrokeWidth : (first?.strokeWidth ?? appState.currentItemStrokeWidth)) || 1;
-  const currentFontSize = Number(toolMode ? appState.currentItemFontSize : (first?.fontSize ?? appState.currentItemFontSize)) || 20;
-  const currentFontFamily = Number(toolMode ? appState.currentItemFontFamily : (first?.fontFamily ?? appState.currentItemFontFamily)) || DEFAULT_FONT_FAMILY_ID;
-  const currentTextAlign = (toolMode ? appState.currentItemTextAlign : first?.textAlign) || appState.currentItemTextAlign || "left";
-  const currentVerticalAlign = (toolMode ? appState.currentItemVerticalAlign : first?.verticalAlign) || "middle";
+  const currentFontSize = Number(toolMode ? appState.currentItemFontSize : (firstTextFormattingElement?.fontSize ?? appState.currentItemFontSize)) || 20;
+  const currentFontFamily = Number(toolMode ? appState.currentItemFontFamily : (firstTextFormattingElement?.fontFamily ?? appState.currentItemFontFamily)) || DEFAULT_FONT_FAMILY_ID;
+  const currentTextAlign = (toolMode ? appState.currentItemTextAlign : firstTextFormattingElement?.textAlign) || appState.currentItemTextAlign || "left";
+  const currentVerticalAlign = (toolMode ? appState.currentItemVerticalAlign : firstTextFormattingElement?.verticalAlign) || "middle";
   const currentOpacity = Number(toolMode ? (appState.currentItemOpacity ?? 100) : (first?.opacity ?? appState.currentItemOpacity ?? 100));
   // Mirror the default Properties panel: text-only controls are shown only
   // when the active selection consists entirely of text. Shape, connector,
@@ -321,11 +351,20 @@ export default function ContextualFormattingToolbar({
       // during text-edit/toolbar focus transitions even while this panel remains
       // visible. Updating these ids directly keeps all floating controls reliable.
       const selectedIds = new Set(liveSelection.map((element) => element.id));
+      const noteGroupIds = new Set([...selectedIds, ...noteContainerIds, ...noteTextIds]);
+      const patchKeys = Object.keys(patch);
+      const textOnlyPatch = patchKeys.length > 0 && patchKeys.every((key) => ["strokeColor", "fontFamily", "fontSize", "textAlign", "verticalAlign"].includes(key));
+      const backgroundOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "backgroundColor";
+      const hasSeparateNoteText = noteSelection && noteTextIds.size > 0 && elementsHaveNoteText(sceneElementsForFormatting, noteTextIds);
       const now = Date.now();
       const elements = api.getSceneElements?.() || [];
       const updatedElements = elements.map((element) => {
-        if (!selectedIds.has(element.id)) return element;
+        const isSelected = selectedIds.has(element.id);
+        const isRelatedNoteElement = noteSelection && noteGroupIds.has(element.id);
+        if (!isSelected && !isRelatedNoteElement) return element;
         if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
+        if (hasSeparateNoteText && textOnlyPatch && element.type !== "text") return element;
+        if (hasSeparateNoteText && backgroundOnlyPatch && element.type === "text") return element;
         return {
           ...element,
           ...patch,
