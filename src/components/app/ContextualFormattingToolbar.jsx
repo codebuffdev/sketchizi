@@ -103,6 +103,37 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   };
 }
 
+function curvedArrowPatch(element) {
+  const sourcePoints = Array.isArray(element?.points) && element.points.length >= 2
+    ? element.points
+    : [[0, 0], [Number(element?.width) || 0, Number(element?.height) || 0]];
+  const start = sourcePoints[0];
+  const end = sourcePoints[sourcePoints.length - 1];
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
+  const length = Math.hypot(dx, dy) || 1;
+  // Add a perpendicular midpoint so the arrow has a visible curved/bent path.
+  const bend = Math.max(24, Math.min(72, length * 0.18));
+  const middle = [
+    (start[0] + end[0]) / 2 - (dy / length) * bend,
+    (start[1] + end[1]) / 2 + (dx / length) * bend,
+  ];
+  const points = [start, middle, end];
+  const minX = Math.min(...points.map((point) => point[0]));
+  const minY = Math.min(...points.map((point) => point[1]));
+  const maxX = Math.max(...points.map((point) => point[0]));
+  const maxY = Math.max(...points.map((point) => point[1]));
+  return {
+    x: element.x + minX,
+    y: element.y + minY,
+    width: maxX - minX,
+    height: maxY - minY,
+    points: points.map(([x, y]) => [x - minX, y - minY]),
+    elbowed: false,
+    roundness: { type: 2 },
+  };
+}
+
 function Swatch({ color, label, selected, onClick, fill = false }) {
   return (
     <button
@@ -271,8 +302,9 @@ export default function ContextualFormattingToolbar({
               <>
                 <div className="format-option-label format-sub-label">Arrow type</div>
                 <div className="format-option-row">
-                  <button type="button" className={`format-option-button${!first?.elbowed ? " is-selected" : ""}`} aria-label="Straight arrow" aria-pressed={!first?.elbowed} onClick={() => applyToSelected({ elbowed: false })}>↗</button>
-                  <button type="button" className={`format-option-button${first?.elbowed ? " is-selected" : ""}`} aria-label="Elbow arrow" aria-pressed={Boolean(first?.elbowed)} onClick={() => applyToSelected({ elbowed: true })}>⌞</button>
+                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) <= 2 ? " is-selected" : ""}`} aria-label="Straight arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) <= 2} title="Straight arrow" onClick={() => applyToSelected({ elbowed: false, points: [[0, 0], [first.width, first.height]], roundness: null })}>↗</button>
+                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) > 2 ? " is-selected" : ""}`} aria-label="Curved arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) > 2} title="Curved arrow" onClick={() => applyToSelected(curvedArrowPatch(first))}>⌒</button>
+                  <button type="button" className={`format-option-button${first?.elbowed ? " is-selected" : ""}`} aria-label="Elbow arrow" aria-pressed={Boolean(first?.elbowed)} title="Elbow arrow" onClick={() => applyToSelected({ elbowed: true })}>⌞</button>
                 </div>
                 <div className="format-option-label format-sub-label">Arrowheads</div>
                 <div className="format-option-row format-arrowhead-row">
