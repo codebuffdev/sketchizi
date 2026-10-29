@@ -1811,6 +1811,7 @@ function App() {
             propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
+            onToolActivated={() => closePanel("properties")}
             onOpenProperties={() => {
                const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
                if (selectedIds.length && apiRef.current?.updateScene) {
