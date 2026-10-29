@@ -324,7 +324,9 @@ test('note selections expose typography and background controls in the floating 
   assert.match(toolbarSource, /bound\?\.type \|\| ""\)\.toLowerCase\(\) === "text"/);
   assert.match(toolbarSource, /data\.isNote === true/);
   assert.match(toolbarSource, /const noteSelection = liveSelection\.some\(isNoteFormattingElement\)/);
-  assert.match(toolbarSource, /const onlyTextSelection = liveSelection\.length > 0 && liveSelection\.every\(isTextFormattingElement\)/);
+  assert.match(toolbarSource, /const isBoundTextNote = \(element\) =>/);
+  assert.match(toolbarSource, /const isNoteSelectionElement = \(element\) => isNoteFormattingElement\(element\) \|\| isBoundTextNote\(element\)/);
+  assert.match(toolbarSource, /const onlyTextSelection = liveSelection\\.length > 0 && liveSelection\\.every\\(\\(element\\) => element\\.type === "text" \\|\\| isNoteSelectionElement\\(element\\)\\)/);
   assert.match(toolbarSource, /Choose custom background color/);
   assert.match(toolbarSource, /format-option-label format-sub-label">Vertical align/);
   assert.match(toolbarSource, /\["top", "Top"/);
