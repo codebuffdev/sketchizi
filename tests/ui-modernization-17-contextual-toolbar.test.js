@@ -256,3 +256,13 @@ test('floating toolbar positions selections from the viewport origin without hal
   assert.doesNotMatch(toolbar, /selection(?:Left|Right) = .*\+ rootWidth \/ 2/);
   assert.doesNotMatch(toolbar, /selection(?:Top|Bottom) = .*\+ rootHeight \/ 2/);
 });
+
+
+test('arrow floating Stroke popover includes arrow type and start/end arrowheads', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbar, /first\?\.type === "arrow"[\s\S]*?Arrow type[\s\S]*?elbowed: false[\s\S]*?elbowed: true[\s\S]*?Arrowheads/);
+  assert.match(toolbar, /aria-label="Start arrowhead"[\s\S]*?startArrowhead[\s\S]*?aria-label="End arrowhead"[\s\S]*?endArrowhead/);
+  assert.match(toolbar, /<option value="arrow">Arrow<\/option>[\s\S]*?<option value="bar">Bar<\/option>[\s\S]*?<option value="dot">Dot<\/option>/);
+  assert.match(styles, /\.format-arrowhead-control select/);
+});
