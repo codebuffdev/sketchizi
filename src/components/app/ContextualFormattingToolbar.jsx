@@ -309,6 +309,7 @@ export default function ContextualFormattingToolbar({
     liveSelection.find((element) => isNoteFormattingElement(element) && element.type !== "text" && element.backgroundColor != null) ||
     sceneElementsForFormatting.find((element) => noteContainerIds.has(element.id) && element.backgroundColor != null) ||
     firstTextFormattingElement;
+  const noteGroupIds = new Set([...liveSelection.map((element) => element.id), ...noteContainerIds, ...noteTextIds]);
   const position = useMemo(
     () => getSelectionPosition(apiRef?.current, toolMode ? [] : liveSelection, canvasRootRef?.current, Boolean(openGroup)),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
@@ -351,11 +352,10 @@ export default function ContextualFormattingToolbar({
       // during text-edit/toolbar focus transitions even while this panel remains
       // visible. Updating these ids directly keeps all floating controls reliable.
       const selectedIds = new Set(liveSelection.map((element) => element.id));
-      const noteGroupIds = new Set([...selectedIds, ...noteContainerIds, ...noteTextIds]);
       const patchKeys = Object.keys(patch);
       const textOnlyPatch = patchKeys.length > 0 && patchKeys.every((key) => ["strokeColor", "fontFamily", "fontSize", "textAlign", "verticalAlign"].includes(key));
       const backgroundOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "backgroundColor";
-      const hasSeparateNoteText = noteSelection && noteTextIds.size > 0 && elementsHaveNoteText(sceneElementsForFormatting, noteTextIds);
+      const hasSeparateNoteText = noteSelection && noteContainerIds.size > 0 && noteTextIds.size > 0 && elementsHaveNoteText(sceneElementsForFormatting, noteTextIds);
       const now = Date.now();
       const elements = api.getSceneElements?.() || [];
       const updatedElements = elements.map((element) => {
@@ -401,7 +401,7 @@ export default function ContextualFormattingToolbar({
     const api = apiRef?.current;
     if (!api || liveSelection.length === 0) return;
     const scene = api.getSceneElements?.() || [];
-    const selectedIds = new Set(liveSelection.map((element) => element.id));
+    const selectedIds = new Set(noteSelection ? [...noteGroupIds] : liveSelection.map((element) => element.id));
     const isSelectedLive = (element) => element && !element.isDeleted && !element.deleted && selectedIds.has(element.id);
     const moving = scene.filter(isSelectedLive);
     if (!moving.length) return;
