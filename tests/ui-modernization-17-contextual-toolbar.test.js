@@ -276,3 +276,11 @@ test('floating arrow type controls include straight, curved, and elbow paths', (
   assert.match(toolbar, /aria-label="Curved arrow"[\s\S]*?curvedArrowPatch\(first\)/);
   assert.match(toolbar, /aria-label="Elbow arrow"[\s\S]*?elbowed: true/);
 });
+
+
+test('floating stroke popover exposes edge controls for line selections too', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbar, /first\?\.type === "rectangle" \|\| first\?\.type === "diamond" \|\| first\?\.type === "line"/);
+  assert.match(toolbar, /aria-label="Square edges"/);
+  assert.match(toolbar, /aria-label="Rounded edges"/);
+});
