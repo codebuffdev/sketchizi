@@ -670,6 +670,10 @@ export default function SketchiziCanvas({
           elements: savedSketch?.elements || [],
           appState: {
             ...(savedSketch?.appState || {}),
+            // Start every Sketchizi canvas in Excalidraw Zen Mode. Keep this
+            // after the saved appState spread so legacy drawings cannot restore
+            // the full header and default side panels on startup.
+            zenModeEnabled: true,
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: getCanvasBackground(isDarkTheme),
