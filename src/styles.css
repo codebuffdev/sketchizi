@@ -474,6 +474,31 @@
 }
 .app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-track { background: #eceef6 !important; }
 .app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-thumb { border-color: #eceef6 !important; }
+
+/* Use neutral meta tones for Icon Library accents instead of violet. */
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search:focus,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search:focus-visible {
+  border-color: #cbd0da !important;
+  box-shadow: none !important;
+  outline-color: #9ca3af !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-heading button {
+  color: #697386 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-heading button:hover {
+  color: #374151 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid {
+  scrollbar-color: #aeb5c1 #eceef2 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-track {
+  background: #eceef2 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-thumb {
+  background: #aeb5c1 !important;
+  border-color: #eceef2 !important;
+}
 .app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-collections-menu {
   border-color: #dfe3ee !important; background: #fff !important; color: #30344b !important;
 }
