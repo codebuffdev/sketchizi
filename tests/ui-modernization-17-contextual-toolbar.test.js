@@ -49,7 +49,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.scrollY/);
   assert.match(toolbar, /const barWidth = 48/);
   assert.match(toolbar, /canvasRevision/);
-  assert.match(toolbar, /const popoverSide = left \\+ barWidth \\+ 340 \\+ 16 <= rootWidth/);
+  assert.match(toolbar, /const popoverSide = left \+ barWidth \+ 340 \+ 16 <= rootWidth/);
 });
 
 test('contextual toolbar has light, dark, responsive, and focus-visible styling', () => {
@@ -141,7 +141,7 @@ test('contextual toolbar stays above bottom dock and keeps frameless high-contra
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.match(toolbar, /const barWidth = 48/);
-  assert.match(toolbar, /const popoverSide = left \\+ barWidth \\+ 340 \\+ 16 <= rootWidth/);
+  assert.match(toolbar, /const popoverSide = left \+ barWidth \+ 340 \+ 16 <= rootWidth/);
   const frameless = dockCss;
   assert.match(frameless, /background: transparent !important/);
   assert.match(frameless, /border: 0 !important/);
