@@ -84,6 +84,7 @@ export default function SketchiziCanvas({
       const scrollBackTooltip = /scroll back to content/i.test(label);
       let left;
       let top;
+      let keepOutsideDock = false;
       if (vertical) {
         left = side === "right" ? buttonRect.left - tipRect.width - 10 : buttonRect.right + 10;
         if (left < 8) left = buttonRect.right + 10;
@@ -92,14 +93,23 @@ export default function SketchiziCanvas({
       } else {
         left = buttonRect.left + (buttonRect.width - tipRect.width) / 2;
         if (scrollBackTooltip && toolbar) {
-          // Keep the scroll-back control's tooltip outside the dock instead
-          // of covering toolbar tools. Prefer the dock's right side, matching
-          // the requested placement; fall back to its left near the viewport edge.
           const toolbarRect = toolbar.getBoundingClientRect();
-          left = toolbarRect.right + 12;
-          top = toolbarRect.top + (toolbarRect.height - tipRect.height) / 2;
-          if (left + tipRect.width > window.innerWidth - 8) {
-            left = toolbarRect.left - tipRect.width - 12;
+          const rightCandidate = toolbarRect.right + 12;
+          const leftCandidate = toolbarRect.left - tipRect.width - 12;
+          if (rightCandidate + tipRect.width <= window.innerWidth - 8) {
+            // Preferred placement: outside the dock on its right.
+            left = rightCandidate;
+            top = toolbarRect.top + (toolbarRect.height - tipRect.height) / 2;
+          } else if (leftCandidate >= 8) {
+            // If the right side is too narrow, use the left side of the dock.
+            left = leftCandidate;
+            top = toolbarRect.top + (toolbarRect.height - tipRect.height) / 2;
+          } else {
+            // Narrow windows cannot fit the tooltip beside the dock. Put it
+            // below the dock instead of clamping it over the toolbar controls.
+            left = Math.max(8, Math.min(window.innerWidth - tipRect.width - 8, toolbarRect.right - tipRect.width));
+            top = toolbarRect.bottom + 8;
+            keepOutsideDock = true;
           }
         } else {
           top = buttonRect.top - tipRect.height - 8;
@@ -107,7 +117,13 @@ export default function SketchiziCanvas({
         }
       }
       left = Math.max(8, Math.min(window.innerWidth - tipRect.width - 8, left));
-      top = Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, top));
+      if (keepOutsideDock) {
+        if (top + tipRect.height > window.innerHeight - 8) {
+          top = Math.max(8, toolbar.getBoundingClientRect().top - tipRect.height - 8);
+        }
+      } else {
+        top = Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, top));
+      }
       toolbarTooltip.style.left = `${left}px`;
       toolbarTooltip.style.top = `${top}px`;
       toolbarTooltip.style.visibility = "visible";
