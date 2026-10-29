@@ -177,7 +177,7 @@ export default function PropertiesPanel({
       </div>
     )}
 
-    <div className="properties-section properties-appearance">
+    {!hideDuplicateFormattingControls && <div className="properties-section properties-appearance">
       <div className="properties-section-title">Appearance</div>
 
       {hasShapeSelection && !hideDuplicateFormattingControls && (
@@ -336,7 +336,7 @@ export default function PropertiesPanel({
           onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })}
         />
       </div>}
-    </div>
+    </div>}
 
     {hasArrowSelection && (
       <div className="properties-section">
@@ -369,7 +369,7 @@ export default function PropertiesPanel({
       </div>
     )}
 
-    {hasTextSelection && selectedCount === 1 && firstSelected?.type === "text" && (
+    {!hideDuplicateFormattingControls && hasTextSelection && selectedCount === 1 && firstSelected?.type === "text" && (
       <div className="properties-section">
         <div className="properties-section-title">Text</div>
         {!hideDuplicateFormattingControls && <div className="property-row">
