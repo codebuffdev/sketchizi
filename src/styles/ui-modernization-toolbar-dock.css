@@ -163,6 +163,16 @@
   touch-action: none;
 }
 
+/* The dock is locked by default; the Tools menu explicitly unlocks dragging. */
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="true"] .sketchizi-dock-grip {
+  cursor: default;
+}
+
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="true"] .sketchizi-dock-grip:hover {
+  background: transparent;
+  color: #777f92;
+}
+
 .app .excalidraw .App-toolbar .sketchizi-dock-grip:hover {
   background: rgb(127 135 155 / 13%);
   color: #c9cde0;
@@ -1498,3 +1508,13 @@
   color: var(--text-primary, #f2f3f7);
   font: inherit;
 }
+
+/* Only expose the dock drag grip while the dock is unlocked. */
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="true"] .App-toolbar .sketchizi-dock-grip {
+  display: none !important;
+}
+
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="false"] .App-toolbar .sketchizi-dock-grip {
+  display: inline-flex !important;
+}
+

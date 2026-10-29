@@ -53,6 +53,10 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
       api.updateScene({ appState: { zenModeEnabled: true } });
       return;
     }
+    if (tool === "dock-lock") {
+      window.dispatchEvent(new CustomEvent("sketchizi:toggle-dock-lock"));
+      return;
+    }
     api.setActiveTool({ type: tool });
   }, [apiRef, canEdit, closePanel]);
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 function ToolIcon({ name }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round" };
@@ -9,11 +9,21 @@ function ToolIcon({ name }) {
     laser: <><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z" /><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z" /></>,
     lasso: <><path d="M12 4c5 0 8 2.2 8 5s-3 5-8 5-8-2.2-8-5 3-5 8-5Z" /><path d="M7 13.2c-.7 2.7-.2 4.8 1.6 5.5 1.5.6 3.2-.6 3.2-2.1 0-1.2-1.5-1.8-2.3-.8-.7.8-.2 2.3 1.4 3.2" /></>,
     "zen-mode": <><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" /></>,
+    "dock-lock": <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
   };
   return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" {...common}>{paths[name]}</svg>;
 }
 
 export default function MoreTools({ open, anchor, position, activateTool, toggle, canEdit = true, placement = "canvas" }) {
+  const [dockLocked, setDockLocked] = useState(true);
+
+  useEffect(() => {
+    const handleDockLockState = (event) => {
+      if (typeof event.detail?.locked === "boolean") setDockLocked(event.detail.locked);
+    };
+    window.addEventListener("sketchizi:dock-lock-state", handleDockLockState);
+    return () => window.removeEventListener("sketchizi:dock-lock-state", handleDockLockState);
+  }, []);
   useEffect(() => {
     if (!open) return undefined;
     const closeOnOutsidePointer = (event) => {
@@ -53,6 +63,7 @@ export default function MoreTools({ open, anchor, position, activateTool, toggle
     ["laser", "Laser pointer", "K"],
     ["lasso", "Lasso selection", ""],
     ["zen-mode", "Zen mode", "Alt+Z"],
+    ["dock-lock", dockLocked ? "Unlock dock" : "Lock dock", ""],
   ];
 
   return (
