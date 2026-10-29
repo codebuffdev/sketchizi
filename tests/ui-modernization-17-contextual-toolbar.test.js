@@ -309,7 +309,7 @@ test('floating background color controls are available for line selections', () 
 test('drawing-tool formatting uses current-item defaults and exposes draw, fill, and draw-to-shape modes', () => {
   assert.match(toolbar, /const toolMode = \(drawingTool \|\| textTool \|\| bucketFillTool \|\| drawToShapeTool\) && !noteSelection && !onlyTextSelection/);
   assert.match(toolbar, /const onlyTextSelection = liveSelection\.length > 0 && liveSelection\.every/);
-  assert.match(toolbar, /GROUPS\.filter\(\(group\) => group\.id === "stroke" \|\| group\.id === "opacity"\)/);
+  assert.ok(toolbar.includes('group.id === "stroke" || group.id === "opacity" || (activeToolMode === "text"'));
   assert.match(toolbar, /activeGroup === "stroke" && bucketFillTool/);
   assert.match(toolbar, /window\.addEventListener\("sketchizi:activate-tool", onCustomTool\)/);
   assert.match(toolbar, /tool === "bucketfill"[\s\S]*?setCustomToolMode\("fill"\)[\s\S]*?tool === "autoshape"[\s\S]*?setCustomToolMode\("shape"\)/);
