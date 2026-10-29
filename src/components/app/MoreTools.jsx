@@ -8,6 +8,7 @@ function ToolIcon({ name }) {
     embeddable: <><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="m9 10-2 2 2 2m6-4 2 2-2 2m-2-5-2 6" /></>,
     laser: <><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z" /><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z" /></>,
     lasso: <><path d="M12 4c5 0 8 2.2 8 5s-3 5-8 5-8-2.2-8-5 3-5 8-5Z" /><path d="M7 13.2c-.7 2.7-.2 4.8 1.6 5.5 1.5.6 3.2-.6 3.2-2.1 0-1.2-1.5-1.8-2.3-.8-.7.8-.2 2.3 1.4 3.2" /></>,
+    "zen-mode": <><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" /></>,
   };
   return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" {...common}>{paths[name]}</svg>;
 }
@@ -51,6 +52,7 @@ export default function MoreTools({ open, anchor, position, activateTool, toggle
     ["embeddable", "Web Embed", ""],
     ["laser", "Laser pointer", "K"],
     ["lasso", "Lasso selection", ""],
+    ["zen-mode", "Zen mode", "Alt+Z"],
   ];
 
   return (
