@@ -6,14 +6,24 @@ const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx',
 const styles = readFileSync(new URL('../src/styles/ui-modernization-navigation.css', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 
-test('does not add a duplicate fit-to-content control beside native zoom controls', () => {
-  assert.doesNotMatch(canvas, /sketchizi-fit-content-button/);
-  assert.doesNotMatch(canvas, /zoomRow\.appendChild\(fitButton\)/);
+test('keeps Fit to content beside the native zoom controls', () => {
+  assert.match(canvas, /sketchizi-fit-content-button/);
+  assert.match(canvas, /aria-label", "Fit diagram to viewport"/);
+  assert.match(canvas, /Fit to content \\(F\\)/);
+  assert.match(canvas, /zoomActions\.querySelector\(":scope > \.Stack_horizontal"\)/);
+  assert.match(canvas, /zoomRow\.appendChild\(fitButton\)/);
 });
 
-test('removes Excalidraw Scroll back to content navigation control', () => {
+test('fit action delegates to native viewport APIs and ignores deleted elements', () => {
+  assert.match(canvas, /getSceneElements\?\.\(\) \|\| \[\]\)\.filter\(\(element\) => element && !element\.isDeleted && !element\.deleted\)/);
+  assert.match(canvas, /api\.setViewport\(\{ target: elements, fit: "contain" \}\)/);
+  assert.match(canvas, /api\.scrollToContent\?\.\(elements, \{ fitToViewport: true, animate: true \}\)/);
+});
+
+test('removes Excalidraw Scroll back to content control while keeping Fit to content', () => {
   assert.match(canvas, /scroll back to content/i);
   assert.match(canvas, /if \(\/scroll back to content\/i\.test\(label\)\) button\.remove\(\)/);
+  assert.match(canvas, /fitContentButtonRef\.current\.disabled = !canEdit \|\| viewModeEnabled \|\| !hasVisibleElements/);
 });
 
 test('native zoom and undo/redo controls retain accessible titles and disabled styling', () => {
