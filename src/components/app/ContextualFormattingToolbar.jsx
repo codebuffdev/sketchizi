@@ -651,7 +651,6 @@ export default function ContextualFormattingToolbar({
           <button type="button" className="format-option-button" aria-label="Bring selection forward" title="Bring forward" onClick={() => reorderSelection("front")}>↑</button>
           <button type="button" className="format-option-button" aria-label="Bring selection to front" title="Bring to front" onClick={() => reorderSelection("front")}>⇈</button>
         </div>
-        <button type="button" className="format-more-properties" onClick={onOpenProperties}>Open Properties panel</button>
       </div>
     );
     return null;
