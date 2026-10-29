@@ -260,7 +260,7 @@ export default function ContextualFormattingToolbar({
             </label>
           </div>
         </div>
-        {!onlyTextSelection && !hasImageSelection && hasShape && (
+        {!onlyTextSelection && !hasImageSelection && (
           <div className="format-option-section">
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
