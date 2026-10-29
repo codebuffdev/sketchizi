@@ -301,7 +301,7 @@ test('floating background color controls are available for line selections', () 
 
 
 test('drawing-tool formatting uses current-item defaults and exposes draw, fill, and draw-to-shape modes', () => {
-  assert.match(toolbar, /const toolMode = liveSelection\.length === 0 && \(drawingTool \|\| bucketFillTool \|\| drawToShapeTool\)/);
+  assert.match(toolbar, /const toolMode = drawingTool \|\| bucketFillTool \|\| drawToShapeTool/);
   assert.match(toolbar, /const onlyTextSelection = liveSelection\.length > 0 && liveSelection\.every/);
   assert.match(toolbar, /GROUPS\.filter\(\(group\) => group\.id === "stroke" \|\| group\.id === "opacity"\)/);
   assert.match(toolbar, /activeGroup === "stroke" && bucketFillTool/);
