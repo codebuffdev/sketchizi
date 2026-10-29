@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { calculateAlignmentGuides } from "../../features/canvas/alignmentGuides.js";
-import { snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
+import { calculateEqualSpacingGuides, snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
 
 const EMPTY_GUIDES = [];
 
@@ -55,6 +55,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const viewportRect = viewport.getBoundingClientRect();
       setOverlay({ left: viewportRect.left - rootRect.left, top: viewportRect.top - rootRect.top, width: viewportRect.width, height: viewportRect.height });
       const found = calculateAlignmentGuides(elements, selectedIds, 9 / zoom);
+      const spacing = calculateEqualSpacingGuides(elements, selectedIds, 4 / zoom).map((guide) => ({ ...guide, kind: "spacing" }));
       const sceneToViewport = api.sceneCoordsToViewportCoords;
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
@@ -67,12 +68,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
         return (position + offset) * zoom;
       };
-      setGuides(found.map((guide) => ({
-        ...guide,
-        screenPosition: toLocal(guide.axis, guide.position),
-        screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start),
-        screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end),
-      })).filter((guide) => Number.isFinite(guide.screenPosition) && Number.isFinite(guide.screenStart) && Number.isFinite(guide.screenEnd)));
+      setGuides(found.map((guide) => ({ ...guide, kind: "alignment", screenPosition: toLocal(guide.axis, guide.position), screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start), screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end) })).concat(spacing.map((guide) => ({ ...guide, screenPosition: toLocal(guide.axis === "x" ? "y" : "x", guide.position), screenStart: toLocal(guide.axis, guide.start), screenEnd: toLocal(guide.axis, guide.end) })).filter((guide) => Number.isFinite(guide.screenPosition) && Number.isFinite(guide.screenStart) && Number.isFinite(guide.screenEnd)));
     };
 
     const scheduleUpdate = () => {
@@ -119,11 +115,29 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
   if (!guides.length) return null;
   return (
     <svg className="sketchizi-alignment-guides" style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }} viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)} aria-hidden="true" focusable="false">
-      {guides.map((guide, index) => guide.axis === "x" ? (
-        <line key={guide.axis + guide.screenPosition + index} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
-      ) : (
-        <line key={guide.axis + guide.screenPosition + index} x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
-      ))}
+      {guides.map((guide, index) => {
+        const key = guide.kind + guide.axis + guide.screenPosition + index;
+        if (guide.kind === "spacing") {
+          return guide.axis === "x" ? (
+            <g key={key} className="sketchizi-spacing-guide">
+              <line x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
+              <line x1={guide.screenStart} x2={guide.screenStart} y1={guide.screenPosition - 3} y2={guide.screenPosition + 3} />
+              <line x1={guide.screenEnd} x2={guide.screenEnd} y1={guide.screenPosition - 3} y2={guide.screenPosition + 3} />
+            </g>
+          ) : (
+            <g key={key} className="sketchizi-spacing-guide">
+              <line x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
+              <line x1={guide.screenPosition - 3} x2={guide.screenPosition + 3} y1={guide.screenStart} y2={guide.screenStart} />
+              <line x1={guide.screenPosition - 3} x2={guide.screenPosition + 3} y1={guide.screenEnd} y2={guide.screenEnd} />
+            </g>
+          );
+        }
+        return guide.axis === "x" ? (
+          <line key={key} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
+        ) : (
+          <line key={key} x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
+        );
+      })}
     </svg>
   );
 }
