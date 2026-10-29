@@ -1087,23 +1087,27 @@
  * compressed horizontal ribbon. Controls remain bound to selected elements.
  */
 .app .contextual-formatting-toolbar {
-  box-sizing: border-box;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
-  width: var(--contextual-panel-width, 340px);
-  max-width: calc(100% - 24px);
-  max-height: var(--contextual-panel-max-height, calc(100% - 32px));
-  padding: 16px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  position: fixed !important;
+  z-index: 10030 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  width: var(--contextual-panel-width, 340px) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: var(--contextual-panel-max-height, calc(100vh - 32px)) !important;
+  padding: 16px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   overscroll-behavior: contain;
-  border: 1px solid var(--ui-border, #343946);
-  border-radius: 14px;
-  background: var(--ui-surface-solid, #202127);
-  color: var(--ui-text, #f1f2f5);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
-  transform: none;
+  border: 1px solid var(--ui-border, #343946) !important;
+  border-radius: 14px !important;
+  background: var(--ui-surface-solid, #202127) !important;
+  color: var(--ui-text, #f1f2f5) !important;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 28%) !important;
+  transform: none !important;
 }
 .app .contextual-formatting-toolbar > .contextual-formatting-group {
   box-sizing: border-box;
@@ -1275,4 +1279,27 @@
   background: #fff;
   border-color: #d7dbe5;
   color: #303440;
+}
+
+
+/* The floating panel is the single primary formatting surface while selected. */
+.app:has(.contextual-formatting-toolbar) .desktop-properties-host,
+.app:has(.contextual-formatting-toolbar) .desktop-properties-host.is-open {
+  display: none !important;
+}
+.app .contextual-formatting-toolbar > .contextual-formatting-group {
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+}
+.app .contextual-formatting-toolbar > .contextual-formatting-group::before {
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  white-space: normal !important;
+}
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  display: grid !important;
+  grid-template-columns: auto minmax(40px, 1fr) auto !important;
+  width: 100% !important;
 }
