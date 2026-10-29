@@ -280,3 +280,22 @@
   .ai-ask-header-actions button { min-height: 28px; padding: 0 5px; font-size: 10px; }
   .ai-ask-header-actions .ai-ask-close { width: 25px; min-height: 28px; }
 }
+
+
+/* The AI Ask title text is replaced by the supplied AI-and-sparkle mark. */
+.ai-ask-heading { flex: 0 0 auto; min-width: 0; }
+.ai-ask-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--ui-active, #f0eff9);
+  color: var(--ui-accent, #5b55c7);
+}
+.ai-ask-mark svg { display: block; width: 100%; height: 100%; }
+@media (max-width: 460px) {
+  .ai-ask-mark { width: 30px; height: 30px; padding: 3px; }
+}
