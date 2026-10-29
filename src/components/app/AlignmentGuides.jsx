@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { calculateAlignmentGuides } from "../../features/canvas/alignmentGuides.js";
 import { calculateEqualSpacingGuides, snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
 
@@ -43,7 +44,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       if (gesture && selectedIds.size && [...selectedIds].some((id) => gesture.selectedIds.has(id))) {
         const snapped = snapSceneElementsToSmartGuides(elements, gesture.baseline, gesture.selectedIds, 8 / zoom);
         if (snapped !== elements) {
-          api.updateScene?.({ elements: snapped });
+          api.updateScene?.({ elements: snapped, captureUpdate: CaptureUpdateAction.NEVER });
           elements = snapped;
           appState = api.getAppState?.() || appState;
         }
