@@ -344,7 +344,6 @@ export default function DesktopAppHeader({
 
       <div className="desktop-app-header-account-zone">
         <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
-        <AuthenticationControl />
       </div>
 
       <button
@@ -433,6 +432,7 @@ export default function DesktopAppHeader({
           <span className="desktop-app-search-label">Search…</span>
           <kbd className="desktop-app-search-shortcut">Ctrl+K</kbd>
         </button>
+        <AuthenticationControl />
       </div>
     </header>
   );
