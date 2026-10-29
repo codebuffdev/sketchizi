@@ -79,10 +79,6 @@ function elementsHaveNoteText(elements, noteTextIds) {
   return elements.some((element) => element?.type === "text" && noteTextIds.has(element.id));
 }
 
-function isTextFormattingElement(element) {
-  return element?.type === "text" || isNoteFormattingElement(element);
-}
-
 function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   if (!api || !root) return null;
   const appState = api.getAppState?.();
