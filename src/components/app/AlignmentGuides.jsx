@@ -34,7 +34,6 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const elements = api.getSceneElements?.() || [];
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
       const rootRect = root.getBoundingClientRect();
-      const canvasRect = root.querySelector(".layer-canvas")?.getBoundingClientRect() || rootRect;
       const tolerance = 9 / zoom;
       const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
       const sceneToViewport = api.sceneCoordsToViewportCoords;
