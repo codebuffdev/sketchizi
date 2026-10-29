@@ -1734,18 +1734,6 @@ function App() {
           </svg>
         </button>
 
-        <button
-          type="button"
-          className={architectureValidationOpen ? "architecture-validation-toggle active" : "architecture-validation-toggle"}
-          onClick={() => togglePanel("architecture-validation")}
-          title="Architecture validation"
-          aria-label="Architecture validation"
-          aria-expanded={architectureValidationOpen}
-        >
-          <svg className="architecture-validation-toggle-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 20 6v5.5c0 4.7-3.2 7.8-8 9.5-4.8-1.7-8-4.8-8-9.5V6Z"/><path d="m8.5 12 2.3 2.3 4.8-5"/></svg>
-          <span>Validation</span>
-        </button>
-
 
 
       </DesktopAppHeader>
