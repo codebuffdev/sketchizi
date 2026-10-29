@@ -353,7 +353,7 @@ export default function ContextualFormattingToolbar({
             </div>
           </div>
         )}
-        {!onlyTextSelection && !hasImageSelection && (first?.type === "rectangle" || first?.type === "diamond" || first?.type === "line") && (
+        {!toolMode && !onlyTextSelection && !hasImageSelection && (first?.type === "rectangle" || first?.type === "diamond" || first?.type === "line") && (
           <div className="format-option-section">
             <div className="format-option-label">Edges</div>
             <div className="format-option-row">
@@ -382,7 +382,7 @@ export default function ContextualFormattingToolbar({
             <div className="format-option-row">
               {[1, 2, 4].map((width) => <button key={width} type="button" className={`format-option-button${currentStrokeWidth === width ? " is-selected" : ""}`} aria-pressed={currentStrokeWidth === width} onClick={() => applyFormatting({ strokeWidth: width })}>{width}</button>)}
             </div>
-            {(hasShape || activeToolMode === "shape") && <>
+            {(toolMode ? activeToolMode === "shape" : hasShape) && <>
               <div className="format-option-label format-sub-label">Fill style</div>
               <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}</div>
             </>}
