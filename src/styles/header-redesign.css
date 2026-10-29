@@ -1612,3 +1612,41 @@
     box-shadow: none !important;
   }
 }
+
+/* Keep the theme and AI Ask controls beside the utility actions on the right. */
+@media (max-width: 1120px) {
+  .app .desktop-app-header.is-constrained > .desktop-app-header-actions {
+    grid-area: features;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 7px 0 0;
+    border: 0;
+    border-top: 1px solid var(--ui-border, #e3e5eb);
+    overflow: visible;
+  }
+
+  .app .desktop-app-header.is-constrained .desktop-app-header-actions .desktop-app-header-account-zone,
+  .app .desktop-app-header.is-constrained .desktop-app-header-actions .desktop-app-header-panel-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    align-self: center;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .app .desktop-app-header.is-constrained .desktop-app-header-actions .desktop-app-header-panel-actions > * {
+    flex: 0 0 auto;
+    min-width: 30px;
+    margin: 0;
+  }
+}
