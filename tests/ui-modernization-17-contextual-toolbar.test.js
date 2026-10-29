@@ -215,3 +215,13 @@ test('Properties panel suppresses duplicate formatting groups when the floating 
   assert.match(propertiesPanel, /!hideDuplicateFormattingControls && hasTextSelection && selectedCount === 1/);
   assert.match(propertiesPanel, /hideDuplicateFormattingControls=\{true\}/);
 });
+
+
+test('custom stroke color picker is visible and remains keyboard-accessible', () => {
+  const toolbarSource = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  const toolbarCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  assert.match(toolbarSource, /className="format-custom-color-icon"/);
+  assert.match(toolbarSource, /type="color" aria-label="Choose custom color"/);
+  assert.match(toolbarCss, /\.format-custom-color-icon[\s\S]*?pointer-events: none/);
+  assert.match(toolbarCss, /\.format-custom-color input[\s\S]*?opacity: 0/);
+});
