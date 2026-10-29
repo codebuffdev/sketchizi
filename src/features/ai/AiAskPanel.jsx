@@ -1001,9 +1001,53 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
           <span className="ai-ask-mark" aria-hidden="true">✳</span>
           <div><h2 id="ai-ask-title">AI Ask</h2><p>Ask questions about your current diagram</p></div>
         </div>
+        {auth.status === "authenticated" && (
+                    <div className={`ai-ask-provider-disclosure ${providerSettingsOpen ? "is-open" : ""}`}>
+                      <button type="button" className="ai-ask-provider-summary" aria-expanded={providerSettingsOpen} aria-controls="ai-ask-provider-settings" onClick={() => setProviderSettingsOpen((value) => !value)}>
+                        <span className={`ai-ask-provider-status ${chat.provider === "byok" && !keyApplied ? "is-warning" : "is-ready"}`} aria-hidden="true">{chat.provider === "byok" && !keyApplied ? "!" : "✓"}</span>
+                        <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Sketchizi AI"}</strong><small>{chat.provider === "byok" ? (keyApplied ? "Gemini · Key ready" : "Gemini · API key required") : "Included AI access"}</small></span>
+                        <span className="ai-ask-provider-manage">{providerSettingsOpen ? "Done" : "Manage"}</span>
+                        <span className="ai-ask-provider-chevron" aria-hidden="true">⌄</span>
+                      </button>
+                      {providerSettingsOpen && <div className="ai-ask-provider-settings" id="ai-ask-provider-settings">
+                        <div className="ai-ask-provider-row">
+                          <label htmlFor="ai-ask-provider">Provider</label>
+                          <select id="ai-ask-provider" value={chat.provider} onChange={(event) => chooseProvider(event.target.value)} disabled={busy || Boolean(pendingRequest)}>
+                            <option value="builtin">Sketchizi AI (included)</option>
+                            <option value="byok">Bring Your Own Key (BYOK)</option>
+                          </select>
+                        </div>
+                        {chat.provider === "builtin" ? (
+                          <div className="ai-ask-usage" aria-live="polite">
+                            {!chat.conversationId && conversationStatus === "creating" && <span>Preparing your AI conversation…</span>}
+                            {!chat.conversationId && conversationStatus === "error" && <><span>Could not prepare your AI conversation: {conversationError || "Please try again."}</span><button type="button" onClick={() => ensureConversation(auth.user.id).catch(() => {})} disabled={busy}>Retry conversation</button></>}
+                            {chat.conversationId && usageStatus === "loading" && <span>Loading usage allowance…</span>}
+                            {chat.conversationId && usageStatus === "error" && <><span>Usage allowance unavailable: {usageError || "Could not load usage."}</span><button type="button" onClick={() => refreshUsage(chat.conversationId, auth.user.id)} disabled={busy || !chat.conversationId}>Retry usage</button></>}
+                            {chat.conversationId && usageStatus === "idle" && <span>Usage allowance will load when ready.</span>}
+                            {chat.conversationId && usageStatus === "loaded" && usage && (usage.admin ? <span>Admin account · No built-in AI question allowance limits</span> : <>
+                              <span>Conversation: <strong>{usage.conversationRemaining ?? "—"}</strong> questions left</span>
+                              <span>Rolling 12 hours: <strong>{usage.accountRemaining ?? "—"}</strong> left</span>
+                              {usage.accountRemaining <= 0 && <div className="ai-ask-quota-exhausted" role="status">
+                                <strong>Built-in AI allowance exhausted</strong>
+                                <span>Your 10-question rolling 12-hour account limit has been reached. You still have questions left in this conversation, but the account limit takes priority. You can use built-in AI again when a slot becomes available.</span>
+                                {usage.nextAvailableAt && <small>Next question expected to be available: {new Date(usage.nextAvailableAt).toLocaleString()}.</small>}
+                              </div>}
+                            </>)}
+                          </div>
+                        ) : (
+                          <div className="ai-ask-byok-settings">
+                            <label htmlFor="ai-ask-api-key">Gemini API key</label>
+                            <div className="ai-ask-key-row"><input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} /><button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button></div>
+                            <div className="ai-ask-key-actions"><button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button><button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button></div>
+                            <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
+                          </div>
+                        )}
+                      </div>}
+                    </div>
+        )}
         <div className="ai-ask-header-actions">
           <button type="button" onClick={clearTranscript} disabled={!chat.messages.length || Boolean(pendingRequest)} title="Clear visible messages" aria-label="Clear conversation messages">Clear</button>
-          <button type="button" onClick={startNewConversation} disabled={busy || Boolean(pendingRequest) || auth.status !== "authenticated" || (chat.provider === "builtin" && usage?.accountRemaining <= 0)} title="Start a new conversation" aria-label="New conversation">New</button>
+          <button type="button" onClick={startNewConversation} disabled={busy || Boolean(pendingRequest) || auth.status !== "authenticated" || (chat.provider === "builtin" && !usage?.admin && usage?.accountRemaining <= 0)} title="Start a new conversation" aria-label="New conversation">New</button>
           <button type="button" className="ai-ask-close" onClick={onClose} aria-label="Close AI Ask">×</button>
         </div>
       </header>
@@ -1022,49 +1066,6 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
 
       {auth.status === "authenticated" && (
         <>
-          <div className={`ai-ask-provider-disclosure ${providerSettingsOpen ? "is-open" : ""}`}>
-            <button type="button" className="ai-ask-provider-summary" aria-expanded={providerSettingsOpen} aria-controls="ai-ask-provider-settings" onClick={() => setProviderSettingsOpen((value) => !value)}>
-              <span className={`ai-ask-provider-status ${chat.provider === "byok" && !keyApplied ? "is-warning" : "is-ready"}`} aria-hidden="true">{chat.provider === "byok" && !keyApplied ? "!" : "✓"}</span>
-              <span className="ai-ask-provider-summary-text"><strong>{chat.provider === "byok" ? "Bring Your Own Key (BYOK)" : "Sketchizi AI"}</strong><small>{chat.provider === "byok" ? (keyApplied ? "Gemini · Key ready" : "Gemini · API key required") : "Included AI access"}</small></span>
-              <span className="ai-ask-provider-manage">{providerSettingsOpen ? "Done" : "Manage"}</span>
-              <span className="ai-ask-provider-chevron" aria-hidden="true">⌄</span>
-            </button>
-            {providerSettingsOpen && <div className="ai-ask-provider-settings" id="ai-ask-provider-settings">
-              <div className="ai-ask-provider-row">
-                <label htmlFor="ai-ask-provider">Provider</label>
-                <select id="ai-ask-provider" value={chat.provider} onChange={(event) => chooseProvider(event.target.value)} disabled={busy || Boolean(pendingRequest)}>
-                  <option value="builtin">Sketchizi AI (included)</option>
-                  <option value="byok">Bring Your Own Key (BYOK)</option>
-                </select>
-              </div>
-              {chat.provider === "builtin" ? (
-                <div className="ai-ask-usage" aria-live="polite">
-                  {!chat.conversationId && conversationStatus === "creating" && <span>Preparing your AI conversation…</span>}
-                  {!chat.conversationId && conversationStatus === "error" && <><span>Could not prepare your AI conversation: {conversationError || "Please try again."}</span><button type="button" onClick={() => ensureConversation(auth.user.id).catch(() => {})} disabled={busy}>Retry conversation</button></>}
-                  {chat.conversationId && usageStatus === "loading" && <span>Loading usage allowance…</span>}
-                  {chat.conversationId && usageStatus === "error" && <><span>Usage allowance unavailable: {usageError || "Could not load usage."}</span><button type="button" onClick={() => refreshUsage(chat.conversationId, auth.user.id)} disabled={busy || !chat.conversationId}>Retry usage</button></>}
-                  {chat.conversationId && usageStatus === "idle" && <span>Usage allowance will load when ready.</span>}
-                  {chat.conversationId && usageStatus === "loaded" && usage && (usage.admin ? <span>Admin account · No built-in AI question allowance limits</span> : <>
-                    <span>Conversation: <strong>{usage.conversationRemaining ?? "—"}</strong> questions left</span>
-                    <span>Rolling 12 hours: <strong>{usage.accountRemaining ?? "—"}</strong> left</span>
-                    {usage.accountRemaining <= 0 && <div className="ai-ask-quota-exhausted" role="status">
-                      <strong>Built-in AI allowance exhausted</strong>
-                      <span>Your 10-question rolling 12-hour account limit has been reached. You still have questions left in this conversation, but the account limit takes priority. You can use built-in AI again when a slot becomes available.</span>
-                      {usage.nextAvailableAt && <small>Next question expected to be available: {new Date(usage.nextAvailableAt).toLocaleString()}.</small>}
-                    </div>}
-                  </>)}
-                </div>
-              ) : (
-                <div className="ai-ask-byok-settings">
-                  <label htmlFor="ai-ask-api-key">Gemini API key</label>
-                  <div className="ai-ask-key-row"><input id="ai-ask-api-key" type={showKey ? "text" : "password"} autoComplete="off" spellCheck="false" value={apiKey} onChange={(event) => updateApiKey(event.target.value)} placeholder="Paste your Gemini API key" disabled={busy} /><button type="button" onClick={() => setShowKey((value) => !value)}>{showKey ? "Hide" : "Show"}</button></div>
-                  <div className="ai-ask-key-actions"><button className="ai-ask-primary" type="button" onClick={applyApiKey} disabled={!apiKey.trim() || busy}>{keyApplied ? "Key ready" : "Use key"}</button><button type="button" onClick={removeApiKey} disabled={!apiKey && !keyApplied}>Remove key</button></div>
-                  <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
-                </div>
-              )}
-            </div>}
-          </div>
-
           <div className="ai-ask-messages" ref={transcriptRef} aria-label="AI Ask conversation" aria-live="polite">
             {!chat.messages.length ? (
               <div className="ai-ask-empty-state">
