@@ -68,6 +68,15 @@ export default function SketchiziCanvas({
     let observer;
     let frame = 0;
     let activeDragCleanup = null;
+    let dockLocked = true;
+    const publishDockLockState = (locked) => {
+      dockLocked = locked;
+      const container = root.querySelector(".App-toolbar-container");
+      if (container) container.dataset.sketchiziDockLocked = String(locked);
+      window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked } }));
+    };
+    const toggleDockLock = () => publishDockLockState(!dockLocked);
+    window.addEventListener("sketchizi:toggle-dock-lock", toggleDockLock);
     const toolbarTooltip = document.createElement("div");
     toolbarTooltip.className = "sketchizi-toolbar-tooltip";
     toolbarTooltip.setAttribute("role", "tooltip");
@@ -164,6 +173,13 @@ export default function SketchiziCanvas({
       const container = root.querySelector(".App-toolbar-container");
       if (!toolbar || !container) return;
       toolbar.dataset.sketchiziDock = "true";
+      if (!container.dataset.sketchiziDockLocked) {
+        container.dataset.sketchiziDockLocked = "true";
+        dockLocked = true;
+        window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: true } }));
+      } else {
+        dockLocked = container.dataset.sketchiziDockLocked !== "false";
+      }
       if (!toolbar.querySelector(":scope > .sketchizi-dock-grip")) {
         const grip = document.createElement("button");
         grip.type = "button";
@@ -176,7 +192,7 @@ export default function SketchiziCanvas({
           const delta = directions[event.key];
           if (!delta || window.matchMedia("(max-width: 760px)").matches) return;
           const dock = root.querySelector(".App-toolbar-container");
-          if (!dock) return;
+          if (!dock || dock.dataset.sketchiziDockLocked !== "false") return;
           event.preventDefault();
           const rect = dock.getBoundingClientRect();
           dock.style.setProperty("width", "max-content", "important");
@@ -204,7 +220,7 @@ export default function SketchiziCanvas({
           dock.style.setProperty("bottom", "auto", "important");
         });
         grip.addEventListener("pointerdown", (event) => {
-          if (event.button !== 0 || window.matchMedia("(max-width: 760px)").matches) return;
+          if (container.dataset.sketchiziDockLocked !== "false" || event.button !== 0 || window.matchMedia("(max-width: 760px)").matches) return;
           event.preventDefault();
           hideToolbarTooltip();
           const rect = container.getBoundingClientRect();
@@ -416,6 +432,7 @@ export default function SketchiziCanvas({
       activeDragCleanup?.();
       cancelAnimationFrame(frame);
       observer?.disconnect();
+      window.removeEventListener("sketchizi:toggle-dock-lock", toggleDockLock);
       window.removeEventListener("resize", clampDockToViewport);
       window.removeEventListener("resize", onToolbarTooltipResize);
       tooltipBindings.forEach(({ show, hide }, button) => {
