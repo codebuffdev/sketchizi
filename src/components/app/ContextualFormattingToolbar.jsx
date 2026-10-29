@@ -210,6 +210,43 @@ export default function ContextualFormattingToolbar({
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
               {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyToSelected({ backgroundColor: color })} />)}
+              <label
+                className="format-custom-color format-custom-fill-color"
+                title="Choose custom background color"
+                aria-label="Choose custom background color"
+                style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1" }}
+              >
+                <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                <input
+                  type="color"
+                  aria-label="Choose custom background color"
+                  value={/^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1"}
+                  onChange={(event) => applyToSelected({ backgroundColor: event.target.value })}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+        {!onlyTextSelection && !hasImageSelection && first?.type === "rectangle" && (
+          <div className="format-option-section">
+            <div className="format-option-label">Edges</div>
+            <div className="format-option-row">
+              <button
+                type="button"
+                className={`format-option-button format-edge-button${!first?.roundness ? " is-selected" : ""}`}
+                aria-label="Square edges"
+                aria-pressed={!first?.roundness}
+                title="Square edges"
+                onClick={() => applyToSelected({ roundness: null })}
+              ><span className="format-edge-square" aria-hidden="true" /></button>
+              <button
+                type="button"
+                className={`format-option-button format-edge-button${first?.roundness ? " is-selected" : ""}`}
+                aria-label="Rounded edges"
+                aria-pressed={Boolean(first?.roundness)}
+                title="Rounded edges"
+                onClick={() => applyToSelected({ roundness: { type: 3 } })}
+              ><span className="format-edge-rounded" aria-hidden="true" /></button>
             </div>
           </div>
         )}
