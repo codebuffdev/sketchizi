@@ -16,3 +16,10 @@
   vector-effect: non-scaling-stroke;
   shape-rendering: crispEdges;
 }
+
+/* Keep alignment guides theme-aware and subtle against each canvas background. */
+.theme-light .sketchizi-alignment-guides line,
+.app.theme-light .sketchizi-alignment-guides line {
+  stroke: #dc2626;
+  opacity: 0.5;
+}
