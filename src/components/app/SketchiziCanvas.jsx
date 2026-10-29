@@ -12,7 +12,7 @@ export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
-  selectedElements = [], applyToSelected, onOpenProperties, propertiesOpen = false, canEdit = true,
+  selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridVisible = false, gridSize = 20, gridSnappingEnabled = false,
 }) {
@@ -42,6 +42,22 @@ export default function SketchiziCanvas({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+
+
+  // Selecting any tool from the dock dismisses the legacy Properties panel.
+  // The floating formatting toolbar remains the primary control surface.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root || !onToolActivated) return undefined;
+    const handleDockPointerDown = (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target?.closest(".App-toolbar button, .App-toolbar [role='button']")) return;
+      onToolActivated();
+    };
+    root.addEventListener("pointerdown", handleDockPointerDown, true);
+    return () => root.removeEventListener("pointerdown", handleDockPointerDown, true);
+  }, [onToolActivated]);
 
   // Enhance Excalidraw's own toolbar in place. Buttons and their React handlers
   // stay native; this adds only a grip, separators, and session-only dragging.
@@ -654,6 +670,10 @@ export default function SketchiziCanvas({
           elements: savedSketch?.elements || [],
           appState: {
             ...(savedSketch?.appState || {}),
+            // Start every Sketchizi canvas in Excalidraw Zen Mode. Keep this
+            // after the saved appState spread so legacy drawings cannot restore
+            // the full header and default side panels on startup.
+            zenModeEnabled: true,
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: getCanvasBackground(isDarkTheme),
@@ -670,16 +690,18 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      <ContextualFormattingToolbar
-        apiRef={apiRef}
-        canvasRootRef={canvasRootRef}
-        canvasRevision={canvasRevision}
-        selectedElements={selectedElements}
-        applyToSelected={applyToSelected}
-        onOpenProperties={onOpenProperties}
-        propertiesOpen={propertiesOpen}
-        canEdit={canEdit && !viewModeEnabled}
-      />
+      {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
+        <ContextualFormattingToolbar
+          apiRef={apiRef}
+          canvasRootRef={canvasRootRef}
+          canvasRevision={canvasRevision}
+          selectedElements={selectedElements}
+          applyToSelected={applyToSelected}
+          onOpenProperties={onOpenProperties}
+          propertiesOpen={propertiesOpen}
+          canEdit={canEdit && !viewModeEnabled}
+        />
+      )}
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />

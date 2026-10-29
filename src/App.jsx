@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
-import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
 import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
@@ -1722,22 +1721,6 @@ function App() {
           </button>
         ) : null}
       >
-        {collaborationCanEdit && selectedCount > 0 && (
-          <button
-            type="button"
-            className={propertiesOpen ? "properties-toggle active" : "properties-toggle"}
-            onClick={() => togglePanel("properties")}
-            title="Properties and style"
-            aria-label="Properties and style"
-            aria-expanded={propertiesOpen}
-          >
-            <span className="properties-toggle-icon">◧</span>
-            <span>Properties</span>
-          </button>
-        )}
-
-
-
         <button
           type="button"
           className={aiAskOpen ? "ai-ask-toggle is-icon-only active" : "ai-ask-toggle is-icon-only"}
@@ -1811,20 +1794,7 @@ function App() {
             propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
-            onOpenProperties={() => {
-               const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
-               if (selectedIds.length && apiRef.current?.updateScene) {
-                 apiRef.current.updateScene({
-                   appState: {
-                     selectedElementIds: Object.fromEntries(selectedIds.map((id) => [id, true])),
-                     selectedGroupIds: {},
-                     selectedGroupForOperation: null,
-                   },
-                   captureUpdate: CaptureUpdateAction.NEVER,
-                 });
-               }
-               openPanel("properties");
-             }}
+            onToolActivated={() => closePanel("properties")}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
             gridVisible={gridVisible}
@@ -1849,28 +1819,9 @@ function App() {
 
 
         <aside
-          className={`desktop-context-region ${propertiesOpen ? "properties-state-open" : "properties-state-closed"} ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
+          className={`desktop-context-region ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
           aria-label="Properties and architecture validation"
         >
-          {collaborationCanEdit && selectedCount > 0 && propertiesOpen && (
-            <div className={`desktop-properties-host ${propertiesOpen ? "is-open" : "is-closed"}`}>
-              <PropertiesPanel
-                selectedCount={selectedCount} propertiesOpen={propertiesOpen}
-                setPropertiesOpen={(next) => (next ? openPanel("properties") : closePanel("properties"))} firstSelected={firstSelected}
-                hasShapeSelection={hasShapeSelection} hasArrowSelection={hasArrowSelection}
-                hasTextSelection={hasTextSelection} hideDuplicateFormattingControls={true} applyToSelected={applyToSelected}
-                applyToSelectedArrow={applyToSelectedArrow} updateSingleSelected={updateSingleSelected}
-                awsResource={selectedAwsResource} awsResourceDefinition={selectedAwsResourceDefinition} updateAwsResource={updateSelectedAwsResource}
-                kubernetesResource={selectedKubernetesResource} kubernetesResourceDefinition={selectedKubernetesResourceDefinition} updateKubernetesResource={updateSelectedKubernetesResource}
-                networkingResource={selectedNetworkingResource} networkingResourceDefinition={selectedNetworkingResourceDefinition} updateNetworkingResource={updateSelectedNetworkingResource}
-                architectureRelationship={selectedArchitectureRelationship} architectureRelationshipTypes={["traffic-flow", "contains", "routes-to", "depends-on", "connects-to"]} updateArchitectureRelationshipType={updateSelectedArchitectureRelationshipType}
-                awsRelationship={selectedAwsRelationship} relationshipTypes={AWS_RELATIONSHIP_TYPES} updateAwsRelationshipType={updateSelectedAwsRelationshipType}
-                kubernetesRelationship={selectedKubernetesRelationship} kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES} updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType} kubernetesRelationshipGuidance={selectedKubernetesRelationshipGuidance}
-                readOnly={!collaborationCanEdit} authorship={collaborationAuthorship} selfId={collaborationClientId} participants={collaborationParticipants}
-              />
-            </div>
-          )}
-
           {(propertiesOpen || architectureValidationOpen) && (
             <div className={`desktop-validation-host ${architectureValidationOpen ? "is-open" : "is-closed"}`}>
               <ArchitectureValidationPanel
