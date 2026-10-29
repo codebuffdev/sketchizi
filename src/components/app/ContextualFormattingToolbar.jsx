@@ -203,6 +203,12 @@ export default function ContextualFormattingToolbar({
       } else if (tool === "autoshape") {
         setCustomToolMode("shape");
         setOpenGroup("stroke");
+      } else if (["note", "sticky-note", "stickynote", "notes"].includes(String(tool || "").toLowerCase())) {
+        // Notes are created through Sketchizi's custom tool event rather than
+        // Excalidraw's native activeTool state, so explicitly enable the same
+        // contextual formatting rail used by text creation.
+        setCustomToolMode("note");
+        setOpenGroup("stroke");
       }
     };
     const onNativeTool = (event) => {
@@ -236,11 +242,12 @@ export default function ContextualFormattingToolbar({
   const appState = apiRef?.current?.getAppState?.() || {};
   const activeToolType = String(appState.activeTool?.type || "").toLowerCase();
   const drawingTool = activeToolType === "freedraw";
-  const textTool = activeToolType === "text";
+  const noteTool = customToolMode === "note" || ["note", "sticky-note", "stickynote", "notes"].includes(activeToolType);
+  const textTool = activeToolType === "text" || noteTool;
   const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
   const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
   const toolMode = drawingTool || textTool || bucketFillTool || drawToShapeTool;
-  const activeToolMode = drawingTool ? "draw" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
+  const activeToolMode = drawingTool ? "draw" : noteTool ? "text" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
