@@ -189,7 +189,13 @@ export default function ContextualFormattingToolbar({
           <div className="format-option-label">{onlyTextSelection ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
             {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyToSelected({ strokeColor: color })} />)}
-            <label className="format-custom-color" title="Choose custom color">
+            <label
+              className="format-custom-color"
+              title="Choose custom color"
+              aria-label="Choose custom color"
+              style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed" }}
+            >
+              <span className="format-custom-color-icon" aria-hidden="true">✎</span>
               <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyToSelected({ strokeColor: event.target.value })} />
             </label>
           </div>
