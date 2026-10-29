@@ -127,7 +127,7 @@ test('contextual toolbar exposes fill, line, roughness and opacity controls on c
   assert.ok(toolbar.includes('<div className="format-option-label format-sub-label">Line style</div>'));
   assert.ok(toolbar.includes('[["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]]'));
   assert.ok(toolbar.includes('["dashed", "Dashed", "— —"]') && toolbar.includes('["dotted", "Dotted", "· · ·"]'));
-  assert.match(toolbar, /"Roughness"/);
+  assert.ok(toolbar.includes("Roughness"));
   assert.match(toolbar, /applyFormatting\(\{ strokeStyle: value \}\)/);
   assert.match(toolbar, /applyFormatting\(\{ roughness: value \}\)/);
   assert.match(toolbar, /applyFormatting\(\{ opacity: Number\(event.target.value\) \}\)/);
