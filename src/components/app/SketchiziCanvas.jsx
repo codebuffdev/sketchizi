@@ -511,7 +511,7 @@ export default function SketchiziCanvas({
       bindToolbarTooltip(button);
 
       const dock = toolbar.getBoundingClientRect();
-      const buttonWidth = 42;
+      const buttonWidth = 148;
       const buttonHeight = 42;
       const gap = 12;
       const vertical = toolbar.dataset.sketchiziOrientation === "vertical";
