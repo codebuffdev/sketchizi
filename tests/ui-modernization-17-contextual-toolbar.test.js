@@ -140,7 +140,7 @@ test('contextual toolbar provides canvas layer ordering actions', () => {
   assert.match(toolbar, /aria-label="Layer order"/);
   assert.match(toolbar, /aria-label="Send selection to back"/);
   assert.match(toolbar, /aria-label="Bring selection to front"/);
-  assert.match(toolbar, /api\.updateScene\(\{ elements: nextElements \}\)/);
+  assert.match(toolbar, /api\.updateScene\(\{ elements: direction === "back" \? \[\.\.\.moving, \.\.\.remaining\] : \[\.\.\.remaining, \.\.\.moving\] \}\)/);
 });
 
 
