@@ -1185,3 +1185,14 @@
   outline: 2px solid var(--ui-accent, #7968ee) !important;
   outline-offset: 2px !important;
 }
+
+
+/*
+ * The floating formatting toolbar is the primary formatting surface.
+ * When a selection exposes it, keep Excalidraw's duplicate appearance sidebar
+ * out of default view. The Sketchizi Properties panel remains available from
+ * the toolbar's More action for non-duplicate and advanced properties.
+ */
+.app:has(.contextual-formatting-toolbar) .excalidraw .App-sidebar {
+  display: none !important;
+}
