@@ -249,6 +249,10 @@ export default function ContextualFormattingToolbar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [apiRef, canvasRootRef, canvasRevision, selectedElements, openGroup],
   );
+  useEffect(() => {
+    if (toolMode && openGroup === null) setOpenGroup("stroke");
+    if (!toolMode && customToolMode) setCustomToolMode(null);
+  }, [toolMode, openGroup, customToolMode]);
   if (!canEdit || (!liveSelection.length && !toolMode) || !position) return null;
 
   const currentStroke = (first?.customData?.iconColor || first?.strokeColor || appState.currentItemStrokeColor || "#2f2f33").toLowerCase();
@@ -295,10 +299,6 @@ export default function ContextualFormattingToolbar({
     api.updateScene({ appState: appStatePatch });
   };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
-  useEffect(() => {
-    if (toolMode && openGroup === null) setOpenGroup("stroke");
-    if (!toolMode && customToolMode) setCustomToolMode(null);
-  }, [toolMode, openGroup, customToolMode]);
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
     if (!api || liveSelection.length === 0) return;
