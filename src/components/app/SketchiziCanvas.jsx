@@ -506,12 +506,63 @@ export default function SketchiziCanvas({
       if (typeof api.setViewport === "function") api.setViewport({ target: elements, fit: "contain" });
       else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
     };
+    const placeScrollBackControl = () => {
+      const toolbar = root.querySelector(".App-toolbar");
+      const buttons = [...root.querySelectorAll("button, [role='button']")];
+      const button = buttons.find((candidate) => {
+        const label = [
+          candidate.getAttribute("aria-label"),
+          candidate.getAttribute("title"),
+          candidate.textContent,
+        ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
+        return /scroll back to content/i.test(label);
+      });
+      if (!button || !toolbar) return;
+      button.classList.add("sketchizi-scroll-back-control");
+      button.dataset.sketchiziTooltip = "Scroll back to content";
+      if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", "Scroll back to content");
+      button.removeAttribute("title");
+      bindToolbarTooltip(button);
+
+      const dock = toolbar.getBoundingClientRect();
+      const buttonWidth = 42;
+      const buttonHeight = 42;
+      const gap = 12;
+      const vertical = toolbar.dataset.sketchiziOrientation === "vertical";
+      const dockSide = toolbar.dataset.sketchiziDockSide;
+      let left;
+      let top;
+      if (vertical) {
+        left = dockSide === "right" ? dock.left - buttonWidth - gap : dock.right + gap;
+        top = dock.top + Math.min(Math.max(0, (dock.height - buttonHeight) / 2), Math.max(0, window.innerHeight - buttonHeight - 8));
+      } else {
+        const right = dock.right + gap;
+        const leftOfDock = dock.left - buttonWidth - gap;
+        if (right + buttonWidth <= window.innerWidth - 8) {
+          left = right;
+          top = dock.top + (dock.height - buttonHeight) / 2;
+        } else if (leftOfDock >= 8) {
+          left = leftOfDock;
+          top = dock.top + (dock.height - buttonHeight) / 2;
+        } else {
+          left = Math.max(8, Math.min(window.innerWidth - buttonWidth - 8, dock.right - buttonWidth));
+          top = dock.bottom + gap;
+          if (top + buttonHeight > window.innerHeight - 8) top = Math.max(8, dock.top - buttonHeight - gap);
+        }
+      }
+      left = Math.max(8, Math.min(window.innerWidth - buttonWidth - 8, left));
+      top = Math.max(8, Math.min(window.innerHeight - buttonHeight - 8, top));
+      button.style.setProperty("position", "fixed", "important");
+      button.style.setProperty("left", `${left}px`, "important");
+      button.style.setProperty("top", `${top}px`, "important");
+      button.style.setProperty("right", "auto", "important");
+      button.style.setProperty("bottom", "auto", "important");
+      button.style.setProperty("z-index", "10020", "important");
+    };
     const suppressNativeScrollBackTooltip = () => {
       document.querySelectorAll('[role="tooltip"]').forEach((tooltip) => {
         if (tooltip.classList.contains("sketchizi-toolbar-tooltip")) return;
         if (!/scroll back to content/i.test(tooltip.textContent || "")) return;
-        // Excalidraw's own tooltip is the duplicate that overlaps the dock.
-        // Keep our body-level tooltip and the trigger's accessible label.
         tooltip.style.setProperty("display", "none", "important");
       });
     };
@@ -519,10 +570,10 @@ export default function SketchiziCanvas({
       if (disposed) return;
       suppressNativeScrollBackTooltip();
       const zoomActions = root.querySelector(".zoom-actions");
-      if (!zoomActions) return;
-      // Excalidraw 0.18 renders ZoomActions as a vertical Stack containing a
-      // horizontal Stack.Row. Insert into that row so the control sits beside
-      // +/-/100% instead of becoming a separate line under the zoom cluster.
+      if (!zoomActions) {
+        placeScrollBackControl();
+        return;
+      }
       const zoomRow = zoomActions.querySelector(":scope > .Stack_horizontal") || zoomActions;
       fitButton = zoomRow.querySelector(":scope > .sketchizi-fit-content-button");
       if (!fitButton) {
@@ -535,22 +586,7 @@ export default function SketchiziCanvas({
         fitButton.addEventListener("click", fitToContent);
         zoomRow.appendChild(fitButton);
       }
-      // Excalidraw's "Scroll back to content" navigation control sits
-      // outside the drawing toolbar, but its native title tooltip can render
-      // on top of the dock. Route it through the same body-level tooltip so
-      // it is placed above the control and never overlaps the dock.
-      root.querySelectorAll("button, [role='button']").forEach((button) => {
-        const label = [
-          button.getAttribute("aria-label"),
-          button.getAttribute("title"),
-          button.textContent,
-        ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
-        if (!/scroll back to content/i.test(label)) return;
-        button.dataset.sketchiziTooltip = "Scroll back to content";
-        if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", "Scroll back to content");
-        button.removeAttribute("title");
-        bindToolbarTooltip(button);
-      });
+      placeScrollBackControl();
 
       const visibleElements = (apiRef?.current?.getSceneElements?.() || []).filter((element) => element && !element.isDeleted && !element.deleted);
       fitButton.disabled = !canEdit || viewModeEnabled || visibleElements.length === 0;
@@ -572,13 +608,22 @@ export default function SketchiziCanvas({
     syncNavigationControls();
     observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
+    const repositionOnPointerMove = () => placeScrollBackControl();
+    window.addEventListener("resize", repositionOnPointerMove);
+    window.addEventListener("pointermove", repositionOnPointerMove, { passive: true });
     const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
     tooltipObserver.observe(document.body, { childList: true, subtree: true });
     suppressNativeScrollBackTooltip();
     return () => {
       disposed = true;
       observer?.disconnect();
+      window.removeEventListener("resize", repositionOnPointerMove);
+      window.removeEventListener("pointermove", repositionOnPointerMove);
       tooltipObserver.disconnect();
+      root.querySelectorAll(".sketchizi-scroll-back-control").forEach((button) => {
+        button.classList.remove("sketchizi-scroll-back-control");
+        ["position", "left", "top", "right", "bottom", "z-index"].forEach((property) => button.style.removeProperty(property));
+      });
       if (fitButton) {
         fitButton.removeEventListener("click", fitToContent);
         fitButton.remove();
