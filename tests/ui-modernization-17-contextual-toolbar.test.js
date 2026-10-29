@@ -7,8 +7,15 @@ const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx',
 const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 
-test('contextual toolbar is rendered only for editable selections', () => {
-  assert.match(toolbar, /if \(!canEdit \|\| liveSelection\.length === 0 \|\| !position\) return null/);
+test('contextual toolbar is rendered for editable selections and supported active drawing tools', () => {
+  assert.match(toolbar, /if \(!canEdit \|\| \(!liveSelection\.length && !toolMode\) \|\| !position\) return null/);
+  assert.match(toolbar, /const drawingTool = activeToolType === "freedraw"/);
+  assert.match(toolbar, /const bucketFillTool = \["bucket-fill", "bucketfill", "fill"\]\.includes\(activeToolType\)/);
+  assert.match(toolbar, /const drawToShapeTool = \["draw-to-shape", "drawtoshape"\]\.includes\(activeToolType\)/);
+  assert.match(toolbar, /api\.updateScene\(\{ appState: appStatePatch \}\)/);
+  assert.match(toolbar, /currentItemStrokeColor = patch\.strokeColor/);
+  assert.match(toolbar, /currentItemBackgroundColor = patch\.backgroundColor/);
+  assert.match(toolbar, /currentItemStrokeWidth = patch\.strokeWidth/);
   assert.doesNotMatch(toolbar, /if \(!canEdit \|\| propertiesOpen \|\|/);
   assert.match(app, /collaborationCanEdit && selectedCount > 0 && propertiesOpen && \(/);
   assert.match(canvas, /propertiesOpen=\{propertiesOpen\}/);
@@ -290,4 +297,14 @@ test('floating background color controls are available for line selections', () 
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   assert.match(toolbar, /!onlyTextSelection && !hasImageSelection && \([\s\S]*?format-option-label">Background/);
   assert.match(toolbar, /Choose custom background color/);
+});
+
+
+test('drawing-tool formatting uses current-item defaults and exposes draw, fill, and draw-to-shape modes', () => {
+  assert.match(toolbar, /const toolMode = liveSelection\.length === 0 && \(drawingTool \|\| bucketFillTool \|\| drawToShapeTool\)/);
+  assert.match(toolbar, /const onlyTextSelection = liveSelection\.length > 0 && liveSelection\.every/);
+  assert.match(toolbar, /GROUPS\.filter\(\(group\) => group\.id === "stroke" \|\| group\.id === "opacity"\)/);
+  assert.match(toolbar, /activeGroup === "stroke" && bucketFillTool/);
+  assert.match(toolbar, /aria-label="Pressure enabled"[\s\S]*?applyFormatting\(\{ pressure: true \}\)/);
+  assert.match(toolbar, /aria-label="Pressure disabled"[\s\S]*?applyFormatting\(\{ pressure: false \}\)/);
 });
