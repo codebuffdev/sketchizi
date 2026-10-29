@@ -237,7 +237,7 @@ export default function ContextualFormattingToolbar({
   const drawingTool = activeToolType === "freedraw";
   const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
   const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
-  const toolMode = liveSelection.length === 0 && (drawingTool || bucketFillTool || drawToShapeTool);
+  const toolMode = drawingTool || bucketFillTool || drawToShapeTool;
   const activeToolMode = drawingTool ? "draw" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
@@ -245,7 +245,7 @@ export default function ContextualFormattingToolbar({
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const onlyTextSelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "text");
   const position = useMemo(
-    () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current, Boolean(openGroup)),
+    () => getSelectionPosition(apiRef?.current, toolMode ? [] : liveSelection, canvasRootRef?.current, Boolean(openGroup)),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [apiRef, canvasRootRef, canvasRevision, selectedElements, openGroup],
@@ -257,13 +257,13 @@ export default function ContextualFormattingToolbar({
   }, [toolMode, customToolMode]);
   if (!canEdit || (!liveSelection.length && !toolMode) || !position) return null;
 
-  const currentStroke = (first?.customData?.iconColor || first?.strokeColor || appState.currentItemStrokeColor || "#2f2f33").toLowerCase();
-  const currentFill = (first?.backgroundColor || appState.currentItemBackgroundColor || "transparent").toLowerCase();
-  const currentStrokeWidth = Number(first?.strokeWidth ?? appState.currentItemStrokeWidth) || 1;
-  const currentFontSize = Number(first?.fontSize ?? appState.currentItemFontSize) || 20;
-  const currentFontFamily = Number(first?.fontFamily ?? appState.currentItemFontFamily) || DEFAULT_FONT_FAMILY_ID;
-  const currentTextAlign = first?.textAlign || appState.currentItemTextAlign || "left";
-  const currentOpacity = Number(first?.opacity ?? appState.currentItemOpacity ?? 100);
+  const currentStroke = (toolMode ? appState.currentItemStrokeColor : (first?.customData?.iconColor || first?.strokeColor))?.toLowerCase() || "#2f2f33";
+  const currentFill = (toolMode ? appState.currentItemBackgroundColor : first?.backgroundColor)?.toLowerCase() || "transparent";
+  const currentStrokeWidth = Number(toolMode ? appState.currentItemStrokeWidth : (first?.strokeWidth ?? appState.currentItemStrokeWidth)) || 1;
+  const currentFontSize = Number(toolMode ? appState.currentItemFontSize : (first?.fontSize ?? appState.currentItemFontSize)) || 20;
+  const currentFontFamily = Number(toolMode ? appState.currentItemFontFamily : (first?.fontFamily ?? appState.currentItemFontFamily)) || DEFAULT_FONT_FAMILY_ID;
+  const currentTextAlign = (toolMode ? appState.currentItemTextAlign : first?.textAlign) || appState.currentItemTextAlign || "left";
+  const currentOpacity = Number(toolMode ? (appState.currentItemOpacity ?? 100) : (first?.opacity ?? appState.currentItemOpacity ?? 100));
   // Mirror the default Properties panel: text-only controls are shown only
   // when the active selection consists entirely of text. Shape, connector,
   // image, and mixed selections keep the shared appearance/layer controls, with
@@ -317,7 +317,7 @@ export default function ContextualFormattingToolbar({
     if (groupId === "stroke") return (
       <>
         <div className="format-option-section">
-          <div className="format-option-label">{onlyTextSelection ? "Text color" : "Stroke color"}</div>
+          <div className="format-option-label">{onlyTextSelection && !toolMode ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
             {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
             <label
@@ -331,7 +331,7 @@ export default function ContextualFormattingToolbar({
             </label>
           </div>
         </div>
-        {!onlyTextSelection && !hasImageSelection && (
+        {(!onlyTextSelection || toolMode) && !hasImageSelection && (
           <div className="format-option-section">
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
