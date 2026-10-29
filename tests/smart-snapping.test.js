@@ -63,3 +63,27 @@ test("ignores deleted elements as snap targets", () => {
   const next = snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 8);
   assert.equal(next, moved);
 });
+
+test("returns horizontal spacing markers for approximately equal gaps", async () => {
+  const { calculateEqualSpacingGuides } = await import("../src/features/canvas/smartSnapping.js");
+  const elements = [el("left", 0, 10), el("moving", 58, 10), el("right", 120, 10)];
+  const guides = calculateEqualSpacingGuides(elements, new Set(["moving"]), 4);
+  assert.equal(guides.length, 2);
+  assert.ok(guides.every((guide) => guide.axis === "x"));
+  assert.deepEqual(guides.map((guide) => guide.gap), [18, 22]);
+});
+
+test("returns vertical spacing markers for approximately equal gaps", async () => {
+  const { calculateEqualSpacingGuides } = await import("../src/features/canvas/smartSnapping.js");
+  const elements = [el("top", 10, 0), el("moving", 10, 58), el("bottom", 10, 120)];
+  const guides = calculateEqualSpacingGuides(elements, new Set(["moving"]), 4);
+  assert.equal(guides.length, 2);
+  assert.ok(guides.every((guide) => guide.axis === "y"));
+  assert.deepEqual(guides.map((guide) => guide.gap), [18, 22]);
+});
+
+test("does not show spacing markers when the gaps are not close to equal", async () => {
+  const { calculateEqualSpacingGuides } = await import("../src/features/canvas/smartSnapping.js");
+  const elements = [el("left", 0, 10), el("moving", 50, 10), el("right", 120, 10)];
+  assert.deepEqual(calculateEqualSpacingGuides(elements, new Set(["moving"]), 4), []);
+});
