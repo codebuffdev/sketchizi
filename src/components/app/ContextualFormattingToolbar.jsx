@@ -230,7 +230,7 @@ export default function ContextualFormattingToolbar({
             </div>
           </div>
         )}
-        {!onlyTextSelection && !hasImageSelection && first?.type === "rectangle" && (
+        {!onlyTextSelection && !hasImageSelection && (first?.type === "rectangle" || first?.type === "diamond") && (
           <div className="format-option-section">
             <div className="format-option-label">Edges</div>
             <div className="format-option-row">
@@ -253,7 +253,7 @@ export default function ContextualFormattingToolbar({
             </div>
           </div>
         )}
-        {!onlyTextSelection && !hasImageSelection && hasLine && (
+        {!onlyTextSelection && !hasImageSelection && (hasLine || hasShape) && (
           <div className="format-option-section">
             <div className="format-option-label">Stroke width</div>
             <div className="format-option-row">
