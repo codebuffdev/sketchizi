@@ -50,8 +50,8 @@ function isNoteFormattingElement(element) {
   // standalone "note" element. Their background and typography must be exposed
   // together in the floating toolbar.
   if (Array.isArray(element?.boundElements) && element.boundElements.some((bound) => String(bound?.type || "").toLowerCase() === "text")) return true;
-  return element?.type !== "text" &&
-    element?.backgroundColor != null &&
+  return element?.backgroundColor != null &&
+    element.backgroundColor !== "transparent" &&
     ["fontFamily", "fontSize", "textAlign", "verticalAlign"].some((key) => key in element);
 }
 
