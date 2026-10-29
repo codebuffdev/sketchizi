@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction, Excalidraw } from "@excalidraw/excalidraw";
 import { snapChangedSceneElements } from "../../features/canvas/gridSnap.js";
+import { snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
@@ -459,14 +460,21 @@ export default function SketchiziCanvas({
 
     const captureBaseline = (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      if (!gridSnappingEnabled || !canEdit || viewModeEnabled || event.button !== 0 || !target?.closest(".layer-canvas")) return;
+      if (!canEdit || viewModeEnabled || event.button !== 0 || !target?.closest(".excalidraw")) return;
+      if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
       const api = apiRef?.current;
       if (!api) return;
       const elements = api.getSceneElements?.() || [];
-      gridSnapBaselineRef.current = new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [element.id, {
-        x: element.x, y: element.y, width: element.width, height: element.height,
-        angle: element.angle, type: element.type,
-      }]));
+      const selectedIds = Object.entries(api.getAppState?.().selectedElementIds || {})
+        .filter(([, selected]) => selected).map(([id]) => id);
+      if (!selectedIds.length) return;
+      gridSnapBaselineRef.current = {
+        baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [element.id, {
+          x: element.x, y: element.y, width: element.width, height: element.height,
+          angle: element.angle, type: element.type,
+        }])),
+        selectedIds: new Set(selectedIds),
+      };
       pointerActive = true;
     };
 
@@ -482,15 +490,24 @@ export default function SketchiziCanvas({
     const finishGesture = () => {
       if (!pointerActive) return;
       pointerActive = false;
-      const baseline = gridSnapBaselineRef.current;
+      const gesture = gridSnapBaselineRef.current;
       gridSnapBaselineRef.current = null;
-      if (!baseline || !gridSnappingEnabled || !canEdit || viewModeEnabled) return;
+      if (!gesture || !canEdit || viewModeEnabled) return;
       firstFrame = requestAnimationFrame(() => {
         secondFrame = requestAnimationFrame(() => {
           const api = apiRef?.current;
           if (!api) return;
           const currentElements = api.getSceneElements?.() || [];
-          const nextElements = snapChangedSceneElements(currentElements, baseline, gridSize);
+          const appState = api.getAppState?.() || {};
+          const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+          const smartSnapped = snapSceneElementsToSmartGuides(
+            currentElements, gesture.baseline, gesture.selectedIds, 8 / zoom,
+          );
+          const nextElements = smartSnapped !== currentElements
+            ? smartSnapped
+            : gridSnappingEnabled
+              ? snapChangedSceneElements(currentElements, gesture.baseline, gridSize)
+              : currentElements;
           if (nextElements !== currentElements) {
             api.updateScene({ elements: nextElements, captureUpdate: CaptureUpdateAction.NEVER });
           }
