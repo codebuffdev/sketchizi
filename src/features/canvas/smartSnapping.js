@@ -114,3 +114,58 @@ export function snapSceneElementsToSmartGuides(elements, baseline, selectedIds, 
   });
   return changed ? next : elements;
 }
+
+/** Return visible gap markers when the moving selection sits between two aligned objects. */
+export function calculateEqualSpacingGuides(elements, selectedIds, tolerance = DEFAULT_SNAP_TOLERANCE) {
+  if (!Array.isArray(elements) || !(selectedIds instanceof Set) || !selectedIds.size) return [];
+  const movingElements = elements.filter((element) => visible(element) && selectedIds.has(element.id));
+  const stationary = elements.filter((element) => visible(element) && !selectedIds.has(element.id));
+  if (!movingElements.length || !stationary.length) return [];
+  const movingBounds = movingElements.map(getBounds);
+  const moving = {
+    left: Math.min(...movingBounds.map((b) => b.left)),
+    right: Math.max(...movingBounds.map((b) => b.right)),
+    top: Math.min(...movingBounds.map((b) => b.top)),
+    bottom: Math.max(...movingBounds.map((b) => b.bottom)),
+  };
+  const fixed = stationary.map((element) => ({ element, ...getBounds(element) }));
+  const guides = [];
+  for (let i = 0; i < fixed.length; i++) for (let j = i + 1; j < fixed.length; j++) {
+    const a = fixed[i]; const b = fixed[j];
+    const left = a.right <= moving.left && b.left >= moving.right ? a : b.right <= moving.left && a.left >= moving.right ? b : null;
+    const right = left === a ? b : left === b ? a : null;
+    if (left && right) {
+      const overlap = Math.min(moving.bottom, left.bottom, right.bottom) - Math.max(moving.top, left.top, right.top);
+      if (overlap > -Math.min(moving.bottom - moving.top, left.height, right.height) * 0.25) {
+        const y = (Math.max(moving.top, left.top, right.top) + Math.min(moving.bottom, left.bottom, right.bottom)) / 2;
+        const leftGap = moving.left - left.right;
+        const rightGap = right.left - moving.right;
+        if (leftGap >= 0 && rightGap >= 0 && Math.abs(leftGap - rightGap) <= tolerance * 2) {
+          guides.push({ axis: "x", position: y, start: left.right, end: moving.left, gap: leftGap });
+          guides.push({ axis: "x", position: y, start: moving.right, end: right.left, gap: rightGap });
+        }
+      }
+    }
+    const top = a.bottom <= moving.top && b.top >= moving.bottom ? a : b.bottom <= moving.top && a.top >= moving.bottom ? b : null;
+    const bottom = top === a ? b : top === b ? a : null;
+    if (top && bottom) {
+      const overlap = Math.min(moving.right, top.right, bottom.right) - Math.max(moving.left, top.left, bottom.left);
+      if (overlap > -Math.min(moving.right - moving.left, top.width, bottom.width) * 0.25) {
+        const x = (Math.max(moving.left, top.left, bottom.left) + Math.min(moving.right, top.right, bottom.right)) / 2;
+        const topGap = moving.top - top.bottom;
+        const bottomGap = bottom.top - moving.bottom;
+        if (topGap >= 0 && bottomGap >= 0 && Math.abs(topGap - bottomGap) <= tolerance * 2) {
+          guides.push({ axis: "y", position: x, start: top.bottom, end: moving.top, gap: topGap });
+          guides.push({ axis: "y", position: x, start: moving.bottom, end: bottom.top, gap: bottomGap });
+        }
+      }
+    }
+  }
+  const seen = new Set();
+  return guides.filter((guide) => {
+    const key = [guide.axis, guide.position.toFixed(2), guide.start.toFixed(2), guide.end.toFixed(2)].join(":");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return guide.end >= guide.start;
+  });
+}
