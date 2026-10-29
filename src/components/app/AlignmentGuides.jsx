@@ -34,13 +34,16 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const elements = api.getSceneElements?.() || [];
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
       const rootRect = root.getBoundingClientRect();
+      const canvasRect = root.querySelector(".layer-canvas")?.getBoundingClientRect() || rootRect;
+      const canvasOffsetX = canvasRect.left - rootRect.left;
+      const canvasOffsetY = canvasRect.top - rootRect.top;
       const tolerance = 9 / zoom;
       const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
       const sceneToViewport = api.sceneCoordsToViewportCoords;
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
           const point = sceneToViewport({ x: axis === "x" ? position : 0, y: axis === "y" ? position : 0 });
-          return axis === "x" ? point.x : point.y;
+          return (axis === "x" ? point.x + canvasOffsetX : point.y + canvasOffsetY);
         }
         const canvas = root.querySelector(".layer-canvas");
         const rect = canvas?.getBoundingClientRect() || rootRect;
