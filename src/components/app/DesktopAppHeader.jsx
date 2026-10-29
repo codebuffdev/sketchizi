@@ -323,7 +323,6 @@ export default function DesktopAppHeader({
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
       </div>
 
-      <div className="desktop-app-header-panel-actions">{children}</div>
 
       {collaborationCreationState === "creating" && (
         <div className="collaboration-header-status creating" role="status" aria-live="polite">
@@ -342,9 +341,6 @@ export default function DesktopAppHeader({
         </div>
       )}
 
-      <div className="desktop-app-header-account-zone">
-        <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
-      </div>
 
       <button
         type="button"
@@ -417,6 +413,10 @@ export default function DesktopAppHeader({
       <div className="desktop-app-header-spacer" />
 
       <div className="desktop-app-header-actions">
+        <div className="desktop-app-header-account-zone">
+          <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
+        </div>
+        <div className="desktop-app-header-panel-actions">{children}</div>
         {moreToolsToggle}
         <button
           type="button"
