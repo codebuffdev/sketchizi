@@ -255,8 +255,6 @@ export default function AuthenticationControl() {
             onClick={() => setProfileMenuOpen((open) => !open)}
           >
             {auth.user?.picture ? <img className="auth-account-avatar" src={auth.user.picture} alt="" referrerPolicy="no-referrer" /> : <span className="auth-account-avatar auth-account-avatar-fallback" aria-hidden="true">{(auth.user?.name || auth.user?.email || "U").slice(0, 1).toUpperCase()}</span>}
-            <span className="auth-account-name">{auth.user?.name || auth.user?.email || "Signed in"}</span>
-            <svg className="auth-account-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
           </button>
           {profileMenuOpen && (
             <div className="auth-account-menu" role="menu" aria-label="Account menu">
