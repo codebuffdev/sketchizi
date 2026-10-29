@@ -321,7 +321,7 @@ test('drawing-tool formatting uses current-item defaults and exposes draw, fill,
 test('note selections expose typography and background controls in the floating toolbar', () => {
   const toolbarSource = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   assert.match(toolbarSource, /function isNoteFormattingElement\(element\)/);
-  assert.match(toolbarSource, /bound\.type\)\.toLowerCase\(\) === "text"/);
+  assert.match(toolbarSource, /bound\\?\\.type \\|\\| ""\\)\\.toLowerCase\\(\\) === "text"/);
   assert.match(toolbarSource, /data\.isNote === true/);
   assert.match(toolbarSource, /const noteSelection = liveSelection\.some\(isNoteFormattingElement\)/);
   assert.match(toolbarSource, /const onlyTextSelection = liveSelection\.length > 0 && liveSelection\.every\(isTextFormattingElement\)/);
@@ -331,4 +331,9 @@ test('note selections expose typography and background controls in the floating 
   assert.match(toolbarSource, /\["middle", "Middle"/);
   assert.match(toolbarSource, /\["bottom", "Bottom"/);
   assert.match(toolbarSource, /currentItemVerticalAlign = patch\.verticalAlign/);
+  assert.match(toolbarSource, /const firstTextFormattingElement =/);
+  assert.match(toolbarSource, /const firstNoteBackgroundElement =/);
+  assert.match(toolbarSource, /hasSeparateNoteText && textOnlyPatch && element\\.type !== "text"/);
+  assert.match(toolbarSource, /hasSeparateNoteText && backgroundOnlyPatch && element\\.type === "text"/);
+  assert.match(toolbarSource, /const selectedIds = new Set\\(noteSelection \\? \\[\\.\\.\\.noteGroupIds\\]/);
 });
