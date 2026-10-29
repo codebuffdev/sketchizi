@@ -237,7 +237,7 @@ test('floating formatting controls follow the selected element type', () => {
 });
 
 
-test('rectangle stroke popover includes edge controls and custom background color', () => {
+test('rectangle and diamond stroke popovers include edge, fill, and custom background controls', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.match(toolbar, /Choose custom background color/);
