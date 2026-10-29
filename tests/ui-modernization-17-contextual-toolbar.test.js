@@ -47,7 +47,10 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.zoom\?\.value/);
   assert.match(toolbar, /appState\.scrollX/);
   assert.match(toolbar, /appState\.scrollY/);
-  assert.match(toolbar, /const barWidth = 48/);
+  assert.match(toolbar, /const rightCandidate = selectionRight \+ gap/);
+  assert.match(toolbar, /const leftCandidate = selectionLeft - railWidth - gap/);
+  assert.match(toolbar, /const selectionCenterY = \(selectionTop \+ selectionBottom\) \/ 2/);
+  assert.match(toolbar, /const rootWidth = root\.clientWidth/);
   assert.match(toolbar, /canvasRevision/);
   assert.match(toolbar, /const popoverSide = left \+ barWidth \+ 340 \+ 16 <= rootWidth/);
 });
