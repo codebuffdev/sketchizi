@@ -34,16 +34,24 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const elements = api.getSceneElements?.() || [];
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
       const rootRect = root.getBoundingClientRect();
-      const canvas = root.querySelector(".layer-canvas");
-      const canvasRect = canvas?.getBoundingClientRect() || rootRect;
-      const tolerance = 7 / zoom;
+      const tolerance = 9 / zoom;
       const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
-      const toLocalX = (sceneX) => canvasRect.left - rootRect.left + (sceneX + (Number(appState.scrollX) || 0)) * zoom + (Number(appState.width) || canvasRect.width) / 2;
-      const toLocalY = (sceneY) => canvasRect.top - rootRect.top + (sceneY + (Number(appState.scrollY) || 0)) * zoom + (Number(appState.height) || canvasRect.height) / 2;
+      const sceneToViewport = api.sceneCoordsToViewportCoords;
+      const toLocal = (axis, position) => {
+        if (typeof sceneToViewport === "function") {
+          const point = sceneToViewport({ x: axis === "x" ? position : 0, y: axis === "y" ? position : 0 });
+          return axis === "x" ? point.x : point.y;
+        }
+        const canvas = root.querySelector(".layer-canvas");
+        const rect = canvas?.getBoundingClientRect() || rootRect;
+        const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
+        const extent = axis === "x" ? (Number(appState.width) || rect.width) : (Number(appState.height) || rect.height);
+        return (axis === "x" ? rect.left - rootRect.left : rect.top - rootRect.top) + (position + offset) * zoom + extent / 2;
+      };
       setGuides(found.map((guide) => ({
         ...guide,
-        screenPosition: guide.axis === "x" ? toLocalX(guide.position) : toLocalY(guide.position),
-      })));
+        screenPosition: toLocal(guide.axis, guide.position),
+      })).filter((guide) => Number.isFinite(guide.screenPosition)));
     };
 
     const scheduleUpdate = () => {
