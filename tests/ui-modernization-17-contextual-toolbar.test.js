@@ -10,6 +10,9 @@ const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8
 test('contextual toolbar is rendered for editable selections and supported active drawing tools', () => {
   assert.match(toolbar, /if \(!canEdit \|\| \(!liveSelection\.length && !toolMode\) \|\| !position\) return null/);
   assert.match(toolbar, /const drawingTool = activeToolType === "freedraw"/);
+  assert.match(toolbar, /const textTool = activeToolType === "text"/);
+  assert.match(toolbar, /activeToolMode === "text" && \["fontFamily", "fontSize", "textAlign"\]\.includes\(group\.id\)/);
+  assert.match(toolbar, /activeToolMode !== "text" && \(!onlyTextSelection \|\| toolMode\)/);
   assert.match(toolbar, /const bucketFillTool = \["bucket-fill", "bucketfill", "fill"\]\.includes\(activeToolType\)/);
   assert.match(toolbar, /const drawToShapeTool = \["draw-to-shape", "drawtoshape"\]\.includes\(activeToolType\)/);
   assert.match(toolbar, /api\.updateScene\(\{ appState: appStatePatch \}\)/);
