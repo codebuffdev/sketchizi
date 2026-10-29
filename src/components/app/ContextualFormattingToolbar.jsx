@@ -297,16 +297,31 @@ export default function ContextualFormattingToolbar({
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const sceneElementsForFormatting = apiRef?.current?.getSceneElements?.() || [];
+  const noteBackgroundColor = (element) =>
+    Boolean(element?.backgroundColor && NOTE_BACKGROUND_COLORS.some(([color]) => color === String(element.backgroundColor).toLowerCase()));
+  const sharesGroupWith = (element, candidate) => {
+    const groups = new Set(element?.groupIds || []);
+    return groups.size > 0 && (candidate?.groupIds || []).some((groupId) => groups.has(groupId));
+  };
   const isBoundTextNote = (element) => {
     if (!element) return false;
     if (element.type === "text" && element.containerId) {
       const container = sceneElementsForFormatting.find((candidate) => candidate.id === element.containerId);
-      return Boolean(container?.backgroundColor && container.backgroundColor !== "transparent");
+      if (container?.backgroundColor && container.backgroundColor !== "transparent") return true;
     }
-    if (element.type !== "text" && element.backgroundColor && element.backgroundColor !== "transparent") {
+    if (element.type === "text") {
+      return sceneElementsForFormatting.some((candidate) =>
+        candidate.type !== "text" &&
+        noteBackgroundColor(candidate) &&
+        sharesGroupWith(element, candidate),
+      );
+    }
+    if (element.backgroundColor && element.backgroundColor !== "transparent") {
       return sceneElementsForFormatting.some((candidate) =>
         candidate.type === "text" &&
-        (candidate.containerId === element.id || (element.boundElements || []).some((bound) => bound.id === candidate.id && String(bound.type || "").toLowerCase() === "text")),
+        (candidate.containerId === element.id ||
+          (element.boundElements || []).some((bound) => bound.id === candidate.id && String(bound.type || "").toLowerCase() === "text") ||
+          (noteBackgroundColor(element) && sharesGroupWith(element, candidate))),
       );
     }
     return false;
@@ -325,6 +340,13 @@ export default function ContextualFormattingToolbar({
       if (String(bound?.type || "").toLowerCase() === "text" && bound.id) noteTextIds.add(bound.id);
     }
     if (element.type === "text" && element.containerId) noteContainerIds.add(element.containerId);
+    if (noteSelection && isNoteSelectionElement(element)) {
+      for (const candidate of sceneElementsForFormatting) {
+        if (!sharesGroupWith(element, candidate)) continue;
+        if (candidate.type === "text") noteTextIds.add(candidate.id);
+        else if (noteBackgroundColor(candidate)) noteContainerIds.add(candidate.id);
+      }
+    }
   }
   for (const element of sceneElementsForFormatting) {
     if (element.type === "text" && (noteContainerIds.has(element.containerId) || noteTextIds.has(element.id))) {
@@ -389,7 +411,8 @@ export default function ContextualFormattingToolbar({
       // visible. Updating these ids directly keeps all floating controls reliable.
       const selectedIds = new Set(liveSelection.map((element) => element.id));
       const patchKeys = Object.keys(patch);
-      const textOnlyPatch = patchKeys.length > 0 && patchKeys.every((key) => ["strokeColor", "fontFamily", "fontSize", "textAlign", "verticalAlign"].includes(key));
+      const textOnlyPatch = patchKeys.length > 0 && patchKeys.every((key) => ["strokeColor", "fontFamily", "fontSize", "textAlign"].includes(key));
+      const containerOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "verticalAlign";
       const backgroundOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "backgroundColor";
       const hasSeparateNoteText = noteSelection && noteContainerIds.size > 0 && noteTextIds.size > 0 && elementsHaveNoteText(sceneElementsForFormatting, noteTextIds);
       const now = Date.now();
@@ -400,6 +423,7 @@ export default function ContextualFormattingToolbar({
         if (!isSelected && !isRelatedNoteElement) return element;
         if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
         if (hasSeparateNoteText && textOnlyPatch && element.type !== "text") return element;
+        if (hasSeparateNoteText && containerOnlyPatch && element.type === "text") return element;
         if (hasSeparateNoteText && backgroundOnlyPatch && element.type === "text") return element;
         return {
           ...element,
