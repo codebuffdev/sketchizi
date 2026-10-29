@@ -30,43 +30,20 @@ function getSelectionPosition(api, elements, root) {
   if (!api || !root || !elements.length) return null;
   const appState = api.getAppState?.();
   if (!appState) return null;
-  const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
-  const sceneBounds = elements.reduce((bounds, element) => {
-    const x = Number(element.x) || 0;
-    const y = Number(element.y) || 0;
-    const width = Number(element.width) || 0;
-    const height = Number(element.height) || 0;
-    bounds.left = Math.min(bounds.left, x, x + width);
-    bounds.top = Math.min(bounds.top, y, y + height);
-    bounds.right = Math.max(bounds.right, x, x + width);
-    bounds.bottom = Math.max(bounds.bottom, y, y + height);
-    return bounds;
-  }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
 
-  if (!Number.isFinite(sceneBounds.left) || !Number.isFinite(sceneBounds.top)) return null;
-  const viewportWidth = Number(appState.width) || root.clientWidth;
-  const viewportHeight = Number(appState.height) || root.clientHeight;
-  const centerX = ((sceneBounds.left + sceneBounds.right) / 2 + (Number(appState.scrollX) || 0)) * zoom + viewportWidth / 2;
-  const topY = (sceneBounds.top + (Number(appState.scrollY) || 0)) * zoom + viewportHeight / 2;
-  const bottomY = (sceneBounds.bottom + (Number(appState.scrollY) || 0)) * zoom + viewportHeight / 2;
-  const rootWidth = root.clientWidth || viewportWidth;
-  const rootHeight = root.clientHeight || viewportHeight;
-  const preferredWidth = Math.max(1, Math.min(520, rootWidth - 16));
-  const left = Math.max(8, Math.min(rootWidth - preferredWidth - 8, centerX - preferredWidth / 2));
-  // Reserve space for Excalidraw's bottom controls and the compact dock.
-  // Prefer below the selection, but flip above it before the toolbar reaches
-  // the dock/scroll-back area. Clamp the final position to the usable canvas.
-  const toolbarHeight = 42;
-  const bottomDockClearance = 88;
-  const usableBottom = Math.max(8, rootHeight - bottomDockClearance);
-  const belowTop = bottomY + 10;
-  const aboveTop = topY - toolbarHeight - 10;
-  const top = belowTop + toolbarHeight <= usableBottom
-    ? belowTop
-    : Math.max(8, aboveTop);
+  // Match the approved Properties reference: a full, vertically stacked
+  // settings card on the right side of the canvas, not a tiny horizontal strip
+  // hovering over the selected object.
+  const rootWidth = root.clientWidth || Number(appState.width) || window.innerWidth;
+  const rootHeight = root.clientHeight || Number(appState.height) || window.innerHeight;
+  const panelWidth = Math.min(360, rootWidth - 24);
+  const left = Math.max(12, rootWidth - panelWidth - 16);
+  const top = 16;
   return {
     left: `${left}px`,
-    top: `${Math.max(8, Math.min(usableBottom - toolbarHeight, top))}px`,
+    top: `${top}px`,
+    "--contextual-panel-max-height": `${Math.max(220, rootHeight - 32)}px`,
+    "--contextual-panel-width": `${panelWidth}px`,
   };
 }
 
