@@ -481,7 +481,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
 
   const startNewConversation = useCallback(async () => {
     if (busy || pendingRequest || !auth.user?.id) return;
-    if (chat.provider === "builtin" && usage && usage.accountRemaining <= 0) {
+    if (chat.provider === "builtin" && usage && !usage.admin && usage.accountRemaining <= 0) {
       setPanelError("The rolling account allowance is exhausted. You can continue when an earlier successful question leaves the 12-hour window.");
       return;
     }
@@ -519,7 +519,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     // Enforce the known built-in quota at the action boundary as well as in the UI.
     // This prevents starter prompts, keyboard submission, or future controls from
     // submitting a request when the account allowance is exhausted.
-    if (chat.provider === "builtin" && usageStatus === "loaded" &&
+    if (chat.provider === "builtin" && usageStatus === "loaded" && !usage?.admin &&
         (usage?.accountRemaining <= 0 || usage?.conversationRemaining <= 0)) {
       setPanelError(usage?.accountRemaining <= 0
         ? "The built-in AI rolling 12-hour account allowance is exhausted. You can use built-in AI again when a slot becomes available."
@@ -1044,7 +1044,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
                   {chat.conversationId && usageStatus === "loading" && <span>Loading usage allowance…</span>}
                   {chat.conversationId && usageStatus === "error" && <><span>Usage allowance unavailable: {usageError || "Could not load usage."}</span><button type="button" onClick={() => refreshUsage(chat.conversationId, auth.user.id)} disabled={busy || !chat.conversationId}>Retry usage</button></>}
                   {chat.conversationId && usageStatus === "idle" && <span>Usage allowance will load when ready.</span>}
-                  {chat.conversationId && usageStatus === "loaded" && usage && <>
+                  {chat.conversationId && usageStatus === "loaded" && usage && (usage.admin ? <span>Admin account · No built-in AI question allowance limits</span> : <>
                     <span>Conversation: <strong>{usage.conversationRemaining ?? "—"}</strong> questions left</span>
                     <span>Rolling 12 hours: <strong>{usage.accountRemaining ?? "—"}</strong> left</span>
                     {usage.accountRemaining <= 0 && <div className="ai-ask-quota-exhausted" role="status">
@@ -1052,7 +1052,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
                       <span>Your 10-question rolling 12-hour account limit has been reached. You still have questions left in this conversation, but the account limit takes priority. You can use built-in AI again when a slot becomes available.</span>
                       {usage.nextAvailableAt && <small>Next question expected to be available: {new Date(usage.nextAvailableAt).toLocaleString()}.</small>}
                     </div>}
-                  </>}
+                  </>)}
                 </div>
               ) : (
                 <div className="ai-ask-byok-settings">
@@ -1070,7 +1070,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               <div className="ai-ask-empty-state">
                 <h3>What would you like to understand?</h3>
                 <p>Each question uses a fresh structured snapshot of the entire current canvas. AI Ask is read-only and never edits your diagram.</p>
-                <div className="ai-ask-starters">{STARTER_PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={() => sendQuestion(prompt)} disabled={busy || Boolean(pendingRequest) || (chat.provider === "builtin" && usageStatus === "loaded" && (usage?.accountRemaining <= 0 || usage?.conversationRemaining <= 0))}>{prompt}</button>)}</div>
+                <div className="ai-ask-starters">{STARTER_PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={() => sendQuestion(prompt)} disabled={busy || Boolean(pendingRequest) || (chat.provider === "builtin" && usageStatus === "loaded" && !usage?.admin && (usage?.accountRemaining <= 0 || usage?.conversationRemaining <= 0))}>{prompt}</button>)}</div>
               </div>
             ) : chat.messages.map((message, index) => (
               <article key={`${message.requestId || message.timestamp || index}-${message.role}-${index}`} className={`ai-ask-message ${message.role}`}>
@@ -1086,14 +1086,14 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             <span>{panelError || (pendingRequest ? "An earlier request has not reached a confirmed final state." : chat.retryAttempt?.outcomeUnknown ? "The previous request's final provider outcome is uncertain." : newAnswerQuestion ? "The previous generation succeeded, but its answer is not retained." : "This question can be retried.")}</span>
             {pendingRequest && auth.status === "authenticated" && <button type="button" onClick={checkPendingRequest} disabled={busy}>Check status</button>}
             {pendingRequest?.sameIdRecoveryAvailable && auth.status === "authenticated" && <button type="button" onClick={() => sendQuestion(pendingRequest.question, { recoveryRequest: pendingRequest })} disabled={busy || (pendingRequest.provider === "byok" && !apiKey.trim())}>Retry with same request ID</button>}
-            {chat.retryAttempt && auth.status === "authenticated" && !(chat.provider === "builtin" && usageStatus === "loaded" && usage?.accountRemaining <= 0) && <button type="button" onClick={() => sendQuestion(chat.retryAttempt.question, { retryAttempt: chat.retryAttempt })} disabled={busy || !chat.conversationId || (chat.provider === "byok" && (!keyApplied || !apiKey.trim()))}>{chat.retryAttempt.outcomeUnknown ? "Generate new attempt" : chat.retryAttempt.reuseRequestId ? "Retry request" : "Retry question"}</button>}
-            {newAnswerQuestion && auth.status === "authenticated" && !(chat.provider === "builtin" && usageStatus === "loaded" && usage?.accountRemaining <= 0) && <button type="button" onClick={() => sendQuestion(newAnswerQuestion)} disabled={busy || Boolean(pendingRequest) || (chat.provider === "byok" && (!keyApplied || !apiKey.trim()))}>Generate a new answer</button>}
+            {chat.retryAttempt && auth.status === "authenticated" && !(chat.provider === "builtin" && usageStatus === "loaded" && !usage?.admin && usage?.accountRemaining <= 0) && <button type="button" onClick={() => sendQuestion(chat.retryAttempt.question, { retryAttempt: chat.retryAttempt })} disabled={busy || !chat.conversationId || (chat.provider === "byok" && (!keyApplied || !apiKey.trim()))}>{chat.retryAttempt.outcomeUnknown ? "Generate new attempt" : chat.retryAttempt.reuseRequestId ? "Retry request" : "Retry question"}</button>}
+            {newAnswerQuestion && auth.status === "authenticated" && !(chat.provider === "builtin" && usageStatus === "loaded" && !usage?.admin && usage?.accountRemaining <= 0) && <button type="button" onClick={() => sendQuestion(newAnswerQuestion)} disabled={busy || Boolean(pendingRequest) || (chat.provider === "byok" && (!keyApplied || !apiKey.trim()))}>Generate a new answer</button>}
             <button type="button" onClick={() => setPanelError("")} aria-label="Dismiss error">×</button>
           </div>}
           <form className="ai-ask-composer" onSubmit={(event) => { event.preventDefault(); sendQuestion(); }}>
             <label className="ai-ask-sr-only" htmlFor="ai-ask-question">Ask a question about your diagram</label>
-            <textarea id="ai-ask-question" value={chat.draft} onChange={(event) => updateChat((current) => ({ ...current, draft: event.target.value.slice(0, 4000) }))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(); } }} placeholder="Ask about your diagram…" rows={3} maxLength={4000} disabled={busy || Boolean(pendingRequest) || !chat.conversationId || (chat.provider === "builtin" && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))} />
-            <div className="ai-ask-composer-footer"><span>Enter to send · Shift+Enter for a new line</span><button className="ai-ask-primary" type="submit" disabled={busy || Boolean(pendingRequest) || !chat.draft.trim() || !chat.conversationId || (chat.provider === "builtin" && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))}> {busy ? "Thinking…" : "Ask"} </button></div>
+            <textarea id="ai-ask-question" value={chat.draft} onChange={(event) => updateChat((current) => ({ ...current, draft: event.target.value.slice(0, 4000) }))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(); } }} placeholder="Ask about your diagram…" rows={3} maxLength={4000} disabled={busy || Boolean(pendingRequest) || !chat.conversationId || (chat.provider === "builtin" && !usage?.admin && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))} />
+            <div className="ai-ask-composer-footer"><span>Enter to send · Shift+Enter for a new line</span><button className="ai-ask-primary" type="submit" disabled={busy || Boolean(pendingRequest) || !chat.draft.trim() || !chat.conversationId || (chat.provider === "builtin" && !usage?.admin && (usage?.conversationRemaining <= 0 || usage?.accountRemaining <= 0))}> {busy ? "Thinking…" : "Ask"} </button></div>
           </form>
           <div className="ai-ask-privacy-note">Diagram content and recent chat are sent to {chat.provider === "byok" ? "Gemini using your key" : "Sketchizi AI"}. The AI service stores usage metadata, not prompts, responses, or diagram snapshots.</div>
         </>
