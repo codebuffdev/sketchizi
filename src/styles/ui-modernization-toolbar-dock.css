@@ -1196,3 +1196,122 @@
 .app:has(.contextual-formatting-toolbar) .excalidraw .App-sidebar {
   display: none !important;
 }
+
+
+/*
+ * Full-panel layout overrides. Keep these after the legacy horizontal-dock
+ * rules above: this surface is now a vertical properties card, not a toolbar.
+ */
+.app .contextual-formatting-toolbar {
+  position: fixed !important;
+  inset: 72px 20px auto auto !important;
+  z-index: 10030 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  width: min(420px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  max-width: min(420px, calc(100vw - 32px)) !important;
+  max-height: calc(100vh - 88px) !important;
+  padding: 16px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  flex-wrap: nowrap !important;
+  border: 1px solid var(--ui-border, #373b49) !important;
+  border-radius: 14px !important;
+  background: var(--ui-surface-solid, #1d202a) !important;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 35%) !important;
+  transform: none !important;
+}
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 0 0 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--ui-border-soft, #343846) !important;
+  overflow: visible !important;
+}
+.app .contextual-formatting-toolbar .contextual-formatting-group::before {
+  content: attr(aria-label) !important;
+  display: block !important;
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  margin: 0 0 2px !important;
+  color: var(--ui-text, #e7e9f0) !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  line-height: 1.4 !important;
+  text-transform: none !important;
+}
+.app .contextual-formatting-toolbar .contextual-formatting-group:last-child {
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+.app .contextual-formatting-toolbar .contextual-color-swatch,
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  flex: 0 0 28px !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+}
+.app .contextual-formatting-toolbar .contextual-opacity {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  display: grid !important;
+  grid-template-columns: auto minmax(60px, 1fr) auto !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+.app .contextual-formatting-toolbar .contextual-opacity input[type="range"] {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+.app .contextual-formatting-toolbar .contextual-custom-color-group {
+  flex-wrap: nowrap !important;
+}
+.app .contextual-formatting-toolbar .contextual-hex-input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+.app:has(.contextual-formatting-toolbar) .desktop-context-region .desktop-properties-host {
+  display: none !important;
+}
+.app:has(.contextual-formatting-toolbar) .desktop-context-region.properties-state-open {
+  display: none !important;
+}
+.app.theme-light .contextual-formatting-toolbar {
+  background: #fff !important;
+  color: #292d36 !important;
+  border-color: #dfe3ec !important;
+  box-shadow: 0 12px 32px rgb(26 31 48 / 14%) !important;
+}
+.app.theme-light .contextual-formatting-toolbar .contextual-formatting-group {
+  border-bottom-color: #e6e8ef !important;
+}
+.app.theme-light .contextual-formatting-toolbar .contextual-formatting-group::before {
+  color: #292d36 !important;
+}
+@media (max-width: 600px) {
+  .app .contextual-formatting-toolbar {
+    inset: 68px 8px auto auto !important;
+    width: min(420px, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 76px) !important;
+    padding: 12px !important;
+  }
+}
