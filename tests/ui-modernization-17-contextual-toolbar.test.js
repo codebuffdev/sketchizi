@@ -19,7 +19,7 @@ test('contextual toolbar is rendered for editable selections and supported activ
   assert.match(toolbar, /currentItemStrokeColor = patch\.strokeColor/);
   assert.match(toolbar, /currentItemBackgroundColor = patch\.backgroundColor/);
   assert.match(toolbar, /currentItemStrokeWidth = patch\.strokeWidth/);
-  assert.ok(toolbarSource.includes('const selectedIds = new Set(noteSelection ? [...noteGroupIds]'));
+  assert.ok(toolbar.includes('const selectedIds = new Set(noteSelection ? [...noteGroupIds]'));
   assert.match(toolbar, /api\.updateScene\(\{ elements: updatedElements, captureUpdate: CaptureUpdateAction\.IMMEDIATELY \}\)/);
   assert.match(toolbar, /version: \(Number\(element\.version\) \|\| 0\) \+ 1/);
   assert.doesNotMatch(toolbar, /if \(!canEdit \|\| propertiesOpen \|\|/);
@@ -47,10 +47,10 @@ test('More restores the current selection before opening Properties', () => {
 });
 
 test('contextual controls use existing selection update and properties-panel callbacks', () => {
-  assert.match(toolbar, /applyToSelected\(\{ strokeColor: color \}\)/);
-  assert.match(toolbar, /applyToSelected\(\{ backgroundColor: color \}\)/);
-  assert.match(toolbar, /applyToSelected\(\{ strokeWidth: width \}\)/);
-  assert.match(toolbar, /applyToSelected\(\{ fontSize:/);
+  assert.match(toolbar, /applyFormatting\(\{ strokeColor: color \}\)/);
+  assert.match(toolbar, /applyFormatting\(\{ backgroundColor: color \}\)/);
+  assert.match(toolbar, /applyFormatting\(\{ strokeWidth: width \}\)/);
+  assert.match(toolbar, /applyFormatting\(\{ fontSize:/);
   assert.match(toolbar, /onClick=\{onOpenProperties\}/);
   assert.match(app, /applyToSelected=\{applyToSelected\}/);
   assert.match(app, /onOpenProperties=\{\(\) => \{[\s\S]*?openPanel\("properties"\);[\s\S]*?\}\}/);
@@ -65,7 +65,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /const selectionCenterY = \(selectionTop \+ selectionBottom\) \/ 2/);
   assert.match(toolbar, /const rootWidth = root\.clientWidth/);
   assert.match(toolbar, /canvasRevision/);
-  assert.match(toolbar, /const popoverSide = left \+ barWidth \+ 340 \+ 16 <= rootWidth/);
+  assert.match(toolbar, /const popoverSide = left \+ railWidth \+ 320 \+ 16 <= rootWidth/);
 });
 
 test('contextual toolbar has light, dark, responsive, and focus-visible styling', () => {
@@ -128,9 +128,9 @@ test('contextual toolbar exposes fill, line, roughness and opacity controls on c
   assert.match(toolbar, /"Fill style"/);
   assert.match(toolbar, /"Line style"/);
   assert.match(toolbar, /"Roughness"/);
-  assert.match(toolbar, /applyToSelected\(\{ strokeStyle: value \}\)/);
-  assert.match(toolbar, /applyToSelected\(\{ roughness: value \}\)/);
-  assert.match(toolbar, /applyToSelected\(\{ opacity: Number\(event.target.value\) \}\)/);
+  assert.match(toolbar, /applyFormatting\(\{ strokeStyle: value \}\)/);
+  assert.match(toolbar, /applyFormatting\(\{ roughness: value \}\)/);
+  assert.match(toolbar, /applyFormatting\(\{ opacity: Number\(event.target.value\) \}\)/);
   assert.match(dockCss, /\.contextual-formatting-toolbar[\s\S]*?max-width: min\(760px, calc\(100vw - 20px\)\)/);
 });
 
@@ -156,8 +156,8 @@ test('scroll-back-to-content control is offset above the bottom dock', () => {
 test('contextual toolbar stays above bottom dock and keeps frameless high-contrast controls', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
-  assert.match(toolbar, /const barWidth = 48/);
-  assert.match(toolbar, /const popoverSide = left \+ barWidth \+ 340 \+ 16 <= rootWidth/);
+  assert.match(toolbar, /const railWidth = 44/);
+  assert.match(toolbar, /const popoverSide = left \+ railWidth \+ 320 \+ 16 <= rootWidth/);
   const frameless = dockCss;
   assert.match(frameless, /background: transparent !important/);
   assert.match(frameless, /border: 0 !important/);
@@ -183,7 +183,7 @@ test('contextual toolbar offers a native custom stroke and text color picker', (
   assert.match(toolbar, /className="format-option-section"/);
   assert.match(toolbar, /type="color"/);
   assert.match(toolbar, /aria-label="Choose custom color"/);
-  assert.match(toolbar, /applyToSelected\(\{ strokeColor: event\.target\.value \}\)/);
+  assert.match(toolbar, /applyFormatting\(\{ strokeColor: event\.target\.value \}\)/);
   assert.match(dockCss, /\\.format-custom-color input/);
 });
 
@@ -191,7 +191,7 @@ test('contextual toolbar offers a native custom stroke and text color picker', (
 test('contextual toolbar clamps to viewport and scrolls its controls on narrow screens', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
-  assert.match(toolbar, /const barWidth = 48/);
+  assert.match(toolbar, /const railWidth = 44/);
   const rules = dockCss.slice(dockCss.lastIndexOf('/* Icon-triggered formatting popovers'));
   assert.match(rules, /width: min\\(320px, calc\\(100vw - 72px\\)\\)/);
   assert.match(rules, /overflow: auto/);
@@ -206,7 +206,7 @@ test('formatting controls are grouped behind compact icon buttons with adjacent 
   assert.match(toolbar, /className=\{\`format-options-popover side-\$\{position\["--format-popover-side"\]\}\`\}/);
   assert.match(toolbar, /label: "Font family"/);
   assert.match(toolbar, /label: "Font size"/);
-  assert.match(toolbar, /Text alignment/);
+  assert.match(toolbar, /Horizontal align/);
   assert.match(toolbar, /aria-label="Opacity"/);
   assert.match(toolbar, /aria-label="Layer order"/);
   assert.match(toolbar, /event\.key === "Escape"/);
@@ -242,7 +242,7 @@ test('custom stroke color picker is visible and remains keyboard-accessible', ()
 
 test('floating formatting controls follow the selected element type', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
-  assert.match(toolbar, /const visibleGroups = GROUPS\.filter\(\(group\) => \{/);
+  assert.match(toolbar, /const visibleGroups = toolMode[\s\S]*?GROUPS\.filter\(\(group\) => group\.id === "stroke" \|\| group\.id === "opacity"/);
   assert.match(toolbar, /return onlyTextSelection;/);
   assert.match(toolbar, /if \(group\.id === "fontFamily" \|\| group\.id === "fontSize" \|\| group\.id === "textAlign"\)/);
   assert.match(toolbar, /onClick=\{\(\) => setOpenGroup\(\(current\) => current === group\.id \? null : group\.id\)\}/);
@@ -254,7 +254,7 @@ test('rectangle and diamond stroke popovers include edge, fill, and custom backg
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.match(toolbar, /Choose custom background color/);
-  assert.match(toolbar, /onChange=\{\(event\) => applyToSelected\(\{ backgroundColor: event\.target\.value \}\)\}/);
+  assert.match(toolbar, /onChange=\{\(event\) => applyFormatting\(\{ backgroundColor: event\.target\.value \}\)\}/);
   assert.match(toolbar, /first\\?\\.type === "rectangle" \\|\\| first\\?\\.type === "diamond"[\\s\\S]*?Edges[\\s\\S]*?Square edges[\\s\\S]*?roundness: null[\\s\\S]*?Rounded edges[\\s\\S]*?roundness: \\{ type: 3 \\}/);
   assert.match(toolbar, /\\(hasLine \\|\\| hasShape\\)/);
   assert.match(styles, /\.format-edge-square/);
