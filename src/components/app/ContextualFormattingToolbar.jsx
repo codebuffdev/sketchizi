@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 
 const STROKE_COLORS = [
@@ -95,6 +95,22 @@ export default function ContextualFormattingToolbar({
   canEdit = true,
 }) {
   const [openGroup, setOpenGroup] = useState(null);
+  const toolbarRef = useRef(null);
+  useEffect(() => {
+    if (!openGroup) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpenGroup(null);
+    };
+    const onPointerDown = (event) => {
+      if (!toolbarRef.current?.contains(event.target)) setOpenGroup(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [openGroup]);
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
   const first = liveSelection[0];
   const elementTypes = liveSelection.map((element) => element.type);
@@ -228,6 +244,7 @@ export default function ContextualFormattingToolbar({
 
   return (
     <div
+      ref={toolbarRef}
       className="contextual-formatting-toolbar"
       role="toolbar"
       aria-label="Selected object formatting"
