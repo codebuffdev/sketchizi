@@ -17,12 +17,9 @@ export default function SketchiziCanvas({
   gridVisible = false, gridSize = 20, gridSnappingEnabled = false,
 }) {
   const canvasRootRef = useRef(null);
-  const fitContentButtonRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
   const gridSnapBaselineRef = useRef(null);
   const handleSceneChange = useCallback((elements, appState, files) => {
-    const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
-    if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
     setCanvasRevision((revision) => revision + 1);
     handleChange?.(elements, appState, files);
   }, [canEdit, handleChange, viewModeEnabled]);
@@ -467,73 +464,13 @@ export default function SketchiziCanvas({
     };
   }, [apiRef, canEdit, gridSize, gridSnappingEnabled, viewModeEnabled]);
 
-  // Add one small Fit-to-content control to Excalidraw's native zoom cluster.
-  // Native zoom, undo, and redo controls remain owned by Excalidraw; this
-  // button simply delegates to the same viewport API used by Sketchizi's F key.
+  // Preserve accessible labels for native zoom and history controls, while
+  // removing the redundant fit-to-content button and Excalidraw's scroll-back
+  // control from the navigation area.
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root) return undefined;
-    let disposed = false;
-    let observer;
-    let fitButton = null;
-    const fitToContent = () => {
-      const api = apiRef?.current;
-      if (!api) return;
-      const elements = (api.getSceneElements?.() || []).filter((element) => element && !element.isDeleted && !element.deleted);
-      if (!elements.length) return;
-      if (typeof api.setViewport === "function") api.setViewport({ target: elements, fit: "contain" });
-      else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
-    };
-    const suppressNativeScrollBackTooltip = () => {
-      document.querySelectorAll('[role="tooltip"]').forEach((tooltip) => {
-        if (tooltip.classList.contains("sketchizi-toolbar-tooltip")) return;
-        if (!/scroll back to content/i.test(tooltip.textContent || "")) return;
-        // Excalidraw's own tooltip is the duplicate that overlaps the dock.
-        // Keep our body-level tooltip and the trigger's accessible label.
-        tooltip.style.setProperty("display", "none", "important");
-      });
-    };
     const syncNavigationControls = () => {
-      if (disposed) return;
-      suppressNativeScrollBackTooltip();
-      const zoomActions = root.querySelector(".zoom-actions");
-      if (!zoomActions) return;
-      // Excalidraw 0.18 renders ZoomActions as a vertical Stack containing a
-      // horizontal Stack.Row. Insert into that row so the control sits beside
-      // +/-/100% instead of becoming a separate line under the zoom cluster.
-      const zoomRow = zoomActions.querySelector(":scope > .Stack_horizontal") || zoomActions;
-      fitButton = zoomRow.querySelector(":scope > .sketchizi-fit-content-button");
-      if (!fitButton) {
-        fitButton = document.createElement("button");
-        fitButton.type = "button";
-        fitButton.className = "sketchizi-fit-content-button";
-        fitButton.setAttribute("aria-label", "Fit diagram to viewport");
-        fitButton.title = "Fit to content (F)";
-        fitButton.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H3v4M3 3l5 5M13 3h4v4M17 3l-5 5M7 17H3v-4M3 17l5-5M13 17h4v-4M17 17l-5-5"/></svg>';
-        fitButton.addEventListener("click", fitToContent);
-        zoomRow.appendChild(fitButton);
-      }
-      // Excalidraw's "Scroll back to content" navigation control sits
-      // outside the drawing toolbar, but its native title tooltip can render
-      // on top of the dock. Route it through the same body-level tooltip so
-      // it is placed above the control and never overlaps the dock.
-      root.querySelectorAll("button, [role='button']").forEach((button) => {
-        const label = [
-          button.getAttribute("aria-label"),
-          button.getAttribute("title"),
-          button.textContent,
-        ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
-        if (!/scroll back to content/i.test(label)) return;
-        button.dataset.sketchiziTooltip = "Scroll back to content";
-        if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", "Scroll back to content");
-        button.removeAttribute("title");
-        bindToolbarTooltip(button);
-      });
-
-      const visibleElements = (apiRef?.current?.getSceneElements?.() || []).filter((element) => element && !element.isDeleted && !element.deleted);
-      fitButton.disabled = !canEdit || viewModeEnabled || visibleElements.length === 0;
-      fitContentButtonRef.current = fitButton;
-
       const nativeTitles = [
         [".zoom-out", "Zoom out"],
         [".zoom-in", "Zoom in"],
@@ -546,24 +483,21 @@ export default function SketchiziCanvas({
           if (!button.getAttribute("title")) button.setAttribute("title", title);
         });
       });
+      root.querySelectorAll("button, [role='button']").forEach((button) => {
+        const label = [
+          button.getAttribute("aria-label"),
+          button.getAttribute("title"),
+          button.textContent,
+        ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
+        if (/scroll back to content/i.test(label)) button.remove();
+      });
+      root.querySelectorAll(".sketchizi-fit-content-button").forEach((button) => button.remove());
     };
     syncNavigationControls();
-    observer = new MutationObserver(syncNavigationControls);
+    const observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
-    const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
-    tooltipObserver.observe(document.body, { childList: true, subtree: true });
-    suppressNativeScrollBackTooltip();
-    return () => {
-      disposed = true;
-      observer?.disconnect();
-      tooltipObserver.disconnect();
-      if (fitButton) {
-        fitButton.removeEventListener("click", fitToContent);
-        fitButton.remove();
-      }
-      if (fitContentButtonRef.current === fitButton) fitContentButtonRef.current = null;
-    };
-  }, [apiRef, canEdit, viewModeEnabled]);
+    return () => observer.disconnect();
+  }, []);
 
   const updateCursorFromPointer = (event) => {
     const target = event.target;
