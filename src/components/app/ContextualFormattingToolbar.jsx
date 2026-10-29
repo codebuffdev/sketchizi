@@ -236,10 +236,11 @@ export default function ContextualFormattingToolbar({
   const appState = apiRef?.current?.getAppState?.() || {};
   const activeToolType = String(appState.activeTool?.type || "").toLowerCase();
   const drawingTool = activeToolType === "freedraw";
+  const textTool = activeToolType === "text";
   const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
   const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
-  const toolMode = drawingTool || bucketFillTool || drawToShapeTool;
-  const activeToolMode = drawingTool ? "draw" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
+  const toolMode = drawingTool || textTool || bucketFillTool || drawToShapeTool;
+  const activeToolMode = drawingTool ? "draw" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
@@ -270,7 +271,7 @@ export default function ContextualFormattingToolbar({
   // image, and mixed selections keep the shared appearance/layer controls, with
   // shape- and line-specific options rendered inside the Stroke popover.
   const visibleGroups = toolMode
-    ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity")
+    ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity" || (activeToolMode === "text" && ["fontFamily", "fontSize", "textAlign"].includes(group.id)))
     : GROUPS.filter((group) => {
       if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") {
         return onlyTextSelection;
@@ -338,7 +339,7 @@ export default function ContextualFormattingToolbar({
     if (groupId === "stroke") return (
       <>
         <div className="format-option-section">
-          <div className="format-option-label">{onlyTextSelection && !toolMode ? "Text color" : "Stroke color"}</div>
+          <div className="format-option-label">{(onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
             {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
             <label
@@ -352,7 +353,7 @@ export default function ContextualFormattingToolbar({
             </label>
           </div>
         </div>
-        {(!onlyTextSelection || toolMode) && !hasImageSelection && (
+        {activeToolMode !== "text" && (!onlyTextSelection || toolMode) && !hasImageSelection && (
           <div className="format-option-section">
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
@@ -397,7 +398,7 @@ export default function ContextualFormattingToolbar({
             </div>
           </div>
         )}
-        {(toolMode || (!onlyTextSelection && !hasImageSelection && (hasLine || hasShape))) && (
+        {activeToolMode !== "text" && (toolMode || (!onlyTextSelection && !hasImageSelection && (hasLine || hasShape))) && (
           <div className="format-option-section">
             <div className="format-option-label">Stroke width</div>
             <div className="format-option-row">
