@@ -337,6 +337,10 @@ test('note selections expose typography and background controls in the floating 
   assert.match(toolbarSource, /const firstNoteBackgroundElement =/);
   assert.match(toolbarSource, /hasSeparateNoteText && textOnlyPatch && element\.type !== "text"/);
   assert.match(toolbarSource, /hasSeparateNoteText && backgroundOnlyPatch && element\.type === "text"/);
+  assert.match(toolbarSource, /const sharesGroupWith = \(element, candidate\) =>/);
+  assert.match(toolbarSource, /noteBackgroundColor\(candidate\) &&\s*sharesGroupWith\(element, candidate\)/);
+  assert.match(toolbarSource, /const containerOnlyPatch = patchKeys\.length === 1 && patchKeys\[0\] === "verticalAlign"/);
+  assert.match(toolbarSource, /hasSeparateNoteText && containerOnlyPatch && element\.type === "text"/);
 });
 
 
