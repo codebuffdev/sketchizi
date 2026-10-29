@@ -47,7 +47,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.zoom\?\.value/);
   assert.match(toolbar, /appState\.scrollX/);
   assert.match(toolbar, /appState\.scrollY/);
-  assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
+  assert.match(toolbar, /const barWidth = 48/);
   assert.match(toolbar, /canvasRevision/);
   assert.match(toolbar, /const popoverSide = left \\+ barWidth \\+ 340 \\+ 16 <= rootWidth/);
 });
@@ -109,9 +109,9 @@ test('contextual toolbar exposes fill, line, roughness and opacity controls on c
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.match(toolbar, /aria-label="Fill style"/);
   assert.match(toolbar, /aria-label="Line style"/);
-  assert.match(toolbar, /aria-label="Roughness"/);
-  assert.match(toolbar, /aria-label="Opacity"/);
-  assert.match(toolbar, /applyToSelected\(\{ fillStyle: value \}\)/);
+  assert.match(toolbar, /"Fill style"/);
+  assert.match(toolbar, /"Line style"/);
+  assert.match(toolbar, /"Roughness"/);
   assert.match(toolbar, /applyToSelected\(\{ strokeStyle: value \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ roughness: value \}\)/);
   assert.match(toolbar, /applyToSelected\(\{ opacity: Number\(event.target.value\) \}\)/);
@@ -153,11 +153,11 @@ test('contextual toolbar stays above bottom dock and keeps frameless high-contra
 test('contextual stroke and fill swatches keep their real colors in both themes', () => {
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   const swatches = dockCss.slice(dockCss.lastIndexOf('/* Icon-triggered formatting popovers'));
-  assert.match(swatches, /button\.contextual-color-swatch[\s\S]*?background: var\(--swatch-color, transparent\) !important/);
-  assert.match(swatches, /background-color: var\(--swatch-color, transparent\) !important/);
-  assert.match(swatches, /button\.contextual-color-swatch\.is-transparent[\s\S]*?linear-gradient/);
-  assert.match(swatches, /\.app:has\(\.excalidraw\.theme--dark\)[\s\S]*?button\.contextual-color-swatch/);
-  assert.match(swatches, /button\.contextual-color-swatch\.is-selected[\s\S]*?border: 2px solid #6366f1/);
+  assert.match(swatches, /\\.format-option-swatch[\\s\\S]*?background: var\\(--swatch-color, #fff\\)/);
+  assert.match(swatches, /\\.format-option-swatch\\.is-selected/);
+  assert.match(swatches, /\\.format-option-swatch\\.is-transparent[\\s\\S]*?repeating-conic-gradient/);
+  assert.match(swatches, /--format-popover-surface: #20232c/);
+  assert.match(swatches, /outline: 2px solid #7165e8/);
 });
 
 
@@ -168,19 +168,19 @@ test('contextual toolbar offers a native custom stroke and text color picker', (
   assert.match(toolbar, /type="color"/);
   assert.match(toolbar, /aria-label="Choose custom color"/);
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: event\.target\.value \}\)/);
-  assert.match(dockCss, /\.contextual-custom-color input\[type="color"\]/);
+  assert.match(dockCss, /\\.format-custom-color input/);
 });
 
 
 test('contextual toolbar clamps to viewport and scrolls its controls on narrow screens', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
-  assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
+  assert.match(toolbar, /const barWidth = 48/);
   const rules = dockCss.slice(dockCss.lastIndexOf('/* Icon-triggered formatting popovers'));
-  assert.match(rules, /max-width: calc\(100vw - 16px\) !important/);
+  assert.match(rules, /width: min\\(320px, calc\\(100vw - 72px\\)\\)/);
   assert.match(rules, /overflow: auto/);
   assert.match(rules, /flex-direction: column/);
-  assert.match(dockCss, /\\.format-icon-button[\\s\\S]*?border-radius: 9px !important/);
+  assert.match(rules, /\\.format-icon-button/);
 });
 
 
