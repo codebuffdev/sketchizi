@@ -305,6 +305,8 @@ test('drawing-tool formatting uses current-item defaults and exposes draw, fill,
   assert.match(toolbar, /const onlyTextSelection = liveSelection\.length > 0 && liveSelection\.every/);
   assert.match(toolbar, /GROUPS\.filter\(\(group\) => group\.id === "stroke" \|\| group\.id === "opacity"\)/);
   assert.match(toolbar, /activeGroup === "stroke" && bucketFillTool/);
+  assert.match(toolbar, /window\.addEventListener\("sketchizi:activate-tool", onCustomTool\)/);
+  assert.match(toolbar, /tool === "bucketfill"[\s\S]*?setCustomToolMode\("fill"\)[\s\S]*?tool === "autoshape"[\s\S]*?setCustomToolMode\("shape"\)/);
   assert.match(toolbar, /aria-label="Pressure enabled"[\s\S]*?applyFormatting\(\{ pressure: true \}\)/);
   assert.match(toolbar, /aria-label="Pressure disabled"[\s\S]*?applyFormatting\(\{ pressure: false \}\)/);
 });
