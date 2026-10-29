@@ -267,6 +267,36 @@ export default function ContextualFormattingToolbar({
             <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.strokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.strokeStyle === value} onClick={() => applyToSelected({ strokeStyle: value })}>{glyph}</button>)}</div>
             <div className="format-option-label format-sub-label">Roughness</div>
             <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} onClick={() => applyToSelected({ roughness: value })}>{label}</button>)}</div>
+            {first?.type === "arrow" && (
+              <>
+                <div className="format-option-label format-sub-label">Arrow type</div>
+                <div className="format-option-row">
+                  <button type="button" className={`format-option-button${!first?.elbowed ? " is-selected" : ""}`} aria-label="Straight arrow" aria-pressed={!first?.elbowed} onClick={() => applyToSelected({ elbowed: false })}>↗</button>
+                  <button type="button" className={`format-option-button${first?.elbowed ? " is-selected" : ""}`} aria-label="Elbow arrow" aria-pressed={Boolean(first?.elbowed)} onClick={() => applyToSelected({ elbowed: true })}>⌞</button>
+                </div>
+                <div className="format-option-label format-sub-label">Arrowheads</div>
+                <div className="format-option-row format-arrowhead-row">
+                  <label className="format-arrowhead-control">
+                    <span>Start</span>
+                    <select aria-label="Start arrowhead" value={first?.startArrowhead || "none"} onChange={(event) => applyToSelected({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                      <option value="none">None</option>
+                      <option value="arrow">Arrow</option>
+                      <option value="bar">Bar</option>
+                      <option value="dot">Dot</option>
+                    </select>
+                  </label>
+                  <label className="format-arrowhead-control">
+                    <span>End</span>
+                    <select aria-label="End arrowhead" value={first?.endArrowhead || "none"} onChange={(event) => applyToSelected({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                      <option value="none">None</option>
+                      <option value="arrow">Arrow</option>
+                      <option value="bar">Bar</option>
+                      <option value="dot">Dot</option>
+                    </select>
+                  </label>
+                </div>
+              </>
+            )}
           </div>
         )}
       </>
