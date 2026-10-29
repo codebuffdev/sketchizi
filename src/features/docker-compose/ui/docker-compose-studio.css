@@ -307,3 +307,69 @@
 .docker-studio-yaml-highlight .docker-yaml-indent-level-3{--compose-indent-bg:rgba(96,165,250,.1105)}
 .docker-studio-yaml-highlight .docker-yaml-indent-level-4{--compose-indent-bg:rgba(192,132,252,.1105)}
 .docker-studio-yaml-highlight .docker-yaml-indent-level-5{--compose-indent-bg:rgba(244,114,182,.104)}
+
+
+/* Theme synchronization: use a light palette when Sketchizi is in light mode. */
+.docker-studio-overlay.theme-light{background:rgba(248,250,252,.96);color:#1f2937}
+.docker-studio-overlay.theme-light .docker-studio{background:#fff;color:#1f2937}
+.docker-studio-overlay.theme-light [class*="docker-studio"]{color:#263244;border-color:#d9e0ea}
+.docker-studio-overlay.theme-light .docker-studio-header,
+.docker-studio-overlay.theme-light .docker-studio-project-row,
+.docker-studio-overlay.theme-light .docker-studio-footer{border-color:#e2e8f0}
+.docker-studio-overlay.theme-light .docker-studio-heading p,
+.docker-studio-overlay.theme-light .docker-studio-fields label span,
+.docker-studio-overlay.theme-light .docker-studio-section-heading,
+.docker-studio-overlay.theme-light .docker-studio-service small,
+.docker-studio-overlay.theme-light .docker-studio-finding small,
+.docker-studio-overlay.theme-light .docker-studio-finding p,
+.docker-studio-overlay.theme-light .docker-studio-empty-check p,
+.docker-studio-overlay.theme-light .docker-studio-footer,
+.docker-studio-overlay.theme-light .docker-studio-topology-node-copy small,
+.docker-studio-overlay.theme-light .docker-studio-dependency-heading span{color:#64748b}
+.docker-studio-overlay.theme-light .docker-studio-eyebrow{color:#6d28d9}
+.docker-studio-overlay.theme-light .docker-studio-close,
+.docker-studio-overlay.theme-light .docker-studio-secondary{background:#f8fafc;color:#334155;border-color:#cbd5e1}
+.docker-studio-overlay.theme-light .docker-studio-primary{background:#702cf2;color:#fff;border-color:#702cf2}
+.docker-studio-overlay.theme-light .docker-studio-danger{background:#fff1f2;color:#be123c;border-color:#fecdd3}
+.docker-studio-overlay.theme-light .docker-studio-project-row,
+.docker-studio-overlay.theme-light .docker-studio-service-list,
+.docker-studio-overlay.theme-light .docker-studio-validation,
+.docker-studio-overlay.theme-light .docker-studio-resources{background:#f8fafc}
+.docker-studio-overlay.theme-light .docker-studio-service-list,
+.docker-studio-overlay.theme-light .docker-studio-validation{border-color:#e2e8f0}
+.docker-studio-overlay.theme-light .docker-studio input,
+.docker-studio-overlay.theme-light .docker-studio textarea,
+.docker-studio-overlay.theme-light .docker-studio select{background:#fff;color:#263244;border-color:#cbd5e1}
+.docker-studio-overlay.theme-light .docker-studio input:focus,
+.docker-studio-overlay.theme-light .docker-studio textarea:focus,
+.docker-studio-overlay.theme-light .docker-studio select:focus{border-color:#8b5cf6;box-shadow:0 0 0 3px #8b5cf626}
+.docker-studio-overlay.theme-light .docker-studio-service{background:transparent;color:#263244}
+.docker-studio-overlay.theme-light .docker-studio-service.active{background:#f0eaff;border-color:#c4b5fd}
+.docker-studio-overlay.theme-light .docker-studio-service-icon{background:#f0eaff;color:#6d28d9;border-color:#ddd6fe}
+.docker-studio-overlay.theme-light .docker-studio-finding,
+.docker-studio-overlay.theme-light .docker-studio-topology-node,
+.docker-studio-overlay.theme-light .docker-studio-dependency-section,
+.docker-studio-overlay.theme-light .docker-studio-topology-edge{background:#fff;border-color:#dbe3ed;color:#334155}
+.docker-studio-overlay.theme-light .docker-studio-topology{background:#f8fafc;border-color:#e2e8f0}
+.docker-studio-overlay.theme-light .docker-studio-topology-heading h2{color:#263244}
+.docker-studio-overlay.theme-light .docker-studio-topology-count{border-color:#dbe3ed;color:#64748b}
+.docker-studio-overlay.theme-light .docker-studio-topology-node.selected{background:#f0eaff;border-color:#a78bfa;box-shadow:0 0 0 1px #8b5cf622}
+.docker-studio-overlay.theme-light .docker-studio-topology-node-icon{background:#f0eaff;border-color:#ddd6fe;color:#6d28d9}
+.docker-studio-overlay.theme-light .docker-studio-topology-node-copy .docker-studio-topology-port{color:#0369a1}
+.docker-studio-overlay.theme-light .docker-studio-dependency-heading h3{color:#334155}
+.docker-studio-overlay.theme-light .docker-studio-topology-edge span{color:#7c3aed}
+.docker-studio-overlay.theme-light .docker-studio-topology-edge.missing,
+.docker-studio-overlay.theme-light .docker-studio-finding.error{background:#fff1f2;border-color:#fecdd3;color:#be123c}
+.docker-studio-overlay.theme-light .docker-studio-finding.warning{background:#fff7ed;border-color:#fed7aa}
+.docker-studio-overlay.theme-light .docker-studio-status.valid{background:#dcfce7;color:#166534}
+.docker-studio-overlay.theme-light .docker-studio-status.invalid{background:#ffe4e6;color:#be123c}
+.docker-studio-overlay.theme-light .docker-studio-empty-check{background:#ecfdf5;border-color:#a7f3d0}
+.docker-studio-overlay.theme-light .docker-studio-empty-check span{color:#047857}
+.docker-studio-overlay.theme-light .docker-studio-notice{background:#eff6ff;color:#1d4ed8}
+.docker-studio-overlay.theme-light .docker-studio-topology-edges{scrollbar-color:#94a3b8 #e2e8f0}
+.docker-studio-overlay.theme-light .docker-studio-topology-edges::-webkit-scrollbar-track{background:#e2e8f0}
+.docker-studio-overlay.theme-light .docker-studio-topology-edges::-webkit-scrollbar-thumb{background:#94a3b8;border-color:#e2e8f0}
+.docker-studio-overlay.theme-light .docker-studio-resources{border-color:#e2e8f0}
+.docker-studio-overlay.theme-light .docker-studio-resources label span{color:#64748b}
+.docker-studio-overlay.theme-light .docker-studio-dialog-backdrop{background:#0f172a55}
+.docker-studio-overlay.theme-light .docker-studio-execution-dialog{background:#fff;color:#263244;border-color:#dbe3ed;box-shadow:0 24px 80px #0f172a22}
