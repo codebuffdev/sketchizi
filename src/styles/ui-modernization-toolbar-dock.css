@@ -1471,3 +1471,30 @@
 .app .contextual-formatting-toolbar .format-edge-rounded {
   border-radius: 5px;
 }
+
+
+/* Arrow-specific controls in the floating Stroke popover */
+.app .contextual-formatting-toolbar .format-arrowhead-row {
+  align-items: flex-end;
+  gap: 8px;
+}
+.app .contextual-formatting-toolbar .format-arrowhead-control {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-secondary, #aeb4c2);
+  font-size: 11px;
+}
+.app .contextual-formatting-toolbar .format-arrowhead-control select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid var(--border-color, #424653);
+  border-radius: 8px;
+  padding: 5px 7px;
+  background: var(--panel-bg, #292c36);
+  color: var(--text-primary, #f2f3f7);
+  font: inherit;
+}
