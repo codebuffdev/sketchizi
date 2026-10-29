@@ -684,16 +684,31 @@ export default function ContextualFormattingToolbar({
             <button type="button" className="format-popover-close" aria-label="Close formatting options" onClick={() => setOpenGroup(null)}>×</button>
           </div>
           {activeGroup === "stroke" && bucketFillTool
-            ? <div className="format-option-section">
-                <div className="format-option-label">Background</div>
-                <div className="format-option-row">
-                  {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
-                  <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color">
-                    <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-                    <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
-                  </label>
+            ? <>
+                <div className="format-option-section">
+                  <div className="format-option-label">Background</div>
+                  <div className="format-option-row">
+                    {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
+                    <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color">
+                      <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                      <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
+                    </label>
+                  </div>
                 </div>
-              </div>
+                <div className="format-option-section">
+                  <div className="format-option-label">Fill style</div>
+                  <div className="format-option-row">
+                    {FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value} title={label} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}
+                  </div>
+                </div>
+                <div className="format-option-section">
+                  <div className="format-option-label">Opacity</div>
+                  <div className="format-opacity-control">
+                    <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
+                    <span>{currentOpacity}</span>
+                  </div>
+                </div>
+              </>
             : renderGroupContent(activeGroup)}
         </div>
       )}
