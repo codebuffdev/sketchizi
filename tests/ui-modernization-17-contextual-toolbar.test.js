@@ -190,3 +190,16 @@ test('floating formatting toolbar is primary and hides the duplicate Excalidraw 
   assert.match(toolbar, /onClick=\{onOpenProperties\}/);
   assert.match(app, /hideDuplicateFormattingControls=\{true\}/);
 });
+
+
+test('floating toolbar exposes text family, size presets, alignment, opacity and four layer actions', () => {
+  assert.match(toolbar, /aria-label="Font family"/);
+  assert.match(toolbar, /aria-label="Font size"/);
+  assert.match(toolbar, /aria-label="Text align"/);
+  assert.match(toolbar, /aria-label="Opacity"/);
+  assert.match(toolbar, /aria-label="Send selection backward"/);
+  assert.match(toolbar, /aria-label="Bring selection forward"/);
+  assert.match(toolbar, /applyToSelected\(\{ fontFamily: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ textAlign: value \}\)/);
+  assert.match(toolbar, /applyToSelected\(\{ opacity: Number\(event.target.value\) \}\)/);
+});
