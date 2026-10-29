@@ -164,11 +164,16 @@ export default function ContextualFormattingToolbar({
   const currentFontFamily = Number(first?.fontFamily) || DEFAULT_FONT_FAMILY_ID;
   const currentTextAlign = first?.textAlign || "left";
   const currentOpacity = Number(first?.opacity ?? 100);
-  // Keep every formatting category available for every selected element type.
-  // Some categories (font controls in particular) are most useful for text, but
-  // their popovers should still open consistently rather than disappearing when
-  // a shape, connector, image, or mixed selection is active.
-  const visibleGroups = GROUPS;
+  // Mirror the default Properties panel: text-only controls are shown only
+  // when the active selection consists entirely of text. Shape, connector,
+  // image, and mixed selections keep the shared appearance/layer controls, with
+  // shape- and line-specific options rendered inside the Stroke popover.
+  const visibleGroups = GROUPS.filter((group) => {
+    if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") {
+      return onlyTextSelection;
+    }
+    return true;
+  });
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
