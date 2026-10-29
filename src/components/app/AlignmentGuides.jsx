@@ -45,7 +45,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
           const point = sceneToViewport({ x: axis === "x" ? position : 0, y: axis === "y" ? position : 0 });
-          return axis === "x" ? point.x : point.y;
+          return axis === "x" ? point.x - viewportRect.left : point.y - viewportRect.top;
         }
         const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
         const extent = axis === "x" ? (Number(appState.width) || viewportRect.width) : (Number(appState.height) || viewportRect.height);
