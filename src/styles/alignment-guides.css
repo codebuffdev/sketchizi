@@ -1,0 +1,25 @@
+.canvas { position: relative; }
+.sketchizi-alignment-guides {
+  position: absolute;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 8;
+}
+.sketchizi-alignment-guides line {
+  stroke: #9ca3af;
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+  shape-rendering: crispEdges;
+}
+
+/* Keep alignment guides theme-aware and subtle against each canvas background. */
+.theme-light .sketchizi-alignment-guides line,
+.app.theme-light .sketchizi-alignment-guides line {
+  stroke: #dc2626;
+  opacity: 0.55;
+}
