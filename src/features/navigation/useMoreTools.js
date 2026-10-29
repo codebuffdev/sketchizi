@@ -48,6 +48,11 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
     }
     if (tool === "text-to-diagram") { api.updateScene({ appState: { ...api.getAppState(), openDialog: { name: "ttd", tab: "text-to-diagram" } } }); return; }
     if (tool === "mermaid") { api.updateScene({ appState: { ...api.getAppState(), openDialog: { name: "ttd", tab: "mermaid" } } }); return; }
+    if (tool === "zen-mode") {
+      // Enter Zen Mode from the Tools menu without changing the active drawing tool.
+      api.updateScene({ appState: { zenModeEnabled: true } });
+      return;
+    }
     api.setActiveTool({ type: tool });
   }, [apiRef, canEdit, closePanel]);
   useEffect(() => {
