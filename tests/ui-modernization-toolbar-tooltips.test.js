@@ -24,9 +24,11 @@ test('toolbar decoration continues to observe native DOM updates', () => {
   assert.match(canvas, /observer\?\.disconnect\(\)/);
 });
 
-test('scroll-back tooltip is positioned beside the right edge of the dock', () => {
+test('scroll-back tooltip stays outside the dock and avoids overlap on narrow screens', () => {
   assert.match(canvas, /scrollBackTooltip && toolbar/);
-  assert.match(canvas, /left = toolbarRect\.right \+ 12/);
-  assert.match(canvas, /top = toolbarRect\.top \+ \(toolbarRect\.height - tipRect\.height\) \/ 2/);
-  assert.match(canvas, /left = toolbarRect\.left - tipRect\.width - 12/);
+  assert.match(canvas, /const rightCandidate = toolbarRect\.right \+ 12/);
+  assert.match(canvas, /rightCandidate \+ tipRect\.width <= window\.innerWidth - 8/);
+  assert.match(canvas, /const leftCandidate = toolbarRect\.left - tipRect\.width - 12/);
+  assert.match(canvas, /top = toolbarRect\.bottom \+ 8/);
+  assert.match(canvas, /keepOutsideDock = true/);
 });
