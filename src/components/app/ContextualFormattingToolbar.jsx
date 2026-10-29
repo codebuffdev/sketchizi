@@ -137,16 +137,27 @@ export default function ContextualFormattingToolbar({
         ))}
       </div>}
 
-      <div className="contextual-formatting-group contextual-custom-color-group" role="group" aria-label="Custom color">
-        <label className="contextual-custom-color" title="Choose custom color">
-          <span aria-hidden="true">+</span>
+      <div className="contextual-formatting-group contextual-custom-color-group" role="group" aria-label="Stroke">
+        <label className="contextual-custom-color" title="Choose stroke color">
           <input
             type="color"
-            aria-label="Choose custom color"
+            aria-label="Choose stroke color"
             value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"}
             onChange={(event) => applyToSelected({ strokeColor: event.target.value })}
           />
         </label>
+        <span className="contextual-hex-prefix" aria-hidden="true">#</span>
+        <input
+          className="contextual-hex-input"
+          type="text"
+          aria-label="Stroke hex color"
+          maxLength={7}
+          value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke.slice(1).toUpperCase() : "7C3AED"}
+          onChange={(event) => {
+            const hex = event.target.value.replace(/^#/, "");
+            if (/^[0-9a-f]{6}$/i.test(hex)) applyToSelected({ strokeColor: `#${hex}` });
+          }}
+        />
       </div>
 
       {showFill && !hasImageSelection && (
@@ -232,9 +243,6 @@ export default function ContextualFormattingToolbar({
           </div>
           <div className="contextual-formatting-group" role="group" aria-label="Roughness">
             {ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={Number(first?.roughness ?? 1) === value ? "is-selected" : ""} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} title={label} onClick={() => applyToSelected({ roughness: value })}>{label.slice(0, 1)}</button>)}
-          </div>
-          <div className="contextual-formatting-group contextual-opacity" role="group" aria-label="Opacity">
-            <label title="Opacity"><span>O</span><input aria-label="Opacity" type="range" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })}/><span>{currentOpacity}</span></label>
           </div>
         </>
       )}
