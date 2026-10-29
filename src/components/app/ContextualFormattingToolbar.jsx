@@ -542,6 +542,10 @@ export default function ContextualFormattingToolbar({
               <div className="format-option-label format-sub-label">Fill style</div>
               <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}</div>
             </>}
+            {drawToShapeTool && <>
+              <div className="format-option-label format-sub-label">Sloppiness</div>
+              <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(toolMode ? appState.currentItemRoughness ?? 1 : first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(toolMode ? appState.currentItemRoughness ?? 1 : first?.roughness ?? 1) === value} title={label} onClick={() => applyFormatting({ roughness: value })}>{label}</button>)}</div>
+            </>}
             {!toolMode && <>
             <div className="format-option-label format-sub-label">Line style</div>
             <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.strokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.strokeStyle === value} onClick={() => applyFormatting({ strokeStyle: value })}>{glyph}</button>)}</div>
