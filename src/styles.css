@@ -1079,3 +1079,156 @@
   background: #3a365f;
   color: #cbc6ff;
 }
+
+
+/*
+ * Approved Properties-panel design for the floating formatting surface.
+ * The toolbar is a right-side settings card with labeled sections, not a
+ * compressed horizontal ribbon. Controls remain bound to selected elements.
+ */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: var(--contextual-panel-width, 340px);
+  max-width: calc(100% - 24px);
+  max-height: var(--contextual-panel-max-height, calc(100% - 32px));
+  padding: 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--ui-border, #343946);
+  border-radius: 14px;
+  background: var(--ui-surface-solid, #202127);
+  color: var(--ui-text, #f1f2f5);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
+  transform: none;
+}
+.app .contextual-formatting-toolbar > .contextual-formatting-group {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--ui-border-soft, #3a3d46);
+}
+.app .contextual-formatting-toolbar > .contextual-formatting-group::before {
+  content: attr(aria-label);
+  display: block;
+  flex: 0 0 100%;
+  width: 100%;
+  color: var(--ui-text, #f1f2f5);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+  text-transform: none;
+}
+.app .contextual-formatting-toolbar > .contextual-formatting-group:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.app .contextual-formatting-toolbar .contextual-color-swatch {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 6px;
+}
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ui-border, #444956);
+  border-radius: 6px;
+  background: var(--ui-hover, #30313a);
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .contextual-custom-color input {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .contextual-opacity {
+  min-width: 0;
+}
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(50px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.app .contextual-formatting-toolbar .contextual-opacity input[type="range"] {
+  width: 100%;
+  min-width: 0;
+}
+.app .contextual-formatting-toolbar .contextual-font-family > button,
+.app .contextual-formatting-toolbar .contextual-font-presets > button,
+.app .contextual-formatting-toolbar .contextual-text-align > button,
+.app .contextual-formatting-toolbar .contextual-layer-actions > button,
+.app .contextual-formatting-toolbar .contextual-width-button,
+.app .contextual-formatting-toolbar .contextual-text-size button {
+  min-width: 38px;
+  width: 38px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--ui-hover, #2c2d35);
+  color: var(--ui-text, #f1f2f5);
+  font-size: 12px;
+}
+.app .contextual-formatting-toolbar .contextual-properties-button {
+  width: auto;
+  min-width: 70px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--ui-hover, #2c2d35);
+  color: var(--ui-text, #f1f2f5);
+}
+.app .contextual-formatting-toolbar .contextual-text-size {
+  justify-content: flex-start;
+}
+.app .contextual-formatting-toolbar .contextual-text-size span {
+  min-width: 24px;
+  font-size: 12px;
+}
+.app.theme-light .contextual-formatting-toolbar {
+  background: #fff;
+  color: #292d36;
+  border-color: #dfe3ec;
+  box-shadow: 0 12px 32px rgb(26 31 48 / 14%);
+}
+.app.theme-light .contextual-formatting-toolbar > .contextual-formatting-group {
+  border-color: #e6e8ef;
+}
+.app.theme-light .contextual-formatting-toolbar > .contextual-formatting-group::before {
+  color: #292d36;
+}
+.app.theme-light .contextual-formatting-toolbar .contextual-font-family > button,
+.app.theme-light .contextual-formatting-toolbar .contextual-font-presets > button,
+.app.theme-light .contextual-formatting-toolbar .contextual-text-align > button,
+.app.theme-light .contextual-formatting-toolbar .contextual-layer-actions > button,
+.app.theme-light .contextual-formatting-toolbar .contextual-width-button,
+.app.theme-light .contextual-formatting-toolbar .contextual-text-size button,
+.app.theme-light .contextual-formatting-toolbar .contextual-properties-button {
+  background: #f0f1f5;
+  color: #303440;
+}
+@media (max-width: 760px) {
+  .app .contextual-formatting-toolbar {
+    width: min(340px, calc(100% - 24px));
+    max-width: calc(100% - 24px);
+    padding: 12px;
+  }
+}
