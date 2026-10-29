@@ -56,7 +56,7 @@
 .app.theme-dark .auth-account-name { color: var(--ui-text, #e5e7eb); }
 .app.theme-dark .auth-account-avatar-fallback { background: var(--ui-surface-hover, #2c2d34); color: var(--ui-text-strong, #f4f4f5); }
 .app.theme-dark .auth-account-chevron { color: var(--ui-text-muted, #a1a1aa); }
-@media (max-width: 900px) {
+@media (max-width: 760px) {
   .auth-account-trigger { max-width: 42px; gap: 0; padding: 3px; justify-content: center; }
   .auth-account-name, .auth-account-chevron { display: none; }
 }
