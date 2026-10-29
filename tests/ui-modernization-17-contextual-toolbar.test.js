@@ -12,7 +12,7 @@ test('contextual toolbar is rendered for editable selections and supported activ
   assert.match(toolbar, /const drawingTool = activeToolType === "freedraw"/);
   assert.match(toolbar, /const textTool = activeToolType === "text"/);
   assert.match(toolbar, /activeToolMode === "text" && \["fontFamily", "fontSize", "textAlign"\]\.includes\(group\.id\)/);
-  assert.match(toolbar, /activeToolMode !== "text" && \(!onlyTextSelection \|\| toolMode\)/);
+  assert.match(toolbar, /\(!onlyTextSelection \|\| toolMode \|\| noteSelection\) && !hasImageSelection/);
   assert.match(toolbar, /const bucketFillTool = \["bucket-fill", "bucketfill", "fill"\]\.includes\(activeToolType\)/);
   assert.match(toolbar, /const drawToShapeTool = \["draw-to-shape", "drawtoshape"\]\.includes\(activeToolType\)/);
   assert.match(toolbar, /api\.updateScene\(\{ appState: appStatePatch \}\)/);
@@ -301,7 +301,7 @@ test('floating stroke popover exposes edge controls for line selections too', ()
 
 test('floating background color controls are available for line selections', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
-  assert.match(toolbar, /!onlyTextSelection && !hasImageSelection && \([\s\S]*?format-option-label">Background/);
+  assert.match(toolbar, /\(!onlyTextSelection \|\| toolMode \|\| noteSelection\) && !hasImageSelection[\s\S]*?format-option-label">Background/);
   assert.match(toolbar, /Choose custom background color/);
 });
 
@@ -315,4 +315,20 @@ test('drawing-tool formatting uses current-item defaults and exposes draw, fill,
   assert.match(toolbar, /tool === "bucketfill"[\s\S]*?setCustomToolMode\("fill"\)[\s\S]*?tool === "autoshape"[\s\S]*?setCustomToolMode\("shape"\)/);
   assert.match(toolbar, /aria-label="Pressure enabled"[\s\S]*?applyFormatting\(\{ pressure: true \}\)/);
   assert.match(toolbar, /aria-label="Pressure disabled"[\s\S]*?applyFormatting\(\{ pressure: false \}\)/);
+});
+
+
+test('note selections expose typography and background controls in the floating toolbar', () => {
+  const toolbarSource = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbarSource, /function isNoteFormattingElement\(element\)/);
+  assert.match(toolbarSource, /bound\.type\)\.toLowerCase\(\) === "text"/);
+  assert.match(toolbarSource, /data\.isNote === true/);
+  assert.match(toolbarSource, /const noteSelection = liveSelection\.some\(isNoteFormattingElement\)/);
+  assert.match(toolbarSource, /const onlyTextSelection = liveSelection\.length > 0 && liveSelection\.every\(isTextFormattingElement\)/);
+  assert.match(toolbarSource, /Choose custom background color/);
+  assert.match(toolbarSource, /format-option-label format-sub-label">Vertical align/);
+  assert.match(toolbarSource, /\["top", "Top"/);
+  assert.match(toolbarSource, /\["middle", "Middle"/);
+  assert.match(toolbarSource, /\["bottom", "Bottom"/);
+  assert.match(toolbarSource, /currentItemVerticalAlign = patch\.verticalAlign/);
 });
