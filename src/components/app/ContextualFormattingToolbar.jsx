@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 
 const STROKE_COLORS = [
@@ -277,12 +278,32 @@ export default function ContextualFormattingToolbar({
       return true;
     });
   const applyFormatting = (patch) => {
-    if (!toolMode) {
-      applyToSelected(patch);
-      return;
-    }
     const api = apiRef?.current;
     if (!api) return;
+    if (!toolMode) {
+      // Use the same live selection snapshot that rendered this toolbar. The
+      // parent callback re-reads Excalidraw selection state, which can be empty
+      // during text-edit/toolbar focus transitions even while this panel remains
+      // visible. Updating these ids directly keeps all floating controls reliable.
+      const selectedIds = new Set(liveSelection.map((element) => element.id));
+      const now = Date.now();
+      const elements = api.getSceneElements?.() || [];
+      const updatedElements = elements.map((element) => {
+        if (!selectedIds.has(element.id)) return element;
+        if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
+        return {
+          ...element,
+          ...patch,
+          version: (Number(element.version) || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647),
+          updated: now,
+        };
+      });
+      if (updatedElements.some((element, index) => element !== elements[index])) {
+        api.updateScene({ elements: updatedElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      }
+      return;
+    }
     const appStatePatch = {};
     if ("strokeColor" in patch) appStatePatch.currentItemStrokeColor = patch.strokeColor;
     if ("backgroundColor" in patch) appStatePatch.currentItemBackgroundColor = patch.backgroundColor === "transparent" ? "transparent" : patch.backgroundColor;
