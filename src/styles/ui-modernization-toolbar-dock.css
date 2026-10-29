@@ -1152,3 +1152,36 @@
   width: max-content !important;
   min-width: max-content !important;
 }
+
+
+/* Keep Excalidraw's native Scroll back to content action outside the dock. */
+.app .excalidraw .sketchizi-scroll-back-control {
+  position: fixed !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: 148px !important;
+  max-width: none !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow: visible !important;
+  border: 1px solid var(--sk-toolbar-border, rgb(128 128 128 / 25%)) !important;
+  border-radius: 12px !important;
+  background: var(--sk-toolbar-surface, var(--ui-surface, #fff)) !important;
+  color: var(--sk-toolbar-ink, currentColor) !important;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 12%) !important;
+  z-index: 10020 !important;
+}
+.app .excalidraw .sketchizi-scroll-back-control:hover {
+  background: var(--sk-toolbar-hover, rgb(128 128 128 / 12%)) !important;
+}
+.app .excalidraw .sketchizi-scroll-back-control:focus-visible {
+  outline: 2px solid var(--ui-accent, #7968ee) !important;
+  outline-offset: 2px !important;
+}
