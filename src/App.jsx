@@ -1905,8 +1905,8 @@ function App() {
         </div>
       )}
       {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudDiagramId ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
-      {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
-      {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
+      {dockerStudioOpen && <DockerComposeStudio isDarkTheme={isDarkTheme} onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
+      {kubernetesStudioOpen && <KubernetesStudio isDarkTheme={isDarkTheme} onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
       {designStudioOpen && (
         <CreateDesignScreen
           isDarkTheme={isDarkTheme}
