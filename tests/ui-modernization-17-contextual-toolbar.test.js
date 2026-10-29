@@ -225,3 +225,11 @@ test('custom stroke color picker is visible and remains keyboard-accessible', ()
   assert.match(toolbarCss, /\.format-custom-color-icon[\s\S]*?pointer-events: none/);
   assert.match(toolbarCss, /\.format-custom-color input[\s\S]*?opacity: 0/);
 });
+
+
+test('all formatting popover categories remain available for every selected element type', () => {
+  const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(toolbar, /const visibleGroups = GROUPS;/);
+  assert.match(toolbar, /onClick=\{\(\) => setOpenGroup\(\(current\) => current === group\.id \? null : group\.id\)\}/);
+  assert.doesNotMatch(toolbar, /GROUPS\.filter\(\(group\) => \{[\s\S]*?return hasText/);
+});
