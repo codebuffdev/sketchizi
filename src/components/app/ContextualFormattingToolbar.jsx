@@ -63,10 +63,13 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   const scaleY = (rootHeight / appHeight) * zoom;
   const scrollX = Number(appState.scrollX) || 0;
   const scrollY = Number(appState.scrollY) || 0;
-  const selectionLeft = (sceneBounds.left + scrollX) * scaleX + rootWidth / 2;
-  const selectionRight = (sceneBounds.right + scrollX) * scaleX + rootWidth / 2;
-  const selectionTop = (sceneBounds.top + scrollY) * scaleY + rootHeight / 2;
-  const selectionBottom = (sceneBounds.bottom + scrollY) * scaleY + rootHeight / 2;
+  // Scene coordinates map into the canvas viewport from its top-left origin.
+  // Do not add half the viewport size: that incorrectly shifts the rail toward
+  // the far edge and can push it off-screen for selections near the opposite side.
+  const selectionLeft = (sceneBounds.left + scrollX) * scaleX;
+  const selectionRight = (sceneBounds.right + scrollX) * scaleX;
+  const selectionTop = (sceneBounds.top + scrollY) * scaleY;
+  const selectionBottom = (sceneBounds.bottom + scrollY) * scaleY;
 
   const railWidth = 44;
   const railHeight = Math.min(300, elements.length ? 6 * 38 + 12 : 12);
