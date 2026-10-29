@@ -10,6 +10,26 @@ const STROKE_COLORS = [
   ["#d98a27", "Orange"],
   ["#7c3aed", "Violet"],
 ];
+const NOTE_TEXT_COLORS = [
+  ["#d3d3d3", "Light gray"],
+  ["#ff8383", "Coral"],
+  ["#39994b", "Green"],
+  ["#56a2e8", "Blue"],
+  ["#b86200", "Orange"],
+];
+const NOTE_BACKGROUND_COLORS = [
+  ["#4b3000", "Ochre"],
+  ["#602e40", "Burgundy"],
+  ["#043b0c", "Forest green"],
+  ["#154162", "Navy"],
+  ["#4c2b01", "Dark brown"],
+];
+const NOTE_FONT_FAMILIES = [
+  [1, "Hand-drawn", "✎"],
+  [2, "Sans", "A"],
+  [3, "Code", "</>"],
+  [9, "Serif", "A"],
+];
 const FILL_COLORS = [
   ["transparent", "No fill"],
   ["#e7bfc1", "Rose fill"],
@@ -281,6 +301,7 @@ export default function ContextualFormattingToolbar({
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const noteSelection = liveSelection.some(isNoteFormattingElement);
+  const noteFormattingMode = noteTool || noteSelection;
   const onlyTextSelection = liveSelection.length > 0 && liveSelection.every(isTextFormattingElement);
   // Selected notes must edit their actual scene elements; tool defaults are
   // used only while creating new text/draw/fill/shape content.
@@ -331,6 +352,10 @@ export default function ContextualFormattingToolbar({
   const currentTextAlign = (toolMode ? appState.currentItemTextAlign : firstTextFormattingElement?.textAlign) || appState.currentItemTextAlign || "left";
   const currentVerticalAlign = (toolMode ? appState.currentItemVerticalAlign : firstTextFormattingElement?.verticalAlign) || "middle";
   const currentOpacity = Number(toolMode ? (appState.currentItemOpacity ?? 100) : (first?.opacity ?? appState.currentItemOpacity ?? 100));
+  const strokePalette = noteFormattingMode ? NOTE_TEXT_COLORS : STROKE_COLORS;
+  const backgroundPalette = noteFormattingMode ? NOTE_BACKGROUND_COLORS : FILL_COLORS;
+  const fontFamilies = noteFormattingMode ? NOTE_FONT_FAMILIES : FONT_FAMILIES;
+  const fontSizes = noteFormattingMode ? FONT_SIZES.filter(([value]) => value !== 12) : FONT_SIZES;
   // Mirror the default Properties panel: text-only controls are shown only
   // when the active selection consists entirely of text. Shape, connector,
   // image, and mixed selections keep the shared appearance/layer controls, with
@@ -415,7 +440,7 @@ export default function ContextualFormattingToolbar({
         <div className="format-option-section">
           <div className="format-option-label">{(onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
-            {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
+            {strokePalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
             <label
               className="format-custom-color"
               title="Choose custom color"
@@ -431,7 +456,7 @@ export default function ContextualFormattingToolbar({
           <div className="format-option-section">
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
-              {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
+              {backgroundPalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
               <label
                 className="format-custom-color format-custom-fill-color"
                 title="Choose custom background color"
@@ -534,7 +559,7 @@ export default function ContextualFormattingToolbar({
       <div className="format-option-section">
         <div className="format-option-label">Font family</div>
         <div className="format-option-row format-font-families">
-          {FONT_FAMILIES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentFontFamily === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyFormatting({ fontFamily: value })}>{glyph}</button>)}
+          {fontFamilies.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentFontFamily === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyFormatting({ fontFamily: value })}>{glyph}</button>)}
         </div>
       </div>
     );
@@ -542,7 +567,7 @@ export default function ContextualFormattingToolbar({
       <div className="format-option-section">
         <div className="format-option-label">Font size</div>
         <div className="format-option-row">
-          {FONT_SIZES.map(([value, label]) => <button key={value} type="button" className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontSize === value} onClick={() => applyFormatting({ fontSize: value })}>{label}</button>)}
+          {fontSizes.map(([value, label]) => <button key={value} type="button" className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontSize === value} onClick={() => applyFormatting({ fontSize: value })}>{label}</button>)}
         </div>
         <div className="format-option-row format-custom-size">
           <button type="button" className="format-option-button" aria-label="Decrease text size" onClick={() => applyFormatting({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
