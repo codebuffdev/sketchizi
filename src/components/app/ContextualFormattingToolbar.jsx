@@ -33,7 +33,7 @@ const GROUPS = [
   { id: "layers", label: "Layers", icon: "▤" },
 ];
 
-function getSelectionPosition(api, elements, root) {
+function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   if (!api || !root || !elements.length) return null;
   const appState = api.getAppState?.();
   if (!appState) return null;
@@ -60,7 +60,11 @@ function getSelectionPosition(api, elements, root) {
   const rootHeight = root.clientHeight || viewportHeight;
   const barWidth = 48;
   const left = Math.max(8, Math.min(rootWidth - barWidth - 8, centerX - barWidth / 2));
-  const top = bottomY + 10 + 42 < rootHeight - 72 ? bottomY + 10 : Math.max(8, topY - 52);
+  const preferredTop = bottomY + 10 + 42 < rootHeight - 72 ? bottomY + 10 : Math.max(8, topY - 52);
+  const popoverHeight = Math.min(520, Math.max(180, rootHeight - 24));
+  const top = isPopoverOpen
+    ? Math.max(8, Math.min(rootHeight - popoverHeight - 8, preferredTop))
+    : Math.max(8, Math.min(rootHeight - 52, preferredTop));
   const popoverSide = left + barWidth + 340 + 16 <= rootWidth ? "right" : "left";
   return {
     left: `${left}px`,
@@ -120,10 +124,10 @@ export default function ContextualFormattingToolbar({
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const onlyTextSelection = liveSelection.every((element) => element.type === "text");
   const position = useMemo(
-    () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current),
+    () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current, Boolean(openGroup)),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [apiRef, canvasRootRef, canvasRevision, selectedElements],
+    [apiRef, canvasRootRef, canvasRevision, selectedElements, openGroup],
   );
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
