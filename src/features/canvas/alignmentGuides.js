@@ -41,7 +41,7 @@ export function calculateAlignmentGuides(elements, selectedIds, tolerance = ALIG
         return distance <= tolerance && (!best || distance < best.distance) ? { edge, distance } : best;
       }, null);
       if (!closest) continue;
-      const position = (closest.edge + value) / 2;
+      const position = value;
       const key = axis + ":" + Math.round(position * 100) / 100;
       if (seen.has(key)) continue;
       seen.add(key);
