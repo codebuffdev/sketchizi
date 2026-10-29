@@ -91,10 +91,16 @@ export default function SketchiziCanvas({
         top = buttonRect.top + (buttonRect.height - tipRect.height) / 2;
       } else {
         left = buttonRect.left + (buttonRect.width - tipRect.width) / 2;
-        if (scrollBackTooltip) {
-          // This Excalidraw navigation control sits near the toolbar. Put its
-          // tooltip below the entire horizontal dock, not over the tool row.
-          top = (toolbar?.getBoundingClientRect().bottom ?? buttonRect.bottom) + 8;
+        if (scrollBackTooltip && toolbar) {
+          // Keep the scroll-back control's tooltip outside the dock instead
+          // of covering toolbar tools. Prefer the dock's right side, matching
+          // the requested placement; fall back to its left near the viewport edge.
+          const toolbarRect = toolbar.getBoundingClientRect();
+          left = toolbarRect.right + 12;
+          top = toolbarRect.top + (toolbarRect.height - tipRect.height) / 2;
+          if (left + tipRect.width > window.innerWidth - 8) {
+            left = toolbarRect.left - tipRect.width - 12;
+          }
         } else {
           top = buttonRect.top - tipRect.height - 8;
           if (top < 8) top = buttonRect.bottom + 8;
