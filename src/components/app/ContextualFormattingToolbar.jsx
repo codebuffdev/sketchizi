@@ -219,7 +219,7 @@ export default function ContextualFormattingToolbar({
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
-  const onlyTextSelection = liveSelection.every((element) => element.type === "text");
+  const onlyTextSelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "text");
   const position = useMemo(
     () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current, Boolean(openGroup)),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
@@ -268,6 +268,7 @@ export default function ContextualFormattingToolbar({
     if ("roundness" in patch) appStatePatch.currentItemRoundness = patch.roundness;
     if ("startArrowhead" in patch) appStatePatch.currentItemStartArrowhead = patch.startArrowhead;
     if ("endArrowhead" in patch) appStatePatch.currentItemEndArrowhead = patch.endArrowhead;
+    if ("pressure" in patch) appStatePatch.currentItemPressure = patch.pressure;
     api.updateScene({ appState: appStatePatch });
   };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
@@ -398,8 +399,8 @@ export default function ContextualFormattingToolbar({
         {drawingTool && <div className="format-option-section">
           <div className="format-option-label">Pressure</div>
           <div className="format-option-row">
-            <button type="button" className="format-option-button is-selected" aria-label="Pressure enabled" aria-pressed="true" title="Use pressure-sensitive stroke">〰</button>
-            <button type="button" className="format-option-button" aria-label="Pressure disabled" aria-pressed="false" title="Use consistent stroke width">〰</button>
+            <button type="button" className={`format-option-button${appState.currentItemPressure !== false ? " is-selected" : ""}`} aria-label="Pressure enabled" aria-pressed={appState.currentItemPressure !== false} title="Use pressure-sensitive stroke" onClick={() => applyFormatting({ pressure: true })}>〰</button>
+            <button type="button" className={`format-option-button${appState.currentItemPressure === false ? " is-selected" : ""}`} aria-label="Pressure disabled" aria-pressed={appState.currentItemPressure === false} title="Use consistent stroke width" onClick={() => applyFormatting({ pressure: false })}>〰</button>
           </div>
         </div>}
       </>
