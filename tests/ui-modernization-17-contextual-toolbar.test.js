@@ -47,7 +47,7 @@ test('selection toolbar placement accounts for zoom, scroll, and canvas bounds',
   assert.match(toolbar, /appState\.zoom\?\.value/);
   assert.match(toolbar, /appState\.scrollX/);
   assert.match(toolbar, /appState\.scrollY/);
-  assert.match(toolbar, /Math\.min\(520, rootWidth - 16\)/);
+  assert.match(toolbar, /Math\.min\(360, viewportWidth - 24\)/);
   assert.match(toolbar, /canvasRevision/);
   assert.match(toolbar, /const belowTop = bottomY \+ 10/);
 });
@@ -164,9 +164,9 @@ test('contextual stroke and fill swatches keep their real colors in both themes'
 test('contextual toolbar offers a native custom stroke and text color picker', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
-  assert.match(toolbar, /aria-label="Custom color"/);
+  assert.match(toolbar, /aria-label="Stroke hex color"/);
   assert.match(toolbar, /type="color"/);
-  assert.match(toolbar, /aria-label="Choose custom color"/);
+  assert.match(toolbar, /aria-label="Choose stroke color"/);
   assert.match(toolbar, /applyToSelected\(\{ strokeColor: event\.target\.value \}\)/);
   assert.match(dockCss, /\.contextual-custom-color input\[type="color"\]/);
 });
