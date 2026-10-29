@@ -190,7 +190,30 @@ export default function ContextualFormattingToolbar({
   canEdit = true,
 }) {
   const [openGroup, setOpenGroup] = useState(null);
+  const [customToolMode, setCustomToolMode] = useState(null);
   const toolbarRef = useRef(null);
+  useEffect(() => {
+    const onCustomTool = (event) => {
+      const tool = event.detail?.tool;
+      if (tool === "bucketfill") {
+        setCustomToolMode("fill");
+        setOpenGroup("stroke");
+      } else if (tool === "autoshape") {
+        setCustomToolMode("shape");
+        setOpenGroup("stroke");
+      }
+    };
+    const onNativeTool = (event) => {
+      const button = event.target?.closest?.(".App-toolbar button, .App-toolbar [role='button']");
+      if (button && !button.closest(".sketchizi-dock-quick-tools")) setCustomToolMode(null);
+    };
+    window.addEventListener("sketchizi:activate-tool", onCustomTool);
+    window.addEventListener("click", onNativeTool, true);
+    return () => {
+      window.removeEventListener("sketchizi:activate-tool", onCustomTool);
+      window.removeEventListener("click", onNativeTool, true);
+    };
+  }, []);
   useEffect(() => {
     if (!openGroup) return undefined;
     const onKeyDown = (event) => {
@@ -211,8 +234,8 @@ export default function ContextualFormattingToolbar({
   const appState = apiRef?.current?.getAppState?.() || {};
   const activeToolType = String(appState.activeTool?.type || "").toLowerCase();
   const drawingTool = activeToolType === "freedraw";
-  const bucketFillTool = ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
-  const drawToShapeTool = ["draw-to-shape", "drawtoshape"].includes(activeToolType);
+  const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
+  const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
   const toolMode = liveSelection.length === 0 && (drawingTool || bucketFillTool || drawToShapeTool);
   const activeToolMode = drawingTool ? "draw" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
@@ -272,6 +295,10 @@ export default function ContextualFormattingToolbar({
     api.updateScene({ appState: appStatePatch });
   };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
+  useEffect(() => {
+    if (toolMode && openGroup === null) setOpenGroup("stroke");
+    if (!toolMode && customToolMode) setCustomToolMode(null);
+  }, [toolMode, openGroup, customToolMode]);
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
     if (!api || liveSelection.length === 0) return;
