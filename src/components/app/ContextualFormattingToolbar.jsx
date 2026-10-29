@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 
 const STROKE_COLORS = [
@@ -33,7 +33,7 @@ const GROUPS = [
   { id: "layers", label: "Layers", icon: "▤" },
 ];
 
-function getSelectionPosition(api, elements, root) {
+function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   if (!api || !root || !elements.length) return null;
   const appState = api.getAppState?.();
   if (!appState) return null;
@@ -58,19 +58,19 @@ function getSelectionPosition(api, elements, root) {
   const bottomY = (sceneBounds.bottom + (Number(appState.scrollY) || 0)) * zoom + viewportHeight / 2;
   const rootWidth = root.clientWidth || viewportWidth;
   const rootHeight = root.clientHeight || viewportHeight;
-  const panelWidth = Math.min(224, rootWidth - 16);
-  const selectionLeft = (sceneBounds.left + (Number(appState.scrollX) || 0)) * zoom + viewportWidth / 2;
-  const selectionRight = (sceneBounds.right + (Number(appState.scrollX) || 0)) * zoom + viewportWidth / 2;
-  const rightCandidate = selectionRight + 12;
-  const leftCandidate = selectionLeft - panelWidth - 12;
-  const left = rightCandidate + panelWidth <= rootWidth - 8
-    ? rightCandidate
-    : leftCandidate >= 8
-      ? leftCandidate
-      : Math.max(8, Math.min(rootWidth - panelWidth - 8, centerX - panelWidth / 2));
-  const panelHeight = Math.min(360, rootHeight - 16);
-  const top = Math.max(8, Math.min(rootHeight - panelHeight - 8, topY - 8));
-  return { left: `${left}px`, top: `${top}px` };
+  const barWidth = 48;
+  const left = Math.max(8, Math.min(rootWidth - barWidth - 8, centerX - barWidth / 2));
+  const preferredTop = bottomY + 10 + 42 < rootHeight - 72 ? bottomY + 10 : Math.max(8, topY - 52);
+  const popoverHeight = Math.min(520, Math.max(180, rootHeight - 24));
+  const top = isPopoverOpen
+    ? Math.max(8, Math.min(rootHeight - popoverHeight - 8, preferredTop))
+    : Math.max(8, Math.min(rootHeight - 52, preferredTop));
+  const popoverSide = left + barWidth + 340 + 16 <= rootWidth ? "right" : "left";
+  return {
+    left: `${left}px`,
+    top: `${Math.max(8, Math.min(rootHeight - 52, top))}px`,
+    "--format-popover-side": popoverSide,
+  };
 }
 
 function Swatch({ color, label, selected, onClick, fill = false }) {
@@ -98,6 +98,23 @@ export default function ContextualFormattingToolbar({
   propertiesOpen = false,
   canEdit = true,
 }) {
+  const [openGroup, setOpenGroup] = useState(null);
+  const toolbarRef = useRef(null);
+  useEffect(() => {
+    if (!openGroup) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpenGroup(null);
+    };
+    const onPointerDown = (event) => {
+      if (!toolbarRef.current?.contains(event.target)) setOpenGroup(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [openGroup]);
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
   const first = liveSelection[0];
   const elementTypes = liveSelection.map((element) => element.type);
@@ -107,10 +124,10 @@ export default function ContextualFormattingToolbar({
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const onlyTextSelection = liveSelection.every((element) => element.type === "text");
   const position = useMemo(
-    () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current),
+    () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current, Boolean(openGroup)),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [apiRef, canvasRootRef, canvasRevision, selectedElements],
+    [apiRef, canvasRootRef, canvasRevision, selectedElements, openGroup],
   );
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
@@ -125,6 +142,7 @@ export default function ContextualFormattingToolbar({
     if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") return hasText;
     return true;
   });
+  const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
     if (!api || liveSelection.length === 0) return;
@@ -141,6 +159,7 @@ export default function ContextualFormattingToolbar({
     if (groupId === "stroke") return (
       <>
         <div className="format-option-section">
+          <div className="format-option-label">{onlyTextSelection ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
             {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyToSelected({ strokeColor: color })} />)}
             <label className="format-custom-color" title="Choose custom color">
@@ -176,6 +195,7 @@ export default function ContextualFormattingToolbar({
     );
     if (groupId === "fontFamily") return (
       <div className="format-option-section">
+        <div className="format-option-label">Font family</div>
         <div className="format-option-row format-font-families">
           {FONT_FAMILIES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentFontFamily === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyToSelected({ fontFamily: value })}>{glyph}</button>)}
         </div>
@@ -183,6 +203,7 @@ export default function ContextualFormattingToolbar({
     );
     if (groupId === "fontSize") return (
       <div className="format-option-section">
+        <div className="format-option-label">Font size</div>
         <div className="format-option-row">
           {FONT_SIZES.map(([value, label]) => <button key={value} type="button" className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontSize === value} onClick={() => applyToSelected({ fontSize: value })}>{label}</button>)}
         </div>
@@ -195,6 +216,7 @@ export default function ContextualFormattingToolbar({
     );
     if (groupId === "textAlign") return (
       <div className="format-option-section">
+        <div className="format-option-label">Text alignment</div>
         <div className="format-option-row">
           {TEXT_ALIGNMENTS.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentTextAlign === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentTextAlign === value} onClick={() => applyToSelected({ textAlign: value })}>{glyph}</button>)}
         </div>
@@ -202,6 +224,7 @@ export default function ContextualFormattingToolbar({
     );
     if (groupId === "opacity") return (
       <div className="format-option-section">
+        <div className="format-option-label">Opacity</div>
         <div className="format-opacity-control">
           <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })} />
           <span>{currentOpacity}</span>
@@ -210,6 +233,7 @@ export default function ContextualFormattingToolbar({
     );
     if (groupId === "layers") return (
       <div className="format-option-section">
+        <div className="format-option-label">Layer order</div>
         <div className="format-option-row">
           <button type="button" className="format-option-button" aria-label="Send selection to back" title="Send to back" onClick={() => reorderSelection("back")}>⇊</button>
           <button type="button" className="format-option-button" aria-label="Send selection backward" title="Send backward" onClick={() => reorderSelection("back")}>↓</button>
@@ -224,21 +248,37 @@ export default function ContextualFormattingToolbar({
 
   return (
     <div
-      className="contextual-formatting-toolbar formatting-panel"
+      ref={toolbarRef}
+      className="contextual-formatting-toolbar"
       role="toolbar"
       aria-label="Selected object formatting"
       style={position}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="formatting-panel-content">
+      <div className="format-icon-rail" role="group" aria-label="Formatting options">
         {visibleGroups.map((group) => (
-          <section className={`formatting-panel-group group-${group.id}`} key={group.id} aria-label={group.label}>
-            <div className="formatting-panel-group-title">{group.label}</div>
-            {renderGroupContent(group.id)}
-          </section>
+          <button
+            key={group.id}
+            type="button"
+            className={`format-icon-button${activeGroup === group.id ? " is-active" : ""}`}
+            aria-label={group.label}
+            aria-expanded={activeGroup === group.id}
+            aria-pressed={activeGroup === group.id}
+            title={group.label}
+            onClick={() => setOpenGroup((current) => current === group.id ? null : group.id)}
+          >{group.icon}</button>
         ))}
       </div>
+      {activeGroup && (
+        <div className={`format-options-popover side-${position["--format-popover-side"]}`} role="dialog" aria-label={`${visibleGroups.find((group) => group.id === activeGroup)?.label} options`}>
+          <div className="format-popover-header">
+            <strong>{visibleGroups.find((group) => group.id === activeGroup)?.label}</strong>
+            <button type="button" className="format-popover-close" aria-label="Close formatting options" onClick={() => setOpenGroup(null)}>×</button>
+          </div>
+          {renderGroupContent(activeGroup)}
+        </div>
+      )}
     </div>
   );
 }
