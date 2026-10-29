@@ -12,3 +12,36 @@
 .app .excalidraw .undo-redo-buttons button:not(:disabled):hover {
   filter: brightness(1.04);
 }
+
+/* Fit-to-content control sits beside the native zoom actions. */
+.app .excalidraw .zoom-actions .Stack_horizontal .sketchizi-fit-content-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  min-width: 34px;
+  height: 32px;
+  min-height: 32px;
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--ui-border-soft, rgb(120 128 145 / 22%));
+  border-radius: 0 7px 7px 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+.app .excalidraw .zoom-actions .Stack_horizontal .sketchizi-fit-content-button:hover:not(:disabled) {
+  background: var(--ui-hover, rgb(120 128 145 / 12%));
+  color: var(--ui-accent, #7968ee);
+}
+.app .excalidraw .zoom-actions .Stack_horizontal .sketchizi-fit-content-button:focus-visible {
+  outline: 2px solid var(--ui-accent, #7968ee);
+  outline-offset: 2px;
+}
+.app .excalidraw .zoom-actions .Stack_horizontal .sketchizi-fit-content-button:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+}
