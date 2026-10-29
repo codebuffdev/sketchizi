@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -8,7 +9,6 @@ const STROKE_COLORS = [
   ["#d98a27", "Orange"],
   ["#7c3aed", "Violet"],
 ];
-
 const FILL_COLORS = [
   ["transparent", "No fill"],
   ["#e7bfc1", "Rose fill"],
@@ -16,12 +16,22 @@ const FILL_COLORS = [
   ["#a8c7e5", "Blue fill"],
   ["#e2d8b9", "Sand fill"],
 ];
-
 const SHAPE_TYPES = new Set(["rectangle", "diamond", "ellipse"]);
 const LINE_TYPES = new Set(["line", "arrow", "rectangle", "diamond", "ellipse"]);
 const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]];
 const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— —"], ["dotted", "Dotted", "· · ·"]];
 const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
+const FONT_FAMILIES = [[1, "Hand-drawn", "✎"], [2, "Sans", "A"], [3, "Code", "</>"], [5, "Excalifont", "E"], [6, "Nunito", "N"], [7, "Lilita", "L"], [8, "Comic", "C"], [9, "Liberation", "L"]];
+const FONT_SIZES = [[12, "XS"], [16, "S"], [20, "M"], [28, "L"], [36, "XL"]];
+const TEXT_ALIGNMENTS = [["left", "Left", "≡"], ["center", "Center", "☰"], ["right", "Right", "≡"]];
+const GROUPS = [
+  { id: "stroke", label: "Stroke", icon: "◒" },
+  { id: "fontFamily", label: "Font family", icon: "A" },
+  { id: "fontSize", label: "Font size", icon: "T" },
+  { id: "textAlign", label: "Text align", icon: "≡" },
+  { id: "opacity", label: "Opacity", icon: "◐" },
+  { id: "layers", label: "Layers", icon: "▤" },
+];
 
 function getSelectionPosition(api, elements, root) {
   if (!api || !root || !elements.length) return null;
@@ -39,8 +49,8 @@ function getSelectionPosition(api, elements, root) {
     bounds.bottom = Math.max(bounds.bottom, y, y + height);
     return bounds;
   }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
-
   if (!Number.isFinite(sceneBounds.left) || !Number.isFinite(sceneBounds.top)) return null;
+
   const viewportWidth = Number(appState.width) || root.clientWidth;
   const viewportHeight = Number(appState.height) || root.clientHeight;
   const centerX = ((sceneBounds.left + sceneBounds.right) / 2 + (Number(appState.scrollX) || 0)) * zoom + viewportWidth / 2;
@@ -48,23 +58,30 @@ function getSelectionPosition(api, elements, root) {
   const bottomY = (sceneBounds.bottom + (Number(appState.scrollY) || 0)) * zoom + viewportHeight / 2;
   const rootWidth = root.clientWidth || viewportWidth;
   const rootHeight = root.clientHeight || viewportHeight;
-  const preferredWidth = Math.max(1, Math.min(520, rootWidth - 16));
-  const left = Math.max(8, Math.min(rootWidth - preferredWidth - 8, centerX - preferredWidth / 2));
-  // Reserve space for Excalidraw's bottom controls and the compact dock.
-  // Prefer below the selection, but flip above it before the toolbar reaches
-  // the dock/scroll-back area. Clamp the final position to the usable canvas.
-  const toolbarHeight = 42;
-  const bottomDockClearance = 88;
-  const usableBottom = Math.max(8, rootHeight - bottomDockClearance);
-  const belowTop = bottomY + 10;
-  const aboveTop = topY - toolbarHeight - 10;
-  const top = belowTop + toolbarHeight <= usableBottom
-    ? belowTop
-    : Math.max(8, aboveTop);
+  const barWidth = 48;
+  const left = Math.max(8, Math.min(rootWidth - barWidth - 8, centerX - barWidth / 2));
+  const top = bottomY + 10 + 42 < rootHeight - 72 ? bottomY + 10 : Math.max(8, topY - 52);
+  const popoverSide = left + barWidth + 340 + 16 <= rootWidth ? "right" : "left";
   return {
     left: `${left}px`,
-    top: `${Math.max(8, Math.min(usableBottom - toolbarHeight, top))}px`,
+    top: `${Math.max(8, Math.min(rootHeight - 52, top))}px`,
+    "--format-popover-side": popoverSide,
   };
+}
+
+function Swatch({ color, label, selected, onClick, fill = false }) {
+  return (
+    <button
+      type="button"
+      key={color}
+      className={`format-option-swatch${selected ? " is-selected" : ""}${fill ? " is-fill-swatch" : ""}${color === "transparent" ? " is-transparent" : ""}`}
+      style={color === "transparent" ? undefined : { "--swatch-color": color }}
+      aria-label={label}
+      aria-pressed={selected}
+      title={label}
+      onClick={onClick}
+    >{color === "transparent" ? "×" : null}</button>
+  );
 }
 
 export default function ContextualFormattingToolbar({
@@ -77,29 +94,35 @@ export default function ContextualFormattingToolbar({
   propertiesOpen = false,
   canEdit = true,
 }) {
+  const [openGroup, setOpenGroup] = useState(null);
   const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
   const first = liveSelection[0];
   const elementTypes = liveSelection.map((element) => element.type);
-  const showFill = elementTypes.some((type) => SHAPE_TYPES.has(type));
-  const showStrokeWidth = elementTypes.some((type) => LINE_TYPES.has(type));
-  const showTextSize = elementTypes.includes("text");
+  const hasText = elementTypes.includes("text");
+  const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
+  const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
+  const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+  const onlyTextSelection = liveSelection.every((element) => element.type === "text");
   const position = useMemo(
     () => getSelectionPosition(apiRef?.current, liveSelection, canvasRootRef?.current),
     // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [apiRef, canvasRootRef, canvasRevision, selectedElements],
   );
-
-  // Keep the primary contextual toolbar visible; More opens the secondary Properties panel.
   if (!canEdit || liveSelection.length === 0 || !position) return null;
 
-  const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
-  const onlyTextSelection = liveSelection.every((element) => element.type === "text");
   const currentStroke = (first?.customData?.iconColor || first?.strokeColor)?.toLowerCase();
   const currentFill = first?.backgroundColor?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(first?.strokeWidth) || 1;
   const currentFontSize = Number(first?.fontSize) || 20;
+  const currentFontFamily = Number(first?.fontFamily) || DEFAULT_FONT_FAMILY_ID;
+  const currentTextAlign = first?.textAlign || "left";
   const currentOpacity = Number(first?.opacity ?? 100);
+  const visibleGroups = GROUPS.filter((group) => {
+    if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") return hasText;
+    return true;
+  });
+  const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const reorderSelection = (direction) => {
     const api = apiRef?.current;
     if (!api || liveSelection.length === 0) return;
@@ -109,10 +132,99 @@ export default function ContextualFormattingToolbar({
     const moving = scene.filter(isSelectedLive);
     if (!moving.length) return;
     const remaining = scene.filter((element) => !isSelectedLive(element));
-    const nextElements = direction === "back" ? [...moving, ...remaining] : [...remaining, ...moving];
-    api.updateScene({ elements: nextElements });
+    api.updateScene({ elements: direction === "back" ? [...moving, ...remaining] : [...remaining, ...moving] });
   };
-  const showShapeStyle = liveSelection.some((element) => SHAPE_TYPES.has(element.type) || element.type === "line" || element.type === "arrow" || element.type === "freedraw");
+
+  const renderGroupContent = (groupId) => {
+    if (groupId === "stroke") return (
+      <>
+        <div className="format-option-section">
+          <div className="format-option-label">{onlyTextSelection ? "Text color" : "Stroke color"}</div>
+          <div className="format-option-row">
+            {STROKE_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyToSelected({ strokeColor: color })} />)}
+            <label className="format-custom-color" title="Choose custom color">
+              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyToSelected({ strokeColor: event.target.value })} />
+            </label>
+          </div>
+        </div>
+        {!onlyTextSelection && !hasImageSelection && hasShape && (
+          <div className="format-option-section">
+            <div className="format-option-label">Background</div>
+            <div className="format-option-row">
+              {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyToSelected({ backgroundColor: color })} />)}
+            </div>
+          </div>
+        )}
+        {!onlyTextSelection && !hasImageSelection && hasLine && (
+          <div className="format-option-section">
+            <div className="format-option-label">Stroke width</div>
+            <div className="format-option-row">
+              {[1, 2, 4].map((width) => <button key={width} type="button" className={`format-option-button${currentStrokeWidth === width ? " is-selected" : ""}`} aria-pressed={currentStrokeWidth === width} onClick={() => applyToSelected({ strokeWidth: width })}>{width}</button>)}
+            </div>
+            {hasShape && <>
+              <div className="format-option-label format-sub-label">Fill style</div>
+              <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyToSelected({ fillStyle: value })}>{glyph}</button>)}</div>
+            </>}
+            <div className="format-option-label format-sub-label">Line style</div>
+            <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.strokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.strokeStyle === value} onClick={() => applyToSelected({ strokeStyle: value })}>{glyph}</button>)}</div>
+            <div className="format-option-label format-sub-label">Roughness</div>
+            <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} onClick={() => applyToSelected({ roughness: value })}>{label}</button>)}</div>
+          </div>
+        )}
+      </>
+    );
+    if (groupId === "fontFamily") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Font family</div>
+        <div className="format-option-row format-font-families">
+          {FONT_FAMILIES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentFontFamily === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyToSelected({ fontFamily: value })}>{glyph}</button>)}
+        </div>
+      </div>
+    );
+    if (groupId === "fontSize") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Font size</div>
+        <div className="format-option-row">
+          {FONT_SIZES.map(([value, label]) => <button key={value} type="button" className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontSize === value} onClick={() => applyToSelected({ fontSize: value })}>{label}</button>)}
+        </div>
+        <div className="format-option-row format-custom-size">
+          <button type="button" className="format-option-button" aria-label="Decrease text size" onClick={() => applyToSelected({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
+          <span>{currentFontSize}</span>
+          <button type="button" className="format-option-button" aria-label="Increase text size" onClick={() => applyToSelected({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
+        </div>
+      </div>
+    );
+    if (groupId === "textAlign") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Text alignment</div>
+        <div className="format-option-row">
+          {TEXT_ALIGNMENTS.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentTextAlign === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentTextAlign === value} onClick={() => applyToSelected({ textAlign: value })}>{glyph}</button>)}
+        </div>
+      </div>
+    );
+    if (groupId === "opacity") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Opacity</div>
+        <div className="format-opacity-control">
+          <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })} />
+          <span>{currentOpacity}</span>
+        </div>
+      </div>
+    );
+    if (groupId === "layers") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Layer order</div>
+        <div className="format-option-row">
+          <button type="button" className="format-option-button" aria-label="Send selection to back" title="Send to back" onClick={() => reorderSelection("back")}>⇊</button>
+          <button type="button" className="format-option-button" aria-label="Send selection backward" title="Send backward" onClick={() => reorderSelection("back")}>↓</button>
+          <button type="button" className="format-option-button" aria-label="Bring selection forward" title="Bring forward" onClick={() => reorderSelection("front")}>↑</button>
+          <button type="button" className="format-option-button" aria-label="Bring selection to front" title="Bring to front" onClick={() => reorderSelection("front")}>⇈</button>
+        </div>
+        <button type="button" className="format-more-properties" onClick={onOpenProperties}>Open Properties panel</button>
+      </div>
+    );
+    return null;
+  };
 
   return (
     <div
@@ -123,126 +235,29 @@ export default function ContextualFormattingToolbar({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
-      {onlyTextSelection && <div className="contextual-formatting-group" role="group" aria-label="Text color">
-        {STROKE_COLORS.map(([color, label]) => (
+      <div className="format-icon-rail" role="group" aria-label="Formatting options">
+        {visibleGroups.map((group) => (
           <button
-            key={color}
+            key={group.id}
             type="button"
-            className={`contextual-color-swatch${currentStroke === color ? " is-selected" : ""}`}
-            style={{ "--swatch-color": color }}
-            aria-label={`Text color ${label}`}
-            aria-pressed={currentStroke === color}
-            title={`Text color: ${label}`}
-            onClick={() => applyToSelected({ strokeColor: color })}
-          />
+            className={`format-icon-button${activeGroup === group.id ? " is-active" : ""}`}
+            aria-label={group.label}
+            aria-expanded={activeGroup === group.id}
+            aria-pressed={activeGroup === group.id}
+            title={group.label}
+            onClick={() => setOpenGroup((current) => current === group.id ? null : group.id)}
+          >{group.icon}</button>
         ))}
-      </div>}
-
-
-
-      {!hasImageSelection && !onlyTextSelection && <div className="contextual-formatting-group" role="group" aria-label="Stroke color">
-        {STROKE_COLORS.map(([color, label]) => (
-          <button
-            key={color}
-            type="button"
-            className={`contextual-color-swatch${currentStroke === color ? " is-selected" : ""}`}
-            style={{ "--swatch-color": color }}
-            aria-label={`Stroke ${label}`}
-            aria-pressed={currentStroke === color}
-            title={`Stroke: ${label}`}
-            onClick={() => applyToSelected({ strokeColor: color })}
-          />
-        ))}
-      </div>}
-
-      <div className="contextual-formatting-group contextual-custom-color-group" role="group" aria-label="Custom color">
-        <label className="contextual-custom-color" title="Choose custom color">
-          <span aria-hidden="true">+</span>
-          <input
-            type="color"
-            aria-label="Choose custom color"
-            value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"}
-            onChange={(event) => applyToSelected({ strokeColor: event.target.value })}
-          />
-        </label>
       </div>
-
-      {showFill && !hasImageSelection && (
-        <div className="contextual-formatting-group" role="group" aria-label="Fill color">
-          {FILL_COLORS.map(([color, label]) => (
-            <button
-              key={color}
-              type="button"
-              className={`contextual-color-swatch contextual-fill-swatch${currentFill === color ? " is-selected" : ""}${color === "transparent" ? " is-transparent" : ""}`}
-              style={color === "transparent" ? undefined : { "--swatch-color": color }}
-              aria-label={label}
-              aria-pressed={currentFill === color}
-              title={label}
-              onClick={() => applyToSelected({ backgroundColor: color })}
-            >
-              {color === "transparent" ? <span aria-hidden="true">×</span> : null}
-            </button>
-          ))}
+      {activeGroup && (
+        <div className={`format-options-popover side-${position["--format-popover-side"]}`} role="dialog" aria-label={`${visibleGroups.find((group) => group.id === activeGroup)?.label} options`}>
+          <div className="format-popover-header">
+            <strong>{visibleGroups.find((group) => group.id === activeGroup)?.label}</strong>
+            <button type="button" className="format-popover-close" aria-label="Close formatting options" onClick={() => setOpenGroup(null)}>×</button>
+          </div>
+          {renderGroupContent(activeGroup)}
         </div>
       )}
-
-      {showStrokeWidth && !hasImageSelection && (
-        <div className="contextual-formatting-group contextual-line-width" role="group" aria-label="Stroke width">
-          {[1, 2, 4].map((width) => (
-            <button
-              key={width}
-              type="button"
-              className={`contextual-width-button${currentStrokeWidth === width ? " is-selected" : ""}`}
-              aria-label={`Stroke width ${width}`}
-              aria-pressed={currentStrokeWidth === width}
-              title={`Stroke width: ${width}`}
-              onClick={() => applyToSelected({ strokeWidth: width })}
-            ><span style={{ height: `${Math.min(width + 1, 5)}px` }} /></button>
-          ))}
-        </div>
-      )}
-
-      {showTextSize && (
-        <div className="contextual-formatting-group contextual-text-size" role="group" aria-label="Text size">
-          <button type="button" aria-label="Decrease text size" title="Decrease text size" onClick={() => applyToSelected({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
-          <span aria-label={`Font size ${currentFontSize}`}>{currentFontSize}</span>
-          <button type="button" aria-label="Increase text size" title="Increase text size" onClick={() => applyToSelected({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
-        </div>
-      )}
-
-      {showShapeStyle && !hasImageSelection && (
-        <>
-          {showFill && <div className="contextual-formatting-group" role="group" aria-label="Fill style">
-            {FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={first?.fillStyle === value ? "is-selected" : ""} aria-label={label} aria-pressed={first?.fillStyle === value} title={label} onClick={() => applyToSelected({ fillStyle: value })}>{glyph}</button>)}
-          </div>}
-          <div className="contextual-formatting-group" role="group" aria-label="Line style">
-            {STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={first?.strokeStyle === value ? "is-selected" : ""} aria-label={label} aria-pressed={first?.strokeStyle === value} title={label} onClick={() => applyToSelected({ strokeStyle: value })}>{glyph}</button>)}
-          </div>
-          <div className="contextual-formatting-group" role="group" aria-label="Roughness">
-            {ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={Number(first?.roughness ?? 1) === value ? "is-selected" : ""} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} title={label} onClick={() => applyToSelected({ roughness: value })}>{label.slice(0, 1)}</button>)}
-          </div>
-          <div className="contextual-formatting-group contextual-opacity" role="group" aria-label="Opacity">
-            <label title="Opacity"><span>O</span><input aria-label="Opacity" type="range" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyToSelected({ opacity: Number(event.target.value) })}/><span>{currentOpacity}</span></label>
-          </div>
-        </>
-      )}
-
-      <div className="contextual-formatting-group contextual-layer-actions" role="group" aria-label="Layer order">
-        <button type="button" aria-label="Send selection to back" title="Send to back" onClick={() => reorderSelection("back")}>↓</button>
-        <button type="button" aria-label="Bring selection to front" title="Bring to front" onClick={() => reorderSelection("front")}>↑</button>
-      </div>
-
-      <div className="contextual-formatting-group contextual-properties-action">
-        <button type="button" className="contextual-properties-button" onClick={onOpenProperties} title="More formatting options" aria-label="More formatting options">
-          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <path d="M3 5h14M3 10h14M3 15h14" />
-            <circle cx="7" cy="5" r="2" fill="currentColor" stroke="none" />
-            <circle cx="12" cy="10" r="2" fill="currentColor" stroke="none" />
-            <circle cx="8" cy="15" r="2" fill="currentColor" stroke="none" />
-          </svg>
-          <span>More</span>
-        </button>
-      </div>
     </div>
   );
 }
