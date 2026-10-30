@@ -122,10 +122,17 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
         <button type="button" onClick={onClose} aria-label="Close layers panel">×</button>
       </header>
       <label className="sketchizi-layers-auto-open">
-        <input type="checkbox" checked={autoOpen} onChange={(event) => onAutoOpenChange?.(event.target.checked)} />
-        <span>Keep Layers open when drawing</span>
+        <span className="sketchizi-layers-auto-open-copy">
+          <strong>Auto-open Layers</strong>
+          <small>Show the panel whenever you add an object</small>
+        </span>
+        <input type="checkbox" checked={autoOpen} onChange={(event) => onAutoOpenChange?.(event.target.checked)} aria-label="Keep Layers open when drawing" />
       </label>
-      <label className="sketchizi-layers-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a layer…" aria-label="Search layers" /></label>
+      <label className="sketchizi-layers-search">
+        <span className="sketchizi-layers-search-icon" aria-hidden="true" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search layers by name or type" aria-label="Search layers" />
+        {query && <button type="button" className="sketchizi-layers-search-clear" onClick={() => setQuery("")} aria-label="Clear layer search">×</button>}
+      </label>
       <div className="sketchizi-layers-list" role="list" aria-label="Diagram layers">
         {elements.length === 0 ? <div className="sketchizi-layers-empty">Your diagram layers will appear here.</div> : filteredElements.length === 0 ? <div className="sketchizi-layers-empty">No layers match your search.</div> : filteredElements.map(({ element, index }) => {
           const label = layerLabel(element, index);
