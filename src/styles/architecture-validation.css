@@ -705,3 +705,72 @@
   --text-secondary: #a5a3ad;
 }
 .app.theme-dark .sketchizi-layers-search:focus-within { background: #1d1d22; }
+
+
+/* Make the auto-open switch an obvious, comfortable control */
+.sketchizi-layers-auto-open {
+  min-height: 68px;
+  padding: 11px 13px;
+  gap: 12px;
+  border-radius: 11px;
+  background: var(--layers-control-bg, #f7f7fa);
+}
+.sketchizi-layers-auto-open-copy strong { font-size: 12px; }
+.sketchizi-layers-auto-open-copy small { font-size: 10px; }
+.sketchizi-layers-auto-open-state {
+  margin-left: auto;
+  min-width: 34px;
+  padding: 4px 7px;
+  border: 1px solid var(--border-color, #dedee3);
+  border-radius: 6px;
+  color: var(--text-secondary, #777);
+  background: var(--panel-bg, #fff);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.sketchizi-layers-auto-open-state.is-on {
+  color: var(--focus-color, #6254c7);
+  border-color: color-mix(in srgb, var(--focus-color, #8274e8) 35%, transparent);
+  background: color-mix(in srgb, var(--focus-color, #8274e8) 10%, var(--panel-bg, #fff));
+}
+.sketchizi-layers-auto-open input {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 27px;
+  border: 1px solid #a1a1aa;
+  border-radius: 999px;
+  background: #a1a1aa;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.12);
+}
+.sketchizi-layers-auto-open input::before {
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.24);
+}
+.sketchizi-layers-auto-open input:checked {
+  border-color: var(--focus-color, #6965db);
+  background: var(--focus-color, #6965db);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.12), 0 0 0 2px color-mix(in srgb, var(--focus-color, #6965db) 12%, transparent);
+}
+.sketchizi-layers-auto-open input:checked::before { transform: translateX(19px); }
+.sketchizi-layers-auto-open:hover .sketchizi-layers-auto-open-state {
+  border-color: color-mix(in srgb, var(--focus-color, #8274e8) 45%, var(--border-color, #dedee3));
+}
+.app.theme-dark .sketchizi-layers-auto-open {
+  --layers-control-bg: #25252b;
+}
+.app.theme-dark .sketchizi-layers-auto-open-state {
+  background: #1d1d22;
+  color: #aaa7b2;
+}
+.app.theme-dark .sketchizi-layers-auto-open-state.is-on {
+  color: #c3baff;
+  background: #342f49;
+  border-color: #5d527e;
+}
