@@ -20,6 +20,7 @@ export default function SketchiziCanvas({
   const canvasRootRef = useRef(null);
   const fitContentButtonRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [canvasApiReady, setCanvasApiReady] = useState(false);
   const gridSnapBaselineRef = useRef(null);
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
@@ -33,6 +34,7 @@ export default function SketchiziCanvas({
   }, [onViewportChange]);
   const registerExcalidrawAPI = useCallback((api) => {
     handleExcalidrawAPI?.(api);
+    setCanvasApiReady(Boolean(api));
     setCanvasRevision((revision) => revision + 1);
   }, [handleExcalidrawAPI]);
 
@@ -721,7 +723,7 @@ export default function SketchiziCanvas({
           canEdit={canEdit && !viewModeEnabled}
         />
       )}
-      <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
+      <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} apiReady={canvasApiReady} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />
