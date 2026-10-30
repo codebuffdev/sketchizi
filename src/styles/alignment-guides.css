@@ -17,6 +17,11 @@
   shape-rendering: crispEdges;
 }
 
+.sketchizi-alignment-guides line.is-spacing-guide {
+  stroke-dasharray: 4 3;
+  opacity: 0.78;
+}
+
 /* Keep alignment guides theme-aware and subtle against each canvas background. */
 .theme-light .sketchizi-alignment-guides line,
 .app.theme-light .sketchizi-alignment-guides line {
