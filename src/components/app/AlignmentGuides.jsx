@@ -1,108 +1,245 @@
 import { useEffect, useState } from "react";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { calculateAlignmentGuides } from "../../features/canvas/alignmentGuides.js";
+import { calculateEqualSpacingGuides, snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
 
 const EMPTY_GUIDES = [];
 
-export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
+function selectedElementIds(appState) {
+  return new Set(Object.entries(appState?.selectedElementIds || {})
+    .filter(([, selected]) => selected)
+    .map(([id]) => id));
+}
+
+function visibleElements(api) {
+  return (api?.getSceneElements?.() || []).filter((element) =>
+    element && !element.isDeleted && !element.deleted);
+}
+
+export default function AlignmentGuides({ canvasRootRef, apiRef, api: apiProp, canEdit, viewModeEnabled }) {
   const [guides, setGuides] = useState(EMPTY_GUIDES);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const root = canvasRootRef.current;
-    if (!root || !canEdit || viewModeEnabled) {
+    const api = apiProp || apiRef?.current;
+    if (!root || !api || !canEdit || viewModeEnabled) {
       setGuides(EMPTY_GUIDES);
       return undefined;
     }
-    let dragging = false;
-    let frame = 0;
-    let lastPointer = null;
 
-    const clear = () => {
-      dragging = false;
-      lastPointer = null;
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      setGuides(EMPTY_GUIDES);
+    let gesture = null;
+    let renderFrame = 0;
+    let selectionFrame = 0;
+    let finishFrame = 0;
+    let latestPointer = null;
+
+    const hide = () => setGuides(EMPTY_GUIDES);
+    const cancelFrames = () => {
+      if (renderFrame) cancelAnimationFrame(renderFrame);
+      if (selectionFrame) cancelAnimationFrame(selectionFrame);
+      if (finishFrame) cancelAnimationFrame(finishFrame);
+      renderFrame = selectionFrame = finishFrame = 0;
     };
 
-    const update = () => {
-      frame = 0;
-      if (!dragging || !lastPointer) return;
-      const api = apiRef?.current;
-      if (!api) return;
+    const renderGuides = () => {
+      renderFrame = 0;
+      if (!gesture || !latestPointer) return;
       const appState = api.getAppState?.() || {};
-      const selectedIds = new Set(Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id));
-      const elements = api.getSceneElements?.() || [];
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+      const dx = (latestPointer.x - gesture.pointer.x) / zoom;
+      const dy = (latestPointer.y - gesture.pointer.y) / zoom;
+      const preview = gesture.elements.map((element) => gesture.selectedIds.has(element.id)
+        ? { ...element, x: element.x + dx, y: element.y + dy }
+        : element);
+
+      const found = calculateAlignmentGuides(preview, gesture.selectedIds, 10 / zoom);
+      const spacing = calculateEqualSpacingGuides(preview, gesture.selectedIds, 5 / zoom)
+        .map((guide) => ({ ...guide, kind: "spacing" }));
+
+      const viewport = root.querySelector(".excalidraw");
+      if (!viewport) { hide(); return; }
       const rootRect = root.getBoundingClientRect();
-      const viewport = root.querySelector('.excalidraw');
-      if (!viewport) { setGuides(EMPTY_GUIDES); return; }
       const viewportRect = viewport.getBoundingClientRect();
-      setOverlay({ left: viewportRect.left - rootRect.left, top: viewportRect.top - rootRect.top, width: viewportRect.width, height: viewportRect.height });
-      const tolerance = 9 / zoom;
-      const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
-      const sceneToViewport = api.sceneCoordsToViewportCoords;
+      setOverlay({
+        left: viewportRect.left - rootRect.left,
+        top: viewportRect.top - rootRect.top,
+        width: viewportRect.width,
+        height: viewportRect.height,
+      });
+
+      // Excalidraw 0.18 scene-to-screen transform: (scene + scroll) * zoom + offset.
       const toLocal = (axis, position) => {
-        if (typeof sceneToViewport === "function") {
-          const point = sceneToViewport({
-            sceneX: axis === "x" ? position : 0,
-            sceneY: axis === "y" ? position : 0,
-          });
-          return axis === "x" ? point.x : point.y;
+        if (axis === "x") {
+          return (position + (Number(appState.scrollX) || 0)) * zoom +
+            (Number(appState.offsetLeft) || viewportRect.left) - viewportRect.left;
         }
-        const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
-        return (position + offset) * zoom;
+        return (position + (Number(appState.scrollY) || 0)) * zoom +
+          (Number(appState.offsetTop) || viewportRect.top) - viewportRect.top;
       };
-      setGuides(found.map((guide) => ({
+      const alignmentScreen = found.map((guide) => ({
         ...guide,
+        kind: "alignment",
         screenPosition: toLocal(guide.axis, guide.position),
         screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start),
         screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end),
-      })).filter((guide) => Number.isFinite(guide.screenPosition) && Number.isFinite(guide.screenStart) && Number.isFinite(guide.screenEnd)));
+      }));
+      const spacingScreen = spacing.map((guide) => ({
+        ...guide,
+        screenPosition: toLocal(guide.axis === "x" ? "y" : "x", guide.position),
+        screenStart: toLocal(guide.axis, guide.start),
+        screenEnd: toLocal(guide.axis, guide.end),
+      }));
+      setGuides(alignmentScreen.concat(spacingScreen).filter((guide) =>
+        Number.isFinite(guide.screenPosition) &&
+        Number.isFinite(guide.screenStart) &&
+        Number.isFinite(guide.screenEnd)));
     };
 
-    const scheduleUpdate = () => {
-      if (!frame) frame = requestAnimationFrame(update);
+    const scheduleRender = () => {
+      if (!renderFrame) renderFrame = requestAnimationFrame(renderGuides);
     };
+
+    // The pinned Excalidraw imperative API has no pointer subscription methods.
+    // Observe its actual canvas DOM events and defer selection reads until its
+    // own event handlers have completed.
     const onPointerDown = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (event.button !== 0 || !target?.closest(".excalidraw")) return;
-      // Selection handles and interaction overlays receive pointer events too;
-      // listening only for .layer-canvas misses those normal drag gestures.
-      if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
-      const appState = apiRef?.current?.getAppState?.() || {};
-      const selectedIds = Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id);
-      if (!selectedIds.length) return;
-      dragging = true;
-      lastPointer = { x: event.clientX, y: event.clientY };
-      scheduleUpdate();
+      if (event.button !== 0 || !event.target?.closest?.(".excalidraw")) return;
+      cancelFrames();
+      hide();
+      gesture = null;
+      latestPointer = { x: event.clientX, y: event.clientY };
+      const pointer = latestPointer;
+      selectionFrame = requestAnimationFrame(() => {
+        selectionFrame = 0;
+        if (!latestPointer) return;
+        const appState = api.getAppState?.() || {};
+        const elements = visibleElements(api);
+        const selectedIds = selectedElementIds(appState);
+        // Selection state is not guaranteed to be committed yet when the
+        // pointer starts. Resolve the element under the pointer from scene
+        // coordinates as a fallback, so click-and-drag on an unselected shape
+        // starts a guide gesture on the first drag.
+        const viewport = root.querySelector(".excalidraw");
+        const rect = viewport?.getBoundingClientRect();
+        const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+        if (rect) {
+          const sceneX = (pointer.x - rect.left) / zoom - (Number(appState.scrollX) || 0);
+          const sceneY = (pointer.y - rect.top) / zoom - (Number(appState.scrollY) || 0);
+          const hit = [...elements].reverse().find((element) => {
+            const left = Number(element.x) || 0;
+            const top = Number(element.y) || 0;
+            return sceneX >= left - 2 && sceneX <= left + (Number(element.width) || 0) + 2 &&
+              sceneY >= top - 2 && sceneY <= top + (Number(element.height) || 0) + 2;
+          });
+          if (hit && !selectedIds.has(hit.id)) {
+            selectedIds.clear();
+            selectedIds.add(hit.id);
+          }
+        }
+        if (![...selectedIds].some((id) => elements.some((element) => element.id === id))) return;
+        gesture = {
+          pointer,
+          selectedIds,
+          elements,
+          baseline: new Map(elements.map((element) => [element.id, {
+            x: element.x, y: element.y, width: element.width, height: element.height,
+            angle: element.angle, type: element.type,
+          }])),
+        };
+      });
     };
+
     const onPointerMove = (event) => {
-      if (!dragging) return;
-      lastPointer = { x: event.clientX, y: event.clientY };
-      scheduleUpdate();
+      if (!latestPointer) return;
+      latestPointer = { x: event.clientX, y: event.clientY };
+      if (gesture) scheduleRender();
     };
-    root.addEventListener("pointerdown", onPointerDown, true);
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("pointerup", clear);
-    window.addEventListener("pointercancel", clear);
+
+    const onPointerUp = () => {
+      if (!latestPointer && !gesture) return;
+      if (selectionFrame) {
+        cancelAnimationFrame(selectionFrame);
+        selectionFrame = 0;
+      }
+      const completed = gesture;
+      gesture = null;
+      latestPointer = null;
+      if (renderFrame) cancelAnimationFrame(renderFrame);
+      renderFrame = 0;
+      if (!completed) { hide(); return; }
+
+      // Let Excalidraw finish its pointer-up scene update before applying the
+      // final magnetic correction.
+      finishFrame = requestAnimationFrame(() => {
+        finishFrame = requestAnimationFrame(() => {
+          finishFrame = 0;
+          const currentApi = apiRef?.current;
+          if (!currentApi) { hide(); return; }
+          const elements = currentApi.getSceneElements?.() || [];
+          const appState = currentApi.getAppState?.() || {};
+          const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+          const snapped = snapSceneElementsToSmartGuides(
+            elements, completed.baseline, completed.selectedIds, 8 / zoom,
+          );
+          if (snapped !== elements) {
+            currentApi.updateScene?.({
+              elements: snapped,
+              captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+            });
+          }
+          hide();
+        });
+      });
+    };
+
+    // Capture at document level so Excalidraw pointer capture and nested canvas
+    // surfaces cannot bypass the gesture start/end handlers.
+    document.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointermove", onPointerMove, { passive: true, capture: true });
+    window.addEventListener("pointerup", onPointerUp, true);
+    window.addEventListener("pointercancel", onPointerUp, true);
     return () => {
-      root.removeEventListener("pointerdown", onPointerDown, true);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", clear);
-      window.removeEventListener("pointercancel", clear);
-      clear();
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
+      cancelFrames();
+      gesture = null;
+      latestPointer = null;
+      hide();
     };
-  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
+  }, [apiProp, apiRef, canvasRootRef, canEdit, viewModeEnabled]);
 
   if (!guides.length) return null;
   return (
-    <svg className="sketchizi-alignment-guides" style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }} viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)} aria-hidden="true" focusable="false">
-      {guides.map((guide, index) => guide.axis === "x" ? (
-        <line key={guide.axis + guide.screenPosition + index} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
-      ) : (
-        <line key={guide.axis + guide.screenPosition + index} x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
-      ))}
+    <svg className="sketchizi-alignment-guides"
+      style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }}
+      viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)}
+      aria-hidden="true" focusable="false">
+      {guides.map((guide, index) => {
+        const key = guide.kind + guide.axis + guide.screenPosition + index;
+        if (guide.kind === "spacing") {
+          return guide.axis === "x" ? (
+            <g key={key} className="sketchizi-spacing-guide">
+              <line x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
+              <line x1={guide.screenStart} x2={guide.screenStart} y1={guide.screenPosition - 4} y2={guide.screenPosition + 4} />
+              <line x1={guide.screenEnd} x2={guide.screenEnd} y1={guide.screenPosition - 4} y2={guide.screenPosition + 4} />
+            </g>
+          ) : (
+            <g key={key} className="sketchizi-spacing-guide">
+              <line x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
+              <line x1={guide.screenPosition - 4} x2={guide.screenPosition + 4} y1={guide.screenStart} y2={guide.screenStart} />
+              <line x1={guide.screenPosition - 4} x2={guide.screenPosition + 4} y1={guide.screenEnd} y2={guide.screenEnd} />
+            </g>
+          );
+        }
+        return guide.axis === "x" ? (
+          <line key={key} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
+        ) : (
+          <line key={key} x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
+        );
+      })}
     </svg>
   );
 }

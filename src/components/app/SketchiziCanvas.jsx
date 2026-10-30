@@ -20,7 +20,6 @@ export default function SketchiziCanvas({
   const canvasRootRef = useRef(null);
   const fitContentButtonRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
-  const gridSnapBaselineRef = useRef(null);
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
@@ -456,21 +455,37 @@ export default function SketchiziCanvas({
     let firstFrame = 0;
     let secondFrame = 0;
     let pointerActive = false;
+    let gestureSequence = 0;
 
     const captureBaseline = (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      if (!gridSnappingEnabled || !canEdit || viewModeEnabled || event.button !== 0 || !target?.closest(".layer-canvas")) return;
-      const api = apiRef?.current;
-      if (!api) return;
-      const elements = api.getSceneElements?.() || [];
-      gridSnapBaselineRef.current = new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [element.id, {
-        x: element.x, y: element.y, width: element.width, height: element.height,
-        angle: element.angle, type: element.type,
-      }]));
-      pointerActive = true;
+      if (!canEdit || viewModeEnabled || event.button !== 0 || !target?.closest(".excalidraw")) return;
+      if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
+      // Excalidraw may select an unselected element during this same
+      // pointerdown. Read selection after its React handler has completed,
+      // otherwise click-and-drag on an unselected shape is missed.
+      const sequence = ++gestureSequence;
+      queueMicrotask(() => {
+        if (sequence !== gestureSequence) return;
+        const api = apiRef?.current;
+        if (!api) return;
+        const elements = api.getSceneElements?.() || [];
+        const selectedIds = Object.entries(api.getAppState?.().selectedElementIds || {})
+          .filter(([, selected]) => selected).map(([id]) => id);
+        if (!selectedIds.length) return;
+        gridSnapBaselineRef.current = {
+          baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [element.id, {
+            x: element.x, y: element.y, width: element.width, height: element.height,
+            angle: element.angle, type: element.type,
+          }])),
+          selectedIds: new Set(selectedIds),
+        };
+        pointerActive = true;
+      });
     };
 
     const clearGesture = () => {
+      gestureSequence += 1;
       pointerActive = false;
       gridSnapBaselineRef.current = null;
       if (firstFrame) cancelAnimationFrame(firstFrame);
@@ -482,15 +497,24 @@ export default function SketchiziCanvas({
     const finishGesture = () => {
       if (!pointerActive) return;
       pointerActive = false;
-      const baseline = gridSnapBaselineRef.current;
+      const gesture = gridSnapBaselineRef.current;
       gridSnapBaselineRef.current = null;
-      if (!baseline || !gridSnappingEnabled || !canEdit || viewModeEnabled) return;
+      if (!gesture || !canEdit || viewModeEnabled) return;
       firstFrame = requestAnimationFrame(() => {
         secondFrame = requestAnimationFrame(() => {
           const api = apiRef?.current;
           if (!api) return;
           const currentElements = api.getSceneElements?.() || [];
-          const nextElements = snapChangedSceneElements(currentElements, baseline, gridSize);
+          const appState = api.getAppState?.() || {};
+          const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+          const smartSnapped = snapSceneElementsToSmartGuides(
+            currentElements, gesture.baseline, gesture.selectedIds, 8 / zoom,
+          );
+          const nextElements = smartSnapped !== currentElements
+            ? smartSnapped
+            : gridSnappingEnabled
+              ? snapChangedSceneElements(currentElements, gesture.baseline, gridSize)
+              : currentElements;
           if (nextElements !== currentElements) {
             api.updateScene({ elements: nextElements, captureUpdate: CaptureUpdateAction.NEVER });
           }
@@ -721,7 +745,7 @@ export default function SketchiziCanvas({
           canEdit={canEdit && !viewModeEnabled}
         />
       )}
-      <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
+      <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} api={apiRef.current} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />

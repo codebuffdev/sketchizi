@@ -23,3 +23,16 @@
   stroke: #dc2626;
   opacity: 0.55;
 }
+
+.sketchizi-spacing-guide line {
+  stroke: #64748b;
+  stroke-width: 1.25;
+  stroke-dasharray: none;
+  opacity: 0.9;
+  vector-effect: non-scaling-stroke;
+}
+.theme-light .sketchizi-spacing-guide line,
+.app.theme-light .sketchizi-spacing-guide line {
+  stroke: #b91c1c;
+  opacity: 0.85;
+}
