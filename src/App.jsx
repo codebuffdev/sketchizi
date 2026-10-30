@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
+import LayersPanel from "./components/app/LayersPanel";
 import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
@@ -122,7 +123,7 @@ function App() {
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
-  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
+  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen, layersOpen } = panelState;
 
   // The native hamburger menu and React-powered floating catalogs are mutually
   // exclusive. Opening the native menu dismisses any active catalog/panel.
@@ -1807,19 +1808,20 @@ function App() {
 
 
         <aside
-          className={`desktop-context-region ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
-          aria-label="Properties and architecture validation"
+          className={`desktop-context-region ${architectureValidationOpen || layersOpen ? "validation-state-open" : "validation-state-closed"}`}
+          aria-label="Properties, layers, and architecture validation"
         >
-          {(propertiesOpen || architectureValidationOpen) && (
-            <div className={`desktop-validation-host ${architectureValidationOpen ? "is-open" : "is-closed"}`}>
-              <ArchitectureValidationPanel
+          {(propertiesOpen || architectureValidationOpen || layersOpen) && (
+            <div className={`desktop-validation-host ${architectureValidationOpen || layersOpen ? "is-open" : "is-closed"}`}>
+              <LayersPanel apiRef={apiRef} sceneElements={apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []} canEdit={collaborationCanEdit} onClose={() => closePanel("layers")} />
+              {!layersOpen && <ArchitectureValidationPanel
                 validation={architectureValidation}
                 sceneElements={apiRef.current?.getSceneElements?.() || []}
                 onClose={() => closePanel("architecture-validation")}
                 onSelectDiagnostic={selectArchitectureDiagnostic}
                 onApplyKubernetesSuggestion={applyKubernetesSuggestion}
                 canApplyCorrections={collaborationCanEdit}
-              />
+              />}
             </div>
           )}
         </aside>
