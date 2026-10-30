@@ -428,3 +428,129 @@
 /* Layers auto-open preference */
 .sketchizi-layers-auto-open{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:var(--text-muted,#777);border-bottom:1px solid var(--default-border-color,#ddd);cursor:pointer;}
 .sketchizi-layers-auto-open input{accent-color:var(--color-primary,#6965db);margin:0;}
+
+
+/* Layers panel refinement and desktop resize affordance */
+.sketchizi-layers-panel {
+  position: relative;
+  border-radius: 12px;
+  background: var(--panel-bg, #fff);
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+}
+.sketchizi-layers-header {
+  min-height: 58px;
+  padding: 12px 15px;
+  background: color-mix(in srgb, var(--panel-bg, #fff) 94%, var(--focus-color, #8274e8));
+}
+.sketchizi-layers-header strong { font-size: 14px; letter-spacing: -.02em; }
+.sketchizi-layers-header span { font-size: 11px; }
+.sketchizi-layers-header button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  font-size: 20px;
+  transition: background .15s ease, transform .15s ease;
+}
+.sketchizi-layers-header button:hover { transform: rotate(90deg); }
+.sketchizi-layers-auto-open {
+  min-height: 46px;
+  padding: 9px 14px;
+  font-size: 11px;
+  color: var(--text-secondary, #777);
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
+}
+.sketchizi-layers-auto-open input { width: 15px; height: 15px; }
+.sketchizi-layers-search {
+  height: 38px;
+  margin: 10px 10px 2px;
+  border-radius: 9px;
+  background: var(--search-bg, rgba(127,127,127,.045));
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.sketchizi-layers-search:focus-within {
+  border-color: var(--focus-color, #8274e8);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-color, #8274e8) 14%, transparent);
+}
+.sketchizi-layer-row {
+  min-height: 42px;
+  gap: 8px;
+  padding: 6px 7px;
+  border-radius: 9px;
+  transition: background .14s ease, border-color .14s ease;
+}
+.sketchizi-layer-row.is-selected {
+  border-color: color-mix(in srgb, var(--focus-color, #8274e8) 70%, transparent);
+  background: color-mix(in srgb, var(--focus-color, #8274e8) 12%, transparent);
+}
+.sketchizi-layer-type {
+  flex-basis: 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 650;
+}
+.sketchizi-layer-name { font-size: 12px; }
+.sketchizi-layer-actions { gap: 2px; }
+.sketchizi-layer-actions button {
+  display: grid;
+  place-items: center;
+  min-width: 27px;
+  height: 28px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+.sketchizi-layer-actions button:focus-visible,
+.sketchizi-layers-header button:focus-visible {
+  outline: 2px solid var(--focus-color, #8274e8);
+  outline-offset: 1px;
+}
+.sketchizi-layers-footer {
+  padding: 10px 13px;
+  font-size: 10px;
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--panel-bg, #fff) 96%, var(--text-secondary, #777));
+}
+.sketchizi-layers-resize-handle { display: none; }
+@media (min-width: 761px) {
+  .sketchizi-layers-resize-handle {
+    position: absolute;
+    z-index: 8;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 10px;
+    cursor: col-resize;
+    touch-action: none;
+    background: transparent;
+  }
+  .sketchizi-layers-resize-handle span {
+    width: 3px;
+    height: 42px;
+    border-radius: 99px;
+    background: transparent;
+    transition: background .15s ease, height .15s ease;
+  }
+  .sketchizi-layers-resize-handle:hover span,
+  .sketchizi-layers-resize-handle:focus-visible span,
+  .sketchizi-layers-resize-handle:active span {
+    height: 58px;
+    background: var(--focus-color, #8274e8);
+  }
+  .sketchizi-layers-resize-handle:focus-visible { outline: none; }
+}
+.app.theme-dark .sketchizi-layers-panel {
+  --panel-bg: #202024;
+  --border-color: #414146;
+  --text-primary: #f2f1f5;
+  --text-secondary: #a5a3ad;
+  --focus-color: #a99bff;
+  --search-bg: #19191d;
+}
+.app.theme-dark .sketchizi-layers-header,
+.app.theme-dark .sketchizi-layers-footer { background: #222226; }
+.app.theme-dark .sketchizi-layers-search { background: #19191d; }
