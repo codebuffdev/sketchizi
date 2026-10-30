@@ -9,10 +9,11 @@ function layerLabel(element, index) {
   return `${type.charAt(0).toUpperCase()}${type.slice(1)} ${index + 1}`;
 }
 
-function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
+function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdit, onClose }) {
   const [revision, setRevision] = useState(0);
   const [renamingId, setRenamingId] = useState(null);
   const [draftName, setDraftName] = useState("");
+  const [query, setQuery] = useState("");
 
   const elements = useMemo(() => {
     const live = Array.isArray(sceneElements) ? sceneElements : [];
@@ -20,6 +21,12 @@ function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
       .filter(({ element }) => element && element.type !== "selection" && element.id)
       .reverse();
   }, [sceneElements, revision]);
+
+  const selectedIds = new Set(selectedElements.map((element) => element?.id).filter(Boolean));
+  const filteredElements = elements.filter(({ element, index }) => {
+    const needle = query.trim().toLowerCase();
+    return !needle || `${layerLabel(element, index)} ${element.type || ""}`.toLowerCase().includes(needle);
+  });
 
   const updateElements = (nextElements) => {
     const api = apiRef.current;
@@ -74,12 +81,13 @@ function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
         <div><strong>Layers</strong><span>{elements.filter(({ element }) => !element.isDeleted).length} objects</span></div>
         <button type="button" onClick={onClose} aria-label="Close layers panel">×</button>
       </header>
+      <label className="sketchizi-layers-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a layer…" aria-label="Search layers" /></label>
       <div className="sketchizi-layers-list" role="list" aria-label="Diagram layers">
-        {elements.length === 0 ? <div className="sketchizi-layers-empty">Your diagram layers will appear here.</div> : elements.map(({ element, index }) => {
+        {elements.length === 0 ? <div className="sketchizi-layers-empty">Your diagram layers will appear here.</div> : filteredElements.length === 0 ? <div className="sketchizi-layers-empty">No layers match your search.</div> : filteredElements.map(({ element, index }) => {
           const label = layerLabel(element, index);
           return (
-            <div className={`sketchizi-layer-row ${element.isDeleted ? "is-hidden" : ""} ${element.locked ? "is-locked" : ""}`} key={element.id} role="listitem">
-              <div role="button" tabIndex={0} className="sketchizi-layer-select" onClick={() => selectLayer(element)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectLayer(element); } }} title={`Select ${label}`}>
+            <div className={`sketchizi-layer-row ${element.isDeleted ? "is-hidden" : ""} ${element.locked ? "is-locked" : ""} ${selectedIds.has(element.id) ? "is-selected" : ""}`} key={element.id} role="listitem">
+              <div role="button" tabIndex={0} aria-pressed={selectedIds.has(element.id)} className="sketchizi-layer-select" onClick={() => selectLayer(element)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectLayer(element); } }} title={`Select ${label}`}>
                 <span className="sketchizi-layer-type" aria-hidden="true">{String(element.type || "?").slice(0, 1).toUpperCase()}</span>
                 {renamingId === element.id ? (
                   <input autoFocus value={draftName} onChange={(event) => setDraftName(event.target.value)} onBlur={() => renameLayer(element)} onKeyDown={(event) => {
