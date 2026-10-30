@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 
 function layerLabel(element, index) {
@@ -14,6 +14,45 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
   const [renamingId, setRenamingId] = useState(null);
   const [draftName, setDraftName] = useState("");
   const [query, setQuery] = useState("");
+  const resizeRef = useRef(null);
+  const resizeStateRef = useRef(null);
+
+  const resizePanel = (clientX) => {
+    const workspace = resizeRef.current?.closest(".desktop-workspace");
+    if (!workspace) return;
+    const bounds = workspace.getBoundingClientRect();
+    const width = Math.max(260, Math.min(560, bounds.right - clientX));
+    workspace.style.setProperty("--sketchizi-desktop-context-width", `${width}px`);
+  };
+
+  const handleResizePointerDown = (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeStateRef.current = { pointerId: event.pointerId };
+    resizePanel(event.clientX);
+  };
+
+  const handleResizePointerMove = (event) => {
+    if (resizeStateRef.current?.pointerId !== event.pointerId) return;
+    resizePanel(event.clientX);
+  };
+
+  const handleResizePointerEnd = (event) => {
+    if (resizeStateRef.current?.pointerId !== event.pointerId) return;
+    resizeStateRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+
+  const handleResizeKeyDown = (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const workspace = resizeRef.current?.closest(".desktop-workspace");
+    if (!workspace) return;
+    const current = Number.parseFloat(getComputedStyle(workspace).getPropertyValue("--sketchizi-desktop-context-width")) || 320;
+    const next = Math.max(260, Math.min(560, current + (event.key === "ArrowLeft" ? 24 : -24)));
+    workspace.style.setProperty("--sketchizi-desktop-context-width", `${next}px`);
+  };
 
   const elements = useMemo(() => {
     const live = Array.isArray(sceneElements) ? sceneElements : [];
@@ -77,6 +116,7 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
 
   return (
     <section className="sketchizi-layers-panel" aria-label="Layers">
+      <div ref={resizeRef} className="sketchizi-layers-resize-handle" role="separator" aria-label="Resize Layers panel" aria-orientation="vertical" aria-valuemin={260} aria-valuemax={560} tabIndex={0} onPointerDown={handleResizePointerDown} onPointerMove={handleResizePointerMove} onPointerUp={handleResizePointerEnd} onPointerCancel={handleResizePointerEnd} onKeyDown={handleResizeKeyDown}><span /></div>
       <header className="sketchizi-layers-header">
         <div><strong>Layers</strong><span>{elements.filter(({ element }) => !element.isDeleted).length} objects</span></div>
         <button type="button" onClick={onClose} aria-label="Close layers panel">×</button>
