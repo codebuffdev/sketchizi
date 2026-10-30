@@ -1626,6 +1626,7 @@ function App() {
       anchor={moreToolsAnchor}
       position={positionMoreToolsButton}
       activateTool={activateMoreTool}
+      openPanel={openPanel}
       toggle={togglePanel}
       canEdit={collaborationCanEdit}
       placement="header"
