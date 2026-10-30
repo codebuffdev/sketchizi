@@ -47,42 +47,39 @@ export function findNearestAlignment(moving, stationary, axis, tolerance) {
 /** Detects when moving an object would make two neighboring gaps equal. */
 export function findNearestEqualSpacing(moving, stationary, axis, tolerance) {
   let best = null;
-  const stationaryBounds = stationary.map((element) => ({ element, bounds: getElementBounds(element) }));
+  const stationaryBounds = stationary.map((element) => getElementBounds(element));
   for (const item of moving) {
     const mb = getElementBounds(item);
-    const candidates = stationaryBounds.filter(({ bounds: b }) => axis === "x"
-      ? overlaps(mb.top, mb.bottom, b.top, b.bottom)
-      : overlaps(mb.left, mb.right, b.left, b.right));
+    const itemStart = axis === "x" ? mb.left : mb.top;
+    const itemEnd = axis === "x" ? mb.right : mb.bottom;
+    const itemSize = axis === "x" ? mb.width : mb.height;
+    const candidates = stationaryBounds
+      .filter((b) => axis === "x"
+        ? overlaps(mb.top, mb.bottom, b.top, b.bottom)
+        : overlaps(mb.left, mb.right, b.left, b.right))
+      .map((b) => ({ start: axis === "x" ? b.left : b.top, end: axis === "x" ? b.right : b.bottom }))
+      .sort((a, b) => a.start - b.start);
     for (let i = 0; i < candidates.length; i += 1) {
       for (let j = i + 1; j < candidates.length; j += 1) {
-        const a = candidates[i].bounds;
-        const b = candidates[j].bounds;
-        const first = axis === "x" ? a : { left: a.top, right: a.bottom };
-        const second = axis === "x" ? b : { left: b.top, right: b.bottom };
-        const left = first.left <= second.left ? first : second;
-        const right = first.left <= second.left ? second : first;
-        const gap = right.left - left.right;
-        if (gap < 0) continue;
-        const movingStart = axis === "x" ? mb.left : mb.top;
-        const movingEnd = axis === "x" ? mb.right : mb.bottom;
-        const beforeGap = movingStart - left.right;
-        const afterGap = right.left - movingEnd;
-        const targetStart = left.right + (gap + (axis === "x" ? mb.width : mb.height)) / 2 - (axis === "x" ? mb.width : mb.height);
-        const targetEnd = targetStart + (axis === "x" ? mb.width : mb.height);
-        const options = [
-          { delta: left.right + gap - movingStart, position: left.right + gap, edge: "start" },
-          { delta: right.left - gap - movingEnd, position: right.left - gap, edge: "end" },
-        ];
-        // The midpoint candidate equalizes both gaps around the moving item.
-        options.push({ delta: targetStart - movingStart, position: targetStart, edge: "center" });
-        for (const option of options) {
-          if (Math.abs(option.delta) > tolerance) continue;
-          if (!best || Math.abs(option.delta) < Math.abs(best.delta)) {
-            best = { ...option, gap, axis, itemId: item.id };
-          }
-        }
+        const left = candidates[i];
+        const right = candidates[j];
+        if (right.start < left.end) continue;
+        const targetStart = (left.end + right.start - itemSize) / 2;
+        const delta = targetStart - itemStart;
+        if (Math.abs(delta) > tolerance || !best || Math.abs(delta) < Math.abs(best.delta)) continue;
+        best = {
+          delta,
+          position: targetStart,
+          edge: "start",
+          gap: (right.start - left.end - itemSize) / 2,
+          axis,
+          itemId: item.id,
+        };
       }
     }
+    // Keep itemEnd referenced so malformed zero-size elements cannot produce
+    // a misleading spacing candidate.
+    if (itemEnd < itemStart) continue;
   }
   return best;
 }
