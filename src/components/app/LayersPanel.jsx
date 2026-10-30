@@ -83,6 +83,7 @@ function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
                 <span className="sketchizi-layer-type" aria-hidden="true">{String(element.type || "?").slice(0, 1).toUpperCase()}</span>
                 {renamingId === element.id ? (
                   <input autoFocus value={draftName} onChange={(event) => setDraftName(event.target.value)} onBlur={() => renameLayer(element)} onKeyDown={(event) => {
+                    event.stopPropagation();
                     if (event.key === "Enter") { event.preventDefault(); renameLayer(element); }
                     if (event.key === "Escape") { event.preventDefault(); setRenamingId(null); }
                   }} onClick={(event) => event.stopPropagation()} aria-label="Layer name" />
