@@ -457,28 +457,37 @@ export default function SketchiziCanvas({
     let firstFrame = 0;
     let secondFrame = 0;
     let pointerActive = false;
+    let gestureSequence = 0;
 
     const captureBaseline = (event) => {
       const target = event.target instanceof Element ? event.target : null;
       if (!canEdit || viewModeEnabled || event.button !== 0 || !target?.closest(".excalidraw")) return;
       if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
-      const api = apiRef?.current;
-      if (!api) return;
-      const elements = api.getSceneElements?.() || [];
-      const selectedIds = Object.entries(api.getAppState?.().selectedElementIds || {})
-        .filter(([, selected]) => selected).map(([id]) => id);
-      if (!selectedIds.length) return;
-      gridSnapBaselineRef.current = {
-        baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [element.id, {
-          x: element.x, y: element.y, width: element.width, height: element.height,
-          angle: element.angle, type: element.type,
-        }])),
-        selectedIds: new Set(selectedIds),
-      };
-      pointerActive = true;
+      // Excalidraw may select an unselected element during this same
+      // pointerdown. Read selection after its React handler has completed,
+      // otherwise click-and-drag on an unselected shape is missed.
+      const sequence = ++gestureSequence;
+      queueMicrotask(() => {
+        if (sequence !== gestureSequence) return;
+        const api = apiRef?.current;
+        if (!api) return;
+        const elements = api.getSceneElements?.() || [];
+        const selectedIds = Object.entries(api.getAppState?.().selectedElementIds || {})
+          .filter(([, selected]) => selected).map(([id]) => id);
+        if (!selectedIds.length) return;
+        gridSnapBaselineRef.current = {
+          baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [element.id, {
+            x: element.x, y: element.y, width: element.width, height: element.height,
+            angle: element.angle, type: element.type,
+          }])),
+          selectedIds: new Set(selectedIds),
+        };
+        pointerActive = true;
+      });
     };
 
     const clearGesture = () => {
+      gestureSequence += 1;
       pointerActive = false;
       gridSnapBaselineRef.current = null;
       if (firstFrame) cancelAnimationFrame(firstFrame);
