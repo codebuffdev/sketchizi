@@ -126,7 +126,22 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
           <strong>Auto-open Layers</strong>
           <small>Show the panel whenever you add an object</small>
         </span>
-        <input type="checkbox" role="switch" checked={autoOpen} onChange={(event) => onAutoOpenChange?.(event.target.checked)} aria-label="Keep Layers open when drawing" />
+        <button
+          type="button"
+          className={`sketchizi-layers-auto-open-button ${autoOpen ? "is-active" : ""}`}
+          role="switch"
+          aria-checked={autoOpen}
+          aria-label="Keep Layers open when drawing"
+          aria-pressed={autoOpen}
+          title={autoOpen ? "Auto-open Layers is on" : "Auto-open Layers is off"}
+          onClick={() => onAutoOpenChange?.(!autoOpen)}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <rect x="2.75" y="3.25" width="14.5" height="13.5" rx="2.25" />
+            <path d="M2.75 7h14.5M6 5.1h.01M8.5 5.1h.01" />
+            <path className="auto-open-mark" d="M10 11.25h5M12.5 8.75v5" />
+          </svg>
+        </button>
       </label>
       <label className="sketchizi-layers-search">
         <span className="sketchizi-layers-search-icon" aria-hidden="true" />
