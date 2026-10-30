@@ -926,3 +926,48 @@
   background: #7665d8;
   color: #fff;
 }
+
+
+/* Hierarchical Layers tree */
+.sketchizi-layers-tree-toolbar {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; padding:7px 12px 3px; color:var(--text-secondary,#888);
+  font-size:10px; letter-spacing:.02em;
+}
+.sketchizi-layers-tree-toolbar>div { display:flex; gap:5px; }
+.sketchizi-layers-tree-toolbar button {
+  padding:4px 8px; border:1px solid var(--border-color,#dedee3);
+  border-radius:6px; background:transparent; color:var(--text-primary,#333);
+  font:inherit; font-size:10px; cursor:pointer;
+}
+.sketchizi-layers-tree-toolbar button:hover:not(:disabled) {
+  border-color:var(--focus-color,#8274e8); background:var(--button-hover-bg,rgba(127,127,127,.1));
+}
+.sketchizi-layers-tree-toolbar button:disabled { opacity:.38; cursor:not-allowed; }
+.sketchizi-layers-tree { display:block; padding:6px 7px; }
+.sketchizi-layer-tree-group { min-width:0; }
+.sketchizi-layer-tree-children {
+  margin-left:calc(13px + var(--layer-depth,0) * 1px);
+  padding-left:9px; border-left:1px solid var(--border-color,#dedee3);
+}
+.sketchizi-layer-group-row { gap:4px; min-height:36px; padding:4px 5px; }
+.sketchizi-layer-expand {
+  display:grid; place-items:center; flex:0 0 20px; width:20px; height:24px;
+  border:0; border-radius:5px; background:transparent; color:var(--text-secondary,#888);
+  font-size:13px; cursor:pointer;
+}
+.sketchizi-layer-expand:hover { background:var(--button-hover-bg,rgba(127,127,127,.1)); color:var(--text-primary,#222); }
+.sketchizi-layer-group-select {
+  display:flex; align-items:center; gap:7px; flex:1; min-width:0;
+  border:0; background:transparent; color:inherit; text-align:left; cursor:pointer;
+}
+.sketchizi-layer-group-icon { color:var(--focus-color,#8274e8); font-size:13px; }
+.sketchizi-layer-group-select small {
+  margin-left:auto; color:var(--text-secondary,#888); font-size:9px;
+}
+.sketchizi-layer-group-row .sketchizi-layer-actions button { min-width:23px; }
+.sketchizi-layer-tree-object { margin-left:20px; }
+.sketchizi-layer-tree-object .sketchizi-layer-type { flex-basis:24px; width:24px; height:24px; }
+.sketchizi-layer-group-row.is-selected { border-color:var(--focus-color,#8274e8); background:color-mix(in srgb,var(--focus-color,#8274e8) 10%,transparent); }
+.app.theme-dark .sketchizi-layers-tree-toolbar { --text-secondary:#aaa; --text-primary:#eee; --border-color:#414146; --focus-color:#a99bff; --button-hover-bg:#303035; }
+.app.theme-dark .sketchizi-layer-tree-children { --border-color:#414146; }
