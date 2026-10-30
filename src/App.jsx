@@ -1813,7 +1813,7 @@ function App() {
         >
           {(propertiesOpen || architectureValidationOpen || layersOpen) && (
             <div className={`desktop-validation-host ${architectureValidationOpen || layersOpen ? "is-open" : "is-closed"}`}>
-              <LayersPanel apiRef={apiRef} sceneElements={apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []} canEdit={collaborationCanEdit} onClose={() => closePanel("layers")} />
+              {layersOpen && <LayersPanel apiRef={apiRef} sceneElements={apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []} canEdit={collaborationCanEdit} onClose={() => closePanel("layers")} />}
               {!layersOpen && <ArchitectureValidationPanel
                 validation={architectureValidation}
                 sceneElements={apiRef.current?.getSceneElements?.() || []}
