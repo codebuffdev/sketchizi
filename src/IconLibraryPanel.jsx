@@ -192,7 +192,13 @@ export default function IconLibraryPanel({
           <kbd>/</kbd>
         </div>
 
-        <nav className="library-source-navigation" aria-label="Icon collections">\n          {sourceTabs.map(([source, label, count]) => <button type="button" key={source} className={activeSource === source ? "library-source-tab active" : "library-source-tab"} onClick={() => chooseSource(source)} aria-pressed={activeSource === source}><span>{label}</span><small>{count}</small></button>)}\n        </nav>\n\n        {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
+                <nav className="library-source-navigation" aria-label="Icon collections">
+          {sourceTabs.map(([source, label, count]) => <button type="button" key={source} className={activeSource === source ? "library-source-tab active" : "library-source-tab"} onClick={() => chooseSource(source)} aria-pressed={activeSource === source}><span>{label}</span><small>{count}</small></button>)}
+        </nav>
+        {activeSource === "aws" && <nav className="library-subcategory-navigation" aria-label="AWS icon categories">{["All", ...awsCategories].map((category) => <button type="button" key={category} className={activeAwsCategory === category ? "library-subcategory-tab active" : "library-subcategory-tab"} onClick={() => { setActiveAwsCategory(category); setIconDisplayLimit(120); }} aria-pressed={activeAwsCategory === category}>{category}</button>)}</nav>}
+        {activeSource === "kubernetes" && <nav className="library-subcategory-navigation" aria-label="Kubernetes icon categories">{["All", ...kubernetesCategories].map((category) => <button type="button" key={category} className={activeKubernetesCategory === category ? "library-subcategory-tab active" : "library-subcategory-tab"} onClick={() => { setActiveKubernetesCategory(category); setIconDisplayLimit(120); }} aria-pressed={activeKubernetesCategory === category}>{category}</button>)}</nav>}
+
+        {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
           <div className="library-recent-heading"><span>Recent searches</span><button type="button" onClick={() => setRecentSearches([])}>Clear all</button></div>
           <div className="library-recent-chips">{recentSearches.map((term) => <button type="button" key={term} className="library-recent-chip" onClick={() => { setActiveSource("all"); setActiveCategory("Eraser Icons"); setSearch(term); setIconDisplayLimit(120); }}><span aria-hidden="true">◷</span>{term}</button>)}</div>
         </section>}
