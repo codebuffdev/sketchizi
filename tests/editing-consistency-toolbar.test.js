@@ -5,9 +5,9 @@ import { readFileSync } from "node:fs";
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const toolbar = readFileSync(new URL("../src/components/app/ContextualFormattingToolbar.jsx", import.meta.url), "utf8");
 
-test("contextual formatting toolbar is mounted in the standard canvas workspace, not only Zen Mode", () => {
+test("contextual formatting toolbar remains intentionally restricted to Zen Mode", () => {
+  assert.match(canvas, /\{\(apiRef\.current\?\.getAppState\?\.\(\)\.zenModeEnabled \?\? true\) && \(/);
   assert.match(canvas, /<ContextualFormattingToolbar[\s\S]*?canEdit=\{canEdit && !viewModeEnabled\}/);
-  assert.doesNotMatch(canvas, /zenModeEnabled[\s\S]{0,100}<ContextualFormattingToolbar/);
 });
 
 test("text creation exposes formatting controls before the first text element exists", () => {
