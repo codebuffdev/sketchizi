@@ -18,8 +18,10 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
     let frame = 0;
     let lastPointer = null;
     let gesture = null;
+    let gestureSequence = 0;
 
     const clear = () => {
+      gestureSequence += 1;
       dragging = false;
       lastPointer = null;
       gesture = null;
@@ -81,21 +83,28 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const target = event.target instanceof Element ? event.target : null;
       if (event.button !== 0 || !target?.closest(".excalidraw")) return;
       if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
-      const api = apiRef?.current;
-      const appState = api?.getAppState?.() || {};
-      const selectedIds = new Set(Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id));
-      if (!selectedIds.size || !api) return;
-      const elements = api.getSceneElements?.() || [];
-      gesture = {
-        selectedIds,
-        baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [
-          element.id,
-          { x: element.x, y: element.y, width: element.width, height: element.height, angle: element.angle, type: element.type },
-        ])),
-      };
-      dragging = true;
-      lastPointer = { x: event.clientX, y: event.clientY };
-      scheduleUpdate();
+      const sequence = ++gestureSequence;
+      const pointer = { x: event.clientX, y: event.clientY };
+      // Selection of an unselected shape is committed by Excalidraw during
+      // this pointerdown. Defer the snapshot until that handler has run.
+      queueMicrotask(() => {
+        if (sequence !== gestureSequence) return;
+        const api = apiRef?.current;
+        const appState = api?.getAppState?.() || {};
+        const selectedIds = new Set(Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id));
+        if (!selectedIds.size || !api) return;
+        const elements = api.getSceneElements?.() || [];
+        gesture = {
+          selectedIds,
+          baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [
+            element.id,
+            { x: element.x, y: element.y, width: element.width, height: element.height, angle: element.angle, type: element.type },
+          ])),
+        };
+        dragging = true;
+        lastPointer = pointer;
+        scheduleUpdate();
+      });
     };
     const onPointerMove = (event) => {
       if (!dragging) return;
