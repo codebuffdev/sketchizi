@@ -9,7 +9,7 @@ function layerLabel(element, index) {
   return `${type.charAt(0).toUpperCase()}${type.slice(1)} ${index + 1}`;
 }
 
-function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdit, onClose }) {
+function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdit, autoOpen = true, onAutoOpenChange, onClose }) {
   const [revision, setRevision] = useState(0);
   const [renamingId, setRenamingId] = useState(null);
   const [draftName, setDraftName] = useState("");
@@ -81,6 +81,10 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
         <div><strong>Layers</strong><span>{elements.filter(({ element }) => !element.isDeleted).length} objects</span></div>
         <button type="button" onClick={onClose} aria-label="Close layers panel">×</button>
       </header>
+      <label className="sketchizi-layers-auto-open">
+        <input type="checkbox" checked={autoOpen} onChange={(event) => onAutoOpenChange?.(event.target.checked)} />
+        <span>Keep Layers open when drawing</span>
+      </label>
       <label className="sketchizi-layers-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a layer…" aria-label="Search layers" /></label>
       <div className="sketchizi-layers-list" role="list" aria-label="Diagram layers">
         {elements.length === 0 ? <div className="sketchizi-layers-empty">Your diagram layers will appear here.</div> : filteredElements.length === 0 ? <div className="sketchizi-layers-empty">No layers match your search.</div> : filteredElements.map(({ element, index }) => {
