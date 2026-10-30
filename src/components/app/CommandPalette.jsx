@@ -35,7 +35,7 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
           command.description,
           ...(command.keywords || []),
         ].join(" "));
-        return needle.split(/\\s+/).filter(Boolean).every((term) => searchable.includes(term));
+        return needle.split(/\s+/).filter(Boolean).every((term) => searchable.includes(term));
       })
       : available;
 
