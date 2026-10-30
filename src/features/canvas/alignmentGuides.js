@@ -9,7 +9,7 @@ function bounds(element) {
   const y = Number(element.y) || 0;
   const width = Math.max(0, Number(element.width) || 0);
   const height = Math.max(0, Number(element.height) || 0);
-  return { left: x, right: x + width, centerX: x + width / 2, top: y, bottom: y + height, centerY: y + height / 2 };
+  return { left: x, right: x + width, centerX: x + width / 2, top: y, bottom: y + height, centerY: y + height / 2, width, height };
 }
 
 /**
