@@ -91,8 +91,8 @@ function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
                 {canEdit && <button type="button" onClick={() => { setRenamingId(element.id); setDraftName(label); }} title="Rename layer" aria-label={`Rename ${label}`}>✎</button>}
                 <button type="button" onClick={() => toggleLayerFlag(element, "isDeleted")} title={element.isDeleted ? "Show layer" : "Hide layer"} aria-label={element.isDeleted ? "Show layer" : "Hide layer"}>{element.isDeleted ? "◌" : "◉"}</button>
                 {canEdit && <button type="button" onClick={() => toggleLayerFlag(element, "locked")} title={element.locked ? "Unlock layer" : "Lock layer"} aria-label={element.locked ? "Unlock layer" : "Lock layer"}>{element.locked ? "▣" : "▢"}</button>}
-                {canEdit && <button type="button" onClick={() => moveLayer(element, 1)} title="Move backward" aria-label="Move layer backward">↓</button>}
-                {canEdit && <button type="button" onClick={() => moveLayer(element, -1)} title="Move forward" aria-label="Move layer forward">↑</button>}
+                {canEdit && <button type="button" onClick={() => moveLayer(element, -1)} title="Move backward" aria-label="Move layer backward">↓</button>}
+                {canEdit && <button type="button" onClick={() => moveLayer(element, 1)} title="Move forward" aria-label="Move layer forward">↑</button>}
               </div>
             </div>
           );
