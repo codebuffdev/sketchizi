@@ -58,9 +58,29 @@ export function snapSceneElementsToSmartGuides(elements, baseline, selectedIds, 
       ? [b.left, b.centerX, b.right]
       : [b.top, b.centerY, b.bottom]);
     const candidates = [];
-    for (const edge of movingEdges) for (const target of fixedEdges) {
-      const delta = target - edge;
-      if (Math.abs(delta) <= tolerance) candidates.push({ delta, distance: Math.abs(delta), kind: "edge" });
+    for (const edge of movingEdges) {
+      for (const fixed of fixedBounds) {
+        // An X alignment is meaningful only when the objects share a row;
+        // a Y alignment is meaningful only when they share a column. Without
+        // this guard, unrelated objects elsewhere on the canvas can attract
+        // the selection simply because one coordinate happens to be close.
+        const crossAxisOverlap = isX
+          ? Math.min(moving.bottom, fixed.bottom) - Math.max(moving.top, fixed.top)
+          : Math.min(moving.right, fixed.right) - Math.max(moving.left, fixed.left);
+        const crossAxisReach = isX
+          ? Math.min(moving.height, fixed.height)
+          : Math.min(moving.width, fixed.width);
+        if (crossAxisOverlap < -Math.max(4, crossAxisReach * 0.15)) continue;
+        const targets = isX
+          ? [fixed.left, fixed.centerX, fixed.right]
+          : [fixed.top, fixed.centerY, fixed.bottom];
+        for (const target of targets) {
+          const delta = target - edge;
+          if (Math.abs(delta) <= tolerance) {
+            candidates.push({ delta, distance: Math.abs(delta), kind: "edge" });
+          }
+        }
+      }
     }
 
     // When the selection is between two elements on the same row/column,
