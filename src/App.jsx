@@ -179,6 +179,15 @@ function App() {
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+  useEffect(() => {
+    try { localStorage.setItem("sketchizi:auto-open-layers", String(autoOpenLayers)); } catch {}
+  }, [autoOpenLayers]);
+
+  useEffect(() => {
+    if (!apiReady || !sketchReady || (cloudDiagramId && cloudSaveState.state === "loading")) return;
+    const initialElements = apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || [];
+    knownLayerElementIdsRef.current = new Set(initialElements.filter((element) => element && !element.isDeleted && element.type !== "selection").map((element) => element.id));
+  }, [apiReady, sketchReady, cloudDiagramId, cloudSaveState.state]);
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
   useEffect(() => {
