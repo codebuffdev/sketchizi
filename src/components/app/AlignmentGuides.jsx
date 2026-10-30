@@ -112,7 +112,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const pointer = latestPointer;
       selectionFrame = requestAnimationFrame(() => {
         selectionFrame = 0;
-        if (!latestPointer || latestPointer !== pointer) return;
+        if (!latestPointer) return;
         const selectedIds = selectedElementIds(api.getAppState?.());
         const elements = visibleElements(api);
         if (![...selectedIds].some((id) => elements.some((element) => element.id === id))) return;
@@ -155,8 +155,10 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
           const currentApi = apiRef?.current;
           if (!currentApi) { hide(); return; }
           const elements = currentApi.getSceneElements?.() || [];
+          const appState = currentApi.getAppState?.() || {};
+          const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
           const snapped = snapSceneElementsToSmartGuides(
-            elements, completed.baseline, completed.selectedIds, 8,
+            elements, completed.baseline, completed.selectedIds, 8 / zoom,
           );
           if (snapped !== elements) {
             currentApi.updateScene?.({
