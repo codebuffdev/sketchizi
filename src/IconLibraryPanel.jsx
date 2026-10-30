@@ -149,8 +149,6 @@ export default function IconLibraryPanel({
   const displayedIcons = useMemo(() => {
     const query = search.trim();
     if (activeSource === "all") return rankIconSearchResults(allIcons, query);
-    if (activeSource === "favorites") return rankIconSearchResults(favorites, query);
-    if (activeSource === "recent") return rankIconSearchResults(recentIcons, query);
     if (activeSource === "eraser") return rankIconSearchResults(eraserCatalog, query);
     if (["aws", "kubernetes", "networking", "uml", "mindmaps"].includes(activeSource)) {
       return query ? rankIconSearchResults(visibleIcons, query) : visibleIcons;
@@ -168,18 +166,6 @@ export default function IconLibraryPanel({
     || displayedIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
     || null;
   const getIconSubtitle = (icon) => sourceLabel(icon);
-  const sourceTabs = [["all", "All icons", allIcons.length], ["eraser", "Essentials", eraserCatalog.length], ["aws", "AWS", awsIcons.length], ["kubernetes", "Kubernetes", kubernetesIcons.length], ["networking", "Networking", networkingIcons.length], ["uml", "UML", umlIcons.length], ["mindmaps", "Mind maps", mindMapIcons.length], ["favorites", "Favorites", favorites.length], ["recent", "Recently used", recentIcons.length]];
-  const chooseSource = (source) => {
-    setActiveSource(source);
-    if (source === "eraser") setActiveCategory("Eraser Icons");
-    if (source === "aws") { setActiveCategory("AWS Architecture"); setActiveAwsCategory("All"); }
-    if (source === "kubernetes") { setActiveCategory("Kubernetes"); setActiveKubernetesCategory("All"); }
-    if (source === "networking") setActiveCategory("Networking");
-    if (source === "uml") setActiveCategory("UML Diagrams");
-    if (source === "mindmaps") setActiveCategory("Mind Maps");
-    setIconDisplayLimit(120);
-    if (iconListRef?.current) iconListRef.current.scrollTop = 0;
-  };
 
   return (
     <aside className="library-panel library-panel-redesign" aria-label="Icon Library" role="dialog" aria-modal="false">
@@ -191,12 +177,6 @@ export default function IconLibraryPanel({
           {search && <button type="button" className="library-search-clear" onClick={() => { setSearch(""); setIconDisplayLimit(120); searchRef.current?.focus(); }} aria-label="Clear icon search" title="Clear search">×</button>}
           <kbd>/</kbd>
         </div>
-
-                <nav className="library-source-navigation" aria-label="Icon collections">
-          {sourceTabs.map(([source, label, count]) => <button type="button" key={source} className={activeSource === source ? "library-source-tab active" : "library-source-tab"} onClick={() => chooseSource(source)} aria-pressed={activeSource === source}><span>{label}</span><small>{count}</small></button>)}
-        </nav>
-        {activeSource === "aws" && <nav className="library-subcategory-navigation" aria-label="AWS icon categories">{["All", ...awsCategories].map((category) => <button type="button" key={category} className={activeAwsCategory === category ? "library-subcategory-tab active" : "library-subcategory-tab"} onClick={() => { setActiveAwsCategory(category); setIconDisplayLimit(120); }} aria-pressed={activeAwsCategory === category}>{category}</button>)}</nav>}
-        {activeSource === "kubernetes" && <nav className="library-subcategory-navigation" aria-label="Kubernetes icon categories">{["All", ...kubernetesCategories].map((category) => <button type="button" key={category} className={activeKubernetesCategory === category ? "library-subcategory-tab active" : "library-subcategory-tab"} onClick={() => { setActiveKubernetesCategory(category); setIconDisplayLimit(120); }} aria-pressed={activeKubernetesCategory === category}>{category}</button>)}</nav>}
 
         {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
           <div className="library-recent-heading"><span>Recent searches</span><button type="button" onClick={() => setRecentSearches([])}>Clear all</button></div>
