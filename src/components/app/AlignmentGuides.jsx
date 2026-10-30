@@ -5,45 +5,45 @@ import { calculateEqualSpacingGuides, snapSceneElementsToSmartGuides } from "../
 
 const EMPTY_GUIDES = [];
 
-function getSelectedIds(pointerDownState, appState) {
-  const ids = new Set(Object.entries(appState?.selectedElementIds || {})
+function selectedElementIds(appState) {
+  return new Set(Object.entries(appState?.selectedElementIds || {})
     .filter(([, selected]) => selected)
     .map(([id]) => id));
-  const hitId = pointerDownState?.hit?.element?.id;
-  if (hitId && (pointerDownState.hit.wasAddedToSelection || ids.has(hitId))) {
-    ids.add(hitId);
-  }
-  return ids;
 }
 
-export default function AlignmentGuides({ canvasRootRef, apiRef, api: apiProp, canEdit, viewModeEnabled }) {
+function visibleElements(api) {
+  return (api?.getSceneElements?.() || []).filter((element) =>
+    element && !element.isDeleted && !element.deleted);
+}
+
+export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
   const [guides, setGuides] = useState(EMPTY_GUIDES);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const root = canvasRootRef.current;
-    const api = apiProp || apiRef?.current;
-    if (!root || !api || !canEdit || viewModeEnabled ||
-        typeof api.onPointerDown !== "function" || typeof api.onPointerUp !== "function") {
+    const api = apiRef?.current;
+    if (!root || !api || !canEdit || viewModeEnabled) {
       setGuides(EMPTY_GUIDES);
       return undefined;
     }
 
     let gesture = null;
-    let frame = 0;
+    let renderFrame = 0;
+    let selectionFrame = 0;
     let finishFrame = 0;
     let latestPointer = null;
 
     const hide = () => setGuides(EMPTY_GUIDES);
     const cancelFrames = () => {
-      if (frame) cancelAnimationFrame(frame);
+      if (renderFrame) cancelAnimationFrame(renderFrame);
+      if (selectionFrame) cancelAnimationFrame(selectionFrame);
       if (finishFrame) cancelAnimationFrame(finishFrame);
-      frame = 0;
-      finishFrame = 0;
+      renderFrame = selectionFrame = finishFrame = 0;
     };
 
     const renderGuides = () => {
-      frame = 0;
+      renderFrame = 0;
       if (!gesture || !latestPointer) return;
       const appState = api.getAppState?.() || {};
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
@@ -68,10 +68,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, api: apiProp, c
         height: viewportRect.height,
       });
 
-      // Excalidraw 0.18.0 does not expose sceneCoordsToViewportCoords
-      // on its imperative API. Use the same transform as Excalidraw's
-      // utility: (scene + scroll) * zoom + canvas offset. Convert the
-      // resulting client coordinate into this SVG's viewport-local space.
+      // Excalidraw 0.18 scene-to-screen transform: (scene + scroll) * zoom + offset.
       const toLocal = (axis, position) => {
         if (axis === "x") {
           return (position + (Number(appState.scrollX) || 0)) * zoom +
@@ -100,86 +97,94 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, api: apiProp, c
     };
 
     const scheduleRender = () => {
-      if (!frame) frame = requestAnimationFrame(renderGuides);
+      if (!renderFrame) renderFrame = requestAnimationFrame(renderGuides);
     };
 
-    // Subscribe to Excalidraw's own gesture lifecycle. Its pointer-down
-    // callback runs after it has resolved the hit target and selection.
-    const unsubscribeDown = api.onPointerDown((_tool, pointerDownState, event) => {
+    // The pinned Excalidraw imperative API has no pointer subscription methods.
+    // Observe its actual canvas DOM events and defer selection reads until its
+    // own event handlers have completed.
+    const onPointerDown = (event) => {
+      if (event.button !== 0 || !event.target?.closest?.(".excalidraw")) return;
       cancelFrames();
       hide();
-      const appState = api.getAppState?.() || {};
-      const selectedIds = getSelectedIds(pointerDownState, appState);
-      const elements = (api.getSceneElements?.() || []).filter((element) =>
-        element && !element.isDeleted && !element.deleted);
-      const selected = elements.filter((element) => selectedIds.has(element.id));
-      if (!selected.length) {
-        gesture = null;
-        return;
-      }
-      gesture = {
-        pointer: { x: event.clientX, y: event.clientY },
-        selectedIds: new Set(selected.map((element) => element.id)),
-        elements,
-        baseline: new Map(elements.map((element) => [element.id, {
-          x: element.x, y: element.y, width: element.width, height: element.height,
-          angle: element.angle, type: element.type,
-        }])),
-      };
-      latestPointer = gesture.pointer;
-    });
-
-    const onPointerMove = (event) => {
-      if (!gesture) return;
+      gesture = null;
       latestPointer = { x: event.clientX, y: event.clientY };
-      scheduleRender();
+      const pointer = latestPointer;
+      selectionFrame = requestAnimationFrame(() => {
+        selectionFrame = 0;
+        if (!latestPointer || latestPointer !== pointer) return;
+        const selectedIds = selectedElementIds(api.getAppState?.());
+        const elements = visibleElements(api);
+        if (![...selectedIds].some((id) => elements.some((element) => element.id === id))) return;
+        gesture = {
+          pointer,
+          selectedIds,
+          elements,
+          baseline: new Map(elements.map((element) => [element.id, {
+            x: element.x, y: element.y, width: element.width, height: element.height,
+            angle: element.angle, type: element.type,
+          }])),
+        };
+      });
     };
 
-    const unsubscribeUp = api.onPointerUp(() => {
-      if (!gesture) return;
+    const onPointerMove = (event) => {
+      if (!latestPointer) return;
+      latestPointer = { x: event.clientX, y: event.clientY };
+      if (gesture) scheduleRender();
+    };
+
+    const onPointerUp = () => {
+      if (!latestPointer && !gesture) return;
+      if (selectionFrame) {
+        cancelAnimationFrame(selectionFrame);
+        selectionFrame = 0;
+      }
       const completed = gesture;
       gesture = null;
       latestPointer = null;
-      cancelFrames();
-      // Excalidraw emits pointer-up before its final scene/history commit.
-      // Defer our one final correction until that commit has completed.
+      if (renderFrame) cancelAnimationFrame(renderFrame);
+      renderFrame = 0;
+      if (!completed) { hide(); return; }
+
+      // Let Excalidraw finish its pointer-up scene update before applying the
+      // final magnetic correction.
       finishFrame = requestAnimationFrame(() => {
         finishFrame = requestAnimationFrame(() => {
           finishFrame = 0;
           const currentApi = apiRef?.current;
           if (!currentApi) { hide(); return; }
           const elements = currentApi.getSceneElements?.() || [];
-          const appState = currentApi.getAppState?.() || {};
-          const selectedNow = new Set(Object.entries(appState.selectedElementIds || {})
-            .filter(([, selected]) => selected).map(([id]) => id));
-          if ([...completed.selectedIds].some((id) => selectedNow.has(id))) {
-            const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
-            const snapped = snapSceneElementsToSmartGuides(
-              elements, completed.baseline, completed.selectedIds, 8 / zoom,
-            );
-            if (snapped !== elements) {
-              currentApi.updateScene?.({
-                elements: snapped,
-                captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-              });
-            }
+          const snapped = snapSceneElementsToSmartGuides(
+            elements, completed.baseline, completed.selectedIds, 8,
+          );
+          if (snapped !== elements) {
+            currentApi.updateScene?.({
+              elements: snapped,
+              captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+            });
           }
           hide();
         });
       });
-    });
+    };
 
+    root.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
+    // Bubble phase plus rAF deferral ensures Excalidraw has processed pointer-up.
+    root.addEventListener("pointerup", onPointerUp);
+    root.addEventListener("pointercancel", onPointerUp);
     return () => {
+      root.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("pointermove", onPointerMove);
-      unsubscribeDown?.();
-      unsubscribeUp?.();
+      root.removeEventListener("pointerup", onPointerUp);
+      root.removeEventListener("pointercancel", onPointerUp);
       cancelFrames();
       gesture = null;
       latestPointer = null;
       hide();
     };
-  }, [apiProp, apiRef, canvasRootRef, canEdit, viewModeEnabled]);
+  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
 
   if (!guides.length) return null;
   return (
