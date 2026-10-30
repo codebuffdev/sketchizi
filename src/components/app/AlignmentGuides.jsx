@@ -16,39 +16,41 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       return undefined;
     }
 
-    let dragging = false;
-    let frame = 0;
     let gesture = null;
+    let frame = 0;
+    let finishFrame = 0;
     let sequence = 0;
 
-    const clearVisuals = () => setGuides(EMPTY_GUIDES);
-    const cancelGesture = () => {
+    const hide = () => setGuides(EMPTY_GUIDES);
+    const cancel = () => {
       sequence += 1;
-      dragging = false;
       gesture = null;
       if (frame) cancelAnimationFrame(frame);
+      if (finishFrame) cancelAnimationFrame(finishFrame);
       frame = 0;
-      clearVisuals();
+      finishFrame = 0;
+      hide();
     };
 
-    const update = () => {
-      frame = 0;
-      if (!dragging || !gesture) return;
+    const renderGuides = (pointer) => {
       const api = apiRef?.current;
-      if (!api) return;
+      if (!api || !gesture) return;
       const appState = api.getAppState?.() || {};
-      const elements = api.getSceneElements?.() || [];
-      const selectedIds = new Set(Object.entries(appState.selectedElementIds || {})
-        .filter(([, selected]) => selected).map(([id]) => id));
-      if (![...gesture.selectedIds].some((id) => selectedIds.has(id))) {
-        clearVisuals();
-        return;
-      }
-
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+      const dx = (pointer.x - gesture.pointer.x) / zoom;
+      const dy = (pointer.y - gesture.pointer.y) / zoom;
+      // Build a deterministic preview from the pointer delta and pointer-down
+      // snapshot. This does not depend on Excalidraw's asynchronous scene update.
+      const preview = gesture.elements.map((element) => gesture.selectedIds.has(element.id)
+        ? { ...element, x: element.x + dx, y: element.y + dy }
+        : element);
+      const found = calculateAlignmentGuides(preview, gesture.selectedIds, 10 / zoom);
+      const spacing = calculateEqualSpacingGuides(preview, gesture.selectedIds, 5 / zoom)
+        .map((guide) => ({ ...guide, kind: "spacing" }));
+
       const rootRect = root.getBoundingClientRect();
       const viewport = root.querySelector(".excalidraw");
-      if (!viewport) { clearVisuals(); return; }
+      if (!viewport) { hide(); return; }
       const viewportRect = viewport.getBoundingClientRect();
       setOverlay({
         left: viewportRect.left - rootRect.left,
@@ -57,11 +59,6 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         height: viewportRect.height,
       });
 
-      // Guides are a read-only preview while Excalidraw owns the pointer
-      // gesture. Mutating its scene during pointermove fights its drag engine.
-      const found = calculateAlignmentGuides(elements, selectedIds, 10 / zoom);
-      const spacing = calculateEqualSpacingGuides(elements, selectedIds, 5 / zoom)
-        .map((guide) => ({ ...guide, kind: "spacing" }));
       const sceneToViewport = api.sceneCoordsToViewportCoords;
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
@@ -74,106 +71,117 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
         return (position + offset) * zoom;
       };
-      const alignmentScreenGuides = found.map((guide) => ({
-        ...guide,
-        kind: "alignment",
+      const alignmentScreen = found.map((guide) => ({
+        ...guide, kind: "alignment",
         screenPosition: toLocal(guide.axis, guide.position),
         screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start),
         screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end),
       }));
-      const spacingScreenGuides = spacing.map((guide) => ({
+      const spacingScreen = spacing.map((guide) => ({
         ...guide,
         screenPosition: toLocal(guide.axis === "x" ? "y" : "x", guide.position),
         screenStart: toLocal(guide.axis, guide.start),
         screenEnd: toLocal(guide.axis, guide.end),
       }));
-      setGuides(alignmentScreenGuides.concat(spacingScreenGuides).filter((guide) =>
+      setGuides(alignmentScreen.concat(spacingScreen).filter((guide) =>
         Number.isFinite(guide.screenPosition) &&
         Number.isFinite(guide.screenStart) &&
         Number.isFinite(guide.screenEnd)));
     };
 
-    const scheduleUpdate = () => {
-      if (!frame) frame = requestAnimationFrame(update);
+    const schedulePreview = (pointer) => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        renderGuides(pointer);
+      });
     };
 
     const onPointerDown = (event) => {
       const target = event.target instanceof Element ? event.target : null;
       if (event.button !== 0 || !target?.closest(".excalidraw")) return;
       if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
-      const currentSequence = ++sequence;
+      const current = ++sequence;
+      const pointer = { x: event.clientX, y: event.clientY };
       queueMicrotask(() => {
-        if (currentSequence !== sequence) return;
+        if (current !== sequence) return;
         const api = apiRef?.current;
         if (!api) return;
         const appState = api.getAppState?.() || {};
         const selectedIds = new Set(Object.entries(appState.selectedElementIds || {})
           .filter(([, selected]) => selected).map(([id]) => id));
         if (!selectedIds.size) return;
-        const elements = api.getSceneElements?.() || [];
+        const elements = (api.getSceneElements?.() || []).filter((element) =>
+          element && !element.isDeleted && !element.deleted);
+        if (!elements.some((element) => selectedIds.has(element.id))) return;
         gesture = {
+          pointer,
           selectedIds,
-          baseline: new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted)
-            .map((element) => [element.id, {
-              x: element.x, y: element.y, width: element.width, height: element.height,
-              angle: element.angle, type: element.type,
-            }])),
+          elements,
+          baseline: new Map(elements.map((element) => [element.id, {
+            x: element.x, y: element.y, width: element.width, height: element.height,
+            angle: element.angle, type: element.type,
+          }])),
         };
-        dragging = true;
-        scheduleUpdate();
       });
     };
 
-    const onPointerMove = () => {
-      if (dragging) scheduleUpdate();
+    const onPointerMove = (event) => {
+      if (!gesture) return;
+      schedulePreview({ x: event.clientX, y: event.clientY });
     };
 
     const onPointerUp = () => {
-      if (!dragging || !gesture) {
-        cancelGesture();
-        return;
-      }
-      const completedGesture = gesture;
-      // Run after Excalidraw's pointerup handlers so the final drag position
-      // is present in the scene before we apply one final magnetic adjustment.
-      queueMicrotask(() => {
-        const api = apiRef?.current;
-        if (api) {
-          const elements = api.getSceneElements?.() || [];
-          const appState = api.getAppState?.() || {};
-          const selectedIds = new Set(Object.entries(appState.selectedElementIds || {})
-            .filter(([, selected]) => selected).map(([id]) => id));
-          if ([...completedGesture.selectedIds].some((id) => selectedIds.has(id))) {
-            const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
-            const snapped = snapSceneElementsToSmartGuides(
-              elements, completedGesture.baseline, completedGesture.selectedIds, 8 / zoom,
-            );
-            if (snapped !== elements) {
-              api.updateScene?.({ elements: snapped, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      if (!gesture) return;
+      const completed = gesture;
+      gesture = null;
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      // Wait two paint frames for Excalidraw's pointer-up scene commit, then
+      // apply a single final snap update so it participates in undo history.
+      finishFrame = requestAnimationFrame(() => {
+        finishFrame = requestAnimationFrame(() => {
+          finishFrame = 0;
+          const api = apiRef?.current;
+          if (api) {
+            const elements = api.getSceneElements?.() || [];
+            const appState = api.getAppState?.() || {};
+            const selectedNow = new Set(Object.entries(appState.selectedElementIds || {})
+              .filter(([, selected]) => selected).map(([id]) => id));
+            if ([...completed.selectedIds].some((id) => selectedNow.has(id))) {
+              const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+              const snapped = snapSceneElementsToSmartGuides(
+                elements, completed.baseline, completed.selectedIds, 8 / zoom,
+              );
+              if (snapped !== elements) {
+                api.updateScene?.({ elements: snapped, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+              }
             }
           }
-        }
-        cancelGesture();
+          hide();
+        });
       });
     };
 
     root.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", cancelGesture);
+    window.addEventListener("pointercancel", cancel);
     return () => {
       root.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", cancelGesture);
-      cancelGesture();
+      window.removeEventListener("pointercancel", cancel);
+      cancel();
     };
   }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
 
   if (!guides.length) return null;
   return (
-    <svg className="sketchizi-alignment-guides" style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }}
-      viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)} aria-hidden="true" focusable="false">
+    <svg className="sketchizi-alignment-guides"
+      style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }}
+      viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)}
+      aria-hidden="true" focusable="false">
       {guides.map((guide, index) => {
         const key = guide.kind + guide.axis + guide.screenPosition + index;
         if (guide.kind === "spacing") {
