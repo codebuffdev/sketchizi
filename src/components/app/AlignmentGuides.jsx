@@ -68,14 +68,17 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, api: apiProp, c
         height: viewportRect.height,
       });
 
-      const toViewport = api.sceneCoordsToViewportCoords;
-      if (typeof toViewport !== "function") { hide(); return; }
+      // Excalidraw 0.18.0 does not expose sceneCoordsToViewportCoords
+      // on its imperative API. Use the same transform as Excalidraw's
+      // utility: (scene + scroll) * zoom + canvas offset. Convert the
+      // resulting client coordinate into this SVG's viewport-local space.
       const toLocal = (axis, position) => {
-        const point = toViewport({
-          sceneX: axis === "x" ? position : 0,
-          sceneY: axis === "y" ? position : 0,
-        });
-        return axis === "x" ? point.x : point.y;
+        if (axis === "x") {
+          return (position + (Number(appState.scrollX) || 0)) * zoom +
+            (Number(appState.offsetLeft) || viewportRect.left) - viewportRect.left;
+        }
+        return (position + (Number(appState.scrollY) || 0)) * zoom +
+          (Number(appState.offsetTop) || viewportRect.top) - viewportRect.top;
       };
       const alignmentScreen = found.map((guide) => ({
         ...guide,
