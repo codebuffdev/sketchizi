@@ -554,3 +554,154 @@
 .app.theme-dark .sketchizi-layers-header,
 .app.theme-dark .sketchizi-layers-footer { background: #222226; }
 .app.theme-dark .sketchizi-layers-search { background: #19191d; }
+
+
+/* Layers preference and search controls: clearer hierarchy and stronger affordance */
+.sketchizi-layers-auto-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 64px;
+  margin: 10px 10px 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e4e4e7);
+  border-radius: 10px;
+  background: var(--layers-control-bg, rgba(127,127,127,.045));
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.sketchizi-layers-auto-open:hover {
+  border-color: color-mix(in srgb, var(--focus-color, #8274e8) 45%, var(--border-color, #e4e4e7));
+}
+.sketchizi-layers-auto-open-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.sketchizi-layers-auto-open-copy strong {
+  color: var(--text-primary, #292929);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.sketchizi-layers-auto-open-copy small {
+  color: var(--text-secondary, #777);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.sketchizi-layers-auto-open input {
+  appearance: none;
+  position: relative;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 21px;
+  margin: 0;
+  border: 1px solid var(--border-color, #c9c9cf);
+  border-radius: 999px;
+  background: #a1a1aa;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.sketchizi-layers-auto-open input::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
+  transition: transform .18s ease;
+}
+.sketchizi-layers-auto-open input:checked {
+  border-color: var(--focus-color, #6965db);
+  background: var(--focus-color, #6965db);
+}
+.sketchizi-layers-auto-open input:checked::before { transform: translateX(15px); }
+.sketchizi-layers-auto-open input:focus-visible {
+  outline: 2px solid var(--focus-color, #8274e8);
+  outline-offset: 3px;
+}
+.sketchizi-layers-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  margin: 10px 10px 6px;
+  padding: 0 11px;
+  border: 1px solid var(--border-color, #dedee3);
+  border-radius: 10px;
+  background: var(--layers-search-bg, rgba(127,127,127,.035));
+  color: var(--text-secondary, #777);
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.sketchizi-layers-search:focus-within {
+  border-color: var(--focus-color, #8274e8);
+  background: var(--panel-bg, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-color, #8274e8) 13%, transparent);
+}
+.sketchizi-layers-search-icon {
+  position: relative;
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  border: 1.7px solid currentColor;
+  border-radius: 50%;
+  opacity: .8;
+}
+.sketchizi-layers-search-icon::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  bottom: -3px;
+  width: 6px;
+  height: 1.7px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+.sketchizi-layers-search input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary, #222);
+  font: inherit;
+  font-size: 12px;
+}
+.sketchizi-layers-search input::placeholder { color: var(--text-secondary, #888); opacity: .85; }
+.sketchizi-layers-search-clear {
+  display: grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary, #777);
+  font-size: 17px;
+  cursor: pointer;
+}
+.sketchizi-layers-search-clear:hover { background: var(--button-hover-bg, rgba(127,127,127,.12)); }
+.app.theme-dark .sketchizi-layers-auto-open {
+  --layers-control-bg: #25252a;
+  --border-color: #414146;
+}
+.app.theme-dark .sketchizi-layers-auto-open-copy strong { color: #f0eff4; }
+.app.theme-dark .sketchizi-layers-auto-open-copy small { color: #a5a3ad; }
+.app.theme-dark .sketchizi-layers-search {
+  --layers-search-bg: #19191e;
+  --border-color: #414146;
+  --text-primary: #f0eff4;
+  --text-secondary: #a5a3ad;
+}
+.app.theme-dark .sketchizi-layers-search:focus-within { background: #1d1d22; }
