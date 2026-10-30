@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import {
   calculateAlignmentGuides,
   findNearestAlignment,
@@ -91,7 +92,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
             updated: Date.now(),
           };
         });
-        api.updateScene?.({ elements: corrected });
+        api.updateScene?.({ elements: corrected, captureUpdate: CaptureUpdateAction.NEVER });
       }
 
       const viewport = root.querySelector(".excalidraw");
