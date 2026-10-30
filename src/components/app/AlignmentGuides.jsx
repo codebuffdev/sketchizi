@@ -16,13 +16,13 @@ function visibleElements(api) {
     element && !element.isDeleted && !element.deleted);
 }
 
-export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
+export default function AlignmentGuides({ canvasRootRef, apiRef, api: apiProp, canEdit, viewModeEnabled }) {
   const [guides, setGuides] = useState(EMPTY_GUIDES);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const root = canvasRootRef.current;
-    const api = apiRef?.current;
+    const api = apiProp || apiRef?.current;
     if (!root || !api || !canEdit || viewModeEnabled) {
       setGuides(EMPTY_GUIDES);
       return undefined;
@@ -209,7 +209,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       latestPointer = null;
       hide();
     };
-  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
+  }, [apiProp, apiRef, canvasRootRef, canEdit, viewModeEnabled]);
 
   if (!guides.length) return null;
   return (
