@@ -66,7 +66,7 @@ export function findNearestEqualSpacing(moving, stationary, axis, tolerance) {
         if (right.start < left.end) continue;
         const targetStart = (left.end + right.start - itemSize) / 2;
         const delta = targetStart - itemStart;
-        if (Math.abs(delta) > tolerance || !best || Math.abs(delta) < Math.abs(best.delta)) continue;
+        if (Math.abs(delta) > tolerance || (best && Math.abs(delta) >= Math.abs(best.delta))) continue;
         best = {
           delta,
           position: targetStart,
