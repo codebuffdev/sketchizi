@@ -113,8 +113,30 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       selectionFrame = requestAnimationFrame(() => {
         selectionFrame = 0;
         if (!latestPointer) return;
-        const selectedIds = selectedElementIds(api.getAppState?.());
+        const appState = api.getAppState?.() || {};
         const elements = visibleElements(api);
+        const selectedIds = selectedElementIds(appState);
+        // Selection state is not guaranteed to be committed yet when the
+        // pointer starts. Resolve the element under the pointer from scene
+        // coordinates as a fallback, so click-and-drag on an unselected shape
+        // starts a guide gesture on the first drag.
+        const viewport = root.querySelector(".excalidraw");
+        const rect = viewport?.getBoundingClientRect();
+        const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+        if (rect) {
+          const sceneX = (pointer.x - rect.left) / zoom - (Number(appState.scrollX) || 0);
+          const sceneY = (pointer.y - rect.top) / zoom - (Number(appState.scrollY) || 0);
+          const hit = [...elements].reverse().find((element) => {
+            const left = Number(element.x) || 0;
+            const top = Number(element.y) || 0;
+            return sceneX >= left - 2 && sceneX <= left + (Number(element.width) || 0) + 2 &&
+              sceneY >= top - 2 && sceneY <= top + (Number(element.height) || 0) + 2;
+          });
+          if (hit && !selectedIds.has(hit.id)) {
+            selectedIds.clear();
+            selectedIds.add(hit.id);
+          }
+        }
         if (![...selectedIds].some((id) => elements.some((element) => element.id === id))) return;
         gesture = {
           pointer,
@@ -171,16 +193,17 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       });
     };
 
-    root.addEventListener("pointerdown", onPointerDown, true);
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    // Bubble phase plus rAF deferral ensures Excalidraw has processed pointer-up.
-    root.addEventListener("pointerup", onPointerUp);
-    root.addEventListener("pointercancel", onPointerUp);
+    // Capture at document level so Excalidraw pointer capture and nested canvas
+    // surfaces cannot bypass the gesture start/end handlers.
+    document.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointermove", onPointerMove, { passive: true, capture: true });
+    window.addEventListener("pointerup", onPointerUp, true);
+    window.addEventListener("pointercancel", onPointerUp, true);
     return () => {
-      root.removeEventListener("pointerdown", onPointerDown, true);
-      window.removeEventListener("pointermove", onPointerMove);
-      root.removeEventListener("pointerup", onPointerUp);
-      root.removeEventListener("pointercancel", onPointerUp);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
       cancelFrames();
       gesture = null;
       latestPointer = null;
