@@ -19,7 +19,7 @@ function sceneToOverlay(api, axis, position, appState, viewportRect) {
       sceneX: axis === "x" ? position : 0,
       sceneY: axis === "y" ? position : 0,
     });
-    return axis === "x" ? point.x - viewportRect.left : point.y - viewportRect.top;
+    return axis === "x" ? point.x : point.y;
   }
   const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
   const offset = axis === "x" ? Number(appState.scrollX) || 0 : Number(appState.scrollY) || 0;
@@ -163,7 +163,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       window.removeEventListener("pointermove", onPointerMove, true);
       clear();
     };
-  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
+  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled, canvasRevision]);
 
   if (!guides.length) return null;
   return (
