@@ -26,7 +26,7 @@ function buildLayerTree(elements) {
       const key = `${parent.id}/${groupId}`;
       let node = groups.get(key);
       if (!node) {
-        node = { id: key, groupId, parent, children: [], elements: [], depth, label: groupName(element, groupId, depth) };
+        node = { id: key, groupId, parent, groupPath: [...(parent.groupPath || []), groupId], children: [], elements: [], depth, label: groupName(element, groupId, depth) };
         groups.set(key, node);
         parent.children.push(node);
       }
@@ -54,6 +54,8 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
   const [draftName, setDraftName] = useState("");
   const [query, setQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [draggedLayerId, setDraggedLayerId] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
   const resizeRef = useRef(null);
   const resizeStateRef = useRef(null);
 
@@ -182,12 +184,69 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
     updateElements(current);
   };
 
+  const handleLayerDragStart = (event, element) => {
+    if (!canEdit) { event.preventDefault(); return; }
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", element.id);
+    setDraggedLayerId(element.id);
+  };
+  const handleLayerDragEnd = () => {
+    setDraggedLayerId(null);
+    setDropTarget(null);
+  };
+  const moveLayerIntoGroup = (elementId, groupNode) => {
+    const current = apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || [];
+    const targetPath = groupNode.groupPath || [groupNode.groupId];
+    const targetMember = groupNode.elements.find((item) => item.id !== elementId);
+    if (!targetMember) return;
+    updateElements(current.map((item) => {
+      if (item.id !== elementId) return item;
+      const names = { ...(item.customData?.[GROUP_NAME_KEY] || {}) };
+      (targetMember.groupIds || []).forEach((id, index) => {
+        const name = targetMember.customData?.[GROUP_NAME_KEY]?.[id];
+        if (name) names[id] = name;
+        else if (!names[id]) names[id] = index === targetPath.length - 1 ? groupNode.label : `Group ${index + 1}`;
+      });
+      return { ...item, groupIds: [...targetPath], customData: { ...(item.customData || {}), [GROUP_NAME_KEY]: names } };
+    }));
+    setCollapsedGroups((state) => ({ ...state, [groupNode.groupId]: false }));
+  };
+  const reorderLayerAround = (draggedId, targetId, position) => {
+    if (!draggedId || draggedId === targetId) return;
+    const current = [...(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || [])];
+    const from = current.findIndex((item) => item.id === draggedId);
+    const to = current.findIndex((item) => item.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moving] = current.splice(from, 1);
+    const targetIndex = current.findIndex((item) => item.id === targetId);
+    // Scene order is back-to-front; the tree is rendered front-to-back.
+    const insertAt = position === "before" ? targetIndex : targetIndex + 1;
+    current.splice(insertAt, 0, moving);
+    updateElements(current);
+  };
+  const handleDropOnGroup = (event, node) => {
+    if (!canEdit || !draggedLayerId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    moveLayerIntoGroup(draggedLayerId, node);
+    handleLayerDragEnd();
+  };
+  const handleDropOnObject = (event, targetId) => {
+    if (!canEdit || !draggedLayerId || draggedLayerId === targetId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const position = event.clientY < bounds.top + bounds.height / 2 ? "after" : "before";
+    reorderLayerAround(draggedLayerId, targetId, position);
+    handleLayerDragEnd();
+  };
+
   const renderNode = (node) => {
     if (node.element) {
       const { element, index, depth } = node;
       const label = layerLabel(element, index);
       if (matchingIds && !matchingIds.has(element.id)) return null;
-      return <div className={`sketchizi-layer-row sketchizi-layer-tree-object ${element.isDeleted ? "is-hidden" : ""} ${element.locked ? "is-locked" : ""} ${selectedIds.has(element.id) ? "is-selected" : ""}`} key={element.id} role="listitem" style={{ "--layer-depth": depth }}>
+      return <div className={`sketchizi-layer-row sketchizi-layer-tree-object ${element.isDeleted ? "is-hidden" : ""} ${element.locked ? "is-locked" : ""} ${selectedIds.has(element.id) ? "is-selected" : ""} ${draggedLayerId === element.id ? "is-dragging" : ""} ${dropTarget === element.id ? "is-drop-target" : ""}`} key={element.id} role="treeitem" draggable={canEdit} onDragStart={(event) => handleLayerDragStart(event, element)} onDragEnd={handleLayerDragEnd} onDragOver={(event) => { if (canEdit && draggedLayerId && draggedLayerId !== element.id) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget(element.id); } }} onDragLeave={() => setDropTarget((current) => current === element.id ? null : current)} onDrop={(event) => handleDropOnObject(event, element.id)} style={{ "--layer-depth": depth }}>
         <div role="button" tabIndex={0} aria-pressed={selectedIds.has(element.id)} className="sketchizi-layer-select" onClick={(event) => selectLayer(element, event)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectLayer(element, event); } }} title={`Select ${label}`}>
           <span className="sketchizi-layer-type" aria-hidden="true">{String(element.type || "?").slice(0, 1).toUpperCase()}</span>
           {renamingId === element.id ? <input autoFocus value={draftName} onChange={(event) => setDraftName(event.target.value)} onBlur={() => saveElementName(element)} onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") saveElementName(element); if (event.key === "Escape") setRenamingId(null); }} onClick={(event) => event.stopPropagation()} aria-label="Layer name" /> : <span className="sketchizi-layer-name">{label}</span>}
@@ -207,7 +266,7 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
     const allHidden = node.elements.every((element) => element.isDeleted);
     const allLocked = node.elements.every((element) => element.locked);
     return <div className="sketchizi-layer-tree-group" key={node.id} style={{ "--layer-depth": node.depth }}>
-      <div className={`sketchizi-layer-row sketchizi-layer-group-row ${selectedIds.size && node.elements.every((element) => selectedIds.has(element.id)) ? "is-selected" : ""} ${allHidden ? "is-hidden" : ""}`}>
+      <div className={`sketchizi-layer-row sketchizi-layer-group-row ${selectedIds.size && node.elements.every((element) => selectedIds.has(element.id)) ? "is-selected" : ""} ${allHidden ? "is-hidden" : ""} ${dropTarget === node.groupId ? "is-drop-target" : ""}`} onDragOver={(event) => { if (canEdit && draggedLayerId) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget(node.groupId); } }} onDragLeave={() => setDropTarget((current) => current === node.groupId ? null : current)} onDrop={(event) => handleDropOnGroup(event, node)}>
         <button type="button" className="sketchizi-layer-expand" aria-label={collapsed ? `Expand ${node.label}` : `Collapse ${node.label}`} aria-expanded={!collapsed} onClick={() => setCollapsedGroups((state) => ({ ...state, [node.groupId]: !state[node.groupId] }))}>{collapsed ? "▸" : "▾"}</button>
         <button type="button" className="sketchizi-layer-group-select" onClick={() => selectGroup(node)} title={`Select all objects in ${node.label}`}>
           <span className="sketchizi-layer-group-icon" aria-hidden="true">▰</span>
@@ -240,7 +299,7 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
         {canEdit && <button type="button" disabled={!selectedElements.some((element) => element.groupIds?.length)} onClick={ungroupSelection} title="Ungroup selected objects">Ungroup</button>}
       </div>
     </div>
-    <div className="sketchizi-layers-list sketchizi-layers-tree" role="tree" aria-label="Diagram layers">
+    <div className={`sketchizi-layers-list sketchizi-layers-tree ${dropTarget === "root" ? "is-root-drop-target" : ""}`} role="tree" aria-label="Diagram layers" onDragOver={(event) => { if (canEdit && draggedLayerId) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget("root"); } }} onDrop={(event) => { if (!canEdit || !draggedLayerId) return; event.preventDefault(); const current = apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []; updateElements(current.map((item) => item.id === draggedLayerId ? { ...item, groupIds: [] } : item)); handleLayerDragEnd(); }}>
       {!elements.length ? <div className="sketchizi-layers-empty">Your diagram layers will appear here.</div> : matchingIds && !matchingIds.size ? <div className="sketchizi-layers-empty">No layers match your search.</div> : tree.map(renderNode)}
     </div>
     <footer className="sketchizi-layers-footer">Select · Shift/Ctrl-click to multi-select · Group to nest objects</footer>
