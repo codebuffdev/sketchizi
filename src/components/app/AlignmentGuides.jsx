@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { calculateAlignmentGuides } from "../../features/canvas/alignmentGuides.js";
-import { calculateEqualSpacingGuides, snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
+import { calculateEqualSpacingGuides } from "../../features/canvas/smartSnapping.js";
 
 const EMPTY_GUIDES = [];
 
@@ -38,17 +37,6 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       let elements = api.getSceneElements?.() || [];
       const selectedIds = new Set(Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id));
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
-
-      // Apply magnetic snapping during the drag, not just on pointer-up. The
-      // pointer-up grid-snap path remains as a final safety net.
-      if (gesture && selectedIds.size && [...selectedIds].some((id) => gesture.selectedIds.has(id))) {
-        const snapped = snapSceneElementsToSmartGuides(elements, gesture.baseline, gesture.selectedIds, 8 / zoom);
-        if (snapped !== elements) {
-          api.updateScene?.({ elements: snapped, captureUpdate: CaptureUpdateAction.NEVER });
-          elements = snapped;
-          appState = api.getAppState?.() || appState;
-        }
-      }
 
       const rootRect = root.getBoundingClientRect();
       const viewport = root.querySelector(".excalidraw");
