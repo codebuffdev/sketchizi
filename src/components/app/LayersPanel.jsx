@@ -38,6 +38,7 @@ function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
   };
 
   const renameLayer = (element) => {
+    if (renamingId !== element.id) return;
     const name = draftName.trim();
     if (!name) {
       setRenamingId(null);
@@ -78,7 +79,7 @@ function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
           const label = layerLabel(element, index);
           return (
             <div className={`sketchizi-layer-row ${element.isDeleted ? "is-hidden" : ""} ${element.locked ? "is-locked" : ""}`} key={element.id} role="listitem">
-              <button type="button" className="sketchizi-layer-select" onClick={() => selectLayer(element)} title={`Select ${label}`}>
+              <div role="button" tabIndex={0} className="sketchizi-layer-select" onClick={() => selectLayer(element)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectLayer(element); } }} title={`Select ${label}`}>
                 <span className="sketchizi-layer-type" aria-hidden="true">{String(element.type || "?").slice(0, 1).toUpperCase()}</span>
                 {renamingId === element.id ? (
                   <input autoFocus value={draftName} onChange={(event) => setDraftName(event.target.value)} onBlur={() => renameLayer(element)} onKeyDown={(event) => {
@@ -86,7 +87,7 @@ function LayersPanel({ apiRef, sceneElements = [], canEdit, onClose }) {
                     if (event.key === "Escape") { event.preventDefault(); setRenamingId(null); }
                   }} onClick={(event) => event.stopPropagation()} aria-label="Layer name" />
                 ) : <span className="sketchizi-layer-name">{label}</span>}
-              </button>
+              </div>
               <div className="sketchizi-layer-actions">
                 {canEdit && <button type="button" onClick={() => { setRenamingId(element.id); setDraftName(label); }} title="Rename layer" aria-label={`Rename ${label}`}>✎</button>}
                 <button type="button" onClick={() => toggleLayerFlag(element, "isDeleted")} title={element.isDeleted ? "Show layer" : "Hide layer"} aria-label={element.isDeleted ? "Show layer" : "Hide layer"}>{element.isDeleted ? "◌" : "◉"}</button>
