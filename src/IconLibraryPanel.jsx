@@ -149,6 +149,8 @@ export default function IconLibraryPanel({
   const displayedIcons = useMemo(() => {
     const query = search.trim();
     if (activeSource === "all") return rankIconSearchResults(allIcons, query);
+    if (activeSource === "favorites") return rankIconSearchResults(favorites, query);
+    if (activeSource === "recent") return rankIconSearchResults(recentIcons, query);
     if (activeSource === "eraser") return rankIconSearchResults(eraserCatalog, query);
     if (["aws", "kubernetes", "networking", "uml", "mindmaps"].includes(activeSource)) {
       return query ? rankIconSearchResults(visibleIcons, query) : visibleIcons;
@@ -166,6 +168,18 @@ export default function IconLibraryPanel({
     || displayedIcons.find((icon) => iconSelectionKey(icon) === selectedIconId)
     || null;
   const getIconSubtitle = (icon) => sourceLabel(icon);
+  const sourceTabs = [["all", "All icons", allIcons.length], ["eraser", "Essentials", eraserCatalog.length], ["aws", "AWS", awsIcons.length], ["kubernetes", "Kubernetes", kubernetesIcons.length], ["networking", "Networking", networkingIcons.length], ["uml", "UML", umlIcons.length], ["mindmaps", "Mind maps", mindMapIcons.length], ["favorites", "Favorites", favorites.length], ["recent", "Recently used", recentIcons.length]];
+  const chooseSource = (source) => {
+    setActiveSource(source);
+    if (source === "eraser") setActiveCategory("Eraser Icons");
+    if (source === "aws") { setActiveCategory("AWS Architecture"); setActiveAwsCategory("All"); }
+    if (source === "kubernetes") { setActiveCategory("Kubernetes"); setActiveKubernetesCategory("All"); }
+    if (source === "networking") setActiveCategory("Networking");
+    if (source === "uml") setActiveCategory("UML Diagrams");
+    if (source === "mindmaps") setActiveCategory("Mind Maps");
+    setIconDisplayLimit(120);
+    if (iconListRef?.current) iconListRef.current.scrollTop = 0;
+  };
 
   return (
     <aside className="library-panel library-panel-redesign" aria-label="Icon Library" role="dialog" aria-modal="false">
@@ -178,7 +192,7 @@ export default function IconLibraryPanel({
           <kbd>/</kbd>
         </div>
 
-        {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
+        <nav className="library-source-navigation" aria-label="Icon collections">\n          {sourceTabs.map(([source, label, count]) => <button type="button" key={source} className={activeSource === source ? "library-source-tab active" : "library-source-tab"} onClick={() => chooseSource(source)} aria-pressed={activeSource === source}><span>{label}</span><small>{count}</small></button>)}\n        </nav>\n\n        {recentSearches.length > 0 && !search.trim() && <section className="library-recent-searches" aria-label="Recent searches">
           <div className="library-recent-heading"><span>Recent searches</span><button type="button" onClick={() => setRecentSearches([])}>Clear all</button></div>
           <div className="library-recent-chips">{recentSearches.map((term) => <button type="button" key={term} className="library-recent-chip" onClick={() => { setActiveSource("all"); setActiveCategory("Eraser Icons"); setSearch(term); setIconDisplayLimit(120); }}><span aria-hidden="true">◷</span>{term}</button>)}</div>
         </section>}
