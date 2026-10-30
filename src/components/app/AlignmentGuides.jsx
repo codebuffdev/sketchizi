@@ -6,16 +6,12 @@ import { calculateEqualSpacingGuides, snapSceneElementsToSmartGuides } from "../
 const EMPTY_GUIDES = [];
 
 function getSelectedIds(pointerDownState, appState) {
-  const ids = new Set(pointerDownState?.originalElements instanceof Map
-    ? [...pointerDownState.originalElements.keys()]
-    : []);
-  if (!ids.size) {
-    Object.entries(appState?.selectedElementIds || {}).forEach(([id, selected]) => {
-      if (selected) ids.add(id);
-    });
-  }
-  if (!ids.size && pointerDownState?.hit?.element?.id) {
-    ids.add(pointerDownState.hit.element.id);
+  const ids = new Set(Object.entries(appState?.selectedElementIds || {})
+    .filter(([, selected]) => selected)
+    .map(([id]) => id));
+  const hitId = pointerDownState?.hit?.element?.id;
+  if (hitId && (pointerDownState.hit.wasAddedToSelection || ids.has(hitId))) {
+    ids.add(hitId);
   }
   return ids;
 }
