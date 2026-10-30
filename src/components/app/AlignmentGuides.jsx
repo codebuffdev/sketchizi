@@ -5,13 +5,30 @@ import { calculateEqualSpacingGuides, snapSceneElementsToSmartGuides } from "../
 
 const EMPTY_GUIDES = [];
 
+function getSelectedIds(pointerDownState, appState) {
+  const ids = new Set(pointerDownState?.originalElements instanceof Map
+    ? [...pointerDownState.originalElements.keys()]
+    : []);
+  if (!ids.size) {
+    Object.entries(appState?.selectedElementIds || {}).forEach(([id, selected]) => {
+      if (selected) ids.add(id);
+    });
+  }
+  if (!ids.size && pointerDownState?.hit?.element?.id) {
+    ids.add(pointerDownState.hit.element.id);
+  }
+  return ids;
+}
+
 export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
   const [guides, setGuides] = useState(EMPTY_GUIDES);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const root = canvasRootRef.current;
-    if (!root || !canEdit || viewModeEnabled) {
+    const api = apiRef?.current;
+    if (!root || !api || !canEdit || viewModeEnabled ||
+        typeof api.onPointerDown !== "function" || typeof api.onPointerUp !== "function") {
       setGuides(EMPTY_GUIDES);
       return undefined;
     }
@@ -19,38 +36,34 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
     let gesture = null;
     let frame = 0;
     let finishFrame = 0;
-    let sequence = 0;
+    let latestPointer = null;
 
     const hide = () => setGuides(EMPTY_GUIDES);
-    const cancel = () => {
-      sequence += 1;
-      gesture = null;
+    const cancelFrames = () => {
       if (frame) cancelAnimationFrame(frame);
       if (finishFrame) cancelAnimationFrame(finishFrame);
       frame = 0;
       finishFrame = 0;
-      hide();
     };
 
-    const renderGuides = (pointer) => {
-      const api = apiRef?.current;
-      if (!api || !gesture) return;
+    const renderGuides = () => {
+      frame = 0;
+      if (!gesture || !latestPointer) return;
       const appState = api.getAppState?.() || {};
       const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
-      const dx = (pointer.x - gesture.pointer.x) / zoom;
-      const dy = (pointer.y - gesture.pointer.y) / zoom;
-      // Build a deterministic preview from the pointer delta and pointer-down
-      // snapshot. This does not depend on Excalidraw's asynchronous scene update.
+      const dx = (latestPointer.x - gesture.pointer.x) / zoom;
+      const dy = (latestPointer.y - gesture.pointer.y) / zoom;
       const preview = gesture.elements.map((element) => gesture.selectedIds.has(element.id)
         ? { ...element, x: element.x + dx, y: element.y + dy }
         : element);
+
       const found = calculateAlignmentGuides(preview, gesture.selectedIds, 10 / zoom);
       const spacing = calculateEqualSpacingGuides(preview, gesture.selectedIds, 5 / zoom)
         .map((guide) => ({ ...guide, kind: "spacing" }));
 
-      const rootRect = root.getBoundingClientRect();
       const viewport = root.querySelector(".excalidraw");
       if (!viewport) { hide(); return; }
+      const rootRect = root.getBoundingClientRect();
       const viewportRect = viewport.getBoundingClientRect();
       setOverlay({
         left: viewportRect.left - rootRect.left,
@@ -59,20 +72,18 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         height: viewportRect.height,
       });
 
-      const sceneToViewport = api.sceneCoordsToViewportCoords;
+      const toViewport = api.sceneCoordsToViewportCoords;
+      if (typeof toViewport !== "function") { hide(); return; }
       const toLocal = (axis, position) => {
-        if (typeof sceneToViewport === "function") {
-          const point = sceneToViewport({
-            sceneX: axis === "x" ? position : 0,
-            sceneY: axis === "y" ? position : 0,
-          });
-          return axis === "x" ? point.x : point.y;
-        }
-        const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
-        return (position + offset) * zoom;
+        const point = toViewport({
+          sceneX: axis === "x" ? position : 0,
+          sceneY: axis === "y" ? position : 0,
+        });
+        return axis === "x" ? point.x : point.y;
       };
       const alignmentScreen = found.map((guide) => ({
-        ...guide, kind: "alignment",
+        ...guide,
+        kind: "alignment",
         screenPosition: toLocal(guide.axis, guide.position),
         screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start),
         screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end),
@@ -89,90 +100,85 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         Number.isFinite(guide.screenEnd)));
     };
 
-    const schedulePreview = (pointer) => {
-      if (frame) cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        renderGuides(pointer);
-      });
+    const scheduleRender = () => {
+      if (!frame) frame = requestAnimationFrame(renderGuides);
     };
 
-    const onPointerDown = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (event.button !== 0 || !target?.closest(".excalidraw")) return;
-      if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
-      const current = ++sequence;
-      const pointer = { x: event.clientX, y: event.clientY };
-      queueMicrotask(() => {
-        if (current !== sequence) return;
-        const api = apiRef?.current;
-        if (!api) return;
-        const appState = api.getAppState?.() || {};
-        const selectedIds = new Set(Object.entries(appState.selectedElementIds || {})
-          .filter(([, selected]) => selected).map(([id]) => id));
-        if (!selectedIds.size) return;
-        const elements = (api.getSceneElements?.() || []).filter((element) =>
-          element && !element.isDeleted && !element.deleted);
-        if (!elements.some((element) => selectedIds.has(element.id))) return;
-        gesture = {
-          pointer,
-          selectedIds,
-          elements,
-          baseline: new Map(elements.map((element) => [element.id, {
-            x: element.x, y: element.y, width: element.width, height: element.height,
-            angle: element.angle, type: element.type,
-          }])),
-        };
-      });
-    };
+    // Subscribe to Excalidraw's own gesture lifecycle. Its pointer-down
+    // callback runs after it has resolved the hit target and selection.
+    const unsubscribeDown = api.onPointerDown((_tool, pointerDownState, event) => {
+      cancelFrames();
+      hide();
+      const appState = api.getAppState?.() || {};
+      const selectedIds = getSelectedIds(pointerDownState, appState);
+      const elements = (api.getSceneElements?.() || []).filter((element) =>
+        element && !element.isDeleted && !element.deleted);
+      const selected = elements.filter((element) => selectedIds.has(element.id));
+      if (!selected.length) {
+        gesture = null;
+        return;
+      }
+      gesture = {
+        pointer: { x: event.clientX, y: event.clientY },
+        selectedIds: new Set(selected.map((element) => element.id)),
+        elements,
+        baseline: new Map(elements.map((element) => [element.id, {
+          x: element.x, y: element.y, width: element.width, height: element.height,
+          angle: element.angle, type: element.type,
+        }])),
+      };
+      latestPointer = gesture.pointer;
+    });
 
     const onPointerMove = (event) => {
       if (!gesture) return;
-      schedulePreview({ x: event.clientX, y: event.clientY });
+      latestPointer = { x: event.clientX, y: event.clientY };
+      scheduleRender();
     };
 
-    const onPointerUp = () => {
+    const unsubscribeUp = api.onPointerUp(() => {
       if (!gesture) return;
       const completed = gesture;
       gesture = null;
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      // Wait two paint frames for Excalidraw's pointer-up scene commit, then
-      // apply a single final snap update so it participates in undo history.
+      latestPointer = null;
+      cancelFrames();
+      // Excalidraw emits pointer-up before its final scene/history commit.
+      // Defer our one final correction until that commit has completed.
       finishFrame = requestAnimationFrame(() => {
         finishFrame = requestAnimationFrame(() => {
           finishFrame = 0;
-          const api = apiRef?.current;
-          if (api) {
-            const elements = api.getSceneElements?.() || [];
-            const appState = api.getAppState?.() || {};
-            const selectedNow = new Set(Object.entries(appState.selectedElementIds || {})
-              .filter(([, selected]) => selected).map(([id]) => id));
-            if ([...completed.selectedIds].some((id) => selectedNow.has(id))) {
-              const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
-              const snapped = snapSceneElementsToSmartGuides(
-                elements, completed.baseline, completed.selectedIds, 8 / zoom,
-              );
-              if (snapped !== elements) {
-                api.updateScene?.({ elements: snapped, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-              }
+          const currentApi = apiRef?.current;
+          if (!currentApi) { hide(); return; }
+          const elements = currentApi.getSceneElements?.() || [];
+          const appState = currentApi.getAppState?.() || {};
+          const selectedNow = new Set(Object.entries(appState.selectedElementIds || {})
+            .filter(([, selected]) => selected).map(([id]) => id));
+          if ([...completed.selectedIds].some((id) => selectedNow.has(id))) {
+            const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+            const snapped = snapSceneElementsToSmartGuides(
+              elements, completed.baseline, completed.selectedIds, 8 / zoom,
+            );
+            if (snapped !== elements) {
+              currentApi.updateScene?.({
+                elements: snapped,
+                captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+              });
             }
           }
           hide();
         });
       });
-    };
+    });
 
-    root.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", cancel);
     return () => {
-      root.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", cancel);
-      cancel();
+      unsubscribeDown?.();
+      unsubscribeUp?.();
+      cancelFrames();
+      gesture = null;
+      latestPointer = null;
+      hide();
     };
   }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
 
