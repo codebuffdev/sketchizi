@@ -26,14 +26,14 @@ function sceneToOverlay(api, axis, position, appState, viewportRect) {
   return (position + offset) * zoom;
 }
 
-export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
+export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled, apiReady }) {
   const [guides, setGuides] = useState(EMPTY_GUIDES);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const root = canvasRootRef.current;
     const api = apiRef?.current;
-    if (!root || !api || !canEdit || viewModeEnabled) {
+    if (!root || !api || !apiReady || !canEdit || viewModeEnabled) {
       setGuides(EMPTY_GUIDES);
       return undefined;
     }
@@ -163,7 +163,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       window.removeEventListener("pointermove", onPointerMove, true);
       clear();
     };
-  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled, canvasRevision]);
+  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled, apiReady]);
 
   if (!guides.length) return null;
   return (
