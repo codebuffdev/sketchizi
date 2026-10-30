@@ -619,7 +619,7 @@ function App() {
     } else {
       const addedElement = [...liveIds].some((id) => !knownLayerElementIdsRef.current.has(id));
       knownLayerElementIdsRef.current = liveIds;
-      if (addedElement && autoOpenLayers && collaborationCanEdit && !collaborationRemoteUpdateRef.current) {
+      if (addedElement && autoOpenLayers && collaborationCanEdit && !collaborationRemoteUpdateRef.current && (!cloudDiagramId || cloudSaveState.state !== "loading")) {
         openPanel("layers");
       }
     }
@@ -631,7 +631,7 @@ function App() {
         applyCanvasThemeBackground(apiRef.current, activeTheme === "dark");
       });
     });
-  }, [apiRef, autoOpenLayers, collaborationCanEdit, cloudDiagramId, handleExcalidrawChange, openPanel, queueSketchSave]);
+  }, [apiRef, autoOpenLayers, collaborationCanEdit, cloudDiagramId, cloudSaveState.state, handleExcalidrawChange, openPanel, queueSketchSave]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
