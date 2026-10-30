@@ -36,16 +36,27 @@ export function calculateAlignmentGuides(elements, selectedIds, tolerance = ALIG
       ["y", target.top], ["y", target.centerY], ["y", target.bottom],
     ];
     for (const [axis, value] of targets) {
-      const closest = movingEdges[axis].reduce((best, edge) => {
-        const distance = Math.abs(edge - value);
-        return distance <= tolerance && (!best || distance < best.distance) ? { edge, distance } : best;
-      }, null);
+      const relevantMoving = movingBounds.filter((moving) => {
+        const overlap = axis === "x"
+          ? Math.min(moving.bottom, target.bottom) - Math.max(moving.top, target.top)
+          : Math.min(moving.right, target.right) - Math.max(moving.left, target.left);
+        const reach = axis === "x" ? Math.min(moving.height, target.height) : Math.min(moving.width, target.width);
+        return overlap >= -Math.max(4, reach * 0.15);
+      });
+      if (!relevantMoving.length) continue;
+      const closest = relevantMoving.flatMap((moving) => {
+        const edges = axis === "x"
+          ? [moving.left, moving.centerX, moving.right]
+          : [moving.top, moving.centerY, moving.bottom];
+        return edges.map((edge) => ({ edge, distance: Math.abs(edge - value) }));
+      }).filter((candidate) => candidate.distance <= tolerance)
+        .sort((a, b) => a.distance - b.distance)[0];
       if (!closest) continue;
       const position = value;
       const key = axis + ":" + Math.round(position * 100) / 100;
       if (seen.has(key)) continue;
       seen.add(key);
-      const aligned = movingBounds.concat([target]);
+      const aligned = relevantMoving.concat([target]);
       const start = axis === "x" ? Math.min(...aligned.map((b) => b.top)) - 12 : Math.min(...aligned.map((b) => b.left)) - 12;
       const end = axis === "x" ? Math.max(...aligned.map((b) => b.bottom)) + 12 : Math.max(...aligned.map((b) => b.right)) + 12;
       guides.push({ axis, position, start, end, distance: closest.distance });
