@@ -54,9 +54,6 @@ export function snapSceneElementsToSmartGuides(elements, baseline, selectedIds, 
     const movingEdges = isX
       ? [moving.left, moving.centerX, moving.right]
       : [moving.top, moving.centerY, moving.bottom];
-    const fixedEdges = fixedBounds.flatMap((b) => isX
-      ? [b.left, b.centerX, b.right]
-      : [b.top, b.centerY, b.bottom]);
     const candidates = [];
     for (const edge of movingEdges) {
       for (const fixed of fixedBounds) {
