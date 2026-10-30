@@ -69,6 +69,8 @@ function App() {
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
+  const [autoOpenLayers, setAutoOpenLayers] = useState(() => { try { return localStorage.getItem("sketchizi:auto-open-layers") !== "false"; } catch { return true; } });
+  const knownLayerElementIdsRef = useRef(null);
   const [architectureValidation, setArchitectureValidation] = useState({ errors: [], warnings: [], info: [] });
   const architectureValidationSignatureRef = useRef("");
   const lastSelectionSignature = useRef("");
@@ -602,6 +604,16 @@ function App() {
   // Never apply a color from the callback's appState argument: that snapshot can
   // predate scene restoration or Excalidraw's internal theme update.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
+    const liveIds = new Set((elements || []).filter((element) => element && !element.isDeleted && element.type !== "selection").map((element) => element.id));
+    if (knownLayerElementIdsRef.current === null) {
+      knownLayerElementIdsRef.current = liveIds;
+    } else {
+      const addedElement = [...liveIds].some((id) => !knownLayerElementIdsRef.current.has(id));
+      knownLayerElementIdsRef.current = liveIds;
+      if (addedElement && autoOpenLayers && collaborationCanEdit && !collaborationRemoteUpdateRef.current) {
+        openPanel("layers");
+      }
+    }
     handleExcalidrawChange(elements, appState);
     if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
     window.requestAnimationFrame(() => {
@@ -610,7 +622,7 @@ function App() {
         applyCanvasThemeBackground(apiRef.current, activeTheme === "dark");
       });
     });
-  }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave]);
+  }, [apiRef, autoOpenLayers, collaborationCanEdit, cloudDiagramId, handleExcalidrawChange, openPanel, queueSketchSave]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
@@ -1814,7 +1826,7 @@ function App() {
         >
           {(propertiesOpen || architectureValidationOpen || layersOpen) && (
             <div className={`desktop-validation-host ${architectureValidationOpen || layersOpen ? "is-open" : "is-closed"}`}>
-              {layersOpen && <LayersPanel apiRef={apiRef} sceneElements={apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []} selectedElements={selectedElements} canEdit={collaborationCanEdit} onClose={() => closePanel("layers")} />}
+              {layersOpen && <LayersPanel apiRef={apiRef} sceneElements={apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []} selectedElements={selectedElements} canEdit={collaborationCanEdit} autoOpen={autoOpenLayers} onAutoOpenChange={setAutoOpenLayers} onClose={() => closePanel("layers")} />}
               {!layersOpen && <ArchitectureValidationPanel
                 validation={architectureValidation}
                 sceneElements={apiRef.current?.getSceneElements?.() || []}
