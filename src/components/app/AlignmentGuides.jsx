@@ -20,13 +20,13 @@ function getSelectedIds(pointerDownState, appState) {
   return ids;
 }
 
-export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
+export default function AlignmentGuides({ canvasRootRef, apiRef, api: apiProp, canEdit, viewModeEnabled }) {
   const [guides, setGuides] = useState(EMPTY_GUIDES);
   const [overlay, setOverlay] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const root = canvasRootRef.current;
-    const api = apiRef?.current;
+    const api = apiProp || apiRef?.current;
     if (!root || !api || !canEdit || viewModeEnabled ||
         typeof api.onPointerDown !== "function" || typeof api.onPointerUp !== "function") {
       setGuides(EMPTY_GUIDES);
@@ -180,7 +180,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       latestPointer = null;
       hide();
     };
-  }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
+  }, [apiProp, apiRef, canvasRootRef, canEdit, viewModeEnabled]);
 
   if (!guides.length) return null;
   return (
