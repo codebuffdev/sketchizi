@@ -26,8 +26,8 @@ test("findNearestEqualSpacing finds the centered position between two objects", 
   const moving = [rect("moving", 110, 20, 40, 30)];
   const stationary = [rect("left", 20, 20, 40, 30), rect("right", 180, 20, 40, 30)];
   const result = findNearestEqualSpacing(moving, stationary, "x", 20);
-  assert.equal(result.delta, -5);
-  assert.equal(result.position, 105);
+  assert.equal(result.delta, -10);
+  assert.equal(result.position, 100);
   assert.equal(result.kind, undefined);
 });
 
