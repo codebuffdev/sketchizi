@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { snapSceneElementsToSmartGuides } from "../src/features/canvas/smartSnapping.js";
+import { calculateAlignmentGuides } from "../src/features/canvas/alignmentGuides.js";
 
 function el(id, x, y, width = 40, height = 40) {
   return { id, x, y, width, height, version: 1, versionNonce: 1, updated: 1 };
@@ -101,4 +102,15 @@ test("snaps to a nearby edge when the objects overlap on the cross axis", () => 
   const moved = [{ ...start[0], x: 57 }, start[1]];
   const next = snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 8);
   assert.equal(next[0].x, 60);
+});
+
+test("alignment guide calculation returns a visible edge guide for nearby objects", () => {
+  const elements = [el("moving", 58, 10), el("fixed", 100, 10)];
+  const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 5);
+  assert.ok(guides.some((guide) => guide.axis === "x" && guide.position === 100));
+});
+
+test("alignment guide calculation ignores objects on unrelated rows", () => {
+  const elements = [el("moving", 58, 10), el("unrelated", 100, 300)];
+  assert.deepEqual(calculateAlignmentGuides(elements, new Set(["moving"]), 5), []);
 });
