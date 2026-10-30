@@ -79,11 +79,11 @@ function App() {
       const viewport = root.querySelector(".excalidraw");
       const rect = viewport?.getBoundingClientRect();
       if (!rect) return;
-      const offset = axis => axis === "x" ? (appState.scrollX || 0) : (appState.scrollY || 0);
       const screen = result.slice(0, 4).map((g, i) => ({
         id: i,
-        x: g.axis === "x" ? (g.position + offset("x")) * zoom + rect.width / 2 : null,
-        y: g.axis === "y" ? (g.position + offset("y")) * zoom + rect.height / 2 : null,
+        position: g.axis === "x"
+          ? (g.position + (Number(appState.scrollX) || 0)) * zoom + (Number(appState.offsetLeft) || rect.left) - rect.left
+          : (g.position + (Number(appState.scrollY) || 0)) * zoom + (Number(appState.offsetTop) || rect.top) - rect.top,
         axis: g.axis,
       }));
       setGuides(screen);
@@ -116,8 +116,8 @@ function App() {
     />
     <svg className="prototype-guides" aria-hidden="true">
       {guides.map((guide) => guide.axis === "x"
-        ? <line key={guide.id} x1={guide.x} x2={guide.x} y1="0" y2="100%" />
-        : <line key={guide.id} x1="0" x2="100%" y1={guide.y} y2={guide.y} />)}
+        ? <line key={guide.id} x1={guide.position} x2={guide.position} y1="0" y2="100%" />
+        : <line key={guide.id} x1="0" x2="100%" y1={guide.position} y2={guide.position} />)}
     </svg>
   </div>;
 }
