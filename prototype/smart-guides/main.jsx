@@ -12,10 +12,35 @@ const initialData = {
   appState: { viewBackgroundColor: "#111719", currentItemStrokeColor: "#e5e7eb", currentItemBackgroundColor: "transparent", zoom: { value: 1 } },
 };
 
+const anchors = (start, size) => [start, start + size / 2, start + size];
+function nearestAlignment(moving, stationary, axis, tolerance) {
+  let best = null;
+  for (const a of moving) {
+    const ax = a.x;
+    const ay = a.y;
+    for (const b of stationary) {
+      const overlap = axis === "x"
+        ? Math.min(ay + a.height, b.y + b.height) - Math.max(ay, b.y)
+        : Math.min(ax + a.width, b.x + b.width) - Math.max(ax, b.x);
+      if (overlap < 0) continue;
+      const movingAnchors = anchors(axis === "x" ? a.x : a.y, axis === "x" ? a.width : a.height);
+      const targetAnchors = anchors(axis === "x" ? b.x : b.y, axis === "x" ? b.width : b.height);
+      for (const from of movingAnchors) for (const to of targetAnchors) {
+        const delta = to - from;
+        if (Math.abs(delta) <= tolerance && (!best || Math.abs(delta) < Math.abs(best.delta))) {
+          best = { delta, position: to };
+        }
+      }
+    }
+  }
+  return best;
+}
+
 function App() {
   const apiRef = useRef(null);
   const rootRef = useRef(null);
   const gestureRef = useRef(null);
+  const [apiReady, setApiReady] = useState(false);
   const [guides, setGuides] = useState([]);
   const [status, setStatus] = useState("Waiting for Excalidraw API…");
   const [eventLog, setEventLog] = useState([]);
@@ -38,16 +63,17 @@ function App() {
         baseline: new Map(elements.map((el) => [el.id, { x: el.x, y: el.y, width: el.width, height: el.height }])),
       } : null;
       setGuides([]);
-      setStatus("Pointer down subscription fired · " + (gestureRef.current ? "drag target captured" : "no target captured"));
-      log("onPointerDown: " + (hit?.id || "no hit") + " · selected " + ids.length);
+      setStatus("Pointer down · " + (gestureRef.current ? "drag captured" : "no drag target"));
+      log("pointer down · selected " + ids.length);
     });
     const unsubscribeUp = api.onPointerUp(() => {
-      const gesture = gestureRef.current;
+      const hadGesture = Boolean(gestureRef.current);
       gestureRef.current = null;
       setGuides([]);
-      setStatus("Pointer up subscription fired · " + (gesture ? "gesture completed" : "no active drag"));
-      log("onPointerUp: " + (gesture ? "captured gesture completed" : "no gesture"));
+      setStatus("Pointer up · " + (hadGesture ? "drag completed" : "no active drag"));
+      log("pointer up · drag " + (hadGesture ? "completed" : "not captured"));
     });
+
     const onMove = (event) => {
       const gesture = gestureRef.current;
       if (!gesture) return;
@@ -55,62 +81,63 @@ function App() {
       const zoom = Math.max(0.1, appState.zoom?.value || 1);
       const dx = (event.clientX - gesture.start.x) / zoom;
       const dy = (event.clientY - gesture.start.y) / zoom;
-      const moving = gesture.elements.filter((el) => gesture.ids.has(el.id));
+      const moving = gesture.elements.filter((el) => gesture.ids.has(el.id)).map((el) => {
+        const base = gesture.baseline.get(el.id);
+        return { ...el, x: base.x + dx, y: base.y + dy, width: base.width, height: base.height };
+      });
       const stationary = gesture.elements.filter((el) => !gesture.ids.has(el.id));
-      const result = [];
-      for (const a of moving) {
-        const ax = a.x + dx;
-        const ay = a.y + dy;
-        const edges = [
-          ["x", ax, "left"], ["x", ax + a.width, "right"], ["x", ax + a.width / 2, "center"],
-          ["y", ay, "top"], ["y", ay + a.height, "bottom"], ["y", ay + a.height / 2, "center"],
-        ];
-        for (const b of stationary) {
-          const overlapX = Math.min(ay + a.height, b.y + b.height) - Math.max(ay, b.y);
-          const overlapY = Math.min(ax + a.width, b.x + b.width) - Math.max(ax, b.x);
-          for (const [axis, position] of edges) {
-            if ((axis === "x" && overlapX < 0) || (axis === "y" && overlapY < 0)) continue;
-            const targets = axis === "x" ? [b.x, b.x + b.width, b.x + b.width / 2] : [b.y, b.y + b.height, b.y + b.height / 2];
-            const match = targets.find((target) => Math.abs(position - target) <= 8 / zoom);
-            if (match !== undefined) result.push({ axis, position: match });
-          }
-        }
+      const snapX = nearestAlignment(moving, stationary, "x", 8 / zoom);
+      const snapY = nearestAlignment(moving, stationary, "y", 8 / zoom);
+      const correctionX = snapX?.delta || 0;
+      const correctionY = snapY?.delta || 0;
+
+      // Apply the correction to the actual scene elements, not just the guide overlay.
+      if (correctionX || correctionY) {
+        const current = api.getSceneElements();
+        const corrected = current.map((el) => {
+          if (!gesture.ids.has(el.id)) return el;
+          const base = gesture.baseline.get(el.id);
+          return { ...el, x: base.x + dx + correctionX, y: base.y + dy + correctionY };
+        });
+        api.updateScene({ elements: corrected });
       }
+
       const viewport = root.querySelector(".excalidraw");
       const rect = viewport?.getBoundingClientRect();
       if (!rect) return;
-      const screen = result.slice(0, 4).map((g, i) => ({
-        id: i,
-        position: g.axis === "x"
-          ? (g.position + (Number(appState.scrollX) || 0)) * zoom + (Number(appState.offsetLeft) || rect.left) - rect.left
-          : (g.position + (Number(appState.scrollY) || 0)) * zoom + (Number(appState.offsetTop) || rect.top) - rect.top,
-        axis: g.axis,
-      }));
-      setGuides(screen);
-      if (screen.length) setStatus("Live alignment match · " + screen.length + " guide(s)");
+      const toScreenX = (position) => (position + (Number(appState.scrollX) || 0)) * zoom + (Number(appState.offsetLeft) || rect.left) - rect.left;
+      const toScreenY = (position) => (position + (Number(appState.scrollY) || 0)) * zoom + (Number(appState.offsetTop) || rect.top) - rect.top;
+      const nextGuides = [];
+      if (snapX) nextGuides.push({ id: "x", axis: "x", position: toScreenX(snapX.position) });
+      if (snapY) nextGuides.push({ id: "y", axis: "y", position: toScreenY(snapY.position) });
+      setGuides(nextGuides);
+      setStatus(nextGuides.length
+        ? "Magnetic snap active · " + nextGuides.length + " axis"
+        : "Dragging · no snap within tolerance");
     };
+
     window.addEventListener("pointermove", onMove, true);
-    setStatus("Excalidraw API ready · pointer subscriptions attached");
-    log("API ready: onPointerDown=" + typeof api.onPointerDown + ", onPointerUp=" + typeof api.onPointerUp);
+    setStatus("Excalidraw API ready · magnetic correction enabled");
+    log("API ready · pointer subscriptions attached");
     return () => {
       unsubscribeDown?.();
       unsubscribeUp?.();
       window.removeEventListener("pointermove", onMove, true);
     };
-  }, [apiRef.current]);
+  }, [apiReady]);
 
   return <div className="prototype-shell" ref={rootRef}>
-    <header><strong>Smart Guides · Isolated Prototype</strong><span>{status}</span></header>
+    <header><strong>Smart Guides · Magnetic Snap Prototype</strong><span>{status}</span></header>
     <aside>
       <strong>Interaction diagnostics</strong>
-      <p>Drag either rectangle toward the other. This prototype isolates Excalidraw pointer subscriptions from Sketchizi's canvas integration.</p>
+      <p>Drag either rectangle toward the other. Within 8 screen pixels, matching edges or centers should pull into alignment on both axes.</p>
       <div className="log">{eventLog.map((line, i) => <div key={i}>{line}</div>)}</div>
       <button onClick={() => { apiRef.current?.resetScene(); setGuides([]); }}>Reset scene</button>
     </aside>
     <Excalidraw
       initialData={initialData}
-      excalidrawAPI={(api) => { apiRef.current = api; setStatus("Excalidraw API mounted"); }}
-      onExcalidrawAPI={(api) => { if (api) { apiRef.current = api; setStatus("Excalidraw API mounted"); } }}
+      excalidrawAPI={(api) => { apiRef.current = api; setApiReady(true); setStatus("Excalidraw API mounted"); }}
+      onExcalidrawAPI={(api) => { if (api) { apiRef.current = api; setApiReady(true); setStatus("Excalidraw API mounted"); } }}
       theme="dark"
       UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false, export: false } }}
     />
