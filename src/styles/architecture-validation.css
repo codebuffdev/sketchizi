@@ -774,3 +774,42 @@
   background: #342f49;
   border-color: #5d527e;
 }
+
+
+/* Final Layers controls cleanup: no redundant state badge or nested input chrome */
+.sketchizi-layers-auto-open-state { display: none !important; }
+.sketchizi-layers-auto-open input {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 27px;
+}
+.sketchizi-layers-search {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.sketchizi-layers-search input,
+.sketchizi-layers-search input:focus,
+.sketchizi-layers-search input:hover {
+  box-sizing: border-box;
+  display: block;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: var(--text-primary, #222);
+  appearance: none;
+}
+.sketchizi-layers-search input:focus-visible {
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .sketchizi-layers-search input {
+  color: #f0eff4;
+}
