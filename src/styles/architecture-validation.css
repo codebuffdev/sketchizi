@@ -971,3 +971,25 @@
 .sketchizi-layer-group-row.is-selected { border-color:var(--focus-color,#8274e8); background:color-mix(in srgb,var(--focus-color,#8274e8) 10%,transparent); }
 .app.theme-dark .sketchizi-layers-tree-toolbar { --text-secondary:#aaa; --text-primary:#eee; --border-color:#414146; --focus-color:#a99bff; --button-hover-bg:#303035; }
 .app.theme-dark .sketchizi-layer-tree-children { --border-color:#414146; }
+
+
+/* Drag-and-drop hierarchy feedback */
+.sketchizi-layer-tree-object[draggable="true"] { cursor: grab; }
+.sketchizi-layer-tree-object.is-dragging { opacity: .38; }
+.sketchizi-layer-tree-object.is-drop-target {
+  border-top: 2px solid var(--focus-color,#8274e8);
+  background: color-mix(in srgb,var(--focus-color,#8274e8) 13%,transparent);
+}
+.sketchizi-layer-group-row.is-drop-target {
+  outline: 2px solid var(--focus-color,#8274e8);
+  outline-offset: -2px;
+  background: color-mix(in srgb,var(--focus-color,#8274e8) 16%,transparent);
+}
+.sketchizi-layers-tree.is-root-drop-target {
+  outline: 1px dashed var(--focus-color,#8274e8);
+  outline-offset: -4px;
+}
+.app.theme-dark .sketchizi-layer-tree-object.is-drop-target,
+.app.theme-dark .sketchizi-layer-group-row.is-drop-target {
+  --focus-color:#a99bff;
+}
