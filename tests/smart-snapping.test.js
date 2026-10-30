@@ -87,3 +87,18 @@ test("does not show spacing markers when the gaps are not close to equal", async
   const elements = [el("left", 0, 10), el("moving", 50, 10), el("right", 120, 10)];
   assert.deepEqual(calculateEqualSpacingGuides(elements, new Set(["moving"]), 4), []);
 });
+
+test("does not snap to an object on a different row", () => {
+  const start = [el("moving", 10, 10), el("unrelated", 50, 300)];
+  const before = baseline(start);
+  const moved = [{ ...start[0], x: 47, y: 10 }, start[1]];
+  assert.equal(snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 8), moved);
+});
+
+test("snaps to a nearby edge when the objects overlap on the cross axis", () => {
+  const start = [el("moving", 10, 10), el("fixed", 100, 15)];
+  const before = baseline(start);
+  const moved = [{ ...start[0], x: 57 }, start[1]];
+  const next = snapSceneElementsToSmartGuides(moved, before, new Set(["moving"]), 8);
+  assert.equal(next[0].x, 60);
+});
