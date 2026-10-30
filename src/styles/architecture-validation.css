@@ -869,3 +869,60 @@
   border-color: #8274e8;
   background: #8274e8;
 }
+
+
+/* Auto-open preference uses the same compact icon-button language as the theme control */
+.sketchizi-layers-auto-open-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: var(--layers-auto-button-bg, #292a31);
+  color: var(--layers-auto-button-fg, #b9bac5);
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.sketchizi-layers-auto-open-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sketchizi-layers-auto-open-button .auto-open-mark { opacity: .35; transition: opacity .16s ease; }
+.sketchizi-layers-auto-open-button:hover {
+  background: var(--layers-auto-button-hover, #393943);
+  color: var(--text-primary, #fff);
+}
+.sketchizi-layers-auto-open-button.is-active {
+  border-color: #7665d8;
+  background: #7665d8;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(118,101,216,.24);
+}
+.sketchizi-layers-auto-open-button.is-active .auto-open-mark { opacity: 1; }
+.sketchizi-layers-auto-open-button:active { transform: scale(.94); }
+.sketchizi-layers-auto-open-button:focus-visible {
+  outline: 2px solid var(--focus-color, #8274e8);
+  outline-offset: 3px;
+}
+.app.theme-dark .sketchizi-layers-auto-open-button {
+  --layers-auto-button-bg: #29292f;
+  --layers-auto-button-fg: #b7b5c2;
+  --layers-auto-button-hover: #393842;
+}
+.app.theme-light .sketchizi-layers-auto-open-button {
+  --layers-auto-button-bg: #f0eff5;
+  --layers-auto-button-fg: #666273;
+  --layers-auto-button-hover: #e5e2f0;
+}
+.app.theme-light .sketchizi-layers-auto-open-button.is-active {
+  background: #7665d8;
+  color: #fff;
+}
