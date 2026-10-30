@@ -745,7 +745,7 @@ export default function SketchiziCanvas({
           canEdit={canEdit && !viewModeEnabled}
         />
       )}
-      <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
+      <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} api={apiRef.current} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />
