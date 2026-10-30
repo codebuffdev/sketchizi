@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction, Excalidraw } from "@excalidraw/excalidraw";
 import { snapChangedSceneElements } from "../../features/canvas/gridSnap.js";
-import { snapSceneElementsToSmartGuides } from "../../features/canvas/smartSnapping.js";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
@@ -21,7 +20,6 @@ export default function SketchiziCanvas({
   const canvasRootRef = useRef(null);
   const fitContentButtonRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
-  const gridSnapBaselineRef = useRef(null);
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
