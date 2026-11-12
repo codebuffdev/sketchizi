@@ -1579,3 +1579,126 @@
   border-color: #9d87ff !important;
   color: #f1eeff !important;
 }
+
+/* UI/UX Enhancement Suite: Dock Hotkey KBD Badges */
+.sketchizi-dock-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  vertical-align: middle;
+}
+.sketchizi-toolbar-tooltip.theme-light .sketchizi-dock-kbd {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-bottom-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* UI/UX Enhancement Suite: Font Size dual badges and direct number stepper */
+.app .contextual-formatting-toolbar .format-font-size-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.app .contextual-formatting-toolbar .format-size-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 42px;
+  padding: 2px 6px;
+  line-height: 1.15;
+}
+.app .contextual-formatting-toolbar .format-size-name {
+  font-weight: 650;
+  font-size: 13px;
+}
+.app .contextual-formatting-toolbar .format-size-sub {
+  font-size: 9.5px;
+  opacity: 0.75;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.app .contextual-formatting-toolbar .format-custom-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.app .contextual-formatting-toolbar .format-size-input-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  border: 1px solid var(--format-option-border, #e1e4ec);
+  border-radius: 6px;
+  background: var(--format-option-surface, #f4f5f8);
+  padding: 0 6px;
+  height: 32px;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-size-input-wrapper {
+  border-color: #3b4050;
+  background: #1b1e27;
+}
+.app .contextual-formatting-toolbar .format-size-input-val {
+  width: 44px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  padding: 0 2px 0 0;
+  outline: none;
+}
+.app .contextual-formatting-toolbar .format-size-input-unit {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-left: 2px;
+  user-select: none;
+}
+
+/* UI/UX Enhancement Suite: Opacity Presets */
+.app .contextual-formatting-toolbar .format-opacity-presets-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.app .contextual-formatting-toolbar .format-opacity-preset-btn {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+/* UI/UX Enhancement Suite: Multi-Selection Alignment */
+.app .contextual-formatting-toolbar .format-alignment-section .format-option-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.app .contextual-formatting-toolbar .format-alignment-section .format-option-row:last-child {
+  grid-template-columns: repeat(2, 1fr);
+}
+.app .contextual-formatting-toolbar .format-alignment-section .format-option-button {
+  width: 100%;
+  min-width: 0;
+  font-size: 11px;
+  gap: 4px;
+}

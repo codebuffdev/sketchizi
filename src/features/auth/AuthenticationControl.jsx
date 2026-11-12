@@ -282,8 +282,7 @@ export default function AuthenticationControl() {
 
       {loginError && auth.status !== "authenticated" && <span className="auth-inline-error" role="status">{loginError}</span>}
       {auth.error && <span className="auth-inline-error" role="status" title={auth.error}>Auth unavailable</span>}
-      {auth.status === "unavailable" && (
-        <button
+      {auth.status === "unavailable" && <button
           className="auth-header-button is-icon-only"
           type="button"
           onClick={retryAuthStatus}

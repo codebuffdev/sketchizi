@@ -52,6 +52,7 @@ export default function TextSizeIndicator({
         .filter(([, isSelected]) => isSelected)
         .map(([id]) => id)
     );
+
     if (selectedIds.size === 0 && Array.isArray(selectedElements)) {
       for (const el of selectedElements) {
         if (el?.id) selectedIds.add(el.id);
@@ -60,8 +61,8 @@ export default function TextSizeIndicator({
 
     if (selectedIds.size === 0) return [];
 
-    // Find all text elements in the selection
-    const textElements = [];
+    // Collect elements to indicate: text elements show px font size; other shapes show W × H px dimensions
+    const elementsToIndicate = [];
     const byId = new Map(sceneElements.map((el) => [el.id, el]));
 
     for (const id of selectedIds) {
@@ -69,20 +70,27 @@ export default function TextSizeIndicator({
       if (!el || el.isDeleted || el.deleted) continue;
 
       if (el.type === "text") {
-        textElements.push(el);
-      } else if (Array.isArray(el.boundElements)) {
+        elementsToIndicate.push(el);
+      } else if (Array.isArray(el.boundElements) && el.boundElements.length > 0) {
+        let hasBoundText = false;
         for (const bound of el.boundElements) {
           if (bound?.type === "text" && bound.id) {
             const boundEl = byId.get(bound.id);
-            if (boundEl && !boundEl.isDeleted) {
-              textElements.push(boundEl);
+            if (boundEl && !boundEl.isDeleted && !boundEl.deleted) {
+              elementsToIndicate.push(boundEl);
+              hasBoundText = true;
             }
           }
         }
+        if (!hasBoundText) {
+          elementsToIndicate.push(el);
+        }
+      } else {
+        elementsToIndicate.push(el);
       }
     }
 
-    if (textElements.length === 0) return [];
+    if (elementsToIndicate.length === 0) return [];
 
     const viewport = root.querySelector(".excalidraw") || root;
     const rootRect = root.getBoundingClientRect();
@@ -92,14 +100,15 @@ export default function TextSizeIndicator({
 
     const sceneCoordsToViewportCoords = api.sceneCoordsToViewportCoords;
 
-    return textElements.map((element) => {
+    return elementsToIndicate.map((element) => {
+      const isText = element.type === "text";
       const fontSize = Number(element.fontSize) || 20;
       const x = Number(element.x) || 0;
       const y = Number(element.y) || 0;
       const width = Number(element.width) || 0;
       const height = Number(element.height) || 0;
 
-      // Bottom center of the text element bounding box
+      // Bottom center of the element bounding box
       const bottomCenterX = x + width / 2;
       const bottomY = y + height;
 
@@ -122,11 +131,12 @@ export default function TextSizeIndicator({
 
       return {
         id: element.id,
+        isText,
         fontSize: Math.round(fontSize),
         left: screenX,
         top: screenY + 8, // slight offset beneath the bottom selection handle
-        width: Math.round(width),
-        height: Math.round(height),
+        width: Math.round(Math.abs(width)),
+        height: Math.round(Math.abs(height)),
       };
     });
   }, [apiRef, canvasRootRef, selectedElements, canvasRevision]);
@@ -143,9 +153,17 @@ export default function TextSizeIndicator({
             left: `${ind.left}px`,
             top: `${ind.top}px`,
           }}
-          title={`Font size: ${ind.fontSize}px (${ind.width} × ${ind.height} px)`}
+          title={
+            ind.isText
+              ? `Font size: ${ind.fontSize}px (${ind.width} × ${ind.height} px)`
+              : `Dimensions: ${ind.width} × ${ind.height} px`
+          }
         >
-          {ind.fontSize}px
+          {ind.isText ? (
+            <>{ind.fontSize}px</>
+          ) : (
+            `${ind.width} × ${ind.height} px`
+          )}
         </div>
       ))}
     </div>
