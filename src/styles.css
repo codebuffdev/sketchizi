@@ -1017,3 +1017,5 @@
 .cloud-save-dialog-actions button{min-height:36px;padding:0 13px;border:1px solid var(--app-border,#303849);border-radius:8px;background:transparent;color:inherit;font:600 12px system-ui,sans-serif;cursor:pointer}
 .cloud-save-dialog-actions .primary{border-color:#7865f4;background:#7865f4;color:white}
 .cloud-save-dialog-actions button:disabled{opacity:.5;cursor:not-allowed}
+
+@import "./styles/advanced-canvas-suite.css";
