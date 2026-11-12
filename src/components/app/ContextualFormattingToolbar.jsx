@@ -44,6 +44,7 @@ const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— �
 const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
 const FONT_FAMILIES = [[1, "Hand-drawn", "✎"], [2, "Sans", "A"], [3, "Code", "</>"], [5, "Excalifont", "E"], [6, "Nunito", "N"], [7, "Lilita", "L"], [8, "Comic", "C"], [9, "Liberation", "L"]];
 const FONT_SIZES = [[12, "XS"], [16, "S"], [20, "M"], [28, "L"], [36, "XL"]];
+const OPACITY_PRESETS = [25, 50, 75, 100];
 const TEXT_ALIGNMENTS = [["left", "Left", "≡"], ["center", "Center", "☰"], ["right", "Right", "≡"]];
 const GROUPS = [
   { id: "stroke", label: "Stroke", icon: "◒" },
@@ -51,6 +52,7 @@ const GROUPS = [
   { id: "fontSize", label: "Font size", icon: "T" },
   { id: "textAlign", label: "Text align", icon: "≡" },
   { id: "opacity", label: "Opacity", icon: "◐" },
+  { id: "align", label: "Align", icon: "⫽" },
   { id: "layers", label: "Layers", icon: "▤" },
 ];
 
@@ -409,6 +411,9 @@ export default function ContextualFormattingToolbar({
   const visibleGroups = toolMode
     ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity" || (activeToolMode === "text" && ["fontFamily", "fontSize", "textAlign"].includes(group.id)))
     : GROUPS.filter((group) => {
+      if (group.id === "align") {
+        return liveSelection.length >= 2;
+      }
       if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") {
         return onlyTextSelection;
       }
@@ -482,6 +487,81 @@ export default function ContextualFormattingToolbar({
     api.updateScene({ elements: direction === "back" ? [...moving, ...remaining] : [...remaining, ...moving] });
   };
 
+  const alignSelection = (alignment) => {
+    const api = apiRef?.current;
+    if (!api || liveSelection.length < 2) return;
+    const scene = api.getSceneElements?.() || [];
+    const selectedIds = new Set(liveSelection.map((el) => el.id));
+    const selected = scene.filter((el) => el && !el.isDeleted && !el.deleted && selectedIds.has(el.id));
+    if (selected.length < 2) return;
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const el of selected) {
+      const elW = Number(el.width) || 0;
+      const elH = Number(el.height) || 0;
+      minX = Math.min(minX, el.x);
+      maxX = Math.max(maxX, el.x + elW);
+      minY = Math.min(minY, el.y);
+      maxY = Math.max(maxY, el.y + elH);
+    }
+
+    const updatedMap = new Map();
+
+    if (alignment === "left") {
+      selected.forEach((el) => updatedMap.set(el.id, { ...el, x: minX }));
+    } else if (alignment === "centerHorizontal") {
+      const midX = (minX + maxX) / 2;
+      selected.forEach((el) => {
+        const elW = Number(el.width) || 0;
+        updatedMap.set(el.id, { ...el, x: midX - elW / 2 });
+      });
+    } else if (alignment === "right") {
+      selected.forEach((el) => {
+        const elW = Number(el.width) || 0;
+        updatedMap.set(el.id, { ...el, x: maxX - elW });
+      });
+    } else if (alignment === "top") {
+      selected.forEach((el) => updatedMap.set(el.id, { ...el, y: minY }));
+    } else if (alignment === "centerVertical") {
+      const midY = (minY + maxY) / 2;
+      selected.forEach((el) => {
+        const elH = Number(el.height) || 0;
+        updatedMap.set(el.id, { ...el, y: midY - elH / 2 });
+      });
+    } else if (alignment === "bottom") {
+      selected.forEach((el) => {
+        const elH = Number(el.height) || 0;
+        updatedMap.set(el.id, { ...el, y: maxY - elH });
+      });
+    } else if (alignment === "distributeHorizontal") {
+      const sorted = [...selected].sort((a, b) => a.x - b.x);
+      const totalWidth = sorted.reduce((sum, el) => sum + (Number(el.width) || 0), 0);
+      const availableSpace = (maxX - minX) - totalWidth;
+      const gap = sorted.length > 1 ? availableSpace / (sorted.length - 1) : 0;
+      let curX = minX;
+      sorted.forEach((el) => {
+        updatedMap.set(el.id, { ...el, x: curX });
+        curX += (Number(el.width) || 0) + gap;
+      });
+    } else if (alignment === "distributeVertical") {
+      const sorted = [...selected].sort((a, b) => a.y - b.y);
+      const totalHeight = sorted.reduce((sum, el) => sum + (Number(el.height) || 0), 0);
+      const availableSpace = (maxY - minY) - totalHeight;
+      const gap = sorted.length > 1 ? availableSpace / (sorted.length - 1) : 0;
+      let curY = minY;
+      sorted.forEach((el) => {
+        updatedMap.set(el.id, { ...el, y: curY });
+        curY += (Number(el.height) || 0) + gap;
+      });
+    }
+
+    const newElements = scene.map((el) => updatedMap.get(el.id) || el);
+    api.updateScene({ elements: newElements, captureUpdate: CaptureUpdateAction.EVENTUALLY });
+  };
   const renderGroupContent = (groupId) => {
     if (groupId === "stroke") return (
       <>
@@ -618,12 +698,39 @@ export default function ContextualFormattingToolbar({
     if (groupId === "fontSize") return (
       <div className="format-option-section">
         <div className="format-option-label">Font size</div>
-        <div className="format-option-row">
-          {fontSizes.map(([value, label]) => <button key={value} type="button" className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontSize === value} onClick={() => applyFormatting({ fontSize: value })}>{label}</button>)}
+        <div className="format-option-row format-font-size-grid">
+          {fontSizes.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`}
+              aria-label={`${label} (${value}px)`}
+              aria-pressed={currentFontSize === value}
+              title={`${label} (${value}px)`}
+              onClick={() => applyFormatting({ fontSize: value })}
+            >
+              <span className="format-size-name">{label}</span>
+              <span className="format-size-sub">{value}px</span>
+            </button>
+          ))}
         </div>
         <div className="format-option-row format-custom-size">
           <button type="button" className="format-option-button" aria-label="Decrease text size" onClick={() => applyFormatting({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
-          <span>{currentFontSize}</span>
+          <div className="format-size-input-wrapper">
+            <input
+              type="number"
+              aria-label="Direct font size"
+              className="format-size-input-val"
+              min="8"
+              max="128"
+              value={currentFontSize}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                if (val >= 6 && val <= 200) applyFormatting({ fontSize: val });
+              }}
+            />
+            <span className="format-size-input-unit">px</span>
+          </div>
           <button type="button" className="format-option-button" aria-label="Increase text size" onClick={() => applyFormatting({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
         </div>
       </div>
@@ -648,10 +755,44 @@ export default function ContextualFormattingToolbar({
     );
     if (groupId === "opacity") return (
       <div className="format-option-section">
-        <div className="format-option-label">Opacity</div>
+        <div className="format-option-label">Opacity ({currentOpacity}%)</div>
+        <div className="format-option-row format-opacity-presets-row">
+          {OPACITY_PRESETS.map((pct) => (
+            <button
+              key={pct}
+              type="button"
+              className={`format-option-button format-opacity-preset-btn${currentOpacity === pct ? " is-selected" : ""}`}
+              aria-label={`${pct}% opacity`}
+              onClick={() => applyFormatting({ opacity: pct })}
+            >
+              {pct}%
+            </button>
+          ))}
+        </div>
         <div className="format-opacity-control">
           <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
-          <span>{currentOpacity}</span>
+          <span>{currentOpacity}%</span>
+        </div>
+      </div>
+    );
+    if (groupId === "align") return (
+      <div className="format-option-section format-alignment-section">
+        <div className="format-option-label">Align horizontal</div>
+        <div className="format-option-row">
+          <button type="button" className="format-option-button" aria-label="Align left" title="Align left" onClick={() => alignSelection("left")}>⇤ Left</button>
+          <button type="button" className="format-option-button" aria-label="Align center horizontally" title="Align center horizontally" onClick={() => alignSelection("centerHorizontal")}>⇥⇤ Center</button>
+          <button type="button" className="format-option-button" aria-label="Align right" title="Align right" onClick={() => alignSelection("right")}>⇥ Right</button>
+        </div>
+        <div className="format-option-label format-sub-label">Align vertical</div>
+        <div className="format-option-row">
+          <button type="button" className="format-option-button" aria-label="Align top" title="Align top" onClick={() => alignSelection("top")}>⤒ Top</button>
+          <button type="button" className="format-option-button" aria-label="Align center vertically" title="Align center vertically" onClick={() => alignSelection("centerVertical")}>⤓⤒ Mid</button>
+          <button type="button" className="format-option-button" aria-label="Align bottom" title="Align bottom" onClick={() => alignSelection("bottom")}>⤓ Bottom</button>
+        </div>
+        <div className="format-option-label format-sub-label">Distribute spacing</div>
+        <div className="format-option-row">
+          <button type="button" className="format-option-button" aria-label="Distribute horizontally" title="Distribute horizontally" onClick={() => alignSelection("distributeHorizontal")}>↔ Horiz</button>
+          <button type="button" className="format-option-button" aria-label="Distribute vertically" title="Distribute vertically" onClick={() => alignSelection("distributeVertical")}>↕ Vert</button>
         </div>
       </div>
     );
@@ -680,6 +821,17 @@ export default function ContextualFormattingToolbar({
       onClick={(event) => event.stopPropagation()}
     >
       <div className="format-icon-rail" role="group" aria-label="Formatting options">
+        {typeof onOpenProperties === "function" && (
+          <button
+            type="button"
+            className="format-icon-button format-properties-trigger"
+            aria-label="Open properties drawer"
+            title="Open properties drawer"
+            onClick={onOpenProperties}
+          >
+            ⋯
+          </button>
+        )}
         {visibleGroups.map((group) => (
           <button
             key={group.id}

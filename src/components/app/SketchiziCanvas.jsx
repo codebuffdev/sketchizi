@@ -97,7 +97,12 @@ export default function SketchiziCanvas({
       const label = button?.dataset?.sketchiziTooltip;
       if (!label || !button.isConnected) return;
       activeTooltipButton = button;
-      toolbarTooltip.textContent = label;
+      const keyMatch = label.match(/^(.*?)\s*\(([^)]+)\)$/);
+      if (keyMatch) {
+        toolbarTooltip.innerHTML = `${keyMatch[1]} <kbd class="sketchizi-dock-kbd">${keyMatch[2]}</kbd>`;
+      } else {
+        toolbarTooltip.textContent = label;
+      }
       const appShell = root.closest(".app");
       toolbarTooltip.classList.toggle("theme-dark", !!appShell?.classList.contains("theme-dark"));
       toolbarTooltip.classList.toggle("theme-light", !!appShell?.classList.contains("theme-light"));
