@@ -92,11 +92,11 @@ function LayersPanel({ apiRef, sceneElements = [], selectedElements = [], canEdi
 
   const elements = useMemo(() => (Array.isArray(sceneElements) ? sceneElements : [])
     .map((element, index) => ({ element, index }))
-    .filter(({ element }) => element && element.type !== "selection" && element.id)
+    .filter(({ element }) => element && element.type !== "selection" && element.id && !element.isDeleted)
     .reverse(), [sceneElements, revision]);
   const tree = useMemo(() => buildLayerTree(elements), [elements]);
   const selectedIds = new Set(selectedElements.map((element) => element?.id).filter(Boolean));
-  const liveElements = elements.filter(({ element }) => !element.isDeleted);
+  const liveElements = elements;
   const matchingIds = query.trim()
     ? new Set(elements.filter(({ element, index }) => `${layerLabel(element, index)} ${element.type || ""}`.toLowerCase().includes(query.trim().toLowerCase())).map(({ element }) => element.id))
     : null;
