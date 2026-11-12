@@ -364,3 +364,37 @@ html[data-sketchizi-theme="dark"] .sketchizi-command-palette {
   outline: none;
   box-shadow: inset 0 0 0 1px rgba(180, 190, 210, .07) !important;
 }
+
+/* Raycast/Spotlight keyboard shortcut badges and selection animation */
+.sketchizi-command-search-hints kbd,
+.sketchizi-command-item > kbd,
+.sketchizi-command-palette-footer kbd {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 20px !important;
+  height: 22px !important;
+  padding: 0 6px !important;
+  border: 1px solid var(--ui-border, #cbd5e1) !important;
+  border-bottom: 2px solid var(--ui-border-strong, #94a3b8) !important;
+  border-radius: 6px !important;
+  background: var(--ui-surface-solid, #ffffff) !important;
+  color: var(--ui-text, #334155) !important;
+  font-family: inherit !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-command-search-hints kbd,
+html[data-sketchizi-theme="dark"] .sketchizi-command-item > kbd,
+html[data-sketchizi-theme="dark"] .sketchizi-command-palette-footer kbd {
+  border-color: #3b4254 !important;
+  border-bottom-color: #262c3a !important;
+  background: #1e2433 !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+.sketchizi-command-item.selected {
+  transform: translateX(2px);
+  transition: transform 0.12s ease, background-color 0.12s ease !important;
+}

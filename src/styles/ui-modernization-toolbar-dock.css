@@ -1518,3 +1518,64 @@
   display: inline-flex !important;
 }
 
+
+/* UI Enhancements for Contextual Formatting Dock & Popovers */
+.app .contextual-formatting-toolbar .format-icon-button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button:hover {
+  transform: scale(1.05);
+}
+.app .contextual-formatting-toolbar .format-icon-button:active {
+  transform: scale(0.95);
+}
+.app .contextual-formatting-toolbar .format-icon-button.is-active,
+.app .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  background: linear-gradient(135deg, #ede9fe 0%, #e0d9ff 100%) !important;
+  border-color: #8b75f8 !important;
+  color: #4c34ba !important;
+  box-shadow: 0 0 0 1px rgba(139, 117, 248, 0.4), 0 2px 8px rgba(139, 117, 248, 0.22) !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button.is-active,
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  background: linear-gradient(135deg, #372a68 0%, #291d54 100%) !important;
+  border-color: #9d87ff !important;
+  color: #f1eeff !important;
+  box-shadow: 0 0 0 1px rgba(157, 135, 255, 0.4), 0 2px 10px rgba(157, 135, 255, 0.3) !important;
+}
+.app .contextual-formatting-toolbar .format-options-popover {
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  animation: formatting-popover-enter 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+@keyframes formatting-popover-enter {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.app .contextual-formatting-toolbar .format-option-swatch {
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+.app .contextual-formatting-toolbar .format-option-swatch:hover {
+  transform: scale(1.15) !important;
+}
+.app .contextual-formatting-toolbar .format-option-swatch.is-selected {
+  box-shadow: 0 0 0 2px var(--format-popover-surface, #fff), 0 0 0 4px #7c6bf0 !important;
+  transform: scale(1.08) !important;
+}
+.app .contextual-formatting-toolbar .format-option-button {
+  transition: all 0.14s ease !important;
+}
+.app .contextual-formatting-toolbar .format-option-button:hover {
+  transform: translateY(-1px);
+}
+.app .contextual-formatting-toolbar .format-option-button.is-selected {
+  background: #ede9fe !important;
+  border-color: #8b75f8 !important;
+  color: #4c34ba !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-option-button.is-selected {
+  background: #372a68 !important;
+  border-color: #9d87ff !important;
+  color: #f1eeff !important;
+}
