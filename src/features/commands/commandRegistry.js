@@ -46,12 +46,6 @@ export function createSketchiziCommandRegistry(context) {
     api.updateScene?.({ appState: { ...api.getAppState(), zoom: { value: next } }, captureUpdate: CaptureUpdateAction.NEVER });
   };
 
-  const openExcalidrawCommandPalette = () => {
-    const api = apiRef.current;
-    if (!api) return;
-    api.updateScene?.({ appState: { ...api.getAppState(), openDialog: { name: "commandPalette" } } });
-  };
-
   const commands = [];
 
   commands.push(
@@ -109,6 +103,17 @@ export function createSketchiziCommandRegistry(context) {
       icon: "▧",
       available: () => canEdit,
       execute: () => openPanel("icon-library"),
+    },
+    {
+      id: "layers.open",
+      label: "Open Layers",
+      description: "Inspect, select, rename, reorder, hide, and lock diagram objects",
+      keywords: ["layers", "objects", "elements", "z order", "visibility", "lock", "rename"],
+      category: "Layout",
+      shortcut: "",
+      icon: "▤",
+      available: () => true,
+      execute: () => openPanel("layers"),
     },
     {
       id: "properties.open",
@@ -340,17 +345,6 @@ export function createSketchiziCommandRegistry(context) {
       icon: "?",
       available: () => true,
       execute: () => openPanel("shortcuts"),
-    },
-    {
-      id: "application.excalidraw-command-palette",
-      label: "Open Excalidraw Command Palette",
-      description: "Open the command palette built into Excalidraw 0.18",
-      keywords: ["excalidraw", "command palette", "native", "commands"],
-      category: "Application",
-      shortcut: "Ctrl+Shift+P",
-      icon: "⚡",
-      available: () => true,
-      execute: openExcalidrawCommandPalette,
     },
   );
 

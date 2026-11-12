@@ -6,6 +6,7 @@ const CATEGORY_ORDER = [
   "Collaboration",
   "Files",
   "View",
+  "Layout",
   "Tools",
   "Export",
   "Application",
@@ -28,11 +29,14 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
     });
     const needle = normalize(query);
     const filtered = needle
-      ? available.filter((command) => normalize([
-        command.label,
-        command.description,
-        ...(command.keywords || []),
-      ].join(" ")).includes(needle))
+      ? available.filter((command) => {
+        const searchable = normalize([
+          command.label,
+          command.description,
+          ...(command.keywords || []),
+        ].join(" "));
+        return needle.split(/\s+/).filter(Boolean).every((term) => searchable.includes(term));
+      })
       : available;
 
     return filtered

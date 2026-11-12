@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 function ToolIcon({ name }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round" };
   const paths = {
+    layers: <><path d="M4 5h16M4 10h16M4 15h10M4 20h10" /><path d="M17 14v7m-3.5-3.5h7" /></>,
     image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m4.5 17 5-5 3.5 3 2.5-2 4 4" /></>,
     frame: <><path d="M5 3v18M19 3v18M3 7h18M3 17h18" /></>,
     embeddable: <><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="m9 10-2 2 2 2m6-4 2 2-2 2m-2-5-2 6" /></>,
@@ -14,7 +15,7 @@ function ToolIcon({ name }) {
   return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" {...common}>{paths[name]}</svg>;
 }
 
-export default function MoreTools({ open, anchor, position, activateTool, toggle, canEdit = true, placement = "canvas" }) {
+export default function MoreTools({ open, anchor, position, activateTool, openPanel, toggle, canEdit = true, placement = "canvas" }) {
   const [dockLocked, setDockLocked] = useState(true);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function MoreTools({ open, anchor, position, activateTool, toggle
   }, [activateTool, canEdit]);
 
   const items = [
+    ["layers", "Open Layers", ""],
     ["image", "Insert image", "9"],
     ["frame", "Frame tool", "F"],
     ["embeddable", "Web Embed", ""],
@@ -76,7 +78,7 @@ export default function MoreTools({ open, anchor, position, activateTool, toggle
           <span>Tool</span>
           <button type="button" className="more-tools-menu-close" aria-label="Close Tool menu" onClick={() => toggle("more-tools")}>×</button>
         </div>
-        {items.map(([tool, label, key]) => <button key={tool} type="button" role="menuitem" disabled={!canEdit} onClick={() => activateTool(tool)}><span className="more-tools-icon"><ToolIcon name={tool} /></span><span>{label}</span><kbd>{key}</kbd></button>)}
+        {items.map(([tool, label, key]) => <button key={tool} type="button" role="menuitem" disabled={tool !== "layers" && !canEdit} onClick={() => { if (tool === "layers") openPanel?.("layers"); else activateTool(tool); }}><span className="more-tools-icon"><ToolIcon name={tool} /></span><span>{label}</span><kbd>{key}</kbd></button>)}
       </div>}
     </div>
   );
