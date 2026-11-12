@@ -259,7 +259,7 @@ function normalizeManifest(value, index) {
   };
 }
 
-export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyResourceYaml }) {
+export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyResourceYaml, isDarkTheme = true }) {
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
@@ -718,7 +718,7 @@ spec:
   };
 
   return (
-    <div className="k8s-studio-overlay" role="presentation">
+    <div className={`k8s-studio-overlay ${isDarkTheme ? "theme-dark" : "theme-light"}`} data-theme={isDarkTheme ? "dark" : "light"} role="presentation">
       <section className="k8s-studio" role="dialog" aria-modal="true" aria-labelledby="k8s-studio-title">
         <header className="k8s-studio-header">
           <div className="k8s-studio-brand">K8s</div>

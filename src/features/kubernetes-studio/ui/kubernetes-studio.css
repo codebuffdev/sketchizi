@@ -203,3 +203,74 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.104)}
+
+
+/* Theme synchronization: the studio follows Sketchizi's active appearance. */
+.k8s-studio-overlay.theme-light{background:rgba(248,250,252,.96);color:#1f2937}
+.k8s-studio-overlay.theme-light .k8s-studio{background:#fff;color:#1f2937}
+.k8s-studio-overlay.theme-light [class*="k8s-studio"],
+.k8s-studio-overlay.theme-light [class*="k8s-yaml"]{color:#263244;border-color:#d9e0ea}
+.k8s-studio-overlay.theme-light .k8s-studio-header,
+.k8s-studio-overlay.theme-light .k8s-studio-actions,
+.k8s-studio-overlay.theme-light .k8s-studio-footer{border-color:#e2e8f0}
+.k8s-studio-overlay.theme-light .k8s-studio-heading p,
+.k8s-studio-overlay.theme-light .k8s-studio-actions>span,
+.k8s-studio-overlay.theme-light .k8s-studio-section-title small,
+.k8s-studio-overlay.theme-light .k8s-studio-help,
+.k8s-studio-overlay.theme-light .k8s-studio-footer,
+.k8s-studio-overlay.theme-light .k8s-studio-resource small,
+.k8s-studio-overlay.theme-light .k8s-studio-notes li,
+.k8s-studio-overlay.theme-light .k8s-yaml-editor-status,
+.k8s-studio-overlay.theme-light .k8s-yaml-editor-controls small{color:#64748b}
+.k8s-studio-overlay.theme-light .k8s-studio-eyebrow{color:#315fc5}
+.k8s-studio-overlay.theme-light .k8s-studio-close,
+.k8s-studio-overlay.theme-light .k8s-studio-secondary,
+.k8s-studio-overlay.theme-light .k8s-yaml-editor-controls button{background:#f8fafc;color:#334155;border-color:#cbd5e1}
+.k8s-studio-overlay.theme-light .k8s-studio-primary{background:#285dc9;color:#fff;border-color:#285dc9}
+.k8s-studio-overlay.theme-light .k8s-studio-editor,
+.k8s-studio-overlay.theme-light .k8s-studio-preview{background:#fff}
+.k8s-studio-overlay.theme-light .k8s-studio-preview{background:#f8fafc}
+.k8s-studio-overlay.theme-light .k8s-studio-section-title>div>span,
+.k8s-studio-overlay.theme-light .k8s-studio-section-title>strong{background:#e8efff;color:#315fc5}
+.k8s-studio-overlay.theme-light .k8s-studio-editor textarea,
+.k8s-studio-overlay.theme-light .k8s-studio-inspector-editor{background:#fbfcfe;color:#243247;border-color:#cbd5e1;caret-color:#243247}
+.k8s-studio-overlay.theme-light .k8s-studio-editor .k8s-yaml-editor-shell textarea{background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent;caret-color:#243247}
+.k8s-studio-overlay.theme-light .k8s-yaml-editor-shell textarea::placeholder{color:#94a3b8}
+.k8s-studio-overlay.theme-light .k8s-yaml-editor-shell .k8s-yaml-highlight{color:#243247}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-key{color:#1759a8}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-punctuation{color:#64748b}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-value{color:#243247}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-string{color:#187344}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-number{color:#a14f0b}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-literal{color:#7e22ce}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-type{color:#a14f0b}
+.k8s-studio-overlay.theme-light .k8s-yaml-highlight .yaml-token-comment{color:#8491a5}
+.k8s-studio-overlay.theme-light .k8s-studio-resource{background:#fff;border-color:#dbe3ed}
+.k8s-studio-overlay.theme-light .k8s-studio-resource-glyph{background:#edf3ff;border-color:#c9d9fb;color:#315fc5}
+.k8s-studio-overlay.theme-light .k8s-studio-resource em{background:#fff4d6;color:#8a5b00}
+.k8s-studio-overlay.theme-light .k8s-studio-empty{background:#f8fafc;border-color:#cbd5e1;color:#64748b}
+.k8s-studio-overlay.theme-light .k8s-studio-error{background:#fff1f2;border-color:#fecdd3;color:#be123c}
+.k8s-studio-overlay.theme-light .k8s-studio-message{background:#ecfdf5;color:#047857}
+.k8s-studio-overlay.theme-light .k8s-studio-message.error{background:#fff1f2;color:#be123c}
+.k8s-studio-overlay.theme-light .k8s-studio-validation{background:#fff;border-color:#dbe3ed}
+.k8s-studio-overlay.theme-light .k8s-studio-validation-heading{border-color:#e2e8f0}
+.k8s-studio-overlay.theme-light .k8s-studio-validation li{border-color:#edf0f5}
+.k8s-studio-overlay.theme-light .k8s-studio-validation li>span{background:#f1f5f9;color:#475569}
+.k8s-studio-overlay.theme-light .k8s-studio-validation-error>span{background:#fff1f2!important;color:#be123c!important}
+.k8s-studio-overlay.theme-light .k8s-studio-validation-warning>span{background:#fff7ed!important;color:#9a3412!important}
+.k8s-studio-overlay.theme-light .k8s-studio-splitter::after{background:#dbe3ed}
+.k8s-studio-overlay.theme-light .k8s-yaml-completions{background:#fff;border-color:#cbd5e1;box-shadow:0 16px 36px #0f172a22}
+.k8s-studio-overlay.theme-light .k8s-yaml-completion{background:transparent;color:#263244}
+.k8s-studio-overlay.theme-light .k8s-yaml-completion.active,
+.k8s-studio-overlay.theme-light .k8s-yaml-completion:hover{background:#e8efff}
+.k8s-studio-overlay.theme-light .k8s-yaml-completion code,
+.k8s-studio-overlay.theme-light .k8s-yaml-editor-status span:first-child{color:#315fc5}
+.k8s-studio-overlay.theme-light .k8s-yaml-completion span{color:#64748b}
+.k8s-studio-overlay.theme-light .k8s-yaml-completion-heading{color:#64748b;border-color:#e2e8f0}
+.k8s-studio-overlay.theme-light .k8s-yaml-completion-heading kbd{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
+.k8s-studio-overlay.theme-light .k8s-studio-inspector-backdrop{background:rgba(15,23,42,.3)}
+.k8s-studio-overlay.theme-light .k8s-studio-inspector{background:#fff;color:#263244;border-color:#dbe3ed;box-shadow:0 24px 80px #0f172a22}
+.k8s-studio-overlay.theme-light .k8s-studio-inspector header,
+.k8s-studio-overlay.theme-light .k8s-studio-inspector footer{border-color:#e2e8f0}
+.k8s-studio-overlay.theme-light .k8s-studio-inspector header small,
+.k8s-studio-overlay.theme-light .k8s-studio-inspector footer{color:#64748b}

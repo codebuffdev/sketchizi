@@ -165,7 +165,7 @@ function highlightLine(line) {
   return <>{indentMarkup}<span className="docker-yaml-punctuation">{listMarker}</span><span className="docker-yaml-key">{key}</span><span className="docker-yaml-punctuation">{separator}</span><span className={valueClass}>{value}</span></>;
 }
 
-export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
+export default function DockerComposeStudio({ onClose, onCreateDiagram, isDarkTheme = true }) {
   const [yamlText, setYamlText] = useState(STARTER);
   const [savedYaml, setSavedYaml] = useState(STARTER);
   const [selectedService, setSelectedService] = useState("web");
@@ -326,7 +326,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     editorRef.current.focus(); editorRef.current.setSelectionRange(offset, offset);
   };
 
-  return <div className="docker-studio-overlay docker-studio-k8s-layout" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+  return <div className={`docker-studio-overlay docker-studio-k8s-layout ${isDarkTheme ? "theme-dark" : "theme-light"}`} data-theme={isDarkTheme ? "dark" : "light"} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
     <section className="docker-studio docker-studio-yaml-first" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
       <header className="docker-studio-header"><div className="docker-studio-brand-mark" aria-hidden="true">▦</div><div className="docker-studio-heading"><span className="docker-studio-eyebrow">INFRASTRUCTURE WORKSPACE</span><h1 id="docker-studio-title">Docker Compose Studio</h1><p>Edit Compose YAML and inspect its containers and relationships.</p></div><button type="button" className="docker-studio-close" onClick={close} aria-label="Close Docker Compose Studio">×</button></header>
       <div className="docker-studio-toolbar"><div className="docker-studio-toolbar-context"><strong>{composeDoc?.name || "Compose project"}</strong><span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>{dirty && <em>Unsaved edits</em>}</div><div className="docker-studio-toolbar-actions"><input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/><button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button><button type="button" className="docker-studio-secondary" onClick={addService} disabled={!composeDoc}>+ Service</button><button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!composeDoc}>Preflight report</button><button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!composeDoc}>Export YAML</button><button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!composeDoc || Boolean(parsed.error)}>Create diagram</button></div></div>
