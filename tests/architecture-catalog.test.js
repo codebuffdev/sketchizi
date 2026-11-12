@@ -10,13 +10,13 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
   const sourceTabsEnd = panel.indexOf("];", sourceTabsStart);
   const sourceTabs = panel.slice(sourceTabsStart, sourceTabsEnd);
   const positions = [
-    sourceTabs.indexOf('{ id: "all", label: "All" }'),
-    sourceTabs.indexOf('{ id: "eraser", label: "Essentials" }'),
     sourceTabs.indexOf('{ id: "aws", label: "AWS" }'),
-    sourceTabs.indexOf('{ id: "kubernetes", label: "Kubernetes" }'),
     sourceTabs.indexOf('{ id: "networking", label: "Networking" }'),
-    sourceTabs.indexOf('{ id: "uml", label: "UML" }'),
+    sourceTabs.indexOf('{ id: "kubernetes", label: "Kubernetes" }'),
     sourceTabs.indexOf('{ id: "mindmaps", label: "Mind Maps" }'),
+    sourceTabs.indexOf('{ id: "uml", label: "UML" }'),
+    sourceTabs.indexOf('{ id: "eraser", label: "Essentials" }'),
+    sourceTabs.indexOf('{ id: "all", label: "All" }'),
   ];
   assert.ok(positions.every((position) => position >= 0));
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);

@@ -1947,3 +1947,23 @@
 .app .library-panel-redesign .library-source-chip .library-source-art {
   background-image: none !important;
 }
+
+/* Enhanced Icon Library UI: Search Highlight and Card polish */
+.library-search-highlight {
+  background: color-mix(in srgb, var(--ui-accent, #8b75f8) 32%, transparent);
+  color: inherit;
+  padding: 1px 3px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.app.theme-dark .library-search-highlight {
+  background: color-mix(in srgb, #a794ff 35%, transparent);
+  color: #fff;
+}
+.app .library-panel-redesign .library-icon-card {
+  transition: transform 0.15s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.15s ease, border-color 0.15s ease !important;
+}
+.app .library-panel-redesign .library-icon-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24) !important;
+}

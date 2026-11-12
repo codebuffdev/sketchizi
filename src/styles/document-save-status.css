@@ -243,6 +243,11 @@
   background: var(--ui-surface-soft, #f8f8fc);
   color: var(--ui-text, #353746);
   line-height: 1.15;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.desktop-app-document-identity:hover {
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .desktop-app-document-identity-icon {
@@ -278,6 +283,19 @@
   white-space: nowrap;
 }
 
+/* Subtle breathing animation for unsaved document indicator */
+@keyframes pulse-dirty-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, .14);
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 0.82;
+    box-shadow: 0 0 0 5px rgba(217, 119, 6, .32);
+  }
+}
 .desktop-app-document-identity-dirty-dot {
   width: 7px;
   height: 7px;
@@ -285,6 +303,7 @@
   border-radius: 50%;
   background: #d97706;
   box-shadow: 0 0 0 3px rgba(217, 119, 6, .12);
+  animation: pulse-dirty-dot 2.2s ease-in-out infinite;
 }
 
 .desktop-app-document-identity.is-dirty {
