@@ -130,7 +130,8 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(app, /cloudDiagramId/);
   assert.match(app, /workspaceClient\.getDiagram\(cloudDiagramId\)/);
   assert.match(app, /workspaceClient\.saveDiagram\(session\.diagramId, revision, document\)/);
-  assert.match(app, /if \(!Array\.isArray\(elements\) \|\| !elements\.some\(\(element\) => element && !element\.isDeleted\)\) return;/);
+  assert.match(app, /if \(!hasCloudSceneChange\(elements\)\) return;/);
+  assert.match(app, /cloudSceneReadyRef\.current/);
   assert.doesNotMatch(app, /allowEmpty: true/);
   assert.ok(app.includes("error?.status === 409 || error?.status === 412"));
   assert.ok(app.includes('state: conflict ? "conflict" : "error"'));
