@@ -55,3 +55,10 @@ test('grid overlay does not capture canvas interactions and respects theme', () 
   assert.ok(styleEntry.indexOf('ui-modernization-grid.css') > styleEntry.indexOf('ui-modernization-navigation.css'));
   assert.ok(styleEntry.indexOf('ui-modernization-grid.css') < styleEntry.indexOf('.kubernetes-library-status'));
 });
+
+test('visual grid and smart guides share the scene-to-canvas transform', () => {
+  assert.match(canvas, /sceneToCanvasPixel\(0, gridAppState\.scrollX, gridZoom\)/);
+  assert.match(canvas, /sceneToCanvasPixel\(0, gridAppState\.scrollY, gridZoom\)/);
+  assert.doesNotMatch(canvas, /gridWidth \/ 2\) % gridStepPixels/);
+  assert.match(styles, /inset: auto/);
+});
