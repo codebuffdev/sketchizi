@@ -387,22 +387,21 @@
 }
 
 
-/* Keep the Layers panel below the floating application header whenever the
-   header is visible (including its pinned state). Restore the full panel area
-   when the header is hidden. */
+/* Reserve click space for context-panel headers under floating application
+   controls. The former Layers-only rule left Properties and Validation behind
+   the header, making close buttons unclickable. */
 @media (min-width: 761px) {
   .app.canvas-first-header:has(.desktop-app-header:not(.is-hidden))
-    .desktop-validation-host:has(.sketchizi-layers-panel) {
+    .desktop-context-region .desktop-validation-host {
     box-sizing: border-box;
     padding-top: calc(68px + var(--safe-top, 0px));
     transition: padding-top .18s ease;
   }
 }
-
 @media (min-width: 521px) and (max-width: 760px) {
   .app.canvas-first-header:has(.desktop-app-header:not(.is-hidden))
-    .sketchizi-layers-panel {
-    top: calc(108px + var(--safe-top, 0px)) !important;
-    max-height: calc(100dvh - 120px - var(--safe-top, 0px) - var(--safe-bottom, 0px)) !important;
+    .architecture-validation-panel {
+    top: calc(108px + var(--safe-top, 0px));
+    max-height: calc(100dvh - 120px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
   }
 }
