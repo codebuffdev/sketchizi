@@ -65,6 +65,18 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem("sketchizi:canvas-focus-mode", String(canvasFocusMode)); } catch {}
   }, [canvasFocusMode]);
+
+  useEffect(() => {
+    const handleCanvasFocusShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.altKey || event.key.toLowerCase() !== "f") return;
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable='true']")) return;
+      event.preventDefault();
+      setCanvasFocusMode((value) => !value);
+    };
+    window.addEventListener("keydown", handleCanvasFocusShortcut);
+    return () => window.removeEventListener("keydown", handleCanvasFocusShortcut);
+  }, []);
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
