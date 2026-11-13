@@ -42,21 +42,26 @@ try {
   // Replacing a populated drawing must be explicitly confirmed. Cancel first
   // to verify that Create does not bypass the existing unsaved-work safeguard.
   await openCreateMenu(page);
-  const cancelReplacement = page.waitForEvent("dialog");
+  let cancelledConfirmation = null;
+  page.once("dialog", async (dialog) => {
+    cancelledConfirmation = { type: dialog.type(), message: dialog.message() };
+    await dialog.dismiss();
+  });
   await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  const cancelDialog = await cancelReplacement;
-  if (cancelDialog.type() !== "confirm" || !cancelDialog.message().includes("create a new drawing")) {
+  if (cancelledConfirmation?.type !== "confirm" || !cancelledConfirmation.message.includes("create a new drawing")) {
     throw new Error("Create > Blank drawing did not request confirmation for existing work.");
   }
-  await cancelDialog.dismiss();
   console.log("PASS: replacing an existing drawing requires confirmation.");
 
   // Confirming replacement returns the user to an empty, editable canvas.
   await openCreateMenu(page);
-  const acceptReplacement = page.waitForEvent("dialog");
+  let confirmedReplacement = false;
+  page.once("dialog", async (dialog) => {
+    confirmedReplacement = dialog.type() === "confirm";
+    await dialog.accept();
+  });
   await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  const acceptDialog = await acceptReplacement;
-  await acceptDialog.accept();
+  if (!confirmedReplacement) throw new Error("Confirmation was not shown when replacing the drawing.");
   await page.getByText("New drawing", { exact: true }).waitFor({ timeout: 10000 });
   await page.locator(".excalidraw").waitFor();
   console.log("PASS: confirmed replacement creates a blank drawing.");
