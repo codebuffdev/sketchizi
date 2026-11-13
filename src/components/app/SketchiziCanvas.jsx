@@ -470,7 +470,7 @@ export default function SketchiziCanvas({
     const captureBaseline = (event) => {
       const target = event.target instanceof Element ? event.target : null;
       if (!gridSnappingEnabled || !canEdit || viewModeEnabled || event.button !== 0 || !target?.closest(".excalidraw")) return;
-      if (target.closest("button, input, textarea, select, [role="menu"], .App-menu, .Island, .popover")) return;
+      if (target.closest("button, input, textarea, select, [role=\'menu\'], .App-menu, .Island, .popover")) return;
       const api = apiRef?.current;
       if (!api) return;
       const elements = api.getSceneElements?.() || [];
