@@ -6,6 +6,8 @@ import {
   calculateTextBaselineGuides,
   getTextBaseline,
   selectDisplayGuides,
+  getGuideRenderAxis,
+  sceneToCanvasPixel,
 } from "../src/features/canvas/alignmentGuides.js";
 
 test("detects edge and center alignment with overlapping geometry", () => {
@@ -95,4 +97,46 @@ test("displays no more than one guide per axis across guide kinds", () => {
   assert.equal(selected.length, 2);
   assert.equal(selected.find((guide) => guide.axis === "x").position, 12);
   assert.equal(selected.find((guide) => guide.axis === "y").kind, "baseline");
+});
+
+test("horizontal spacing spans horizontal gaps with a horizontal stroke", () => {
+  const elements = [
+    { id: "left", x: 0, y: 0, width: 20, height: 20 },
+    { id: "moving", x: 44, y: 0, width: 20, height: 20 },
+    { id: "right", x: 90, y: 0, width: 20, height: 20 },
+  ];
+  const spacing = calculateEqualSpacingGuides(elements, new Set(["moving"]), 2)
+    .find((guide) => guide.axis === "x");
+  assert.ok(spacing);
+  assert.equal(getGuideRenderAxis(spacing), "y");
+  assert.deepEqual([spacing.start, spacing.end, spacing.position], [20, 90, 10]);
+});
+
+test("vertical spacing spans vertical gaps with a vertical stroke", () => {
+  const elements = [
+    { id: "above", x: 0, y: 0, width: 20, height: 20 },
+    { id: "moving", x: 0, y: 44, width: 20, height: 20 },
+    { id: "below", x: 0, y: 90, width: 20, height: 20 },
+  ];
+  const spacing = calculateEqualSpacingGuides(elements, new Set(["moving"]), 2)
+    .find((guide) => guide.axis === "y");
+  assert.ok(spacing);
+  assert.equal(getGuideRenderAxis(spacing), "x");
+  assert.deepEqual([spacing.start, spacing.end, spacing.position], [20, 90, 10]);
+});
+
+test("selects one guide per rendered axis, including spacing", () => {
+  const selection = selectDisplayGuides([
+    { axis: "x", kind: "alignment", distance: 1 },
+    { axis: "y", kind: "spacing", distance: 0 },
+    { axis: "y", kind: "baseline", distance: 1 },
+    { axis: "x", kind: "spacing", distance: 0 },
+  ]);
+  assert.deepEqual(selection.map(getGuideRenderAxis), ["x", "y"]);
+  assert.deepEqual(selection.map((guide) => guide.kind), ["alignment", "baseline"]);
+});
+
+test("scene-to-canvas coordinates use scroll and zoom without viewport-center offset", () => {
+  assert.equal(sceneToCanvasPixel(10, -3, 2), 14);
+  assert.equal(sceneToCanvasPixel(0, 11, 1.5), 16.5);
 });
