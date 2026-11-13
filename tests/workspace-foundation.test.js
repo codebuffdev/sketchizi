@@ -150,7 +150,8 @@ test("authenticated users keep the editor as the default route; Workspace is opt
 
 test("cloud-opened diagrams use their saved name in the editor identity", async () => {
   const source = await read("../src/App.jsx");
-  assert.match(source, /currentDocumentName=\{cloudDiagramId \? \(cloudSessionRef\.current\.name \|\| "Cloud diagram"\)/);
+  assert.match(source, /currentDocumentName=\{cloudDiagramId \? cloudDocumentName/);
+  assert.match(source, /setCloudDocumentName\(diagram\.name \|\| "Cloud diagram"\)/);
   assert.match(source, /name: diagram\.name \|\| "Cloud diagram"/);
   const stylesheet = await read("../src/features/workspace/workspace.css");
   assert.match(stylesheet, /cloud-editor-save-status:not\(\.cloud-editor-save-status-error\):not\(\.cloud-editor-save-status-conflict\)\{display:none!important\}/);
@@ -162,7 +163,8 @@ test("editor exposes an explicit Save to Cloud action and creates a cloud diagra
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
   assert.match(header, /desktop-app-save-to-cloud-button/);
-  assert.match(header, /Save to Cloud/);
+  assert.match(header, /Save drawing to Cloud Workspace/);
+  assert.match(header, /onSaveToCloud\?\.\(\)/);
   assert.match(app, /workspaceClient\.createDiagram\(/);
   assert.match(app, /createCloudDocument\(/);
   assert.match(app, /cloudDiagramId=\$\{encodeURIComponent\(diagram\.id\)\}/);

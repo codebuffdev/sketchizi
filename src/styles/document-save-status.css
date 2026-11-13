@@ -382,3 +382,77 @@
     height: 14px;
   }
 }
+
+
+/* Inline canvas document naming */
+.desktop-app-document-identity {
+  min-width: 0;
+}
+
+.desktop-app-document-identity-copy {
+  min-width: 0;
+}
+
+.desktop-app-document-identity-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-app-document-identity-name-input {
+  width: min(260px, 24vw);
+  min-width: 120px;
+  max-width: 100%;
+  height: 28px;
+  padding: 3px 7px;
+  border: 1px solid var(--ui-border, #aeb7c4);
+  border-radius: 6px;
+  outline: none;
+  color: #202633;
+  background: #ffffff;
+  caret-color: #202633;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  opacity: 1;
+  -webkit-text-fill-color: #202633;
+}
+
+.desktop-app-document-identity-name-input::placeholder {
+  color: #667085;
+  opacity: 1;
+}
+
+.desktop-app-document-identity-name-input::selection {
+  color: #ffffff;
+  background: #315b91;
+}
+
+.desktop-app-document-rename {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  color: var(--text-secondary, #64748b);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.desktop-app-document-rename:hover,
+.desktop-app-document-rename:focus-visible {
+  color: var(--text-primary, currentColor);
+  background: var(--hover-bg, rgba(127, 127, 127, 0.12));
+  opacity: 1;
+}
+
+.desktop-app-document-rename:focus-visible,
+.desktop-app-document-identity-name-input:focus-visible {
+  outline: 2px solid var(--color-primary, #64748b);
+  outline-offset: 2px;
+}
