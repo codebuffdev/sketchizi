@@ -1,4 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
+import {
+  computeElementBounds,
+  getElementMeasurement,
+  isLinearElementType,
+} from "../../features/canvas/elementMeasurement";
 
 export default function TextSizeIndicator({
   apiRef,
@@ -59,35 +64,47 @@ export default function TextSizeIndicator({
       }
     }
 
-    if (selectedIds.size === 0) return [];
-
-    // Collect elements to indicate: text elements show px font size; other shapes show W × H px dimensions
+    // Collect elements to indicate: text elements show px font size;
+    // linear elements (line/arrow) show length in cm; other shapes show W × H px dimensions
     const elementsToIndicate = [];
     const byId = new Map(sceneElements.map((el) => [el.id, el]));
+    const addedIds = new Set();
+
+    const pushUnique = (element) => {
+      if (!element || element.isDeleted || element.deleted || addedIds.has(element.id)) return;
+      addedIds.add(element.id);
+      elementsToIndicate.push(element);
+    };
 
     for (const id of selectedIds) {
       const el = byId.get(id);
       if (!el || el.isDeleted || el.deleted) continue;
 
       if (el.type === "text") {
-        elementsToIndicate.push(el);
+        pushUnique(el);
       } else if (Array.isArray(el.boundElements) && el.boundElements.length > 0) {
         let hasBoundText = false;
         for (const bound of el.boundElements) {
           if (bound?.type === "text" && bound.id) {
             const boundEl = byId.get(bound.id);
             if (boundEl && !boundEl.isDeleted && !boundEl.deleted) {
-              elementsToIndicate.push(boundEl);
+              pushUnique(boundEl);
               hasBoundText = true;
             }
           }
         }
         if (!hasBoundText) {
-          elementsToIndicate.push(el);
+          pushUnique(el);
         }
       } else {
-        elementsToIndicate.push(el);
+        pushUnique(el);
       }
+    }
+
+    // Include an actively drawn/edited linear element so length in cm updates live while drawing
+    const activeLinear = appState.newElement || (appState.editingLinearElement?.elementId ? byId.get(appState.editingLinearElement.elementId) : null);
+    if (activeLinear && isLinearElementType(activeLinear.type)) {
+      pushUnique(activeLinear);
     }
 
     if (elementsToIndicate.length === 0) return [];
@@ -103,14 +120,8 @@ export default function TextSizeIndicator({
     return elementsToIndicate.map((element) => {
       const isText = element.type === "text";
       const fontSize = Number(element.fontSize) || 20;
-      const x = Number(element.x) || 0;
-      const y = Number(element.y) || 0;
-      const width = Number(element.width) || 0;
-      const height = Number(element.height) || 0;
-
-      // Bottom center of the element bounding box
-      const bottomCenterX = x + width / 2;
-      const bottomY = y + height;
+      const { bottomCenterX, bottomY } = computeElementBounds(element);
+      const measurement = getElementMeasurement(element);
 
       let screenX = 0;
       let screenY = 0;
@@ -131,12 +142,15 @@ export default function TextSizeIndicator({
 
       return {
         id: element.id,
+        kind: measurement.kind,
         isText,
         fontSize: Math.round(fontSize),
         left: screenX,
         top: screenY + 8, // slight offset beneath the bottom selection handle
-        width: Math.round(Math.abs(width)),
-        height: Math.round(Math.abs(height)),
+        width: measurement.width,
+        height: measurement.height,
+        label: measurement.label,
+        title: measurement.title,
       };
     });
   }, [apiRef, canvasRootRef, selectedElements, canvasRevision]);
@@ -149,20 +163,17 @@ export default function TextSizeIndicator({
         <div
           key={ind.id}
           className="sketchizi-text-size-indicator"
+          data-measurement-kind={ind.kind}
           style={{
             left: `${ind.left}px`,
             top: `${ind.top}px`,
           }}
-          title={
-            ind.isText
-              ? `Font size: ${ind.fontSize}px (${ind.width} × ${ind.height} px)`
-              : `Dimensions: ${ind.width} × ${ind.height} px`
-          }
+          title={ind.title}
         >
           {ind.isText ? (
             <>{ind.fontSize}px</>
           ) : (
-            `${ind.width} × ${ind.height} px`
+            ind.label
           )}
         </div>
       ))}
