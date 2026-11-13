@@ -76,6 +76,22 @@ try {
   await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
+  // Advanced work remains accessible without crowding the main drawing UI.
+  await blank.page.getByRole("button", { name: /Local document save status/ }).click();
+  await blank.page.getByRole("button", { name: /Export studio/ }).click();
+  await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
+  await blank.page.getByRole("button", { name: "Close export studio" }).click();
+  console.log("PASS: Export Studio remains reachable from the save menu.");
+
+  await blank.page.getByRole("button", { name: "Search commands" }).click();
+  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor();
+  await blank.page.getByRole("searchbox", { name: "Search commands" }).fill("Architecture Validation");
+  await blank.page.getByRole("option", { name: /Architecture Validation/ }).click();
+  await blank.page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
+  await blank.page.getByRole("button", { name: "Close architecture validation" }).click();
+  console.log("PASS: Architecture Validation remains available in the command palette.");
+
+
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
   await responsive.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
