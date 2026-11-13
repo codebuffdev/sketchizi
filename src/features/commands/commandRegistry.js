@@ -30,6 +30,7 @@ export function createSketchiziCommandRegistry(context) {
     collaborationPermission,
     currentFolder,
     fileActionsRef,
+    openExportStudio,
   } = context;
 
   const updateZoom = (operation) => {
@@ -299,6 +300,28 @@ export function createSketchiziCommandRegistry(context) {
       icon: "▰",
       available: () => canEdit && Boolean(currentFolder),
       execute: () => fileActionsRef.current.closeCurrentFolder?.(),
+    },
+    {
+      id: "export.studio",
+      label: "Export Studio",
+      description: "Download high-resolution PNG/SVG or copy the drawing",
+      keywords: ["export", "studio", "png", "svg", "resolution", "clipboard"],
+      category: "Export",
+      shortcut: "",
+      icon: "⇩",
+      available: () => true,
+      execute: () => openExportStudio?.(),
+    },
+    {
+      id: "review.architecture",
+      label: "Architecture Validation",
+      description: "Review architecture suggestions and diagnostics",
+      keywords: ["architecture", "validation", "review", "issues", "kubernetes"],
+      category: "Tools",
+      shortcut: "",
+      icon: "✓",
+      available: () => true,
+      execute: () => openPanel("architecture-validation"),
     },
     {
       id: "export.image",
