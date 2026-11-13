@@ -1719,7 +1719,7 @@ function App() {
       </div>}
       <DesktopAppHeader
         canvasHeaderHidden={canvasHeaderHidden}
-        onToggleCanvasFocusMode={() => setCanvasHeaderHidden((value) => !value)}
+        onToggleCanvasHeader={() => setCanvasHeaderHidden((value) => !value)}
         commands={commands}
         openCommandPalette={commandPalette.openCommandPalette}
         startCollaboration={startCollaboration}
