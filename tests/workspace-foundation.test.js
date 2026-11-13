@@ -38,7 +38,9 @@ test("Tool menu only contains tools not already on the dock and uses labeled SVG
 
 test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
   const app = await read("../src/App.jsx");
-  assert.match(app, /className="workspaces-menu-icon"[^>]*><path d="M3\.5 7\.5h6l2 2h9/);
+  const createMenu = await read("../src/components/app/CreateMenu.jsx");
+  assert.match(createMenu, /className="workspaces-menu-icon"/);
+  assert.match(createMenu, /M12 5v14M5 12h14/);
   assert.match(app, /className="ai-ask-toggle-icon"[^>]*><path d="M20 11\.5a7\.5 7\.5/);
   assert.match(app, /className="architecture-validation-toggle-icon"[^>]*><path d="M12 3 20 6/);
   assert.doesNotMatch(app, /<span className="ai-ask-toggle-icon" aria-hidden="true">✳<\/span>/);
