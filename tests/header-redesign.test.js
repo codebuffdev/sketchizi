@@ -204,5 +204,6 @@ test("Create menu dismisses on overlays, Escape and outside pointerdown", async 
   assert.match(app, /onBeforeOpen=\{\(\) => \{[\s\S]*?closeNativeMenu\(\);[\s\S]*?setActivePanel\(null\);/);
   assert.match(menu, /if \(dismissWhen\) setOpen\(false\)/);
   assert.match(menu, /event\.key === "Escape"/);
+  assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
   assert.match(menu, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);
 });
