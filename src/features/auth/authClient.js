@@ -89,6 +89,12 @@ async function requestCurrentUser() {
       signal: controller.signal,
     });
     if (response.status === 401) return { authenticated: false, user: null };
+    if (response.status === 503) {
+      const payload = await response.clone().json().catch(() => null);
+      if (payload?.error === "Authentication service is not configured.") {
+        return { authenticated: false, user: null };
+      }
+    }
     if (!response.ok) {
       const error = new Error("Could not check sign-in status.");
       error.status = response.status;

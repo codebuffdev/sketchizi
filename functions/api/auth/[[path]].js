@@ -65,6 +65,7 @@ export async function onRequest({ request, env }) {
       method: request.method,
       headers,
       redirect: "manual",
+      signal: AbortSignal.timeout(8000),
     };
 
     if (
@@ -121,7 +122,8 @@ export async function onRequest({ request, env }) {
       headers: responseHeaders,
     });
   } catch (error) {
-    console.error("[auth-gateway] Upstream request failed:", error);
+    const reason = error?.cause?.message || error?.message || "Unknown upstream error";
+    console.warn(`[auth-gateway] Upstream request failed (${upstream.origin}): ${reason}`);
     return Response.json(
       { error: "Authentication service is temporarily unavailable." },
       { status: 502, headers: NO_CACHE }

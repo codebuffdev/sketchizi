@@ -132,3 +132,20 @@ test("GitHub sign-in is available as a separate same-origin OAuth entry point", 
   assert.match(source, /window\.location\.assign\(`\/api\/auth\/login\/github\?returnTo=/);
   assert.match(source, /export async function fetchAuthProviders/);
 });
+
+test("unconfigured authentication service 503 resolves as anonymous while real 502 outage rejects", async () => {
+  const originalFetch = globalThis.fetch;
+  invalidateCurrentUserCache();
+  try {
+    globalThis.fetch = async () => jsonResponse({ authenticated: false, error: "Authentication service is not configured." }, 503);
+    assert.deepEqual(await fetchCurrentUser(), { authenticated: false, user: null });
+
+    invalidateCurrentUserCache();
+    globalThis.fetch = async () => jsonResponse({ authenticated: false, error: "Authentication gateway upstream failed." }, 502);
+    await assert.rejects(fetchCurrentUser(), (error) => error.code === "auth_status_unavailable" && error.status === 502);
+  } finally {
+    invalidateCurrentUserCache();
+    globalThis.fetch = originalFetch;
+  }
+});
+

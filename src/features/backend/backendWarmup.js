@@ -32,6 +32,17 @@ async function requestHealth(deadline) {
     });
     if (response.ok) return true;
 
+    if (response.status === 503) {
+      const payload = await response.clone().json().catch(() => null);
+      if (payload?.code === "ai_service_not_configured") {
+        throw createWarmupError(
+          payload?.error || "The AI service is not configured.",
+          "backend_warmup_rejected",
+          response.status,
+        );
+      }
+    }
+
     // Configuration, route, and authorization errors will not be fixed by waiting
     // for Render to start. Fail fast instead of leaving the user waiting 2 minutes.
     if (response.status >= 400 && response.status < 500 && response.status !== 429) {
@@ -120,6 +131,12 @@ export function startPeriodicBackendWarmup({ intervalMs = PERIODIC_WARMUP_INTERV
         signal: controller.signal,
       });
       if (!response.ok) {
+        const payload = await response.clone().json().catch(() => null);
+        if (response.status === 503 && payload?.code === "ai_service_not_configured") {
+          stopped = true;
+          clearInterval(intervalId);
+          return;
+        }
         console.warn("Sketchizi backend warm-up returned HTTP", response.status);
       }
     } catch (error) {

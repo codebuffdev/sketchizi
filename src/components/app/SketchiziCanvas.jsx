@@ -21,6 +21,7 @@ export default function SketchiziCanvas({
 }) {
   const canvasRootRef = useRef(null);
   const fitContentButtonRef = useRef(null);
+  const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
   const gridSnapBaselineRef = useRef(null);
   const handleSceneChange = useCallback((elements, appState, files) => {
@@ -163,6 +164,7 @@ export default function SketchiziCanvas({
       button.addEventListener("blur", hide);
       tooltipBindings.set(button, { show, hide });
     };
+    bindToolbarTooltipRef.current = bindToolbarTooltip;
     window.addEventListener("resize", onToolbarTooltipResize);
     const clampDockToViewport = () => {
       const container = root.querySelector(".App-toolbar-container");
@@ -450,6 +452,7 @@ export default function SketchiziCanvas({
         button.removeEventListener("blur", hide);
       });
       tooltipBindings.clear();
+      if (bindToolbarTooltipRef.current === bindToolbarTooltip) bindToolbarTooltipRef.current = null;
       toolbarTooltip.remove();
     };
   }, []);
@@ -533,6 +536,7 @@ export default function SketchiziCanvas({
       if (typeof api.setViewport === "function") api.setViewport({ target: elements, fit: "contain" });
       else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
     };
+    const bindToolbarTooltip = (button) => bindToolbarTooltipRef.current?.(button);
     const placeScrollBackControl = () => {
       const toolbar = root.querySelector(".App-toolbar");
       const buttons = [...root.querySelectorAll("button, [role='button']")];

@@ -98,3 +98,42 @@ test("periodic backend warm-up sends a same-origin request and cleanup stops fut
     globalThis.clearInterval = originalClearInterval;
   }
 });
+
+test("backend warm-up fails fast and stops periodic polling when AI service is not configured", async () => {
+  const { startPeriodicBackendWarmup } = await import("../src/features/backend/backendWarmup.js");
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearInterval = globalThis.clearInterval;
+  let calls = 0;
+  let cleared = false;
+
+  globalThis.fetch = async () => {
+    calls += 1;
+    return new Response(JSON.stringify({ code: "ai_service_not_configured", error: "The AI service is not configured." }), {
+      status: 503,
+      headers: { "content-type": "application/json" },
+    });
+  };
+
+  await assert.rejects(
+    ensureBackendReady({ force: true, timeoutMs: 5000 }),
+    (error) => error.code === "backend_warmup_rejected" && error.status === 503,
+  );
+  assert.equal(calls, 1);
+
+  globalThis.setInterval = () => 456;
+  globalThis.clearInterval = (id) => {
+    if (id === 456) cleared = true;
+  };
+  try {
+    startPeriodicBackendWarmup();
+    for (let attempt = 0; attempt < 15 && !cleared; attempt += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    assert.equal(cleared, true);
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.setInterval = originalSetInterval;
+    globalThis.clearInterval = originalClearInterval;
+  }
+});
+
