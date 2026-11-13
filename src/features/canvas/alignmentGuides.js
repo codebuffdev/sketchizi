@@ -45,8 +45,7 @@ export function calculateAlignmentGuides(elements, selectedIds, tolerance = ALIG
       for (const [axis, from, to] of candidates) {
         const distance = Math.abs(from - to);
         if (distance > tolerance) continue;
-        if (axis === "x" && !overlaps(movingBox.top, movingBox.bottom, target.top, target.bottom)) continue;
-        if (axis === "y" && !overlaps(movingBox.left, movingBox.right, target.left, target.right)) continue;
+        // Smart guides should align objects even when they do not overlap on the perpendicular axis.
         const key = axis + ":" + Math.round(to * 100) / 100;
         if (seen.has(key)) continue;
         seen.add(key);
