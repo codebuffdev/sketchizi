@@ -58,6 +58,8 @@ async function awaitScene(check, description) {
   });
   if (!(await check())) {
     const scene = await currentDrawing();
+    const editorDiagnostics = await page.evaluate(() => ({ activeElement: document.activeElement?.outerHTML?.slice(0, 400), canvasCount: document.querySelectorAll(".excalidraw canvas").length, selectedTool: document.querySelector('[data-testid="toolbar-selection"]')?.getAttribute("aria-pressed"), rectangleTool: document.querySelector('[data-testid="toolbar-rectangle"]')?.getAttribute("aria-pressed"), visibleText: document.body.innerText.slice(0, 800) }));
+    console.error("Drawing smoke editor diagnostics:", JSON.stringify(editorDiagnostics));
     throw new Error("Drawing smoke verification failed: " + description + "; stored scene: " + JSON.stringify({ savedAt: scene?.savedAt, elements: scene?.elements?.map((e) => ({ id: e.id, type: e.type, deleted: e.isDeleted, x: e.x, y: e.y, width: e.width, height: e.height })) }));
   }
 }
