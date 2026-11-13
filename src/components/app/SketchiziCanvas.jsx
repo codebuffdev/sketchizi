@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction, Excalidraw } from "@excalidraw/excalidraw";
 import { snapChangedSceneElements } from "../../features/canvas/gridSnap.js";
+import { sceneToCanvasPixel } from "../../features/canvas/alignmentGuides.js";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
@@ -692,8 +693,8 @@ export default function SketchiziCanvas({
   const viewportRect = canvasRootRef.current?.querySelector(".excalidraw")?.getBoundingClientRect();
   const gridWidth = viewportRect?.width || rootRect?.width || Number(gridAppState.width) || 0;
   const gridHeight = viewportRect?.height || rootRect?.height || Number(gridAppState.height) || 0;
-  const gridOriginX = ((((Number(gridAppState.scrollX) || 0) * gridZoom) + gridWidth / 2) % gridStepPixels + gridStepPixels) % gridStepPixels;
-  const gridOriginY = ((((Number(gridAppState.scrollY) || 0) * gridZoom) + gridHeight / 2) % gridStepPixels + gridStepPixels) % gridStepPixels;
+  const gridOriginX = ((sceneToCanvasPixel(0, gridAppState.scrollX, gridZoom) % gridStepPixels) + gridStepPixels) % gridStepPixels;
+  const gridOriginY = ((sceneToCanvasPixel(0, gridAppState.scrollY, gridZoom) % gridStepPixels) + gridStepPixels) % gridStepPixels;
   const gridOverlayStyle = {
     "--sketchizi-grid-step": `${gridStepPixels}px`,
     "--sketchizi-grid-origin-x": `${gridOriginX}px`,
