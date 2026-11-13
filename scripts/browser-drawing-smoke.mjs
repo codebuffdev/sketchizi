@@ -108,6 +108,10 @@ try {
   }, "moved");
   console.log("PASS: native selection drag moves an existing shape and persists its new position.");
 
+  // The properties color picker may capture G as a palette shortcut.
+  // Return keyboard focus to the native editor before toggling its grid.
+  await page.keyboard.press("Escape");
+  await viewport.focus();
   await page.keyboard.press("g");
   await awaitScene(async () => (await currentDrawing())?.appState?.gridModeEnabled === true, "grid");
   console.log("PASS: G enables Excalidraw's native grid and persists the setting.");
