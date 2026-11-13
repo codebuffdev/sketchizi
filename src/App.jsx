@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
@@ -27,9 +27,9 @@ import { useIconInsertion } from "./features/icon-library/useIconInsertion";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
 import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
-import CreateDesignScreen from "./features/design/ui/CreateDesignScreen.jsx";
-import DockerComposeStudio from "./features/docker-compose/ui/DockerComposeStudio.jsx";
-import KubernetesStudio from "./features/kubernetes-studio/ui/KubernetesStudio.jsx";
+const CreateDesignScreen = lazy(() => import("./features/design/ui/CreateDesignScreen.jsx"));
+const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
+const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
 import { createProfileForTemplate, createTemplateElements } from "./features/design/templates/templateRegistry.js";
 import { withDesignProfile } from "./features/design/model/designDocument.js";
 import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
@@ -37,7 +37,7 @@ import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinit
 import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
-import CloudSaveDialog from "./features/workspace/CloudSaveDialog.jsx";
+const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
@@ -49,8 +49,8 @@ import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetes
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import CreateMenu from "./components/app/CreateMenu";
-import ExportStudioModal from "./components/app/ExportStudioModal";
-import ArchitectureTemplatesModal from "./components/app/ArchitectureTemplatesModal";
+const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
+const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
@@ -1929,6 +1929,7 @@ function App() {
           </div>
         </div>
       )}
+      <Suspense fallback={<div className="sketchizi-toast" role="status" aria-live="polite">Opening tool…</div>}>
       {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudDiagramId ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
       {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
@@ -1953,6 +1954,7 @@ function App() {
           apiRef={apiRef}
         />
       )}
+      </Suspense>
     </div>
   );
 }
