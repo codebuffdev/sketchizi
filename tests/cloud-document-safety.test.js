@@ -60,3 +60,14 @@ test("detached cloud drawings immediately display local status and local save co
   assert.match(app, /onSaveToCloud=\{\(\) => cloudDiagramId && !cloudDetachedRef\.current \? saveCloudDiagramNow\(\) : setCloudSaveDialogOpen\(true\)\}/);
   assert.match(app, /if \(cloudDiagramId && !cloudDetachedRef\.current\) \{\s*if \(!cloudSessionRef\.current\.active\)/);
 });
+
+test("new local drawing clears storage only after all older writes settle", () => {
+  const persistence = readFileSync(new URL("../src/features/persistence/useSketchPersistence.js", import.meta.url), "utf8");
+  assert.match(persistence, /const resetLocalSketch = useCallback\(\(\) => \{/);
+  assert.match(persistence, /saveRequestRef\.current = saveRequestRef\.current\.catch\(\(\) => \{\}\)\.then\(async \(\) => \{\s*await clearSketch\(\)/);
+  assert.match(persistence, /const revision = \+\+saveRevisionRef\.current/);
+  assert.match(persistence, /if \(revision === saveRevisionRef\.current\) \{\s*setStorageError\(null\)/);
+  assert.match(files, /void resetLocalSketch\(\)/);
+  assert.doesNotMatch(files, /clearSketch\(\)\.catch/);
+  assert.match(app, /resetLocalSketch, downloadRecoveryBackup/);
+});
