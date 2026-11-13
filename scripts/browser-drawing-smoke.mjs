@@ -66,6 +66,8 @@ try {
   await page.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
   const viewport = page.locator(".excalidraw");
   await viewport.waitFor({ state: "visible" });
+  // Do not draw while IndexedDB restoration is still replacing the scene.
+  await page.getByRole("button", { name: /Local document save status: (Autosave ready|Saved locally)/ }).waitFor({ timeout: 15000 });
   const bounds = await viewport.boundingBox();
   if (!bounds) throw new Error("Excalidraw viewport has no visible bounds.");
 
