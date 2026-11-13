@@ -5,14 +5,14 @@ import { readFile } from "node:fs/promises";
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("application header overlays a full-height workspace instead of taking a layout row", async () => {
-  const css = await read("../src/styles/responsive-final.css");
+  const css = await read("../src/styles.css");
   assert.match(css, /\.app\s*\{[\s\S]*?grid-template-rows:\s*minmax\(0, 1fr\) !important/);
   assert.match(css, /\.desktop-app-header\s*\{[\s\S]*?position:\s*fixed !important/);
   assert.match(css, /\.desktop-workspace\s*\{[\s\S]*?grid-row:\s*1/);
 });
 
 test("scroll hiding does not resize or shift the canvas workspace", async () => {
-  const css = await read("../src/styles/responsive-final.css");
+  const css = await read("../src/styles.css");
   assert.match(css, /\.app\.canvas-header-hidden\s*\{\s*grid-template-rows:\s*minmax\(0, 1fr\) !important/);
   assert.match(css, /\.desktop-app-header\.canvas-header-hidden\s*\{[\s\S]*?height:\s*0 !important/);
   assert.match(css, /\.desktop-app-header\.canvas-header-hidden \.desktop-app-focus-toggle\s*\{[\s\S]*?position:\s*fixed !important/);
