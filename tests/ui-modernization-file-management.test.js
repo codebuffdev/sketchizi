@@ -51,3 +51,21 @@ test("document identity remains compact and responds to light/dark and mobile la
 test("file-management regression test is part of the UI modernization suite", () => {
   assert.match(packageJson.scripts["test:ui-modernization"], /tests\/ui-modernization-file-management\.test\.js/);
 });
+
+
+test("canvas document names can be edited without forcing a file save", () => {
+  assert.match(header, /onRenameDocument/);
+  assert.match(header, /desktop-app-document-identity-name-input/);
+  assert.match(header, /aria-label="Rename canvas"/);
+  assert.match(app, /onRenameDocument=\{renameActiveDocument\}/);
+  assert.match(fileManager, /const renameCurrentDocument = async \(requestedName\)/);
+  assert.match(fileManager, /file\.handle\.move\(targetName\)/);
+  assert.match(fileManager, /setCurrentFile\(renamedFile, baseline\)/);
+});
+
+test("cloud canvas rename persists through the existing workspace metadata endpoint", () => {
+  const workspaceClient = readFileSync(new URL("../src/features/workspace/workspaceClient.js", import.meta.url), "utf8");
+  assert.match(app, /workspaceClient\.updateDiagram\(cloudDiagramId, \{ name: normalizedName \}\)/);
+  assert.match(app, /setCloudDocumentName\(savedName\)/);
+  assert.match(workspaceClient, /updateDiagram: \(diagramId, metadata\) => request\([^\n]+method: "PATCH"/);
+});

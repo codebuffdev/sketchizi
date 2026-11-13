@@ -89,6 +89,7 @@ export default function DesktopAppHeader({
   saveStatus = { state: "ready", lastSavedAt: null },
   currentDocumentName = "Untitled drawing",
   currentDocumentDirty = false,
+  onRenameDocument,
   currentDocumentFileBacked = false,
   onSaveNow,
   onSaveToFile,
@@ -108,6 +109,12 @@ export default function DesktopAppHeader({
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
+  const [documentNameEditing, setDocumentNameEditing] = useState(false);
+  const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
+
+  useEffect(() => {
+    if (!documentNameEditing) setDocumentNameDraft(currentDocumentName);
+  }, [currentDocumentName, documentNameEditing]);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
   nativeMenuOpenLatestRef.current = nativeMenuOpen;
@@ -251,6 +258,20 @@ export default function DesktopAppHeader({
 
   const commandMap = useMemo(() => new Map(commands.map((command) => [command.id, command])), [commands]);
 
+  const commitDocumentRename = async () => {
+    const nextName = documentNameDraft.trim();
+    setDocumentNameEditing(false);
+    if (!nextName || nextName === currentDocumentName) {
+      setDocumentNameDraft(currentDocumentName);
+      return;
+    }
+    try {
+      await onRenameDocument?.(nextName);
+    } catch {
+      setDocumentNameDraft(currentDocumentName);
+    }
+  };
+
   const executeCommand = (command) => {
     if (!canRun(command)) return;
     setOpenMenu(null);
@@ -379,9 +400,44 @@ export default function DesktopAppHeader({
           <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
         </svg>
         <span className="desktop-app-document-identity-copy">
-          <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
+          {documentNameEditing ? (
+            <input
+              className="desktop-app-document-identity-name-input"
+              aria-label="Canvas name"
+              autoFocus
+              maxLength={120}
+              value={documentNameDraft}
+              onChange={(event) => setDocumentNameDraft(event.target.value)}
+              onBlur={commitDocumentRename}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  setDocumentNameDraft(currentDocumentName);
+                  setDocumentNameEditing(false);
+                }
+              }}
+            />
+          ) : (
+            <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
+          )}
         </span>
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        {!documentNameEditing && (
+          <button
+            type="button"
+            className="desktop-app-document-rename"
+            aria-label="Rename canvas"
+            title="Rename canvas"
+            onClick={() => { setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
+          >
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       </div>

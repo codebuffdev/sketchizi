@@ -503,6 +503,74 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     }
   };
 
+  const renameCurrentDocument = async (requestedName) => {
+    const name = String(requestedName || "").trim();
+    if (!name) throw new Error("Enter a name for this canvas.");
+    if (name.length > 120) throw new Error("Canvas names must be 120 characters or fewer.");
+    if (/[\\/]/.test(name)) throw new Error("Canvas names cannot contain path separators.");
+
+    const file = currentFileRef.current;
+    const api = apiRef.current;
+    const baseline = currentFileSceneSignatureRef.current
+      || getLiveSceneSignature(api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []);
+
+    try {
+      if (file?.handle) {
+        if (!(await ensureHandlePermission(file.handle, "readwrite"))) {
+          throw new Error("File permission was denied. Allow access and try renaming again.");
+        }
+        if (typeof file.handle.move !== "function") {
+          throw new Error("This browser cannot rename an already linked file. Use Save As to create a renamed copy.");
+        }
+        const existingExtension = file.name?.match(/\\.[^.]+$/)?.[0] || ".sketchizi";
+        const targetName = /\\.[^./\\\\]+$/.test(name) ? name : `${name}${existingExtension}`;
+        await file.handle.move(targetName);
+        const actualName = file.handle.name || targetName;
+        const renamedFile = { ...file, name: actualName, handle: file.handle };
+        setCurrentFile(renamedFile, baseline);
+        await saveFileHandle(file.id, file.handle);
+        rememberRecentFile({
+          id: file.id,
+          name: actualName,
+          handle: file.handle,
+          savedAt: Date.now(),
+          lastOpenedAt: Date.now(),
+          availability: "available",
+          kind: "file",
+        });
+        if (currentFolderRef.current?.handle) refreshCurrentFolderFiles().catch(() => {});
+      } else {
+        const renamedFile = {
+          ...(file || {}),
+          id: file?.id || null,
+          name,
+          handle: null,
+          fallback: Boolean(file?.fallback),
+        };
+        setCurrentFile(renamedFile, baseline);
+        if (file?.fallback && file.id && api) {
+          const record = await saveRecentSketch({
+            id: file.id,
+            name,
+            format: getDrawingFormat(name),
+            metadata: documentMetadataRef.current.metadata,
+            extensions: documentMetadataRef.current.extensions,
+            elements: api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [],
+            appState: api.getAppState?.() || {},
+            files: api.getFiles?.() || {},
+          }).catch(() => null);
+          if (record) rememberRecentFile({ ...record, lastOpenedAt: Date.now(), availability: "available", kind: "snapshot" });
+        }
+      }
+      logger.info("Document renamed", { category: "file", fileName: name });
+      showToast("Canvas renamed");
+      return true;
+    } catch (error) {
+      handleFileError(error, "Unable to rename canvas");
+      throw error;
+    }
+  };
+
   const openRecentFile = async (id) => {
     const api = apiRef.current;
     if (!api || !id) return;
@@ -643,13 +711,13 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   // they use the file-handle based implementation above.
 
   // Keep stable entry points for the DOM-injected menu and global listeners.
-  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, loadDrawingFromText: (text, name) => { const signature = loadDrawingIntoCanvas(text); setCurrentFile({ id: `github-${Date.now()}`, name, handle: null, fallback: true }, signature); return signature; }, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, updateRecentFileStatus, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, updateRecentFolderStatus, markRecentFolderOpened, refreshCurrentFolderFiles, getCurrentFolder: () => currentFolderRef.current, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
+  fileActionsRef.current = { openDrawingFromDisk, openFolderFromDisk, openRecentFolder, openDrawingFromCurrentFolder, renameCurrentDocument, loadDrawingFromText: (text, name) => { const signature = loadDrawingIntoCanvas(text); setCurrentFile({ id: `github-${Date.now()}`, name, handle: null, fallback: true }, signature); return signature; }, saveDrawingAs, saveCurrentDrawing, createNewFile, closeCurrentFolder, openRecentFile, removeRecentFile: forgetRecentFile, updateRecentFileStatus, clearRecentFiles, removeRecentFolder: forgetRecentFolder, clearRecentFolders, updateRecentFolderStatus, markRecentFolderOpened, refreshCurrentFolderFiles, getCurrentFolder: () => currentFolderRef.current, clearFileAssociation: () => setCurrentFile(null), startCollaboration };
   return {
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,
     currentFile, currentFileRef, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef,
     rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, markRecentFolderOpened, updateRecentFolderStatus, forgetRecentFolder, clearRecentFolders,
     handleFileError, currentSceneText, loadDrawingIntoCanvas, openFolderFromDisk, openRecentFolder, openDrawingFromDisk,
-    openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, saveDrawingAs, saveCurrentDrawing, openRecentFile,
+    openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, saveDrawingAs, saveCurrentDrawing, renameCurrentDocument, openRecentFile,
   };
 }

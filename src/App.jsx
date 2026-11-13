@@ -183,6 +183,7 @@ function App() {
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+  const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   useEffect(() => {
     try { localStorage.setItem("sketchizi:auto-open-layers", String(autoOpenLayers)); } catch {}
   }, [autoOpenLayers]);
@@ -323,6 +324,7 @@ function App() {
         revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
         name: diagram.name || "Cloud diagram",
       };
+      setCloudDocumentName(diagram.name || "Cloud diagram");
       api.updateScene({
         elements,
         appState: { ...api.getAppState(), ...sanitizeCloudAppState(document.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
@@ -410,6 +412,30 @@ function App() {
     if (!apiReady || !currentFile) return;
     markCurrentDocumentChanged(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
   }, [apiReady, currentFile, markCurrentDocumentChanged]);
+
+  const renameActiveDocument = useCallback(async (name) => {
+    const normalizedName = String(name || "").trim();
+    if (!normalizedName) throw new Error("Enter a name for this canvas.");
+    if (normalizedName.length > 120) throw new Error("Canvas names must be 120 characters or fewer.");
+    if (cloudDiagramId) {
+      if (!cloudSessionRef.current.active) throw new Error("The Cloud Workspace document is still loading.");
+      try {
+        const result = await workspaceClient.updateDiagram(cloudDiagramId, { name: normalizedName });
+        const diagram = result?.diagram || result;
+        const savedName = diagram?.name || normalizedName;
+        cloudSessionRef.current.name = savedName;
+        setCloudDocumentName(savedName);
+        showToast("Canvas renamed");
+      } catch (error) {
+        showToast(error?.message || "Unable to rename this cloud canvas.", "error");
+        throw error;
+      }
+      return;
+    }
+    const rename = fileActionsRef.current.renameCurrentDocument;
+    if (typeof rename !== "function") throw new Error("Canvas rename is not available right now.");
+    await rename(normalizedName);
+  }, [cloudDiagramId, showToast]);
 
   const closeExportDialog = useCallback(() => {
     const api = apiRef.current;
@@ -1705,8 +1731,9 @@ function App() {
         setThemeMode={setThemeMode}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
-        currentDocumentName={cloudDiagramId ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")}
+        currentDocumentName={cloudDiagramId ? cloudDocumentName : (currentFile?.name || "Untitled drawing")}
         currentDocumentDirty={documentDirty}
+        onRenameDocument={renameActiveDocument}
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
         onSaveToFile={() => fileActionsRef.current.saveCurrentDrawing?.()}
