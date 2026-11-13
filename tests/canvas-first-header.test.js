@@ -36,3 +36,14 @@ test("header supports pinning, top-edge reveal, and a keyboard visibility shortc
   assert.match(header, /desktop-app-header-reveal-handle/);
   assert.match(css, /desktop-app-header-reveal-handle\.is-visible/);
 });
+
+test("drawing dock stays bottom-centered regardless of header visibility", async () => {
+  const responsive = await read("../src/styles/responsive.css");
+  const responsiveFinal = await read("../src/styles/responsive-final.css");
+  const canvasHeader = await read("../src/styles/canvas-first-header.css");
+
+  assert.match(responsive, /top:\\s*auto !important;[\\s\\S]*bottom:\\s*calc\\(14px \\+ var\\(--safe-bottom, 0px\\)\\) !important;/);
+  assert.match(responsiveFinal, /top:\\s*auto !important;[\\s\\S]*bottom:\\s*calc\\(14px \\+ var\\(--safe-bottom, 0px\\)\\) !important;/);
+  assert.match(canvasHeader, /\\.app\\.canvas-first-header \\.App-toolbar-container\\s*\\{[\\s\\S]*top:\\s*auto !important;[\\s\\S]*bottom:\\s*calc\\(14px \\+ var\\(--safe-bottom, 0px\\)\\) !important;/);
+  assert.doesNotMatch(canvasHeader, /desktop-app-header\\.is-hidden\\) \\.App-toolbar-container/);
+});

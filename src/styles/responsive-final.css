@@ -205,16 +205,14 @@
     min-height: 0;
   }
 
-  /* The floating toolbar remains the native Excalidraw toolbar. On all
-     supported widths at or above 521px it uses the same top-center lane as
-     the desktop design, while the scroll container prevents viewport escape.
-   */
+  /* Keep the native Excalidraw toolbar in the bottom-center lane. The
+     scroll container still prevents it from escaping narrow viewports. */
   .desktop-canvas-region .excalidraw .App-toolbar-container,
   .excalidraw .App-toolbar-container {
     position: fixed !important;
-    top: calc(var(--sketchizi-responsive-header-height) + var(--sketchizi-responsive-toolbar-gap) + var(--safe-top, 0px)) !important;
+    top: auto !important;
     right: auto !important;
-    bottom: auto !important;
+    bottom: calc(14px + var(--safe-bottom, 0px)) !important;
     left: 50% !important;
     width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px)) !important;
     max-width: calc(100vw - 16px - var(--safe-left, 0px) - var(--safe-right, 0px)) !important;

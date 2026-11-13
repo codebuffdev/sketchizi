@@ -12,16 +12,15 @@
  * so it is conditionally unmounted in App.jsx rather than visually hidden. */
 
 
-/* v1.10.24 — move the existing Excalidraw drawing toolbar to a stable
- * top-center application lane on supported desktop/tablet widths. The native
- * toolbar remains the single source of truth; this only changes its viewport
- * positioning. Mobile/phone layouts keep Excalidraw's existing bottom toolbar. */
+/* Keep the native Excalidraw drawing toolbar in a bottom-center lane on
+ * desktop widths. The application header is an overlay and must not reserve
+ * or change the toolbar's vertical position. */
 @media (min-width: 761px) {
   .excalidraw .App-toolbar-container {
     position: fixed !important;
-    top: calc(var(--sketchizi-desktop-header-height, 58px) + 10px) !important;
+    top: auto !important;
     right: auto !important;
-    bottom: auto !important;
+    bottom: calc(14px + var(--safe-bottom, 0px)) !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 120 !important;

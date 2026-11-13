@@ -360,32 +360,21 @@
     justify-content: flex-end;
   }
 
-  .app.canvas-first-header:not(:has(.desktop-app-header.is-hidden)) .App-toolbar-container {
-    top: calc(108px + var(--safe-top, 0px)) !important;
-  }
-
-  .app.canvas-first-header:has(.desktop-app-header.is-hidden) .App-toolbar-container {
-    top: calc(32px + var(--safe-top, 0px)) !important;
-  }
 }
 
-@media (min-width: 761px) and (max-width: 1024px) {
-  .app.canvas-first-header:not(:has(.desktop-app-header.is-hidden)) .App-toolbar-container {
-    top: calc(70px + var(--safe-top, 0px)) !important;
-  }
-
-  .app.canvas-first-header:has(.desktop-app-header.is-hidden) .App-toolbar-container {
-    top: calc(32px + var(--safe-top, 0px)) !important;
-  }
-}
 
 @media (min-width: 1025px) {
-  .app.canvas-first-header:not(:has(.desktop-app-header.is-hidden)) .App-toolbar-container {
-    top: calc(68px + var(--safe-top, 0px)) !important;
-  }
+}
 
-  .app.canvas-first-header:has(.desktop-app-header.is-hidden) .App-toolbar-container {
-    top: calc(32px + var(--safe-top, 0px)) !important;
+/* The drawing dock stays bottom-centered whether the floating application
+   header is shown or hidden. Header visibility must never reposition tools. */
+@media (min-width: 521px) {
+  .app.canvas-first-header .App-toolbar-container {
+    top: auto !important;
+    right: auto !important;
+    bottom: calc(14px + var(--safe-bottom, 0px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
   }
 }
 
