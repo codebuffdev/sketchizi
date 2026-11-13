@@ -50,3 +50,13 @@ test("Reset canvas uses the same guarded new-document path, including cloud deta
   assert.match(files, /new CustomEvent\("sketchizi:detach-cloud-document"\)/);
   assert.match(files, /api\.history\?\.clear\?\.\(\)/);
 });
+
+test("detached cloud drawings immediately display local status and local save controls", () => {
+  assert.match(app, /const \[cloudDetached, setCloudDetached\] = useState\(false\)/);
+  assert.match(app, /cloudDetachedRef\.current = true;\s*setCloudDetached\(true\)/);
+  assert.match(app, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
+  assert.match(app, /isCloudDocument=\{Boolean\(cloudDiagramId && !cloudDetached\)\}/);
+  assert.ok(app.includes("cloudDiagramId && !cloudDetached && <div className="));
+  assert.match(app, /onSaveToCloud=\{\(\) => cloudDiagramId && !cloudDetachedRef\.current \? saveCloudDiagramNow\(\) : setCloudSaveDialogOpen\(true\)\}/);
+  assert.match(app, /if \(cloudDiagramId && !cloudDetachedRef\.current\) \{\s*if \(!cloudSessionRef\.current\.active\)/);
+});
