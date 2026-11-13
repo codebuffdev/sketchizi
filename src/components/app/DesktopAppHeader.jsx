@@ -293,6 +293,21 @@ export default function DesktopAppHeader({
     error: "Save issue",
   };
   const saveStateLabel = saveStateLabels[saveState] || "Local save status";
+  const cloudStatusLabels = {
+    loading: "Loading from Cloud Workspace",
+    pending: "Cloud changes pending",
+    saving: "Saving to Cloud Workspace",
+    saved: "Saved to Cloud Workspace",
+    error: "Cloud save failed",
+    conflict: "Cloud save conflict",
+  };
+  const storageLocation = isCloudDocument ? "Cloud" : currentDocumentFileBacked ? "File" : "Local";
+  const documentStatusLabel = isCloudDocument
+    ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace")
+    : currentDocumentFileBacked
+      ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file")
+      : `Local canvas. ${saveStateLabel}`;
+
   const lastSavedLabel = saveStatus?.lastSavedAt
     ? new Date(saveStatus.lastSavedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     : "No successful local save yet";
@@ -397,8 +412,8 @@ export default function DesktopAppHeader({
 
       <div
         className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
-        title={`${currentDocumentName}${currentDocumentFileBacked ? (currentDocumentDirty ? " — file changes not saved" : " — linked file") : ` — ${saveStateLabel.toLowerCase()}`}`}
-        aria-label={`Current document: ${currentDocumentName}. ${currentDocumentFileBacked ? (currentDocumentDirty ? "Changes not saved to file." : "Linked file.") : ( "Local canvas. " + saveStateLabel + "." )}`}
+        title={`${currentDocumentName} — ${documentStatusLabel}`}
+        aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
       >
         <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M6 3.75h8l4 4v12.5H6z" />
@@ -430,6 +445,7 @@ export default function DesktopAppHeader({
             <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
           )}
         </span>
+        <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
         {!documentNameEditing && (
           <button
@@ -510,6 +526,7 @@ export default function DesktopAppHeader({
               <button type="button" onClick={() => { onSaveNow?.(); }}>Save locally</button>
               <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
               {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
+              <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
               <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
             </div>
             <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>

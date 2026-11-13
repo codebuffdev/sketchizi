@@ -6,11 +6,11 @@ import { createCloudDocument, sanitizeCloudAppState } from "../src/features/work
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("studio menu uses official Kubernetes and Docker brand artwork", async () => {
-  const app = await read("../src/App.jsx");
+  const menu = await read("../src/components/app/CreateMenu.jsx");
   const kubernetes = await read("../public/icons/kubernetes.svg");
   const docker = await read("../public/icons/docker.svg");
-  assert.match(app, /src="\/icons\/kubernetes\.svg"/);
-  assert.match(app, /src="\/icons\/docker\.svg"/);
+  assert.match(menu, /src="\/icons\/kubernetes\.svg"/);
+  assert.match(menu, /src="\/icons\/docker\.svg"/);
   assert.match(kubernetes, /<title>Kubernetes<\/title>/);
   assert.match(kubernetes, /fill="#326ce5"/);
   assert.match(docker, /<title>Docker<\/title>/);
@@ -38,9 +38,13 @@ test("Tool menu only contains tools not already on the dock and uses labeled SVG
 
 test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
   const app = await read("../src/App.jsx");
-  assert.match(app, /className="workspaces-menu-icon"[^>]*><path d="M3\.5 7\.5h6l2 2h9/);
-  assert.match(app, /className="ai-ask-toggle-icon"[^>]*><path d="M20 11\.5a7\.5 7\.5/);
-  assert.match(app, /className="architecture-validation-toggle-icon"[^>]*><path d="M12 3 20 6/);
+  const createMenu = await read("../src/components/app/CreateMenu.jsx");
+  assert.match(createMenu, /className="workspaces-menu-icon"/);
+  assert.match(createMenu, /M12 5v14M5 12h14/);
+  assert.match(app, /className="ai-ask-toggle-icon"[^>]*>\s*<path d="M204 21 L185 25/);
+  const registry = await read("../src/features/commands/commandRegistry.js");
+  assert.match(registry, /label: "Architecture Validation"/);
+  assert.match(registry, /openPanel\("architecture-validation"\)/);
   assert.doesNotMatch(app, /<span className="ai-ask-toggle-icon" aria-hidden="true">✳<\/span>/);
   assert.doesNotMatch(app, /<span className="architecture-validation-toggle-icon">✓<\/span>/);
 });

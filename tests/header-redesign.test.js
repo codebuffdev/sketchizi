@@ -18,16 +18,16 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /Ctrl\+K/);
 });
 
-test("Workspaces header control is icon-only and exposes a hover tooltip", async () => {
+test("Create entry is labeled on desktop and compact on mobile", async () => {
   const app = await read("../src/App.jsx");
-  const styles = await read("../src/styles.css");
-  const start = app.indexOf("const workspaceToggle =");
-  const end = app.indexOf("const moreToolsToggle =", start);
-  const toggle = app.slice(start, end);
-  assert.match(toggle, /title="Workspaces"/);
-  assert.match(toggle, /aria-label="Design Workspaces"/);
-  assert.match(styles, /\.create-design-menu \.design-studio-header-toggle > span,[\s\S]*?\.devops-studio-chevron\s*\{\s*display:\s*none;/);
-  assert.match(styles, /\.create-design-menu \.design-studio-header-toggle \.workspaces-menu-icon\s*\{\s*width:\s*17px;/);
+  const menu = await read("../src/components/app/CreateMenu.jsx");
+  const styles = await read("../src/styles/create-menu.css");
+  assert.match(app, /<CreateMenu/);
+  assert.match(menu, /aria-label="Create drawing"/);
+  assert.match(menu, /title="Create a drawing or open a design workspace"/);
+  assert.match(menu, /<span>Create<\/span>/);
+  assert.match(styles, /min-width: 88px/);
+  assert.match(styles, /@media \(max-width: 760px\)/);
 });
 
 test("Workspaces is the first header control before the hamburger menu", async () => {
@@ -51,14 +51,13 @@ test("Tool control is placed beside command search, outside the feature action g
   assert.match(header, /moreToolsToggle,/);
 });
 
-test("product feature actions remain ordered AI Ask then Validation", async () => {
+test("AI Ask and Architecture Validation remain accessible without cluttering the header", async () => {
   const app = await read("../src/App.jsx");
-  const start = app.indexOf("<DesktopAppHeader");
-  const end = app.indexOf("</DesktopAppHeader>", start);
-  const headerChildren = app.slice(start, end);
-  const ai = headerChildren.indexOf("className={aiAskOpen");
-  const validation = headerChildren.indexOf("className={architectureValidationOpen");
-  assert.ok(ai >= 0 && validation > ai);
+  const registry = await read("../src/features/commands/commandRegistry.js");
+  assert.match(app, /aria-label="AI Ask"/);
+  assert.match(app, /<ArchitectureValidationPanel/);
+  assert.match(registry, /id: "review\.architecture"/);
+  assert.match(registry, /execute: \(\) => openPanel\("architecture-validation"\)/);
   assert.match(app, /const moreToolsToggle = collaborationCanEdit \?/);
 });
 
@@ -197,8 +196,13 @@ test("collaboration dialog stays fully visible and scrollable within viewport", 
 });
 
 
-test("Workspaces dropdown closes whenever another editor panel or native menu opens", async () => {
+test("Create menu dismisses on overlays, Escape and outside pointerdown", async () => {
   const app = await read("../src/App.jsx");
-  assert.match(app, /if \(nativeMenuOpen \|\| activePanel \|\| aiAskOpen \|\| designStudioOpen \|\| dockerStudioOpen \|\| kubernetesStudioOpen\)\s*\{\s*setDevopsStudioMenuOpen\(false\);\s*\}/);
-  assert.match(app, /\}, \[nativeMenuOpen, activePanel, aiAskOpen, designStudioOpen, dockerStudioOpen, kubernetesStudioOpen\]\);/);
+  const menu = await read("../src/components/app/CreateMenu.jsx");
+  assert.match(app, /dismissWhen=\{Boolean\(nativeMenuOpen \|\| activePanel \|\| aiAskOpen \|\| designStudioOpen \|\| dockerStudioOpen \|\| kubernetesStudioOpen\)\}/);
+  assert.match(app, /onBeforeOpen=\{\(\) => \{[\s\S]*?closeNativeMenu\(\);[\s\S]*?setActivePanel\(null\);/);
+  assert.match(menu, /if \(dismissWhen\) setOpen\(false\)/);
+  assert.match(menu, /event\.key === "Escape"/);
+  assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
+  assert.match(menu, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);
 });

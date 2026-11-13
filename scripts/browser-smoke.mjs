@@ -10,9 +10,14 @@ const makePage = async (viewport) => {
   return { context, page };
 };
 
+const openCreateMenu = async (page) => {
+  await page.getByRole("button", { name: "Create drawing" }).click();
+  await page.getByRole("menu", { name: "Create a drawing" }).waitFor();
+};
+
 const openDesignStudio = async (page) => {
-  await page.getByRole("button", { name: /workspaces/i }).click();
-  await page.getByRole("menuitem", { name: /design studio/i }).click();
+  await openCreateMenu(page);
+  await page.getByRole("menuitem", { name: /^Templates/ }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
 
@@ -34,18 +39,66 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
-  // A fresh browser context validates the independent blank-canvas path.
+  // Replacing a populated drawing must be explicitly confirmed. Cancel first
+  // to verify that Create does not bypass the existing unsaved-work safeguard.
+  await openCreateMenu(page);
+  let cancelledConfirmation = null;
+  page.once("dialog", async (dialog) => {
+    cancelledConfirmation = { type: dialog.type(), message: dialog.message() };
+    await dialog.dismiss();
+  });
+  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
+  if (cancelledConfirmation?.type !== "confirm" || !cancelledConfirmation.message.includes("create a new drawing")) {
+    throw new Error("Create > Blank drawing did not request confirmation for existing work.");
+  }
+  console.log("PASS: replacing an existing drawing requires confirmation.");
+
+  // Confirming replacement returns the user to an empty, editable canvas.
+  await openCreateMenu(page);
+  let confirmedReplacement = false;
+  page.once("dialog", async (dialog) => {
+    confirmedReplacement = dialog.type() === "confirm";
+    await dialog.accept();
+  });
+  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
+  if (!confirmedReplacement) throw new Error("Confirmation was not shown when replacing the drawing.");
+  await page.getByText("New drawing", { exact: true }).waitFor({ timeout: 10000 });
+  await page.locator(".excalidraw").waitFor();
+  console.log("PASS: confirmed replacement creates a blank drawing.");
+
+
+  // A fresh browser context validates the primary blank drawing action.
   const blank = await makePage({ width: 1280, height: 800 });
   await blank.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
-  await openDesignStudio(blank.page);
-  await blank.page.getByRole("button", { name: "Start blank" }).click();
-  await blank.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
+  await openCreateMenu(blank.page);
+  await blank.page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
-  console.log("PASS: blank-canvas path opens the editor.");
+  await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
+  console.log("PASS: Create > Blank drawing opens the editor.");
+
+  // Advanced work remains accessible without crowding the main drawing UI.
+  await blank.page.getByRole("button", { name: /Local document save status/ }).click();
+  await blank.page.getByRole("button", { name: /Export studio/ }).click();
+  await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
+  await blank.page.getByRole("button", { name: "Close export studio" }).click();
+  console.log("PASS: Export Studio remains reachable from the save menu.");
+
+  await blank.page.getByRole("button", { name: "Search commands" }).click();
+  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor();
+  await blank.page.getByRole("searchbox", { name: "Search commands" }).fill("Architecture Validation");
+  await blank.page.getByRole("option", { name: /Architecture Validation/ }).click();
+  await blank.page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
+  await blank.page.getByRole("button", { name: "Close architecture validation" }).click();
+  console.log("PASS: Architecture Validation remains available in the command palette.");
+
 
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
   await responsive.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await openCreateMenu(responsive.page);
+  await responsive.page.getByRole("menuitem", { name: /^Templates/ }).waitFor();
+  await responsive.page.keyboard.press("Escape");
+  await responsive.page.getByRole("menu", { name: "Create a drawing" }).waitFor({ state: "detached" });
   await openDesignStudio(responsive.page);
   await responsive.page.getByRole("button", { name: "Start blank" }).waitFor();
   const overflow = await responsive.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
