@@ -33,7 +33,7 @@ test('View menu exposes a single native grid command', () => {
 
 test('G toggles the native grid without a separate Shift+G mode', () => {
   assert.match(preferences, /if \(!event\.shiftKey && key === "g"\) \{ event\.preventDefault\(\); toggleGrid\(\); return; \}/);
-  assert.doesNotMatch(preferences, /toggleCanvasGrid|event\.shiftKey && key === "g"/);
+  assert.doesNotMatch(preferences, /toggleCanvasGrid|if \(event\.shiftKey && key === "g"/);
   assert.match(shortcuts, /\["G", "Toggle Excalidraw grid"\]/);
   assert.doesNotMatch(shortcuts, /Toggle grid snapping|⇧ G/);
 });
