@@ -1,15 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateAlignmentGuides } from "../src/features/canvas/alignmentGuides.js";
+import {
+  calculateAlignmentGuides,
+  calculateEqualSpacingGuides,
+  calculateTextBaselineGuides,
+  getTextBaseline,
+} from "../src/features/canvas/alignmentGuides.js";
 
-test("detects matching vertical and horizontal alignment edges", () => {
+test("detects edge and center alignment with overlapping geometry", () => {
   const elements = [
     { id: "moving", x: 98, y: 198, width: 40, height: 40 },
-    { id: "fixed", x: 100, y: 160, width: 40, height: 40 },
+    { id: "fixed", x: 100, y: 160, width: 40, height: 80 },
   ];
   const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 3);
-  assert.ok(guides.some((guide) => guide.axis === "x" && Math.abs(guide.position - 100) < 2));
-  assert.ok(guides.some((guide) => guide.axis === "y" && Math.abs(guide.position - 200) < 2));
+  assert.ok(guides.some((guide) => guide.axis === "x" && guide.position === 100));
+  assert.ok(guides.some((guide) => guide.axis === "y" && guide.position === 200));
+});
+
+test("does not align objects on distant, non-overlapping axes", () => {
+  const elements = [
+    { id: "moving", x: 0, y: 0, width: 20, height: 20 },
+    { id: "fixed", x: 1, y: 200, width: 20, height: 20 },
+  ];
+  assert.deepEqual(calculateAlignmentGuides(elements, new Set(["moving"]), 3), []);
 });
 
 test("ignores deleted elements and the moving selection itself", () => {
@@ -20,8 +33,27 @@ test("ignores deleted elements and the moving selection itself", () => {
   assert.deepEqual(calculateAlignmentGuides(elements, new Set(["moving"])), []);
 });
 
+test("detects equal horizontal gaps around a single moving object", () => {
+  const elements = [
+    { id: "left", x: 0, y: 0, width: 20, height: 20 },
+    { id: "moving", x: 44, y: 0, width: 20, height: 20 },
+    { id: "right", x: 90, y: 0, width: 20, height: 20 },
+  ];
+  const guides = calculateEqualSpacingGuides(elements, new Set(["moving"]), 2);
+  assert.ok(guides.some((guide) => guide.axis === "x" && Math.abs(guide.delta - 1) < 0.001));
+});
+
+test("detects text baseline alignment using text metrics", () => {
+  const elements = [
+    { id: "a", type: "text", x: 0, y: 0, width: 100, height: 30, fontSize: 20 },
+    { id: "b", type: "text", x: 120, y: 2, width: 100, height: 28, fontSize: 18 },
+  ];
+  assert.ok(Math.abs(getTextBaseline(elements[0]) - getTextBaseline(elements[1])) < 1);
+  assert.equal(calculateTextBaselineGuides(elements, new Set(["a"]), 2).length, 1);
+});
+
 test("returns no guides when selection or stationary elements are missing", () => {
   const elements = [{ id: "one", x: 0, y: 0, width: 20, height: 20 }];
   assert.deepEqual(calculateAlignmentGuides(elements, new Set(["one"])), []);
-  assert.deepEqual(calculateAlignmentGuides(elements, new Set()), []);
+  assert.deepEqual(calculateEqualSpacingGuides(elements, new Set(["one"])), []);
 });
