@@ -24,7 +24,10 @@ test("formatting controls continue to derive their values and actions from the a
 });
 
 
-test("Zen Mode formatting dock does not expose Smart Themes", () => {
-  assert.doesNotMatch(source, /Smart Themes|smartThemePalettes|groupId === "themes"/);
-  assert.doesNotMatch(source, /id: "themes"/);
+test("Zen Mode formatting dock offers Smart Themes only for applicable selected objects", () => {
+  assert.match(source, /id: "themes", label: "Smart Themes"/);
+  assert.match(source, /const applySmartTheme = \(themeId\) =>/);
+  assert.match(source, /applySmartThemeToElements\(\[element\], themeId\)/);
+  assert.match(source, /iconOnlySelection && \["stroke", "opacity", "themes"\]/);
+  assert.doesNotMatch(source, /group\.id === "themes" \|\| \(activeToolMode/);
 });
