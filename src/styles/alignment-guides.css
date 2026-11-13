@@ -6,7 +6,7 @@
   height: 100%;
   overflow: hidden;
   pointer-events: none;
-  z-index: 8;
+  z-index: 10;
 }
 .sketchizi-alignment-guides line {
   stroke: #9ca3af;
