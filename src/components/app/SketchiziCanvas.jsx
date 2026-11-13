@@ -689,8 +689,11 @@ export default function SketchiziCanvas({
   const gridZoom = Math.max(0.1, Number(gridAppState.zoom?.value ?? gridAppState.zoom) || 1);
   const gridStepPixels = Math.max(5, Number(gridSize) || 20) * gridZoom;
   const rootRect = canvasRootRef.current?.getBoundingClientRect();
-  const gridOriginX = ((((Number(gridAppState.scrollX) || 0) * gridZoom) + (rootRect?.width || Number(gridAppState.width) || 0) / 2) % gridStepPixels + gridStepPixels) % gridStepPixels;
-  const gridOriginY = ((((Number(gridAppState.scrollY) || 0) * gridZoom) + (rootRect?.height || Number(gridAppState.height) || 0) / 2) % gridStepPixels + gridStepPixels) % gridStepPixels;
+  const viewportRect = canvasRootRef.current?.querySelector(".excalidraw")?.getBoundingClientRect();
+  const gridWidth = viewportRect?.width || rootRect?.width || Number(gridAppState.width) || 0;
+  const gridHeight = viewportRect?.height || rootRect?.height || Number(gridAppState.height) || 0;
+  const gridOriginX = ((((Number(gridAppState.scrollX) || 0) * gridZoom) + gridWidth / 2) % gridStepPixels + gridStepPixels) % gridStepPixels;
+  const gridOriginY = ((((Number(gridAppState.scrollY) || 0) * gridZoom) + gridHeight / 2) % gridStepPixels + gridStepPixels) % gridStepPixels;
   const gridOverlayStyle = {
     "--sketchizi-grid-step": `${gridStepPixels}px`,
     "--sketchizi-grid-origin-x": `${gridOriginX}px`,
@@ -730,7 +733,11 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {gridVisible && <div className="sketchizi-grid-overlay" aria-hidden="true" />}
+      {gridVisible && <div className="sketchizi-grid-overlay" aria-hidden="true" style={{
+        left: (viewportRect?.left || rootRect?.left || 0) - (rootRect?.left || 0),
+        top: (viewportRect?.top || rootRect?.top || 0) - (rootRect?.top || 0),
+        width: gridWidth, height: gridHeight,
+      }} />}
       {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
         <ContextualFormattingToolbar
           apiRef={apiRef}
