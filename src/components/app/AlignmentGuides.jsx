@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { calculateAlignmentGuides } from "../../features/canvas/alignmentGuides.js";
+import { calculateAlignmentGuides, calculateEqualSpacingGuides, calculateTextBaselineGuides } from "../../features/canvas/alignmentGuides.js";
 
 const EMPTY_GUIDES = [];
 
@@ -40,7 +40,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const viewportRect = viewport.getBoundingClientRect();
       setOverlay({ left: viewportRect.left - rootRect.left, top: viewportRect.top - rootRect.top, width: viewportRect.width, height: viewportRect.height });
       const tolerance = 9 / zoom;
-      const found = calculateAlignmentGuides(elements, selectedIds, tolerance);
+      const found = [\n        ...calculateAlignmentGuides(elements, selectedIds, tolerance),\n        ...calculateEqualSpacingGuides(elements, selectedIds, tolerance),\n        ...calculateTextBaselineGuides(elements, selectedIds, tolerance),\n      ];
       const sceneToViewport = api.sceneCoordsToViewportCoords;
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
@@ -99,9 +99,9 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
   return (
     <svg className="sketchizi-alignment-guides" style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }} viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)} aria-hidden="true" focusable="false">
       {guides.map((guide, index) => guide.axis === "x" ? (
-        <line key={guide.axis + guide.screenPosition + index} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
+        <line key={guide.kind + guide.axis + guide.screenPosition + index} data-guide-kind={guide.kind || "alignment"} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
       ) : (
-        <line key={guide.axis + guide.screenPosition + index} x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
+        <line key={guide.kind + guide.axis + guide.screenPosition + index} data-guide-kind={guide.kind || "alignment"} x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
       ))}
     </svg>
   );
