@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
+import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
 import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
@@ -1772,6 +1773,16 @@ function App() {
             propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
+            onOpenProperties={() => {
+              const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
+              if (selectedIds.length && apiRef.current?.updateScene) {
+                apiRef.current.updateScene({
+                  appState: { selectedElementIds: Object.fromEntries(selectedIds.map((id) => [id, true])) },
+                  captureUpdate: CaptureUpdateAction.NEVER,
+                });
+              }
+              openPanel("properties");
+            }}
             onToolActivated={() => closePanel("properties")}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
@@ -1800,14 +1811,51 @@ function App() {
         >
           {(propertiesOpen || architectureValidationOpen) && (
             <div className={`desktop-validation-host ${architectureValidationOpen ? "is-open" : "is-closed"}`}>
-              <ArchitectureValidationPanel
-                validation={architectureValidation}
-                sceneElements={apiRef.current?.getSceneElements?.() || []}
-                onClose={() => closePanel("architecture-validation")}
-                onSelectDiagnostic={selectArchitectureDiagnostic}
-                onApplyKubernetesSuggestion={applyKubernetesSuggestion}
-                canApplyCorrections={collaborationCanEdit}
-              />
+              {propertiesOpen && (
+                <PropertiesPanel
+                  selectedCount={selectedCount}
+                  propertiesOpen={propertiesOpen}
+                  setPropertiesOpen={(open) => { if (!open) closePanel("properties"); }}
+                  firstSelected={firstSelected}
+                  hasShapeSelection={hasShapeSelection}
+                  hasArrowSelection={hasArrowSelection}
+                  hasTextSelection={hasTextSelection}
+                  applyToSelected={applyToSelected}
+                  applyToSelectedArrow={applyToSelectedArrow}
+                  updateSingleSelected={updateSingleSelected}
+                  awsResource={selectedAwsResource}
+                  awsResourceDefinition={selectedAwsResourceDefinition}
+                  updateAwsResource={updateSelectedAwsResource}
+                  kubernetesResource={selectedKubernetesResource}
+                  kubernetesResourceDefinition={selectedKubernetesResourceDefinition}
+                  updateKubernetesResource={updateSelectedKubernetesResource}
+                  networkingResource={selectedNetworkingResource}
+                  networkingResourceDefinition={selectedNetworkingResourceDefinition}
+                  updateNetworkingResource={updateSelectedNetworkingResource}
+                  architectureRelationship={selectedArchitectureRelationship}
+                  architectureRelationshipTypes={["traffic-flow", "contains", "routes-to", "depends-on", "connects-to"]}
+                  updateArchitectureRelationshipType={updateSelectedArchitectureRelationshipType}
+                  awsRelationship={selectedAwsRelationship}
+                  relationshipTypes={AWS_RELATIONSHIP_TYPES}
+                  updateAwsRelationshipType={updateSelectedAwsRelationshipType}
+                  kubernetesRelationship={selectedKubernetesRelationship}
+                  kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES}
+                  updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
+                  kubernetesRelationshipGuidance={selectedKubernetesRelationshipGuidance}
+                  readOnly={!collaborationCanEdit}
+                  hideDuplicateFormattingControls={true}
+                />
+              )}
+              {architectureValidationOpen && (
+                <ArchitectureValidationPanel
+                  validation={architectureValidation}
+                  sceneElements={apiRef.current?.getSceneElements?.() || []}
+                  onClose={() => closePanel("architecture-validation")}
+                  onSelectDiagnostic={selectArchitectureDiagnostic}
+                  onApplyKubernetesSuggestion={applyKubernetesSuggestion}
+                  canApplyCorrections={collaborationCanEdit}
+                />
+              )}
             </div>
           )}
         </aside>
