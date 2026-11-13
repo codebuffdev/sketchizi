@@ -49,11 +49,13 @@ export default function CreateMenu({
       options[next]?.focus();
     };
     document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown, true);
+    // Excalidraw handles Escape in document-level listeners. Capture at window
+    // so the Create menu can dismiss before those handlers consume the key.
+    window.addEventListener("keydown", onKeyDown, true);
     items()[0]?.focus();
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, [open]);
 
