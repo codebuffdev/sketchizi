@@ -130,7 +130,8 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(app, /cloudDiagramId/);
   assert.match(app, /workspaceClient\.getDiagram\(cloudDiagramId\)/);
   assert.match(app, /workspaceClient\.saveDiagram\(session\.diagramId, revision, document\)/);
-  assert.match(app, /if \(!Array\.isArray\(elements\) \|\| !elements\.some\(\(element\) => element && !element\.isDeleted\)\) return;/);
+  assert.match(app, /if \(!hasCloudSceneChange\(elements\)\) return;/);
+  assert.match(app, /cloudSceneReadyRef\.current/);
   assert.doesNotMatch(app, /allowEmpty: true/);
   assert.ok(app.includes("error?.status === 409 || error?.status === 412"));
   assert.ok(app.includes('state: conflict ? "conflict" : "error"'));
@@ -154,7 +155,8 @@ test("authenticated users keep the editor as the default route; Workspace is opt
 
 test("cloud-opened diagrams use their saved name in the editor identity", async () => {
   const source = await read("../src/App.jsx");
-  assert.match(source, /currentDocumentName=\{cloudDiagramId \? cloudDocumentName/);
+  assert.match(source, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
+  assert.match(source, /setCloudDetached\(true\)/);
   assert.match(source, /setCloudDocumentName\(diagram\.name \|\| "Cloud diagram"\)/);
   assert.match(source, /name: diagram\.name \|\| "Cloud diagram"/);
   const stylesheet = await read("../src/features/workspace/workspace.css");

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   clearEmergencyBackup,
+  clearSketch,
   loadEmergencyBackup,
   loadSketch,
   saveEmergencyBackup,
@@ -117,6 +118,34 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     }, 350);
   }, [apiRef, documentMetadataRef, persistSketchNow, sketchReady]);
 
+  const resetLocalSketch = useCallback(() => {
+    // A previous save may still be in flight even after its debounce timer
+    // has been cancelled. Enqueue the clear behind that write so an old
+    // document cannot reappear after starting a new one.
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    const revision = ++saveRevisionRef.current;
+    saveRequestRef.current = saveRequestRef.current.catch(() => {}).then(async () => {
+      await clearSketch();
+      clearEmergencyBackup();
+      if (revision === saveRevisionRef.current) {
+        setStorageError(null);
+        setSaveStatus({ state: "ready", lastSavedAt: null, error: null, emergencySaved: false });
+      }
+      return true;
+    }).catch((error) => {
+      if (revision === saveRevisionRef.current) {
+        const message = error?.message || "Unable to clear the previous local drawing.";
+        setStorageError({ kind: "write", message, emergencySaved: false });
+        setSaveStatus({ state: "error", lastSavedAt: null, error: message, emergencySaved: false });
+      }
+      return false;
+    });
+    return saveRequestRef.current;
+  }, []);
+
   const retryLocalSave = useCallback(() => {
     const api = apiRef.current;
     if (!api) return Promise.resolve(false);
@@ -172,6 +201,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     queueSketchSave,
     persistSketchNow,
     retryLocalSave,
+    resetLocalSketch,
     downloadRecoveryBackup,
   };
 }

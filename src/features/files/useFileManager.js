@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction, restoreElements } from "@excalidraw/excalidraw";
 import {
-  deleteDirectoryHandle, deleteFileHandle, deleteRecentSketch, clearEmergencyBackup, clearSketch,
+  deleteDirectoryHandle, deleteFileHandle, deleteRecentSketch,
   loadAllDirectoryHandles, loadAllFileHandles, loadDirectoryHandle, loadFileHandle,
   loadRecentSketch, saveDirectoryHandle, saveFileHandle, saveRecentSketch,
 } from "../../persistence";
@@ -28,7 +28,7 @@ function getLiveSceneSignature(elements) {
   return `${(first >>> 0).toString(16).padStart(8, "0")}${(second >>> 0).toString(16).padStart(8, "0")}`;
 }
 
-export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, setSavedSketch, documentMetadataRef, lastSelectionSignature, startCollaboration }) {
+export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, resetLocalSketch, setSavedSketch, documentMetadataRef, lastSelectionSignature, startCollaboration }) {
   const [currentFolder, setCurrentFolderState] = useState(null);
   const [currentFolderFiles, setCurrentFolderFiles] = useState([]);
   const currentFolderRef = useRef(null);
@@ -372,10 +372,6 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     currentUrl.searchParams.delete("cloudProjectId");
     currentUrl.searchParams.set("editor", "1");
     window.history.replaceState(window.history.state, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
-    if (saveTimerRef.current) {
-      window.clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
     api.updateScene({
       elements: [],
       appState: {
@@ -389,8 +385,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     setSavedSketch(null);
     documentMetadataRef.current = { metadata: {}, extensions: {}, format: "excalidraw" };
     setCurrentFile(null);
-    clearEmergencyBackup();
-    clearSketch().catch(() => {});
+    void resetLocalSketch();
     logger.info("New document created", { category: "file" });
     showToast("New drawing");
   };
