@@ -155,7 +155,8 @@ test("authenticated users keep the editor as the default route; Workspace is opt
 
 test("cloud-opened diagrams use their saved name in the editor identity", async () => {
   const source = await read("../src/App.jsx");
-  assert.match(source, /currentDocumentName=\{cloudDiagramId \? cloudDocumentName/);
+  assert.match(source, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
+  assert.match(source, /setCloudDetached\(true\)/);
   assert.match(source, /setCloudDocumentName\(diagram\.name \|\| "Cloud diagram"\)/);
   assert.match(source, /name: diagram\.name \|\| "Cloud diagram"/);
   const stylesheet = await read("../src/features/workspace/workspace.css");
