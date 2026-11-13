@@ -91,6 +91,22 @@ try {
   await blank.page.getByRole("button", { name: "Close architecture validation" }).click();
   console.log("PASS: Architecture Validation remains available in the command palette.");
 
+  // Optional studios should download on first use, open, and return to the same editor.
+  await openCreateMenu(blank.page);
+  await blank.page.getByRole("menuitem", { name: /^Docker Compose Studio/ }).click();
+  await blank.page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ timeout: 30000 });
+  await blank.page.getByRole("button", { name: "Close Docker Compose Studio" }).click();
+  await blank.page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ state: "detached" });
+  console.log("PASS: lazy Docker Compose Studio opens and closes.");
+
+  await openCreateMenu(blank.page);
+  await blank.page.getByRole("menuitem", { name: /^Kubernetes Studio/ }).click();
+  await blank.page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ timeout: 30000 });
+  await blank.page.getByRole("button", { name: "Close K8s Studio" }).click();
+  await blank.page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ state: "detached" });
+  console.log("PASS: lazy Kubernetes Studio opens and closes.");
+
+
 
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
