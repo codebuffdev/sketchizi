@@ -59,6 +59,12 @@ import "./features/workspace/workspace.css";
 function App() {
   const iconCatalog = useIconCatalog();
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
+  const [canvasFocusMode, setCanvasFocusMode] = useState(() => {
+    try { return localStorage.getItem("sketchizi:canvas-focus-mode") === "true"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("sketchizi:canvas-focus-mode", String(canvasFocusMode)); } catch {}
+  }, [canvasFocusMode]);
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
@@ -1674,7 +1680,7 @@ function App() {
 
 
   return (
-    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
+    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${canvasFocusMode ? "canvas-focus-mode" : ""} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
@@ -1692,6 +1698,8 @@ function App() {
         <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
       </div>}
       <DesktopAppHeader
+        canvasFocusMode={canvasFocusMode}
+        onToggleCanvasFocusMode={() => setCanvasFocusMode((value) => !value)}
         commands={commands}
         openCommandPalette={commandPalette.openCommandPalette}
         startCollaboration={startCollaboration}
