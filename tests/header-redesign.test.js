@@ -51,14 +51,13 @@ test("Tool control is placed beside command search, outside the feature action g
   assert.match(header, /moreToolsToggle,/);
 });
 
-test("product feature actions remain ordered AI Ask then Validation", async () => {
+test("AI Ask and Architecture Validation remain accessible without cluttering the header", async () => {
   const app = await read("../src/App.jsx");
-  const start = app.indexOf("<DesktopAppHeader");
-  const end = app.indexOf("</DesktopAppHeader>", start);
-  const headerChildren = app.slice(start, end);
-  const ai = headerChildren.indexOf("className={aiAskOpen");
-  const validation = headerChildren.indexOf("className={architectureValidationOpen");
-  assert.ok(ai >= 0 && validation > ai);
+  const registry = await read("../src/features/commands/commandRegistry.js");
+  assert.match(app, /aria-label="AI Ask"/);
+  assert.match(app, /<ArchitectureValidationPanel/);
+  assert.match(registry, /id: "review\.architecture"/);
+  assert.match(registry, /execute: \(\) => openPanel\("architecture-validation"\)/);
   assert.match(app, /const moreToolsToggle = collaborationCanEdit \?/);
 });
 
