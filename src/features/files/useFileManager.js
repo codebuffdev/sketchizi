@@ -522,8 +522,8 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         if (typeof file.handle.move !== "function") {
           throw new Error("This browser cannot rename an already linked file. Use Save As to create a renamed copy.");
         }
-        const existingExtension = file.name?.match(/\\.[^.]+$/)?.[0] || ".sketchizi";
-        const targetName = /\\.[^./\\\\]+$/.test(name) ? name : `${name}${existingExtension}`;
+        const existingExtension = file.name?.match(/\.[^.]+$/)?.[0] || ".sketchizi";
+        const targetName = /\.[^./\\]+$/.test(name) ? name : `${name}${existingExtension}`;
         await file.handle.move(targetName);
         const actualName = file.handle.name || targetName;
         const renamedFile = { ...file, name: actualName, handle: file.handle };
