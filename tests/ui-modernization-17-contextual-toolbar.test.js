@@ -23,7 +23,8 @@ test('contextual toolbar is rendered for editable selections and supported activ
   assert.match(toolbar, /api\.updateScene\(\{ elements: updatedElements, captureUpdate: CaptureUpdateAction\.IMMEDIATELY \}\)/);
   assert.match(toolbar, /version: \(Number\(element\.version\) \|\| 0\) \+ 1/);
   assert.doesNotMatch(toolbar, /if \(!canEdit \|\| propertiesOpen \|\|/);
-  assert.match(app, /collaborationCanEdit && selectedCount > 0 && propertiesOpen && \(/);
+  assert.match(app, /\{propertiesOpen && \(/);
+  assert.match(app, /<PropertiesPanel/);
   assert.match(canvas, /propertiesOpen=\{propertiesOpen\}/);
   assert.match(app, /propertiesOpen=\{propertiesOpen\}[\s\S]*?selectedElements=\{selectedElements\}/);
   assert.match(canvas, /<ContextualFormattingToolbar[\s\S]*?selectedElements=\{selectedElements\}/);
@@ -135,12 +136,11 @@ test('contextual toolbar exposes fill, line, roughness and opacity controls on c
 });
 
 
-test('contextual toolbar provides canvas layer ordering actions', () => {
+test('contextual toolbar does not duplicate Excalidraw native layer ordering', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
-  assert.ok(toolbar.includes('<div className="format-option-label">Layer order</div>'));
-  assert.match(toolbar, /aria-label="Send selection to back"/);
-  assert.match(toolbar, /aria-label="Bring selection to front"/);
-  assert.match(toolbar, /api\.updateScene\(\{ elements: direction === "back" \? \[\.\.\.moving, \.\.\.remaining\] : \[\.\.\.remaining, \.\.\.moving\] \}\)/);
+  assert.doesNotMatch(toolbar, /id: "layers"|groupId === "layers"|Layer order/);
+  assert.doesNotMatch(toolbar, /const reorderSelection =/);
+  assert.match(canvas, /<Excalidraw/);
 });
 
 
@@ -206,9 +206,10 @@ test('formatting controls are grouped behind compact icon buttons with adjacent 
   assert.match(toolbar, /className=\{\`format-options-popover side-\$\{position\["--format-popover-side"\]\}\`\}/);
   assert.match(toolbar, /label: "Font family"/);
   assert.match(toolbar, /label: "Font size"/);
-  assert.match(toolbar, /Horizontal align/);
+  assert.match(toolbar, /Align horizontal/);
   assert.match(toolbar, /aria-label="Opacity"/);
-  assert.ok(toolbar.includes('<div className="format-option-label">Layer order</div>'));
+  assert.match(toolbar, /label: "Smart Themes"/);
+  assert.doesNotMatch(toolbar, /groupId === "layers"/);
   assert.match(toolbar, /event\.key === "Escape"/);
   assert.match(toolbar, /document\.addEventListener\("pointerdown", onPointerDown\)/);
 });
