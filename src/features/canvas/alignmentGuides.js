@@ -101,8 +101,8 @@ export function calculateEqualSpacingGuides(elements, selectedIds, tolerance = A
       guides.push({
         axis, kind: "spacing", delta, distance: Math.abs(delta),
         position,
-        start: axis === "x" ? beforeEnd : crossStart,
-        end: axis === "x" ? afterStart : crossEnd,
+        start: beforeEnd,
+        end: afterStart,
         gap: (gapBefore + gapAfter) / 2,
       });
     }
@@ -135,6 +135,17 @@ export function calculateTextBaselineGuides(elements, selectedIds, tolerance = A
   return guides;
 }
 
+/** Coordinates relative to the Excalidraw viewport, not the browser window. */
+export function sceneToCanvasPixel(value, scroll, zoom) {
+  return ((Number(value) || 0) + (Number(scroll) || 0)) * (Number(zoom) || 1);
+}
+
+/** Spacing guides span the gap, perpendicular to the measured axis. */
+export function getGuideRenderAxis(guide) {
+  if (guide.kind === "spacing") return guide.axis === "x" ? "y" : "x";
+  return guide.axis;
+}
+
 /**
  * Render at most one guide per axis. Baselines win over ordinary horizontal
  * alignment; spacing is shown only when there is no competing axis guide.
@@ -142,7 +153,7 @@ export function calculateTextBaselineGuides(elements, selectedIds, tolerance = A
 export function selectDisplayGuides(guides) {
   if (!Array.isArray(guides)) return [];
   return ["x", "y"].map((axis) => guides
-    .filter((guide) => guide.axis === axis)
+    .filter((guide) => getGuideRenderAxis(guide) === axis)
     .sort((a, b) => {
       const priority = (guide) => guide.kind === "baseline" ? 0
         : guide.kind === "alignment" ? 1 : 2;
