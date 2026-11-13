@@ -74,5 +74,5 @@ test("cloud canvas rename persists through the existing workspace metadata endpo
 test("saved file exposes distinct Save and Save As actions", () => {
   assert.match(app, /onSaveAs=\{\(\) => fileActionsRef\.current\.saveDrawingAs\?\.\(\)\}/);
   assert.match(header, /currentDocumentFileBacked \? "Save" : "Save to file…"/);
-  assert.match(header, /currentDocumentFileBacked && <button[^>]+onSaveAs/);
+  assert.match(header, /currentDocumentFileBacked && <button[\\s\\S]*?onSaveAs\\?\\.\\(\\)/);
 });
