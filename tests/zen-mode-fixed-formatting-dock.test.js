@@ -22,3 +22,9 @@ test("formatting controls continue to derive their values and actions from the a
   assert.match(source, /const applyFormatting = \(patch\) =>/);
   assert.match(source, /onClick=\{\(\) => setOpenGroup\(\(current\) => current === group\.id \? null : group\.id\)\}/);
 });
+
+
+test("Zen Mode formatting dock does not expose Smart Themes", () => {
+  assert.doesNotMatch(source, /Smart Themes|smartThemePalettes|groupId === "themes"/);
+  assert.doesNotMatch(source, /id: "themes"/);
+});
