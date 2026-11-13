@@ -47,6 +47,7 @@ import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } fr
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetesRelationshipGuidance, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
+import CreateMenu from "./components/app/CreateMenu";
 import ExportStudioModal from "./components/app/ExportStudioModal";
 import ArchitectureTemplatesModal from "./components/app/ArchitectureTemplatesModal";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
@@ -63,7 +64,6 @@ function App() {
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
-  const [devopsStudioMenuOpen, setDevopsStudioMenuOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
@@ -132,27 +132,6 @@ function App() {
   useEffect(() => {
     if (nativeMenuOpen && activePanel) setActivePanel(null);
   }, [nativeMenuOpen, activePanel, setActivePanel]);
-
-  // Workspace menu is transient navigation: Escape and any other open panel/dialog dismiss it.
-  useEffect(() => {
-    // The Workspaces dropdown is mutually exclusive with every other
-    // floating panel, including Excalidraw's native hamburger menu.
-    if (nativeMenuOpen || activePanel || aiAskOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen) {
-      setDevopsStudioMenuOpen(false);
-    }
-  }, [nativeMenuOpen, activePanel, aiAskOpen, designStudioOpen, dockerStudioOpen, kubernetesStudioOpen]);
-
-  useEffect(() => {
-    if (!devopsStudioMenuOpen) return undefined;
-    const closeWorkspaceMenuOnEscape = (event) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopPropagation();
-      setDevopsStudioMenuOpen(false);
-    };
-    window.addEventListener("keydown", closeWorkspaceMenuOnEscape, true);
-    return () => window.removeEventListener("keydown", closeWorkspaceMenuOnEscape, true);
-  }, [devopsStudioMenuOpen]);
 
   useEffect(() => {
     wakeBackendOnPageLoad();
@@ -1609,41 +1588,18 @@ function App() {
   }, [collaborationCanEdit, showToast]);
 
   const workspaceToggle = (
-<div className="devops-studio-menu create-design-menu">
-  <button
-    type="button"
-    className={devopsStudioMenuOpen ? "design-studio-header-toggle active" : "design-studio-header-toggle"}
-    onClick={() => setDevopsStudioMenuOpen((open) => !open)}
-    title="Workspaces"
-    aria-label="Design Workspaces"
-    aria-haspopup="menu"
-    aria-expanded={devopsStudioMenuOpen}
-  >
-    <svg className="workspaces-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v9.25a1.75 1.75 0 0 1-1.75 1.75H5.25a1.75 1.75 0 0 1-1.75-1.75Z"/><path d="M3.5 7.5V5.75A1.75 1.75 0 0 1 5.25 4h4l2 2h4.25"/></svg>
-    <span>Workspaces</span>
-    <svg className="devops-studio-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4.5 6 3.5 3.5L11.5 6" /></svg>
-  </button>
-  {devopsStudioMenuOpen && (
-    <div className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Design Workspaces">
-      <button type="button" role="menuitem" className="cloud-workspace-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); window.location.assign("/workspace"); }} title="Open your private cloud projects and diagrams">
-        <span className="create-design-menu-icon" aria-hidden="true">☁</span>
-        <span><strong>Cloud Workspace</strong><small>Your saved projects and diagrams</small></span>
-      </button>
-      <button type="button" role="menuitem" className="design-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDesignStudioOpen(true); }} title="Create an architecture or diagram from a template">
-        <span className="create-design-menu-icon" aria-hidden="true">◇</span>
-        <span><strong>Design Studio</strong><small>Architecture and diagram templates</small></span>
-      </button>
-      <button type="button" role="menuitem" className="kubernetes-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setKubernetesStudioOpen(true); }} title="Design Kubernetes architectures and import YAML">
-        <span className="create-design-menu-icon" aria-hidden="true"><img src="/icons/kubernetes.svg" alt="" width="22" height="22" /></span>
-        <span><strong>K8s Studio</strong><small>Kubernetes manifests and diagrams</small></span>
-      </button>
-      <button type="button" role="menuitem" className="docker-compose-studio-menu-item" onClick={() => { setDevopsStudioMenuOpen(false); setDockerStudioOpen(true); }} title="Design Docker Compose applications">
-        <span className="create-design-menu-icon" aria-hidden="true"><img src="/icons/docker.svg" alt="" width="22" height="22" /></span>
-        <span><strong>Docker Studio</strong><small>Compose files and service diagrams</small></span>
-      </button>
-    </div>
-  )}
-</div>
+    <CreateMenu
+      onBlankDrawing={() => fileActionsRef.current.createNewFile?.()}
+      onTemplates={() => setDesignStudioOpen(true)}
+      onCloudWorkspace={() => window.location.assign("/workspace")}
+      onKubernetesStudio={() => setKubernetesStudioOpen(true)}
+      onDockerStudio={() => setDockerStudioOpen(true)}
+      onBeforeOpen={() => {
+        if (nativeMenuOpen) closeNativeMenu();
+        if (activePanel) setActivePanel(null);
+      }}
+      dismissWhen={Boolean(nativeMenuOpen || activePanel || aiAskOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen)}
+    />
   );
 
   const moreToolsToggle = collaborationCanEdit ? (
@@ -1794,7 +1750,7 @@ function App() {
           )}
         </aside>
 
-        <section className="desktop-canvas-region" aria-label="Canvas workspace" onPointerDownCapture={() => { if (devopsStudioMenuOpen) setDevopsStudioMenuOpen(false); }} onClickCapture={() => { if (devopsStudioMenuOpen) setDevopsStudioMenuOpen(false); }}>
+        <section className="desktop-canvas-region" aria-label="Canvas workspace">
           <SketchiziCanvas
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
