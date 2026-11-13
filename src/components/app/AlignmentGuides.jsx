@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { calculateAlignmentGuides, calculateEqualSpacingGuides, calculateTextBaselineGuides, selectDisplayGuides } from "../../features/canvas/alignmentGuides.js";
+import { calculateAlignmentGuides, calculateEqualSpacingGuides, calculateTextBaselineGuides, selectDisplayGuides, getGuideRenderAxis, sceneToCanvasPixel } from "../../features/canvas/alignmentGuides.js";
 
 const EMPTY_GUIDES = [];
 
@@ -45,24 +45,20 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         ...calculateEqualSpacingGuides(elements, selectedIds, tolerance),
         ...calculateTextBaselineGuides(elements, selectedIds, tolerance),
       ];
-      const sceneToViewport = api.sceneCoordsToViewportCoords;
-      const toLocal = (axis, position) => {
-        if (typeof sceneToViewport === "function") {
-          const point = sceneToViewport({
-            sceneX: axis === "x" ? position : 0,
-            sceneY: axis === "y" ? position : 0,
-          });
-          return axis === "x" ? point.x : point.y;
-        }
-        const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
-        return (position + offset) * zoom;
-      };
-      setGuides(selectDisplayGuides(found).map((guide) => ({
-        ...guide,
-        screenPosition: toLocal(guide.axis, guide.position),
-        screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start),
-        screenEnd: toLocal(guide.axis === "x" ? "y" : "x", guide.end),
-      })).filter((guide) => Number.isFinite(guide.screenPosition) && Number.isFinite(guide.screenStart) && Number.isFinite(guide.screenEnd)));
+      const toLocal = (axis, position) => sceneToCanvasPixel(
+        position, axis === "x" ? appState.scrollX : appState.scrollY, zoom,
+      );
+      setGuides(selectDisplayGuides(found).map((guide) => {
+        const displayAxis = getGuideRenderAxis(guide);
+        const crossAxis = displayAxis === "x" ? "y" : "x";
+        return {
+          ...guide,
+          displayAxis,
+          screenPosition: toLocal(displayAxis, guide.position),
+          screenStart: toLocal(crossAxis, guide.start),
+          screenEnd: toLocal(crossAxis, guide.end),
+        };
+      }).filter((guide) => Number.isFinite(guide.screenPosition) && Number.isFinite(guide.screenStart) && Number.isFinite(guide.screenEnd)));
     };
 
     const scheduleUpdate = () => {
@@ -102,7 +98,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
   if (!guides.length) return null;
   return (
     <svg className="sketchizi-alignment-guides" style={{ left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height }} viewBox={"0 0 " + Math.max(1, overlay.width) + " " + Math.max(1, overlay.height)} aria-hidden="true" focusable="false">
-      {guides.map((guide, index) => guide.axis === "x" ? (
+      {guides.map((guide, index) => guide.displayAxis === "x" ? (
         <line key={guide.kind + guide.axis + guide.screenPosition + index} data-guide-kind={guide.kind || "alignment"} x1={guide.screenPosition} x2={guide.screenPosition} y1={guide.screenStart} y2={guide.screenEnd} />
       ) : (
         <line key={guide.kind + guide.axis + guide.screenPosition + index} data-guide-kind={guide.kind || "alignment"} x1={guide.screenStart} x2={guide.screenEnd} y1={guide.screenPosition} y2={guide.screenPosition} />
