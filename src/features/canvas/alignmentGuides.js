@@ -58,7 +58,11 @@ export function calculateAlignmentGuides(elements, selectedIds, tolerance = ALIG
       }
     }
   }
-  return guides;
+  // Keep the overlay calm: show only the closest useful alignment per axis.
+  return ["x", "y"].map((axis) => guides
+    .filter((guide) => guide.axis === axis)
+    .sort((a, b) => a.distance - b.distance)[0])
+    .filter(Boolean);
 }
 
 /**
