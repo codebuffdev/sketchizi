@@ -1738,6 +1738,7 @@ function App() {
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
         onSaveToFile={() => fileActionsRef.current.saveCurrentDrawing?.()}
+        onSaveAs={() => fileActionsRef.current.saveDrawingAs?.()}
         isCloudDocument={Boolean(cloudDiagramId)}
         onSaveToCloud={() => cloudDiagramId ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
         cloudSaveState={cloudSaveState.state}

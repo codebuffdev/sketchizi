@@ -69,3 +69,10 @@ test("cloud canvas rename persists through the existing workspace metadata endpo
   assert.match(app, /setCloudDocumentName\(savedName\)/);
   assert.match(workspaceClient, /updateDiagram: \(diagramId, metadata\) => request\([^\n]+method: "PATCH"/);
 });
+
+
+test("saved file exposes distinct Save and Save As actions", () => {
+  assert.match(app, /onSaveAs=\{\(\) => fileActionsRef\.current\.saveDrawingAs\?\.\(\)\}/);
+  assert.match(header, /currentDocumentFileBacked \? "Save" : "Save to file…"/);
+  assert.match(header, /currentDocumentFileBacked && <button[^>]+onSaveAs/);
+});

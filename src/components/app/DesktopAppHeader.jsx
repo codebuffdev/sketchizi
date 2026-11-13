@@ -93,6 +93,7 @@ export default function DesktopAppHeader({
   currentDocumentFileBacked = false,
   onSaveNow,
   onSaveToFile,
+  onSaveAs,
   onSaveToCloud,
   isCloudDocument = false,
   cloudSaveState = "inactive",
@@ -509,7 +510,8 @@ export default function DesktopAppHeader({
             {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
             <div className="desktop-app-save-status-actions">
               <button type="button" onClick={() => { onSaveNow?.(); }}>Save locally</button>
-              <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save to same file" : "Save to file…"}</button>
+              <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
+              {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
               <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
             </div>
             <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
