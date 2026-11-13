@@ -78,3 +78,12 @@ test("saved file exposes distinct Save and Save As actions", () => {
   assert.match(header, /onSaveAs\?\.\(\)/);
   assert.match(header, /currentDocumentFileBacked &&/);
 });
+
+
+test("canvas rename input keeps typed text readable against its background", () => {
+  const styles = readFileSync(new URL("../src/styles/document-save-status.css", import.meta.url), "utf8");
+  assert.match(styles, /\.desktop-app-document-identity-name-input\s*\{[\s\S]*?color:\s*#202633;/);
+  assert.match(styles, /caret-color:\s*#202633;/);
+  assert.match(styles, /\.desktop-app-document-identity-name-input::placeholder\s*\{[\s\S]*?color:\s*#667085;/);
+  assert.match(styles, /\.desktop-app-document-identity-name-input::selection/);
+});
