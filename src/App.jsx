@@ -595,6 +595,7 @@ function App() {
     collaborationPermission,
     currentFolder,
     fileActionsRef,
+    openExportStudio: () => setExportStudioOpen(true),
   });
   useNativeSketchiziMenu({ apiRef, fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
