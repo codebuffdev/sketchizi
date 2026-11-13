@@ -37,6 +37,18 @@ test("aligns objects on the same Y coordinate even when horizontally separated",
   assert.ok(!guides.some((guide) => guide.axis === "x"));
 });
 
+test("limits alignment output to the closest guide on each axis", () => {
+  const elements = [
+    { id: "moving", x: 0, y: 0, width: 20, height: 20 },
+    { id: "near", x: 1, y: 200, width: 20, height: 20 },
+    { id: "far", x: 3, y: 400, width: 20, height: 20 },
+  ];
+  const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 5);
+  assert.equal(guides.filter((guide) => guide.axis === "x").length, 1);
+  assert.equal(guides.filter((guide) => guide.axis === "y").length, 0);
+  assert.equal(guides.find((guide) => guide.axis === "x").position, 1);
+});
+
 test("ignores deleted elements and the moving selection itself", () => {
   const elements = [
     { id: "moving", x: 10, y: 10, width: 20, height: 20 },
