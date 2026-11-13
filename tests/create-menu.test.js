@@ -37,6 +37,8 @@ test("Create menu is accessible and dismissible", () => {
   assert.match(menu, /role="menuitem"/);
   assert.match(menu, /event\.key === "Escape"/);
   assert.match(menu, /"ArrowDown", "ArrowUp", "Home", "End"/);
+  assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
+  assert.match(menu, /window\.removeEventListener\("keydown", onKeyDown, true\)/);
   assert.match(menu, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);
   assert.match(menu, /document\.removeEventListener\("pointerdown", onPointerDown, true\)/);
   assert.match(menu, /if \(dismissWhen\) setOpen\(false\)/);
