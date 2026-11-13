@@ -1,4 +1,4 @@
-/* Sketchizi Icon Panel v2: clean, high-density asset workbench matching Sketchizi dark & light themes. */
+/* Sketchizi Icon Panel v3: slim, uncluttered workbench drawer for dark & light themes. */
 
 @media (min-width: 761px) {
   .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
@@ -8,8 +8,8 @@
     display: flex !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    width: min(424px, calc(100vw - 28px)) !important;
-    height: min(700px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 24px)) !important;
+    width: min(352px, calc(100vw - 28px)) !important;
+    height: min(520px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 24px)) !important;
     padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
@@ -27,7 +27,7 @@
     align-items: stretch !important;
     justify-content: center !important;
     width: auto !important;
-    height: min(78dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 20px)) !important;
+    height: min(72dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 20px)) !important;
     padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
@@ -37,22 +37,21 @@
 }
 
 .app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel {
-  --skp-bg: #151923;
-  --skp-surface: #1b202c;
-  --skp-surface-hover: #222837;
-  --skp-surface-active: #272f42;
-  --skp-border: #283041;
-  --skp-border-strong: #39445c;
+  --skp-bg: #141821;
+  --skp-surface: #1a202c;
+  --skp-surface-hover: #212838;
+  --skp-surface-active: #273044;
+  --skp-border: rgba(255, 255, 255, 0.08);
+  --skp-border-strong: rgba(255, 255, 255, 0.16);
   --skp-text: #eef1f8;
-  --skp-text-muted: #919cb4;
+  --skp-text-muted: #9aa5bd;
   --skp-text-faint: #6f7a93;
   --skp-accent: #7c6cff;
   --skp-accent-soft: rgba(124, 108, 255, 0.16);
   --skp-stage-bg: #e7ecf4;
-  --skp-stage-border: rgba(255, 255, 255, 0.08);
-  --skp-kbd-bg: #1f2534;
-  --skp-kbd-border: #333c52;
-  --skp-shadow: 0 20px 56px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --skp-kbd-bg: #1e2433;
+  --skp-kbd-border: rgba(255, 255, 255, 0.12);
+  --skp-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
 
   position: relative !important;
   inset: auto !important;
@@ -67,7 +66,7 @@
   min-height: 0 !important;
   padding: 0 !important;
   border: 1px solid var(--skp-border) !important;
-  border-radius: 14px !important;
+  border-radius: 12px !important;
   background: var(--skp-bg) !important;
   color: var(--skp-text) !important;
   box-shadow: var(--skp-shadow) !important;
@@ -81,21 +80,20 @@
 
 .app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel {
   --skp-bg: #ffffff;
-  --skp-surface: #f6f7fb;
-  --skp-surface-hover: #eef1f8;
-  --skp-surface-active: #e6e9f6;
-  --skp-border: #e1e5ef;
-  --skp-border-strong: #c7cfe0;
-  --skp-text: #1c2233;
-  --skp-text-muted: #5d6780;
-  --skp-text-faint: #7b849b;
+  --skp-surface: #f5f7fb;
+  --skp-surface-hover: #edf1f8;
+  --skp-surface-active: #e4e9f5;
+  --skp-border: #e5e8f0;
+  --skp-border-strong: #c9d1e2;
+  --skp-text: #181e2c;
+  --skp-text-muted: #5a657d;
+  --skp-text-faint: #848ea3;
   --skp-accent: #5b50d6;
   --skp-accent-soft: rgba(91, 80, 214, 0.1);
-  --skp-stage-bg: #eef1f7;
-  --skp-stage-border: #e0e5f0;
+  --skp-stage-bg: #eef2f8;
   --skp-kbd-bg: #eef1f7;
-  --skp-kbd-border: #d4dbe8;
-  --skp-shadow: 0 20px 54px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  --skp-kbd-border: #d5dce9;
+  --skp-shadow: 0 18px 44px rgba(15, 23, 42, 0.12);
   color-scheme: light;
 }
 
@@ -105,23 +103,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   flex: 0 0 auto;
-  padding: 12px 14px 10px;
+  padding: 9px 12px 8px;
   border-bottom: 1px solid var(--skp-border);
 }
 
 .sk-icon-panel-heading {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 
 .sk-icon-panel-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 680;
+  font-size: 13px;
+  font-weight: 650;
   letter-spacing: -0.015em;
   color: var(--skp-text);
   white-space: nowrap;
@@ -130,39 +128,38 @@
 }
 
 .sk-icon-panel-count {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
-  color: var(--skp-text-muted);
+  color: var(--skp-text-faint);
   font-variant-numeric: tabular-nums;
 }
 
 .sk-icon-panel-header-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex: 0 0 auto;
 }
 
 .sk-view-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--skp-border);
-  border-radius: 8px;
-  background: var(--skp-surface);
+  gap: 1px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .sk-view-toggle-btn {
   display: grid;
   place-items: center;
-  width: 26px;
+  width: 24px;
   height: 24px;
   padding: 0;
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--skp-text-muted);
+  color: var(--skp-text-faint);
   cursor: pointer;
   transition: background-color 140ms ease, color 140ms ease;
 }
@@ -175,26 +172,24 @@
 .sk-view-toggle-btn.is-active {
   background: var(--skp-surface-active);
   color: var(--skp-text);
-  box-shadow: inset 0 0 0 1px var(--skp-border-strong);
 }
 
 .sk-icon-panel-close {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 0;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: 0;
+  border-radius: 6px;
   background: transparent;
-  color: var(--skp-text-muted);
+  color: var(--skp-text-faint);
   cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition: background-color 140ms ease, color 140ms ease;
 }
 
 .sk-icon-panel-close:hover {
   background: var(--skp-surface-hover);
-  border-color: var(--skp-border);
   color: var(--skp-text);
 }
 
@@ -205,8 +200,8 @@
   flex-direction: column !important;
   flex: 1 1 0% !important;
   min-height: 0 !important;
-  padding: 12px 14px 8px !important;
-  gap: 10px !important;
+  padding: 10px 12px 10px !important;
+  gap: 7px !important;
   overflow: hidden !important;
   background: transparent !important;
 }
@@ -222,11 +217,11 @@
 
 .app .library-panel-redesign.sk-icon-panel .sk-search-icon {
   position: absolute;
-  left: 11px;
-  width: 15px;
-  height: 15px;
+  left: 10px;
+  width: 14px;
+  height: 14px;
   fill: none;
-  stroke: var(--skp-text-muted);
+  stroke: var(--skp-text-faint);
   stroke-width: 2;
   stroke-linecap: round;
   pointer-events: none;
@@ -234,14 +229,14 @@
 
 .app .library-panel-redesign.sk-icon-panel .sk-search-input {
   width: 100% !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  padding: 0 36px 0 34px !important;
+  height: 33px !important;
+  min-height: 33px !important;
+  padding: 0 32px 0 30px !important;
   border: 1px solid var(--skp-border) !important;
-  border-radius: 9px !important;
+  border-radius: 8px !important;
   background: var(--skp-surface) !important;
   color: var(--skp-text) !important;
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   line-height: 1.4 !important;
   box-shadow: none !important;
   transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
@@ -255,26 +250,26 @@
 .app .library-panel-redesign.sk-icon-panel .sk-search-input:focus-visible {
   border-color: var(--skp-accent) !important;
   background: var(--skp-bg) !important;
-  box-shadow: 0 0 0 3px var(--skp-accent-soft) !important;
+  box-shadow: 0 0 0 2px var(--skp-accent-soft) !important;
   outline: none !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-search-kbd {
   position: absolute !important;
   top: 50% !important;
-  right: 9px !important;
+  right: 8px !important;
   z-index: 3 !important;
   transform: translateY(-50%) !important;
   display: grid !important;
   place-items: center !important;
-  width: 20px !important;
-  height: 20px !important;
+  width: 18px !important;
+  height: 18px !important;
   padding: 0 !important;
   border: 1px solid var(--skp-kbd-border) !important;
-  border-radius: 5px !important;
+  border-radius: 4px !important;
   background: var(--skp-kbd-bg) !important;
-  color: var(--skp-text-muted) !important;
-  font-size: 11px !important;
+  color: var(--skp-text-faint) !important;
+  font-size: 10.5px !important;
   font-weight: 600 !important;
   pointer-events: none;
 }
@@ -282,19 +277,19 @@
 .app .library-panel-redesign.sk-icon-panel .sk-search-clear {
   position: absolute !important;
   top: 50% !important;
-  right: 7px !important;
+  right: 6px !important;
   z-index: 3 !important;
   transform: translateY(-50%) !important;
   display: grid !important;
   place-items: center !important;
-  width: 24px !important;
-  height: 24px !important;
+  width: 22px !important;
+  height: 22px !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: 6px !important;
+  border-radius: 5px !important;
   background: transparent !important;
   color: var(--skp-text-muted) !important;
-  font-size: 16px !important;
+  font-size: 15px !important;
   line-height: 1 !important;
   cursor: pointer;
 }
@@ -304,144 +299,150 @@
   color: var(--skp-text) !important;
 }
 
-/* Segmented Scope Tabs: All / Saved / Recent */
+/* Borderless underline Scope Tabs: All · Saved · Recent */
 .sk-scope-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 3px;
-  padding: 3px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   flex: 0 0 auto;
-  border: 1px solid var(--skp-border);
-  border-radius: 9px;
-  background: var(--skp-surface);
+  padding: 0 2px;
+  border-bottom: 1px solid var(--skp-border);
 }
 
 .sk-scope-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 8px;
+  height: 26px;
+  padding: 0 1px 2px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
   color: var(--skp-text-muted);
   font-size: 12px;
-  font-weight: 550;
+  font-weight: 520;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition: color 140ms ease;
 }
 
 .sk-scope-tab:hover {
   color: var(--skp-text);
-  background: var(--skp-surface-hover);
 }
 
 .sk-scope-tab.is-active {
-  background: var(--skp-surface-active);
   color: var(--skp-text);
   font-weight: 620;
-  box-shadow: inset 0 0 0 1px var(--skp-border-strong);
 }
 
-.sk-scope-tab svg {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
+.sk-scope-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--skp-accent);
 }
 
-/* 6 Catalog Tabs: 3x2 clean labeled grid */
+/* Single-row borderless Collection Tabs (6 items on 1 clean line) */
 .app .library-panel-redesign.sk-icon-panel .sk-catalog-tabs {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 2px !important;
   flex: 0 0 auto;
-  overflow: visible !important;
-  padding: 0 !important;
+  overflow-x: auto !important;
+  scrollbar-width: none;
+  padding: 0 0 2px !important;
 }
 
-.app .library-panel-redesign.sk-icon-panel .sk-catalog-tab {
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab {
   display: inline-flex !important;
   align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 7px !important;
-  width: 100% !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  flex: 1 0 auto !important;
+  width: auto !important;
   min-width: 0 !important;
-  height: 32px !important;
-  min-height: 32px !important;
-  padding: 0 9px !important;
-  border: 1px solid var(--skp-border) !important;
-  border-radius: 8px !important;
-  background: var(--skp-surface) !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 4px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
   background-image: none !important;
   color: var(--skp-text-muted) !important;
-  font-size: 12px !important;
-  font-weight: 540 !important;
+  font-size: 11px !important;
+  font-weight: 520 !important;
   box-shadow: none !important;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition: background-color 140ms ease, color 140ms ease;
 }
 
-.app .library-panel-redesign.sk-icon-panel .sk-catalog-tab:hover {
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab:hover,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab:hover {
   background: var(--skp-surface-hover) !important;
-  border-color: var(--skp-border-strong) !important;
   color: var(--skp-text) !important;
 }
 
-.app .library-panel-redesign.sk-icon-panel .sk-catalog-tab.is-active,
-.app .library-panel-redesign.sk-icon-panel .sk-catalog-tab.active {
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.is-active,
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.active,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.is-active,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.active {
   background: var(--skp-accent-soft) !important;
-  border-color: var(--skp-accent) !important;
   color: var(--skp-text) !important;
   font-weight: 620 !important;
 }
 
 .sk-catalog-tab-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-catalog-tab svg,
 .sk-source-brand-icon {
-  width: 16px !important;
-  height: 16px !important;
-  flex: 0 0 16px !important;
+  width: 13px !important;
+  height: 13px !important;
+  flex: 0 0 13px !important;
   object-fit: contain;
 }
 
-/* Subcategory filter row (AWS & Kubernetes) */
+/* Subcategory filter row (AWS & Kubernetes only) */
 .sk-subcategory-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 0 0 auto;
 }
 
 .sk-subcategory-select {
   flex: 1 1 auto;
   min-width: 0;
-  height: 32px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 8px;
   border: 1px solid var(--skp-border);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--skp-surface);
   color: var(--skp-text);
-  font-size: 12px;
+  font-size: 11.5px;
   cursor: pointer;
 }
 
 .sk-subcategory-reset {
   flex: 0 0 auto;
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--skp-border);
-  border-radius: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
   background: transparent;
   color: var(--skp-text-muted);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 550;
   cursor: pointer;
 }
@@ -460,46 +461,41 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  height: 34px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 10px;
   border: 1px dashed var(--skp-border-strong);
-  border-radius: 8px;
-  background: var(--skp-surface);
-  color: var(--skp-text);
-  font-size: 12px;
-  font-weight: 560;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--skp-text-muted);
+  font-size: 11.5px;
+  font-weight: 550;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .sk-quick-starter-btn:hover {
   background: var(--skp-accent-soft);
   border-color: var(--skp-accent);
+  color: var(--skp-text);
 }
 
-/* Recent searches strip */
+/* Recent searches strip (unboxed quiet links) */
 .app .library-panel-redesign.sk-icon-panel .sk-recent-searches {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 0 0 auto;
   margin: 0 !important;
-  padding: 0 0 6px !important;
-  border-bottom: 1px solid var(--skp-border) !important;
-}
-
-.sk-recent-label {
-  flex: 0 0 auto;
-  font-size: 11px;
-  color: var(--skp-text-faint);
+  padding: 0 !important;
+  border: 0 !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-recent-chips {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
   overflow-x: auto;
@@ -512,25 +508,25 @@
 
 .app .library-panel-redesign.sk-icon-panel .sk-recent-chip {
   flex: 0 0 auto;
-  height: 22px !important;
-  min-height: 22px !important;
-  padding: 0 8px !important;
-  border: 1px solid var(--skp-border) !important;
-  border-radius: 6px !important;
-  background: var(--skp-surface) !important;
-  color: var(--skp-text-muted) !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: var(--skp-text-faint) !important;
   font-size: 11px !important;
   cursor: pointer;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-recent-chip:hover {
-  border-color: var(--skp-border-strong) !important;
   color: var(--skp-text) !important;
+  text-decoration: underline;
 }
 
 .sk-recent-clear {
   flex: 0 0 auto;
-  padding: 2px 4px;
+  padding: 0 2px;
   border: 0;
   background: transparent;
   color: var(--skp-text-faint);
@@ -564,7 +560,7 @@
   flex: 1 1 0% !important;
   min-height: 0 !important;
   max-height: none !important;
-  padding: 2px 4px 6px 0 !important;
+  padding: 2px 2px 4px 0 !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   overscroll-behavior: contain;
@@ -573,7 +569,7 @@
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid::-webkit-scrollbar-track {
@@ -586,44 +582,44 @@
   border: 0 !important;
 }
 
-/* Grid view (default 3 columns) */
+/* Grid view: clean 4-column borderless tiles (no card-within-card boxes) */
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 8px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 3px !important;
 }
 
-@media (max-width: 380px) {
+@media (max-width: 340px) {
   .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
 
-.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card {
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card {
   position: relative !important;
   display: flex !important;
   flex-direction: column !important;
   min-width: 0 !important;
-  min-height: 102px !important;
+  height: auto !important;
+  min-height: 82px !important;
+  max-height: none !important;
   padding: 0 !important;
-  border: 1px solid var(--skp-border) !important;
-  border-radius: 10px !important;
-  background: var(--skp-surface) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
   box-shadow: none !important;
   transform: none !important;
   overflow: hidden !important;
-  transition: border-color 140ms ease, background-color 140ms ease, transform 140ms ease !important;
+  transition: background-color 120ms ease !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card:hover {
-  border-color: var(--skp-border-strong) !important;
   background: var(--skp-surface-hover) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card.is-selected {
-  border-color: var(--skp-accent) !important;
-  background: var(--skp-surface-active) !important;
+  background: var(--skp-accent-soft) !important;
   box-shadow: inset 0 0 0 1px var(--skp-accent) !important;
 }
 
@@ -632,10 +628,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 7px;
+  gap: 5px;
   width: 100%;
-  height: 100%;
-  padding: 10px 6px 9px;
+  height: auto;
+  min-height: 82px;
+  padding: 7px 3px 6px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -650,18 +647,18 @@
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-stage {
   display: grid !important;
   place-items: center !important;
-  width: 46px !important;
-  height: 46px !important;
-  flex: 0 0 46px !important;
-  border: 1px solid var(--skp-stage-border) !important;
-  border-radius: 9px !important;
+  width: 38px !important;
+  height: 38px !important;
+  flex: 0 0 38px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
   background: var(--skp-stage-bg) !important;
   margin: 0 !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-stage img {
-  width: 32px !important;
-  height: 32px !important;
+  width: 26px !important;
+  height: 26px !important;
   object-fit: contain !important;
   pointer-events: none;
 }
@@ -672,31 +669,42 @@
   align-items: center !important;
   width: 100% !important;
   min-width: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
-.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-name {
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-name,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-name {
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
   width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
   padding-bottom: 1px !important;
   overflow: hidden !important;
-  color: var(--skp-text) !important;
-  font-size: 11px !important;
-  font-weight: 540 !important;
-  line-height: 1.32 !important;
+  color: var(--skp-text-muted) !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.24 !important;
   text-align: center !important;
   white-space: normal !important;
   word-break: break-word !important;
 }
 
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card:hover .sk-icon-name,
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card.is-selected .sk-icon-name {
+  color: var(--skp-text) !important;
+}
+
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-actions {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 3px;
+  right: 3px;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
   opacity: 0;
   transition: opacity 120ms ease;
 }
@@ -707,15 +715,14 @@
   opacity: 1 !important;
 }
 
-.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card.has-favorite:not(:hover):not(:focus-within) .sk-add-btn {
-  opacity: 0;
-  pointer-events: none;
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-add-btn {
+  display: none !important;
 }
 
-/* List view (compact 1-column rows) */
+/* List view: sleek borderless rows with hover-revealed actions */
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view {
   grid-template-columns: minmax(0, 1fr) !important;
-  gap: 5px !important;
+  gap: 1px !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card {
@@ -723,29 +730,29 @@
   grid-template-columns: minmax(0, 1fr) auto !important;
   align-items: center !important;
   gap: 6px !important;
-  min-height: 50px !important;
-  padding: 5px 8px 5px 6px !important;
-  border: 1px solid var(--skp-border) !important;
-  border-radius: 9px !important;
-  background: var(--skp-surface) !important;
+  min-height: 36px !important;
+  padding: 3px 6px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: transparent !important;
   box-shadow: none !important;
   transform: none !important;
+  transition: background-color 120ms ease !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card:hover {
-  border-color: var(--skp-border-strong) !important;
   background: var(--skp-surface-hover) !important;
+  box-shadow: none !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card.is-selected {
-  border-color: var(--skp-accent) !important;
-  background: var(--skp-surface-active) !important;
+  background: var(--skp-accent-soft) !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card-main {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
   padding: 0;
   border: 0;
@@ -758,51 +765,54 @@
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-stage {
   display: grid !important;
   place-items: center !important;
-  width: 38px !important;
-  height: 38px !important;
-  flex: 0 0 38px !important;
-  border: 1px solid var(--skp-stage-border) !important;
-  border-radius: 8px !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
   background: var(--skp-stage-bg) !important;
   margin: 0 !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-stage img {
-  width: 26px !important;
-  height: 26px !important;
+  width: 20px !important;
+  height: 20px !important;
   object-fit: contain !important;
   pointer-events: none;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card-text {
   display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  gap: 1px !important;
+  flex-direction: row !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
   min-width: 0 !important;
   flex: 1 1 auto !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-name {
   display: block !important;
-  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
   color: var(--skp-text) !important;
-  font-size: 12.5px !important;
-  font-weight: 580 !important;
+  font-size: 12px !important;
+  font-weight: 540 !important;
   line-height: 1.3 !important;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-subtitle {
   display: block !important;
-  width: 100% !important;
+  flex: 0 0 auto !important;
+  max-width: 96px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  color: var(--skp-text-muted) !important;
-  font-size: 11px !important;
+  color: var(--skp-text-faint) !important;
+  font-size: 10.5px !important;
   line-height: 1.25 !important;
 }
 
@@ -810,8 +820,20 @@
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 2px !important;
+  opacity: 0 !important;
+  transition: opacity 120ms ease;
+}
+
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card:hover .sk-icon-actions,
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card:focus-within .sk-icon-actions,
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card.has-favorite .sk-icon-actions {
   opacity: 1 !important;
+}
+
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card.has-favorite:not(:hover):not(:focus-within) .sk-add-btn {
+  opacity: 0 !important;
+  pointer-events: none;
 }
 
 /* Shared action buttons inside cards */
@@ -820,17 +842,17 @@
   position: static !important;
   display: grid !important;
   place-items: center !important;
-  width: 24px !important;
-  height: 24px !important;
+  width: 22px !important;
+  height: 22px !important;
   padding: 0 !important;
-  border: 1px solid transparent !important;
-  border-radius: 6px !important;
+  border: 0 !important;
+  border-radius: 5px !important;
   background: transparent !important;
   color: var(--skp-text-muted) !important;
   box-shadow: none !important;
   opacity: 1 !important;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
 .app .library-panel-redesign.sk-icon-panel .sk-fav-btn:hover {
@@ -843,14 +865,7 @@
   background: transparent !important;
 }
 
-.app .library-panel-redesign.sk-icon-panel .sk-add-btn {
-  border-color: var(--skp-border) !important;
-  background: var(--skp-bg) !important;
-  color: var(--skp-text) !important;
-}
-
 .app .library-panel-redesign.sk-icon-panel .sk-add-btn:hover {
-  border-color: var(--skp-accent) !important;
   background: var(--skp-accent) !important;
   color: #ffffff !important;
 }
@@ -861,40 +876,40 @@
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
   flex: 1 1 auto !important;
-  min-height: 180px !important;
-  padding: 24px 16px !important;
+  min-height: 150px !important;
+  padding: 20px 14px !important;
   border: 1px dashed var(--skp-border) !important;
-  border-radius: 10px !important;
-  background: var(--skp-surface) !important;
+  border-radius: 9px !important;
+  background: transparent !important;
   text-align: center !important;
 }
 
 .sk-icon-empty-title {
   margin: 0;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--skp-text);
 }
 
 .sk-icon-empty-desc {
   margin: 0;
-  max-width: 240px;
-  font-size: 12px;
+  max-width: 220px;
+  font-size: 11.5px;
   line-height: 1.45;
   color: var(--skp-text-muted);
 }
 
 .sk-icon-empty-action {
   margin-top: 6px;
-  height: 30px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 11px;
   border: 1px solid var(--skp-border-strong);
-  border-radius: 7px;
+  border-radius: 6px;
   background: var(--skp-surface-active);
   color: var(--skp-text);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 560;
   cursor: pointer;
 }
@@ -902,51 +917,6 @@
 .sk-icon-empty-action:hover {
   border-color: var(--skp-accent);
   background: var(--skp-accent-soft);
-}
-
-/* Footer */
-.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-footer {
-  order: 2 !important;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex: 0 0 auto;
-  height: 32px;
-  padding: 0 14px;
-  border-top: 1px solid var(--skp-border);
-  background: var(--skp-bg);
-  font-size: 11px;
-  color: var(--skp-text-muted);
-}
-
-.app .library-panel-redesign.sk-icon-panel .sk-icon-footer-tip {
-  color: var(--skp-text-muted) !important;
-}
-
-.app .library-panel-redesign.sk-icon-panel .sk-icon-escape-hint {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  color: var(--skp-text-muted) !important;
-  font-size: 11px !important;
-}
-
-.app .library-panel-redesign.sk-icon-panel .sk-icon-escape-hint kbd {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  height: 18px !important;
-  padding: 0 5px !important;
-  border: 1px solid var(--skp-kbd-border) !important;
-  border-radius: 4px !important;
-  background: var(--skp-kbd-bg) !important;
-  color: var(--skp-text) !important;
-  box-shadow: none !important;
-  font-family: inherit !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
-  line-height: 1 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

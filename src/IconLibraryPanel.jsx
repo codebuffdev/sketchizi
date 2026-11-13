@@ -5,18 +5,18 @@ import {
   getActiveCollectionTitle,
   getHighlightSegments,
   getSubcategoryOptions,
-  iconMetaLine,
   iconSelectionKey,
   loadStoredViewMode,
   mixAllIcons,
   resolveDisplayedIcons,
+  sourceLabel,
 } from "./features/icon-library/iconPanelUtils";
 
 function SourceCategoryIcon({ id }) {
   const common = {
     viewBox: "0 0 24 24",
-    width: 16,
-    height: 16,
+    width: 14,
+    height: 14,
     fill: "none",
     stroke: "currentColor",
     strokeWidth: 1.85,
@@ -38,11 +38,11 @@ function SourceCategoryIcon({ id }) {
     case "networking":
       return (
         <svg {...common}>
-          <circle cx="12" cy="12" r="3" fill="currentColor" />
-          <circle cx="5" cy="5" r="2.1" />
-          <circle cx="19" cy="5" r="2.1" />
-          <circle cx="5" cy="19" r="2.1" />
-          <circle cx="19" cy="19" r="2.1" />
+          <circle cx="12" cy="12" r="2.8" fill="currentColor" />
+          <circle cx="5" cy="5" r="2" />
+          <circle cx="19" cy="5" r="2" />
+          <circle cx="5" cy="19" r="2" />
+          <circle cx="19" cy="19" r="2" />
           <path d="m9.8 9.8-3.2-3.2m7.6 3.2 3.2-3.2m-7.6 7.6-3.2 3.2m7.6-3.2 3.2 3.2" />
         </svg>
       );
@@ -83,28 +83,6 @@ function SourceCategoryIcon({ id }) {
           <circle cx="17" cy="7" r="3.5" />
           <path d="M7 14.5 10.5 20.5h-7Z" />
           <rect x="13.5" y="14" width="7" height="6.5" rx="1.5" />
-        </svg>
-      );
-    case "all":
-      return (
-        <svg {...common}>
-          <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-          <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-          <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-          <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-        </svg>
-      );
-    case "favorites":
-      return (
-        <svg {...common}>
-          <path d="m12 3.5 2.5 5.1 5.6.8-4 4 .9 5.6-5-2.6-5 2.6.9-5.6-4-4 5.6-.8Z" />
-        </svg>
-      );
-    case "recent":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="M12 7.5v4.8l3.2 1.8" />
         </svg>
       );
     default:
@@ -171,7 +149,7 @@ export default function IconLibraryPanel({
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || "[]");
-      return Array.isArray(stored) ? stored.filter((item) => typeof item === "string").slice(0, 5) : [];
+      return Array.isArray(stored) ? stored.filter((item) => typeof item === "string").slice(0, 4) : [];
     } catch {
       return [];
     }
@@ -262,7 +240,7 @@ export default function IconLibraryPanel({
     const normalized = value.trim();
     if (!normalized) return;
     setRecentSearches((current) =>
-      [normalized, ...current.filter((item) => item.toLowerCase() !== normalized.toLowerCase())].slice(0, 5),
+      [normalized, ...current.filter((item) => item.toLowerCase() !== normalized.toLowerCase())].slice(0, 4),
     );
   };
 
@@ -340,7 +318,15 @@ export default function IconLibraryPanel({
     .map((tab) => ({
       ...tab,
       shortLabel:
-        tab.id === "networking" ? "Network" : tab.id === "kubernetes" ? "K8s" : tab.id === "mindmaps" ? "Mind Map" : tab.label,
+        tab.id === "networking"
+          ? "Net"
+          : tab.id === "kubernetes"
+            ? "K8s"
+            : tab.id === "mindmaps"
+              ? "Mind"
+              : tab.id === "eraser"
+                ? "Core"
+                : tab.label,
     }));
 
   const subcategoryOptions = useMemo(
@@ -390,7 +376,7 @@ export default function IconLibraryPanel({
               aria-pressed={viewMode === "grid"}
               title="Grid view"
             >
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <rect x="2" y="2" width="4.8" height="4.8" rx="1" />
                 <rect x="9.2" y="2" width="4.8" height="4.8" rx="1" />
                 <rect x="2" y="9.2" width="4.8" height="4.8" rx="1" />
@@ -405,7 +391,7 @@ export default function IconLibraryPanel({
               aria-pressed={viewMode === "list"}
               title="List view"
             >
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
                 <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
               </svg>
             </button>
@@ -418,7 +404,7 @@ export default function IconLibraryPanel({
             aria-label="Close icon library"
             title="Close (Esc)"
           >
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
               <path d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5" />
             </svg>
           </button>
@@ -449,7 +435,7 @@ export default function IconLibraryPanel({
               }
             }}
             onBlur={() => rememberSearch()}
-            placeholder="Search icons, AWS, K8s, UML..."
+            placeholder="Search icons..."
             aria-label="Search icons, tags, or categories"
           />
           {search ? (
@@ -478,8 +464,7 @@ export default function IconLibraryPanel({
             aria-pressed={activeSource === "all"}
             onClick={() => chooseSource("all")}
           >
-            <SourceCategoryIcon id="all" />
-            <span>All</span>
+            All
           </button>
           <button
             type="button"
@@ -487,8 +472,7 @@ export default function IconLibraryPanel({
             aria-pressed={activeSource === "favorites"}
             onClick={() => chooseSource("favorites")}
           >
-            <SourceCategoryIcon id="favorites" />
-            <span>Saved{favorites.length > 0 ? ` (${favorites.length})` : ""}</span>
+            Saved{favorites.length > 0 ? ` (${favorites.length})` : ""}
           </button>
           <button
             type="button"
@@ -496,8 +480,7 @@ export default function IconLibraryPanel({
             aria-pressed={activeSource === "recent"}
             onClick={() => chooseSource("recent")}
           >
-            <SourceCategoryIcon id="recent" />
-            <span>Recent{recentIcons.length > 0 ? ` (${recentIcons.length})` : ""}</span>
+            Recent{recentIcons.length > 0 ? ` (${recentIcons.length})` : ""}
           </button>
         </nav>
 
@@ -571,7 +554,6 @@ export default function IconLibraryPanel({
 
         {recentSearches.length > 0 && !search.trim() && (
           <section className="library-recent-searches sk-recent-searches" aria-label="Recent searches">
-            <span className="sk-recent-label">Recent</span>
             <div className="library-recent-chips sk-recent-chips">
               {recentSearches.map((term) => (
                 <button
@@ -625,6 +607,7 @@ export default function IconLibraryPanel({
                 const selectionKey = iconSelectionKey(icon);
                 const isSelected = selectedIconId === selectionKey;
                 const isDragging = draggingIcon?.icon?.id === icon.id;
+                const collectionMeta = sourceLabel(icon);
                 return (
                   <div
                     key={`${icon.category || icon.source}-${icon.id}`}
@@ -641,7 +624,7 @@ export default function IconLibraryPanel({
                         setSelectedIconId(selectionKey);
                         handleIconClick(icon);
                       }}
-                      title={`Add ${icon.name} to canvas (or drag to place)`}
+                      title={`${icon.name} — Click or drag onto canvas`}
                       aria-label={`Add ${icon.name} to canvas`}
                       aria-pressed={isSelected}
                     >
@@ -653,7 +636,7 @@ export default function IconLibraryPanel({
                           {renderHighlightedText(icon.name, search)}
                         </span>
                         {viewMode === "list" && (
-                          <span className="icon-subtitle sk-icon-subtitle">{iconMetaLine(icon)}</span>
+                          <span className="icon-subtitle sk-icon-subtitle">{collectionMeta}</span>
                         )}
                       </span>
                     </button>
@@ -673,7 +656,7 @@ export default function IconLibraryPanel({
                           toggleFavorite(icon);
                         }}
                       >
-                        <svg viewBox="0 0 16 16" width="13" height="13" fill={favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill={favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
                           <path d="m8 2 1.85 3.75 4.15.6-3 2.92.71 4.13L8 11.45 4.29 13.4 5 9.27 2 6.35l4.15-.6Z" />
                         </svg>
                       </button>
@@ -692,7 +675,7 @@ export default function IconLibraryPanel({
                           handleIconClick(icon);
                         }}
                       >
-                        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                           <path d="M8 3.25v9.5M3.25 8h9.5" />
                         </svg>
                       </button>
@@ -733,13 +716,6 @@ export default function IconLibraryPanel({
           )}
         </section>
       </div>
-
-      <footer className="sk-icon-panel-footer">
-        <span className="sk-icon-footer-tip">Click or drag onto canvas</span>
-        <span className="library-escape-hint sk-icon-escape-hint">
-          <kbd>Esc</kbd> close
-        </span>
-      </footer>
     </aside>
   );
 }
