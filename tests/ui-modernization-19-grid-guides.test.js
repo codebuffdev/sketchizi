@@ -18,8 +18,11 @@ test('canvas grid visibility has its own state, separate from grid snapping stat
   assert.match(app, /const toggleCanvasGrid = useCallback\(\(\) => setGridVisible\(\(visible\) => !visible\), \[\]\)/);
   assert.match(app, /gridVisible=\{gridVisible\}/);
   assert.match(canvas, /data-grid-visible=\{gridVisible \? "true" : "false"\}/);
+  assert.match(canvas, /gridVisible && <div className="sketchizi-grid-overlay"/);
+  assert.match(styles, /\.sketchizi-grid-overlay/);
   assert.match(canvas, /gridModeEnabled=\{false\}/);
   assert.match(canvas, /snapChangedSceneElements\(currentElements, baseline, gridSize\)/);
+  assert.match(canvas, /target\?\.closest\("\.excalidraw"\)/);
   assert.match(app, /gridSnappingEnabled=\{gridEnabled\}/);
 });
 
