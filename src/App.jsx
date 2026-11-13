@@ -59,23 +59,31 @@ import "./features/workspace/workspace.css";
 function App() {
   const iconCatalog = useIconCatalog();
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
-  const [canvasFocusMode, setCanvasFocusMode] = useState(() => {
-    try { return localStorage.getItem("sketchizi:canvas-focus-mode") === "true"; } catch { return false; }
-  });
+  const [canvasHeaderHidden, setCanvasHeaderHidden] = useState(false);
+
+  // Use the canvas wheel direction as a passive visibility signal only.
+  // Do not preventDefault or alter Excalidraw's zoom/pan handling.
   useEffect(() => {
-    try { localStorage.setItem("sketchizi:canvas-focus-mode", String(canvasFocusMode)); } catch {}
-  }, [canvasFocusMode]);
+    const canvasRegion = document.querySelector(".desktop-canvas-region");
+    if (!canvasRegion) return undefined;
+    const handleCanvasWheel = (event) => {
+      if (event.deltaY > 8) setCanvasHeaderHidden(true);
+      else if (event.deltaY < -8) setCanvasHeaderHidden(false);
+    };
+    canvasRegion.addEventListener("wheel", handleCanvasWheel, { passive: true });
+    return () => canvasRegion.removeEventListener("wheel", handleCanvasWheel);
+  }, []);
 
   useEffect(() => {
-    const handleCanvasFocusShortcut = (event) => {
+    const handleCanvasHeaderShortcut = (event) => {
       if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.altKey || event.key.toLowerCase() !== "f") return;
       const target = event.target;
       if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable='true']")) return;
       event.preventDefault();
-      setCanvasFocusMode((value) => !value);
+      setCanvasHeaderHidden((value) => !value);
     };
-    window.addEventListener("keydown", handleCanvasFocusShortcut);
-    return () => window.removeEventListener("keydown", handleCanvasFocusShortcut);
+    window.addEventListener("keydown", handleCanvasHeaderShortcut);
+    return () => window.removeEventListener("keydown", handleCanvasHeaderShortcut);
   }, []);
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
@@ -1692,7 +1700,7 @@ function App() {
 
 
   return (
-    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${canvasFocusMode ? "canvas-focus-mode" : ""} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
+    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${canvasHeaderHidden ? "canvas-header-hidden" : ""} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""}`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
@@ -1710,8 +1718,8 @@ function App() {
         <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
       </div>}
       <DesktopAppHeader
-        canvasFocusMode={canvasFocusMode}
-        onToggleCanvasFocusMode={() => setCanvasFocusMode((value) => !value)}
+        canvasHeaderHidden={canvasHeaderHidden}
+        onToggleCanvasFocusMode={() => setCanvasHeaderHidden((value) => !value)}
         commands={commands}
         openCommandPalette={commandPalette.openCommandPalette}
         startCollaboration={startCollaboration}
