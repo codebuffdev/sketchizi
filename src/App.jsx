@@ -1807,11 +1807,11 @@ function App() {
 
 
         <aside
-          className={`desktop-context-region ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
+          className={`desktop-context-region ${propertiesOpen || architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
           aria-label="Properties and architecture validation"
         >
           {(propertiesOpen || architectureValidationOpen) && (
-            <div className={`desktop-validation-host ${architectureValidationOpen ? "is-open" : "is-closed"}`}>
+            <div className={`desktop-validation-host ${propertiesOpen || architectureValidationOpen ? "is-open" : "is-closed"}`}>
               {propertiesOpen && (
                 <PropertiesPanel
                   selectedCount={selectedCount}
