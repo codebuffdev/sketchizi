@@ -1186,14 +1186,14 @@
 
 
 
-/* Canvas focus mode: remove the header's grid track entirely so the canvas
-   receives the reclaimed viewport height. The restore control stays reachable. */
+/* Scroll-aware canvas header: collapse its grid track when hidden while
+   keeping a compact restore affordance fixed above the canvas. */
 @media (min-width: 761px) {
-  .app.canvas-focus-mode {
+  .app.canvas-header-hidden {
     grid-template-rows: 0 minmax(0, 1fr) !important;
   }
 
-  .app .desktop-app-header.canvas-focus-mode {
+  .app .desktop-app-header.canvas-header-hidden {
     position: static !important;
     z-index: 1600 !important;
     width: 0 !important;
@@ -1206,7 +1206,11 @@
     border: 0 !important;
   }
 
-  .app .desktop-app-header.canvas-focus-mode > :not(.desktop-app-focus-toggle) {
+  .app .desktop-app-header.canvas-header-hidden > :not(.desktop-app-focus-toggle) {
+    display: none !important;
+  }
+
+  .app .desktop-app-header:not(.canvas-header-hidden) .desktop-app-focus-toggle {
     display: none !important;
   }
 
@@ -1226,30 +1230,7 @@
     transition: background-color .15s ease, border-color .15s ease, opacity .15s ease;
   }
 
-  .app .desktop-app-header:not(.canvas-focus-mode) .desktop-app-focus-toggle {
-    display: inline-grid;
-    place-items: center;
-    flex: 0 0 28px;
-    width: 28px;
-    height: 28px;
-    min-height: 28px;
-    margin-left: 4px;
-    padding: 0;
-    border: 1px solid transparent;
-    border-radius: 7px;
-    background: transparent;
-    color: var(--ui-text-muted, #73798a);
-    cursor: pointer;
-  }
-
-  .app .desktop-app-focus-toggle:hover,
-  .app .desktop-app-focus-toggle:focus-visible {
-    border-color: var(--ui-border, #dfe3eb);
-    background: var(--ui-hover, #f3f4f7);
-    color: var(--ui-text, #252938);
-  }
-
-  .app .desktop-app-header.canvas-focus-mode .desktop-app-focus-toggle {
+  .app .desktop-app-header.canvas-header-hidden .desktop-app-focus-toggle {
     position: fixed !important;
     top: 10px !important;
     right: 12px !important;
@@ -1271,8 +1252,11 @@
 }
 
 @media (prefers-reduced-motion: no-preference) and (min-width: 761px) {
-  .app .desktop-app-header,
-  .app .desktop-workspace {
-    transition: grid-template-rows .18s ease, height .18s ease;
+  .app .desktop-app-header {
+    transition: height .18s ease, min-height .18s ease;
+  }
+
+  .app {
+    transition: grid-template-rows .18s ease;
   }
 }
