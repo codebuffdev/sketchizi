@@ -7,7 +7,7 @@ test("Vite local Pages-function defaults match the configured development port a
   const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   assert.match(pkg.scripts.dev, /--port 3000/);
   assert.match(pkg.scripts.preview, /--port 3000/);
-  assert.match(vite, /host:\s*"localhost:3000"/);
+  assert.match(vite, /req\.headers\.host \|\| "localhost:3000"/);
   assert.match(vite, /AUTH_SERVICE_ORIGIN:[^\n]*http:\/\/localhost:8080/);
   assert.match(vite, /AI_SERVICE_ORIGIN:[^\n]*http:\/\/localhost:8090/);
   assert.match(vite, /PUBLIC_FRONTEND_ORIGIN:[^\n]*http:\/\/localhost:3000/);
