@@ -56,7 +56,10 @@ async function awaitScene(check, description) {
   }, description, { timeout: 20000, polling: 200 }).catch((error) => {
     throw new Error("Drawing smoke did not persist " + description + ": " + error.message);
   });
-  if (!(await check())) throw new Error("Drawing smoke verification failed: " + description);
+  if (!(await check())) {
+    const scene = await currentDrawing();
+    throw new Error("Drawing smoke verification failed: " + description + "; stored scene: " + JSON.stringify({ savedAt: scene?.savedAt, elements: scene?.elements?.map((e) => ({ id: e.id, type: e.type, deleted: e.isDeleted, x: e.x, y: e.y, width: e.width, height: e.height })) }));
+  }
 }
 
 try {
