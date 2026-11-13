@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
+import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -52,6 +53,7 @@ const GROUPS = [
   { id: "fontSize", label: "Font size", icon: "T" },
   { id: "textAlign", label: "Text align", icon: "≡" },
   { id: "opacity", label: "Opacity", icon: "◐" },
+  { id: "themes", label: "Smart Themes", icon: "✧" },
   { id: "align", label: "Align", icon: "⫽" },
 ];
 
@@ -409,9 +411,9 @@ export default function ContextualFormattingToolbar({
   // image, and mixed selections keep the shared appearance/layer controls, with
   // shape- and line-specific options rendered inside the Stroke popover.
   const visibleGroups = toolMode
-    ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity" || group.id === "themes" || (activeToolMode === "text" && ["fontFamily", "fontSize", "textAlign"].includes(group.id)))
+    ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity" || (activeToolMode === "text" && ["fontFamily", "fontSize", "textAlign"].includes(group.id)))
     : GROUPS.filter((group) => {
-      if (iconOnlySelection && ["stroke", "opacity"].includes(group.id)) return false;
+      if (iconOnlySelection && ["stroke", "opacity", "themes"].includes(group.id)) return false;
       if (group.id === "align") {
         return liveSelection.length >= 2;
       }
@@ -476,6 +478,22 @@ export default function ContextualFormattingToolbar({
     api.updateScene({ appState: appStatePatch });
   };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
+  const applySmartTheme = (themeId) => {
+    const api = apiRef?.current;
+    if (!api || !canEdit || !liveSelection.length) return;
+    const selectedIds = new Set(liveSelection.map((element) => element.id));
+    const scene = api.getSceneElements?.() || [];
+    const next = scene.map((element) => {
+      if (!selectedIds.has(element.id) || element.isDeleted || element.type === "image") return element;
+      const themed = applySmartThemeToElements([element], themeId)[0];
+      if (themed.strokeColor === element.strokeColor && themed.backgroundColor === element.backgroundColor) return element;
+      return { ...themed, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+    });
+    if (next.some((element, index) => element !== scene[index])) {
+      api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    }
+  };
+
   const alignSelection = (alignment) => {
     const api = apiRef?.current;
     if (!api || liveSelection.length < 2) return;
@@ -761,6 +779,19 @@ export default function ContextualFormattingToolbar({
         <div className="format-opacity-control">
           <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
           <span>{currentOpacity}%</span>
+        </div>
+      </div>
+    );
+    if (groupId === "themes") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Smart Themes</div>
+        <div className="format-option-row">
+          {SMART_THEMES.map((theme) => (
+            <button key={theme.id} type="button" className="format-option-button" title={theme.description}
+              aria-label={`Apply ${theme.name} theme to selected objects`} onClick={() => applySmartTheme(theme.id)}>
+              {theme.name}
+            </button>
+          ))}
         </div>
       </div>
     );
