@@ -8,33 +8,21 @@
   pointer-events: none;
   z-index: 10;
 }
+/* All smart guides share one visual language; type only affects placement. */
 .sketchizi-alignment-guides line {
-  stroke: #9ca3af;
-  stroke-width: 1;
-  stroke-dasharray: 2 5;
-  opacity: 0.5;
+  stroke: #a78bfa;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  opacity: 0.92;
   vector-effect: non-scaling-stroke;
-  shape-rendering: crispEdges;
+  shape-rendering: geometricPrecision;
 }
-.sketchizi-alignment-guides line[data-guide-kind="spacing"] {
-  stroke: #0ea5e9;
-  stroke-dasharray: 3 3;
-  opacity: 0.8;
+
+.app.theme-light .sketchizi-alignment-guides line,
+.theme-light .sketchizi-alignment-guides line {
+  stroke: #6d28d9;
 }
-.sketchizi-alignment-guides line[data-guide-kind="baseline"] {
-  stroke: #a855f7;
-  stroke-dasharray: 6 3;
-  opacity: 0.85;
-}
-.theme-light .sketchizi-alignment-guides line,
-.app.theme-light .sketchizi-alignment-guides line {
-  stroke: #dc2626;
-  opacity: 0.55;
-}
-.app.theme-light .sketchizi-alignment-guides line[data-guide-kind="spacing"],
-.theme-light .sketchizi-alignment-guides line[data-guide-kind="spacing"] { stroke: #0284c7; }
-.app.theme-light .sketchizi-alignment-guides line[data-guide-kind="baseline"],
-.theme-light .sketchizi-alignment-guides line[data-guide-kind="baseline"] { stroke: #9333ea; }
 
 .sketchizi-text-size-layer {
   position: absolute; inset: 0; pointer-events: none; z-index: 100; overflow: visible;
