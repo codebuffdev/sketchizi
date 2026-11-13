@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   calculateAlignmentGuides,
   calculateEqualSpacingGuides,
@@ -139,4 +140,17 @@ test("selects one guide per rendered axis, including spacing", () => {
 test("scene-to-canvas coordinates use scroll and zoom without viewport-center offset", () => {
   assert.equal(sceneToCanvasPixel(10, -3, 2), 14);
   assert.equal(sceneToCanvasPixel(0, 11, 1.5), 16.5);
+});
+
+test("all guide types use the same stroke and do not pixel-snap at fractional zoom", () => {
+  const css = readFileSync(new URL("../src/styles/alignment-guides.css", import.meta.url), "utf8");
+  const baseStroke = css.match(/\.sketchizi-alignment-guides line\s*\{([^}]*)\}/)?.[1];
+  assert.ok(baseStroke, "Shared guide stroke declaration must exist");
+  assert.match(baseStroke, /stroke-width:\s*1\.5\s*;/);
+  assert.match(baseStroke, /stroke-dasharray:\s*5 4\s*;/);
+  assert.match(baseStroke, /opacity:\s*0\.92\s*;/);
+  assert.match(baseStroke, /vector-effect:\s*non-scaling-stroke\s*;/);
+  assert.match(baseStroke, /shape-rendering:\s*geometricPrecision\s*;/);
+  assert.doesNotMatch(css, /line\[data-guide-kind=/, "Guide types must not override shared styling");
+  assert.doesNotMatch(css, /shape-rendering:\s*crispEdges/);
 });
