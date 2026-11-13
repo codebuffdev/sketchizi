@@ -24,6 +24,7 @@
 @import "./styles/ui-modernization-navigation.css";
 @import "./styles/document-save-status.css";
 @import "./styles/canvas-first-header.css";
+@import "./styles/create-menu.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
