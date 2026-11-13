@@ -104,11 +104,60 @@ export default function DesktopAppHeader({
 }) {
   const [openMenu, setOpenMenu] = useState(null);
   const [availableWidth, setAvailableWidth] = useState(0);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
   nativeMenuOpenLatestRef.current = nativeMenuOpen;
+
+  useEffect(() => {
+    // The canvas-first header is for desktop and tablet layouts. Phone
+    // controls retain their existing layout and interaction model.
+    if (typeof window !== "undefined" &&
+        typeof window.matchMedia === "function" &&
+        !window.matchMedia("(min-width: 521px)").matches) {
+      return undefined;
+    }
+
+    const collapseOnCanvasInteraction = (event) => {
+      if (headerPinned || !(event.target instanceof Element)) return;
+      if (event.target.closest(".desktop-canvas-region")) {
+        setHeaderVisible(false);
+      }
+    };
+
+    // Only pointer position is observed for reveal. Canvas wheel gestures
+    // remain dedicated to zooming and navigation.
+    const revealFromTopEdge = (event) => {
+      if (event.clientY <= 20) setHeaderVisible(true);
+    };
+
+    const toggleHeaderShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.altKey ||
+          event.key.toLowerCase() !== "h") return;
+
+      const target = event.target;
+      if (target instanceof Element && target.closest(
+        "input, textarea, select, [contenteditable='true'], .monaco-editor, .cm-editor"
+      )) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      setHeaderVisible((visible) => !visible);
+    };
+
+    document.addEventListener("pointerdown", collapseOnCanvasInteraction, true);
+    document.addEventListener("pointermove", revealFromTopEdge, { passive: true });
+    document.addEventListener("keydown", toggleHeaderShortcut, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", collapseOnCanvasInteraction, true);
+      document.removeEventListener("pointermove", revealFromTopEdge, { passive: true });
+      document.removeEventListener("keydown", toggleHeaderShortcut, true);
+    };
+  }, [headerPinned]);
 
   useEffect(() => {
     const header = headerRef.current;
@@ -223,7 +272,15 @@ export default function DesktopAppHeader({
     : "No successful local save yet";
 
   return (
-    <header ref={headerRef} className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}`}>
+    <>
+      <header
+        id="desktop-app-header"
+        ref={headerRef}
+        className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
+        aria-hidden={!headerVisible}
+        data-pinned={headerPinned}
+      >
+      <div className="desktop-app-header-island desktop-app-header-island-left">
       {workspaceToggle}
       <button
         type="button"
@@ -327,7 +384,8 @@ export default function DesktopAppHeader({
         {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
       </div>
 
-
+      </div>
+      <div className="desktop-app-header-island desktop-app-header-island-right">
       {collaborationCreationState === "creating" && (
         <div className="collaboration-header-status creating" role="status" aria-live="polite">
           <span className="collaboration-header-spinner" aria-hidden="true" />
@@ -488,6 +546,53 @@ export default function DesktopAppHeader({
         </button>
         <AuthenticationControl />
       </div>
-    </header>
+
+      <button
+        type="button"
+        className={`desktop-app-header-visibility-button desktop-app-header-pin-button${headerPinned ? " is-active" : ""}`}
+        onClick={() => {
+          setHeaderPinned((pinned) => !pinned);
+          setHeaderVisible(true);
+        }}
+        aria-label={headerPinned ? "Unpin application header" : "Pin application header"}
+        aria-pressed={headerPinned}
+        title={headerPinned ? "Unpin header" : "Pin header while working"}
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" />
+          <path d="M12 15v6" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        className="desktop-app-header-visibility-button desktop-app-header-collapse-button"
+        onClick={() => setHeaderVisible(false)}
+        aria-label="Hide application header"
+        title="Hide header (Ctrl+Shift+H)"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m6 14 6-6 6 6" />
+        </svg>
+      </button>
+      </div>
+      </header>
+
+      <button
+        type="button"
+        className={`desktop-app-header-reveal-handle${headerVisible ? "" : " is-visible"}`}
+        onClick={() => setHeaderVisible(true)}
+        onPointerEnter={() => setHeaderVisible(true)}
+        onFocus={() => setHeaderVisible(true)}
+        aria-controls="desktop-app-header"
+        aria-label="Show application header"
+        title="Show header (Ctrl+Shift+H)"
+        tabIndex={headerVisible ? -1 : 0}
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m6 10 6 6 6-6" />
+        </svg>
+        <span className="sr-only">Show header</span>
+      </button>
+    </>
   );
 }

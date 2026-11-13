@@ -1,0 +1,394 @@
+/* Canvas-first floating header.
+   Desktop and tablet controls overlay the workspace instead of reserving a
+   permanent row. The Excalidraw drawing toolbar remains the canvas toolbar. */
+
+@media (min-width: 521px) {
+  .app.canvas-first-header {
+    position: relative;
+  }
+
+  .app.canvas-first-header .desktop-app-header {
+    position: absolute !important;
+    z-index: 620 !important;
+    top: calc(10px + var(--safe-top, 0px));
+    right: calc(12px + var(--safe-right, 0px));
+    left: calc(12px + var(--safe-left, 0px));
+    display: flex !important;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    width: auto !important;
+    max-width: none;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--ui-text, #252631);
+    box-shadow: none !important;
+    pointer-events: none;
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+    transition: transform .18s ease, opacity .16s ease, visibility .18s linear;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-hidden {
+    transform: translateY(calc(-100% - 18px));
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .app.canvas-first-header .desktop-app-header-island {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: calc(50% - 6px);
+    box-sizing: border-box;
+    padding: 6px 9px;
+    border: 1px solid color-mix(in srgb, var(--ui-border, #dedee7) 82%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 90%, transparent);
+    color: var(--ui-text, #252631);
+    box-shadow: 0 8px 28px rgb(15 23 42 / 10%);
+    -webkit-backdrop-filter: blur(16px) saturate(1.08);
+    backdrop-filter: blur(16px) saturate(1.08);
+    pointer-events: auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header-island-left {
+    justify-content: flex-start;
+    margin-right: auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header-island-right {
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-spacer {
+    display: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    gap: 5px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-account-zone,
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-panel-actions {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    flex: 0 1 auto;
+    gap: 5px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-start-collaboration-button {
+    margin-left: 0;
+  }
+
+  .app.canvas-first-header .desktop-app-document-identity {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: min(240px, 22vw);
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .app.canvas-first-header .desktop-app-document-identity-copy,
+  .app.canvas-first-header .desktop-app-document-identity-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app.canvas-first-header .desktop-app-header-visibility-button {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 28px;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--ui-border, #dedee7);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ui-text-muted, #6b7280);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+
+  .app.canvas-first-header .desktop-app-header-visibility-button:hover,
+  .app.canvas-first-header .desktop-app-header-visibility-button:focus-visible {
+    border-color: var(--ui-border, #b9bfcb);
+    background: var(--ui-hover, rgb(148 163 184 / 12%));
+    color: var(--ui-text-strong, #202334);
+  }
+
+  .app.canvas-first-header .desktop-app-header-pin-button.is-active {
+    border-color: var(--ui-accent, #64748b);
+    background: var(--ui-hover, rgb(148 163 184 / 14%));
+    color: var(--ui-text-strong, #202334);
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    position: absolute;
+    z-index: 619;
+    top: calc(4px + var(--safe-top, 0px));
+    left: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 21px;
+    padding: 0;
+    border: 1px solid var(--ui-border, #d8dce5);
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 92%, transparent);
+    color: var(--ui-text-muted, #667085);
+    box-shadow: 0 5px 16px rgb(15 23 42 / 10%);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(-50%, -8px);
+    transition: opacity .16s ease, transform .16s ease, visibility .16s linear;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle:focus-visible {
+    outline: 2px solid var(--ui-accent, #64748b);
+    outline-offset: 2px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-island {
+    border-color: color-mix(in srgb, var(--ui-border, #3a3d46) 86%, transparent);
+    background: color-mix(in srgb, var(--ui-surface-solid, #171a21) 91%, transparent);
+    color: var(--ui-text, #f2f2f4);
+    box-shadow: 0 8px 28px rgb(0 0 0 / 28%);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle {
+    border-color: var(--ui-border, #3a3d46);
+    background: color-mix(in srgb, var(--ui-surface-solid, #171a21) 94%, transparent);
+    color: var(--ui-text, #e5e7eb);
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-compact .desktop-app-nav {
+    gap: 0;
+    padding-right: 4px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-compact .desktop-app-nav-button {
+    padding-inline: 5px;
+    font-size: 10px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-compact .desktop-app-search-label,
+  .app.canvas-first-header .desktop-app-header.is-compact .desktop-app-search-shortcut,
+  .app.canvas-first-header .desktop-app-header.is-compact .desktop-app-start-collaboration-label,
+  .app.canvas-first-header .desktop-app-header.is-compact .auth-account-name,
+  .app.canvas-first-header .desktop-app-header.is-compact .auth-account-chevron {
+    display: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-compact .desktop-app-search-button,
+  .app.canvas-first-header .desktop-app-header.is-compact .desktop-app-start-collaboration-button {
+    width: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    height: 30px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-island-left {
+    max-width: 42%;
+    gap: 4px;
+    padding: 5px 6px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-island-right {
+    max-width: 56%;
+    gap: 3px;
+    padding: 5px 6px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-nav {
+    display: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-document-identity {
+    max-width: 150px;
+    flex: 1 1 auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-actions,
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-panel-actions,
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-account-zone {
+    gap: 3px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-action-btn {
+    width: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    height: 30px;
+    justify-content: center;
+    padding: 3px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-action-btn span {
+    display: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-save-status-trigger {
+    width: 28px;
+    min-width: 28px;
+    min-height: 30px;
+    justify-content: center;
+    padding: 3px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-save-status-label,
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-save-status-chevron,
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-start-collaboration-label {
+    display: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-search-button {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-theme-toggle {
+    width: 48px;
+    min-width: 48px;
+    flex-basis: 48px;
+    height: 30px;
+    min-height: 30px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-document-identity-name {
+    max-width: 110px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-visibility-button {
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    flex-basis: 26px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    display: none;
+  }
+}
+
+@media (min-width: 761px) {
+  .app.canvas-first-header {
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+}
+
+@media (min-width: 521px) and (max-width: 760px) {
+  .app.canvas-first-header .desktop-app-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 6px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-island-left,
+  .app.canvas-first-header .desktop-app-header-island-right {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .app.canvas-first-header .desktop-app-header-island-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .app.canvas-first-header:not(:has(.desktop-app-header.is-hidden)) .App-toolbar-container {
+    top: calc(108px + var(--safe-top, 0px)) !important;
+  }
+
+  .app.canvas-first-header:has(.desktop-app-header.is-hidden) .App-toolbar-container {
+    top: calc(32px + var(--safe-top, 0px)) !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  .app.canvas-first-header:not(:has(.desktop-app-header.is-hidden)) .App-toolbar-container {
+    top: calc(70px + var(--safe-top, 0px)) !important;
+  }
+
+  .app.canvas-first-header:has(.desktop-app-header.is-hidden) .App-toolbar-container {
+    top: calc(32px + var(--safe-top, 0px)) !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .app.canvas-first-header:not(:has(.desktop-app-header.is-hidden)) .App-toolbar-container {
+    top: calc(68px + var(--safe-top, 0px)) !important;
+  }
+
+  .app.canvas-first-header:has(.desktop-app-header.is-hidden) .App-toolbar-container {
+    top: calc(32px + var(--safe-top, 0px)) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app.canvas-first-header .desktop-app-header,
+  .app.canvas-first-header .desktop-app-header-reveal-handle,
+  .app.canvas-first-header .desktop-app-header-visibility-button {
+    transition: none !important;
+  }
+}
