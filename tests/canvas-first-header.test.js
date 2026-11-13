@@ -51,3 +51,14 @@ test("drawing dock stays bottom-centered regardless of header visibility", async
   assert.ok(canvasHeader.includes(bottomAnchor));
   assert.equal(canvasHeader.includes("desktop-app-header.is-hidden) .App-toolbar-container"), false);
 });
+
+
+test("Layers panel clears the floating header while it is visible and reclaims space when hidden", async () => {
+  const css = await read("../src/styles/canvas-first-header.css");
+
+  assert.match(css, /:has\\(\\.desktop-app-header:not\\(\\.is-hidden\\)\\)[\\s\\S]*?\\.desktop-validation-host:has\\(\\.sketchizi-layers-panel\\)/);
+  assert.match(css, /padding-top: calc\\(68px \\+ var\\(--safe-top, 0px\\)\\)/);
+  assert.match(css, /:has\\(\\.desktop-app-header:not\\(\\.is-hidden\\)\\)[\\s\\S]*?\\.sketchizi-layers-panel/);
+  assert.match(css, /top: calc\\(108px \\+ var\\(--safe-top, 0px\\)\\) !important/);
+  assert.match(css, /max-height: calc\\(100dvh - 120px - var\\(--safe-top, 0px\\) - var\\(--safe-bottom, 0px\\)\\) !important/);
+});
