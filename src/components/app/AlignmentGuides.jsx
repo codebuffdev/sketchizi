@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { calculateAlignmentGuides, calculateEqualSpacingGuides, calculateTextBaselineGuides } from "../../features/canvas/alignmentGuides.js";
+import { calculateAlignmentGuides, calculateEqualSpacingGuides, calculateTextBaselineGuides, selectDisplayGuides } from "../../features/canvas/alignmentGuides.js";
 
 const EMPTY_GUIDES = [];
 
@@ -57,7 +57,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         const offset = axis === "x" ? (Number(appState.scrollX) || 0) : (Number(appState.scrollY) || 0);
         return (position + offset) * zoom;
       };
-      setGuides(found.map((guide) => ({
+      setGuides(selectDisplayGuides(found).map((guide) => ({
         ...guide,
         screenPosition: toLocal(guide.axis, guide.position),
         screenStart: toLocal(guide.axis === "x" ? "y" : "x", guide.start),
