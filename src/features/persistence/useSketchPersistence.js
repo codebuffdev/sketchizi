@@ -10,6 +10,7 @@ import {
 } from "../../persistence";
 import { logger } from "../../logging/logger";
 import { serializeDrawing } from "../../fileSystem.js";
+import { resolveLiveSketchSnapshot } from "./resolveLiveSketchSnapshot.js";
 
 export function useSketchPersistence({ apiRef, documentMetadataRef }) {
   const [savedSketch, setSavedSketch] = useState(null);
@@ -108,9 +109,11 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
       saveTimerRef.current = null;
-      const files = apiRef.current?.getFiles?.() || {};
+      const api = apiRef.current;
+      const live = resolveLiveSketchSnapshot(api, elements, appState);
+      const files = api?.getFiles?.() || {};
       persistSketchNow({
-        elements, appState, files,
+        elements: live.elements, appState: live.appState, files,
         metadata: documentMetadataRef?.current?.metadata || {},
         extensions: documentMetadataRef?.current?.extensions || {},
         format: documentMetadataRef?.current?.format || "excalidraw",
