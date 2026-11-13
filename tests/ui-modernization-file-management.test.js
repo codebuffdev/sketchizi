@@ -10,7 +10,7 @@ const styles = readFileSync(new URL("../src/styles/document-save-status.css", im
 const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 test("header shows current document identity and a distinct unsaved-to-file state", () => {
-  assert.match(app, /currentDocumentName=\{cloudDiagramId \? \(cloudSessionRef\.current\.name \|\| "Cloud diagram"\) : \(currentFile\?\.name \|\| "Untitled drawing"\)\}/);
+  assert.match(app, /currentDocumentName=\{cloudDiagramId \? cloudDocumentName : \(currentFile\?\.name \|\| "Untitled drawing"\)\}/);
   assert.match(app, /currentDocumentDirty=\{documentDirty\}/);
   assert.match(app, /currentDocumentFileBacked=\{Boolean\(currentFile\?\.handle\)\}/);
   assert.match(header, /desktop-app-document-identity/);
@@ -50,4 +50,40 @@ test("document identity remains compact and responds to light/dark and mobile la
 
 test("file-management regression test is part of the UI modernization suite", () => {
   assert.match(packageJson.scripts["test:ui-modernization"], /tests\/ui-modernization-file-management\.test\.js/);
+});
+
+
+test("canvas document names can be edited without forcing a file save", () => {
+  assert.match(header, /onRenameDocument/);
+  assert.match(header, /desktop-app-document-identity-name-input/);
+  assert.match(header, /aria-label="Rename canvas"/);
+  assert.match(app, /onRenameDocument=\{renameActiveDocument\}/);
+  assert.match(fileManager, /const renameCurrentDocument = async \(requestedName\)/);
+  assert.match(fileManager, /file\.handle\.move\(targetName\)/);
+  assert.match(fileManager, /setCurrentFile\(renamedFile, baseline\)/);
+});
+
+test("cloud canvas rename persists through the existing workspace metadata endpoint", () => {
+  const workspaceClient = readFileSync(new URL("../src/features/workspace/workspaceClient.js", import.meta.url), "utf8");
+  assert.match(app, /workspaceClient\.updateDiagram\(cloudDiagramId, \{ name: normalizedName \}\)/);
+  assert.match(app, /setCloudDocumentName\(savedName\)/);
+  assert.match(workspaceClient, /updateDiagram: \(diagramId, metadata\) => request\([^\n]+method: "PATCH"/);
+});
+
+
+test("saved file exposes distinct Save and Save As actions", () => {
+  assert.match(app, /onSaveAs=\{\(\) => fileActionsRef\.current\.saveDrawingAs\?\.\(\)\}/);
+  assert.match(header, /currentDocumentFileBacked \? "Save" : "Save to file…"/);
+  assert.match(header, /Save As…/);
+  assert.match(header, /onSaveAs\?\.\(\)/);
+  assert.match(header, /currentDocumentFileBacked &&/);
+});
+
+
+test("canvas rename input keeps typed text readable against its background", () => {
+  const styles = readFileSync(new URL("../src/styles/document-save-status.css", import.meta.url), "utf8");
+  assert.match(styles, /\.desktop-app-document-identity-name-input\s*\{[\s\S]*?color:\s*#202633;/);
+  assert.match(styles, /caret-color:\s*#202633;/);
+  assert.match(styles, /\.desktop-app-document-identity-name-input::placeholder\s*\{[\s\S]*?color:\s*#667085;/);
+  assert.match(styles, /\.desktop-app-document-identity-name-input::selection/);
 });
