@@ -160,6 +160,7 @@ function App() {
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
   const cloudDetachedRef = useRef(false);
+  const [cloudDetached, setCloudDetached] = useState(false);
   const cloudSceneReadyRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
@@ -168,6 +169,7 @@ function App() {
   useEffect(() => {
     const detachCloudDocument = () => {
       cloudDetachedRef.current = true;
+      setCloudDetached(true);
       cloudSceneReadyRef.current = false;
       if (cloudSaveTimerRef.current) {
         window.clearTimeout(cloudSaveTimerRef.current);
@@ -297,6 +299,7 @@ function App() {
         format: document.format || diagram.format || "excalidraw",
       };
       cloudDetachedRef.current = false;
+      setCloudDetached(false);
       cloudSceneReadyRef.current = false;
       cloudSessionRef.current = {
         active: true,
@@ -400,7 +403,7 @@ function App() {
     const normalizedName = String(name || "").trim();
     if (!normalizedName) throw new Error("Enter a name for this canvas.");
     if (normalizedName.length > 120) throw new Error("Canvas names must be 120 characters or fewer.");
-    if (cloudDiagramId) {
+    if (cloudDiagramId && !cloudDetachedRef.current) {
       if (!cloudSessionRef.current.active) throw new Error("The Cloud Workspace document is still loading.");
       try {
         const result = await workspaceClient.updateDiagram(cloudDiagramId, { name: normalizedName });
@@ -1650,7 +1653,7 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {cloudDiagramId && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+      {cloudDiagramId && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
           <button type="button" onClick={() => {
@@ -1680,15 +1683,15 @@ function App() {
         setThemeMode={setThemeMode}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
-        currentDocumentName={cloudDiagramId ? cloudDocumentName : (currentFile?.name || "Untitled drawing")}
+        currentDocumentName={cloudDiagramId && !cloudDetached ? cloudDocumentName : (currentFile?.name || "Untitled drawing")}
         currentDocumentDirty={documentDirty}
         onRenameDocument={renameActiveDocument}
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
         onSaveToFile={() => fileActionsRef.current.saveCurrentDrawing?.()}
         onSaveAs={() => fileActionsRef.current.saveDrawingAs?.()}
-        isCloudDocument={Boolean(cloudDiagramId)}
-        onSaveToCloud={() => cloudDiagramId ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
+        isCloudDocument={Boolean(cloudDiagramId && !cloudDetached)}
+        onSaveToCloud={() => cloudDiagramId && !cloudDetachedRef.current ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
         cloudSaveState={cloudSaveState.state}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
         onOpenExport={() => setExportStudioOpen(true)}
@@ -1946,7 +1949,7 @@ function App() {
         </div>
       )}
       <Suspense fallback={<div className="sketchizi-toast" role="status" aria-live="polite">Opening tool…</div>}>
-      {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudDiagramId ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
+      {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudDiagramId && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
       {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
       {designStudioOpen && (
