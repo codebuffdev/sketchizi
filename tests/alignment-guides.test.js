@@ -17,12 +17,24 @@ test("detects edge and center alignment with overlapping geometry", () => {
   assert.ok(guides.some((guide) => guide.axis === "y" && guide.position === 200));
 });
 
-test("does not align objects on distant, non-overlapping axes", () => {
+test("aligns objects on the same X coordinate even when vertically separated", () => {
   const elements = [
     { id: "moving", x: 0, y: 0, width: 20, height: 20 },
     { id: "fixed", x: 1, y: 200, width: 20, height: 20 },
   ];
-  assert.deepEqual(calculateAlignmentGuides(elements, new Set(["moving"]), 3), []);
+  const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 3);
+  assert.ok(guides.some((guide) => guide.axis === "x" && guide.position === 1));
+  assert.ok(!guides.some((guide) => guide.axis === "y"));
+});
+
+test("aligns objects on the same Y coordinate even when horizontally separated", () => {
+  const elements = [
+    { id: "moving", x: 0, y: 0, width: 20, height: 20 },
+    { id: "fixed", x: 200, y: 1, width: 20, height: 20 },
+  ];
+  const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 3);
+  assert.ok(guides.some((guide) => guide.axis === "y" && guide.position === 1));
+  assert.ok(!guides.some((guide) => guide.axis === "x"));
 });
 
 test("ignores deleted elements and the moving selection itself", () => {
