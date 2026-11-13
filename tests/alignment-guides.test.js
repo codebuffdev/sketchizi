@@ -5,6 +5,7 @@ import {
   calculateEqualSpacingGuides,
   calculateTextBaselineGuides,
   getTextBaseline,
+  selectDisplayGuides,
 } from "../src/features/canvas/alignmentGuides.js";
 
 test("detects edge and center alignment with overlapping geometry", () => {
@@ -80,4 +81,18 @@ test("returns no guides when selection or stationary elements are missing", () =
   const elements = [{ id: "one", x: 0, y: 0, width: 20, height: 20 }];
   assert.deepEqual(calculateAlignmentGuides(elements, new Set(["one"])), []);
   assert.deepEqual(calculateEqualSpacingGuides(elements, new Set(["one"])), []);
+});
+
+test("displays no more than one guide per axis across guide kinds", () => {
+  const guides = [
+    { axis: "x", kind: "alignment", position: 10, distance: 1 },
+    { axis: "x", kind: "alignment", position: 12, distance: 0 },
+    { axis: "y", kind: "alignment", position: 20, distance: 0 },
+    { axis: "y", kind: "baseline", position: 21, distance: 2 },
+    { axis: "x", kind: "spacing", position: 15, distance: 0 },
+  ];
+  const selected = selectDisplayGuides(guides);
+  assert.equal(selected.length, 2);
+  assert.equal(selected.find((guide) => guide.axis === "x").position, 12);
+  assert.equal(selected.find((guide) => guide.axis === "y").kind, "baseline");
 });
