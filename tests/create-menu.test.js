@@ -68,3 +68,10 @@ test("document identity distinguishes cloud-backed drawings from local files", (
   assert.match(css, /\.desktop-app-document-location/);
   assert.match(styleEntry, /@import "\.\/styles\/document-location\.css";/);
 });
+
+test("floating header does not block context-panel close actions", () => {
+  const css = readFileSync(new URL("../src/styles/canvas-first-header.css", import.meta.url), "utf8");
+  assert.match(css, /\.desktop-context-region \.desktop-validation-host/);
+  assert.match(css, /padding-top: calc\(68px \+ var\(--safe-top, 0px\)\)/);
+  assert.doesNotMatch(css, /\.sketchizi-layers-panel/);
+});
