@@ -1,9 +1,12 @@
 /* Phase 19: a visual-only grid overlay. Grid snapping remains controlled by Shift+G. */
-.app .canvas[data-grid-visible="true"] .excalidraw .layer-canvas::after {
-  content: "";
+.app .canvas {
+  position: relative;
+}
+
+.app .canvas .sketchizi-grid-overlay {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 7;
   pointer-events: none;
   background-image: radial-gradient(circle, var(--sketchizi-grid-dot, rgb(112 123 143 / 22%)) 0.8px, transparent 1px);
   background-size: var(--sketchizi-grid-step, 20px) var(--sketchizi-grid-step, 20px);
@@ -17,11 +20,4 @@
 
 .app.theme-dark .canvas[data-grid-visible="true"] {
   --sketchizi-grid-dot: rgb(163 174 194 / 24%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app .canvas[data-grid-visible="true"] .excalidraw .layer-canvas::after {
-    animation: none;
-    transition: none;
-  }
 }
