@@ -10,9 +10,14 @@ const makePage = async (viewport) => {
   return { context, page };
 };
 
+const openCreateMenu = async (page) => {
+  await page.getByRole("button", { name: "Create drawing" }).click();
+  await page.getByRole("menu", { name: "Create a drawing" }).waitFor();
+};
+
 const openDesignStudio = async (page) => {
-  await page.getByRole("button", { name: /workspaces/i }).click();
-  await page.getByRole("menuitem", { name: /design studio/i }).click();
+  await openCreateMenu(page);
+  await page.getByRole("menuitem", { name: /^Templates/ }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
 
@@ -34,18 +39,45 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
-  // A fresh browser context validates the independent blank-canvas path.
+  // Replacing a populated drawing must be explicitly confirmed. Cancel first
+  // to verify that Create does not bypass the existing unsaved-work safeguard.
+  await openCreateMenu(page);
+  const cancelReplacement = page.waitForEvent("dialog");
+  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
+  const cancelDialog = await cancelReplacement;
+  if (cancelDialog.type() !== "confirm" || !cancelDialog.message().includes("create a new drawing")) {
+    throw new Error("Create > Blank drawing did not request confirmation for existing work.");
+  }
+  await cancelDialog.dismiss();
+  console.log("PASS: replacing an existing drawing requires confirmation.");
+
+  // Confirming replacement returns the user to an empty, editable canvas.
+  await openCreateMenu(page);
+  const acceptReplacement = page.waitForEvent("dialog");
+  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
+  const acceptDialog = await acceptReplacement;
+  await acceptDialog.accept();
+  await page.getByText("New drawing", { exact: true }).waitFor({ timeout: 10000 });
+  await page.locator(".excalidraw").waitFor();
+  console.log("PASS: confirmed replacement creates a blank drawing.");
+
+
+  // A fresh browser context validates the primary blank drawing action.
   const blank = await makePage({ width: 1280, height: 800 });
   await blank.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
-  await openDesignStudio(blank.page);
-  await blank.page.getByRole("button", { name: "Start blank" }).click();
-  await blank.page.getByRole("heading", { name: "What are you designing?" }).waitFor({ state: "detached", timeout: 30000 });
+  await openCreateMenu(blank.page);
+  await blank.page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
-  console.log("PASS: blank-canvas path opens the editor.");
+  await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
+  console.log("PASS: Create > Blank drawing opens the editor.");
 
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
   await responsive.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await openCreateMenu(responsive.page);
+  await responsive.page.getByRole("menuitem", { name: /^Templates/ }).waitFor();
+  await responsive.page.keyboard.press("Escape");
+  await responsive.page.getByRole("menu", { name: "Create a drawing" }).waitFor({ state: "detached" });
   await openDesignStudio(responsive.page);
   await responsive.page.getByRole("button", { name: "Start blank" }).waitFor();
   const overflow = await responsive.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
