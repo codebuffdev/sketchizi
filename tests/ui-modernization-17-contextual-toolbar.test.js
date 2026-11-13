@@ -19,7 +19,8 @@ test('contextual toolbar is rendered for editable selections and supported activ
   assert.match(toolbar, /currentItemStrokeColor = patch\.strokeColor/);
   assert.match(toolbar, /currentItemBackgroundColor = patch\.backgroundColor/);
   assert.match(toolbar, /currentItemStrokeWidth = patch\.strokeWidth/);
-  assert.ok(toolbar.includes('const selectedIds = new Set(noteSelection ? [...noteGroupIds]'));
+  assert.ok(toolbar.includes('const selectedIds = new Set(liveSelection.map((element) => element.id))'));
+  assert.match(toolbar, /const isRelatedNoteElement = noteSelection && noteGroupIds\.has\(element\.id\)/);
   assert.match(toolbar, /api\.updateScene\(\{ elements: updatedElements, captureUpdate: CaptureUpdateAction\.IMMEDIATELY \}\)/);
   assert.match(toolbar, /version: \(Number\(element\.version\) \|\| 0\) \+ 1/);
   assert.doesNotMatch(toolbar, /if \(!canEdit \|\| propertiesOpen \|\|/);
