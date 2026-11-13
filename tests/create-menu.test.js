@@ -57,3 +57,14 @@ test("Create control is clearly labeled on desktop and compact on small screens"
   assert.match(styles, /@media \(max-width: 760px\)/);
   assert.match(styles, /\.sketchizi-create-menu-heading/);
 });
+
+test("document identity distinguishes cloud-backed drawings from local files", () => {
+  const header = readFileSync(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../src/styles/document-location.css", import.meta.url), "utf8");
+  assert.match(header, /const storageLocation = isCloudDocument \? "Cloud" : currentDocumentFileBacked \? "File" : "Local"/);
+  assert.match(header, /const documentStatusLabel = isCloudDocument/);
+  assert.match(header, /cloudStatusLabels\[cloudSaveState\]/);
+  assert.match(header, /aria-label="Storage location"/);
+  assert.match(css, /\.desktop-app-document-location/);
+  assert.match(styleEntry, /@import "\.\/styles\/document-location\.css";/);
+});
