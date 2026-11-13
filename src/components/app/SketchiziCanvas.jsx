@@ -9,6 +9,7 @@ import TextSizeIndicator from "./TextSizeIndicator";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
+import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -656,6 +657,15 @@ export default function SketchiziCanvas({
       }
       if (fitContentButtonRef.current === fitButton) fitContentButtonRef.current = null;
     };
+  }, [apiRef, canEdit, viewModeEnabled]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (!apiRef?.current || !canEdit || viewModeEnabled) return;
+      handleStickyNoteRapidFlow(event, apiRef.current);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [apiRef, canEdit, viewModeEnabled]);
 
   const updateCursorFromPointer = (event) => {

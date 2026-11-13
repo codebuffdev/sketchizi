@@ -96,6 +96,10 @@ export default function DesktopAppHeader({
   isCloudDocument = false,
   cloudSaveState = "inactive",
   onDownloadRecoveryBackup,
+  onOpenExport,
+  onOpenTemplates,
+  onToggleMinimap,
+  minimapOpen = false,
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
@@ -410,6 +414,56 @@ export default function DesktopAppHeader({
         </button>
       )}
 
+      {typeof onOpenTemplates === "function" && (
+        <button
+          type="button"
+          className="desktop-app-header-action-btn"
+          onClick={() => { setOpenMenu(null); onOpenTemplates(); }}
+          title="Architecture Starter Packs"
+          aria-label="Architecture Templates"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+          </svg>
+          <span>Templates</span>
+        </button>
+      )}
+      {typeof onOpenExport === "function" && (
+        <button
+          type="button"
+          className="desktop-app-header-action-btn"
+          onClick={() => { setOpenMenu(null); onOpenExport(); }}
+          title="Export Studio & Copy to Clipboard"
+          aria-label="Export Studio"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>Export</span>
+        </button>
+      )}
+      {typeof onToggleMinimap === "function" && (
+        <button
+          type="button"
+          className={"desktop-app-header-action-btn" + (minimapOpen ? " active" : "")}
+          onClick={() => { setOpenMenu(null); onToggleMinimap(); }}
+          title="Toggle Canvas Mini-Map (M)"
+          aria-label="Toggle Canvas Mini-Map"
+          aria-pressed={minimapOpen}
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+            <line x1="8" y1="2" x2="8" y2="18" />
+            <line x1="16" y1="6" x2="16" y2="22" />
+          </svg>
+          <span>Map</span>
+        </button>
+      )}
       <div className="desktop-app-header-spacer" />
 
       <div className="desktop-app-header-actions">

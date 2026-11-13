@@ -48,6 +48,8 @@ import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } fr
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetesRelationshipGuidance, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
+import ExportStudioModal from "./components/app/ExportStudioModal";
+import ArchitectureTemplatesModal from "./components/app/ArchitectureTemplatesModal";
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
@@ -79,6 +81,8 @@ function App() {
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
   const [minimapOpen, setMinimapOpen] = useState(false);
+  const [exportStudioOpen, setExportStudioOpen] = useState(false);
+  const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
   const [iconLibraryPinned, setIconLibraryPinned] = useState(false);
   const minimapDragRef = useRef(null);
   const minimapController = useMinimapController({ apiRef, minimapOpen });
@@ -1710,6 +1714,10 @@ function App() {
         onSaveToCloud={() => cloudDiagramId ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
         cloudSaveState={cloudSaveState.state}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
+        onOpenExport={() => setExportStudioOpen(true)}
+        onOpenTemplates={() => setTemplatesModalOpen(true)}
+        onToggleMinimap={() => setMinimapOpen((o) => !o)}
+        minimapOpen={minimapOpen}
         workspaceToggle={workspaceToggle}
         moreToolsToggle={moreToolsToggle}
         libraryToggle={collaborationCanEdit ? (
@@ -1924,6 +1932,20 @@ function App() {
           isDarkTheme={isDarkTheme}
           onClose={() => setDesignStudioOpen(false)}
           onCreate={createDesignFromStudio}
+        />
+      )}
+      {exportStudioOpen && (
+        <ExportStudioModal
+          isOpen={exportStudioOpen}
+          onClose={() => setExportStudioOpen(false)}
+          apiRef={apiRef}
+        />
+      )}
+      {templatesModalOpen && (
+        <ArchitectureTemplatesModal
+          isOpen={templatesModalOpen}
+          onClose={() => setTemplatesModalOpen(false)}
+          apiRef={apiRef}
         />
       )}
     </div>
