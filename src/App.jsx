@@ -425,6 +425,7 @@ function App() {
         const savedName = diagram?.name || normalizedName;
         cloudSessionRef.current.name = savedName;
         setCloudDocumentName(savedName);
+        document.title = `${savedName} · Sketchizi`;
         showToast("Canvas renamed");
       } catch (error) {
         showToast(error?.message || "Unable to rename this cloud canvas.", "error");

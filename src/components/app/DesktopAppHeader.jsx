@@ -111,6 +111,7 @@ export default function DesktopAppHeader({
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
   const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
+  const cancelDocumentRenameRef = useRef(false);
 
   useEffect(() => {
     if (!documentNameEditing) setDocumentNameDraft(currentDocumentName);
@@ -259,6 +260,11 @@ export default function DesktopAppHeader({
   const commandMap = useMemo(() => new Map(commands.map((command) => [command.id, command])), [commands]);
 
   const commitDocumentRename = async () => {
+    if (cancelDocumentRenameRef.current) {
+      cancelDocumentRenameRef.current = false;
+      setDocumentNameDraft(currentDocumentName);
+      return;
+    }
     const nextName = documentNameDraft.trim();
     setDocumentNameEditing(false);
     if (!nextName || nextName === currentDocumentName) {
@@ -415,6 +421,7 @@ export default function DesktopAppHeader({
                   event.currentTarget.blur();
                 } else if (event.key === "Escape") {
                   event.preventDefault();
+                  cancelDocumentRenameRef.current = true;
                   setDocumentNameDraft(currentDocumentName);
                   setDocumentNameEditing(false);
                 }
@@ -431,7 +438,7 @@ export default function DesktopAppHeader({
             className="desktop-app-document-rename"
             aria-label="Rename canvas"
             title="Rename canvas"
-            onClick={() => { setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
+            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
           >
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
