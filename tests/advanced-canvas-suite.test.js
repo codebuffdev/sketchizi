@@ -15,7 +15,7 @@ const advancedCss = readFileSync(new URL("../src/styles/advanced-canvas-suite.cs
 
 test("Capability 1: Canvas Mini-Map Navigator is integrated with header toggle and dark mode styles", () => {
   assert.ok(appHeader.includes("onToggleMinimap"), "Header accepts onToggleMinimap prop");
-  assert.ok(appHeader.includes("Toggle Canvas Mini-Map"), "Header has mini-map button");
+  assert.ok(appHeader.includes("view.toggle-minimap"), "View menu exposes the mini-map action");
   assert.ok(appHeader.includes("minimapOpen"), "Header tracks minimap active state");
 
   assert.match(appSource, /const \[minimapOpen, setMinimapOpen\] = useState\(false\);/);
@@ -28,7 +28,7 @@ test("Capability 1: Canvas Mini-Map Navigator is integrated with header toggle a
 
 test("Capability 2: High-Res Export Studio offers 1x/2x/3x scale, background modes, and 1-click clipboard", () => {
   assert.ok(appHeader.includes("onOpenExport"), "Header accepts onOpenExport prop");
-  assert.ok(appHeader.includes("Export Studio & Copy to Clipboard"), "Header has export action button");
+  assert.ok(appHeader.includes("onOpenExport?.()") && appHeader.includes("Export studio…"), "Save menu opens Export Studio");
   assert.ok(appSource.includes("<ExportStudioModal"), "App mounts ExportStudioModal");
 
   assert.ok(exportModalSource.includes("Resolution Scale"), "Modal provides resolution scale controls");
