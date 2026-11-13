@@ -6,62 +6,34 @@
   height: 100%;
   overflow: hidden;
   pointer-events: none;
-  z-index: 8;
+  z-index: 10;
 }
+/* All smart guides share one visual language; type only affects placement. */
 .sketchizi-alignment-guides line {
-  stroke: #9ca3af;
-  stroke-width: 1;
-  stroke-dasharray: 2 5;
-  opacity: 0.5;
+  stroke: #a78bfa;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  opacity: 0.92;
   vector-effect: non-scaling-stroke;
-  shape-rendering: crispEdges;
+  shape-rendering: geometricPrecision;
 }
 
-/* Keep alignment guides theme-aware and subtle against each canvas background. */
-.theme-light .sketchizi-alignment-guides line,
-.app.theme-light .sketchizi-alignment-guides line {
-  stroke: #dc2626;
-  opacity: 0.55;
+.app.theme-light .sketchizi-alignment-guides line,
+.theme-light .sketchizi-alignment-guides line {
+  stroke: #6d28d9;
 }
 
-/* Text font-size indicator badge displayed beneath selected text */
 .sketchizi-text-size-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  overflow: visible;
+  position: absolute; inset: 0; pointer-events: none; z-index: 100; overflow: visible;
 }
-
 .sketchizi-text-size-indicator {
-  position: absolute;
-  transform: translate(-50%, 0);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5px 5.5px;
-  border-radius: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: 0.02em;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  background: rgba(20, 24, 36, 0.92);
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  transition: opacity 0.12s ease;
+  position: absolute; transform: translate(-50%, 0); display: inline-flex; align-items: center; justify-content: center;
+  padding: 1.5px 5.5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px; font-weight: 600; line-height: 1.25; letter-spacing: 0.02em; pointer-events: none; user-select: none;
+  white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  background: rgba(20, 24, 36, 0.92); color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.3); transition: opacity 0.12s ease;
 }
-
-.app.theme-light .sketchizi-text-size-indicator,
-.theme-light .sketchizi-text-size-indicator {
-  background: rgba(255, 255, 255, 0.94);
-  color: #334155;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+.app.theme-light .sketchizi-text-size-indicator, .theme-light .sketchizi-text-size-indicator {
+  background: rgba(255, 255, 255, 0.94); color: #334155; border: 1px solid rgba(148, 163, 184, 0.45); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }

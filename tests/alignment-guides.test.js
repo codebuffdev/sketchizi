@@ -1,15 +1,56 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateAlignmentGuides } from "../src/features/canvas/alignmentGuides.js";
+import { readFileSync } from "node:fs";
+import {
+  calculateAlignmentGuides,
+  calculateEqualSpacingGuides,
+  calculateTextBaselineGuides,
+  getTextBaseline,
+  selectDisplayGuides,
+  getGuideRenderAxis,
+  sceneToCanvasPixel,
+} from "../src/features/canvas/alignmentGuides.js";
 
-test("detects matching vertical and horizontal alignment edges", () => {
+test("detects edge and center alignment with overlapping geometry", () => {
   const elements = [
     { id: "moving", x: 98, y: 198, width: 40, height: 40 },
-    { id: "fixed", x: 100, y: 160, width: 40, height: 40 },
+    { id: "fixed", x: 100, y: 160, width: 40, height: 80 },
   ];
   const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 3);
-  assert.ok(guides.some((guide) => guide.axis === "x" && Math.abs(guide.position - 100) < 2));
-  assert.ok(guides.some((guide) => guide.axis === "y" && Math.abs(guide.position - 200) < 2));
+  assert.ok(guides.some((guide) => guide.axis === "x" && guide.position === 100));
+  assert.ok(guides.some((guide) => guide.axis === "y" && guide.position === 200));
+});
+
+test("aligns objects on the same X coordinate even when vertically separated", () => {
+  const elements = [
+    { id: "moving", x: 0, y: 0, width: 20, height: 20 },
+    { id: "fixed", x: 1, y: 200, width: 20, height: 20 },
+  ];
+  const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 3);
+  assert.ok(guides.some((guide) => guide.axis === "x" && guide.position === 1));
+  assert.ok(!guides.some((guide) => guide.axis === "y"));
+});
+
+test("aligns objects on the same Y coordinate even when horizontally separated", () => {
+  const elements = [
+    { id: "moving", x: 0, y: 0, width: 20, height: 20 },
+    { id: "fixed", x: 200, y: 1, width: 20, height: 20 },
+  ];
+  const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 3);
+  assert.ok(guides.some((guide) => guide.axis === "y" && guide.position === 1));
+  assert.ok(!guides.some((guide) => guide.axis === "x"));
+});
+
+test("limits alignment output to the closest guide on each axis", () => {
+  const elements = [
+    { id: "moving", x: 0, y: 0, width: 20, height: 20 },
+    { id: "near", x: 1, y: 200, width: 20, height: 20 },
+    { id: "far", x: 3, y: 400, width: 20, height: 20 },
+  ];
+  const guides = calculateAlignmentGuides(elements, new Set(["moving"]), 5);
+  assert.equal(guides.filter((guide) => guide.axis === "x").length, 1);
+  assert.equal(guides.filter((guide) => guide.axis === "y").length, 0);
+  assert.equal(guides.find((guide) => guide.axis === "x").position, 1);
 });
 
 test("ignores deleted elements and the moving selection itself", () => {
@@ -20,8 +61,96 @@ test("ignores deleted elements and the moving selection itself", () => {
   assert.deepEqual(calculateAlignmentGuides(elements, new Set(["moving"])), []);
 });
 
+test("detects equal horizontal gaps around a single moving object", () => {
+  const elements = [
+    { id: "left", x: 0, y: 0, width: 20, height: 20 },
+    { id: "moving", x: 44, y: 0, width: 20, height: 20 },
+    { id: "right", x: 90, y: 0, width: 20, height: 20 },
+  ];
+  const guides = calculateEqualSpacingGuides(elements, new Set(["moving"]), 2);
+  assert.ok(guides.some((guide) => guide.axis === "x" && Math.abs(guide.delta - 1) < 0.001));
+});
+
+test("detects text baseline alignment using text metrics", () => {
+  const elements = [
+    { id: "a", type: "text", x: 0, y: 0, width: 100, height: 30, fontSize: 20 },
+    { id: "b", type: "text", x: 120, y: 2, width: 100, height: 28, fontSize: 18 },
+  ];
+  assert.ok(Math.abs(getTextBaseline(elements[0]) - getTextBaseline(elements[1])) < 1);
+  assert.equal(calculateTextBaselineGuides(elements, new Set(["a"]), 2).length, 1);
+});
+
 test("returns no guides when selection or stationary elements are missing", () => {
   const elements = [{ id: "one", x: 0, y: 0, width: 20, height: 20 }];
   assert.deepEqual(calculateAlignmentGuides(elements, new Set(["one"])), []);
-  assert.deepEqual(calculateAlignmentGuides(elements, new Set()), []);
+  assert.deepEqual(calculateEqualSpacingGuides(elements, new Set(["one"])), []);
+});
+
+test("displays no more than one guide per axis across guide kinds", () => {
+  const guides = [
+    { axis: "x", kind: "alignment", position: 10, distance: 1 },
+    { axis: "x", kind: "alignment", position: 12, distance: 0 },
+    { axis: "y", kind: "alignment", position: 20, distance: 0 },
+    { axis: "y", kind: "baseline", position: 21, distance: 2 },
+    { axis: "x", kind: "spacing", position: 15, distance: 0 },
+  ];
+  const selected = selectDisplayGuides(guides);
+  assert.equal(selected.length, 2);
+  assert.equal(selected.find((guide) => guide.axis === "x").position, 12);
+  assert.equal(selected.find((guide) => guide.axis === "y").kind, "baseline");
+});
+
+test("horizontal spacing spans horizontal gaps with a horizontal stroke", () => {
+  const elements = [
+    { id: "left", x: 0, y: 0, width: 20, height: 20 },
+    { id: "moving", x: 44, y: 0, width: 20, height: 20 },
+    { id: "right", x: 90, y: 0, width: 20, height: 20 },
+  ];
+  const spacing = calculateEqualSpacingGuides(elements, new Set(["moving"]), 2)
+    .find((guide) => guide.axis === "x");
+  assert.ok(spacing);
+  assert.equal(getGuideRenderAxis(spacing), "y");
+  assert.deepEqual([spacing.start, spacing.end, spacing.position], [20, 90, 10]);
+});
+
+test("vertical spacing spans vertical gaps with a vertical stroke", () => {
+  const elements = [
+    { id: "above", x: 0, y: 0, width: 20, height: 20 },
+    { id: "moving", x: 0, y: 44, width: 20, height: 20 },
+    { id: "below", x: 0, y: 90, width: 20, height: 20 },
+  ];
+  const spacing = calculateEqualSpacingGuides(elements, new Set(["moving"]), 2)
+    .find((guide) => guide.axis === "y");
+  assert.ok(spacing);
+  assert.equal(getGuideRenderAxis(spacing), "x");
+  assert.deepEqual([spacing.start, spacing.end, spacing.position], [20, 90, 10]);
+});
+
+test("selects one guide per rendered axis, including spacing", () => {
+  const selection = selectDisplayGuides([
+    { axis: "x", kind: "alignment", distance: 1 },
+    { axis: "y", kind: "spacing", distance: 0 },
+    { axis: "y", kind: "baseline", distance: 1 },
+    { axis: "x", kind: "spacing", distance: 0 },
+  ]);
+  assert.deepEqual(selection.map(getGuideRenderAxis), ["x", "y"]);
+  assert.deepEqual(selection.map((guide) => guide.kind), ["alignment", "baseline"]);
+});
+
+test("scene-to-canvas coordinates use scroll and zoom without viewport-center offset", () => {
+  assert.equal(sceneToCanvasPixel(10, -3, 2), 14);
+  assert.equal(sceneToCanvasPixel(0, 11, 1.5), 16.5);
+});
+
+test("all guide types use the same stroke and do not pixel-snap at fractional zoom", () => {
+  const css = readFileSync(new URL("../src/styles/alignment-guides.css", import.meta.url), "utf8");
+  const baseStroke = css.match(/\.sketchizi-alignment-guides line\s*\{([^}]*)\}/)?.[1];
+  assert.ok(baseStroke, "Shared guide stroke declaration must exist");
+  assert.match(baseStroke, /stroke-width:\s*1\.5\s*;/);
+  assert.match(baseStroke, /stroke-dasharray:\s*5 4\s*;/);
+  assert.match(baseStroke, /opacity:\s*0\.92\s*;/);
+  assert.match(baseStroke, /vector-effect:\s*non-scaling-stroke\s*;/);
+  assert.match(baseStroke, /shape-rendering:\s*geometricPrecision\s*;/);
+  assert.doesNotMatch(css, /line\[data-guide-kind=/, "Guide types must not override shared styling");
+  assert.doesNotMatch(css, /shape-rendering:\s*crispEdges/);
 });

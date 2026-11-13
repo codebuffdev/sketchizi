@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import IconLibraryPanel from "./IconLibraryPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
-import LayersPanel from "./components/app/LayersPanel";
 import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
@@ -67,12 +66,9 @@ function App() {
   const [devopsStudioMenuOpen, setDevopsStudioMenuOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
-  const [gridVisible, setGridVisible] = useState(false);
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
-  const [autoOpenLayers, setAutoOpenLayers] = useState(() => { try { return localStorage.getItem("sketchizi:auto-open-layers") !== "false"; } catch { return true; } });
-  const knownLayerElementIdsRef = useRef(null);
   const [architectureValidation, setArchitectureValidation] = useState({ errors: [], warnings: [], info: [] });
   const architectureValidationSignatureRef = useRef("");
   const lastSelectionSignature = useRef("");
@@ -129,7 +125,7 @@ function App() {
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
-  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen, layersOpen } = panelState;
+  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   // The native hamburger menu and React-powered floating catalogs are mutually
   // exclusive. Opening the native menu dismisses any active catalog/panel.
@@ -184,15 +180,6 @@ function App() {
   const cloudLoadStartedRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
-  useEffect(() => {
-    try { localStorage.setItem("sketchizi:auto-open-layers", String(autoOpenLayers)); } catch {}
-  }, [autoOpenLayers]);
-
-  useEffect(() => {
-    if (!apiReady || !sketchReady || (cloudDiagramId && cloudSaveState.state === "loading")) return;
-    const initialElements = apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || [];
-    knownLayerElementIdsRef.current = new Set(initialElements.filter((element) => element && !element.isDeleted && element.type !== "selection").map((element) => element.id));
-  }, [apiReady, sketchReady, cloudDiagramId, cloudSaveState.state]);
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -467,7 +454,6 @@ function App() {
 
   const canvasTools = useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit: collaborationCanEdit });
   const { toggleGrid, activateArrowTool, activateSelectionTool, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected, hasTextSelection, hasArrowSelection, hasShapeSelection } = canvasTools;
-  const toggleCanvasGrid = useCallback(() => setGridVisible((visible) => !visible), []);
   const selectedAwsResource = getSelectedAwsResource(selectedElements);
   const selectedAwsResourceDefinition = getAwsResourceDefinitionById(selectedAwsResource?.definitionId);
   const selectedKubernetesResource = getSelectedKubernetesResource(selectedElements);
@@ -606,7 +592,7 @@ function App() {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
   }, [closePanel, collaborationCanEdit, libraryOpen]);
   const preferences = useSketchiziPreferences({
-    apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, toggleCanvasGrid,
+    apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid,
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
@@ -618,8 +604,6 @@ function App() {
     setThemeMode,
     gridEnabled,
     toggleGrid,
-    gridVisible,
-    toggleCanvasGrid,
     setMinimapOpen,
     fitDiagram: preferences.fitDiagram,
     activateMoreTool,
@@ -644,16 +628,6 @@ function App() {
   // Never apply a color from the callback's appState argument: that snapshot can
   // predate scene restoration or Excalidraw's internal theme update.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
-    const liveIds = new Set((elements || []).filter((element) => element && !element.isDeleted && element.type !== "selection").map((element) => element.id));
-    if (knownLayerElementIdsRef.current === null) {
-      knownLayerElementIdsRef.current = liveIds;
-    } else {
-      const addedElement = [...liveIds].some((id) => !knownLayerElementIdsRef.current.has(id));
-      knownLayerElementIdsRef.current = liveIds;
-      if (addedElement && autoOpenLayers && collaborationCanEdit && !collaborationRemoteUpdateRef.current && (!cloudDiagramId || cloudSaveState.state !== "loading")) {
-        openPanel("layers");
-      }
-    }
     handleExcalidrawChange(elements, appState);
     if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
     window.requestAnimationFrame(() => {
@@ -662,7 +636,7 @@ function App() {
         applyCanvasThemeBackground(apiRef.current, activeTheme === "dark");
       });
     });
-  }, [apiRef, autoOpenLayers, collaborationCanEdit, cloudDiagramId, cloudSaveState.state, handleExcalidrawChange, openPanel, queueSketchSave]);
+  }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
@@ -1798,7 +1772,7 @@ function App() {
 
       </DesktopAppHeader>
 
-      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen || layersOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
+      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
         <aside className={`desktop-resources-region ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
           {collaborationCanEdit && (
             <IconLibraryPanel
@@ -1845,9 +1819,7 @@ function App() {
             onToolActivated={() => closePanel("properties")}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
-            gridVisible={gridVisible}
-            gridSize={gridSize}
-            gridSnappingEnabled={gridEnabled}
+            gridEnabled={gridEnabled}
           />
 
 
@@ -1867,20 +1839,19 @@ function App() {
 
 
         <aside
-          className={`desktop-context-region ${architectureValidationOpen || layersOpen ? "validation-state-open" : "validation-state-closed"}`}
-          aria-label="Properties, layers, and architecture validation"
+          className={`desktop-context-region ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
+          aria-label="Properties and architecture validation"
         >
-          {(propertiesOpen || architectureValidationOpen || layersOpen) && (
-            <div className={`desktop-validation-host ${architectureValidationOpen || layersOpen ? "is-open" : "is-closed"}`}>
-              {layersOpen && <LayersPanel apiRef={apiRef} sceneElements={apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []} selectedElements={selectedElements} canEdit={collaborationCanEdit} autoOpen={autoOpenLayers} onAutoOpenChange={setAutoOpenLayers} onClose={() => closePanel("layers")} />}
-              {!layersOpen && <ArchitectureValidationPanel
+          {(propertiesOpen || architectureValidationOpen) && (
+            <div className={`desktop-validation-host ${architectureValidationOpen ? "is-open" : "is-closed"}`}>
+              <ArchitectureValidationPanel
                 validation={architectureValidation}
                 sceneElements={apiRef.current?.getSceneElements?.() || []}
                 onClose={() => closePanel("architecture-validation")}
                 onSelectDiagnostic={selectArchitectureDiagnostic}
                 onApplyKubernetesSuggestion={applyKubernetesSuggestion}
                 canApplyCorrections={collaborationCanEdit}
-              />}
+              />
             </div>
           )}
         </aside>

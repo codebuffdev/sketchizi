@@ -4,7 +4,7 @@ import { clearEmergencyBackup, clearSketch } from "../../persistence";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js";
 import { applyCanvasThemeBackground } from "./canvasTheme.js";
 
-export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, toggleCanvasGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
+export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
   const themeMode = themeModeState === "light" ? "light" : "dark";
   const isDarkTheme = themeMode === "dark";
@@ -71,15 +71,14 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
       }
       if (!plainKey) return;
       if (key === "d") { event.preventDefault(); setThemeMode((mode) => mode === "dark" ? "light" : "dark"); return; }
-      if (event.shiftKey && key === "g") { event.preventDefault(); toggleGrid(); return; }
-      if (!event.shiftKey && key === "g") { event.preventDefault(); toggleCanvasGrid?.(); return; }
+      if (!event.shiftKey && key === "g") { event.preventDefault(); toggleGrid(); return; }
       if (key === "p" && selectedCount > 0) { event.preventDefault(); togglePanel("properties"); return; }
       if (key === "m") { event.preventDefault(); setMinimapOpen((open) => !open); return; }
       if (key === "f") { event.preventDefault(); fitDiagram(); }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canEdit, fitDiagram, openPanel, searchRef, selectedCount, setMinimapOpen, toggleCanvasGrid, toggleGrid, togglePanel]);
+  }, [canEdit, fitDiagram, openPanel, searchRef, selectedCount, setMinimapOpen, toggleGrid, togglePanel]);
 
   useEffect(() => {
     const handleResetCanvas = (event) => {
