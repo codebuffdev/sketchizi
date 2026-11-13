@@ -1184,3 +1184,95 @@
 }
 
 
+
+
+/* Canvas focus mode: remove the header's grid track entirely so the canvas
+   receives the reclaimed viewport height. The restore control stays reachable. */
+@media (min-width: 761px) {
+  .app.canvas-focus-mode {
+    grid-template-rows: 0 minmax(0, 1fr) !important;
+  }
+
+  .app .desktop-app-header.canvas-focus-mode {
+    position: static !important;
+    z-index: 1600 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  .app .desktop-app-header.canvas-focus-mode > :not(.desktop-app-focus-toggle) {
+    display: none !important;
+  }
+
+  .app .desktop-app-focus-toggle {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    border: 1px solid var(--ui-border, #dfe3eb);
+    border-radius: 9px;
+    background: var(--ui-surface-solid, #fff);
+    color: var(--ui-text, #343746);
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, opacity .15s ease;
+  }
+
+  .app .desktop-app-header:not(.canvas-focus-mode) .desktop-app-focus-toggle {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+    margin-left: 4px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--ui-text-muted, #73798a);
+    cursor: pointer;
+  }
+
+  .app .desktop-app-focus-toggle:hover,
+  .app .desktop-app-focus-toggle:focus-visible {
+    border-color: var(--ui-border, #dfe3eb);
+    background: var(--ui-hover, #f3f4f7);
+    color: var(--ui-text, #252938);
+  }
+
+  .app .desktop-app-header.canvas-focus-mode .desktop-app-focus-toggle {
+    position: fixed !important;
+    top: 10px !important;
+    right: 12px !important;
+    z-index: 1601 !important;
+    box-shadow: 0 3px 12px rgb(15 23 42 / 12%);
+  }
+
+  .app.theme-dark .desktop-app-focus-toggle {
+    border-color: #414451;
+    background: #20222b;
+    color: #e6e7f1;
+  }
+
+  .app.theme-dark .desktop-app-focus-toggle:hover,
+  .app.theme-dark .desktop-app-focus-toggle:focus-visible {
+    background: #30333e;
+    border-color: #626779;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 761px) {
+  .app .desktop-app-header,
+  .app .desktop-workspace {
+    transition: grid-template-rows .18s ease, height .18s ease;
+  }
+}
