@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CaptureUpdateAction, Excalidraw } from "@excalidraw/excalidraw";
-import { snapChangedSceneElements } from "../../features/canvas/gridSnap.js";
-import { sceneToCanvasPixel } from "../../features/canvas/alignmentGuides.js";
+import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
@@ -18,13 +16,12 @@ export default function SketchiziCanvas({
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
-  gridVisible = false, gridSize = 20, gridSnappingEnabled = false,
+  gridEnabled = false,
 }) {
   const canvasRootRef = useRef(null);
   const fitContentButtonRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
-  const gridSnapBaselineRef = useRef(null);
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
@@ -458,69 +455,6 @@ export default function SketchiziCanvas({
     };
   }, []);
 
-  // Grid visibility is a separate visual overlay. Grid snapping is applied to
-  // changed geometry at pointer-up because Excalidraw's native gridModeEnabled
-  // couples the visible grid with snapping. Native elements/handlers stay intact.
-  useEffect(() => {
-    const root = canvasRootRef.current;
-    if (!root) return undefined;
-    let firstFrame = 0;
-    let secondFrame = 0;
-    let pointerActive = false;
-
-    const captureBaseline = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (!gridSnappingEnabled || !canEdit || viewModeEnabled || event.button !== 0 || !target?.closest(".excalidraw")) return;
-      if (target.closest("button, input, textarea, select, [role=\'menu\'], .App-menu, .Island, .popover")) return;
-      const api = apiRef?.current;
-      if (!api) return;
-      const elements = api.getSceneElements?.() || [];
-      gridSnapBaselineRef.current = new Map(elements.filter((element) => element && !element.isDeleted && !element.deleted).map((element) => [element.id, {
-        x: element.x, y: element.y, width: element.width, height: element.height,
-        angle: element.angle, type: element.type,
-      }]));
-      pointerActive = true;
-    };
-
-    const clearGesture = () => {
-      pointerActive = false;
-      gridSnapBaselineRef.current = null;
-      if (firstFrame) cancelAnimationFrame(firstFrame);
-      if (secondFrame) cancelAnimationFrame(secondFrame);
-      firstFrame = 0;
-      secondFrame = 0;
-    };
-
-    const finishGesture = () => {
-      if (!pointerActive) return;
-      pointerActive = false;
-      const baseline = gridSnapBaselineRef.current;
-      gridSnapBaselineRef.current = null;
-      if (!baseline || !gridSnappingEnabled || !canEdit || viewModeEnabled) return;
-      firstFrame = requestAnimationFrame(() => {
-        secondFrame = requestAnimationFrame(() => {
-          const api = apiRef?.current;
-          if (!api) return;
-          const currentElements = api.getSceneElements?.() || [];
-          const nextElements = snapChangedSceneElements(currentElements, baseline, gridSize);
-          if (nextElements !== currentElements) {
-            api.updateScene({ elements: nextElements, captureUpdate: CaptureUpdateAction.NEVER });
-          }
-        });
-      });
-    };
-
-    root.addEventListener("pointerdown", captureBaseline, true);
-    window.addEventListener("pointerup", finishGesture);
-    window.addEventListener("pointercancel", clearGesture);
-    return () => {
-      root.removeEventListener("pointerdown", captureBaseline, true);
-      window.removeEventListener("pointerup", finishGesture);
-      window.removeEventListener("pointercancel", clearGesture);
-      clearGesture();
-    };
-  }, [apiRef, canEdit, gridSize, gridSnappingEnabled, viewModeEnabled]);
-
   // Add one small Fit-to-content control to Excalidraw's native zoom cluster.
   // Native zoom, undo, and redo controls remain owned by Excalidraw; this
   // button simply delegates to the same viewport API used by Sketchizi's F key.
@@ -686,25 +620,11 @@ export default function SketchiziCanvas({
   const clearRemoteCursor = () => {
     updateCollaborationCursor?.(null);
   };
-  const gridAppState = apiRef?.current?.getAppState?.() || {};
-  const gridZoom = Math.max(0.1, Number(gridAppState.zoom?.value ?? gridAppState.zoom) || 1);
-  const gridStepPixels = Math.max(5, Number(gridSize) || 20) * gridZoom;
-  const rootRect = canvasRootRef.current?.getBoundingClientRect();
-  const viewportRect = canvasRootRef.current?.querySelector(".excalidraw")?.getBoundingClientRect();
-  const gridWidth = viewportRect?.width || rootRect?.width || Number(gridAppState.width) || 0;
-  const gridHeight = viewportRect?.height || rootRect?.height || Number(gridAppState.height) || 0;
-  const gridOriginX = ((sceneToCanvasPixel(0, gridAppState.scrollX, gridZoom) % gridStepPixels) + gridStepPixels) % gridStepPixels;
-  const gridOriginY = ((sceneToCanvasPixel(0, gridAppState.scrollY, gridZoom) % gridStepPixels) + gridStepPixels) % gridStepPixels;
-  const gridOverlayStyle = {
-    "--sketchizi-grid-step": `${gridStepPixels}px`,
-    "--sketchizi-grid-origin-x": `${gridOriginX}px`,
-    "--sketchizi-grid-origin-y": `${gridOriginY}px`,
-  };
   const visibleSceneElements = apiRef?.current?.getSceneElements?.() || savedSketch?.elements || [];
   const isCanvasEmpty = visibleSceneElements.every((element) => element?.isDeleted || element?.deleted);
 
   return (
-    <main ref={canvasRootRef} data-grid-visible={gridVisible ? "true" : "false"} style={gridOverlayStyle} className={viewModeEnabled ? "canvas viewer-mode" : "canvas"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
+    <main ref={canvasRootRef} className={viewModeEnabled ? "canvas viewer-mode" : "canvas"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       <Excalidraw
         // Always seed the scene with the active Day/Night background. Legacy
         // saved scenes may contain an old independent canvas color, which must
@@ -721,7 +641,7 @@ export default function SketchiziCanvas({
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: getCanvasBackground(isDarkTheme),
-            gridModeEnabled: false,
+            gridModeEnabled: gridEnabled,
           },
           files: savedSketch?.files || {},
         }}
@@ -729,16 +649,11 @@ export default function SketchiziCanvas({
         onExcalidrawAPI={registerExcalidrawAPI}
         theme={isDarkTheme ? "dark" : "light"}
         viewModeEnabled={viewModeEnabled}
-        gridModeEnabled={false}
+        gridModeEnabled={gridEnabled}
         aiEnabled={true}
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {gridVisible && <div className="sketchizi-grid-overlay" aria-hidden="true" style={{
-        left: (viewportRect?.left || rootRect?.left || 0) - (rootRect?.left || 0),
-        top: (viewportRect?.top || rootRect?.top || 0) - (rootRect?.top || 0),
-        width: gridWidth, height: gridHeight,
-      }} />}
       {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
         <ContextualFormattingToolbar
           apiRef={apiRef}
