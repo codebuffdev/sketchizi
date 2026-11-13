@@ -2,63 +2,46 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
-const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
-const commands = readFileSync(new URL('../src/features/commands/commandRegistry.js', import.meta.url), 'utf8');
-const preferences = readFileSync(new URL('../src/features/navigation/useSketchiziPreferences.js', import.meta.url), 'utf8');
-const header = readFileSync(new URL('../src/components/app/DesktopAppHeader.jsx', import.meta.url), 'utf8');
-const shortcuts = readFileSync(new URL('../src/ShortcutHelp.jsx', import.meta.url), 'utf8');
-const styles = readFileSync(new URL('../src/styles/ui-modernization-grid.css', import.meta.url), 'utf8');
-const styleEntry = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-const snap = readFileSync(new URL('../src/features/canvas/gridSnap.js', import.meta.url), 'utf8');
+const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+const app = read('../src/App.jsx');
+const canvas = read('../src/components/app/SketchiziCanvas.jsx');
+const tools = read('../src/features/canvas/useCanvasTools.js');
+const commands = read('../src/features/commands/commandRegistry.js');
+const preferences = read('../src/features/navigation/useSketchiziPreferences.js');
+const header = read('../src/components/app/DesktopAppHeader.jsx');
+const shortcuts = read('../src/ShortcutHelp.jsx');
+const panelState = read('../src/features/navigation/usePanelState.js');
+const styles = read('../src/styles.css');
 
-test('canvas grid visibility has its own state, separate from grid snapping state', () => {
+test('Excalidraw owns grid display and snapping', () => {
   assert.match(app, /const \[gridEnabled, setGridEnabled\] = useState\(false\)/);
-  assert.match(app, /const \[gridVisible, setGridVisible\] = useState\(false\)/);
-  assert.match(app, /const toggleCanvasGrid = useCallback\(\(\) => setGridVisible\(\(visible\) => !visible\), \[\]\)/);
-  assert.match(app, /gridVisible=\{gridVisible\}/);
-  assert.match(canvas, /data-grid-visible=\{gridVisible \? "true" : "false"\}/);
-  assert.match(canvas, /gridVisible && <div className="sketchizi-grid-overlay"/);
-  assert.match(styles, /\.sketchizi-grid-overlay/);
-  assert.match(canvas, /gridModeEnabled=\{false\}/);
-  assert.match(canvas, /snapChangedSceneElements\(currentElements, baseline, gridSize\)/);
-  assert.match(canvas, /target\?\.closest\("\.excalidraw"\)/);
-  assert.match(app, /gridSnappingEnabled=\{gridEnabled\}/);
+  assert.match(app, /gridEnabled=\{gridEnabled\}/);
+  assert.match(canvas, /gridModeEnabled=\{gridEnabled\}/);
+  assert.match(canvas, /gridModeEnabled: gridEnabled/);
+  assert.match(tools, /gridModeEnabled: enabled/);
+  assert.doesNotMatch(canvas, /sketchizi-grid-overlay|gridSnapBaselineRef|snapChangedSceneElements|gridVisible|gridSnappingEnabled/);
+  assert.doesNotMatch(styles, /ui-modernization-grid\.css/);
 });
 
-test('View menu exposes separate canvas-grid and grid-snapping commands', () => {
-  assert.match(commands, /id: "view\.toggle-canvas-grid"[\s\S]*?shortcut: "G"[\s\S]*?execute: toggleCanvasGrid/);
-  assert.match(commands, /id: "view\.toggle-grid"[\s\S]*?label: gridEnabled \? "Disable Grid Snapping" : "Enable Grid Snapping"[\s\S]*?shortcut: "⇧G"[\s\S]*?execute: toggleGrid/);
-  assert.match(header, /"view\.toggle-canvas-grid"[\s\S]*?"view\.toggle-grid"/);
+test('View menu exposes a single native grid command', () => {
+  assert.match(commands, /id: "view\.toggle-grid"[\s\S]*?shortcut: "G"[\s\S]*?execute: toggleGrid/);
+  assert.match(commands, /label: gridEnabled \? "Hide Grid" : "Show Grid"/);
+  assert.doesNotMatch(commands, /view\.toggle-canvas-grid|gridVisible|toggleCanvasGrid/);
+  assert.match(header, /"view\.toggle-grid"/);
+  assert.doesNotMatch(header, /view\.toggle-canvas-grid/);
 });
 
-test('G and Shift+G shortcuts are documented and independently routed', () => {
-  assert.match(preferences, /if \(event\.shiftKey && key === "g"\).*?toggleGrid\(\)/);
-  assert.match(preferences, /if \(!event\.shiftKey && key === "g"\).*?toggleCanvasGrid\?\.\(\)/);
-  assert.match(shortcuts, /\["G", "Show \/ hide canvas grid"\]/);
-  assert.match(shortcuts, /\["⇧ G", "Toggle grid snapping"\]/);
+test('G toggles the native grid without a separate Shift+G mode', () => {
+  assert.match(preferences, /if \(!event\.shiftKey && key === "g"\) \{ event\.preventDefault\(\); toggleGrid\(\); return; \}/);
+  assert.doesNotMatch(preferences, /toggleCanvasGrid|event\.shiftKey && key === "g"/);
+  assert.match(shortcuts, /\["G", "Toggle Excalidraw grid"\]/);
+  assert.doesNotMatch(shortcuts, /Toggle grid snapping|⇧ G/);
 });
 
-test('visual grid scales and repositions with canvas zoom and scroll', () => {
-  assert.match(canvas, /gridStepPixels = Math\.max\(5, Number\(gridSize\) \|\| 20\) \* gridZoom/);
-  assert.match(canvas, /gridAppState\.scrollX/);
-  assert.match(canvas, /gridAppState\.scrollY/);
-  assert.match(styles, /background-size: var\(--sketchizi-grid-step/);
-  assert.match(styles, /background-position: var\(--sketchizi-grid-origin-x/);
-});
-
-test('grid overlay does not capture canvas interactions and respects theme', () => {
-  assert.match(styles, /pointer-events: none/);
-  assert.match(styles, /\.app\.theme-light/);
-  assert.match(styles, /\.app\.theme-dark/);
-  assert.match(styleEntry, /@import "\.\/styles\/ui-modernization-grid\.css";/);
-  assert.ok(styleEntry.indexOf('ui-modernization-grid.css') > styleEntry.indexOf('ui-modernization-navigation.css'));
-  assert.ok(styleEntry.indexOf('ui-modernization-grid.css') < styleEntry.indexOf('.kubernetes-library-status'));
-});
-
-test('visual grid and smart guides share the scene-to-canvas transform', () => {
-  assert.match(canvas, /sceneToCanvasPixel\(0, gridAppState\.scrollX, gridZoom\)/);
-  assert.match(canvas, /sceneToCanvasPixel\(0, gridAppState\.scrollY, gridZoom\)/);
-  assert.doesNotMatch(canvas, /gridWidth \/ 2\) % gridStepPixels/);
-  assert.match(styles, /inset: auto/);
+test('Layers panel entry points and automatic opening are removed', () => {
+  assert.doesNotMatch(app, /LayersPanel|layersOpen|autoOpenLayers|knownLayerElementIdsRef|auto-open-layers/);
+  assert.doesNotMatch(commands, /layers\.open|openPanel\("layers"\)/);
+  assert.doesNotMatch(panelState, /layersOpen|activePanel === "layers"/);
+  assert.match(app, /<ArchitectureValidationPanel/);
+  assert.match(app, /<SketchiziCanvas/);
 });
