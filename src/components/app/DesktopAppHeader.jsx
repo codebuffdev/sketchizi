@@ -100,8 +100,8 @@ export default function DesktopAppHeader({
   onOpenTemplates,
   onToggleMinimap,
   minimapOpen = false,
-  canvasFocusMode = false,
-  onToggleCanvasFocusMode,
+  canvasHeaderHidden = false,
+  onToggleCanvasHeader,
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
@@ -225,17 +225,17 @@ export default function DesktopAppHeader({
     : "No successful local save yet";
 
   return (
-    <header ref={headerRef} className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${canvasFocusMode ? " canvas-focus-mode" : ""}`}>
+    <header ref={headerRef} className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${canvasHeaderHidden ? " canvas-header-hidden" : ""}`}>
       <button
         type="button"
         className="desktop-app-focus-toggle"
-        onClick={onToggleCanvasFocusMode}
-        aria-label={canvasFocusMode ? "Show application header" : "Focus canvas and hide application header"}
-        aria-expanded={!canvasFocusMode}
-        title={canvasFocusMode ? "Show application header (Ctrl+Shift+F)" : "Focus canvas (Ctrl+Shift+F)"}
+        onClick={onToggleCanvasHeader}
+        aria-label={canvasHeaderHidden ? "Show application header" : "Hide application header"}
+        aria-expanded={!canvasHeaderHidden}
+        title={canvasHeaderHidden ? "Show application header (Ctrl+Shift+F)" : "Hide header (Ctrl+Shift+F)"}
       >
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          {canvasFocusMode ? <><path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4" /><path d="M9 9h6v6H9z" /></> : <><path d="M4 7h16M4 12h16M4 17h16" /><path d="M18 4v6" /></>}
+          {canvasHeaderHidden ? <><path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4" /><path d="M9 9h6v6H9z" /></> : <><path d="M4 7h16M4 12h16M4 17h16" /><path d="M18 4v6" /></>}
         </svg>
       </button>
       {workspaceToggle}
