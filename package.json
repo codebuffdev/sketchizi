@@ -9,6 +9,7 @@
     "build": "vite build",
     "prebuild": "node scripts/copy-excalidraw-fonts.mjs",
     "preview": "vite preview",
+    "report:build-assets": "node scripts/report-build-assets.mjs",
     "sync:eraser": "node scripts/sync-eraser-icons.mjs",
     "collaboration-server": "node server/collaboration-server.mjs",
     "test:networking": "node --test tests/networking.test.js",
