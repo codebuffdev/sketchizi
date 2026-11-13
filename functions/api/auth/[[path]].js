@@ -65,7 +65,6 @@ export async function onRequest({ request, env }) {
       method: request.method,
       headers,
       redirect: "manual",
-      signal: AbortSignal.timeout(8000),
     };
 
     if (

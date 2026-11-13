@@ -1,6 +1,0 @@
-{
-  "name": "Sketchizi",
-  "description": "Free Online Diagram & Architecture Designer with cloud, Kubernetes, networking, UML, and mind map icon libraries.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

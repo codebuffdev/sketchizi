@@ -66,3 +66,17 @@ test("GitHub callback path is rewritten to Spring Security callback", async () =
   await onRequest({ request: new Request("https://sketchizi.pages.dev/api/auth/oauth2/callback/github?code=fake&state=fake"), env: { AUTH_SERVICE_ORIGIN: "https://auth.example.test" } });
   assert.equal(target, "https://auth.example.test/login/oauth2/code/github?code=fake&state=fake");
 });
+
+
+test("gateway does not impose a short fixed timeout on cold-starting auth services", async () => {
+  let seenOptions;
+  globalThis.fetch = async (_url, options) => {
+    seenOptions = options;
+    return new Response("ok");
+  };
+  await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/auth/me"),
+    env: { AUTH_SERVICE_ORIGIN: "https://auth.example.test" },
+  });
+  assert.equal(seenOptions.signal, undefined);
+});

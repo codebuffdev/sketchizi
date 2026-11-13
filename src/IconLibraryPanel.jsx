@@ -567,7 +567,7 @@ export default function IconLibraryPanel({
                 <input
                   type="color"
                   aria-label="Custom Essentials icon color"
-                  value={essentialIconColor || "#7c3aed"}
+                  value={essentialIconColor || "#3b82f6"}
                   onChange={(event) => setEssentialIconColor(event.target.value)}
                 />
               </label>

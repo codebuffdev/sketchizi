@@ -28,10 +28,10 @@ test("recolorSvgMarkup preserves fill='none' on outlined Lucide icons and recolo
 test("recolorSvgDataUrl encodes recolored base64 SVG data URLs safely", () => {
   const svg = '<svg viewBox="0 0 24 24" fill="none" stroke="#111111"><circle cx="12" cy="12" r="8"/></svg>';
   const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
-  const updated = recolorSvgDataUrl(dataUrl, "#7c3aed");
+  const updated = recolorSvgDataUrl(dataUrl, "#3b82f6");
   assert.ok(updated?.startsWith("data:image/svg+xml;base64,"));
   const decoded = Buffer.from(updated.split(",")[1], "base64").toString("utf8");
-  assert.match(decoded, /stroke="#7c3aed"/);
+  assert.match(decoded, /stroke="#3b82f6"/);
   assert.match(decoded, /fill="none"/);
 });
 
@@ -52,7 +52,9 @@ test("isRecolorableEssentialIcon targets Core/Essentials icons and excludes clou
 });
 
 test("CORE_ICON_COLORS and isLightColor classify white/light vs dark swatches accurately", () => {
-  assert.ok(CORE_ICON_COLORS.length >= 6);
+  assert.ok(CORE_ICON_COLORS.length >= 5);
+  assert.equal(CORE_ICON_COLORS.some(([, label]) => /violet|purple/i.test(label)), false);
+  assert.equal(CORE_ICON_COLORS.some(([color]) => color.toLowerCase() === "#7c3aed"), false);
   assert.equal(isLightColor("#ffffff"), true);
   assert.equal(isLightColor("#fff"), true);
   assert.equal(isLightColor("#1e293b"), false);

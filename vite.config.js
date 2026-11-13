@@ -18,7 +18,7 @@ async function readRequestBody(req) {
 async function handlePagesFunction(handler, req, res) {
   const method = (req.method || "GET").toUpperCase();
   const protocol = req.headers["x-forwarded-proto"] || "http";
-  const host = req.headers.host || "localhost:5173";
+  const host = req.headers.host || "localhost:3000";
   const headers = new Headers(req.headers);
 
   for (const name of ["host", "connection", "content-length", "transfer-encoding"]) {
@@ -37,10 +37,10 @@ async function handlePagesFunction(handler, req, res) {
   const response = await handler({
     request,
     env: {
-      AUTH_SERVICE_ORIGIN: process.env.AUTH_SERVICE_ORIGIN || "",
-      AI_SERVICE_ORIGIN: process.env.AI_SERVICE_ORIGIN || "",
+      AUTH_SERVICE_ORIGIN: process.env.AUTH_SERVICE_ORIGIN || "http://localhost:8080",
+      AI_SERVICE_ORIGIN: process.env.AI_SERVICE_ORIGIN || "http://localhost:8090",
       AI_IDENTITY_HMAC_SECRET: process.env.AI_IDENTITY_HMAC_SECRET || "",
-      PUBLIC_FRONTEND_ORIGIN: process.env.PUBLIC_FRONTEND_ORIGIN || "",
+      PUBLIC_FRONTEND_ORIGIN: process.env.PUBLIC_FRONTEND_ORIGIN || "http://localhost:3000",
     },
   });
 

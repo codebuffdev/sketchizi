@@ -3,7 +3,6 @@ const PRESERVED_PAINT = new Set(["none", "transparent", "inherit", "initial", "u
 export const CORE_ICON_COLORS = [
   ["#1e293b", "Ink"],
   ["#ffffff", "White"],
-  ["#7c3aed", "Violet"],
   ["#3b82f6", "Blue"],
   ["#16a34a", "Green"],
   ["#d97706", "Amber"],
