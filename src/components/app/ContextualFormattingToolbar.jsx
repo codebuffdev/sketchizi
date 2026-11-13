@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
-import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -54,7 +53,6 @@ const GROUPS = [
   { id: "textAlign", label: "Text align", icon: "≡" },
   { id: "opacity", label: "Opacity", icon: "◐" },
   { id: "align", label: "Align", icon: "⫽" },
-  { id: "themes", label: "Smart Themes", icon: "🎨" },
   { id: "layers", label: "Layers", icon: "▤" },
 ];
 
@@ -795,49 +793,6 @@ export default function ContextualFormattingToolbar({
         <div className="format-option-row">
           <button type="button" className="format-option-button" aria-label="Distribute horizontally" title="Distribute horizontally" onClick={() => alignSelection("distributeHorizontal")}>↔ Horiz</button>
           <button type="button" className="format-option-button" aria-label="Distribute vertically" title="Distribute vertically" onClick={() => alignSelection("distributeVertical")}>↕ Vert</button>
-        </div>
-      </div>
-    );
-    if (groupId === "themes") return (
-      <div className="format-option-section">
-        <div className="format-option-label">Smart Themes</div>
-        <div className="format-smart-themes-list">
-          {SMART_THEMES.map((theme) => (
-            <button
-              key={theme.id}
-              type="button"
-              className="format-smart-theme-btn"
-              title={theme.description}
-              onClick={() => {
-                const api = apiRef?.current;
-                if (!api) return;
-                const allElements = api.getSceneElements?.() || [];
-                const selectedIds = new Set(
-                  Object.entries(appState.selectedElementIds || {})
-                    .filter(([, sel]) => sel)
-                    .map(([id]) => id)
-                );
-                let targets = allElements;
-                if (selectedIds.size > 0) {
-                  targets = allElements.filter((el) => selectedIds.has(el.id));
-                }
-                const recoloredTargets = applySmartThemeToElements(targets, theme.id);
-                const targetMap = new Map(recoloredTargets.map((el) => [el.id, el]));
-                const nextElements = allElements.map((el) => targetMap.get(el.id) || el);
-                api.updateScene?.({
-                  elements: nextElements,
-                  commitToHistory: true,
-                });
-              }}
-            >
-              <span className="format-smart-theme-swatches">
-                {theme.swatch.map((c, i) => (
-                  <span key={i} className="format-smart-theme-dot" style={{ backgroundColor: c }} />
-                ))}
-              </span>
-              <span>{theme.name}</span>
-            </button>
-          ))}
         </div>
       </div>
     );
