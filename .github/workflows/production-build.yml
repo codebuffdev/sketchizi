@@ -37,6 +37,8 @@ jobs:
         run: npm run check:build-prerequisites
 
       - name: Run automated regression suite
+        id: regression
+        continue-on-error: true
         run: npm run test:all
 
       - name: Build production application
@@ -98,3 +100,11 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 7
+
+      # Keep CI red for any regression failures, but only after the build and
+      # browser smoke steps have had a chance to run and produce diagnostics.
+      - name: Enforce regression suite result
+        if: ${{ always() && steps.regression.outcome == 'failure' }}
+        run: |
+          echo "::error::Automated regression suite failed; see the test step above."
+          exit 1
