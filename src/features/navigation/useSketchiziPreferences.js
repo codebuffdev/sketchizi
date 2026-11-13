@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
-import { clearEmergencyBackup, clearSketch } from "../../persistence";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js";
 import { applyCanvasThemeBackground } from "./canvasTheme.js";
 
-export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch = null, canEdit = true }) {
+export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
   const themeMode = themeModeState === "light" ? "light" : "dark";
   const isDarkTheme = themeMode === "dark";
@@ -82,20 +80,20 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
 
   useEffect(() => {
     const handleResetCanvas = (event) => {
-      const target = event.target?.closest?.('button, [role="button"], a'); if (!target) return;
+      const target = event.target?.closest?.('button, [role="button"], a');
+      if (!target) return;
       if (target.textContent?.replace(/\s+/g, " ").trim().toLowerCase() !== "reset the canvas") return;
-      event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
-      if (!window.confirm("Clear this canvas? Your saved Sketchizi canvas will also be cleared. This action cannot be undone.")) return;
-      const api = apiRef.current; if (!api) return;
-      if (saveTimerRef.current) { window.clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
-      api.updateScene({ elements: [], appState: { ...api.getAppState(), selectedElementIds: {}, selectedGroupForOperation: null }, captureUpdate: CaptureUpdateAction.NEVER });
-      api.history?.clear?.();
-      clearEmergencyBackup(); fileActionsRef.current.clearFileAssociation?.();
-      clearSketch().catch(() => setStorageError({ kind: "write", message: "The canvas was cleared, but the saved local copy could not be removed.", emergencySaved: false }));
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      if (!canEdit) return;
+      // All destructive replacement actions use the same confirmation,
+      // cloud detachment, history reset, and local document initialization.
+      fileActionsRef.current.createNewFile?.();
     };
     document.addEventListener("click", handleResetCanvas, true);
     return () => document.removeEventListener("click", handleResetCanvas, true);
-  }, [apiRef, fileActionsRef, saveTimerRef, setStorageError]);
+  }, [canEdit, fileActionsRef]);
 
   return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground };
 }
