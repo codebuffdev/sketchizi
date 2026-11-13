@@ -43,14 +43,16 @@ test('duplicate native Scroll back to content tooltip is suppressed', () => {
   assert.match(canvas, /tooltipObserver\.observe\(document\.body, \{ childList: true, subtree: true \}\)/);
 });
 
-test('Scroll back to content tooltip is placed below the horizontal dock', () => {
-  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+test('Scroll back to content tooltip is anchored to the control without covering the dock', () => {
   assert.match(canvas, /const scrollBackTooltip = \/scroll back to content\/i\.test\(label\)/);
-  assert.match(canvas, /if \(scrollBackTooltip\) \{[\s\S]*?top = \(toolbar\?\.getBoundingClientRect\(\)\.bottom \?\? buttonRect\.bottom\) \+ 8;/);
+  assert.match(canvas, /if \(scrollBackTooltip\) \{/);
+  assert.match(canvas, /top = buttonRect\.top - tipRect\.height - 8/);
+  assert.match(canvas, /if \(top < 8\) top = buttonRect\.bottom \+ 8/);
 });
 
-test('Scroll back to content uses the dock-aware tooltip instead of a native title tooltip', () => {
-  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
-  assert.match(canvas, /Scroll back to content[\s\S]*?button\.removeAttribute\("title"\)[\s\S]*?bindToolbarTooltip\(button\)/);
-  assert.match(canvas, /if \(!\/scroll back to content\/i\.test\(label\)\) return;/);
+test('Scroll back to content uses accessible native-title suppression and the shared dock tooltip', () => {
+  assert.match(canvas, /button\.dataset\.sketchiziTooltip = "Scroll back to content"/);
+  assert.match(canvas, /button\.removeAttribute\("title"\)/);
+  assert.match(canvas, /bindToolbarTooltip\(button\)/);
+  assert.match(canvas, /return \/scroll back to content\/i\.test\(label\)/);
 });
