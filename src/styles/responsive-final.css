@@ -569,3 +569,86 @@
     min-width: 0;
   }
 }
+
+
+/* Canvas-first header: the workspace owns the full viewport and the
+   application header floats above it instead of consuming a layout row. */
+@media (min-width: 761px) {
+  .app {
+    position: relative;
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+
+  .desktop-app-header {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    z-index: 1500 !important;
+    width: 100% !important;
+    height: var(--sketchizi-desktop-header-height, 58px) !important;
+    min-height: var(--sketchizi-desktop-header-height, 58px) !important;
+    box-sizing: border-box;
+    box-shadow: 0 2px 10px rgb(15 23 42 / 7%);
+    transition: transform .18s ease, opacity .18s ease;
+  }
+
+  .desktop-workspace {
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* Hiding the header changes only its visibility. It never changes the
+     workspace or canvas dimensions. Keep one fixed, keyboard-accessible
+     restore control outside the hidden header surface. */
+  .app.canvas-header-hidden {
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+
+  .app .desktop-app-header.canvas-header-hidden {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    pointer-events: none !important;
+    visibility: visible !important;
+  }
+
+  .app .desktop-app-header.canvas-header-hidden > :not(.desktop-app-focus-toggle) {
+    display: none !important;
+  }
+
+  .app .desktop-app-header:not(.canvas-header-hidden) .desktop-app-focus-toggle {
+    display: none !important;
+  }
+
+  .app .desktop-app-header.canvas-header-hidden .desktop-app-focus-toggle {
+    position: fixed !important;
+    top: 10px !important;
+    right: 12px !important;
+    z-index: 1601 !important;
+    display: inline-grid !important;
+    pointer-events: auto !important;
+    box-shadow: 0 3px 12px rgb(15 23 42 / 12%);
+  }
+
+  .app.theme-dark .desktop-app-header.canvas-header-hidden .desktop-app-focus-toggle {
+    border-color: #414451;
+    background: #20222b;
+    color: #e6e7f1;
+  }
+}
