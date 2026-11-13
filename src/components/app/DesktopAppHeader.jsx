@@ -12,7 +12,6 @@ const MENU_DEFINITIONS = [
       "view.fit-canvas",
       "view.toggle-minimap",
       "view.toggle-theme",
-      "view.toggle-canvas-grid",
       "view.toggle-grid",
     ],
   },
@@ -26,8 +25,7 @@ const VIEW_COMMAND_ICONS = {
   "view.fit-canvas": "fit",
   "view.toggle-minimap": "map",
   "view.toggle-theme": "theme",
-  "view.toggle-canvas-grid": "grid",
-  "view.toggle-grid": "snap",
+  "view.toggle-grid": "grid",
 };
 function ViewCommandIcon({ name }) {
   const paths = {
