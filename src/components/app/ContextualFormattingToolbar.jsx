@@ -53,7 +53,6 @@ const GROUPS = [
   { id: "textAlign", label: "Text align", icon: "≡" },
   { id: "opacity", label: "Opacity", icon: "◐" },
   { id: "align", label: "Align", icon: "⫽" },
-  { id: "layers", label: "Layers", icon: "▤" },
 ];
 
 function isNoteFormattingElement(element) {
@@ -311,6 +310,7 @@ export default function ContextualFormattingToolbar({
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+  const iconOnlySelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
   const sceneElementsForFormatting = apiRef?.current?.getSceneElements?.() || [];
   const noteBackgroundColor = (element) =>
     Boolean(element?.backgroundColor && NOTE_BACKGROUND_COLORS.some(([color]) => color === String(element.backgroundColor).toLowerCase()));
@@ -411,6 +411,7 @@ export default function ContextualFormattingToolbar({
   const visibleGroups = toolMode
     ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity" || group.id === "themes" || (activeToolMode === "text" && ["fontFamily", "fontSize", "textAlign"].includes(group.id)))
     : GROUPS.filter((group) => {
+      if (iconOnlySelection && ["stroke", "opacity"].includes(group.id)) return false;
       if (group.id === "align") {
         return liveSelection.length >= 2;
       }
@@ -475,18 +476,6 @@ export default function ContextualFormattingToolbar({
     api.updateScene({ appState: appStatePatch });
   };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
-  const reorderSelection = (direction) => {
-    const api = apiRef?.current;
-    if (!api || liveSelection.length === 0) return;
-    const scene = api.getSceneElements?.() || [];
-    const selectedIds = new Set(noteSelection ? [...noteGroupIds] : liveSelection.map((element) => element.id));
-    const isSelectedLive = (element) => element && !element.isDeleted && !element.deleted && selectedIds.has(element.id);
-    const moving = scene.filter(isSelectedLive);
-    if (!moving.length) return;
-    const remaining = scene.filter((element) => !isSelectedLive(element));
-    api.updateScene({ elements: direction === "back" ? [...moving, ...remaining] : [...remaining, ...moving] });
-  };
-
   const alignSelection = (alignment) => {
     const api = apiRef?.current;
     if (!api || liveSelection.length < 2) return;
@@ -793,17 +782,6 @@ export default function ContextualFormattingToolbar({
         <div className="format-option-row">
           <button type="button" className="format-option-button" aria-label="Distribute horizontally" title="Distribute horizontally" onClick={() => alignSelection("distributeHorizontal")}>↔ Horiz</button>
           <button type="button" className="format-option-button" aria-label="Distribute vertically" title="Distribute vertically" onClick={() => alignSelection("distributeVertical")}>↕ Vert</button>
-        </div>
-      </div>
-    );
-    if (groupId === "layers") return (
-      <div className="format-option-section">
-        <div className="format-option-label">Layer order</div>
-        <div className="format-option-row">
-          <button type="button" className="format-option-button" aria-label="Send selection to back" title="Send to back" onClick={() => reorderSelection("back")}>⇊</button>
-          <button type="button" className="format-option-button" aria-label="Send selection backward" title="Send backward" onClick={() => reorderSelection("back")}>↓</button>
-          <button type="button" className="format-option-button" aria-label="Bring selection forward" title="Bring forward" onClick={() => reorderSelection("front")}>↑</button>
-          <button type="button" className="format-option-button" aria-label="Bring selection to front" title="Bring to front" onClick={() => reorderSelection("front")}>⇈</button>
         </div>
       </div>
     );
