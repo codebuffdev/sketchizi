@@ -41,7 +41,7 @@ test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validat
   const createMenu = await read("../src/components/app/CreateMenu.jsx");
   assert.match(createMenu, /className="workspaces-menu-icon"/);
   assert.match(createMenu, /M12 5v14M5 12h14/);
-  assert.match(app, /className="ai-ask-toggle-icon"[^>]*><path d="M204 21 L185 25/);
+  assert.match(app, /className="ai-ask-toggle-icon"[^>]*>\s*<path d="M204 21 L185 25/);
   const registry = await read("../src/features/commands/commandRegistry.js");
   assert.match(registry, /label: "Architecture Validation"/);
   assert.match(registry, /openPanel\("architecture-validation"\)/);
