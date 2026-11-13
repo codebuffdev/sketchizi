@@ -39,6 +39,7 @@ import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinit
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
+import { hasCloudSceneChange, isActiveCloudSession, usesLocalAutosave } from "./features/workspace/cloudSavePolicy.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -158,12 +159,16 @@ function App() {
   const cloudSaveQueueRef = useRef(Promise.resolve());
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
+  const cloudDetachedRef = useRef(false);
+  const cloudSceneReadyRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
   useEffect(() => {
     const detachCloudDocument = () => {
+      cloudDetachedRef.current = true;
+      cloudSceneReadyRef.current = false;
       if (cloudSaveTimerRef.current) {
         window.clearTimeout(cloudSaveTimerRef.current);
         cloudSaveTimerRef.current = null;
@@ -209,25 +214,25 @@ function App() {
   }, [showToast]);
 
   const queueSketchSave = useCallback((elements, appState) => {
-    if (!cloudDiagramId) {
+    if (usesLocalAutosave(cloudDiagramId, cloudDetachedRef.current)) {
       queueLocalSketchSave(elements, appState);
       return;
     }
     // A cloud session must never overwrite the browser-local sketch while its
     // document is loading or after a failed load.
-    if (!cloudSessionRef.current.active || !apiRef.current) return;
+    if (!cloudSceneReadyRef.current || !cloudSessionRef.current.active || !apiRef.current) return;
     // Excalidraw can emit a transient empty scene while restoring/updating a
     // scene. Never let that snapshot replace a non-empty cloud document.
     // Keep any already queued non-empty save intact when an empty callback
     // arrives during restoration.
-    if (!Array.isArray(elements) || !elements.some((element) => element && !element.isDeleted)) return;
+    if (!hasCloudSceneChange(elements)) return;
     setCloudSaveState((current) => ({ ...current, state: "pending", error: "" }));
     if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
     cloudSaveTimerRef.current = window.setTimeout(() => {
       cloudSaveTimerRef.current = null;
       const session = cloudSessionRef.current;
       const api = apiRef.current;
-      if (!session.active || !api || !Array.isArray(elements)) return;
+      if (!isActiveCloudSession(session, cloudSessionRef.current) || !api || !Array.isArray(elements)) return;
       const document = createCloudDocument({
         api,
         elements,
@@ -236,15 +241,22 @@ function App() {
       });
       setCloudSaveState((current) => ({ ...current, state: "saving", error: "" }));
       cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
-        const revision = cloudSessionRef.current.revision;
+        // The user may have created a new local drawing while a previous
+        // cloud save was waiting in the queue. Never send that stale request.
+        if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
+        const revision = session.revision;
         const result = await workspaceClient.saveDiagram(session.diagramId, revision, document);
+        // An in-flight request can finish after detachment. Keep its result
+        // from overwriting the status or revision of the new local drawing.
+        if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
         if (result && result.revision !== undefined && result.revision !== null) {
-          cloudSessionRef.current.revision = result.revision;
+          session.revision = result.revision;
         } else if (typeof revision === "number") {
-          cloudSessionRef.current.revision = revision + 1;
+          session.revision = revision + 1;
         }
         setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
       }).catch((error) => {
+        if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
         const conflict = error?.status === 409 || error?.status === 412 || error?.code === "revision_conflict";
         setCloudSaveState({
           state: conflict ? "conflict" : "error",
@@ -284,6 +296,8 @@ function App() {
         extensions: document.extensions || {},
         format: document.format || diagram.format || "excalidraw",
       };
+      cloudDetachedRef.current = false;
+      cloudSceneReadyRef.current = false;
       cloudSessionRef.current = {
         active: true,
         diagramId: diagram.id || cloudDiagramId,
@@ -301,12 +315,14 @@ function App() {
       const files = Object.values(document.files || {});
       if (files.length) api.addFiles?.(files);
       setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format: document.format || diagram.format || "excalidraw" });
+      cloudSceneReadyRef.current = true;
       if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
       setCloudSaveState({ state: "saved", error: "" });
       document.title = `${diagram.name || "Cloud diagram"} · Sketchizi`;
     }).catch((error) => {
       if (cancelled) return;
       cloudSessionRef.current.active = false;
+      cloudSceneReadyRef.current = false;
       setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
     });
     return () => { cancelled = true; };
