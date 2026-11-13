@@ -24,6 +24,7 @@ import SketchiziCanvas from "./components/app/SketchiziCanvas";
 import CollaborationUI from "./components/app/CollaborationUI";
 import MoreTools from "./components/app/MoreTools";
 import { useIconInsertion } from "./features/icon-library/useIconInsertion";
+import { isLightColor } from "./features/icon-library/iconColorService";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
 import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
@@ -1854,11 +1855,23 @@ function App() {
 
           {draggingIcon && (
             <div
-              className="icon-drag-ghost"
+              className={`icon-drag-ghost ${draggingIcon.icon?.iconColor && isLightColor(draggingIcon.icon.iconColor) ? "is-contrast-dark" : ""}`}
               style={{ left: draggingIcon.x, top: draggingIcon.y }}
               aria-hidden="true"
             >
-              <img src={draggingIcon.icon.src} alt="" draggable={false} />
+              {draggingIcon.icon?.iconColor ? (
+                <span
+                  className="sk-tinted-icon sk-drag-tinted-icon"
+                  style={{
+                    backgroundColor: draggingIcon.icon.iconColor,
+                    WebkitMaskImage: `url("${draggingIcon.icon.src}")`,
+                    maskImage: `url("${draggingIcon.icon.src}")`,
+                  }}
+                  aria-hidden="true"
+                />
+              ) : (
+                <img src={draggingIcon.icon.src} alt="" draggable={false} />
+              )}
               <span>{draggingIcon.icon.name}</span>
             </div>
           )}

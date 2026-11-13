@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
+import { CORE_ICON_COLORS, isRecolorableEssentialIcon, recolorSvgDataUrl } from "../../features/icon-library/iconColorService.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -311,6 +312,8 @@ export default function ContextualFormattingToolbar({
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
   const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+  const hasEssentialIconSelection = liveSelection.some(isRecolorableEssentialIcon);
+  const onlyEssentialIconSelection = liveSelection.length > 0 && liveSelection.every(isRecolorableEssentialIcon);
   const sceneElementsForFormatting = apiRef?.current?.getSceneElements?.() || [];
   const noteBackgroundColor = (element) =>
     Boolean(element?.backgroundColor && NOTE_BACKGROUND_COLORS.some(([color]) => color === String(element.backgroundColor).toLowerCase()));
@@ -400,7 +403,7 @@ export default function ContextualFormattingToolbar({
   const currentTextAlign = (toolMode ? appState.currentItemTextAlign : firstTextFormattingElement?.textAlign) || appState.currentItemTextAlign || "left";
   const currentVerticalAlign = (toolMode ? appState.currentItemVerticalAlign : firstTextFormattingElement?.verticalAlign) || "middle";
   const currentOpacity = Number(toolMode ? (appState.currentItemOpacity ?? 100) : (first?.opacity ?? appState.currentItemOpacity ?? 100));
-  const strokePalette = noteFormattingMode ? NOTE_TEXT_COLORS : STROKE_COLORS;
+  const strokePalette = noteFormattingMode ? NOTE_TEXT_COLORS : onlyEssentialIconSelection ? CORE_ICON_COLORS : STROKE_COLORS;
   const backgroundPalette = noteFormattingMode ? NOTE_BACKGROUND_COLORS : FILL_COLORS;
   const fontFamilies = noteFormattingMode ? NOTE_FONT_FAMILIES : FONT_FAMILIES;
   const fontSizes = noteFormattingMode ? FONT_SIZES.filter(([value]) => value !== 12) : FONT_SIZES;
@@ -435,11 +438,53 @@ export default function ContextualFormattingToolbar({
       const hasSeparateNoteText = noteSelection && noteContainerIds.size > 0 && noteTextIds.size > 0 && elementsHaveNoteText(sceneElementsForFormatting, noteTextIds);
       const now = Date.now();
       const elements = api.getSceneElements?.() || [];
+      const files = "strokeColor" in patch && hasEssentialIconSelection ? (api.getFiles?.() || {}) : null;
+      const nextFiles = [];
+      const nextFileIdBySource = new Map();
       const updatedElements = elements.map((element) => {
         const isSelected = selectedIds.has(element.id);
         const isRelatedNoteElement = noteSelection && noteGroupIds.has(element.id);
         if (!isSelected && !isRelatedNoteElement) return element;
-        if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
+        if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) {
+          if ("strokeColor" in patch && isSelected && isRecolorableEssentialIcon(element) && files) {
+            const sourceFile = element.fileId ? files[element.fileId] : null;
+            if (!sourceFile?.dataURL) return element;
+            const cacheKey = `${element.fileId}:${patch.strokeColor}`;
+            let newFileId = nextFileIdBySource.get(cacheKey);
+            if (!newFileId) {
+              const recoloredDataURL = recolorSvgDataUrl(sourceFile.dataURL, patch.strokeColor);
+              if (!recoloredDataURL) return element;
+              newFileId = `icon-${element.customData?.iconId || element.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+              nextFileIdBySource.set(cacheKey, newFileId);
+              nextFiles.push({
+                id: newFileId,
+                dataURL: recoloredDataURL,
+                mimeType: "image/svg+xml",
+                created: now,
+                lastRetrieved: now,
+              });
+            }
+            return {
+              ...element,
+              fileId: newFileId,
+              customData: {
+                ...(element.customData || {}),
+                iconColor: patch.strokeColor,
+              },
+              version: (Number(element.version) || 0) + 1,
+              versionNonce: Math.floor(Math.random() * 2147483647),
+              updated: now,
+            };
+          }
+          if (!("opacity" in patch)) return element;
+          return {
+            ...element,
+            opacity: patch.opacity,
+            version: (Number(element.version) || 0) + 1,
+            versionNonce: Math.floor(Math.random() * 2147483647),
+            updated: now,
+          };
+        }
         if (hasSeparateNoteText && textOnlyPatch && element.type !== "text") return element;
         if (hasSeparateNoteText && containerOnlyPatch && element.type === "text") return element;
         if (hasSeparateNoteText && backgroundOnlyPatch && element.type === "text") return element;
@@ -451,6 +496,9 @@ export default function ContextualFormattingToolbar({
           updated: now,
         };
       });
+      if (nextFiles.length > 0 && typeof api.addFiles === "function") {
+        api.addFiles(nextFiles);
+      }
       if (updatedElements.some((element, index) => element !== elements[index])) {
         api.updateScene({ elements: updatedElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
       }
@@ -566,7 +614,7 @@ export default function ContextualFormattingToolbar({
     if (groupId === "stroke") return (
       <>
         <div className="format-option-section">
-          <div className="format-option-label">{(onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
+          <div className="format-option-label">{onlyEssentialIconSelection ? "Icon color" : (onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
             {strokePalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
             <label

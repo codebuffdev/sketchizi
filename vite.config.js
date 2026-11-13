@@ -37,10 +37,10 @@ async function handlePagesFunction(handler, req, res) {
   const response = await handler({
     request,
     env: {
-      AUTH_SERVICE_ORIGIN: process.env.AUTH_SERVICE_ORIGIN || "http://localhost:8080",
-      AI_SERVICE_ORIGIN: process.env.AI_SERVICE_ORIGIN || "http://localhost:8090",
+      AUTH_SERVICE_ORIGIN: process.env.AUTH_SERVICE_ORIGIN || "",
+      AI_SERVICE_ORIGIN: process.env.AI_SERVICE_ORIGIN || "",
       AI_IDENTITY_HMAC_SECRET: process.env.AI_IDENTITY_HMAC_SECRET || "",
-      PUBLIC_FRONTEND_ORIGIN: process.env.PUBLIC_FRONTEND_ORIGIN || "http://localhost:5173",
+      PUBLIC_FRONTEND_ORIGIN: process.env.PUBLIC_FRONTEND_ORIGIN || "",
     },
   });
 
@@ -109,6 +109,8 @@ function sketchiziPagesFunctionsDev() {
 export default defineConfig({
   plugins: [react(), sketchiziPagesFunctionsDev()],
   server: {
+    host: "0.0.0.0",
+    port: 3000,
     proxy: {
       "/collaboration": {
         target: "ws://localhost:8787",

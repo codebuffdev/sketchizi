@@ -3,6 +3,7 @@ import { logger } from "../../logging/logger";
 import { insertAwsResource, isIntelligentAwsResourceIcon } from "../aws-resources/awsResourceService";
 import { insertKubernetesResource, isIntelligentKubernetesResourceIcon } from "../kubernetes-resources/kubernetesResourceService";
 import { insertNetworkingResource, isIntelligentNetworkingResourceIcon } from "../networking/networkingResourceService.js";
+import { recolorSvgMarkup } from "./iconColorService.js";
 export function createEditableLibraryElements(icon, x, y) {
     const source = icon?.source;
     const id = icon?.id || "";
@@ -318,6 +319,12 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
     // correct path and preserves the real Eraser artwork.
     const imageSource = icon.src;
 
+    const iconColor = options.iconColor || icon.iconColor || null;
+    const isEssentialIcon =
+      icon.source === "eraser" ||
+      String(icon.category || "").toLowerCase() === "eraser icons" ||
+      String(icon.category || "").toLowerCase() === "essentials";
+
     const addImage = (dataURL) => {
       api.addFiles([
         {
@@ -342,6 +349,8 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
             iconId: icon.id,
             iconName: icon.name,
             iconCategory: icon.category,
+            iconSource: icon.source,
+            ...(isEssentialIcon && iconColor ? { iconColor } : {}),
           },
         },
       ]);
@@ -358,7 +367,8 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
         return response.text();
       })
       .then((svg) => {
-        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+        const finalSvg = isEssentialIcon && iconColor ? recolorSvgMarkup(svg, iconColor) || svg : svg;
+        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(finalSvg)))}`;
         addImage(dataURL);
       })
       .catch((error) => {

@@ -11,6 +11,18 @@ import {
   resolveDisplayedIcons,
   sourceLabel,
 } from "./features/icon-library/iconPanelUtils";
+import { CORE_ICON_COLORS, isLightColor } from "./features/icon-library/iconColorService";
+
+const ESSENTIAL_COLOR_STORAGE_KEY = "sketchizi:essential-icon-color:v1";
+
+function loadStoredEssentialColor() {
+  try {
+    const saved = localStorage.getItem(ESSENTIAL_COLOR_STORAGE_KEY);
+    return saved && /^#[0-9a-f]{6}$/i.test(saved) ? saved : null;
+  } catch {
+    return null;
+  }
+}
 
 function SourceCategoryIcon({ id }) {
   const common = {
@@ -146,6 +158,7 @@ export default function IconLibraryPanel({
   const [activeSource, setActiveSource] = useState("all");
   const [viewMode, setViewMode] = useState(loadStoredViewMode);
   const [selectedIconId, setSelectedIconId] = useState(null);
+  const [essentialIconColor, setEssentialIconColor] = useState(loadStoredEssentialColor);
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || "[]");
@@ -171,6 +184,13 @@ export default function IconLibraryPanel({
       localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
     } catch {}
   }, [viewMode]);
+
+  useEffect(() => {
+    try {
+      if (essentialIconColor) localStorage.setItem(ESSENTIAL_COLOR_STORAGE_KEY, essentialIconColor);
+      else localStorage.removeItem(ESSENTIAL_COLOR_STORAGE_KEY);
+    } catch {}
+  }, [essentialIconColor]);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -504,6 +524,57 @@ export default function IconLibraryPanel({
           })}
         </nav>
 
+        {activeSource === "eraser" && (
+          <div className="sk-icon-color-bar">
+            <span className="sk-icon-color-label">Color</span>
+            <div className="sk-icon-color-swatches" role="group" aria-label="Core Essentials icon color">
+              <button
+                type="button"
+                className={`sk-icon-color-reset ${!essentialIconColor ? "is-active" : ""}`}
+                onClick={() => setEssentialIconColor(null)}
+                aria-label="Default icon color"
+                aria-pressed={!essentialIconColor}
+                title="Default color"
+              >
+                <span aria-hidden="true" />
+              </button>
+              {CORE_ICON_COLORS.map(([color, label]) => {
+                const active = essentialIconColor?.toLowerCase() === color.toLowerCase();
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`sk-icon-color-swatch ${active ? "is-active" : ""} ${isLightColor(color) ? "is-light-swatch" : ""}`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setEssentialIconColor(color)}
+                    aria-label={`${label} icon color`}
+                    aria-pressed={active}
+                    title={label}
+                  />
+                );
+              })}
+              <label
+                className={`sk-icon-color-custom ${essentialIconColor && !CORE_ICON_COLORS.some(([c]) => c.toLowerCase() === essentialIconColor.toLowerCase()) ? "is-active" : ""}`}
+                title="Custom icon color"
+                aria-label="Choose custom Essentials icon color"
+                style={
+                  essentialIconColor && !CORE_ICON_COLORS.some(([c]) => c.toLowerCase() === essentialIconColor.toLowerCase())
+                    ? { backgroundColor: essentialIconColor }
+                    : undefined
+                }
+              >
+                <span className="sk-icon-color-custom-icon" aria-hidden="true">+</span>
+                <input
+                  type="color"
+                  aria-label="Custom Essentials icon color"
+                  value={essentialIconColor || "#7c3aed"}
+                  onChange={(event) => setEssentialIconColor(event.target.value)}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+
         {subcategoryOptions.length > 0 && !search.trim() && (
           <div className="sk-subcategory-bar">
             <select
@@ -608,13 +679,16 @@ export default function IconLibraryPanel({
                 const isSelected = selectedIconId === selectionKey;
                 const isDragging = draggingIcon?.icon?.id === icon.id;
                 const collectionMeta = sourceLabel(icon);
+                const tintedColor = icon.source === "eraser" ? essentialIconColor : null;
+                const contrastDarkStage = Boolean(tintedColor && isLightColor(tintedColor));
+                const insertableIcon = tintedColor ? { ...icon, iconColor: tintedColor } : icon;
                 return (
                   <div
                     key={`${icon.category || icon.source}-${icon.id}`}
                     className={`icon-card library-icon-card sk-icon-card ${isDragging ? "is-drag-source" : ""} ${isSelected ? "is-selected" : ""} ${favorite ? "has-favorite" : ""}`}
-                    onPointerDown={(event) => handleIconPointerDown(event, icon)}
-                    onMouseDown={(event) => handleIconMouseDown(event, icon)}
-                    onDragStart={(event) => handleDragStart(event, icon)}
+                    onPointerDown={(event) => handleIconPointerDown(event, insertableIcon)}
+                    onMouseDown={(event) => handleIconMouseDown(event, insertableIcon)}
+                    onDragStart={(event) => handleDragStart(event, insertableIcon)}
                     draggable={true}
                   >
                     <button
@@ -622,14 +696,26 @@ export default function IconLibraryPanel({
                       className="sk-icon-card-main"
                       onClick={() => {
                         setSelectedIconId(selectionKey);
-                        handleIconClick(icon);
+                        handleIconClick(insertableIcon);
                       }}
                       title={`${icon.name} — Click or drag onto canvas`}
                       aria-label={`Add ${icon.name} to canvas`}
                       aria-pressed={isSelected}
                     >
-                      <span className="icon-preview library-icon-preview sk-icon-stage">
-                        <img src={icon.src} alt="" draggable={false} loading="lazy" />
+                      <span className={`icon-preview library-icon-preview sk-icon-stage ${contrastDarkStage ? "is-contrast-dark" : ""}`}>
+                        {tintedColor ? (
+                          <span
+                            className="sk-tinted-icon"
+                            style={{
+                              backgroundColor: tintedColor,
+                              WebkitMaskImage: `url("${icon.src}")`,
+                              maskImage: `url("${icon.src}")`,
+                            }}
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <img src={icon.src} alt="" draggable={false} loading="lazy" />
+                        )}
                       </span>
                       <span className="library-icon-card-content sk-icon-card-text">
                         <span className="icon-name sk-icon-name">
@@ -672,7 +758,7 @@ export default function IconLibraryPanel({
                           event.preventDefault();
                           event.stopPropagation();
                           setSelectedIconId(selectionKey);
-                          handleIconClick(icon);
+                          handleIconClick(insertableIcon);
                         }}
                       >
                         <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">

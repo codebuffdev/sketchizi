@@ -56,15 +56,21 @@ test("Icon grid owns vertical scrolling and supports borderless 4-column Grid an
   assert.match(styles, /--skp-stage-bg:\s*#e7ecf4/);
 });
 
-test("Icon cards use accessible buttons, stop propagation on favorite/insert actions, and preserve original SVG insertion", async () => {
+test("Icon cards use accessible buttons, stop propagation on favorite/insert actions, and support Core/Essentials icon recoloring", async () => {
   const insertion = await readFile(new URL("../src/features/icon-library/iconInsertionService.js", import.meta.url), "utf8");
+  const toolbar = await readFile(new URL("../src/components/app/ContextualFormattingToolbar.jsx", import.meta.url), "utf8");
   assert.match(panel, /className="sk-icon-card-main"/);
   assert.match(panel, /className=\{`favorite-button sk-fav-btn/);
   assert.match(panel, /className="library-add-icon sk-add-btn"/);
   assert.match(panel, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/);
   assert.match(panel, /onMouseDown=\{\(event\) => event\.stopPropagation\(\)\}/);
-  assert.doesNotMatch(panel, /selectedEssentialColor|essentialColors|tintColor/);
-  assert.doesNotMatch(insertion, /tintMonochromeSvg|icon\.tintColor/);
-  assert.match(insertion, /encodeURIComponent\(svg\)/);
+  assert.match(panel, /className="sk-icon-color-bar"/);
+  assert.match(panel, /aria-label="Custom Essentials icon color"/);
+  assert.match(panel, /className="sk-tinted-icon"/);
+  assert.match(insertion, /recolorSvgMarkup\(svg, iconColor\)/);
+  assert.match(insertion, /encodeURIComponent\(finalSvg\)/);
+  assert.match(toolbar, /isRecolorableEssentialIcon/);
+  assert.match(toolbar, /recolorSvgDataUrl/);
+  assert.match(toolbar, /"Icon color"/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
 });

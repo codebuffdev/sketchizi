@@ -4,11 +4,11 @@
   "version": "1.10.87",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "predev": "node scripts/copy-excalidraw-fonts.mjs",
     "build": "vite build",
     "prebuild": "node scripts/copy-excalidraw-fonts.mjs",
-    "preview": "vite preview",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
     "sync:eraser": "node scripts/sync-eraser-icons.mjs",
     "collaboration-server": "node server/collaboration-server.mjs",
     "test:networking": "node --test tests/networking.test.js",
