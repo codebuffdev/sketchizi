@@ -6,11 +6,11 @@ import { createCloudDocument, sanitizeCloudAppState } from "../src/features/work
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("studio menu uses official Kubernetes and Docker brand artwork", async () => {
-  const app = await read("../src/App.jsx");
+  const menu = await read("../src/components/app/CreateMenu.jsx");
   const kubernetes = await read("../public/icons/kubernetes.svg");
   const docker = await read("../public/icons/docker.svg");
-  assert.match(app, /src="\/icons\/kubernetes\.svg"/);
-  assert.match(app, /src="\/icons\/docker\.svg"/);
+  assert.match(menu, /src="\/icons\/kubernetes\.svg"/);
+  assert.match(menu, /src="\/icons\/docker\.svg"/);
   assert.match(kubernetes, /<title>Kubernetes<\/title>/);
   assert.match(kubernetes, /fill="#326ce5"/);
   assert.match(docker, /<title>Docker<\/title>/);
