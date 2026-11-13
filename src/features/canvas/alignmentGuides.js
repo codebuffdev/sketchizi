@@ -134,3 +134,18 @@ export function calculateTextBaselineGuides(elements, selectedIds, tolerance = A
   }
   return guides;
 }
+
+/**
+ * Render at most one guide per axis. Baselines win over ordinary horizontal
+ * alignment; spacing is shown only when there is no competing axis guide.
+ */
+export function selectDisplayGuides(guides) {
+  if (!Array.isArray(guides)) return [];
+  return ["x", "y"].map((axis) => guides
+    .filter((guide) => guide.axis === axis)
+    .sort((a, b) => {
+      const priority = (guide) => guide.kind === "baseline" ? 0
+        : guide.kind === "alignment" ? 1 : 2;
+      return priority(a) - priority(b) || a.distance - b.distance;
+    })[0]).filter(Boolean);
+}
