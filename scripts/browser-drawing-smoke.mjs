@@ -29,39 +29,40 @@ async function currentDrawing() {
 }
 
 async function awaitScene(check, description) {
-  await page.waitForFunction(async (description) => {
-    const db = await new Promise((resolve, reject) => {
-      const request = indexedDB.open("sketchizi-local-state");
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    try {
-      const scene = await new Promise((resolve, reject) => {
-        const transaction = db.transaction("documents", "readonly");
-        const request = transaction.objectStore("documents").get("main");
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => reject(request.error);
-      });
-      const visible = (scene?.elements || []).filter((element) => element && !element.isDeleted);
-      if (description === "rectangle") return visible.some((element) => element.type === "rectangle" && element.width > 60 && element.height > 40);
-      if (description === "grid") return scene?.appState?.gridModeEnabled === true;
-      if (description === "moved") {
-        const original = window.__drawingSmokeOriginalBounds;
-        return visible.some((element) => element.id === original?.id && Math.abs(element.x - original.x) > 15 && Math.abs(element.y - original.y) > 15);
-      }
-      return false;
-    } finally {
-      db.close();
+  // The editor may briefly persist a stale restoration snapshot while a new
+  // drawing is being committed. Require the expected record to remain durable
+  // across multiple polls rather than trusting a single transient read.
+  const deadline = Date.now() + 20000;
+  let consecutiveMatches = 0;
+  let lastScene = null;
+  while (Date.now() < deadline) {
+    lastScene = await currentDrawing();
+    const visible = (lastScene?.elements || []).filter((element) => element && !element.isDeleted);
+    const original = await page.evaluate(() => window.__drawingSmokeOriginalBounds);
+    const matched = description === "rectangle"
+      ? visible.some((element) => element.type === "rectangle" && element.width > 60 && element.height > 40)
+      : description === "grid"
+        ? lastScene?.appState?.gridModeEnabled === true
+        : description === "moved"
+          ? visible.some((element) => element.id === original?.id && Math.abs(element.x - original.x) > 15 && Math.abs(element.y - original.y) > 15)
+          : false;
+    if (matched && await check()) {
+      consecutiveMatches += 1;
+      if (consecutiveMatches >= 3) return;
+    } else {
+      consecutiveMatches = 0;
     }
-  }, description, { timeout: 20000, polling: 200 }).catch((error) => {
-    throw new Error("Drawing smoke did not persist " + description + ": " + error.message);
-  });
-  if (!(await check())) {
-    const scene = await currentDrawing();
-    const editorDiagnostics = await page.evaluate(() => ({ activeElement: document.activeElement?.outerHTML?.slice(0, 400), canvasCount: document.querySelectorAll(".excalidraw canvas").length, selectedTool: document.querySelector('[data-testid="toolbar-selection"]')?.getAttribute("aria-pressed"), rectangleTool: document.querySelector('[data-testid="toolbar-rectangle"]')?.getAttribute("aria-pressed"), visibleText: document.body.innerText.slice(0, 800) }));
-    console.error("Drawing smoke editor diagnostics:", JSON.stringify(editorDiagnostics));
-    throw new Error("Drawing smoke verification failed: " + description + "; stored scene: " + JSON.stringify({ savedAt: scene?.savedAt, elements: scene?.elements?.map((e) => ({ id: e.id, type: e.type, deleted: e.isDeleted, x: e.x, y: e.y, width: e.width, height: e.height })) }));
+    await page.waitForTimeout(250);
   }
+  const editorDiagnostics = await page.evaluate(() => ({
+    activeElement: document.activeElement?.outerHTML?.slice(0, 400),
+    canvasCount: document.querySelectorAll(".excalidraw canvas").length,
+    selectedTool: document.querySelector('[data-testid="toolbar-selection"]')?.getAttribute("aria-pressed"),
+    rectangleTool: document.querySelector('[data-testid="toolbar-rectangle"]')?.getAttribute("aria-pressed"),
+    visibleText: document.body.innerText.slice(0, 800),
+  }));
+  throw new Error("Drawing smoke did not durably persist " + description + ": " +
+    JSON.stringify({ stored: { savedAt: lastScene?.savedAt, elements: lastScene?.elements?.map((e) => ({ id: e.id, type: e.type, deleted: e.isDeleted, x: e.x, y: e.y, width: e.width, height: e.height })) }, editorDiagnostics }));
 }
 
 try {
