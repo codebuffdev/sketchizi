@@ -40,7 +40,11 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       const viewportRect = viewport.getBoundingClientRect();
       setOverlay({ left: viewportRect.left - rootRect.left, top: viewportRect.top - rootRect.top, width: viewportRect.width, height: viewportRect.height });
       const tolerance = 9 / zoom;
-      const found = [\n        ...calculateAlignmentGuides(elements, selectedIds, tolerance),\n        ...calculateEqualSpacingGuides(elements, selectedIds, tolerance),\n        ...calculateTextBaselineGuides(elements, selectedIds, tolerance),\n      ];
+      const found = [
+        ...calculateAlignmentGuides(elements, selectedIds, tolerance),
+        ...calculateEqualSpacingGuides(elements, selectedIds, tolerance),
+        ...calculateTextBaselineGuides(elements, selectedIds, tolerance),
+      ];
       const sceneToViewport = api.sceneCoordsToViewportCoords;
       const toLocal = (axis, position) => {
         if (typeof sceneToViewport === "function") {
