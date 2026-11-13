@@ -574,8 +574,8 @@ export default function DesktopAppHeader({
           <path d="m6 14 6-6 6 6" />
         </svg>
       </button>
-      </div>
-      </header>
+    </div>
+    </header>
 
       <button
         type="button"
