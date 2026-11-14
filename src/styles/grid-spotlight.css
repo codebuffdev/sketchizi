@@ -62,7 +62,7 @@
   height: var(--sk-grid-focus-height);
   opacity: 0;
   background-image:
-    linear-gradient(to right, rgb(78 96 115 / 12%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(78 96 115 / 9%) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(78 96 115 / 12%) 1px, transparent 1px);
   background-size: var(--sk-grid-size) var(--sk-grid-size);
   background-position:
@@ -90,7 +90,7 @@
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::after {
   background-image:
-    linear-gradient(to right, rgb(158 173 194 / 14%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(158 173 194 / 10%) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(158 173 194 / 14%) 1px, transparent 1px);
 }
 
@@ -110,8 +110,16 @@
   width: 90%;
   height: 90%;
   opacity: 1;
-  -webkit-mask-image: none;
-  mask-image: none;
+  /* Feather the fine grid into the underlying full-canvas coarse grid.
+     The fade is inside the 90% region, so the outer 5% stays coarse-only. */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
   transition: none;
 }
 
