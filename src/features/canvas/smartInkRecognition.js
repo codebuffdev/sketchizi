@@ -51,7 +51,7 @@ export function renderInkForRecognition(elements) {
 export async function recognizeInk(elements) {
   const canvas = renderInkForRecognition(elements);
   if (!canvas) return { text: "", available: false };
-  const endpoint = import.meta.env?.VITE_SMART_INK_RECOGNITION_URL;
+  const endpoint = import.meta.env?.VITE_SMART_INK_RECOGNITION_URL || "/api/smart-ink/recognize";
   if (endpoint) {
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     if (!blob) throw new Error("Unable to render ink");
@@ -65,7 +65,7 @@ export async function recognizeInk(elements) {
         signal: controller.signal,
         credentials: "same-origin",
       });
-      if (!response.ok) throw new Error("Recognition service unavailable");
+      if (!response.ok) { if ([404, 503].includes(response.status)) return recognizeInBrowser(canvas); throw new Error("Recognition service unavailable"); }
       const data = await response.json();
       if (typeof data.text !== "string") throw new Error("Invalid recognition response");
       return { text: data.text.trim(), available: true, provider: "service" };
@@ -73,6 +73,10 @@ export async function recognizeInk(elements) {
       clearTimeout(timeout);
     }
   }
+  return recognizeInBrowser(canvas);
+}
+
+async function recognizeInBrowser(canvas) {
   if (typeof globalThis.TextDetector !== "function") return { text: "", available: false };
   const detector = new globalThis.TextDetector();
   const blocks = await detector.detect(canvas);
