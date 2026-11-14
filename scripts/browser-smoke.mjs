@@ -76,6 +76,55 @@ try {
   await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
+  // Icon discovery should use readable categories, without compressing six
+  // collections into one hard-to-scan row.
+  await blank.page.getByRole("button", { name: "Open icon library" }).click();
+  await blank.page.getByRole("dialog", { name: "Icon Library" }).waitFor();
+  const collectionLayout = await blank.page.locator(".sk-catalog-tabs").evaluate((node) => ({
+    display: getComputedStyle(node).display,
+    columnCount: getComputedStyle(node).gridTemplateColumns.split(" ").filter(Boolean).length,
+    names: [...node.querySelectorAll(".sk-catalog-tab-label")].map((label) => label.textContent.trim()),
+  }));
+  if (collectionLayout.display !== "grid" || collectionLayout.columnCount !== 3 ||
+    !collectionLayout.names.includes("Networking") || !collectionLayout.names.includes("Kubernetes") ||
+    !collectionLayout.names.includes("Essentials")) {
+    throw new Error(`Icon library collections are cramped or unreadable: ${JSON.stringify(collectionLayout)}`);
+  }
+  await blank.page.getByRole("button", { name: "Close icon library" }).click();
+  console.log("PASS: icon library shows readable multi-row category navigation.");
+
+  // The clipboard toast is owned by Excalidraw, so exercise its native class
+  // using a temporary message without needing clipboard permissions.
+  const toastLayout = await blank.page.evaluate(() => {
+    const editor = document.querySelector(".desktop-canvas-region .excalidraw");
+    const dock = editor?.querySelector(".App-toolbar");
+    if (!editor || !dock) return null;
+    const toast = document.createElement("div");
+    toast.className = "Toast";
+    toast.textContent = "Copied selection to clipboard as PNG";
+    editor.appendChild(toast);
+    const rect = toast.getBoundingClientRect();
+    const dockRect = dock.getBoundingClientRect();
+    const position = getComputedStyle(toast).position;
+    const layout = {
+      position,
+      top: rect.top,
+      bottom: rect.bottom,
+      dockTop: dockRect.top,
+      viewportWidth: window.innerWidth,
+      left: rect.left,
+      right: rect.right,
+    };
+    toast.remove();
+    return layout;
+  });
+  if (!toastLayout || toastLayout.position !== "fixed" ||
+    toastLayout.bottom + 12 >= toastLayout.dockTop ||
+    toastLayout.left < 0 || toastLayout.right > toastLayout.viewportWidth) {
+    throw new Error(`Clipboard notification overlaps the drawing toolbar: ${JSON.stringify(toastLayout)}`);
+  }
+  console.log("PASS: native Excalidraw clipboard notification clears the drawing toolbar.");
+
   // Advanced work remains accessible without crowding the main drawing UI.
   await blank.page.getByRole("button", { name: /Local document save status/ }).click();
   await blank.page.getByRole("button", { name: /Export studio/ }).click();
