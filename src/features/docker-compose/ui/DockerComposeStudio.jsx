@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
 import { traceComposeDependencies } from "../composeDependencyTrace.js";
+import { exploreComposeNetworkReachability } from "../composeNetworkReachability.js";
 import "./docker-compose-studio.css";
 
 
@@ -205,6 +206,11 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     try { return traceComposeDependencies(composeDoc, selectedService); }
     catch { return null; }
   }, [composeDoc, selectedService]);
+  const networkReachability = useMemo(() => {
+    if (!composeDoc || !selectedService || !Object.hasOwn(composeDoc.services, selectedService)) return null;
+    try { return exploreComposeNetworkReachability(composeDoc, selectedService); }
+    catch { return null; }
+  }, [composeDoc, selectedService]);
   const dirty = yamlText !== savedYaml;
   const close = () => { if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return; onClose?.(); };
 
@@ -355,6 +361,10 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
               <p>Static Compose depends_on path for {selectedService}. This is not a live network request trace.</p>
               {dependencyTrace?.steps.length ? dependencyTrace.steps.map((step, index) => <button type="button" key={step.from + step.to + index} className={step.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => { if (step.exists) setSelectedService(step.to); }}><strong>{step.from}</strong><span>→</span><strong>{step.to}</strong><small>{step.exists ? "declared dependency" : "missing service"}</small></button>) : <p>No declared downstream dependencies.</p>}
               {dependencyTrace?.warnings.map((warning, index) => <p key={index} role="status">{warning}</p>)}
+              <strong>Potential network peers</strong>
+              <p>Shared Compose networks permit possible connectivity; they do not prove HTTP traffic.</p>
+              {networkReachability?.peers.length ? networkReachability.peers.map((peer) => <button type="button" className="docker-studio-relationship" key={peer.name} onClick={() => setSelectedService(peer.name)}><strong>{selectedService}</strong><span>↔</span><strong>{peer.name}</strong><small>Shared: {peer.sharedNetworks.join(", ")}</small></button>) : <p>No other services share this service's declared networks.</p>}
+
             </div>}
           </section>
           <section className="docker-studio-relationship-panel" aria-label="Service relationships"><div className="docker-studio-relationship-heading"><strong>Relationships</strong><span>{edges.length}</span></div>{edges.length ? edges.map((edge, i) => <button type="button" key={edge.from + edge.to + i} className={edge.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => setSelectedService(edge.exists ? edge.to : edge.from)}><strong>{edge.from}</strong><span>→</span><strong>{edge.to}</strong><small>{edge.exists ? "depends on" : "missing service"}</small></button>) : <p>No service dependencies are defined.</p>}{(volumes.length > 0 || networks.length > 0) && <div className="docker-studio-shared-resources"><strong>Shared resources</strong>{volumes.map((name) => <span key={"v" + name}>Volume · {name}</span>)}{networks.map((name) => <span key={"n" + name}>Network · {name}</span>)}</div>}</section>
