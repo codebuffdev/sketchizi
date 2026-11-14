@@ -62,7 +62,7 @@
   height: var(--sk-grid-focus-height);
   opacity: 0;
   background-image:
-    linear-gradient(to right, rgb(78 96 115 / 12%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(78 96 115 / 9%) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(78 96 115 / 12%) 1px, transparent 1px);
   background-size: var(--sk-grid-size) var(--sk-grid-size);
   background-position:
@@ -90,7 +90,7 @@
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::after {
   background-image:
-    linear-gradient(to right, rgb(158 173 194 / 14%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(158 173 194 / 10%) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(158 173 194 / 14%) 1px, transparent 1px);
 }
 
@@ -99,3 +99,132 @@
     transition: none;
   }
 }
+
+/* Permanent dual-density workspace grid.
+   Regular squares cover 100%; fine squares cover the centered 90%,
+   leaving a regular-grid-only 5% margin on every edge.
+   Scene-aligned background offsets continue to be supplied by the canvas. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled::after {
+  left: 5%;
+  top: 5%;
+  width: 90%;
+  height: 90%;
+  opacity: 1;
+  /* Feather the fine grid into the underlying full-canvas coarse grid.
+     The fade is inside the 90% region, so the outer 5% stays coarse-only. */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  transition: none;
+}
+
+/* No separate focus activation: drawing, selection and pointer events do
+   not change the permanent grid's coverage or visibility. */
+
+/* Normal hides only its own fine grid. Canvas and Local each render their
+   distinct fine-grid geometry while respecting the native Show Grid toggle. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled:not(.is-focus-style):not(.is-local-style)::after {
+  display: none;
+}
+
+/* Restore the original production behavior only for Focus (Local).
+   This rule follows the permanent 90% rule, overriding its geometry
+   and retaining the original feathered rectangle around drawing content. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-local-style::after {
+  left: var(--sk-grid-focus-left);
+  top: var(--sk-grid-focus-top);
+  width: var(--sk-grid-focus-width);
+  height: var(--sk-grid-focus-height);
+  opacity: 0;
+  background-position:
+    calc(var(--sk-grid-offset-x) - var(--sk-grid-focus-left))
+    calc(var(--sk-grid-offset-y) - var(--sk-grid-focus-top));
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  transition: opacity 260ms ease;
+}
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-local-style.has-focus::after {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-local-style::after {
+    transition: none;
+  }
+}
+
+/* Header-owned grid settings. No floating controls on the canvas. */
+.sketchizi-header-grid { position: relative; display: inline-flex; align-items: center; }
+.sketchizi-header-grid-trigger {
+  display: grid; place-items: center; width: 34px; height: 34px;
+  border: 1px solid transparent; border-radius: 9px;
+  color: inherit; background: transparent; cursor: pointer;
+}
+.sketchizi-header-grid-trigger:hover { background: rgb(139 132 246 / 12%); }
+.sketchizi-header-grid-trigger.is-active {
+  border-color: rgb(139 132 246 / 65%);
+  background: rgb(139 132 246 / 16%);
+}
+.sketchizi-header-grid-popover {
+  position: absolute; z-index: 200; top: calc(100% + 12px); right: 0;
+  width: min(350px, calc(100vw - 24px)); box-sizing: border-box;
+  padding: 16px; border: 1px solid rgb(130 140 160 / 24%);
+  border-radius: 12px; background: var(--color-surface-lowest, #20232a);
+  color: var(--text-primary-color, #e8e8eb);
+  box-shadow: 0 16px 44px rgb(0 0 0 / 35%);
+}
+.sketchizi-header-grid-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sketchizi-header-grid-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+.sketchizi-header-grid-toggle input { accent-color: #8178ee; width: 17px; height: 17px; cursor: pointer; }
+.sketchizi-header-grid-modes { margin-top: 18px; font-size: 12px; }
+.sketchizi-header-grid-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.sketchizi-header-grid-options button {
+  min-height: 64px; padding: 9px 4px; font: inherit; font-size: 11px;
+  border: 1px solid rgb(130 140 160 / 24%); border-radius: 8px;
+  background: transparent; color: inherit; cursor: pointer;
+}
+.sketchizi-header-grid-options button[aria-pressed="true"] {
+  border-color: #958cff; background: rgb(139 132 246 / 17%);
+}
+.sketchizi-header-grid-options button:disabled { opacity: .38; cursor: not-allowed; }
+.sketchizi-header-grid-popover p { margin: 12px 0 0; font-size: 11px; opacity: .7; line-height: 1.5; }
+.sketchizi-header-grid-trigger:focus-visible,
+.sketchizi-header-grid-options button:focus-visible { outline: 2px solid #958cff; outline-offset: 2px; }
+
+/* Refined compact grid settings popover with real CSS grid previews. */
+.sketchizi-header-grid-popover { width: min(410px, calc(100vw - 24px)); padding: 18px; border-radius: 14px; }
+.sketchizi-header-grid-top { padding-bottom: 16px; border-bottom: 1px solid rgb(140 150 170 / 16%); }
+.sketchizi-header-grid-heading { display: flex; align-items: flex-start; gap: 10px; }
+.sketchizi-header-grid-heading > .desktop-app-dropdown-icon { width: 22px; height: 22px; margin-top: 1px; }
+.sketchizi-header-grid-heading > div { display: flex; flex-direction: column; gap: 4px; }
+.sketchizi-header-grid-heading strong { font-size: 15px; }
+.sketchizi-header-grid-heading small { font-size: 11px; opacity: .65; }
+.sketchizi-header-grid-toggle { gap: 9px; white-space: nowrap; }
+.sketchizi-header-grid-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.sketchizi-header-grid-switch { display: inline-block; width: 34px; height: 20px; border-radius: 12px; background: #555968; position: relative; transition: background .15s; }
+.sketchizi-header-grid-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.sketchizi-header-grid-toggle input:checked + .sketchizi-header-grid-switch { background: #8274ed; }
+.sketchizi-header-grid-toggle input:checked + .sketchizi-header-grid-switch::after { transform: translateX(14px); }
+.sketchizi-header-grid-toggle input:focus-visible + .sketchizi-header-grid-switch { outline: 2px solid #aaa4ff; outline-offset: 3px; }
+.sketchizi-header-grid-modes { margin-top: 16px; }
+.sketchizi-header-grid-modes > strong { font-size: 12px; }
+.sketchizi-header-grid-options { gap: 8px; margin-top: 10px; }
+.sketchizi-header-grid-options button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 138px; padding: 12px 6px 10px; border-radius: 10px; text-align: center; }
+.sketchizi-header-grid-options button > strong { font-size: 11px; font-weight: 600; }
+.sketchizi-header-grid-options button > small { font-size: 10px; line-height: 1.35; opacity: .65; }
+.sketchizi-grid-preview { display: block; position: relative; width: 58px; height: 55px; margin-bottom: 4px; border-radius: 5px; overflow: hidden; background-image: linear-gradient(to right, rgb(170 180 200 / 28%) 1px, transparent 1px),linear-gradient(to bottom, rgb(170 180 200 / 28%) 1px, transparent 1px); background-size: 15px 15px; }
+.sketchizi-grid-preview.is-focus::after,.sketchizi-grid-preview.is-local::after { content: ""; position: absolute; inset: 5%; background-image: linear-gradient(to right, rgb(160 145 255 / 55%) 1px, transparent 1px),linear-gradient(to bottom, rgb(160 145 255 / 55%) 1px, transparent 1px); background-size: 6px 6px; -webkit-mask-image: radial-gradient(ellipse, black 40%, transparent 75%); mask-image: radial-gradient(ellipse, black 40%, transparent 75%); }
+.sketchizi-grid-preview.is-local::after { inset: 25% 18%; border-radius: 4px; -webkit-mask-image: radial-gradient(ellipse, black 30%, transparent 85%); mask-image: radial-gradient(ellipse, black 30%, transparent 85%); }
+.sketchizi-grid-selected-check { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: #8174ee; color: white; font-size: 12px; }
+.sketchizi-header-grid-description { display: flex; align-items: flex-start; gap: 8px; padding-top: 12px; border-top: 1px solid rgb(140 150 170 / 16%); }
+.sketchizi-header-grid-description > span { font-size: 14px; line-height: 1; }

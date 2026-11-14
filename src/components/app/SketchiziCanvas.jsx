@@ -18,7 +18,7 @@ export default function SketchiziCanvas({
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
-  gridEnabled = false,
+  gridEnabled = false, gridStyle = "focus", onGridVisibilityChange,
 }) {
   const canvasRootRef = useRef(null);
   const fitContentButtonRef = useRef(null);
@@ -44,6 +44,8 @@ export default function SketchiziCanvas({
     // decorative layers. Respect live Excalidraw state, not just saved props.
     const showGrid = state.gridModeEnabled ?? savedSketch?.appState?.gridModeEnabled ?? gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
+    node.classList.toggle("is-focus-style", gridStyle === "focus");
+    node.classList.toggle("is-local-style", gridStyle === "local");
     if (!showGrid) {
       node.classList.remove("has-focus");
       return;
@@ -82,7 +84,7 @@ export default function SketchiziCanvas({
     node.style.setProperty("--sk-grid-focus-top", `${focus.top}px`);
     node.style.setProperty("--sk-grid-focus-width", `${focus.width}px`);
     node.style.setProperty("--sk-grid-focus-height", `${focus.height}px`);
-  }, [apiRef, savedSketch, gridEnabled]);
+  }, [apiRef, savedSketch, gridEnabled, gridStyle]);
 
   useEffect(() => {
     const root = canvasRootRef.current;
@@ -200,8 +202,9 @@ export default function SketchiziCanvas({
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
     setCanvasRevision((revision) => revision + 1);
+    onGridVisibilityChange?.(Boolean(appState?.gridModeEnabled));
     handleChange?.(elements, appState, files);
-  }, [canEdit, handleChange, viewModeEnabled]);
+  }, [canEdit, handleChange, viewModeEnabled, onGridVisibilityChange]);
   const handleViewportChange = useCallback((...args) => {
     setCanvasRevision((revision) => revision + 1);
     onViewportChange?.(...args);

@@ -69,6 +69,15 @@ function App() {
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(false);
+  const [gridStyle, setGridStyle] = useState(() => {
+    try {
+      const stored = window.localStorage.getItem("sketchizi-grid-style");
+      return ["normal", "focus", "local"].includes(stored) ? stored : "focus";
+    } catch { return "focus"; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Private browsing. */ }
+  }, [gridStyle]);
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -1676,6 +1685,10 @@ function App() {
       </div>}
       <DesktopAppHeader
         commands={commands}
+        gridEnabled={gridEnabled}
+        gridStyle={gridStyle}
+        onToggleGrid={toggleGrid}
+        onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
         startCollaboration={startCollaboration}
         collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}
@@ -1814,7 +1827,9 @@ function App() {
             onToolActivated={() => closePanel("properties")}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
-            gridEnabled={gridEnabled}
+            gridStyle={gridStyle}
+             onGridVisibilityChange={setGridEnabled}
+             gridEnabled={gridEnabled}
           />
 
 

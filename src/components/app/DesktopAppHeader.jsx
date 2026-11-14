@@ -70,6 +70,10 @@ function runNativeEditAction(pattern) {
 
 export default function DesktopAppHeader({
   commands,
+  gridEnabled = false,
+  gridStyle = "focus",
+  onToggleGrid,
+  onGridStyleChange,
   openCommandPalette,
   startCollaboration,
   collaborationActive,
@@ -103,6 +107,23 @@ export default function DesktopAppHeader({
   children,
 }) {
   const [openMenu, setOpenMenu] = useState(null);
+  const [gridPopoverOpen, setGridPopoverOpen] = useState(false);
+  const gridPopoverRef = useRef(null);
+  useEffect(() => {
+    if (!gridPopoverOpen) return undefined;
+    const closeOutside = (event) => {
+      if (!gridPopoverRef.current?.contains(event.target)) setGridPopoverOpen(false);
+    };
+    const closeEscape = (event) => {
+      if (event.key === "Escape") setGridPopoverOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeEscape);
+    };
+  }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [headerPinned, setHeaderPinned] = useState(false);
@@ -482,6 +503,53 @@ export default function DesktopAppHeader({
       )}
 
 
+      <div className="sketchizi-header-grid" ref={gridPopoverRef}>
+        <button type="button" className={gridEnabled ? "sketchizi-header-grid-trigger is-active" : "sketchizi-header-grid-trigger"}
+          aria-label="Grid settings" title="Grid settings" aria-haspopup="dialog" aria-expanded={gridPopoverOpen}
+          onClick={() => { setOpenMenu(null); setGridPopoverOpen((open) => !open); }}>
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+          </svg>
+        </button>
+        {gridPopoverOpen && (
+          <section className="sketchizi-header-grid-popover" role="dialog" aria-label="Grid settings">
+            <div className="sketchizi-header-grid-top">
+              <div className="sketchizi-header-grid-heading">
+                <ViewCommandIcon name="grid" />
+                <div><strong>Grid</strong><small>Configure canvas grid and focus mode.</small></div>
+              </div>
+              <label className="sketchizi-header-grid-toggle">
+                <span>Show Grid</span>
+                <input type="checkbox" checked={gridEnabled} onChange={() => onToggleGrid?.()} />
+                <span className="sketchizi-header-grid-switch" aria-hidden="true" />
+              </label>
+            </div>
+            <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
+              <strong>Grid Mode</strong>
+              <div className="sketchizi-header-grid-options" role="group" aria-label="Grid mode">
+                {[["normal", "Normal", "Uniform grid across the canvas."],
+                  ["focus", "Focus (Canvas)", "Dense central grid (90%)."],
+                  ["local", "Focus (Local)", "Dense grid near content."]].map(([value, label, description]) => (
+                  <button key={value} type="button" disabled={!gridEnabled} aria-pressed={gridStyle === value}
+                    onClick={() => onGridStyleChange?.(value)}>
+                    <span className={`sketchizi-grid-preview is-${value}`} aria-hidden="true"><span /></span>
+                    <strong>{label}</strong>
+                    <small>{description}</small>
+                    {gridStyle === value && <span className="sketchizi-grid-selected-check" aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="sketchizi-header-grid-description">
+              <span aria-hidden="true">ⓘ</span>
+              {!gridEnabled ? "Turn on Show Grid to choose a mode." :
+                gridStyle === "normal" ? "Normal shows a uniform grid across the canvas." :
+                gridStyle === "local" ? "Focus (Local) shows a denser grid around drawing content." :
+                "Focus (Canvas) shows a denser grid in the central area with smooth edges."}
+            </p>
+          </section>
+        )}
+      </div>
       <button
         type="button"
         className="desktop-app-save-to-cloud-button is-icon-only"

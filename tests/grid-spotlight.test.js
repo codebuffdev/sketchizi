@@ -98,7 +98,7 @@ test('visual layers are rectangular, softly faded, and never intercept input', (
   assert.match(css, /-webkit-mask-composite: source-in/);
   assert.match(css, /--sk-grid-focus-width/);
   assert.match(css, /--sk-grid-focus-height/);
-  assert.doesNotMatch(css, /clip-path:\s*circle|radial-gradient\(\s*ellipse/);
+  assert.doesNotMatch(css, /clip-path:\s*circle/);
   assert.match(css, /\.app\.theme-dark \.desktop-canvas-region,\s*\.app\.theme-light \.desktop-canvas-region\s*\{[^}]*background-image: none !important;/s);
 });
 
@@ -114,7 +114,7 @@ test('Show Grid OFF hides both layers and live toggle controls them immediately'
   assert.match(canvas, /if \(!showGrid\) \{\s*node\.classList\.remove\("has-focus"\);\s*return;/);
   assert.match(css, /\.sketchizi-grid-spotlight:not\(\.is-grid-enabled\)\s*\{\s*display: none;/);
   assert.match(canvas, /\[canvasRevision, selectedElements, paintWorkspaceGrid\]/);
-  assert.match(canvas, /\[apiRef, savedSketch, gridEnabled\]/);
+  assert.match(canvas, /\[apiRef, savedSketch, gridEnabled, gridStyle\]/);
 });
 
 test('focus stays centered on content even if the last pointer location is elsewhere', () => {
