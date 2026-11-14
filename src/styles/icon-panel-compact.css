@@ -8,6 +8,8 @@
 @media (max-width: 760px) {
   .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
     inset: calc(var(--sketchizi-desktop-header-height, 54px) + 8px) auto auto 10px !important;
+    /* Keep the open drawer above mobile header hit areas for accessible taps. */
+    z-index: 800 !important;
     width: min(320px, calc(100vw - 20px)) !important;
     max-width: calc(100vw - 20px) !important;
     height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 20px)) !important;
