@@ -1,15 +1,29 @@
 /* Sketchizi Compact Icon Library: ~320 × 460 px, list-first, all collections reachable. */
-@media (min-width: 761px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
-    width: min(320px, calc(100vw - 28px)) !important;
-    height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 24px)) !important;
-  }
+/* A root-level portal avoids the workspace's stacking context (z-index: 0).
+   The mobile header can otherwise cover the All dropdown's hit targets. */
+.app > .sk-icon-library-portal-host.mobile-resource-open {
+  position: fixed !important;
+  inset: calc(var(--sketchizi-desktop-header-height, 54px) + 12px) auto auto 14px !important;
+  z-index: 900 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  width: min(320px, calc(100vw - 28px)) !important;
+  height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 24px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+.app > .sk-icon-library-portal-host.mobile-resource-closed {
+  display: none !important;
 }
 @media (max-width: 760px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app > .sk-icon-library-portal-host.mobile-resource-open {
     inset: calc(var(--sketchizi-desktop-header-height, 54px) + 8px) auto auto 10px !important;
-    /* Keep the open drawer above mobile header hit areas for accessible taps. */
-    z-index: 800 !important;
     width: min(320px, calc(100vw - 20px)) !important;
     max-width: calc(100vw - 20px) !important;
     height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 20px)) !important;
