@@ -203,3 +203,26 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.104)}
+
+
+/* Grouped manifest diagnostics: controls deliberately scoped to this panel. */
+.k8s-studio-validation .k8s-studio-diagnostic-groups{display:grid;gap:10px;padding:10px;max-height:320px;overflow:auto}
+.k8s-studio-validation .k8s-studio-diagnostic-group{min-width:0;border:1px solid #344259;border-radius:9px;background:#182235;overflow:hidden}
+.k8s-studio-validation .k8s-studio-diagnostic-resource{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #344259}
+.k8s-studio-validation .k8s-studio-diagnostic-resource strong{font-size:12px;color:#e5edfa;overflow-wrap:anywhere}
+.k8s-studio-validation .k8s-studio-diagnostic-resource span{font-size:10px;color:#aab8cc;white-space:nowrap}
+.k8s-studio-validation .k8s-studio-diagnostic-group ul{max-height:none;overflow:visible}
+.k8s-studio-validation .k8s-studio-diagnostic-group li{gap:10px;padding:12px;align-items:flex-start}
+.k8s-studio-validation .k8s-studio-diagnostic-severity{font-size:9px;min-width:48px;text-transform:uppercase;letter-spacing:.04em}
+.k8s-studio-validation .k8s-studio-diagnostic-content{min-width:0;flex:1}
+.k8s-studio-validation .k8s-studio-diagnostic-content>p{margin:0;color:#d6deeb;font-size:12px;line-height:1.5}
+.k8s-studio-validation .k8s-studio-diagnostic-actions{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-top:9px}
+.k8s-studio-validation .k8s-studio-diagnostic-inspect,.k8s-studio-validation .k8s-studio-diagnostic-fix>summary{display:inline-flex;align-items:center;justify-content:center;min-height:28px;box-sizing:border-box;padding:5px 9px;border:1px solid #43536e;border-radius:6px;background:#253248;color:#e0e9f8;font:500 11px/1.3 inherit;cursor:pointer;list-style:none}
+.k8s-studio-validation .k8s-studio-diagnostic-fix>summary::-webkit-details-marker{display:none}
+.k8s-studio-validation .k8s-studio-diagnostic-inspect:hover,.k8s-studio-validation .k8s-studio-diagnostic-fix>summary:hover{background:#32415a;border-color:#7690b4}
+.k8s-studio-validation .k8s-studio-diagnostic-inspect:focus-visible,.k8s-studio-validation .k8s-studio-diagnostic-fix>summary:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+.k8s-studio-validation .k8s-studio-diagnostic-fix[open]{flex-basis:100%}
+.k8s-studio-validation .k8s-studio-diagnostic-fix-body{margin-top:8px;padding:10px 12px;border:1px solid #344259;border-radius:7px;background:#101827}
+.k8s-studio-validation .k8s-studio-diagnostic-fix-body p{margin:0 0 7px;color:#d5dfef;font-size:11px;white-space:pre-wrap}
+.k8s-studio-validation .k8s-studio-diagnostic-fix-body small{font-size:10px;color:#9fb0c8}
+@media(max-width:520px){.k8s-studio-validation .k8s-studio-diagnostic-group li{flex-wrap:wrap}.k8s-studio-validation .k8s-studio-diagnostic-content{flex-basis:100%}}
