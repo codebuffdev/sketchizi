@@ -1,6 +1,11 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
+import { normalizeStudioDiagnostics } from "../../studio-validation/diagnostics.js";
+import { convertComposeToKubernetes } from "../composeToKubernetes.js";
+import { traceComposeDependencies } from "../composeDependencyTrace.js";
+import { exploreComposeNetworkReachability } from "../composeNetworkReachability.js";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
+import { updateComposeServiceImage } from "../composeYamlEdits.js";
 import "./docker-compose-studio.css";
 
 
@@ -174,6 +179,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [showValidation, setShowValidation] = useState(false);
+  const [showConversion, setShowConversion] = useState(false);
+  const [showTrace, setShowTrace] = useState(false);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
   const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 60 });
@@ -190,14 +197,40 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     } catch (cause) { return { document: null, error: cause?.message || "Could not parse Compose YAML." }; }
   }, [yamlText]);
   const composeDoc = parsed.document;
+  const conversion = useMemo(() => {
+    if (!composeDoc) return { manifests: [], warnings: [], error: parsed.error };
+    try { return { ...convertComposeToKubernetes(composeDoc), error: "" }; }
+    catch (cause) { return { manifests: [], warnings: [], error: cause.message }; }
+  }, [composeDoc, parsed.error]);
+  const conversionYaml = conversion.manifests.map((manifest) => stringify(manifest).trimEnd()).join("\n---\n") + (conversion.manifests.length ? "\n" : "");
+  const downloadConversion = () => {
+    if (!conversion.manifests.length || conversion.error) return;
+    const blob = new Blob([conversionYaml], { type: "application/yaml" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = "sketchizi-kubernetes-preview.yaml";
+    document.body.appendChild(link); link.click(); link.remove();
+    URL.revokeObjectURL(url);
+  };
   const serviceEntries = Object.entries(composeDoc?.services || {});
   const serviceNames = new Set(serviceEntries.map(([name]) => name));
   const selected = composeDoc?.services?.[selectedService];
   const volumes = Object.keys(composeDoc?.volumes || {});
   const networks = Object.keys(composeDoc?.networks || {});
   const validation = useMemo(() => composeDoc ? validateComposeDocument(composeDoc) : { valid: false, findings: [] }, [composeDoc]);
+  const diagnostics = useMemo(() => normalizeStudioDiagnostics("docker-compose", validation.findings), [validation.findings]);
   const readiness = useMemo(() => composeDoc ? analyzeComposeReadiness(composeDoc) : null, [composeDoc]);
   const edges = serviceEntries.flatMap(([from, service]) => dependenciesOf(service).map((to) => ({ from, to, exists: serviceNames.has(to) })));
+  const dependencyTrace = useMemo(() => {
+    if (!composeDoc || !selectedService || !Object.hasOwn(composeDoc.services, selectedService)) return null;
+    try { return traceComposeDependencies(composeDoc, selectedService); }
+    catch { return null; }
+  }, [composeDoc, selectedService]);
+  const networkReachability = useMemo(() => {
+    if (!composeDoc || !selectedService || !Object.hasOwn(composeDoc.services, selectedService)) return null;
+    try { return exploreComposeNetworkReachability(composeDoc, selectedService); }
+    catch { return null; }
+  }, [composeDoc, selectedService]);
   const dirty = yamlText !== savedYaml;
   const close = () => { if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return; onClose?.(); };
 
@@ -315,8 +348,20 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     if (!composeDoc) { setError(parsed.error); return; }
     let i = serviceEntries.length + 1; let name = "service-" + i;
     while (serviceNames.has(name)) name = "service-" + (++i);
-    setYamlText(stringify({ ...composeDoc, services: { ...composeDoc.services, [name]: { image: "nginx:alpine", restart: "unless-stopped" } } }));
+    const yamlDocument = parseDocument(yamlText, { uniqueKeys: true });
+    if (yamlDocument.errors.length) { setError(yamlDocument.errors[0].message); return; }
+    yamlDocument.setIn(["services", name], { image: "nginx:alpine", restart: "unless-stopped" });
+    setYamlText(String(yamlDocument));
     setSelectedService(name); setError(""); setNotice("Added " + name + " to the YAML.");
+  };
+  const updateSelectedServiceImage = (nextImage) => {
+    if (!composeDoc || !selected || typeof nextImage !== "string") return;
+    const image = nextImage.trim();
+    if (!image) { setError("Service image cannot be empty."); return; }
+    if (image === selected.image) return;
+    try { setYamlText(updateComposeServiceImage(yamlText, selectedService, image)); }
+    catch (cause) { setError(cause.message); return; }
+    setError(""); setNotice("Updated " + selectedService + " image in YAML.");
   };
   const focusSelected = () => {
     if (!editorRef.current) return;
@@ -341,11 +386,46 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
           {parsed.error && <div className="docker-studio-parse-error" role="alert"><strong>YAML needs attention</strong><p>{parsed.error}</p></div>}
           {!parsed.error && !serviceEntries.length && <div className="docker-studio-empty-check">Define services in YAML to see their containers here.</div>}
           <div className="docker-studio-container-list">{serviceEntries.map(([name, service]) => <button key={name} type="button" className={selectedService === name ? "docker-studio-container-card selected" : "docker-studio-container-card"} onClick={() => { setSelectedService(name); setError(""); }} aria-pressed={selectedService === name}><span className={"docker-studio-container-icon docker-studio-container-icon-" + serviceIconType(name, service)} aria-hidden="true"><ServiceIcon type={serviceIconType(name, service)} /></span><span className="docker-studio-container-copy"><strong>{name}</strong><small>{imageOf(service)}</small><small className="docker-studio-container-meta">{service?.ports?.length || 0} ports · {service?.volumes?.length || 0} mounts · {service?.environment ? (Array.isArray(service.environment) ? service.environment.length : Object.keys(service.environment).length) : 0} env</small></span></button>)}</div>
-          {selected && <section className="docker-studio-selected-details"><div className="docker-studio-selected-heading"><span>SELECTED SERVICE</span><button type="button" onClick={focusSelected}>Edit YAML</button></div><h3>{selectedService}</h3><p>{imageOf(selected)}</p>{dependenciesOf(selected).length > 0 && <div><strong>Depends on</strong><div className="docker-studio-chip-list">{dependenciesOf(selected).map((name) => <button type="button" key={name} className={serviceNames.has(name) ? "" : "missing"} onClick={() => setSelectedService(name)}>{name}</button>)}</div></div>}{namesOf(selected.volumes).length > 0 && <div><strong>Mounts</strong><div className="docker-studio-detail-list">{namesOf(selected.volumes).map((value, i) => <span key={i}>{value}</span>)}</div></div>}{namesOf(selected.networks).length > 0 && <div><strong>Networks</strong><div className="docker-studio-chip-list">{namesOf(selected.networks).map((name) => <span key={name}>{name}</span>)}</div></div>}</section>}
+          {selected && <section className="docker-studio-selected-details"><div className="docker-studio-selected-heading"><span>SELECTED SERVICE</span><button type="button" onClick={focusSelected}>Edit YAML</button></div><h3>{selectedService}</h3><label>Image <input key={selectedService + ":" + (selected.image || "")} aria-label={"Image for " + selectedService} defaultValue={selected.image || ""} placeholder="e.g. nginx:alpine" onBlur={(event) => updateSelectedServiceImage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>{dependenciesOf(selected).length > 0 && <div><strong>Depends on</strong><div className="docker-studio-chip-list">{dependenciesOf(selected).map((name) => <button type="button" key={name} className={serviceNames.has(name) ? "" : "missing"} onClick={() => setSelectedService(name)}>{name}</button>)}</div></div>}{namesOf(selected.volumes).length > 0 && <div><strong>Mounts</strong><div className="docker-studio-detail-list">{namesOf(selected.volumes).map((value, i) => <span key={i}>{value}</span>)}</div></div>}{namesOf(selected.networks).length > 0 && <div><strong>Networks</strong><div className="docker-studio-chip-list">{namesOf(selected.networks).map((name) => <span key={name}>{name}</span>)}</div></div>}</section>}
+          <section className="docker-studio-relationship-panel" aria-label="Dependency path explorer">
+            <button type="button" className="docker-studio-validation-toggle" onClick={() => setShowTrace((value) => !value)} aria-expanded={showTrace}>Explore dependencies {showTrace ? "−" : "+"}</button>
+            {showTrace && <div>
+              <p>Static Compose depends_on path for {selectedService}. This is not a live network request trace.</p>
+              {dependencyTrace?.steps.length ? dependencyTrace.steps.map((step, index) => <button type="button" key={step.from + step.to + index} className={step.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => { if (step.exists) setSelectedService(step.to); }}><strong>{step.from}</strong><span>→</span><strong>{step.to}</strong><small>{step.exists ? "declared dependency" : "missing service"}</small></button>) : <p>No declared downstream dependencies.</p>}
+              {dependencyTrace?.warnings.map((warning, index) => <p key={index} role="status">{warning}</p>)}
+              {dependencyTrace?.steps.length > 0 && <svg role="img" aria-label={"Declared dependency edges from " + selectedService} viewBox={"0 0 520 " + (dependencyTrace.steps.length * 68 + 16)} style={{ width: "100%", maxHeight: 360 }}>
+                {dependencyTrace.steps.map((step, index) => <g key={step.from + step.to + index} transform={"translate(0 " + (index * 68 + 8) + ")"}>
+                  <rect x="8" y="8" width="170" height="42" rx="8" fill="#2563eb" />
+                  <text x="93" y="34" textAnchor="middle" fill="white" fontSize="13">{step.from.slice(0, 22)}</text>
+                  <line x1="180" y1="29" x2="240" y2="29" stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" />
+                  <path d="M232 23 L240 29 L232 35" fill="none" stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" />
+                  <rect x="244" y="8" width="170" height="42" rx="8" fill={step.exists ? "#0f766e" : "#991b1b"} />
+                  <text x="329" y="34" textAnchor="middle" fill="white" fontSize="13">{step.to.slice(0, 22)}</text>
+                  <text x="424" y="34" fill="currentColor" fontSize="11">{step.exists ? "declared" : "missing"}</text>
+                </g>)}
+              </svg>}
+              <strong>Potential network peers</strong>
+              <p>Shared Compose networks permit possible connectivity; they do not prove HTTP traffic.</p>
+              {networkReachability?.peers.length ? networkReachability.peers.map((peer) => <button type="button" className="docker-studio-relationship" key={peer.name} onClick={() => setSelectedService(peer.name)}><strong>{selectedService}</strong><span>↔</span><strong>{peer.name}</strong><small>Shared: {peer.sharedNetworks.join(", ")}</small></button>) : <p>No other services share this service's declared networks.</p>}
+
+            </div>}
+          </section>
           <section className="docker-studio-relationship-panel" aria-label="Service relationships"><div className="docker-studio-relationship-heading"><strong>Relationships</strong><span>{edges.length}</span></div>{edges.length ? edges.map((edge, i) => <button type="button" key={edge.from + edge.to + i} className={edge.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => setSelectedService(edge.exists ? edge.to : edge.from)}><strong>{edge.from}</strong><span>→</span><strong>{edge.to}</strong><small>{edge.exists ? "depends on" : "missing service"}</small></button>) : <p>No service dependencies are defined.</p>}{(volumes.length > 0 || networks.length > 0) && <div className="docker-studio-shared-resources"><strong>Shared resources</strong>{volumes.map((name) => <span key={"v" + name}>Volume · {name}</span>)}{networks.map((name) => <span key={"n" + name}>Network · {name}</span>)}</div>}</section>
         </aside>
       </div>
-      <section className="docker-studio-validation-strip" aria-label="Compose validation"><button type="button" className="docker-studio-validation-toggle" onClick={() => setShowValidation((value) => !value)} aria-expanded={showValidation}><span className={parsed.error || validation.findings.some((finding) => finding.severity === "error") ? "docker-studio-validation-dot error" : "docker-studio-validation-dot"}/><strong>{parsed.error ? "YAML parse error" : validation.findings.length ? validation.findings.length + " validation findings" : "Compose checks"}</strong><span>{parsed.error ? "Fix YAML syntax to continue" : validation.findings.filter((finding) => finding.severity === "error").length + " errors · " + validation.findings.filter((finding) => finding.severity === "warning").length + " warnings"}</span><span>{showValidation ? "−" : "+"}</span></button>{showValidation && <div className="docker-studio-validation-content">{parsed.error && <p className="docker-studio-parse-error">{parsed.error}</p>}{validation.findings.map((finding, i) => <article key={finding.code + finding.path + i} className={"docker-studio-finding " + finding.severity}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></article>)}{readiness && <div className="docker-studio-readiness-summary"><strong>Readiness {readiness.readinessScore}/100 · {readiness.readinessGrade}</strong><span>{readiness.severityCounts.error} errors · {readiness.severityCounts.warning} warnings · {readiness.severityCounts.info} recommendations</span>{readiness.startupOrder.length > 0 && <p>Suggested startup order: {readiness.startupOrder.join(" → ")}</p>}</div>}{!parsed.error && !validation.findings.length && <p>No issues detected by the static checks.</p>}</div>}</section>
+      <section className="docker-studio-validation-strip" aria-label="Kubernetes conversion preview">
+        <button type="button" className="docker-studio-validation-toggle" onClick={() => setShowConversion((value) => !value)} aria-expanded={showConversion}>
+          <strong>Preview Kubernetes YAML</strong><span>{conversion.manifests.length} manifests · {conversion.warnings.length} review warnings</span><span>{showConversion ? "−" : "+"}</span>
+        </button>
+        {showConversion && <div className="docker-studio-validation-content">
+          <p>Review-only conversion. No Kubernetes resources are deployed. Unsupported Compose fields require manual migration.</p>
+          {conversion.error && <p role="alert">{conversion.error}</p>}
+          {conversion.warnings.map((warning, index) => <article key={warning.service + warning.field + index} className="docker-studio-finding warning"><strong>{warning.service}: {warning.field}</strong><p>{warning.message}</p></article>)}
+          {conversion.manifests.length > 0 && <><button type="button" onClick={downloadConversion}>Download Kubernetes YAML</button><pre style={{ maxHeight: 320, overflow: "auto", whiteSpace: "pre-wrap" }}>{conversionYaml}</pre></>}
+          {!conversion.manifests.length && !conversion.error && <p>No convertible image-backed services found.</p>}
+        </div>}
+      </section>
+      <section className="docker-studio-validation-strip" aria-label="Compose validation"><button type="button" className="docker-studio-validation-toggle" onClick={() => setShowValidation((value) => !value)} aria-expanded={showValidation}><span className={parsed.error || validation.findings.some((finding) => finding.severity === "error") ? "docker-studio-validation-dot error" : "docker-studio-validation-dot"}/><strong>{parsed.error ? "YAML parse error" : validation.findings.length ? validation.findings.length + " validation findings" : "Compose checks"}</strong><span>{parsed.error ? "Fix YAML syntax to continue" : validation.findings.filter((finding) => finding.severity === "error").length + " errors · " + validation.findings.filter((finding) => finding.severity === "warning").length + " warnings"}</span><span>{showValidation ? "−" : "+"}</span></button>{showValidation && <div className="docker-studio-validation-content">{parsed.error && <p className="docker-studio-parse-error">{parsed.error}</p>}{diagnostics.map((finding) => <article key={finding.id} className={"docker-studio-finding " + finding.severity}><strong>{finding.message}</strong><small>{finding.path}</small>{finding.path?.startsWith("services.") && serviceNames.has(finding.path.split(".")[1]) && <button type="button" onClick={() => setSelectedService(finding.path.split(".")[1])} aria-label={"Select service " + finding.path.split(".")[1]}>Select service</button>}<details><summary>Review suggested correction</summary><p>{finding.remediation || "Review the affected Compose configuration and correct this validation finding."}</p><small>Preview only — YAML remains unchanged.</small></details></article>)}{readiness && <div className="docker-studio-readiness-summary"><strong>Readiness {readiness.readinessScore}/100 · {readiness.readinessGrade}</strong><span>{readiness.severityCounts.error} errors · {readiness.severityCounts.warning} warnings · {readiness.severityCounts.info} recommendations</span>{readiness.startupOrder.length > 0 && <p>Suggested startup order: {readiness.startupOrder.join(" → ")}</p>}</div>}{!parsed.error && !validation.findings.length && <p>No issues detected by the static checks.</p>}</div>}</section>
       {(error || notice) && <div className={error ? "docker-studio-message error" : "docker-studio-message"} role={error ? "alert" : "status"}>{error || notice}</div>}
       <footer className="docker-studio-footer"><span>{serviceEntries.length} services · {volumes.length} named volumes · {networks.length} networks</span><span>YAML-first workflow · Canvas changes only after Create diagram</span></footer>
     </section>

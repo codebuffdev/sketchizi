@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
+import { normalizeStudioDiagnostics } from "../../studio-validation/diagnostics.js";
 import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
 import { readZipTextFiles } from "../zipBundleReader.js";
 import { renderHelmBundle, renderKustomizeBundle } from "../browserBundleRenderer.js";
+import { summarizeKubernetesSnapshot } from "../readOnlySnapshot.js";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -340,6 +342,19 @@ spec:
   const [selectedValuesFile, setSelectedValuesFile] = useState("");
   const [renderingBundle, setRenderingBundle] = useState(false);
   const [error, setError] = useState("");
+  const [snapshotText, setSnapshotText] = useState("");
+  const [snapshotSummary, setSnapshotSummary] = useState([]);
+  const [snapshotError, setSnapshotError] = useState("");
+  const inspectSnapshot = () => {
+    try {
+      const data = JSON.parse(snapshotText);
+      const items = Array.isArray(data) ? data : data?.items;
+      const summary = summarizeKubernetesSnapshot(items);
+      setSnapshotSummary(summary);
+      setSnapshotError("");
+    } catch (cause) { setSnapshotSummary([]); setSnapshotError(cause?.message || "Invalid snapshot JSON"); }
+  };
+
   const [inspectedResourceId, setInspectedResourceId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorDraft, setInspectorDraft] = useState("");
@@ -467,6 +482,8 @@ spec:
       return { resources: [], unsupported: [], parseError: cause?.message || "Unable to parse YAML.", issues: [] };
     }
   }, [yamlText]);
+  const diagnostics = useMemo(() => normalizeStudioDiagnostics("kubernetes", parsed.issues), [parsed.issues]);
+
 
   const inspectedResource = parsed.resources.find((resource) => resource.id === inspectedResourceId) || null;
   const inspectResource = (resource) => {
@@ -830,7 +847,7 @@ spec:
             {!parsed.parseError && !parsed.resources.length ? <div className="k8s-studio-empty">Resources will appear here after valid YAML is provided.</div> : null}
             {parsed.issues?.length > 0 && <section className="k8s-studio-validation" aria-label="Manifest validation">
               <div className="k8s-studio-validation-heading"><strong>Manifest checks</strong><span>{parsed.issues.filter((issue) => issue.severity === "error").length} errors · {parsed.issues.filter((issue) => issue.severity === "warning").length} warnings</span></div>
-              <ul>{parsed.issues.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}><span>{issue.severity === "error" ? "Error" : issue.severity === "warning" ? "Warning" : "Info"}</span><div><strong>{issue.kind}/{issue.resource}</strong><p>{issue.message}</p></div></li>)}</ul>
+              <ul>{diagnostics.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}><span>{issue.severity === "error" ? "Error" : issue.severity === "warning" ? "Warning" : "Info"}</span><div><strong>{issue.resource}</strong><p>{issue.message}</p>{parsed.resources.some((resource) => resource.kind + "/" + resource.name === issue.resource) && <button type="button" onClick={() => { const target = parsed.resources.find((resource) => resource.kind + "/" + resource.name === issue.resource); if (target) inspectResource(target); }} aria-label={"Inspect " + issue.resource}>Inspect resource</button>}<details><summary>Review suggested correction</summary><p>{issue.remediation || "Review the affected resource and update the manifest to resolve this validation finding. No changes will be applied automatically."}</p><small>Preview only — YAML remains unchanged.</small></details></div></li>)}</ul>
             </section>}
             <div className="k8s-studio-resource-list">
               {parsed.resources.map((resource) => <article className="k8s-studio-resource" key={resource.id}>
@@ -844,6 +861,14 @@ spec:
         </div>
 
         {(error || parsed.parseError || notice) && <div className={error || parsed.parseError ? "k8s-studio-message error" : "k8s-studio-message"} role={error || parsed.parseError ? "alert" : "status"}>{error || parsed.parseError || notice}</div>}
+        <details style={{ padding: "12px 16px" }}>
+          <summary>Inspect read-only Kubernetes snapshot</summary>
+          <p>Paste an authorized Kubernetes resource list as JSON. Only minimal status fields are displayed; no cluster connection or deployment occurs. Avoid pasting sensitive cluster data.</p>
+          <textarea aria-label="Kubernetes snapshot JSON" rows={4} style={{ width: "100%" }} value={snapshotText} onChange={(event) => setSnapshotText(event.target.value)} placeholder={'{"items":[{"kind":"Pod","metadata":{"name":"api"},"status":{"phase":"Running"}}]}'}/>
+          <button type="button" className="k8s-studio-secondary" onClick={inspectSnapshot}>Inspect snapshot</button>
+          {snapshotError && <p role="alert">{snapshotError}</p>}
+          {snapshotSummary.length > 0 && <ul>{snapshotSummary.map((resource, index) => <li key={resource.kind + resource.namespace + resource.name + index}>{resource.kind} / {resource.namespace} / {resource.name} · {resource.phase || resource.type || (resource.ready + "/" + resource.desired + " ready")}</li>)}</ul>}
+        </details>
         <footer className="k8s-studio-footer">
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
           <div><button type="button" className="k8s-studio-secondary" onClick={requestClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
