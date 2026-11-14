@@ -1,8 +1,8 @@
-/* A screen-space circular dot grid centered on the current edit position.
+/* A screen-space circular square-line grid centered on the current edit position.
    Rendered above the static scene background, below interactive overlays.
    Intentionally visual-only: Excalidraw's native grid/snapping stays intact. */
 
-/* Remove the old canvas-wide decorative dot pattern; retain theme fills. */
+/* Remove the old canvas-wide decorative pattern; retain theme fills. */
 .app.theme-dark .desktop-canvas-region,
 .app.theme-light .desktop-canvas-region {
   background-image: none !important;
@@ -21,9 +21,17 @@
   box-sizing: border-box;
   pointer-events: none !important;
   user-select: none;
-  background-image: radial-gradient(circle at 1px 1px, rgb(87 96 113 / 20%) 0.8px, transparent 1px);
-  background-size: var(--sk-grid-size) var(--sk-grid-size);
-  background-position: var(--sk-grid-offset-x) var(--sk-grid-offset-y);
+  /* Orthogonal 1px rules create actual square cells instead of dotted nodes.
+     The identical X/Y spacing and offsets keep squares aligned while panning. */
+  background-image:
+    linear-gradient(to right, rgb(87 96 113 / 21%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(87 96 113 / 21%) 1px, transparent 1px);
+  background-size:
+    var(--sk-grid-size) var(--sk-grid-size),
+    var(--sk-grid-size) var(--sk-grid-size);
+  background-position:
+    var(--sk-grid-offset-x) var(--sk-grid-offset-y),
+    var(--sk-grid-offset-x) var(--sk-grid-offset-y);
   background-repeat: repeat;
   clip-path: circle(var(--sk-grid-focus-radius) at var(--sk-grid-focus-x) var(--sk-grid-focus-y));
   -webkit-mask-image: radial-gradient(
@@ -42,7 +50,9 @@
 }
 
 .app.theme-dark .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight {
-  background-image: radial-gradient(circle at 1px 1px, rgb(168 177 195 / 19%) 0.8px, transparent 1px);
+  background-image:
+    linear-gradient(to right, rgb(168 177 195 / 19%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(168 177 195 / 19%) 1px, transparent 1px);
 }
 
 @media (prefers-reduced-motion: reduce) {
