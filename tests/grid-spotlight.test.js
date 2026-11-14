@@ -107,3 +107,12 @@ test('native Excalidraw grid snapping and document persistence remain untouched'
   assert.doesNotMatch(canvas, /gridModeEnabled:\s*false/);
   assert.doesNotMatch(canvas, /\.updateScene\(\{\s*appState:\s*\{\s*gridModeEnabled:\s*false/s);
 });
+
+test('Show Grid OFF hides both layers and live toggle controls them immediately', () => {
+  assert.match(canvas, /state\.gridModeEnabled \?\? savedSketch\?\.appState\?\.gridModeEnabled \?\? gridEnabled/);
+  assert.match(canvas, /node\.classList\.toggle\("is-grid-enabled", !!showGrid\)/);
+  assert.match(canvas, /if \(!showGrid\) \{\s*node\.classList\.remove\("has-focus"\);\s*return;/);
+  assert.match(css, /\.sketchizi-grid-spotlight:not\(\.is-grid-enabled\)\s*\{\s*display: none;/);
+  assert.match(canvas, /\[canvasRevision, selectedElements, paintWorkspaceGrid\]/);
+  assert.match(canvas, /\[apiRef, savedSketch, gridEnabled\]/);
+});
