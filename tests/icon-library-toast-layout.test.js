@@ -7,9 +7,11 @@ const styles = readFileSync(new URL('../src/styles/icon-panel-compact.css', impo
 const feedback = readFileSync(new URL('../src/styles/canvas-feedback-overlays.css', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8');
 
-test('compact catalog exposes all sources with top-level shortcuts and More menu', () => {
+test('compact catalog exposes all sources through the All dropdown', () => {
   assert.match(panel, /primaryCatalogTabs/);
-  assert.match(panel, /extraCatalogTabs/);
+  assert.match(panel, /catalogMenuTabs/);
+  assert.match(panel, /aria-label="All categories"/);
+  assert.match(panel, /aria-label="All icon categories"/);
   assert.match(panel, /\{tab\.label\}/);
   assert.match(panel, /onClick=\{\(\) => chooseSource\(isActive \? "all" : tab\.id\)\}/);
   assert.match(styles, /\.sk-catalog-tabs\s*\{[^}]*display: flex !important;/s);
