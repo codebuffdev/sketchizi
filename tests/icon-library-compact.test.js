@@ -6,12 +6,21 @@ import { loadStoredViewMode, VIEW_MODE_STORAGE_KEY } from '../src/features/icon-
 const panel = readFileSync(new URL('../src/IconLibraryPanel.jsx', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles/icon-panel-compact.css', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8');
+const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
 test('compact library CSS is loaded after the expanded panel theme', () => {
   assert.ok(entry.indexOf('./styles/icon-panel-compact.css') > entry.indexOf('./styles/icon-panel-v2.css'));
   assert.match(styles, /width: min\(320px, calc\(100vw - 28px\)\) !important/);
   assert.match(styles, /height: min\(460px, calc\(100dvh/);
   assert.match(styles, /@media \(max-width: 760px\)/);
+});
+
+test('portal host lifts the compact drawer above mobile header without altering canvas', () => {
+  assert.match(app, /import \{ createPortal \} from "react-dom"/);
+  assert.match(app, /libraryOverlayHost && createPortal\(/);
+  assert.match(app, /sk-icon-library-portal-host/);
+  assert.match(styles, /\.app > \.sk-icon-library-portal-host\.mobile-resource-open\s*\{[^}]*position: fixed !important;[^}]*z-index: 900 !important;/s);
+  assert.match(styles, /\.sk-icon-library-portal-host\.mobile-resource-closed\s*\{[^}]*display: none !important;/s);
 });
 
 test('All dropdown exposes every real collection without sacrificing quick shortcuts', () => {
