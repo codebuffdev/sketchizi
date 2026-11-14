@@ -351,3 +351,29 @@
 .docker-studio .docker-studio-validation-strip button:not(.docker-studio-validation-toggle):hover{background:#334c70}
 .docker-studio .docker-studio-validation-strip button:focus-visible{outline:2px solid #a5c9ff;outline-offset:2px}
 @media(max-width:800px){.docker-studio .docker-studio-k8s-workspace{display:flex;flex-direction:column;overflow:auto}.docker-studio .docker-studio-resource-pane{max-height:42vh;min-height:180px;border-right:0;border-bottom:1px solid #29384c}.docker-studio .docker-studio-yaml-pane{min-height:350px;flex:1}}
+
+
+/* Compose Studio Services 2.0: compact service explorer and inspector. */
+.docker-studio .docker-studio-resource-pane .docker-studio-container-list.studio-services-only{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-content:start;gap:9px;padding:14px 16px}
+.docker-studio .docker-studio-container-card{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:9px;min-width:0;min-height:112px;padding:12px;border-radius:10px;background:#15243a;transition:background .15s,border-color .15s}
+.docker-studio .docker-studio-container-card.selected{background:#24203d;border-color:#9875ff;box-shadow:inset 0 0 0 1px #9875ff}
+.docker-studio .docker-studio-container-card-heading{display:flex;align-items:center;gap:9px;min-width:0}
+.docker-studio .docker-studio-container-card-heading strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docker-studio .docker-studio-container-copy{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;padding-left:0}
+.docker-studio .docker-studio-container-copy small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docker-studio .docker-studio-container-copy .docker-studio-container-meta{font-size:10px;color:#90a5c3}
+.docker-studio .docker-studio-resource-pane .docker-studio-selected-details.studio-services-only{display:flex;flex-direction:column;gap:14px;padding:16px;margin:0 16px 16px;background:#17263d}
+.docker-studio .docker-studio-selected-heading{align-items:center}
+.docker-studio .docker-studio-selected-heading>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.docker-studio .docker-studio-selected-heading>div>span{font-size:9px;font-weight:800;letter-spacing:.12em;color:#ad95ff}
+.docker-studio .docker-studio-selected-heading h3{font-size:15px}
+.docker-studio .docker-studio-inspector-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.docker-studio .docker-studio-inspector-field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.docker-studio .docker-studio-inspector-field>strong{font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:#a5b6ce}
+.docker-studio .docker-studio-inspector-field input,.docker-studio .docker-studio-inspector-value{box-sizing:border-box;width:100%;min-height:35px;padding:9px 10px;border:1px solid #34465e;border-radius:7px;background:#101c2e;color:#e0eafb;font-size:12px;overflow-wrap:anywhere}
+.docker-studio .docker-studio-inspector-field input:focus-visible{outline:2px solid #a78bfa;outline-offset:1px}
+.docker-studio .docker-studio-inspector-field .docker-studio-chip-list{min-height:32px;align-items:center}
+.docker-studio .docker-studio-inspector-muted{color:#8498b2;font-size:11px}
+.docker-studio .docker-studio-inspector-mounts{grid-column:1/-1}
+.docker-studio .docker-studio-inspector-mounts .docker-studio-detail-list span{overflow-wrap:anywhere}
+@media(max-width:620px){.docker-studio .docker-studio-resource-pane .docker-studio-container-list.studio-services-only{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}.docker-studio .docker-studio-inspector-grid{grid-template-columns:1fr}.docker-studio .docker-studio-inspector-mounts{grid-column:auto}}
