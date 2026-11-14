@@ -429,6 +429,11 @@ export default function DesktopAppHeader({
         })}
       </nav>
 
+
+
+      </div>
+      <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
+        {/** The creation action stays in the existing workspace toggle; only its layout changes. */}
       <div
         className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
@@ -480,7 +485,6 @@ export default function DesktopAppHeader({
           </button>
         )}
       </div>
-
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-right">
       {collaborationCreationState === "creating" && (
