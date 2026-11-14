@@ -745,10 +745,11 @@ spec:
             <h1 id="k8s-studio-title">K8s Studio</h1>
             <p>Build a Kubernetes architecture from resources or existing YAML manifests.</p>
           </div>
+          <div className="k8s-studio-header-actions"><button type="button" className="k8s-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
           <button type="button" className="k8s-studio-close" onClick={requestClose} aria-label="Close K8s Studio">×</button>
         </header>
 
-        <div className="k8s-studio-actions" aria-label="Kubernetes import tools">
+        <details className="k8s-studio-import-tools"><summary>More import options</summary><div className="k8s-studio-actions" aria-label="Kubernetes import tools">
           <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
           <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
           <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Kustomize / Helm bundle</button>
@@ -778,6 +779,7 @@ spec:
           </section>
         )}
 
+</details>
         <nav className="studio-workspace-tabs" aria-label="Kubernetes Studio views">
           {["resources", "validation", "insights"].map((tab) => <button type="button" key={tab} className={workspaceTab === tab ? "active" : ""} aria-current={workspaceTab === tab ? "page" : undefined} onClick={() => setWorkspaceTab(tab)}>{tab === "resources" ? "Resources" : tab === "validation" ? "Validation (" + parsed.issues.length + ")" : "Insights"}</button>)}
         </nav>
@@ -852,8 +854,21 @@ spec:
             {workspaceTab === "resources" && diagnostics.length > 0 && <button type="button" className="k8s-studio-validation-summary" onClick={() => setWorkspaceTab("validation")}><span aria-hidden="true">⚠</span><strong>{diagnostics.length} validation {diagnostics.length === 1 ? "finding" : "findings"}</strong><span>Review findings →</span></button>}
             {workspaceTab === "validation" && diagnostics.length === 0 && !parsed.parseError && <div className="k8s-studio-empty">No validation findings for the current manifest.</div>}
             {parsed.issues?.length > 0 && <section className="k8s-studio-validation studio-validation-only" aria-label="Manifest validation">
-              <div className="k8s-studio-validation-heading"><strong>Manifest checks</strong><span>{parsed.issues.filter((issue) => issue.severity === "error").length} errors · {parsed.issues.filter((issue) => issue.severity === "warning").length} warnings</span></div>
-              <ul>{diagnostics.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}><span>{issue.severity === "error" ? "Error" : issue.severity === "warning" ? "Warning" : "Info"}</span><div><strong>{issue.resource}</strong><p>{issue.message}</p>{parsed.resources.some((resource) => resource.kind + "/" + resource.name === issue.resource) && <button type="button" onClick={() => { const target = parsed.resources.find((resource) => resource.kind + "/" + resource.name === issue.resource); if (target) inspectResource(target); }} aria-label={"Inspect " + issue.resource}>Inspect resource</button>}<details><summary>Review suggested correction</summary><p>{issue.remediation || "Review the affected resource and update the manifest to resolve this validation finding. No changes will be applied automatically."}</p><small>Preview only — YAML remains unchanged.</small></details></div></li>)}</ul>
+              <div className="k8s-studio-validation-heading"><strong>Manifest checks</strong><span>{diagnostics.filter((issue) => issue.severity === "error").length} errors · {diagnostics.filter((issue) => issue.severity === "warning").length} warnings</span></div>
+              <div className="k8s-studio-diagnostic-groups">{[...new Set(diagnostics.map((issue) => issue.resource || "General"))].map((resourceName) => {
+                const findings = diagnostics.filter((issue) => (issue.resource || "General") === resourceName);
+                const target = parsed.resources.find((resource) => resource.kind + "/" + resource.name === resourceName);
+                return <section key={resourceName} className="k8s-studio-diagnostic-group" aria-label={resourceName}>
+                  <div className="k8s-studio-diagnostic-resource"><strong>{resourceName}</strong><span>{findings.length} findings</span></div>
+                  <ul>{findings.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}>
+                    <span className="k8s-studio-diagnostic-severity">{issue.severity}</span>
+                    <div className="k8s-studio-diagnostic-content"><p>{issue.message}</p><div className="k8s-studio-diagnostic-actions">
+                      {target && <button type="button" className="k8s-studio-diagnostic-inspect" onClick={() => inspectResource(target)}>Inspect resource</button>}
+                      <details className="k8s-studio-diagnostic-fix"><summary>Suggested fix</summary><div className="k8s-studio-diagnostic-fix-body"><p>{issue.remediation || "Review the resource manifest to resolve this finding."}</p><small>Guidance only — YAML is unchanged</small></div></details>
+                    </div></div>
+                  </li>)}</ul>
+                </section>;
+              })}</div>
             </section>}
             {workspaceTab === "insights" && <div className="studio-insights-panel" aria-label="Manifest insights">
               <h3>Manifest overview</h3><p>{parsed.resources.length} resources · {diagnostics.length} validation findings</p>
@@ -861,6 +876,14 @@ spec:
               <div className="studio-insight-grid"><span>Namespaces</span><strong>{[...new Set(parsed.resources.map((resource) => resource.namespace).filter(Boolean))].join(", ") || "Default"}</strong></div>
               <p>Inspect individual resources in the Resources tab. Validation guidance remains read-only.</p>
             </div>}
+            {workspaceTab === "insights" && <details className="k8s-studio-snapshot-card">
+          <summary>Inspect read-only Kubernetes snapshot</summary>
+          <p>Paste an authorized Kubernetes resource list as JSON. Only minimal status fields are displayed; no cluster connection or deployment occurs. Avoid pasting sensitive cluster data.</p>
+          <textarea aria-label="Kubernetes snapshot JSON" rows={4} value={snapshotText} onChange={(event) => setSnapshotText(event.target.value)} placeholder={'{"items":[{"kind":"Pod","metadata":{"name":"api"},"status":{"phase":"Running"}}]}'}/>
+          <button type="button" className="k8s-studio-secondary" onClick={inspectSnapshot}>Inspect snapshot</button>
+          {snapshotError && <p role="alert">{snapshotError}</p>}
+          {snapshotSummary.length > 0 && <ul>{snapshotSummary.map((resource, index) => <li key={resource.kind + resource.namespace + resource.name + index}>{resource.kind} / {resource.namespace} / {resource.name} · {resource.phase || resource.type || (resource.ready + "/" + resource.desired + " ready")}</li>)}</ul>}
+        </details>}
             <div className="k8s-studio-resource-list studio-resources-only" aria-label="Parsed Kubernetes resources">
               {parsed.resources.map((resource) => <article className="k8s-studio-resource" key={resource.id}>
                 <span className={"k8s-studio-resource-glyph k8s-studio-resource-glyph-" + resource.kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")}><KubernetesResourceIcon kind={resource.kind} /></span>
@@ -873,14 +896,6 @@ spec:
         </div>
 
         {(error || parsed.parseError || notice) && <div className={error || parsed.parseError ? "k8s-studio-message error" : "k8s-studio-message"} role={error || parsed.parseError ? "alert" : "status"}>{error || parsed.parseError || notice}</div>}
-        <details style={{ padding: "12px 16px" }}>
-          <summary>Inspect read-only Kubernetes snapshot</summary>
-          <p>Paste an authorized Kubernetes resource list as JSON. Only minimal status fields are displayed; no cluster connection or deployment occurs. Avoid pasting sensitive cluster data.</p>
-          <textarea aria-label="Kubernetes snapshot JSON" rows={4} style={{ width: "100%" }} value={snapshotText} onChange={(event) => setSnapshotText(event.target.value)} placeholder={'{"items":[{"kind":"Pod","metadata":{"name":"api"},"status":{"phase":"Running"}}]}'}/>
-          <button type="button" className="k8s-studio-secondary" onClick={inspectSnapshot}>Inspect snapshot</button>
-          {snapshotError && <p role="alert">{snapshotError}</p>}
-          {snapshotSummary.length > 0 && <ul>{snapshotSummary.map((resource, index) => <li key={resource.kind + resource.namespace + resource.name + index}>{resource.kind} / {resource.namespace} / {resource.name} · {resource.phase || resource.type || (resource.ready + "/" + resource.desired + " ready")}</li>)}</ul>}
-        </details>
         <footer className="k8s-studio-footer">
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
           <div><button type="button" className="k8s-studio-secondary" onClick={requestClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
