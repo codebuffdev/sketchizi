@@ -76,22 +76,54 @@ try {
   await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
-  // Icon discovery should use readable categories, without compressing six
-  // collections into one hard-to-scan row.
+  // The small editor toolbox must match the approved compact mockup and
+  // retain every icon collection under More without enlarging the drawer.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
-  await blank.page.getByRole("dialog", { name: "Icon Library" }).waitFor();
-  const collectionLayout = await blank.page.locator(".sk-catalog-tabs").evaluate((node) => ({
-    display: getComputedStyle(node).display,
-    columnCount: getComputedStyle(node).gridTemplateColumns.split(" ").filter(Boolean).length,
-    names: [...node.querySelectorAll(".sk-catalog-tab-label")].map((label) => label.textContent.trim()),
-  }));
-  if (collectionLayout.display !== "grid" || collectionLayout.columnCount !== 3 ||
-    !collectionLayout.names.includes("Networking") || !collectionLayout.names.includes("Kubernetes") ||
-    !collectionLayout.names.includes("Essentials")) {
-    throw new Error(`Icon library collections are cramped or unreadable: ${JSON.stringify(collectionLayout)}`);
+  const library = blank.page.getByRole("dialog", { name: "Icon Library" });
+  await library.waitFor();
+  const compactLayout = await library.evaluate((panel) => {
+    const collections = panel.querySelector(".sk-catalog-tabs");
+    const rect = panel.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      collectionDisplay: getComputedStyle(collections).display,
+      allVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "All"),
+      awsVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "AWS"),
+      kubernetesVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "Kubernetes"),
+    };
+  });
+  if (compactLayout.width > 322 || compactLayout.height > 462 ||
+    compactLayout.width < 270 || compactLayout.height < 260 ||
+    compactLayout.collectionDisplay !== "flex" ||
+    !compactLayout.allVisible || !compactLayout.awsVisible || !compactLayout.kubernetesVisible) {
+    throw new Error(`Icon Library is not compact: ${JSON.stringify(compactLayout)}`);
   }
-  await blank.page.getByRole("dialog", { name: "Icon Library" }).getByRole("button", { name: "Close icon library" }).click();
-  console.log("PASS: icon library shows readable multi-row category navigation.");
+  await library.getByRole("button", { name: "More icon collections" }).click();
+  const more = library.getByRole("menu", { name: "More icon collections" });
+  await more.getByRole("menuitemradio", { name: "Networking" }).click();
+  await more.waitFor({ state: "detached" });
+  await library.getByRole("button", { name: "More icon collections" }).click();
+  await more.getByRole("menuitemradio", { name: "UML" }).click();
+  await library.getByRole("button", { name: "List view" }).click();
+  await library.locator(".sk-icon-grid.is-list-view").waitFor();
+  await library.getByRole("button", { name: "Grid view" }).click();
+  await library.locator(".sk-icon-grid.is-grid-view").waitFor();
+  await library.getByRole("button", { name: "List view" }).click();
+
+  // Check viewport containment without requiring a separate mobile route.
+  await blank.page.setViewportSize({ width: 390, height: 740 });
+  const smallLayout = await library.evaluate((panel) => {
+    const rect = panel.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, width: rect.width, height: rect.height, vw: window.innerWidth, vh: window.innerHeight };
+  });
+  if (smallLayout.left < 0 || smallLayout.right > smallLayout.vw + 1 ||
+    smallLayout.width > 322 || smallLayout.height > 462 || smallLayout.height > smallLayout.vh) {
+    throw new Error(`Compact icon panel overflows at phone width: ${JSON.stringify(smallLayout)}`);
+  }
+  await blank.page.setViewportSize({ width: 1280, height: 800 });
+  await library.getByRole("button", { name: "Close icon library" }).click();
+  console.log("PASS: 320×460 compact library with More collections, list/grid, and phone containment.");
 
   // The clipboard toast is owned by Excalidraw, so exercise its native class
   // using a temporary message without needing clipboard permissions.
