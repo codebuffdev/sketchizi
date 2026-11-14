@@ -18,7 +18,8 @@ test("Draw toolbar offers Freehand and Write choices", () => {
 test("both modes preserve native Excalidraw ink and read-only safeguards", () => {
   assert.match(picker, /setActiveTool\?\.\(\{ type: "freedraw" \}\)/);
   assert.match(picker, /!canEdit \|\| viewModeEnabled/);
-  assert.match(picker, /Smart conversion coming next/);
+  assert.match(picker, /Automatically beautify recognized handwriting/);
+  assert.match(picker, /live ink cleanup/);
   assert.match(canvas, /<SmartInkModePicker/);
   assert.match(css, /z-index: 10050/);
 });
