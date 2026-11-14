@@ -1,0 +1,23 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
+
+test("Compose Studio preserves YAML editor and uses focused navigation", async () => {
+  const source = await read("src/features/docker-compose/ui/DockerComposeStudio.jsx");
+  for (const label of ["Services", "Dependencies", "Validation", "Convert to K8s", "Docker Compose YAML", "Create diagram"]) assert.ok(source.includes(label), "Missing " + label);
+  assert.match(source, /studio-tab-" \+ workspaceTab/);
+  assert.match(source, /setShowConversion\(true\)/);
+});
+test("Kubernetes Studio provides focused resources, validation and insights views", async () => {
+  const source = await read("src/features/kubernetes-studio/ui/KubernetesStudio.jsx");
+  for (const label of ["Resources", "Validation (", "Insights", "Manifest overview", "Kubernetes YAML manifest"]) assert.ok(source.includes(label), "Missing " + label);
+  assert.match(source, /studio-tab-" \+ workspaceTab/);
+});
+test("Both Studios retain keyboard-visible navigation and contextual panels", async () => {
+  for (const path of ["src/features/docker-compose/ui/docker-compose-studio.css", "src/features/kubernetes-studio/ui/kubernetes-studio.css"]) {
+    const css = await read(path);
+    assert.match(css, /\.studio-workspace-tabs button:focus-visible/);
+    assert.match(css, /\.studio-workspace-tabs button\.active/);
+  }
+});
