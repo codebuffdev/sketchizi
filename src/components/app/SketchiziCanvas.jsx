@@ -788,9 +788,7 @@ export default function SketchiziCanvas({
   return (
     <main ref={canvasRootRef} className={viewModeEnabled ? "canvas viewer-mode" : "canvas"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       <Excalidraw
-        // Always seed the scene with the active Day/Night background. Legacy
-        // saved scenes may contain an old independent canvas color, which must
-        // never flash or override the current global theme during initialization.
+        // Preserve the drawing background when restoring a scene.
         initialData={{
           elements: savedSketch?.elements || [],
           appState: {
@@ -802,7 +800,7 @@ export default function SketchiziCanvas({
             zenModeEnabled: false,
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
-            viewBackgroundColor: getCanvasBackground(isDarkTheme),
+            viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasBackground(isDarkTheme),
             gridModeEnabled: savedSketch?.appState?.gridModeEnabled ?? gridEnabled,
           },
           files: savedSketch?.files || {},

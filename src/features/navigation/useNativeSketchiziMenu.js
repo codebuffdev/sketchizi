@@ -66,7 +66,7 @@ export function useNativeSketchiziMenu({
       // calculation that subtracts a guessed header height can still leave the
       // scroll area taller than the space below its actual on-screen position.
       // Measure the real scroll container after Excalidraw positions it.
-      const label = [...document.querySelectorAll("body *")].find(
+      const label = [...document.querySelectorAll(".dropdown-menu-container *, .dropdown-menu *")].find(
         (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
       );
       const scrollContainer = label?.closest?.(".dropdown-menu-container");
@@ -95,9 +95,9 @@ export function useNativeSketchiziMenu({
 
     const cleanNativeMenu = () => {
       frame = 0;
-      // The app now offers exactly two coordinated themes. Remove Excalidraw's
-      // independent canvas-background palette so the canvas cannot diverge.
-      const canvasBackgroundLabel = [...document.querySelectorAll("body *")].find(
+      // Remove Excalidraw's duplicate independent canvas-background palette;
+      // the header appearance picker owns these settings. Scope to native menus.
+      const canvasBackgroundLabel = [...document.querySelectorAll(".dropdown-menu-container *, .dropdown-menu *")].find(
         (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
       );
       if (canvasBackgroundLabel) {

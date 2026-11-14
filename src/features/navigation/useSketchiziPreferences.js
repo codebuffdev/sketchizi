@@ -4,21 +4,25 @@ import { applyCanvasThemeBackground } from "./canvasTheme.js";
 
 export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
-  const themeMode = themeModeState === "light" ? "light" : "dark";
-  const isDarkTheme = themeMode === "dark";
-  const systemDark = isDarkTheme;
+  const themeMode = themeModeState;
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const isDarkTheme = themeMode === "dark" || (themeMode === "system" && systemDark);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setSystemDark(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   const setThemeMode = useCallback((nextMode) => {
     setThemeModeState((current) => {
       const resolved = typeof nextMode === "function" ? nextMode(current) : nextMode;
-      return resolved === "light" ? "light" : "dark";
+      return ["light", "dark", "system"].includes(resolved) ? resolved : "dark";
     });
   }, []);
-  // Canvas background is not independently configurable in the Day/Night-only design.
-  // Keep no-op callbacks for the native menu adapter, but never let legacy saved
-  // canvas-background preferences override the global application theme.
   const markCanvasBackgroundCustom = useCallback(() => {}, []);
   const useThemeDefaultBackground = useCallback(() => {
-    applyCanvasThemeBackground(apiRef.current, isDarkTheme);
+    applyCanvasThemeBackground(apiRef.current, isDarkTheme, true);
   }, [apiRef, isDarkTheme]);
 
   useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);

@@ -21,6 +21,6 @@ test("theme toggle and AI Ask are grouped before the existing right-side utility
 });
 
 test("theme toggle and AI Ask retain their existing callbacks and props", () => {
-  assert.match(source, /<ThemeControl setThemeMode=\{setThemeMode\} isDarkTheme=\{isDarkTheme\} \/>/);
+  assert.match(source, /<ThemeControl setThemeMode=\{setThemeMode\} themeMode=\{themeMode\} isDarkTheme=\{isDarkTheme\} api=\{canvasApi\} canEdit=\{canEditCanvas\} \/>/);
   assert.match(source, /<div className="desktop-app-header-panel-actions">\{children\}<\/div>/);
 });

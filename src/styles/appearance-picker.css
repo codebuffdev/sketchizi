@@ -1,0 +1,21 @@
+.sketchizi-appearance { position: fixed; z-index: 10000; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 80px); overflow-y: auto; padding: 16px; box-sizing: border-box; border: 1px solid #d7d9e0; border-radius: 14px; background: #fff; color: #24252e; box-shadow: 0 12px 40px #0003; font: 14px/1.5 system-ui, sans-serif; }
+.sketchizi-appearance[data-dark="true"] { background: #232329; color: #eeeef4; border-color: #3b3b47; }
+.sketchizi-appearance button { cursor: pointer; font: inherit; color: inherit; }
+.sketchizi-appearance button:disabled, .sketchizi-appearance input:disabled { opacity: .45; cursor: default; }
+.appearance-heading { display: flex; align-items: center; justify-content: space-between; font-weight: 600; margin-bottom: 10px; }
+.appearance-heading button { border: 0; background: transparent; font-size: 22px; }
+.appearance-modes { display: flex; gap: 4px; background: #8881; padding: 4px; border-radius: 10px; margin-bottom: 20px; }
+.appearance-modes button { flex: 1; display: grid; gap: 4px; border: 0; border-radius: 7px; padding: 8px 4px; background: transparent; }
+.appearance-modes button[aria-pressed="true"] { background: #b2a7ff; color: #202036; }
+.appearance-swatches { display: flex; gap: 7px; margin-bottom: 14px; }
+.appearance-swatches button { padding: 3px; border: 2px solid transparent; border-radius: 8px; background: transparent; flex: 1; min-width: 0; height: 36px; }
+.appearance-swatches span { display: block; width: 100%; height: 100%; border-radius: 4px; box-shadow: 0 0 0 1px #8886; }
+.appearance-swatches button[aria-pressed="true"] { border-color: #a89cff; }
+.sketchizi-appearance[data-dark="true"] .appearance-swatches span { filter: invert(93%) hue-rotate(180deg); }
+.appearance-custom { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.appearance-custom input { width: 48px; height: 32px; border: 1px solid #8886; padding: 2px; border-radius: 6px; background: transparent; cursor: pointer; }
+.appearance-reset { margin-top: 12px; width: 100%; border: 1px solid #8886; border-radius: 7px; padding: 7px; background: transparent; }
+.sketchizi-appearance p { font-size: 12px; opacity: .65; margin: 12px 0 0; }
+.sketchizi-appearance :focus-visible { outline: 2px solid #a89cff; outline-offset: 3px; }
+
+.app .desktop-app-header button.desktop-app-theme-toggle { display: inline-flex; }

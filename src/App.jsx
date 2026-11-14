@@ -9,7 +9,6 @@ import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
-import { applyCanvasThemeBackground } from "./features/navigation/canvasTheme.js";
 import { useSketchiziEscape } from "./features/navigation/useSketchiziEscape";
 import { useSketchPersistence } from "./features/persistence/useSketchPersistence";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
@@ -635,18 +634,10 @@ function App() {
     onArchitectureSceneChange: updateArchitectureValidation,
     onDocumentSceneChange: markCurrentDocumentChanged,
   });
-  // Reconcile against the live Excalidraw API after its onChange/theme cycle.
-  // Never apply a color from the callback's appState argument: that snapshot can
-  // predate scene restoration or Excalidraw's internal theme update.
+  // Save the live background with the scene instead of forcing a theme color.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
     handleExcalidrawChange(elements, appState);
     if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        const activeTheme = document.querySelector(".app")?.dataset.theme;
-        applyCanvasThemeBackground(apiRef.current, activeTheme === "dark");
-      });
-    });
   }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
@@ -1572,6 +1563,9 @@ function App() {
         createCollaboration={createCollaboration}
         dismissCollaborationCreationFailure={collaboration.dismissCollaborationCreationFailure}
         setThemeMode={setThemeMode}
+        themeMode={themeMode}
+        canvasApi={apiRef.current}
+        canEditCanvas={collaborationCanEdit}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
         currentDocumentName={cloudDiagramId && !cloudDetached ? cloudDocumentName : (currentFile?.name || "Untitled drawing")}
