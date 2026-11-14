@@ -315,7 +315,10 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     if (!composeDoc) { setError(parsed.error); return; }
     let i = serviceEntries.length + 1; let name = "service-" + i;
     while (serviceNames.has(name)) name = "service-" + (++i);
-    setYamlText(stringify({ ...composeDoc, services: { ...composeDoc.services, [name]: { image: "nginx:alpine", restart: "unless-stopped" } } }));
+    const yamlDocument = parseDocument(yamlText, { uniqueKeys: true });
+    if (yamlDocument.errors.length) { setError(yamlDocument.errors[0].message); return; }
+    yamlDocument.setIn(["services", name], { image: "nginx:alpine", restart: "unless-stopped" });
+    setYamlText(String(yamlDocument));
     setSelectedService(name); setError(""); setNotice("Added " + name + " to the YAML.");
   };
   const focusSelected = () => {
