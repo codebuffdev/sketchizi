@@ -10,7 +10,7 @@ import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
-import { workspaceGridRadii, spotlightCenter, spotlightElementCenter, spotlightGridPattern } from "../../features/canvas/gridSpotlight.js";
+import { workspaceGridRadii, spotlightCenter, spotlightElementCenter, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -61,10 +61,10 @@ export default function SketchiziCanvas({
     node.style.setProperty("--sk-grid-size", `${pattern.spacing}px`);
     node.style.setProperty("--sk-grid-offset-x", `${pattern.offsetX}px`);
     node.style.setProperty("--sk-grid-offset-y", `${pattern.offsetY}px`);
-    const coarseSize = pattern.spacing * 4;
-    node.style.setProperty("--sk-grid-coarse-size", `${coarseSize}px`);
-    node.style.setProperty("--sk-grid-coarse-offset-x", `${((pattern.offsetX % coarseSize) + coarseSize) % coarseSize}px`);
-    node.style.setProperty("--sk-grid-coarse-offset-y", `${((pattern.offsetY % coarseSize) + coarseSize) % coarseSize}px`);
+    const coarse = workspaceCoarseGridPattern(appState);
+    node.style.setProperty("--sk-grid-coarse-size", `${coarse.spacing}px`);
+    node.style.setProperty("--sk-grid-coarse-offset-x", `${coarse.offsetX}px`);
+    node.style.setProperty("--sk-grid-coarse-offset-y", `${coarse.offsetY}px`);
   }, [apiRef]);
 
   // The vignette is visual-only; it appears on actual canvas interaction, not
