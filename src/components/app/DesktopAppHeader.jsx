@@ -514,25 +514,39 @@ export default function DesktopAppHeader({
         {gridPopoverOpen && (
           <section className="sketchizi-header-grid-popover" role="dialog" aria-label="Grid settings">
             <div className="sketchizi-header-grid-top">
-              <strong>Grid</strong>
+              <div className="sketchizi-header-grid-heading">
+                <ViewCommandIcon name="grid" />
+                <div><strong>Grid</strong><small>Configure canvas grid and focus mode.</small></div>
+              </div>
               <label className="sketchizi-header-grid-toggle">
                 <span>Show Grid</span>
                 <input type="checkbox" checked={gridEnabled} onChange={() => onToggleGrid?.()} />
+                <span className="sketchizi-header-grid-switch" aria-hidden="true" />
               </label>
             </div>
             <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
-              <span>Grid Mode</span>
+              <strong>Grid Mode</strong>
               <div className="sketchizi-header-grid-options" role="group" aria-label="Grid mode">
-                {[["normal", "Normal"], ["focus", "Focus (Canvas)"], ["local", "Focus (Local)"]].map(([value, label]) => (
+                {[["normal", "Normal", "Uniform grid across the canvas."],
+                  ["focus", "Focus (Canvas)", "Dense central grid (90%)."],
+                  ["local", "Focus (Local)", "Dense grid near content."]].map(([value, label, description]) => (
                   <button key={value} type="button" disabled={!gridEnabled} aria-pressed={gridStyle === value}
-                    onClick={() => onGridStyleChange?.(value)}>{label}</button>
+                    onClick={() => onGridStyleChange?.(value)}>
+                    <span className={`sketchizi-grid-preview is-${value}`} aria-hidden="true"><span /></span>
+                    <strong>{label}</strong>
+                    <small>{description}</small>
+                    {gridStyle === value && <span className="sketchizi-grid-selected-check" aria-hidden="true">✓</span>}
+                  </button>
                 ))}
               </div>
             </div>
-            <p>{!gridEnabled ? "Turn on Show Grid to choose a mode." :
-              gridStyle === "normal" ? "Regular grid across the canvas." :
-              gridStyle === "local" ? "Dense grid around drawing content." :
-              "Dense grid across the central 90%, with soft edges."}</p>
+            <p className="sketchizi-header-grid-description">
+              <span aria-hidden="true">ⓘ</span>
+              {!gridEnabled ? "Turn on Show Grid to choose a mode." :
+                gridStyle === "normal" ? "Normal shows a uniform grid across the canvas." :
+                gridStyle === "local" ? "Focus (Local) shows a denser grid around drawing content." :
+                "Focus (Canvas) shows a denser grid in the central area with smooth edges."}
+            </p>
           </section>
         )}
       </div>
