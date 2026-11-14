@@ -131,8 +131,9 @@ export default function AuthenticationControl() {
   useEffect(() => {
     if (!dialogOpen) return undefined;
     const close = (event) => { if (event.key === "Escape") setDialogOpen(false); };
-    document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
+    // Capture Escape before header/editor shortcuts can stop propagation.
+    window.addEventListener("keydown", close, true);
+    return () => window.removeEventListener("keydown", close, true);
   }, [dialogOpen]);
 
   useEffect(() => {
@@ -305,7 +306,7 @@ export default function AuthenticationControl() {
       {dialogOpen && dialogHost && createPortal(
         <div className="auth-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialogOpen(false); }}>
           <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title">
-            <button type="button" className="auth-dialog-close" aria-label="Close sign-in dialog" onClick={() => setDialogOpen(false)}>×</button>
+            <button type="button" className="auth-dialog-close" aria-label="Close sign-in dialog" autoFocus onClick={() => setDialogOpen(false)}>×</button>
             <div className="auth-dialog-mark" aria-hidden="true">S</div>
             <h2 id="auth-dialog-title">Sign in to Sketchizi</h2>
             <p>{signInContext.message}</p>
