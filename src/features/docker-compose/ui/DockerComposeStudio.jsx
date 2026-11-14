@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
+import { updateComposeServiceImage } from "../composeYamlEdits.js";
 import "./docker-compose-studio.css";
 
 
@@ -326,10 +327,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     const image = nextImage.trim();
     if (!image) { setError("Service image cannot be empty."); return; }
     if (image === selected.image) return;
-    const yamlDocument = parseDocument(yamlText, { uniqueKeys: true });
-    if (yamlDocument.errors.length) { setError(yamlDocument.errors[0].message); return; }
-    yamlDocument.setIn(["services", selectedService, "image"], image);
-    setYamlText(String(yamlDocument));
+    try { setYamlText(updateComposeServiceImage(yamlText, selectedService, image)); }
+    catch (cause) { setError(cause.message); return; }
     setError(""); setNotice("Updated " + selectedService + " image in YAML.");
   };
   const focusSelected = () => {
