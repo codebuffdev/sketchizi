@@ -9,6 +9,7 @@ import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
+import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -491,37 +492,16 @@ export default function SketchiziCanvas({
       button.removeAttribute("title");
       bindToolbarTooltip(button);
 
-      const dock = toolbar.getBoundingClientRect();
-      const buttonWidth = 148;
-      const buttonHeight = 42;
-      const gap = 12;
-      const vertical = toolbar.dataset.sketchiziOrientation === "vertical";
-      const dockSide = toolbar.dataset.sketchiziDockSide;
-      let left;
-      let top;
-      if (vertical) {
-        left = dockSide === "right" ? dock.left - buttonWidth - gap : dock.right + gap;
-        top = dock.top + Math.min(Math.max(0, (dock.height - buttonHeight) / 2), Math.max(0, window.innerHeight - buttonHeight - 8));
-      } else {
-        const right = dock.right + gap;
-        const leftOfDock = dock.left - buttonWidth - gap;
-        if (right + buttonWidth <= window.innerWidth - 8) {
-          left = right;
-          top = dock.top + (dock.height - buttonHeight) / 2;
-        } else if (leftOfDock >= 8) {
-          left = leftOfDock;
-          top = dock.top + (dock.height - buttonHeight) / 2;
-        } else {
-          left = Math.max(8, Math.min(window.innerWidth - buttonWidth - 8, dock.right - buttonWidth));
-          top = dock.bottom + gap;
-          if (top + buttonHeight > window.innerHeight - 8) top = Math.max(8, dock.top - buttonHeight - gap);
-        }
-      }
-      left = Math.max(8, Math.min(window.innerWidth - buttonWidth - 8, left));
-      top = Math.max(8, Math.min(window.innerHeight - buttonHeight - 8, top));
+      const position = getScrollBackPlacement({
+        dock: toolbar.getBoundingClientRect(),
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        vertical: toolbar.dataset.sketchiziOrientation === "vertical",
+        dockSide: toolbar.dataset.sketchiziDockSide,
+      });
       button.style.setProperty("position", "fixed", "important");
-      button.style.setProperty("left", `${left}px`, "important");
-      button.style.setProperty("top", `${top}px`, "important");
+      button.style.setProperty("left", `${position.left}px`, "important");
+      button.style.setProperty("top", `${position.top}px`, "important");
       button.style.setProperty("right", "auto", "important");
       button.style.setProperty("bottom", "auto", "important");
       button.style.setProperty("z-index", "10020", "important");
