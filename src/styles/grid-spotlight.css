@@ -28,6 +28,12 @@
   contain: paint;
 }
 
+/* OFF means no grid of any kind, even while editing or selecting.
+   Hide the entire decorative layer to avoid stale focus transitions. */
+.app .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight:not(.is-grid-enabled) {
+  display: none;
+}
+
 .app .desktop-canvas-region .sketchizi-grid-spotlight::before,
 .app .desktop-canvas-region .sketchizi-grid-spotlight::after {
   content: "";
