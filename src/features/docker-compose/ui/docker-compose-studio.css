@@ -377,3 +377,31 @@
 .docker-studio .docker-studio-inspector-mounts{grid-column:1/-1}
 .docker-studio .docker-studio-inspector-mounts .docker-studio-detail-list span{overflow-wrap:anywhere}
 @media(max-width:620px){.docker-studio .docker-studio-resource-pane .docker-studio-container-list.studio-services-only{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}.docker-studio .docker-studio-inspector-grid{grid-template-columns:1fr}.docker-studio .docker-studio-inspector-mounts{grid-column:auto}}
+
+
+/* Compact Compose Studio toolbar, aligned with Kubernetes Studio. */
+.docker-studio .docker-studio-header-compact{display:flex;align-items:center;gap:12px;box-sizing:border-box;min-height:66px;padding:10px 18px;flex-shrink:0}
+.docker-studio-header-compact .docker-studio-brand-mark{flex:none;width:36px;height:36px;border-radius:10px;font-size:19px}
+.docker-studio-header-compact h1{flex:none;margin:0;font-size:16px;line-height:1.2;white-space:nowrap}
+.docker-studio-header-compact .docker-studio-toolbar-context{flex:1;min-width:0;gap:8px;padding-left:12px;overflow:hidden}
+.docker-studio-header-compact .docker-studio-toolbar-context strong,.docker-studio-header-compact .docker-studio-toolbar-context span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docker-studio-header-compact .docker-studio-toolbar-context strong{font-size:11px}
+.docker-studio-header-compact .docker-studio-toolbar-context span{font-size:10px}
+.docker-studio-header-compact .docker-studio-toolbar-actions{flex:none;gap:6px;flex-wrap:nowrap}
+.docker-studio-header-compact .docker-studio-toolbar-actions button{min-height:32px;padding:0 9px;font-size:10px;white-space:nowrap}
+.docker-studio-header-compact .docker-studio-close{position:static;flex:none;width:34px;height:34px;border-radius:9px;font-size:20px}
+@media(max-width:1200px){.docker-studio .docker-studio-header-compact{flex-wrap:wrap}.docker-studio-header-compact .docker-studio-toolbar-context{flex:1}.docker-studio-header-compact .docker-studio-toolbar-actions{order:3;flex:1 0 100%;justify-content:flex-start;overflow-x:auto}}
+@media(max-width:650px){.docker-studio-header-compact .docker-studio-toolbar-context span{display:none}.docker-studio-header-compact h1{font-size:14px}.docker-studio .docker-studio-header-compact{gap:8px;padding:9px 12px}}
+
+
+/* Smaller unified header and navigation, with recognizable Docker branding. */
+.docker-studio .docker-studio-header-compact{min-height:52px;padding:7px 14px;gap:10px}
+.docker-studio-header-compact .docker-studio-brand-mark{width:30px;height:30px;border-radius:8px;background:#1769b3;color:#fff}
+.docker-studio-docker-icon{display:block;width:23px;height:19px}
+.docker-studio-header-compact h1{font-size:14px}
+.docker-studio-header-compact .docker-studio-toolbar-context{padding-left:6px}
+.docker-studio-header-compact .docker-studio-toolbar-actions button{min-height:28px;padding:0 8px;font-size:10px}
+.docker-studio-header-compact .docker-studio-close{width:29px;height:29px;font-size:18px}
+.docker-studio .studio-workspace-tabs{padding:5px 12px;gap:5px;min-height:38px;box-sizing:border-box}
+.docker-studio .studio-workspace-tabs button{padding:6px 10px;font-size:11px;border-radius:6px}
+@media(max-width:1200px){.docker-studio .docker-studio-header-compact{padding:8px 12px}}

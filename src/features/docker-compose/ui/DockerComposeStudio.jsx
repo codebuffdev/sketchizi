@@ -374,8 +374,24 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
 
   return <div className="docker-studio-overlay docker-studio-k8s-layout" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
     <section className="docker-studio docker-studio-yaml-first" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
-      <header className="docker-studio-header"><div className="docker-studio-brand-mark" aria-hidden="true">▦</div><div className="docker-studio-heading"><span className="docker-studio-eyebrow">INFRASTRUCTURE WORKSPACE</span><h1 id="docker-studio-title">Docker Compose Studio</h1><p>Edit Compose YAML and inspect its containers and relationships.</p></div><button type="button" className="docker-studio-close" onClick={close} aria-label="Close Docker Compose Studio">×</button></header>
-      <div className="docker-studio-toolbar"><div className="docker-studio-toolbar-context"><strong>{composeDoc?.name || "Compose project"}</strong><span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>{dirty && <em>Unsaved edits</em>}</div><div className="docker-studio-toolbar-actions"><input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/><button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button><button type="button" className="docker-studio-secondary" onClick={addService} disabled={!composeDoc}>+ Service</button><button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!composeDoc}>Preflight report</button><button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!composeDoc}>Export YAML</button><button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!composeDoc || Boolean(parsed.error)}>Create diagram</button></div></div>
+      <header className="docker-studio-header docker-studio-header-compact">
+        <div className="docker-studio-brand-mark" aria-hidden="true"><svg className="docker-studio-docker-icon" viewBox="0 0 64 48" fill="currentColor" focusable="false"><path d="M8 16h9v9H8zm11 0h9v9h-9zm11 0h9v9h-9zM19 5h9v9h-9zm11 0h9v9h-9zm11 11h9v9h-9zM2 27h50c2-4 5-6 10-6-1 6-4 10-9 12-2 10-11 15-24 15C14 48 5 41 2 27z"/></svg></div>
+        <h1 id="docker-studio-title">Docker Compose Studio</h1>
+        <div className="docker-studio-toolbar-context" aria-label="Compose project summary">
+          <strong>{composeDoc?.name || "Compose project"}</strong>
+          <span>{serviceEntries.length} services · {volumes.length} volumes · {networks.length} networks</span>
+          {dirty && <em>Unsaved edits</em>}
+        </div>
+        <div className="docker-studio-toolbar-actions" role="group" aria-label="Docker Compose actions">
+          <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" hidden onChange={importYaml} aria-label="Import Compose YAML"/>
+          <button type="button" className="docker-studio-secondary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
+          <button type="button" className="docker-studio-secondary" onClick={addService} disabled={!composeDoc}>+ Service</button>
+          <button type="button" className="docker-studio-secondary" onClick={exportReport} disabled={!composeDoc}>Preflight report</button>
+          <button type="button" className="docker-studio-secondary" onClick={exportYaml} disabled={!composeDoc}>Export YAML</button>
+          <button type="button" className="docker-studio-primary" onClick={createDiagram} disabled={!composeDoc || Boolean(parsed.error)}>Create diagram</button>
+        </div>
+        <button type="button" className="docker-studio-close" onClick={close} aria-label="Close Docker Compose Studio">×</button>
+      </header>
       <nav className="studio-workspace-tabs" aria-label="Docker Studio views">
         {["services", "dependencies", "validation", "conversion"].map((tab) => <button type="button" key={tab} className={workspaceTab === tab ? "active" : ""} aria-current={workspaceTab === tab ? "page" : undefined} onClick={() => { setWorkspaceTab(tab); if (tab === "validation") setShowValidation(true); if (tab === "conversion") setShowConversion(true); if (tab === "dependencies") setShowTrace(true); }}>{tab === "services" ? "Services" : tab === "dependencies" ? "Dependencies" : tab === "validation" ? "Validation" : "Convert to K8s"}</button>)}
       </nav>
