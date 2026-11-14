@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import "./SmartInkModePicker.css";
 
-const DRAW_TOOL_LABEL = /^(draw|freedraw|freehand)(?:\\s|$)/i;
+const DRAW_TOOL_LABEL = /^(draw|freedraw|freehand)(?:\s|$)/i;
 
 export function isNativeDrawButton(button) {
   if (!button || button.closest(".sketchizi-smart-ink-menu")) return false;
