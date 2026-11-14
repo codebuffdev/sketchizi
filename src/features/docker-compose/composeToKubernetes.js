@@ -47,7 +47,7 @@ export function convertComposeToKubernetes(compose) {
     for (const field of ["build", "depends_on", "volumes", "networks", "secrets", "configs", "deploy", "healthcheck", "command", "entrypoint", "profiles", "restart", "privileged"]) {
       if (Object.hasOwn(service, field)) warnings.push({ service: serviceName, field, message: "Compose " + field + " requires manual Kubernetes review; not converted." });
     }
-    if (service.ports?.length !== ports.length) warnings.push({ service: serviceName, field: "ports", message: "Some port mappings could not be converted." });
+    if (Array.isArray(service.ports) && service.ports.length !== ports.length) warnings.push({ service: serviceName, field: "ports", message: "Some port mappings could not be converted." });
     if (service.ports?.length) warnings.push({ service: serviceName, field: "ports", message: "Host-published ports and protocols are not preserved; review Service exposure." });
   }
   return { manifests, warnings };
