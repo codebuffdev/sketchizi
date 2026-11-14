@@ -1,0 +1,24 @@
+.sk-shape-measurements {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sk-shape-measurement {
+  position: absolute;
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  padding: 4px 7px;
+  border: 1px solid rgb(142 132 242 / 35%);
+  border-radius: 6px;
+  background: var(--color-surface-lowest, #252935);
+  color: var(--text-primary-color, #f2f1f7);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+.sk-shape-measurement-height { transform: translate(0, -50%); }
