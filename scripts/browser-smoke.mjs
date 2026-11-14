@@ -212,11 +212,12 @@ try {
   if (off.enabled || off.display !== "none" || off.active) {
     throw new Error(`Show Grid OFF must hide all layers: ${JSON.stringify(off)}`);
   }
-  const toggleShowGrid = async (label) => {
-    await gridSession.page.getByRole("button", { name: "View", exact: true }).click();
-    await gridSession.page.getByRole("menuitem", { name: new RegExp(label) }).click();
-  };
-  await toggleShowGrid("Show Grid");
+  // Grid visibility is controlled from the header, not the View menu.
+  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
+  const gridToggle = gridSession.page.getByRole("dialog", { name: "Grid settings" })
+    .getByRole("checkbox", { name: "Show Grid" });
+  await gridToggle.check();
+  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-grid-enabled"),
   );

@@ -23,11 +23,13 @@ test('Excalidraw owns grid display and snapping', () => {
   assert.doesNotMatch(styles, /ui-modernization-grid\.css/);
 });
 
-test('View menu exposes a single native grid command', () => {
+test('header owns grid visibility while command and G shortcut remain available', () => {
   assert.match(commands, /id: "view\.toggle-grid"[\s\S]*?shortcut: "G"[\s\S]*?execute: toggleGrid/);
   assert.match(commands, /label: gridEnabled \? "Hide Grid" : "Show Grid"/);
   assert.doesNotMatch(commands, /view\.toggle-canvas-grid|gridVisible|toggleCanvasGrid/);
-  assert.match(header, /"view\.toggle-grid"/);
+  assert.doesNotMatch(header, /"view\.toggle-grid"/);
+  assert.match(header, /aria-label="Grid settings"/);
+  assert.match(header, /onToggleGrid\?\.\(\)/);
   assert.doesNotMatch(header, /view\.toggle-canvas-grid/);
 });
 
