@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { cmToScenePx, lineAngleDegrees, scenePxToCm } from "../../features/canvas/precisionGeometry.js";
+import { cmToScenePx, lineAngleDegrees, scenePxToCm, snapToIncrement } from "../../features/canvas/precisionGeometry.js";
 import "./PrecisionToolbar.css";
 
 const format = (value) => Number(value).toFixed(2);
@@ -12,10 +12,14 @@ export default function PrecisionToolbar({ apiRef, canEdit, viewModeEnabled, sel
   const [radiusCm, setRadiusCm] = useState("2.5");
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
+  const [snapEnabled, setSnapEnabled] = useState(false);
+  const [snapCm, setSnapCm] = useState("0.5");
+  const [guide, setGuide] = useState(null);
   const reset = useCallback((nextMode = null) => {
     setMode(nextMode);
     setPoints([]);
     setResult("");
+    setGuide(null);
   }, []);
   const editableShape = selectedElements.length === 1 && ["rectangle", "ellipse", "diamond"].includes(selectedElements[0]?.type)
     ? selectedElements[0] : null;
@@ -66,10 +70,15 @@ export default function PrecisionToolbar({ apiRef, canEdit, viewModeEnabled, sel
     if (!state) return;
     const zoom = state.zoom?.value ?? state.zoom ?? 1;
     if (!Number.isFinite(zoom) || zoom <= 0) return;
-    const point = {
+    const rawPoint = {
       x: (event.clientX - (state.offsetLeft ?? 0)) / zoom - (state.scrollX ?? 0),
       y: (event.clientY - (state.offsetTop ?? 0)) / zoom - (state.scrollY ?? 0),
     };
+    const increment = cmToScenePx(snapCm);
+    const point = snapEnabled && increment > 0 ? {
+      x: snapToIncrement(rawPoint.x, increment),
+      y: snapToIncrement(rawPoint.y, increment),
+    } : rawPoint;
     if (mode === "compass") { createCircle(point); return; }
     const next = [...points, point];
     const count = mode === "ruler" ? 2 : 3;
@@ -77,6 +86,7 @@ export default function PrecisionToolbar({ apiRef, canEdit, viewModeEnabled, sel
       setPoints(next);
       return;
     }
+    setGuide({ mode, points: next });
     if (mode === "ruler") {
       setResult(`Distance: ${format(scenePxToCm(Math.hypot(next[1].x - next[0].x, next[1].y - next[0].y)))} cm`);
     } else {
@@ -87,6 +97,13 @@ export default function PrecisionToolbar({ apiRef, canEdit, viewModeEnabled, sel
     }
     setPoints([]);
   };
+  const state = apiRef?.current?.getAppState?.() || {};
+  const zoom = state.zoom?.value ?? state.zoom ?? 1;
+  const toScreen = (point) => ({
+    x: (point.x + (state.scrollX ?? 0)) * zoom + (state.offsetLeft ?? 0),
+    y: (point.y + (state.scrollY ?? 0)) * zoom + (state.offsetTop ?? 0),
+  });
+  const guidePoints = (guide?.points || points).map(toScreen);
   if (!canEdit || viewModeEnabled) return null;
   return (
     <>
@@ -96,6 +113,8 @@ export default function PrecisionToolbar({ apiRef, canEdit, viewModeEnabled, sel
           <button key={tool.id} type="button" aria-pressed={mode === tool.id}
             onClick={() => reset(mode === tool.id ? null : tool.id)}>{tool.label}</button>
         ))}
+        <label><input type="checkbox" checked={snapEnabled} onChange={(event) => setSnapEnabled(event.target.checked)} /> Snap points</label>
+        {snapEnabled && <label>Step (cm) <input type="number" aria-label="Snap increment in centimeters" min="0.01" step="0.1" value={snapCm} onChange={(event) => setSnapCm(event.target.value)} /></label>}
         {mode === "compass" && <label>Radius (cm) <input aria-label="Circle radius in centimeters" type="number" min="0.01" step="0.1" value={radiusCm} onChange={(event) => setRadiusCm(event.target.value)} /></label>}
         {editableShape && <label>Width (cm) <input aria-label="Exact width in centimeters" type="number" min="0.01" step="0.1" value={widthCm} onChange={(event) => setWidthCm(event.target.value)} /></label>}
         {editableShape && <label>Height (cm) <input aria-label="Exact height in centimeters" type="number" min="0.01" step="0.1" value={heightCm} onChange={(event) => setHeightCm(event.target.value)} /></label>}
@@ -105,6 +124,10 @@ export default function PrecisionToolbar({ apiRef, canEdit, viewModeEnabled, sel
           ? `Choose point ${points.length + 1} of 2`
           : `Choose point ${points.length + 1} of 3 (vertex second)`)}</span>}
       </section>
+      {mode && guidePoints.length > 0 && <svg className="sk-precision-guide" aria-hidden="true">
+        {guidePoints.length > 1 && <polyline points={guidePoints.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke="#8979f4" strokeWidth="2" strokeDasharray="6 4" />}
+        {guidePoints.map((p, index) => <circle key={index} cx={p.x} cy={p.y} r="4" fill="#8979f4" stroke="white" strokeWidth="1.5" />)}
+      </svg>}
       {mode && <div className="sk-precision-hit-area" role="button" tabIndex={0}
         aria-label={mode === "compass" ? "Select circle center" : mode === "ruler" ? "Select two points to measure distance" : "Select three points to measure angle"}
         onPointerDown={capturePoint}
