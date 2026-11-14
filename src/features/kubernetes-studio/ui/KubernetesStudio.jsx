@@ -867,11 +867,11 @@ spec:
         </div>
 
         {(error || parsed.parseError || notice) && <div className={error || parsed.parseError ? "k8s-studio-message error" : "k8s-studio-message"} role={error || parsed.parseError ? "alert" : "status"}>{error || parsed.parseError || notice}</div>}
-        <details style={{ padding: "12px 16px" }}>
-          <summary>Inspect read-only Kubernetes snapshot</summary>
-          <p>Paste an authorized Kubernetes resource list as JSON. Only minimal status fields are displayed; no cluster connection or deployment occurs. Avoid pasting sensitive cluster data.</p>
-          <textarea aria-label="Kubernetes snapshot JSON" rows={4} style={{ width: "100%" }} value={snapshotText} onChange={(event) => setSnapshotText(event.target.value)} placeholder={'{"items":[{"kind":"Pod","metadata":{"name":"api"},"status":{"phase":"Running"}}]}'}/>
-          <button type="button" className="k8s-studio-secondary" onClick={inspectSnapshot}>Inspect snapshot</button>
+        <details className="k8s-studio-snapshot-panel">
+          <summary><span className="k8s-studio-snapshot-icon" aria-hidden="true">▦</span><span><strong>Cluster snapshot</strong><small>Optional · Inspect exported resource status locally</small></span><span className="k8s-studio-snapshot-chevron" aria-hidden="true">⌄</span></summary>
+          <p>Paste an authorized Kubernetes resource list as JSON. Inspection is local and read-only; no cluster connection or deployment occurs. Do not include sensitive cluster data.</p>
+          <textarea aria-label="Kubernetes snapshot JSON" rows={4} value={snapshotText} onChange={(event) => setSnapshotText(event.target.value)} placeholder={'{"items":[{"kind":"Pod","metadata":{"name":"api"},"status":{"phase":"Running"}}]}'}/>
+          <div className="k8s-studio-snapshot-actions"><button type="button" className="k8s-studio-secondary" onClick={inspectSnapshot}>Inspect snapshot</button><small>JSON resource list · No changes applied</small></div>
           {snapshotError && <p role="alert">{snapshotError}</p>}
           {snapshotSummary.length > 0 && <ul>{snapshotSummary.map((resource, index) => <li key={resource.kind + resource.namespace + resource.name + index}>{resource.kind} / {resource.namespace} / {resource.name} · {resource.phase || resource.type || (resource.ready + "/" + resource.desired + " ready")}</li>)}</ul>}
         </details>
