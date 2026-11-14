@@ -62,7 +62,7 @@ async function awaitScene(check, description) {
     visibleText: document.body.innerText.slice(0, 800),
   }));
   throw new Error("Drawing smoke did not durably persist " + description + ": " +
-    JSON.stringify({ stored: { savedAt: lastScene?.savedAt, elements: lastScene?.elements?.map((e) => ({ id: e.id, type: e.type, deleted: e.isDeleted, x: e.x, y: e.y, width: e.width, height: e.height })) }, editorDiagnostics }));
+    JSON.stringify({ stored: { savedAt: lastScene?.savedAt, gridModeEnabled: lastScene?.appState?.gridModeEnabled, gridSize: lastScene?.appState?.gridSize, elements: lastScene?.elements?.map((e) => ({ id: e.id, type: e.type, deleted: e.isDeleted, x: e.x, y: e.y, width: e.width, height: e.height })) }, editorDiagnostics }));
 }
 
 try {
@@ -117,6 +117,8 @@ try {
   await awaitScene(async () => (await currentDrawing())?.appState?.gridModeEnabled === true, "grid");
   console.log("PASS: G enables Excalidraw's native grid and persists the setting.");
 
+  const beforeReload = await currentDrawing();
+  console.log("Before reload:", JSON.stringify({ gridModeEnabled: beforeReload?.appState?.gridModeEnabled, gridSize: beforeReload?.appState?.gridSize, rectangle: beforeReload?.elements?.find((element) => element.id === drawn.id) && { x: beforeReload.elements.find((element) => element.id === drawn.id).x, y: beforeReload.elements.find((element) => element.id === drawn.id).y } }));
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
   await page.getByRole("button", { name: /Local document save status: (Autosave ready|Saved locally)/ }).waitFor({ timeout: 15000 });
