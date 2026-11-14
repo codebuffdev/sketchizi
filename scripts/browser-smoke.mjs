@@ -90,7 +90,7 @@ try {
     !collectionLayout.names.includes("Essentials")) {
     throw new Error(`Icon library collections are cramped or unreadable: ${JSON.stringify(collectionLayout)}`);
   }
-  await blank.page.getByRole("button", { name: "Close icon library" }).click();
+  await blank.page.getByRole("dialog", { name: "Icon Library" }).getByRole("button", { name: "Close icon library" }).click();
   console.log("PASS: icon library shows readable multi-row category navigation.");
 
   // The clipboard toast is owned by Excalidraw, so exercise its native class
