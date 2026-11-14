@@ -185,6 +185,62 @@ try {
   await library.getByRole("button", { name: "Close icon library" }).click();
   console.log("PASS: 320×460 library, All category dropdown, compact text, list/grid, and phone containment.");
 
+  // Circular focus grid must sit above the scene without covering tool hit
+  // targets, follow editing pointer position, and shrink on narrow screens.
+  const focusGrid = blank.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
+  await focusGrid.waitFor({ timeout: 12000 });
+  const sceneBounds = await blank.page.locator(".desktop-canvas-region > .canvas").boundingBox();
+  if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
+  const firstFocus = {
+    x: sceneBounds.x + sceneBounds.width * 0.52,
+    y: sceneBounds.y + sceneBounds.height * 0.54,
+  };
+  await blank.page.mouse.move(firstFocus.x, firstFocus.y);
+  await blank.page.waitForTimeout(100);
+  const readFocus = () => focusGrid.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return {
+      parent: node.parentElement?.className,
+      pointerEvents: style.pointerEvents,
+      clipPath: style.clipPath,
+      maskImage: style.maskImage,
+      backgroundImage: style.backgroundImage,
+      x: parseFloat(node.style.getPropertyValue("--sk-grid-focus-x")),
+      y: parseFloat(node.style.getPropertyValue("--sk-grid-focus-y")),
+      radius: parseFloat(node.style.getPropertyValue("--sk-grid-focus-radius")),
+      spacing: parseFloat(node.style.getPropertyValue("--sk-grid-size")),
+      canvasBackground: getComputedStyle(document.querySelector(".desktop-canvas-region")).backgroundImage,
+    };
+  });
+  const desktopFocus = await readFocus();
+  if (!desktopFocus.parent?.includes("excalidraw__canvas-wrapper") ||
+    desktopFocus.pointerEvents !== "none" ||
+    !desktopFocus.clipPath.startsWith("circle(") ||
+    !desktopFocus.maskImage.includes("radial-gradient") ||
+    !desktopFocus.backgroundImage.includes("radial-gradient") ||
+    desktopFocus.canvasBackground !== "none" ||
+    Math.abs(desktopFocus.x - (firstFocus.x - sceneBounds.x)) > 10 ||
+    Math.abs(desktopFocus.y - (firstFocus.y - sceneBounds.y)) > 10 ||
+    desktopFocus.radius < 200 || desktopFocus.radius > 495 ||
+    desktopFocus.spacing < 8) {
+    throw new Error(`Circular focus grid incorrect at desktop: ${JSON.stringify(desktopFocus)}`);
+  }
+  await blank.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.7, sceneBounds.y + sceneBounds.height * 0.65);
+  await blank.page.waitForTimeout(80);
+  const movedFocus = await readFocus();
+  if (Math.abs(movedFocus.x - desktopFocus.x) < 40 || Math.abs(movedFocus.y - desktopFocus.y) < 30) {
+    throw new Error(`Circular grid does not follow the edit position: ${JSON.stringify({desktopFocus,movedFocus})}`);
+  }
+  await blank.page.setViewportSize({ width: 390, height: 740 });
+  await blank.page.waitForTimeout(100);
+  const phoneFocus = await readFocus();
+  if (phoneFocus.radius > 166 || phoneFocus.radius < 110 ||
+    phoneFocus.pointerEvents !== "none" || !phoneFocus.clipPath.startsWith("circle(")) {
+    throw new Error(`Circular focus does not fit a phone viewport: ${JSON.stringify(phoneFocus)}`);
+  }
+  await blank.page.setViewportSize({ width: 1280, height: 800 });
+  console.log("PASS: circular grid remains clipped, pointer-transparent, responsive, and follows editing position.");
+
   // The clipboard toast is owned by Excalidraw, so exercise its native class
   // using a temporary message without needing clipboard permissions.
   const toastLayout = await blank.page.evaluate(() => {
