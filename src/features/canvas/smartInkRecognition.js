@@ -65,7 +65,7 @@ export async function recognizeInk(elements) {
         signal: controller.signal,
         credentials: "same-origin",
       });
-      if (!response.ok) { if ([404, 503].includes(response.status)) return recognizeInBrowser(canvas); throw new Error("Recognition service unavailable"); }
+      if (!response.ok) return recognizeInBrowser(canvas);
       const data = await response.json();
       if (typeof data.text !== "string") throw new Error("Invalid recognition response");
       return { text: data.text.trim(), available: true, provider: "service" };
