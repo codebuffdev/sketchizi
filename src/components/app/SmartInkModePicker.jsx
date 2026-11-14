@@ -27,11 +27,13 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
   const openPreview = useCallback(async (automaticStrokes = null) => {
     const api = apiRef?.current;
     const ids = api?.getAppState?.()?.selectedElementIds || {};
-    const selected = automaticStrokes || (api?.getSceneElements?.() || []).filter((el) => el.type === "freedraw" && !el.isDeleted && ids[el.id]);
+    const selected = Array.isArray(automaticStrokes) ? automaticStrokes : (api?.getSceneElements?.() || []).filter((el) => el.type === "freedraw" && !el.isDeleted && ids[el.id]);
     if (!selected.length) {
       setMessage("Select handwritten strokes with the selection tool first.");
       return;
     }
+    if (requestRef.current) return;
+    requestRef.current = true;
     setBusy(true);
     setMessage("");
     try {
@@ -45,11 +47,13 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
       setRecognizedText("");
       setMessage("Recognition failed. Enter the words manually; ink is unchanged.");
     } finally {
+      requestRef.current = false;
       setBusy(false);
     }
   }, [apiRef]);
   const sessionRef = useRef({ baseline: new Set(), fingerprint: "", changedAt: 0, offered: false });
   const stateRef = useRef({ busy: false, preview: false });
+  const requestRef = useRef(false);
   useEffect(() => { stateRef.current = { busy, preview: Boolean(preview) }; }, [busy, preview]);
   useEffect(() => {
     if (mode !== "write" || !canEdit || viewModeEnabled) return undefined;
@@ -138,7 +142,7 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
     <>
       {mode === "write" && <div className="sketchizi-smart-ink-indicator" role="status">
         <span>Write mode</span>
-        <button type="button" disabled={busy} onClick={openPreview}>{busy ? "Recognizing…" : "Beautify selected ink"}</button>
+        <button type="button" disabled={busy} onClick={() => openPreview()}>{busy ? "Recognizing…" : "Beautify selected ink"}</button>
         {message && <span className="sketchizi-smart-ink-message">{message}</span>}
       </div>}
       {preview && createPortal(
