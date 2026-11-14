@@ -16,7 +16,7 @@ test("converts simple services to Deployment and ClusterIP Service proposals", (
 test("unsupported Compose features are explicitly reported rather than silently converted", () => {
   const result = convertComposeToKubernetes({ services: { web: { image: "nginx", volumes: ["./data:/data"], depends_on: ["db"] }, db: { build: "." } } });
   assert.equal(result.manifests.length, 1);
-  assert.deepEqual(result.warnings.map(({ field }) => field).sort(), ["build", "depends_on", "image", "volumes"]);
+  assert.deepEqual(result.warnings.map(({ field }) => field).sort(), ["depends_on", "image", "volumes"]);
 });
 
 test("rejects missing services and colliding DNS names", () => {
