@@ -29,25 +29,21 @@ test("Icon Panel renders accessible dialog, results count, view mode switcher, a
   assert.match(panel, /aria-label="Close icon library"/);
 });
 
-test("Icon Panel includes search, quick filters, and a single-row catalog with accessible All categories dropdown", () => {
+test("Icon Panel keeps search and quick filters with one compact category selector", () => {
   assert.match(panel, /className="search sk-search-input"/);
-  assert.match(panel, /className="sk-search-kbd"/);
   assert.match(panel, /className="sk-scope-tabs"/);
   assert.match(panel, />\s*All icons\s*<\/button>/);
-  assert.match(panel, />\s*Saved\{favorites\.length > 0/);
-  assert.match(panel, />\s*Recent\{recentIcons\.length > 0/);
-  assert.match(panel, /className="library-source-tabs sk-catalog-tabs"/);
-  assert.match(panel, /className="sk-catalog-tab-label"/);
-  assert.match(compact, /\.sk-catalog-tabs\s*\{[^}]*display:\s*flex !important;/s);
-  assert.match(panel, /aria-label="All categories"/);
-  assert.match(panel, /role="menuitemradio"/);
-  assert.match(panel, /catalogMenuTabs\.map/);
-  assert.match(panel, /src="\/icons\/aws\.svg"/);
-  assert.match(panel, /src="\/icons\/k8s-kubernetes\.svg"/);
+  assert.match(panel, /Saved\{favorites\.length > 0/);
+  assert.match(panel, /Recent\{recentIcons\.length > 0/);
+  assert.match(panel, /className="sk-unified-category-select"/);
+  assert.match(panel, /aria-label="Icon category"/);
+  assert.doesNotMatch(panel, /className="library-source-tabs sk-catalog-tabs"/);
 });
 
-test("Icon Panel exposes AWS/Kubernetes subcategory select and Mind Map starter bar", () => {
-  assert.match(panel, /className="sk-subcategory-select"/);
+test("Icon Panel offers AWS and Kubernetes subcategories and Mind Map starter", () => {
+  assert.match(panel, /getSubcategoryOptions/);
+  assert.match(panel, /setActiveAwsCategory\(category\)/);
+  assert.match(panel, /setActiveKubernetesCategory\(category\)/);
   assert.match(panel, /Insert starter mind map/);
   assert.match(panel, /className="sk-quick-starter-btn"/);
 });
