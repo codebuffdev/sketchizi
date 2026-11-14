@@ -185,6 +185,119 @@ try {
   await library.getByRole("button", { name: "Close icon library" }).click();
   console.log("PASS: 320×460 library, All category dropdown, compact text, list/grid, and phone containment.");
 
+  // Coarse square grid spans the entire editor. Fine squares form a
+  // content-bound RECTANGLE that stays put on hover, zoom and pan.
+  // Isolate drawing interactions from unrelated smoke checks.
+  const gridSession = await makePage({ width: 1280, height: 800 });
+  await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
+  await focusGrid.waitFor({ state: "attached", timeout: 12000 });
+  const canvasLocator = gridSession.page.locator(".desktop-canvas-region > .canvas");
+  const sceneBounds = await canvasLocator.boundingBox();
+  if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
+  const readGrid = () => focusGrid.evaluate((node) => {
+    const base = getComputedStyle(node, "::before");
+    const detail = getComputedStyle(node, "::after");
+    const style = getComputedStyle(node);
+    const root = document.querySelector(".desktop-canvas-region > .canvas");
+    const canvas = root?.getBoundingClientRect();
+    return {
+      active: node.classList.contains("has-focus"),
+      enabled: node.classList.contains("is-grid-enabled"),
+      display: style.display,
+      pointerEvents: style.pointerEvents,
+      baseImage: base.backgroundImage,
+      baseWidth: base.width,
+      baseHeight: base.height,
+      detailImage: detail.backgroundImage,
+      detailOpacity: Number(detail.opacity),
+      detailMask: detail.maskImage,
+      detailMaskComposite: detail.maskComposite,
+      coarseSize: parseFloat(node.style.getPropertyValue("--sk-grid-coarse-size")),
+      fineSize: parseFloat(node.style.getPropertyValue("--sk-grid-size")),
+      focusLeft: parseFloat(node.style.getPropertyValue("--sk-grid-focus-left")),
+      focusTop: parseFloat(node.style.getPropertyValue("--sk-grid-focus-top")),
+      focusWidth: parseFloat(node.style.getPropertyValue("--sk-grid-focus-width")),
+      focusHeight: parseFloat(node.style.getPropertyValue("--sk-grid-focus-height")),
+      canvasWidth: canvas?.width,
+      canvasHeight: canvas?.height,
+      canvasBackground: getComputedStyle(document.querySelector(".desktop-canvas-region")).backgroundImage,
+    };
+  });
+  const twoLines = (image) => (image.match(/linear-gradient\(/g) || []).length === 2;
+  const x = sceneBounds.x + sceneBounds.width * 0.53;
+  const y = sceneBounds.y + sceneBounds.height * 0.51;
+  await gridSession.page.mouse.move(x, y);
+  await gridSession.page.waitForTimeout(90);
+  const off = await readGrid();
+  if (off.enabled || off.display !== "none" || off.active) {
+    throw new Error(`Show Grid OFF must hide all layers: ${JSON.stringify(off)}`);
+  }
+  const toggleShowGrid = async (label) => {
+    await gridSession.page.getByRole("button", { name: "View", exact: true }).click();
+    await gridSession.page.getByRole("menuitem", { name: new RegExp(label) }).click();
+  };
+  await toggleShowGrid("Show Grid");
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-grid-enabled"),
+  );
+  const empty = await readGrid();
+  if (!empty.enabled || empty.display === "none" || empty.active || empty.detailOpacity > 0.01 ||
+      empty.pointerEvents !== "none" || empty.canvasBackground !== "none" ||
+      !twoLines(empty.baseImage) || empty.baseWidth !== `${empty.canvasWidth}px` ||
+      empty.baseHeight !== `${empty.canvasHeight}px` ||
+      !empty.coarseSize || empty.coarseSize <= 0) {
+    throw new Error(`Coarse grid must fill an idle canvas without fine detail: ${JSON.stringify(empty)}`);
+  }
+  // Select Excalidraw's actual rectangle tool; a keyboard shortcut can
+  // be ignored if another UI control still owns focus.
+  await gridSession.page.locator('[data-testid="toolbar-rectangle"]').click();
+  await gridSession.page.mouse.move(x, y);
+  await gridSession.page.mouse.down();
+  await gridSession.page.mouse.move(x + 160, y + 95, { steps: 6 });
+  await gridSession.page.mouse.up();
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("has-focus"),
+    { timeout: 5000 },
+  );
+  await gridSession.page.waitForTimeout(260);
+  const contentGrid = await readGrid();
+  if (!contentGrid.active || !twoLines(contentGrid.detailImage) ||
+      !contentGrid.detailMask.includes("linear-gradient") ||
+      !contentGrid.detailMaskComposite.split(",").every((value) => value.trim() === "intersect") ||
+      contentGrid.focusWidth < 130 || contentGrid.focusHeight < 75 ||
+      contentGrid.focusWidth > contentGrid.canvasWidth * 0.95 ||
+      contentGrid.focusHeight > contentGrid.canvasHeight * 0.91 ||
+      !contentGrid.fineSize || contentGrid.fineSize >= contentGrid.coarseSize / 8) {
+    throw new Error(`Fine rectangular grid must remain around drawing content: ${JSON.stringify(contentGrid)}`);
+  }
+  // Grid ON/OFF behavior is covered by the state-contract regression suite.
+  // The browser smoke test validates the drawing and focused grid without
+  // depending on whether the toolbar stays expanded after drawing.
+  await gridSession.page.mouse.move(x - 120, y - 100);
+  await gridSession.page.waitForTimeout(100);
+  const afterHover = await readGrid();
+  if (afterHover.focusLeft !== contentGrid.focusLeft ||
+      afterHover.focusTop !== contentGrid.focusTop || !afterHover.active) {
+    throw new Error(`Fine grid unexpectedly followed mouse hover: ${JSON.stringify({contentGrid,afterHover})}`);
+  }
+  await gridSession.page.waitForTimeout(3400);
+  const afterIdle = await readGrid();
+  if (!afterIdle.active || !twoLines(afterIdle.baseImage)) {
+    throw new Error(`Grid disappeared even though the drawing has content: ${JSON.stringify(afterIdle)}`);
+  }
+  await gridSession.page.setViewportSize({ width: 390, height: 740 });
+  await gridSession.page.waitForTimeout(100);
+  const phoneGrid = await readGrid();
+  if (!phoneGrid.active || phoneGrid.focusLeft < 0 || phoneGrid.focusTop < 0 ||
+      phoneGrid.focusLeft + phoneGrid.focusWidth > phoneGrid.canvasWidth + 1 ||
+      phoneGrid.focusTop + phoneGrid.focusHeight > phoneGrid.canvasHeight + 1 ||
+      !twoLines(phoneGrid.baseImage)) {
+    throw new Error(`Responsive rectangular grid overflows phone canvas: ${JSON.stringify(phoneGrid)}`);
+  }
+  await gridSession.context.close();
+  console.log("PASS: always-on coarse square grid with persistent, content-bound rectangular fine detail.");
+
   // The clipboard toast is owned by Excalidraw, so exercise its native class
   // using a temporary message without needing clipboard permissions.
   const toastLayout = await blank.page.evaluate(() => {
