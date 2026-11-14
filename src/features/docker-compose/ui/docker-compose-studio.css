@@ -326,3 +326,28 @@
 .docker-studio-resource-pane.studio-tab-validation,.docker-studio-resource-pane.studio-tab-conversion{min-height:0}
 .docker-studio .studio-bottom-panel:not(.studio-panel-visible){display:none}
 .docker-studio .studio-bottom-panel.studio-panel-visible{max-height:36vh;overflow:auto}
+
+
+/* Compose Studio 2.0: one contextual left pane, one YAML editor, no stacked scroll regions. */
+.docker-studio .studio-workspace-tabs{flex:none;padding:9px 18px;gap:6px}
+.docker-studio .studio-workspace-tabs button{border:1px solid #2c3a51;border-radius:7px;background:#121e30}
+.docker-studio .studio-workspace-tabs button.active{background:#542b9b;border-color:#7d4ce0}
+.docker-studio .docker-studio-k8s-workspace{grid-template-columns:minmax(310px,40%) minmax(0,1fr);overflow:hidden}
+.docker-studio .docker-studio-resource-pane{grid-column:1;grid-row:1;overflow-y:auto;overflow-x:hidden;background:#101b2b;border-right:1px solid #29384c}
+.docker-studio .docker-studio-yaml-pane{grid-column:2;grid-row:1;border-right:0;min-width:0;background:#0c1422}
+.docker-studio .docker-studio-resource-pane>.docker-studio-pane-heading{position:sticky;top:0;z-index:2}
+.docker-studio .docker-studio-resource-pane .docker-studio-container-list{max-height:none;min-height:0;overflow:visible;flex:none;border-bottom:0;padding:12px 16px}
+.docker-studio .docker-studio-resource-pane .docker-studio-selected-details{overflow:visible;margin:0 16px 12px;padding:13px;border:1px solid #31445f;border-radius:9px;background:#17253a}
+.docker-studio .docker-studio-resource-pane .docker-studio-relationship-panel{overflow:visible;flex:none;padding:12px 16px}
+.docker-studio .docker-studio-resource-pane .studio-relationships-secondary{border-top:1px solid #29384c}
+.docker-studio .docker-studio-resource-pane .studio-bottom-panel{flex:none;max-height:none;overflow:visible;border-top:0;margin:12px 16px;padding:0;border:1px solid #31445f;border-radius:9px;background:#162236}
+.docker-studio .docker-studio-resource-pane .studio-bottom-panel.studio-panel-visible{max-height:none;overflow:visible}
+.docker-studio .docker-studio-resource-pane .studio-bottom-panel .docker-studio-validation-content{max-height:none;overflow:visible}
+.docker-studio .docker-studio-resource-pane.studio-tab-validation .docker-studio-pane-heading,.docker-studio .docker-studio-resource-pane.studio-tab-conversion .docker-studio-pane-heading{display:flex}
+.docker-studio .docker-studio-resource-pane.studio-tab-validation>.docker-studio-parse-error,.docker-studio .docker-studio-resource-pane.studio-tab-conversion>.docker-studio-parse-error{margin:12px}
+.docker-studio .docker-studio-relationship-panel svg{display:block;max-width:100%;height:auto;min-height:100px}
+.docker-studio .docker-studio-relationship-panel>div>p{font-size:11px;line-height:1.5;color:#9fb0c8}
+.docker-studio .docker-studio-validation-strip button:not(.docker-studio-validation-toggle){appearance:none;border:1px solid #435777;border-radius:6px;padding:6px 10px;background:#243650;color:#e0eafa;font-size:11px;cursor:pointer}
+.docker-studio .docker-studio-validation-strip button:not(.docker-studio-validation-toggle):hover{background:#334c70}
+.docker-studio .docker-studio-validation-strip button:focus-visible{outline:2px solid #a5c9ff;outline-offset:2px}
+@media(max-width:800px){.docker-studio .docker-studio-k8s-workspace{display:flex;flex-direction:column;overflow:auto}.docker-studio .docker-studio-resource-pane{max-height:42vh;min-height:180px;border-right:0;border-bottom:1px solid #29384c}.docker-studio .docker-studio-yaml-pane{min-height:350px;flex:1}}
