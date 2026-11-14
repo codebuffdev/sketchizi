@@ -224,7 +224,8 @@ try {
     (desktopFocus.backgroundImage.match(/linear-gradient\(/g) || []).length !== 2 ||
     desktopFocus.backgroundImage.includes("radial-gradient") ||
     !/to right/.test(desktopFocus.backgroundImage) ||
-    !/to bottom/.test(desktopFocus.backgroundImage) ||
+    // Chromium omits the default `to bottom` direction when serializing CSS.
+    !desktopFocus.backgroundImage.split("linear-gradient(")[2] ||
     desktopFocus.backgroundSize.split(",").length !== 2 ||
     desktopFocus.backgroundSize.split(",").map((value) => value.trim())[0] !== desktopFocus.backgroundSize.split(",").map((value) => value.trim())[1] ||
     desktopFocus.backgroundPosition.split(",").length !== 2 ||
