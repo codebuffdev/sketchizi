@@ -829,7 +829,7 @@ export default function SketchiziCanvas({
         />
       )}
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
-      <PrecisionToolbar apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
+      <PrecisionToolbar apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} selectedElements={selectedElements} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
