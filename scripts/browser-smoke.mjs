@@ -145,6 +145,30 @@ try {
     smallLayout.width > 322 || smallLayout.height > 462 || smallLayout.height > smallLayout.vh) {
     throw new Error(`Compact icon panel overflows at phone width: ${JSON.stringify(smallLayout)}`);
   }
+  const mobileHitTest = await library.evaluate((panel) => {
+    const button = panel.querySelector('button[aria-label="All categories"]');
+    const header = document.querySelector("#desktop-app-header");
+    const resources = panel.closest(".desktop-resources-region");
+    const workspace = panel.closest(".desktop-workspace");
+    const rect = button.getBoundingClientRect();
+    const atPoint = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    const summarize = (element) => {
+      if (!element) return null;
+      const r = element.getBoundingClientRect();
+      return { tag: element.tagName, className: typeof element.className === "string" ? element.className.slice(0, 100) : "", top: r.top, bottom: r.bottom, left: r.left, right: r.right, zIndex: getComputedStyle(element).zIndex, position: getComputedStyle(element).position };
+    };
+    return {
+      clickable: atPoint === button || button.contains(atPoint),
+      button: summarize(button),
+      topElement: summarize(atPoint),
+      header: summarize(header),
+      panel: summarize(panel),
+      resources: summarize(resources),
+      workspace: summarize(workspace),
+      viewport: [window.innerWidth, window.innerHeight],
+    };
+  });
+  if (!mobileHitTest.clickable) throw new Error(`Icon category control is covered at phone width: ${JSON.stringify(mobileHitTest)}`);
   await library.getByRole("button", { name: "All categories" }).click();
   const menuBounds = await categories.evaluate((menu) => {
     const rect = menu.getBoundingClientRect();
