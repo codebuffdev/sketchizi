@@ -32,7 +32,8 @@ try {
         });
         throw new Error("Mobile editor is hidden at " + width + "px: " + JSON.stringify(diagnostics));
       }
-      await page.getByRole("button", { name: /Local document save status: (Autosave ready|Saved locally)/ }).waitFor({ timeout: 15000 });
+      // The desktop save-status button is intentionally hidden on phone layouts.
+      // Mobile readiness is established by the mounted, visible editor instead.
       const geometry = await page.evaluate(() => {
         const editor = document.querySelector(".excalidraw");
         const rect = editor?.getBoundingClientRect();
