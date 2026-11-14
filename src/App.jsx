@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
@@ -1651,6 +1652,10 @@ function App() {
   }
 
 
+  // The floating icon drawer must escape the mobile workspace's z-index: 0
+  // stacking context so header controls cannot intercept its menu or rows.
+  const libraryOverlayHost = typeof document === "undefined" ? null : document.querySelector(".app");
+
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {cloudDiagramId && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
@@ -1750,7 +1755,8 @@ function App() {
       </DesktopAppHeader>
 
       <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
-        <aside className={`desktop-resources-region ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
+        {libraryOverlayHost && createPortal(
+          <aside className={`desktop-resources-region sk-icon-library-portal-host ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
           {collaborationCanEdit && (
             <IconLibraryPanel
               searchRef={searchRef} search={search} setSearch={setSearch}
@@ -1769,7 +1775,9 @@ function App() {
               onClose={() => closePanel("icon-library")}
             />
           )}
-        </aside>
+          </aside>,
+          libraryOverlayHost,
+        )}
 
         <section className="desktop-canvas-region" aria-label="Canvas workspace">
           <SketchiziCanvas
