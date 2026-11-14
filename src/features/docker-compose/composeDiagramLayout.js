@@ -45,8 +45,8 @@ export function planComposeDiagram(document) {
   }
   const rows = Math.max(1, ...[...groups.values()].map((group) => group.length));
   const resources = [
-    ...networks.entries().map(([name, members]) => ({ name, kind: "NETWORK", members })),
-    ...volumes.entries().map(([name, members]) => ({ name, kind: "VOLUME", members }))
+    ...Array.from(networks.entries()).map(([name, members]) => ({ name, kind: "NETWORK", members })),
+    ...Array.from(volumes.entries()).map(([name, members]) => ({ name, kind: "VOLUME", members }))
   ];
   const resourceWidth = 210, resourceHeight = 58, resourceGap = 22;
   const resourceTop = top + rows * (cardHeight + gapY) + 48;
