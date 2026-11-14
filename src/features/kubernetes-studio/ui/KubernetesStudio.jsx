@@ -853,6 +853,12 @@ spec:
               <div className="k8s-studio-validation-heading"><strong>Manifest checks</strong><span>{parsed.issues.filter((issue) => issue.severity === "error").length} errors · {parsed.issues.filter((issue) => issue.severity === "warning").length} warnings</span></div>
               <ul>{diagnostics.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}><span>{issue.severity === "error" ? "Error" : issue.severity === "warning" ? "Warning" : "Info"}</span><div><strong>{issue.resource}</strong><p>{issue.message}</p>{parsed.resources.some((resource) => resource.kind + "/" + resource.name === issue.resource) && <button type="button" onClick={() => { const target = parsed.resources.find((resource) => resource.kind + "/" + resource.name === issue.resource); if (target) inspectResource(target); }} aria-label={"Inspect " + issue.resource}>Inspect resource</button>}<details><summary>Review suggested correction</summary><p>{issue.remediation || "Review the affected resource and update the manifest to resolve this validation finding. No changes will be applied automatically."}</p><small>Preview only — YAML remains unchanged.</small></details></div></li>)}</ul>
             </section>}
+            {workspaceTab === "insights" && <div className="studio-insights-panel" aria-label="Manifest insights">
+              <h3>Manifest overview</h3><p>{parsed.resources.length} resources · {diagnostics.length} validation findings</p>
+              <div className="studio-insight-grid"><span>Resource types</span><strong>{[...new Set(parsed.resources.map((resource) => resource.kind))].join(", ") || "None"}</strong></div>
+              <div className="studio-insight-grid"><span>Namespaces</span><strong>{[...new Set(parsed.resources.map((resource) => resource.namespace).filter(Boolean))].join(", ") || "Default"}</strong></div>
+              <p>Inspect individual resources in the Resources tab. Validation guidance remains read-only.</p>
+            </div>}
             <div className="k8s-studio-resource-list studio-resources-only">
               {parsed.resources.map((resource) => <article className="k8s-studio-resource" key={resource.id}>
                 <span className={"k8s-studio-resource-glyph k8s-studio-resource-glyph-" + resource.kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")}><KubernetesResourceIcon kind={resource.kind} /></span>
