@@ -25,8 +25,8 @@
    displays only the width in centimeters, above Excalidraw's stacking context. */
 .sk-shape-measurement-width-mask {
   position: absolute;
-  width: 114px;
-  height: 28px;
+  width: 100px;
+  height: 26px;
   transform: translate(-50%, -50%);
   background: var(--sk-measure-canvas-bg);
   border-radius: 5px;
