@@ -185,73 +185,93 @@ try {
   await library.getByRole("button", { name: "Close icon library" }).click();
   console.log("PASS: 320×460 library, All category dropdown, compact text, list/grid, and phone containment.");
 
-  // Circular focus grid must sit above the scene without covering tool hit
-  // targets, follow editing pointer position, and shrink on narrow screens.
+  // The reference design is an IDLE-HIDDEN, softly faded grid around actual
+  // work. Hovering must NOT show a moving cursor halo.
   const focusGrid = blank.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
-  await focusGrid.waitFor({ timeout: 12000 });
+  await focusGrid.waitFor({ state: "attached", timeout: 12000 });
   const sceneBounds = await blank.page.locator(".desktop-canvas-region > .canvas").boundingBox();
   if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
   const firstFocus = {
     x: sceneBounds.x + sceneBounds.width * 0.52,
     y: sceneBounds.y + sceneBounds.height * 0.54,
   };
-  await blank.page.mouse.move(firstFocus.x, firstFocus.y);
-  await blank.page.waitForTimeout(100);
   const readFocus = () => focusGrid.evaluate((node) => {
     const style = getComputedStyle(node);
+    const macro = getComputedStyle(node, "::before");
+    const fine = getComputedStyle(node, "::after");
     return {
       parent: node.parentElement?.className,
+      active: node.classList.contains("is-active"),
+      opacity: Number(style.opacity),
       pointerEvents: style.pointerEvents,
       clipPath: style.clipPath,
-      maskImage: style.maskImage,
-      backgroundImage: style.backgroundImage,
-      backgroundSize: style.backgroundSize,
-      backgroundPosition: style.backgroundPosition,
+      macroBackground: macro.backgroundImage,
+      fineBackground: fine.backgroundImage,
+      macroMask: macro.maskImage,
+      fineMask: fine.maskImage,
+      macroSize: macro.backgroundSize,
+      fineSize: fine.backgroundSize,
       x: parseFloat(node.style.getPropertyValue("--sk-grid-focus-x")),
       y: parseFloat(node.style.getPropertyValue("--sk-grid-focus-y")),
-      radius: parseFloat(node.style.getPropertyValue("--sk-grid-focus-radius")),
-      spacing: parseFloat(node.style.getPropertyValue("--sk-grid-size")),
+      rx: parseFloat(node.style.getPropertyValue("--sk-grid-focus-rx")),
+      ry: parseFloat(node.style.getPropertyValue("--sk-grid-focus-ry")),
       canvasBackground: getComputedStyle(document.querySelector(".desktop-canvas-region")).backgroundImage,
     };
   });
-  const desktopFocus = await readFocus();
-  if (!desktopFocus.parent?.includes("excalidraw__canvas-wrapper") ||
-    desktopFocus.pointerEvents !== "none" ||
-    !desktopFocus.clipPath.startsWith("circle(") ||
-    !desktopFocus.maskImage.includes("radial-gradient") ||
-    // CSS must paint continuous horizontal and vertical rules (square cells),
-    // not the former circular dot stamps. Both layers share the same tiling.
-    (desktopFocus.backgroundImage.match(/linear-gradient\(/g) || []).length !== 2 ||
-    desktopFocus.backgroundImage.includes("radial-gradient") ||
-    !/to right/.test(desktopFocus.backgroundImage) ||
-    // Chromium omits the default `to bottom` direction when serializing CSS.
-    !desktopFocus.backgroundImage.split("linear-gradient(")[2] ||
-    desktopFocus.backgroundSize.split(",").length !== 2 ||
-    desktopFocus.backgroundSize.split(",").map((value) => value.trim())[0] !== desktopFocus.backgroundSize.split(",").map((value) => value.trim())[1] ||
-    desktopFocus.backgroundPosition.split(",").length !== 2 ||
-    desktopFocus.backgroundPosition.split(",").map((value) => value.trim())[0] !== desktopFocus.backgroundPosition.split(",").map((value) => value.trim())[1] ||
-    desktopFocus.canvasBackground !== "none" ||
-    Math.abs(desktopFocus.x - (firstFocus.x - sceneBounds.x)) > 10 ||
-    Math.abs(desktopFocus.y - (firstFocus.y - sceneBounds.y)) > 10 ||
-    desktopFocus.radius < 200 || desktopFocus.radius > 495 ||
-    desktopFocus.spacing < 8) {
-    throw new Error(`Circular focus grid incorrect at desktop: ${JSON.stringify(desktopFocus)}`);
+  await blank.page.mouse.move(firstFocus.x, firstFocus.y);
+  await blank.page.waitForTimeout(90);
+  const idleFocus = await readFocus();
+  if (idleFocus.active || idleFocus.opacity > 0.01 || idleFocus.pointerEvents !== "none" ||
+    idleFocus.canvasBackground !== "none") {
+    throw new Error(`Grid must stay hidden on idle mouse movement: ${JSON.stringify(idleFocus)}`);
   }
-  await blank.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.7, sceneBounds.y + sceneBounds.height * 0.65);
-  await blank.page.waitForTimeout(80);
-  const movedFocus = await readFocus();
-  if (Math.abs(movedFocus.x - desktopFocus.x) < 40 || Math.abs(movedFocus.y - desktopFocus.y) < 30) {
-    throw new Error(`Circular grid does not follow the edit position: ${JSON.stringify({desktopFocus,movedFocus})}`);
+  await blank.page.mouse.down();
+  await blank.page.waitForTimeout(100);
+  const desktopFocus = await readFocus();
+  const twoSquareLayers = (value) => (value.match(/linear-gradient\(/g) || []).length === 2;
+  if (!desktopFocus.active ||
+    !desktopFocus.parent?.includes("excalidraw__canvas-wrapper") ||
+    desktopFocus.pointerEvents !== "none" ||
+    desktopFocus.clipPath !== "none" ||
+    !twoSquareLayers(desktopFocus.macroBackground) ||
+    !twoSquareLayers(desktopFocus.fineBackground) ||
+    !desktopFocus.macroMask.includes("radial-gradient") ||
+    !desktopFocus.fineMask.includes("radial-gradient") ||
+    desktopFocus.rx < 250 || desktopFocus.rx > 600 ||
+    desktopFocus.ry < 200 || desktopFocus.ry > 460 ||
+    Math.abs(desktopFocus.x - (firstFocus.x - sceneBounds.x)) > 10 ||
+    Math.abs(desktopFocus.y - (firstFocus.y - sceneBounds.y)) > 10) {
+    throw new Error(`Layered work grid did not activate correctly: ${JSON.stringify(desktopFocus)}`);
+  }
+  await blank.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.70, sceneBounds.y + sceneBounds.height * 0.65);
+  await blank.page.waitForTimeout(100);
+  const drawingFocus = await readFocus();
+  if (Math.abs(drawingFocus.x - desktopFocus.x) < 40 || Math.abs(drawingFocus.y - desktopFocus.y) < 30) {
+    throw new Error(`Grid did not track an active drawing gesture: ${JSON.stringify({desktopFocus,drawingFocus})}`);
+  }
+  await blank.page.mouse.up();
+  const releasedFocus = await readFocus();
+  await blank.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.82, sceneBounds.y + sceneBounds.height * 0.38);
+  await blank.page.waitForTimeout(100);
+  const hoverAfterDrawing = await readFocus();
+  if (hoverAfterDrawing.x !== releasedFocus.x || hoverAfterDrawing.y !== releasedFocus.y) {
+    throw new Error(`Grid followed hover after drawing stopped: ${JSON.stringify({releasedFocus,hoverAfterDrawing})}`);
+  }
+  await blank.page.waitForTimeout(3400);
+  const dormantFocus = await readFocus();
+  if (dormantFocus.active) {
+    throw new Error(`Grid did not return to idle after activity: ${JSON.stringify(dormantFocus)}`);
   }
   await blank.page.setViewportSize({ width: 390, height: 740 });
-  await blank.page.waitForTimeout(100);
+  await blank.page.waitForTimeout(90);
   const phoneFocus = await readFocus();
-  if (phoneFocus.radius > 166 || phoneFocus.radius < 110 ||
-    phoneFocus.pointerEvents !== "none" || !phoneFocus.clipPath.startsWith("circle(")) {
-    throw new Error(`Circular focus does not fit a phone viewport: ${JSON.stringify(phoneFocus)}`);
+  if (phoneFocus.rx > 190 || phoneFocus.rx < 110 ||
+    phoneFocus.ry > 350 || phoneFocus.ry < 200 ||
+    phoneFocus.pointerEvents !== "none" || phoneFocus.active) {
+    throw new Error(`Work-area grid does not fit an idle phone viewport: ${JSON.stringify(phoneFocus)}`);
   }
   await blank.page.setViewportSize({ width: 1280, height: 800 });
-  console.log("PASS: circular square-line grid stays clipped, pointer-transparent, responsive, and follows editing position.");
+  console.log("PASS: activity-only layered square grid has a soft fade, ignores hover, follows drawing, then hides.");
 
   // The clipboard toast is owned by Excalidraw, so exercise its native class
   // using a temporary message without needing clipboard permissions.
