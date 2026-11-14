@@ -86,6 +86,18 @@ export function workspaceFocusRect({
     maxX = Math.max(maxX, x1, x2);
     maxY = Math.max(maxY, y1, y2);
   }
+  // A single rectangle/frame is an explicit focus boundary. Confine the
+  // detailed grid INSIDE it, rather than allowing it to spill into surrounding
+  // canvas. This is the case illustrated by the user's rounded rectangle.
+  if (visible.length === 1 && ["rectangle", "frame", "magicframe"].includes(visible[0].type)) {
+    const left = Math.round(clamp(minX, 0, w));
+    const top = Math.round(clamp(minY, 0, h));
+    const right = Math.round(clamp(maxX, 0, w));
+    const bottom = Math.round(clamp(maxY, 0, h));
+    if (right > left && bottom > top) {
+      return { left, top, width: right - left, height: bottom - top };
+    }
+  }
   // The focus must cover the actual work bounds, not just be centered near it.
   // Use the pointer only for an empty scene; once elements exist, the drawing
   // geometry wins, so detail cannot drift away from the selected rectangle.
