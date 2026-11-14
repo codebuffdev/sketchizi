@@ -110,6 +110,10 @@ export default defineConfig({
   plugins: [react(), sketchiziPagesFunctionsDev()],
   server: {
     proxy: {
+      "/api/smart-ink/recognize": {
+        target: "http://127.0.0.1:8791",
+        changeOrigin: false,
+      },
       "/collaboration": {
         target: "ws://localhost:8787",
         ws: true,
