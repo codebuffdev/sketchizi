@@ -20,3 +20,15 @@ test("Compose Studio tab navigation and diagram generator coexist", async () => 
   assert.match(app, /resource\.members\.forEach/);
   assert.match(planner, /resourcePositions/);
 });
+
+test("Services 2.0 keeps editable image field and accessible compact inspector", async () => {
+  const [studio, styles] = await Promise.all([
+    read("src/features/docker-compose/ui/DockerComposeStudio.jsx"),
+    read("src/features/docker-compose/ui/docker-compose-studio.css")
+  ]);
+  assert.match(studio, /aria-label=\{"Service inspector for " \+ selectedService\}/);
+  assert.match(studio, /docker-studio-inspector-grid/);
+  assert.match(studio, /onBlur=\{\(event\) => updateSelectedServiceImage\(event\.target\.value\)\}/);
+  assert.match(studio, /aria-pressed=\{selectedService === name\}/);
+  assert.match(styles, /grid-template-columns:repeat\(auto-fit,minmax\(150px,1fr\)\)/);
+});
