@@ -450,7 +450,7 @@ export default function IconLibraryPanel({
               ? `aws:${activeAwsCategory}`
               : activeSource === "kubernetes" && activeKubernetesCategory !== "All"
                 ? `kubernetes:${activeKubernetesCategory}`
-                : activeSource}
+                : ["favorites", "recent"].includes(activeSource) ? "all" : activeSource}
             onChange={(event) => {
               const value = event.target.value;
               const separator = value.indexOf(":");
