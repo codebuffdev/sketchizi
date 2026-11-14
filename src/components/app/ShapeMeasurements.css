@@ -1,0 +1,38 @@
+.sk-shape-measurements {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sk-shape-measurement {
+  position: absolute;
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  padding: 4px 7px;
+  border: 1px solid rgb(142 132 242 / 35%);
+  border-radius: 6px;
+  background: #252935;
+  color: #f2f1f7;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+/* A single opaque replacement region hides the native pixel badge and
+   displays only the width in centimeters, above Excalidraw's stacking context. */
+.sk-shape-measurement-width-mask {
+  position: absolute;
+  width: 100px;
+  height: 26px;
+  transform: translate(-50%, -50%);
+  background: var(--sk-measure-canvas-bg);
+  border-radius: 5px;
+}
+.sk-shape-measurement-width {
+  left: 50%;
+  top: 50%;
+}
+.sk-shape-measurement-height { transform: translate(0, -50%); }
