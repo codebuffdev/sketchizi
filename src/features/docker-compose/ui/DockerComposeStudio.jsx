@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
+import { traceComposeDependencies } from "../composeDependencyTrace.js";
+import { exploreComposeNetworkReachability } from "../composeNetworkReachability.js";
 import "./docker-compose-studio.css";
 
 
@@ -174,6 +176,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [showValidation, setShowValidation] = useState(false);
+  const [showTrace, setShowTrace] = useState(false);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
   const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 60 });
@@ -198,6 +201,16 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const validation = useMemo(() => composeDoc ? validateComposeDocument(composeDoc) : { valid: false, findings: [] }, [composeDoc]);
   const readiness = useMemo(() => composeDoc ? analyzeComposeReadiness(composeDoc) : null, [composeDoc]);
   const edges = serviceEntries.flatMap(([from, service]) => dependenciesOf(service).map((to) => ({ from, to, exists: serviceNames.has(to) })));
+  const dependencyTrace = useMemo(() => {
+    if (!composeDoc || !selectedService || !Object.hasOwn(composeDoc.services, selectedService)) return null;
+    try { return traceComposeDependencies(composeDoc, selectedService); }
+    catch { return null; }
+  }, [composeDoc, selectedService]);
+  const networkReachability = useMemo(() => {
+    if (!composeDoc || !selectedService || !Object.hasOwn(composeDoc.services, selectedService)) return null;
+    try { return exploreComposeNetworkReachability(composeDoc, selectedService); }
+    catch { return null; }
+  }, [composeDoc, selectedService]);
   const dirty = yamlText !== savedYaml;
   const close = () => { if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return; onClose?.(); };
 
@@ -342,6 +355,29 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
           {!parsed.error && !serviceEntries.length && <div className="docker-studio-empty-check">Define services in YAML to see their containers here.</div>}
           <div className="docker-studio-container-list">{serviceEntries.map(([name, service]) => <button key={name} type="button" className={selectedService === name ? "docker-studio-container-card selected" : "docker-studio-container-card"} onClick={() => { setSelectedService(name); setError(""); }} aria-pressed={selectedService === name}><span className={"docker-studio-container-icon docker-studio-container-icon-" + serviceIconType(name, service)} aria-hidden="true"><ServiceIcon type={serviceIconType(name, service)} /></span><span className="docker-studio-container-copy"><strong>{name}</strong><small>{imageOf(service)}</small><small className="docker-studio-container-meta">{service?.ports?.length || 0} ports · {service?.volumes?.length || 0} mounts · {service?.environment ? (Array.isArray(service.environment) ? service.environment.length : Object.keys(service.environment).length) : 0} env</small></span></button>)}</div>
           {selected && <section className="docker-studio-selected-details"><div className="docker-studio-selected-heading"><span>SELECTED SERVICE</span><button type="button" onClick={focusSelected}>Edit YAML</button></div><h3>{selectedService}</h3><p>{imageOf(selected)}</p>{dependenciesOf(selected).length > 0 && <div><strong>Depends on</strong><div className="docker-studio-chip-list">{dependenciesOf(selected).map((name) => <button type="button" key={name} className={serviceNames.has(name) ? "" : "missing"} onClick={() => setSelectedService(name)}>{name}</button>)}</div></div>}{namesOf(selected.volumes).length > 0 && <div><strong>Mounts</strong><div className="docker-studio-detail-list">{namesOf(selected.volumes).map((value, i) => <span key={i}>{value}</span>)}</div></div>}{namesOf(selected.networks).length > 0 && <div><strong>Networks</strong><div className="docker-studio-chip-list">{namesOf(selected.networks).map((name) => <span key={name}>{name}</span>)}</div></div>}</section>}
+          <section className="docker-studio-relationship-panel" aria-label="Dependency path explorer">
+            <button type="button" className="docker-studio-validation-toggle" onClick={() => setShowTrace((value) => !value)} aria-expanded={showTrace}>Explore dependencies {showTrace ? "−" : "+"}</button>
+            {showTrace && <div>
+              <p>Static Compose depends_on path for {selectedService}. This is not a live network request trace.</p>
+              {dependencyTrace?.steps.length ? dependencyTrace.steps.map((step, index) => <button type="button" key={step.from + step.to + index} className={step.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => { if (step.exists) setSelectedService(step.to); }}><strong>{step.from}</strong><span>→</span><strong>{step.to}</strong><small>{step.exists ? "declared dependency" : "missing service"}</small></button>) : <p>No declared downstream dependencies.</p>}
+              {dependencyTrace?.warnings.map((warning, index) => <p key={index} role="status">{warning}</p>)}
+              {dependencyTrace?.steps.length > 0 && <svg role="img" aria-label={"Declared dependency edges from " + selectedService} viewBox={"0 0 520 " + (dependencyTrace.steps.length * 68 + 16)} style={{ width: "100%", maxHeight: 360 }}>
+                {dependencyTrace.steps.map((step, index) => <g key={step.from + step.to + index} transform={"translate(0 " + (index * 68 + 8) + ")"}>
+                  <rect x="8" y="8" width="170" height="42" rx="8" fill="#2563eb" />
+                  <text x="93" y="34" textAnchor="middle" fill="white" fontSize="13">{step.from.slice(0, 22)}</text>
+                  <line x1="180" y1="29" x2="240" y2="29" stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" />
+                  <path d="M232 23 L240 29 L232 35" fill="none" stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" />
+                  <rect x="244" y="8" width="170" height="42" rx="8" fill={step.exists ? "#0f766e" : "#991b1b"} />
+                  <text x="329" y="34" textAnchor="middle" fill="white" fontSize="13">{step.to.slice(0, 22)}</text>
+                  <text x="424" y="34" fill="currentColor" fontSize="11">{step.exists ? "declared" : "missing"}</text>
+                </g>)}
+              </svg>}
+              <strong>Potential network peers</strong>
+              <p>Shared Compose networks permit possible connectivity; they do not prove HTTP traffic.</p>
+              {networkReachability?.peers.length ? networkReachability.peers.map((peer) => <button type="button" className="docker-studio-relationship" key={peer.name} onClick={() => setSelectedService(peer.name)}><strong>{selectedService}</strong><span>↔</span><strong>{peer.name}</strong><small>Shared: {peer.sharedNetworks.join(", ")}</small></button>) : <p>No other services share this service's declared networks.</p>}
+
+            </div>}
+          </section>
           <section className="docker-studio-relationship-panel" aria-label="Service relationships"><div className="docker-studio-relationship-heading"><strong>Relationships</strong><span>{edges.length}</span></div>{edges.length ? edges.map((edge, i) => <button type="button" key={edge.from + edge.to + i} className={edge.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => setSelectedService(edge.exists ? edge.to : edge.from)}><strong>{edge.from}</strong><span>→</span><strong>{edge.to}</strong><small>{edge.exists ? "depends on" : "missing service"}</small></button>) : <p>No service dependencies are defined.</p>}{(volumes.length > 0 || networks.length > 0) && <div className="docker-studio-shared-resources"><strong>Shared resources</strong>{volumes.map((name) => <span key={"v" + name}>Volume · {name}</span>)}{networks.map((name) => <span key={"n" + name}>Network · {name}</span>)}</div>}</section>
         </aside>
       </div>
