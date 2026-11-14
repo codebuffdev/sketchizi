@@ -72,3 +72,24 @@
     margin: 0;
   }
 }
+
+/* Async collaboration feedback belongs below the utility island, not inline
+   between its controls. Keep the status visible without shifting or covering
+   grid, save, search, profile, and other header actions. */
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-header-island-right {
+    position: relative;
+    overflow: visible;
+  }
+  .app.canvas-first-header .desktop-app-header-island-right > .collaboration-header-status {
+    position: absolute;
+    inset: calc(100% + 8px) 0 auto auto;
+    z-index: 5;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: min(340px, calc(100vw - 32px));
+    margin: 0;
+    flex: none;
+    white-space: normal;
+  }
+}
