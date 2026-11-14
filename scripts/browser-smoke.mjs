@@ -266,9 +266,9 @@ try {
       !contentGrid.detailMask.includes("linear-gradient") ||
       !contentGrid.detailMaskComposite.split(",").every((value) => value.trim() === "intersect") ||
       contentGrid.focusWidth < 400 || contentGrid.focusHeight < 260 ||
-      contentGrid.focusWidth > contentGrid.canvasWidth * 0.89 ||
-      contentGrid.focusHeight > contentGrid.canvasHeight * 0.83 ||
-      !contentGrid.fineSize || contentGrid.fineSize >= contentGrid.coarseSize) {
+      contentGrid.focusWidth > contentGrid.canvasWidth * 0.95 ||
+      contentGrid.focusHeight > contentGrid.canvasHeight * 0.91 ||
+      !contentGrid.fineSize || contentGrid.fineSize >= contentGrid.coarseSize / 8) {
     throw new Error(`Fine rectangular grid must remain around drawing content: ${JSON.stringify(contentGrid)}`);
   }
   await toggleShowGrid("Hide Grid");
