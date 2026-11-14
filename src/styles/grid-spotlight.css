@@ -83,15 +83,17 @@
   opacity: 1;
 }
 
+/* Dark surfaces amplify the dense lattice. Keep both axes equally quiet,
+   with fine lines subordinate to the coarse alignment grid. */
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::before {
   background-image:
-    linear-gradient(to right, rgb(158 173 194 / 11%) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(158 173 194 / 11%) 1px, transparent 1px);
+    linear-gradient(to right, rgb(158 173 194 / 6%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(158 173 194 / 6%) 1px, transparent 1px);
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::after {
   background-image:
-    linear-gradient(to right, rgb(158 173 194 / 10%) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(158 173 194 / 14%) 1px, transparent 1px);
+    linear-gradient(to right, rgb(158 173 194 / 4%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(158 173 194 / 4%) 1px, transparent 1px);
 }
 
 @media (prefers-reduced-motion: reduce) {
