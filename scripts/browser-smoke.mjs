@@ -221,7 +221,7 @@ try {
     !desktopFocus.maskImage.includes("radial-gradient") ||
     // CSS must paint continuous horizontal and vertical rules (square cells),
     // not the former circular dot stamps. Both layers share the same tiling.
-    (desktopFocus.backgroundImage.match(/linear-gradient\\(/g) || []).length !== 2 ||
+    (desktopFocus.backgroundImage.match(/linear-gradient\(/g) || []).length !== 2 ||
     desktopFocus.backgroundImage.includes("radial-gradient") ||
     !/to right/.test(desktopFocus.backgroundImage) ||
     !/to bottom/.test(desktopFocus.backgroundImage) ||
