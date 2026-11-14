@@ -1,0 +1,6 @@
+.sk-precision-toolbar{position:absolute;left:16px;bottom:82px;z-index:120;display:flex;align-items:center;flex-wrap:wrap;gap:6px;max-width:min(680px,calc(100% - 32px));padding:7px 9px;border:1px solid #8c84f255;border-radius:10px;background:#252935;color:#f2f1f7;box-shadow:0 3px 14px #0003;font-size:12px}
+.sk-precision-toolbar button{padding:5px 9px;border:1px solid #ffffff35;border-radius:6px;background:#393e50;color:inherit;cursor:pointer}
+.sk-precision-toolbar button[aria-pressed="true"]{background:#7668db;border-color:#a79bf5}
+.sk-precision-toolbar button:focus-visible{outline:2px solid #b4aaff;outline-offset:2px}
+.sk-precision-toolbar [role="status"]{font-variant-numeric:tabular-nums}
+.sk-precision-hit-area{position:absolute;inset:0;z-index:110;cursor:crosshair;background:transparent;touch-action:none}
