@@ -43,3 +43,16 @@ test("Kubernetes redesign keeps snapshot inside Insights and groups validation b
   assert.match(css, /\.k8s-studio \.k8s-studio-snapshot-card textarea/);
   assert.match(css, /\.k8s-studio \.k8s-studio-diagnostic-inspect:focus-visible/);
 });
+
+test("Compose redesign renders contextual validation and conversion inside left workspace", async () => {
+  const source = await read("src/features/docker-compose/ui/DockerComposeStudio.jsx");
+  const css = await read("src/features/docker-compose/ui/docker-compose-studio.css");
+  const aside = source.indexOf('aria-label="Compose workspace details"');
+  const conversion = source.indexOf('aria-label="Kubernetes conversion preview"');
+  const validation = source.indexOf('aria-label="Compose validation"');
+  const asideEnd = source.indexOf("</aside>", aside);
+  assert.ok(aside > 0 && conversion > aside && validation > conversion && asideEnd > validation, "Contextual panels must remain inside left workspace");
+  assert.match(css, /\.docker-studio \.docker-studio-resource-pane\{grid-column:1/);
+  assert.match(css, /\.docker-studio \.docker-studio-yaml-pane\{grid-column:2/);
+  assert.match(css, /\.docker-studio \.docker-studio-resource-pane \.docker-studio-container-list\{max-height:none/);
+});
