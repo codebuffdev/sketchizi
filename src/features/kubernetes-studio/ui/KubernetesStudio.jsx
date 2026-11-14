@@ -262,6 +262,7 @@ function normalizeManifest(value, index) {
 }
 
 export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyResourceYaml }) {
+  const [previewTab, setPreviewTab] = useState("resources");
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
@@ -843,19 +844,24 @@ spec:
           <div className="k8s-studio-splitter" role="separator" aria-label="Resize manifest and resource preview" aria-orientation="vertical" aria-valuemin={28} aria-valuemax={72} aria-valuenow={Math.round(previewSplit)} tabIndex={0} onPointerDown={(event) => { splitDragRef.current = true; document.body.classList.add("k8s-studio-resizing"); }} onKeyDown={(event) => { if (event.key === "ArrowLeft") { event.preventDefault(); setPreviewSplit((value) => Math.max(28, value - 3)); } if (event.key === "ArrowRight") { event.preventDefault(); setPreviewSplit((value) => Math.min(72, value + 3)); } }} />
           <aside className="k8s-studio-preview">
             <div className="k8s-studio-section-title"><div><span>02</span><h2>Resource preview</h2></div><strong>{parsed.resources.length}</strong></div>
+            <div className="k8s-studio-preview-tabs" role="tablist" aria-label="Resource preview views">
+              <button type="button" role="tab" aria-selected={previewTab === "resources"} className={previewTab === "resources" ? "active" : ""} onClick={() => setPreviewTab("resources")}>Resources <span>{parsed.resources.length}</span></button>
+              <button type="button" role="tab" aria-selected={previewTab === "validation"} className={previewTab === "validation" ? "active" : ""} onClick={() => setPreviewTab("validation")}>Validation <span>{parsed.issues?.length || 0}</span></button>
+            </div>
             {parsed.parseError ? <div className="k8s-studio-error" role="alert"><strong>YAML parsing failed</strong><p>{parsed.parseError}</p></div> : null}
             {!parsed.parseError && !parsed.resources.length ? <div className="k8s-studio-empty">Resources will appear here after valid YAML is provided.</div> : null}
-            {parsed.issues?.length > 0 && <section className="k8s-studio-validation" aria-label="Manifest validation">
+            {previewTab === "validation" && parsed.issues?.length > 0 && <section className="k8s-studio-validation" aria-label="Manifest validation">
               <div className="k8s-studio-validation-heading"><strong>Manifest checks</strong><span>{parsed.issues.filter((issue) => issue.severity === "error").length} errors · {parsed.issues.filter((issue) => issue.severity === "warning").length} warnings</span></div>
               <ul>{diagnostics.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}><span>{issue.severity === "error" ? "Error" : issue.severity === "warning" ? "Warning" : "Info"}</span><div><strong>{issue.resource}</strong><p>{issue.message}</p>{parsed.resources.some((resource) => resource.kind + "/" + resource.name === issue.resource) && <button type="button" onClick={() => { const target = parsed.resources.find((resource) => resource.kind + "/" + resource.name === issue.resource); if (target) inspectResource(target); }} aria-label={"Inspect " + issue.resource}>Inspect resource</button>}<details><summary>Review suggested correction</summary><p>{issue.remediation || "Review the affected resource and update the manifest to resolve this validation finding. No changes will be applied automatically."}</p><small>Preview only — YAML remains unchanged.</small></details></div></li>)}</ul>
             </section>}
-            <div className="k8s-studio-resource-list">
+            {previewTab === "validation" && !parsed.parseError && !parsed.issues?.length && <div className="k8s-studio-empty" role="status">No validation findings for the current manifest.</div>}
+            {previewTab === "resources" && <div className="k8s-studio-resource-list">
               {parsed.resources.map((resource) => <article className="k8s-studio-resource" key={resource.id}>
                 <span className={"k8s-studio-resource-glyph k8s-studio-resource-glyph-" + resource.kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")}><KubernetesResourceIcon kind={resource.kind} /></span>
                 <div><strong>{resource.name}</strong><small>{resource.kind} · {resource.namespace}</small></div><button type="button" className="k8s-studio-resource-inspect" onClick={() => inspectResource(resource)}>Inspect</button>
                 {!resource.supported && <em>Generic</em>}
               </article>)}
-            </div>
+            </div>}
             {parsed.unsupported.length > 0 && <details className="k8s-studio-notes"><summary>Import notes ({parsed.unsupported.length})</summary><ul>{parsed.unsupported.map((item, index) => <li key={index}>{item}</li>)}</ul></details>}
           </aside>
         </div>
