@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { fetchAuthProviders, fetchCurrentUser, fetchGitHubRepositoryConnection, invalidateCurrentUserCache, disconnectGitHubRepositoryConnection, signOut, startGitHubRepositoryConnection, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
 
 export default function AuthenticationControl() {
@@ -239,6 +240,13 @@ export default function AuthenticationControl() {
     } finally { setBusy(false); }
   };
 
+  // The header uses stacking/positioning effects; mounting the modal inside
+  // the application shell keeps its fixed backdrop relative to the workspace
+  // instead of trapping it inside the top-right navigation.
+  const dialogHost = typeof document !== "undefined"
+    ? document.querySelector(".app") || document.body
+    : null;
+
   return (
     <div className="auth-control-root">
       {auth.status === "loading" ? (
@@ -294,7 +302,7 @@ export default function AuthenticationControl() {
           </svg>
         </button>
       }
-      {dialogOpen && (
+      {dialogOpen && dialogHost && createPortal(
         <div className="auth-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialogOpen(false); }}>
           <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title">
             <button type="button" className="auth-dialog-close" aria-label="Close sign-in dialog" onClick={() => setDialogOpen(false)}>×</button>
@@ -315,7 +323,8 @@ export default function AuthenticationControl() {
             )}
             <p className="auth-dialog-footnote">Sign in securely with Google or GitHub. Repository access is a separate permission.</p>
           </section>
-        </div>
+        </div>,
+        dialogHost
       )}
     </div>
   );
