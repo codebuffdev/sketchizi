@@ -126,9 +126,9 @@
 /* No separate focus activation: drawing, selection and pointer events do
    not change the permanent grid's coverage or visibility. */
 
-/* Normal uses only the full-canvas coarse grid. Focus retains the approved
-   softly feathered 90% fine grid. Both respect the native Show Grid toggle. */
-.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled:not(.is-focus-style)::after {
+/* Normal hides only its own fine grid. Canvas and Local each render their
+   distinct fine-grid geometry while respecting the native Show Grid toggle. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled:not(.is-focus-style):not(.is-local-style)::after {
   display: none;
 }
 
