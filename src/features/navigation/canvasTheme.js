@@ -13,16 +13,18 @@ export function getCanvasBackground(isDarkTheme) {
 }
 
 /**
- * Reconcile Excalidraw's actual scene background with Sketchizi's single
- * Day/Night theme. Read from the live API, never from a stale onChange payload.
+ * Update theme defaults while preserving independent drawing backgrounds.
+ * Read from the live API, never from a stale onChange payload.
  */
-export function applyCanvasThemeBackground(api, isDarkTheme) {
+export function applyCanvasThemeBackground(api, isDarkTheme, force = false) {
   if (!api?.getAppState || !api?.updateScene) return false;
 
   const desiredBackground = getCanvasBackground(isDarkTheme);
   const actualBackground = String(api.getAppState()?.viewBackgroundColor || "")
     .trim()
     .toLowerCase();
+
+  if (!force && actualBackground && ![LIGHT_CANVAS_BACKGROUND, DARK_CANVAS_BACKGROUND].includes(actualBackground)) return false;
 
   if (actualBackground === desiredBackground) return false;
 

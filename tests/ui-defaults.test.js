@@ -13,10 +13,10 @@ test("missing, invalid, or unavailable theme preference defaults to dark", () =>
   assert.equal(getInitialThemeMode({ getItem() { throw new Error("blocked"); } }), "dark");
 });
 
-test("only saved light and dark preferences are accepted", () => {
+test("saved light, dark, and system preferences are accepted", () => {
   assert.equal(getInitialThemeMode(storageWith("light")), "light");
   assert.equal(getInitialThemeMode(storageWith("dark")), "dark");
-  assert.equal(getInitialThemeMode(storageWith("system")), "dark");
+  assert.equal(getInitialThemeMode(storageWith("system")), "system");
 });
 
 test("the hamburger menu constrains and owns its vertical scroll region", async () => {
@@ -37,12 +37,13 @@ test("the hamburger menu constrains and owns its vertical scroll region", async 
 });
 
 
-test("canvas always follows the global two-theme preference and reconciles after Excalidraw updates", async () => {
+test("appearance follows the selected theme and supports live system changes", async () => {
   const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
   assert.match(source, /const isDarkTheme = themeMode === "dark"/);
+  assert.match(source, /media.addEventListener\("change", update\)/);
   assert.match(source, /applyCanvasThemeBackground\(apiRef\.current, isDarkTheme\)/);
   assert.match(source, /window\.requestAnimationFrame\(\(\) =>/);
-  assert.doesNotMatch(source, /themeMode === "system"/);
+  assert.match(source, /themeMode === "system"/);
   assert.doesNotMatch(source, /canvasBackgroundMode/);
 });
 
@@ -52,9 +53,9 @@ test("independent canvas palette is removed in the two-theme design", async () =
   assert.match(source, /canvasBackgroundLabel\.closest/);
 });
 
-test("restored scene background cannot override Day/Night during initialData hydration", async () => {
+test("restored scene keeps its saved canvas background", async () => {
   const source = await readFile(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
-  assert.match(source, /viewBackgroundColor: getCanvasBackground\(isDarkTheme\)/);
+  assert.match(source, /viewBackgroundColor: savedSketch\?\.appState\?\.viewBackgroundColor \|\| getCanvasBackground\(isDarkTheme\)/);
   const helper = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
   assert.match(helper, /api\.getAppState\(\)/);
   assert.match(helper, /api\.updateScene\(/);

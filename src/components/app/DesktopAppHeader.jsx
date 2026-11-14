@@ -85,6 +85,9 @@ export default function DesktopAppHeader({
   workspaceToggle,
   moreToolsToggle,
   setThemeMode,
+  themeMode,
+  canvasApi,
+  canEditCanvas,
   isDarkTheme,
   saveStatus = { state: "ready", lastSavedAt: null },
   currentDocumentName = "Untitled drawing",
@@ -625,7 +628,7 @@ export default function DesktopAppHeader({
 
       <div className="desktop-app-header-actions">
         <div className="desktop-app-header-account-zone">
-          <ThemeControl setThemeMode={setThemeMode} isDarkTheme={isDarkTheme} />
+          <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} api={canvasApi} canEdit={canEditCanvas} />
         </div>
         <div className="desktop-app-header-panel-actions">{children}</div>
         {moreToolsToggle}
