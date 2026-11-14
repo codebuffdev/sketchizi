@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
+import { convertComposeToKubernetes } from "../composeToKubernetes.js";
 import "./docker-compose-studio.css";
 
 
@@ -174,6 +175,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [showValidation, setShowValidation] = useState(false);
+  const [showConversion, setShowConversion] = useState(false);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
   const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 60 });
@@ -190,6 +192,21 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     } catch (cause) { return { document: null, error: cause?.message || "Could not parse Compose YAML." }; }
   }, [yamlText]);
   const composeDoc = parsed.document;
+  const conversion = useMemo(() => {
+    if (!composeDoc) return { manifests: [], warnings: [], error: parsed.error };
+    try { return { ...convertComposeToKubernetes(composeDoc), error: "" }; }
+    catch (cause) { return { manifests: [], warnings: [], error: cause.message }; }
+  }, [composeDoc, parsed.error]);
+  const conversionYaml = conversion.manifests.map((manifest) => stringify(manifest).trimEnd()).join("\n---\n") + (conversion.manifests.length ? "\n" : "");
+  const downloadConversion = () => {
+    if (!conversion.manifests.length || conversion.error) return;
+    const blob = new Blob([conversionYaml], { type: "application/yaml" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = "sketchizi-kubernetes-preview.yaml";
+    document.body.appendChild(link); link.click(); link.remove();
+    URL.revokeObjectURL(url);
+  };
   const serviceEntries = Object.entries(composeDoc?.services || {});
   const serviceNames = new Set(serviceEntries.map(([name]) => name));
   const selected = composeDoc?.services?.[selectedService];
@@ -345,6 +362,18 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
           <section className="docker-studio-relationship-panel" aria-label="Service relationships"><div className="docker-studio-relationship-heading"><strong>Relationships</strong><span>{edges.length}</span></div>{edges.length ? edges.map((edge, i) => <button type="button" key={edge.from + edge.to + i} className={edge.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => setSelectedService(edge.exists ? edge.to : edge.from)}><strong>{edge.from}</strong><span>→</span><strong>{edge.to}</strong><small>{edge.exists ? "depends on" : "missing service"}</small></button>) : <p>No service dependencies are defined.</p>}{(volumes.length > 0 || networks.length > 0) && <div className="docker-studio-shared-resources"><strong>Shared resources</strong>{volumes.map((name) => <span key={"v" + name}>Volume · {name}</span>)}{networks.map((name) => <span key={"n" + name}>Network · {name}</span>)}</div>}</section>
         </aside>
       </div>
+      <section className="docker-studio-validation-strip" aria-label="Kubernetes conversion preview">
+        <button type="button" className="docker-studio-validation-toggle" onClick={() => setShowConversion((value) => !value)} aria-expanded={showConversion}>
+          <strong>Preview Kubernetes YAML</strong><span>{conversion.manifests.length} manifests · {conversion.warnings.length} review warnings</span><span>{showConversion ? "−" : "+"}</span>
+        </button>
+        {showConversion && <div className="docker-studio-validation-content">
+          <p>Review-only conversion. No Kubernetes resources are deployed. Unsupported Compose fields require manual migration.</p>
+          {conversion.error && <p role="alert">{conversion.error}</p>}
+          {conversion.warnings.map((warning, index) => <article key={warning.service + warning.field + index} className="docker-studio-finding warning"><strong>{warning.service}: {warning.field}</strong><p>{warning.message}</p></article>)}
+          {conversion.manifests.length > 0 && <><button type="button" onClick={downloadConversion}>Download Kubernetes YAML</button><pre style={{ maxHeight: 320, overflow: "auto", whiteSpace: "pre-wrap" }}>{conversionYaml}</pre></>}
+          {!conversion.manifests.length && !conversion.error && <p>No convertible image-backed services found.</p>}
+        </div>}
+      </section>
       <section className="docker-studio-validation-strip" aria-label="Compose validation"><button type="button" className="docker-studio-validation-toggle" onClick={() => setShowValidation((value) => !value)} aria-expanded={showValidation}><span className={parsed.error || validation.findings.some((finding) => finding.severity === "error") ? "docker-studio-validation-dot error" : "docker-studio-validation-dot"}/><strong>{parsed.error ? "YAML parse error" : validation.findings.length ? validation.findings.length + " validation findings" : "Compose checks"}</strong><span>{parsed.error ? "Fix YAML syntax to continue" : validation.findings.filter((finding) => finding.severity === "error").length + " errors · " + validation.findings.filter((finding) => finding.severity === "warning").length + " warnings"}</span><span>{showValidation ? "−" : "+"}</span></button>{showValidation && <div className="docker-studio-validation-content">{parsed.error && <p className="docker-studio-parse-error">{parsed.error}</p>}{validation.findings.map((finding, i) => <article key={finding.code + finding.path + i} className={"docker-studio-finding " + finding.severity}><strong>{finding.message}</strong><small>{finding.path}</small><p>{finding.remediation}</p></article>)}{readiness && <div className="docker-studio-readiness-summary"><strong>Readiness {readiness.readinessScore}/100 · {readiness.readinessGrade}</strong><span>{readiness.severityCounts.error} errors · {readiness.severityCounts.warning} warnings · {readiness.severityCounts.info} recommendations</span>{readiness.startupOrder.length > 0 && <p>Suggested startup order: {readiness.startupOrder.join(" → ")}</p>}</div>}{!parsed.error && !validation.findings.length && <p>No issues detected by the static checks.</p>}</div>}</section>
       {(error || notice) && <div className={error ? "docker-studio-message error" : "docker-studio-message"} role={error ? "alert" : "status"}>{error || notice}</div>}
       <footer className="docker-studio-footer"><span>{serviceEntries.length} services · {volumes.length} named volumes · {networks.length} networks</span><span>YAML-first workflow · Canvas changes only after Create diagram</span></footer>
