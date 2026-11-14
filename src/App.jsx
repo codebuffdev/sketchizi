@@ -1827,7 +1827,9 @@ function App() {
             onToolActivated={() => closePanel("properties")}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
-            gridEnabled={gridEnabled}
+            gridStyle={gridStyle}
+             onGridVisibilityChange={setGridEnabled}
+             gridEnabled={gridEnabled}
           />
 
 
