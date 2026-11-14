@@ -235,7 +235,7 @@ try {
   }
   const toggleShowGrid = async (label) => {
     await gridSession.page.getByRole("button", { name: "View", exact: true }).click();
-    await gridSession.page.getByRole("menuitem", { name: label, exact: true }).click();
+    await gridSession.page.getByRole("menuitem", { name: new RegExp(label) }).click();
   };
   await toggleShowGrid("Show Grid");
   await gridSession.page.waitForFunction(() =>
