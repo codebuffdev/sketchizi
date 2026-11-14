@@ -24,11 +24,13 @@ test('toolbar decoration continues to observe native DOM updates', () => {
   assert.match(canvas, /observer\?\.disconnect\(\)/);
 });
 
-test('moves the native Scroll back to content button outside the toolbar dock', () => {
+test('positions the native Scroll back to content action above the drawing dock', () => {
   assert.match(canvas, /button\.classList\.add\("sketchizi-scroll-back-control"\)/);
+  assert.match(canvas, /getScrollBackPlacement\(\{/);
+  assert.match(canvas, /dock: toolbar\.getBoundingClientRect\(\)/);
   assert.match(canvas, /button\.style\.setProperty\("position", "fixed", "important"\)/);
-  assert.match(canvas, /const right = dock\.right \+ gap/);
-  assert.match(canvas, /const leftOfDock = dock\.left - buttonWidth - gap/);
+  assert.match(canvas, /button\.style\.setProperty\("left", `\$\{position\.left\}px`, "important"\)/);
+  assert.match(canvas, /button\.style\.setProperty\("top", `\$\{position\.top\}px`, "important"\)/);
   assert.match(canvas, /window\.addEventListener\("pointermove", repositionOnPointerMove/);
   assert.match(canvas, /button\.classList\.remove\("sketchizi-scroll-back-control"\)/);
 });
