@@ -26,7 +26,8 @@ export default function SketchiziCanvas({
   const [canvasRevision, setCanvasRevision] = useState(0);
   const [gridStyle, setGridStyle] = useState(() => {
     try {
-      return window.localStorage.getItem("sketchizi-grid-style") === "normal" ? "normal" : "focus";
+      const saved = window.localStorage.getItem("sketchizi-grid-style");
+      return ["normal", "focus", "local"].includes(saved) ? saved : "focus";
     } catch {
       return "focus";
     }
@@ -55,6 +56,7 @@ export default function SketchiziCanvas({
     const showGrid = state.gridModeEnabled ?? savedSketch?.appState?.gridModeEnabled ?? gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
     node.classList.toggle("is-focus-style", gridStyle === "focus");
+    node.classList.toggle("is-local-style", gridStyle === "local");
     if (!showGrid) {
       node.classList.remove("has-focus");
       return;
@@ -797,7 +799,8 @@ export default function SketchiziCanvas({
       <div className="sketchizi-grid-style-control" role="group" aria-label="Grid style">
         <span className="sketchizi-grid-style-label">Grid style</span>
         <button type="button" aria-pressed={gridStyle === "normal"} onClick={() => setGridStyle("normal")}>Normal</button>
-        <button type="button" aria-pressed={gridStyle === "focus"} onClick={() => setGridStyle("focus")}>Focus</button>
+        <button type="button" aria-pressed={gridStyle === "focus"} onClick={() => setGridStyle("focus")}>Focus (Canvas)</button>
+        <button type="button" aria-pressed={gridStyle === "local"} onClick={() => setGridStyle("local")}>Focus (Local)</button>
       </div>
       <Excalidraw
         // Always seed the scene with the active Day/Night background. Legacy
