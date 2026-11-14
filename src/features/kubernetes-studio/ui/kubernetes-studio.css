@@ -217,3 +217,36 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-studio-preview .k8s-studio-resource>div{min-width:0;flex:1}
 .k8s-studio-preview .k8s-studio-resource>div strong,.k8s-studio-preview .k8s-studio-resource>div small{overflow-wrap:anywhere}
 @media(max-width:700px){.k8s-studio-preview .k8s-studio-resource-list{grid-template-columns:1fr}}
+
+
+/* Kubernetes Studio polish: calm, consistent inspector and optional snapshot. */
+.k8s-studio-preview{min-width:0}
+.k8s-studio-preview .k8s-studio-validation{margin:12px;border:1px solid #33445b;border-radius:11px;background:#111e30;overflow:hidden}
+.k8s-studio-preview .k8s-studio-validation-heading{padding:12px 14px;background:#17253a;border-bottom:1px solid #2b3c52}
+.k8s-studio-preview .k8s-studio-validation ul{margin:0;padding:0;list-style:none}
+.k8s-studio-preview .k8s-studio-validation li{padding:12px 14px;border-bottom:1px solid #2a394d;gap:10px}
+.k8s-studio-preview .k8s-studio-validation li:last-child{border-bottom:0}
+.k8s-studio-preview .k8s-studio-validation li>div{min-width:0;overflow-wrap:anywhere}
+.k8s-studio-preview .k8s-studio-validation li button{display:inline-flex;margin:8px 0 3px;padding:6px 10px;border:1px solid #435675;border-radius:6px;background:#20314a;color:#e1eaff;font:inherit;font-size:11px;cursor:pointer}
+.k8s-studio-preview .k8s-studio-validation li button:hover{background:#2b4160}
+.k8s-studio-preview .k8s-studio-validation details{margin-top:8px;border-top:1px solid #2c3d53;padding-top:8px}
+.k8s-studio-preview .k8s-studio-validation summary{cursor:pointer;color:#b7c9e1;font-size:11px}
+.k8s-studio-preview .k8s-studio-validation details p{line-height:1.5}
+.k8s-studio-snapshot-panel{margin:12px 16px;border:1px solid #2b3c53;border-radius:10px;background:#142137;overflow:hidden}
+.k8s-studio-snapshot-panel>summary{display:flex;align-items:center;gap:12px;list-style:none;padding:13px 16px;cursor:pointer;color:#e3ecfa}
+.k8s-studio-snapshot-panel>summary::-webkit-details-marker{display:none}
+.k8s-studio-snapshot-panel>summary:hover{background:#1b2b43}
+.k8s-studio-snapshot-panel>summary:focus-visible{outline:2px solid #a78bfa;outline-offset:-2px}
+.k8s-studio-snapshot-panel>summary>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.k8s-studio-snapshot-panel>summary strong{font-size:12px}
+.k8s-studio-snapshot-panel>summary small{font-size:10px;color:#91a7c1}
+.k8s-studio-snapshot-icon{display:grid;place-items:center;width:31px;height:31px;border-radius:8px;background:#253754;color:#b9a5ff}
+.k8s-studio-snapshot-chevron{margin-left:auto;font-size:17px;transition:transform .15s}
+.k8s-studio-snapshot-panel[open] .k8s-studio-snapshot-chevron{transform:rotate(180deg)}
+.k8s-studio-snapshot-panel>p,.k8s-studio-snapshot-panel>textarea,.k8s-studio-snapshot-panel>.k8s-studio-snapshot-actions,.k8s-studio-snapshot-panel>ul{margin:0 16px 12px}
+.k8s-studio-snapshot-panel>p{color:#a8bad2;font-size:11px;line-height:1.55}
+.k8s-studio-snapshot-panel>textarea{display:block;box-sizing:border-box;width:calc(100% - 32px);resize:vertical;min-height:96px;padding:12px;border:1px solid #354862;border-radius:8px;background:#0d1829;color:#e5edfa;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
+.k8s-studio-snapshot-panel>textarea:focus-visible{outline:2px solid #a78bfa;outline-offset:1px}
+.k8s-studio-snapshot-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.k8s-studio-snapshot-actions small{color:#8fa4bd;font-size:10px}
+.k8s-studio-snapshot-panel>ul{color:#cdd9e9;font-size:11px;line-height:1.8}
