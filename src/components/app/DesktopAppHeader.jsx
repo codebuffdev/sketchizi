@@ -341,7 +341,6 @@ export default function DesktopAppHeader({
         data-pinned={headerPinned}
       >
       <div className="desktop-app-header-island desktop-app-header-island-left">
-      {workspaceToggle}
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
@@ -433,7 +432,7 @@ export default function DesktopAppHeader({
 
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
-        {/** The creation action stays in the existing workspace toggle; only its layout changes. */}
+        {workspaceToggle}
       <div
         className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
