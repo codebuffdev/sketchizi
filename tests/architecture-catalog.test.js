@@ -22,17 +22,17 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
   assert.doesNotMatch(panel, /library-collections-wrap|library-collections-menu|chooseCollection/);
   assert.match(panel, /primaryCatalogTabs/);
-  assert.match(panel, /extraCatalogTabs/);
+  assert.match(panel, /catalogMenuTabs/);
 });
 
-test("Networking remains a first-class icon source through the More menu", () => {
+test("Networking remains a first-class icon source through the All dropdown", () => {
   assert.match(panel, /\{ id: "networking", label: "Networking" \}/);
   assert.match(panel, /else if \(source === "networking"\)[\s\S]*?setActiveCategory\("Networking"\)/);
   assert.match(panel, /\["aws", "kubernetes", "networking", "uml", "mindmaps"\]\.includes\(activeSource\)/);
   assert.match(catalog, /activeCategory === "Networking"[\s\S]*?base = networkingIcons/);
 });
 
-test("UML and Mind Maps remain available through the More menu and existing catalogs", () => {
+test("UML and Mind Maps remain available through the All dropdown and existing catalogs", () => {
   assert.match(panel, /else if \(source === "uml"\)[\s\S]*?setActiveCategory\("UML Diagrams"\)/);
   assert.match(panel, /else if \(source === "mindmaps"\)[\s\S]*?setActiveCategory\("Mind Maps"\)/);
   assert.match(catalog, /activeCategory === "UML Diagrams"[\s\S]*?base = umlIcons/);
@@ -41,7 +41,7 @@ test("UML and Mind Maps remain available through the More menu and existing cata
 
 test("Icon Library removes the redundant Collections dropdown without placeholder catalogs", () => {
   assert.doesNotMatch(panel, /library-collections-wrap|library-collections-menu|chooseCollection|activeSource === "collections"/);
-  assert.match(panel, /aria-label="More icon collections"/);
+  assert.match(panel, /aria-label="All icon categories"/);
   assert.match(panel, /role="menuitemradio"/);
   for (const future of ["Security & Identity", "Compute & Runtime", "Data & Storage", "Messaging & Events", "Observability", "CI/CD & DevOps", "AI & Machine Learning", "Hybrid Cloud & Edge"]) {
     assert.equal(panel.includes(`"${future}"`), false, `${future} must not be a visible placeholder`);
