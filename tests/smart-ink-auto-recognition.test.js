@@ -6,7 +6,7 @@ const engine = readFileSync(new URL("../src/features/canvas/smartInkRecognition.
 test("Write mode detects newly drawn strokes after a pause", () => {
   assert.match(picker, /baseline: new Set/);
   assert.match(picker, /el\.type === "freedraw"/);
-  assert.match(picker, /Date\.now\(\) - session\.changedAt > 1400/);
+  assert.match(picker, /supportsOnlineInk/);
   assert.match(picker, /void openPreview\(strokes\)/);
   assert.match(picker, /window\.clearInterval\(interval\)/);
 });
