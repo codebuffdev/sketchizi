@@ -21,7 +21,7 @@ export function getSelectedShapeBounds(elements) {
   return { left, top, width, height, angle: shape.angle || 0 };
 }
 
-export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevision, viewModeEnabled }) {
+export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevision, viewModeEnabled, canvasRootRef }) {
   const bounds = useMemo(() => getSelectedShapeBounds(selectedElements), [selectedElements, canvasRevision]);
   if (viewModeEnabled || !bounds || Math.abs(bounds.angle) > 0.001) return null;
   const state = apiRef?.current?.getAppState?.();
@@ -31,8 +31,10 @@ export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevi
   const scrollY = state.scrollY ?? 0;
   const offsetLeft = state.offsetLeft ?? 0;
   const offsetTop = state.offsetTop ?? 0;
-  const x = (bounds.left + scrollX) * zoom + offsetLeft;
-  const y = (bounds.top + scrollY) * zoom + offsetTop;
+  const rootRect = canvasRootRef?.current?.getBoundingClientRect?.();
+  if (!rootRect) return null;
+  const x = (bounds.left + scrollX) * zoom + offsetLeft - rootRect.left;
+  const y = (bounds.top + scrollY) * zoom + offsetTop - rootRect.top;
   const width = bounds.width * zoom;
   const height = bounds.height * zoom;
   if (![x, y, width, height].every(Number.isFinite)) return null;
