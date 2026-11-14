@@ -33,3 +33,11 @@ npm run smart-ink-server
 Proxy `/api/smart-ink/recognize` from the frontend origin to `127.0.0.1:8791` and require authenticated sessions and request rate limiting **at the proxy**. Set `VITE_SMART_INK_RECOGNITION_URL=/api/smart-ink/recognize` in the frontend environment. The service is intentionally bound to loopback by default. Do **not** expose it publicly: the Origin check is not authentication and can be forged by non-browser clients. Restrict the Google Cloud API key to Vision API and monitor costs. No API key should be committed or passed to the browser.
 
 The service accepts a maximum 2 MiB PNG and returns `{ "text": "..." }`. It never stores submitted images. Recognition can be imperfect; users must review the result before replacing their strokes.
+
+## Live stroke refinement and on-device handwriting recognition
+
+In Write mode, Sketchizi locally smooths each completed freehand stroke shortly after the pointer is lifted. This works with no cloud service and does not attempt to guess a letter: a pen stroke can be only part of a character. It preserves stroke endpoints, pressure data, deliberate corners, and the original scene's other elements. Undo/redo behavior still requires hands-on browser verification.
+
+When Chromium's platform Handwriting Recognition API is available (`navigator.createHandwritingRecognizer` and `HandwritingStroke`), the original pen points are sent to the **on-device** recognizer. Its prediction is checked after a short pause (about 350 ms) instead of the slower OCR window. If the local recognizer is unavailable or fails, Sketchizi falls back to configured server OCR and then experimental image recognition. Unrecognized strokes are never replaced. This API is platform-dependent, so Windows/desktop browser support must not be assumed from the browser version alone.
+
+**This is not guaranteed per-letter font replacement on every device.** Letters such as i, t, and cursive joins can require several pen strokes. Providing reliable character-by-character conversion on unsupported platforms still requires an actual deployed handwriting recognition model and representative real-world handwriting tests.
