@@ -43,8 +43,8 @@ async function awaitScene(check, description) {
       ? visible.some((element) => element.type === "rectangle" && element.width > 60 && element.height > 40)
       : description === "grid"
         ? lastScene?.appState?.gridModeEnabled === true
-        : description === "moved"
-          ? visible.some((element) => element.id === original?.id && Math.abs(element.x - original.x) > 15 && Math.abs(element.y - original.y) > 15)
+        : description === "moved" || description === "restored"
+          ? visible.some((element) => element.id === original?.id && Math.abs(element.x - original.x) > 15 && Math.abs(element.y - original.y) > 15) && (description !== "restored" || lastScene?.appState?.gridModeEnabled === true)
           : false;
     if (matched && await check()) {
       consecutiveMatches += 1;
@@ -119,6 +119,11 @@ try {
 
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
+  await page.getByRole("button", { name: /Local document save status: (Autosave ready|Saved locally)/ }).waitFor({ timeout: 15000 });
+  await awaitScene(async () => {
+    const scene = await currentDrawing();
+    return scene?.elements?.some((element) => element.id === drawn.id && Math.abs(element.x - drawn.x) > 15) && scene?.appState?.gridModeEnabled === true;
+  }, "restored");
   const restored = await currentDrawing();
   const rectangle = restored?.elements?.find((element) => element.id === drawn.id && !element.isDeleted);
   if (!rectangle || Math.abs(rectangle.x - drawn.x) <= 15 || !restored?.appState?.gridModeEnabled) {
