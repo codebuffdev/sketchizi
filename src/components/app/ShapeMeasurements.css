@@ -1,7 +1,7 @@
 .sk-shape-measurements {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 100;
   pointer-events: none;
   overflow: hidden;
 }
@@ -20,5 +20,18 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+/* Excalidraw renders its own px dimensions beneath a selection. Mask that
+   badge locally so the centimeter width is the only visible size readout. */
+.sk-shape-measurement-width {
+  isolation: isolate;
+}
+.sk-shape-measurement-width::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -5px -38px;
+  border-radius: 7px;
+  background: var(--sk-canvas-background, #101619);
 }
 .sk-shape-measurement-height { transform: translate(0, -50%); }
