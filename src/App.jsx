@@ -1414,33 +1414,60 @@ function App() {
       })));
     }
 
+    // Explicit text elements avoid Excalidraw label-theme overrides and allow reliable contrast.
+    const addText = (x, y, text, fontSize, color, width = 240) => skeleton.push({
+      type: "text", x, y, text, fontSize, fontFamily: 2, strokeColor: color,
+      width, textAlign: "left"
+    });
     services.forEach(([name, service]) => {
       const { x, y } = positions.get(name);
       const iconAsset = iconAssets.get(serviceIconSources.get(name));
       const details = composeCardDetails(service);
       skeleton.push({
         type: "rectangle", x, y, width: cardWidth, height: cardHeight,
-        strokeColor: "#6474b8", backgroundColor: "#19243a", fillStyle: "solid",
-        strokeWidth: 2, roundness: { type: 3 },
-        label: { text: name + "\n" + details.join("\n"), fontSize: 15, fontFamily: 2, textAlign: "left", verticalAlign: "middle" }
+        strokeColor: "#6685bd", backgroundColor: "#18263b", fillStyle: "solid",
+        strokeWidth: 2, roundness: { type: 3 }
       });
+      skeleton.push({ type: "line", x: x + 12, y: y + 47, width: cardWidth - 24, height: 0, points: [[0, 0], [cardWidth - 24, 0]], strokeColor: "#344b68", strokeWidth: 1 });
+      addText(x + 16, y + 13, name, 20, "#f1f5ff", cardWidth - 76);
+      details.forEach((detail, index) => addText(x + 16, y + 60 + index * 25, detail, 14, "#c1d1e9", cardWidth - 32));
       if (iconAsset) skeleton.push({
-        type: "image", x: x + cardWidth - 48, y: y + 12,
-        width: 34, height: 34, fileId: iconAsset.fileId, status: "saved", scale: [1, 1]
+        type: "image", x: x + cardWidth - 48, y: y + 10,
+        width: 32, height: 32, fileId: iconAsset.fileId, status: "saved", scale: [1, 1]
       });
     });
-    resources.forEach((resource, index) => {
-      const column = index % Math.min(4, resources.length);
-      const row = Math.floor(index / Math.min(4, resources.length));
-      const x = left + column * (resourceWidth + resourceGap);
-      const y = resourceTop + row * (resourceHeight + 12);
+    // Resource membership is a real relationship: connect each network or named
+    // volume to its members, with thin orthogonal paths behind the resource cards.
+    resources.forEach((resource) => {
+      const pos = layout.resourcePositions.get(resource.kind + ":" + resource.name);
+      if (!pos) return;
+      const resourceCenterX = pos.x + resourceWidth / 2;
+      resource.members.forEach((member) => {
+        const servicePos = positions.get(member);
+        if (!servicePos) return;
+        const startX = servicePos.x + cardWidth / 2;
+        const startY = servicePos.y + cardHeight;
+        const endY = pos.y;
+        const midY = startY + Math.max(14, (endY - startY) / 2);
+        skeleton.push({
+          type: "line", x: startX, y: startY, width: resourceCenterX - startX, height: endY - startY,
+          points: [[0, 0], [0, midY - startY], [resourceCenterX - startX, midY - startY], [resourceCenterX - startX, endY - startY]],
+          strokeColor: resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8", strokeWidth: 1, strokeStyle: "dashed"
+        });
+      });
+    });
+    resources.forEach((resource) => {
+      const pos = layout.resourcePositions.get(resource.kind + ":" + resource.name);
+      if (!pos) return;
+      const { x, y } = pos;
+      const accent = resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8";
       skeleton.push({
         type: "rectangle", x, y, width: resourceWidth, height: resourceHeight,
-        strokeColor: resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8",
-        backgroundColor: resource.kind === "VOLUME" ? "#103d38" : "#102f45",
-        fillStyle: "solid", strokeWidth: 1, roundness: { type: 3 },
-        label: { text: resource.kind + "  ·  " + resource.name + "\n" + resource.members.join(" · "), fontSize: 12, fontFamily: 2, textAlign: "center", verticalAlign: "middle" }
+        strokeColor: accent, backgroundColor: "#142b39",
+        fillStyle: "solid", strokeWidth: 1, roundness: { type: 3 }
       });
+      addText(x + 12, y + 9, resource.kind + " · " + resource.name, 13, "#e2f3ff", resourceWidth - 24);
+      addText(x + 12, y + 35, resource.members.join(" · "), 12, "#a6c8da", resourceWidth - 24);
     });
 
     const elements = convertToExcalidrawElements(skeleton);
