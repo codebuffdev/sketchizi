@@ -892,9 +892,9 @@ function App() {
       return;
     }
 
-    const cardWidth = 320;
-    const cardHeight = 164;
-    const gapX = 76;
+    const cardWidth = 284;
+    const cardHeight = 132;
+    const gapX = 92;
     const gapY = 78;
     const positions = new Map();
     const normalizedIconToken = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -938,7 +938,7 @@ function App() {
       buckets.get(rank).push(resource);
     });
     const resourcePositions = new Map();
-    const maxPerRow = 3;
+    const maxPerRow = 4;
     let nextLayoutY = 90;
     [...buckets.entries()].sort((a, b) => a[0] - b[0]).forEach(([rank, items]) => {
       // Stable ordering makes regenerated diagrams easier to compare and groups
@@ -951,11 +951,11 @@ function App() {
         const row = Math.floor(index / maxPerRow);
         const column = index % maxPerRow;
         const x = 120 + column * (cardWidth + gapX);
-        const y = nextLayoutY + row * (cardHeight + 34);
+        const y = nextLayoutY + row * (cardHeight + 42);
         resourcePositions.set(resource.id, { x, y, rank, row, column });
         positions.set(resource.id, { x, y });
       });
-      nextLayoutY += rowCount * (cardHeight + 34) + 84;
+      nextLayoutY += rowCount * (cardHeight + 42) + 84;
     });
 
     const iconAssets = await Promise.all(resources.map(async (resource) => {
@@ -1007,7 +1007,7 @@ function App() {
         resource.kind === "Ingress" ? `Hosts: ${(spec.rules || []).map((rule) => rule.host).filter(Boolean).slice(0, 2).join(", ") || "default backend"}` : "",
         resource.kind === "ConfigMap" ? `Keys: ${Object.keys(manifest.data || {}).slice(0, 3).join(", ")}` : "",
         resource.apiVersion || "",
-      ].filter(Boolean).join("\n");
+      ].filter(Boolean).slice(0, 5).join("\n");
       const metadata = {
         provider: "kubernetes", resourceType: String(resource.kind || "resource").toLowerCase(),
         catalog: "kubernetes", importedFromYaml: true,
@@ -1019,8 +1019,8 @@ function App() {
         id: resourceElementId,
         type: "rectangle", x, y, width: cardWidth, height: cardHeight,
         boundElements: [],
-        strokeColor: resource.kind === "Service" ? "#0891b2" : resource.kind === "Ingress" ? "#8b5cf6" : ["ConfigMap", "Secret", "PersistentVolumeClaim", "PersistentVolume", "StorageClass"].includes(resource.kind) ? "#b28b43" : "#4779bf",
-        backgroundColor: resource.kind === "Service" ? "#102b32" : resource.kind === "Ingress" ? "#241c38" : ["ConfigMap", "Secret", "PersistentVolumeClaim", "PersistentVolume", "StorageClass"].includes(resource.kind) ? "#28251d" : "#172333",
+        strokeColor: resource.kind === "Service" ? "#0891b2" : resource.kind === "Ingress" ? "#805ad5" : "#4779bf",
+        backgroundColor: resource.kind === "Service" ? "#e6f8fb" : resource.kind === "Ingress" ? "#f1eaff" : "#eaf2ff",
         fillStyle: "solid", strokeWidth: 1.5, roughness: 0, roundness: { type: 3 },
         groupIds: [resourceGroup],
         customData: { diagramIcon: true, iconId: icon?.id || null, iconName: icon?.name || resource.kind, iconCategory: icon?.category || "Kubernetes", iconSource: "kubernetes", kubernetesManifestResource: metadata },
@@ -1029,7 +1029,7 @@ function App() {
       nodes.push(resourceRectangle);
       if (fileId) {
         nodes.push({
-          type: "image", x: x + 18, y: y + 30, width: 62, height: 62, fileId,
+          type: "image", x: x + 16, y: y + 31, width: 52, height: 52, fileId,
           groupIds: [resourceGroup],
           customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", kubernetesManifestResource: metadata },
         });
@@ -1041,15 +1041,15 @@ function App() {
         });
       }
       nodes.push({
-        type: "text", x: x + 98, y: y + 16, width: cardWidth - 116, height: 44,
-        text: `${resource.kind}\n${resource.name}`, fontSize: 16, fontFamily: 2, textAlign: "left",
-        verticalAlign: "top", strokeColor: "#e6efff", backgroundColor: "transparent", autoResize: false,
+        type: "text", x: x + 82, y: y + 14, width: cardWidth - 98, height: 38,
+        text: `${resource.kind}\n${resource.name}`, fontSize: 15, fontFamily: 2, textAlign: "left",
+        verticalAlign: "top", strokeColor: "#182b45", backgroundColor: "transparent", autoResize: false,
         groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
       });
       nodes.push({
-        type: "text", x: x + 98, y: y + 64, width: cardWidth - 116, height: 84,
+        type: "text", x: x + 82, y: y + 54, width: cardWidth - 98, height: 70,
         text: details, fontSize: 11, fontFamily: 2, textAlign: "left",
-        verticalAlign: "top", strokeColor: "#a8bbd4", backgroundColor: "transparent", autoResize: false,
+        verticalAlign: "top", strokeColor: "#475b73", backgroundColor: "transparent", autoResize: false,
         groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
       });
     });
