@@ -361,14 +361,15 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
               <p>Static Compose depends_on path for {selectedService}. This is not a live network request trace.</p>
               {dependencyTrace?.steps.length ? dependencyTrace.steps.map((step, index) => <button type="button" key={step.from + step.to + index} className={step.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => { if (step.exists) setSelectedService(step.to); }}><strong>{step.from}</strong><span>→</span><strong>{step.to}</strong><small>{step.exists ? "declared dependency" : "missing service"}</small></button>) : <p>No declared downstream dependencies.</p>}
               {dependencyTrace?.warnings.map((warning, index) => <p key={index} role="status">{warning}</p>)}
-              {dependencyTrace && <svg role="img" aria-label={"Declared dependency path from " + selectedService} viewBox={"0 0 520 " + Math.max(96, (dependencyTrace.steps.length + 1) * 72)} style={{ width: "100%", maxHeight: 360, background: "var(--color-surface, transparent)" }}>
-                <rect x="12" y="12" width="180" height="44" rx="8" fill="#2563eb" />
-                <text x="102" y="39" textAnchor="middle" fill="white" fontSize="14">{selectedService.slice(0, 23)}</text>
-                {dependencyTrace.steps.map((step, index) => <g key={step.from + step.to + index}>
-                  <line x1="102" y1={56 + index * 72} x2="102" y2={84 + index * 72} stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" strokeDasharray={step.exists ? "none" : "5 4"} />
-                  <rect x="12" y={84 + index * 72} width="180" height="44" rx="8" fill={step.exists ? "#0f766e" : "#991b1b"} />
-                  <text x="102" y={111 + index * 72} textAnchor="middle" fill="white" fontSize="14">{step.to.slice(0, 23)}</text>
-                  <text x="212" y={111 + index * 72} fill="currentColor" fontSize="12">{step.exists ? "depends_on: " + step.from : "missing dependency"}</text>
+              {dependencyTrace?.steps.length > 0 && <svg role="img" aria-label={"Declared dependency edges from " + selectedService} viewBox={"0 0 520 " + (dependencyTrace.steps.length * 68 + 16)} style={{ width: "100%", maxHeight: 360 }}>
+                {dependencyTrace.steps.map((step, index) => <g key={step.from + step.to + index} transform={"translate(0 " + (index * 68 + 8) + ")"}>
+                  <rect x="8" y="8" width="170" height="42" rx="8" fill="#2563eb" />
+                  <text x="93" y="34" textAnchor="middle" fill="white" fontSize="13">{step.from.slice(0, 22)}</text>
+                  <line x1="180" y1="29" x2="240" y2="29" stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" />
+                  <path d="M232 23 L240 29 L232 35" fill="none" stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" />
+                  <rect x="244" y="8" width="170" height="42" rx="8" fill={step.exists ? "#0f766e" : "#991b1b"} />
+                  <text x="329" y="34" textAnchor="middle" fill="white" fontSize="13">{step.to.slice(0, 22)}</text>
+                  <text x="424" y="34" fill="currentColor" fontSize="11">{step.exists ? "declared" : "missing"}</text>
                 </g>)}
               </svg>}
               <strong>Potential network peers</strong>
