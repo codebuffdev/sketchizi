@@ -76,8 +76,7 @@ try {
   await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
-  // The small editor toolbox must match the approved compact mockup and
-  // retain every icon collection under More without enlarging the drawer.
+  // All opens every category; the drawer remains compact and list/grid stays intact.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
   const library = blank.page.getByRole("dialog", { name: "Icon Library" });
   await library.waitFor();
@@ -88,9 +87,9 @@ try {
       width: rect.width,
       height: rect.height,
       collectionDisplay: getComputedStyle(collections).display,
-      allVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "All"),
+      allVisible: !!panel.querySelector('button[aria-label="All categories"]'),
       awsVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "AWS"),
-      kubernetesVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "Kubernetes"),
+      kubernetesVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "K8s"),
     };
   });
   if (compactLayout.width > 322 || compactLayout.height > 462 ||
@@ -99,12 +98,37 @@ try {
     !compactLayout.allVisible || !compactLayout.awsVisible || !compactLayout.kubernetesVisible) {
     throw new Error(`Icon Library is not compact: ${JSON.stringify(compactLayout)}`);
   }
-  await library.getByRole("button", { name: "More icon collections" }).click();
-  const more = library.getByRole("menu", { name: "More icon collections" });
-  await more.getByRole("menuitemradio", { name: "Networking" }).click();
-  await more.waitFor({ state: "detached" });
-  await library.getByRole("button", { name: "More icon collections" }).click();
-  await more.getByRole("menuitemradio", { name: "UML" }).click();
+  await library.getByRole("button", { name: "All categories" }).click();
+  const categories = library.getByRole("menu", { name: "All icon categories" });
+  for (const name of ["All icons", "AWS", "Kubernetes", "Networking", "Mind Maps", "UML", "Essentials"]) {
+    await categories.getByRole("menuitemradio", { name, exact: true }).waitFor();
+  }
+  await categories.getByRole("menuitemradio", { name: "Networking" }).click();
+  await categories.waitFor({ state: "detached" });
+  await library.getByRole("button", { name: "All categories" }).click();
+  await categories.getByRole("menuitemradio", { name: "UML" }).click();
+  await library.getByRole("button", { name: "All categories" }).click();
+  await categories.getByRole("menuitemradio", { name: "All icons" }).click();
+
+  // Screenshot regression: results and instructions must not become
+  // default-size body paragraphs in a 320px-wide toolbox.
+  await library.getByRole("textbox", { name: "Search icons, tags, or categories" }).fill("ec2");
+  const typography = await library.evaluate((panel) => {
+    const meta = panel.querySelector(".sk-icon-compact-results-meta");
+    const hint = panel.querySelector(".sk-icon-compact-hint");
+    return {
+      metaSize: meta ? parseFloat(getComputedStyle(meta).fontSize) : null,
+      hintSize: hint ? parseFloat(getComputedStyle(hint).fontSize) : null,
+      metaText: meta?.textContent?.trim(),
+      hintText: hint?.textContent?.trim(),
+    };
+  });
+  if (typography.metaSize === null || typography.metaSize > 12 ||
+    typography.hintSize === null || typography.hintSize > 11 ||
+    !typography.metaText.includes("results") || !typography.hintText.includes("Drag to place")) {
+    throw new Error(`Compact library text is oversized: ${JSON.stringify(typography)}`);
+  }
+  await library.getByRole("textbox", { name: "Search icons, tags, or categories" }).fill("");
   await library.getByRole("button", { name: "List view" }).click();
   await library.locator(".sk-icon-grid.is-list-view").waitFor();
   await library.getByRole("button", { name: "Grid view" }).click();
@@ -121,9 +145,21 @@ try {
     smallLayout.width > 322 || smallLayout.height > 462 || smallLayout.height > smallLayout.vh) {
     throw new Error(`Compact icon panel overflows at phone width: ${JSON.stringify(smallLayout)}`);
   }
+  await library.getByRole("button", { name: "All categories" }).click();
+  const menuBounds = await categories.evaluate((menu) => {
+    const rect = menu.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, vw: window.innerWidth, vh: window.innerHeight };
+  });
+  if (menuBounds.left < 0 || menuBounds.right > menuBounds.vw + 1 ||
+      menuBounds.top < 0 || menuBounds.bottom > menuBounds.vh + 1) {
+    throw new Error(`All category menu overflows mobile viewport: ${JSON.stringify(menuBounds)}`);
+  }
+  await blank.page.keyboard.press("Escape");
+  await categories.waitFor({ state: "detached" });
+  await library.waitFor();
   await blank.page.setViewportSize({ width: 1280, height: 800 });
   await library.getByRole("button", { name: "Close icon library" }).click();
-  console.log("PASS: 320×460 compact library with More collections, list/grid, and phone containment.");
+  console.log("PASS: 320×460 library, All category dropdown, compact text, list/grid, and phone containment.");
 
   // The clipboard toast is owned by Excalidraw, so exercise its native class
   // using a temporary message without needing clipboard permissions.
