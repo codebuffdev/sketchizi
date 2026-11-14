@@ -15,7 +15,7 @@ test("shape measurements convert CSS pixels to centimeters", () => {
 
 test("labels are placed on the bottom and right edges and update with scene changes", () => {
   assert.match(overlay, /x \+ width \/ 2/);
-  assert.match(overlay, /y \+ height \+ 13/);
+  assert.match(overlay, /y \+ height \+ 21/);
   assert.match(overlay, /x \+ width \+ 13/);
   assert.match(overlay, /y \+ height \/ 2/);
   assert.match(canvas, /<ShapeMeasurements apiRef=/);
