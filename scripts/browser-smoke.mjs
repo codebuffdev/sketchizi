@@ -222,7 +222,7 @@ try {
       canvasBackground: getComputedStyle(document.querySelector(".desktop-canvas-region")).backgroundImage,
     };
   });
-  const twoLines = (image) => (image.match(/linear-gradient\\(/g) || []).length === 2;
+  const twoLines = (image) => (image.match(/linear-gradient\(/g) || []).length === 2;
   const x = sceneBounds.x + sceneBounds.width * 0.53;
   const y = sceneBounds.y + sceneBounds.height * 0.51;
   await gridSession.page.mouse.move(x, y);
