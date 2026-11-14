@@ -125,3 +125,49 @@
 
 /* No separate focus activation: drawing, selection and pointer events do
    not change the permanent grid's coverage or visibility. */
+
+/* Normal uses only the full-canvas coarse grid. Focus retains the approved
+   softly feathered 90% fine grid. Both respect the native Show Grid toggle. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled:not(.is-focus-style)::after {
+  display: none;
+}
+
+/* Compact grid-style switch, independent of Excalidraw's Show Grid control. */
+.app .canvas .sketchizi-grid-style-control {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid rgb(128 142 158 / 25%);
+  border-radius: 10px;
+  background: var(--color-surface-lowest, #20232a);
+  color: var(--text-primary-color, #e8e8eb);
+  box-shadow: 0 3px 14px rgb(0 0 0 / 14%);
+}
+.app .canvas .sketchizi-grid-style-label {
+  font-size: 12px;
+  padding: 0 8px 0 5px;
+  white-space: nowrap;
+}
+.app .canvas .sketchizi-grid-style-control button {
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.app .canvas .sketchizi-grid-style-control button[aria-pressed="true"] {
+  background: var(--color-primary-light, rgb(115 108 230 / 24%));
+  outline: 1px solid rgb(139 132 246 / 55%);
+}
+.app .canvas .sketchizi-grid-style-control button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
