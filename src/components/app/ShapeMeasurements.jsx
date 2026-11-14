@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import "./ShapeMeasurements.css";
-import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
+
 
 const CM_PER_CSS_PX = 2.54 / 96;
 const formatCm = (value) => `${(Math.abs(value) * CM_PER_CSS_PX).toFixed(2)} cm`;
@@ -41,7 +41,7 @@ export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevi
   const height = bounds.height * zoom;
   if (![x, y, width, height].every(Number.isFinite)) return null;
   return createPortal(
-    <div className="sk-shape-measurements" aria-hidden="true" style={{ "--sk-measure-canvas-bg": getCanvasBackground(isDarkTheme) }}>
+    <div className="sk-shape-measurements" aria-hidden="true" style={{ "--sk-measure-canvas-bg": isDarkTheme ? "#12181c" : "#ffffff" }}>
       <span className="sk-shape-measurement-width-mask" style={{ left: x + width / 2, top: y + height + 15 }}>
         <span className="sk-shape-measurement sk-shape-measurement-width">{formatCm(bounds.width)}</span>
       </span>
