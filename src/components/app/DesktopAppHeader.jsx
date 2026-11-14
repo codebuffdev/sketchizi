@@ -507,6 +507,65 @@ export default function DesktopAppHeader({
       )}
 
 
+      <div className="desktop-app-save-status-wrap">
+        <button
+          type="button"
+          className={`desktop-app-save-status-trigger is-${saveState}`}
+          aria-label={`Local document save status: ${saveStateLabel}. Open save and recovery options.`}
+          aria-haspopup="dialog"
+          aria-expanded={saveDetailsOpen}
+          title={`${saveStateLabel}. Click for save and recovery options.`}
+          onClick={() => { setOpenMenu(null); setSaveDetailsOpen((open) => !open); }}
+        >
+          <span className="desktop-app-save-status-dot" aria-hidden="true" />
+          <span className="desktop-app-save-status-label" role="status" aria-live="polite">{saveStateLabel}</span>
+          <span className="desktop-app-save-status-chevron" aria-hidden="true">⌄</span>
+        </button>
+        {saveDetailsOpen && (
+          <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
+            <div className="desktop-app-save-status-heading">
+              <strong>Local save &amp; recovery</strong>
+              <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
+            </div>
+            <p>Sketchizi autosaves this canvas in this browser on this device.</p>
+            <div className="desktop-app-save-status-last-saved">
+              <span>Last successful local save</span>
+              <strong>{lastSavedLabel}</strong>
+            </div>
+            {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
+            {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
+            <div className="desktop-app-save-status-actions">
+              <button type="button" onClick={() => { onSaveNow?.(); }}>Save locally</button>
+              <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
+              {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
+              <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
+              <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
+            </div>
+            <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
+          </section>
+        )}
+      </div>
+
+      {!collaborationActive && (
+        <button
+          type="button"
+          className="desktop-app-start-collaboration-button"
+          onClick={() => { setOpenMenu(null); startCollaboration?.(); }}
+          disabled={collaborationCreationState === "creating"}
+          aria-label={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
+          title={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
+        >
+          <svg className="desktop-app-start-collaboration-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span className="desktop-app-start-collaboration-label">{collaborationCreationState === "creating" ? "Creating…" : "Collab"}</span>
+        </button>
+      )}
+
+      <span className="desktop-app-header-action-divider" aria-hidden="true" />
+
       <div className="sketchizi-header-grid" ref={gridPopoverRef}>
         <button type="button" className={gridEnabled ? "sketchizi-header-grid-trigger is-active" : "sketchizi-header-grid-trigger"}
           aria-label="Grid settings" title="Grid settings" aria-haspopup="dialog" aria-expanded={gridPopoverOpen}
@@ -566,63 +625,6 @@ export default function DesktopAppHeader({
           <path d="M257 247 153 347 175 369 242 302 243 447 272 447 272 303 336 369 358 347Z M39 193 39 232 54 265 86 292 126 302 127 274 133 252 148 227 173 206 208 194 244 195 270 205 301 233 317 264 336 257 365 261 389 280 400 302 426 300 448 289 465 270 474 242 469 213 448 185 427 174 399 171 391 121 366 80 330 52 285 38 240 40 203 55 171 83 149 123 140 120 107 122 71 140 52 161Z" />
         </svg>
       </button>
-
-      <div className="desktop-app-save-status-wrap">
-        <button
-          type="button"
-          className={`desktop-app-save-status-trigger is-${saveState}`}
-          aria-label={`Local document save status: ${saveStateLabel}. Open save and recovery options.`}
-          aria-haspopup="dialog"
-          aria-expanded={saveDetailsOpen}
-          title={`${saveStateLabel}. Click for save and recovery options.`}
-          onClick={() => { setOpenMenu(null); setSaveDetailsOpen((open) => !open); }}
-        >
-          <span className="desktop-app-save-status-dot" aria-hidden="true" />
-          <span className="desktop-app-save-status-label" role="status" aria-live="polite">{saveStateLabel}</span>
-          <span className="desktop-app-save-status-chevron" aria-hidden="true">⌄</span>
-        </button>
-        {saveDetailsOpen && (
-          <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
-            <div className="desktop-app-save-status-heading">
-              <strong>Local save &amp; recovery</strong>
-              <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
-            </div>
-            <p>Sketchizi autosaves this canvas in this browser on this device.</p>
-            <div className="desktop-app-save-status-last-saved">
-              <span>Last successful local save</span>
-              <strong>{lastSavedLabel}</strong>
-            </div>
-            {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
-            {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
-            <div className="desktop-app-save-status-actions">
-              <button type="button" onClick={() => { onSaveNow?.(); }}>Save locally</button>
-              <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
-              {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
-              <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
-              <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
-            </div>
-            <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
-          </section>
-        )}
-      </div>
-
-      {!collaborationActive && (
-        <button
-          type="button"
-          className="desktop-app-start-collaboration-button"
-          onClick={() => { setOpenMenu(null); startCollaboration?.(); }}
-          disabled={collaborationCreationState === "creating"}
-          aria-label={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
-          title={collaborationCreationState === "creating" ? "Creating collaboration" : "Collab"}
-        >
-          <svg className="desktop-app-start-collaboration-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          <span className="desktop-app-start-collaboration-label">{collaborationCreationState === "creating" ? "Creating…" : "Collab"}</span>
-        </button>
-      )}
 
       <div className="desktop-app-header-spacer" />
 
