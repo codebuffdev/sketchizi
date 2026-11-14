@@ -147,44 +147,22 @@ try {
     throw new Error(`Compact icon panel overflows at phone width: ${JSON.stringify(smallLayout)}`);
   }
   const mobileHitTest = await library.evaluate((panel) => {
-    const button = panel.querySelector('button[aria-label="All categories"]');
-    const header = document.querySelector("#desktop-app-header");
-    const resources = panel.closest(".desktop-resources-region");
-    const workspace = panel.closest(".desktop-workspace");
-    const rect = button.getBoundingClientRect();
+    const control = panel.querySelector('select[aria-label="Icon category"]');
+    if (!control) return { clickable: false, reason: "Category selector missing" };
+    const rect = control.getBoundingClientRect();
     const atPoint = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    const summarize = (element) => {
-      if (!element) return null;
-      const r = element.getBoundingClientRect();
-      return { tag: element.tagName, className: typeof element.className === "string" ? element.className.slice(0, 100) : "", top: r.top, bottom: r.bottom, left: r.left, right: r.right, zIndex: getComputedStyle(element).zIndex, position: getComputedStyle(element).position };
-    };
     return {
-      clickable: atPoint === button || button.contains(atPoint),
-      button: summarize(button),
-      topElement: summarize(atPoint),
-      header: summarize(header),
-      panel: summarize(panel),
-      resources: summarize(resources),
-      workspace: summarize(workspace),
+      clickable: atPoint === control || control.contains(atPoint),
+      rect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
       viewport: [window.innerWidth, window.innerHeight],
     };
   });
-  if (!mobileHitTest.clickable) throw new Error(`Icon category control is covered at phone width: ${JSON.stringify(mobileHitTest)}`);
-  await library.getByRole("button", { name: "All categories" }).click();
-  const menuBounds = await categories.evaluate((menu) => {
-    const rect = menu.getBoundingClientRect();
-    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, vw: window.innerWidth, vh: window.innerHeight };
-  });
-  if (menuBounds.left < 0 || menuBounds.right > menuBounds.vw + 1 ||
-      menuBounds.top < 0 || menuBounds.bottom > menuBounds.vh + 1) {
-    throw new Error(`All category menu overflows mobile viewport: ${JSON.stringify(menuBounds)}`);
-  }
-  await blank.page.keyboard.press("Escape");
-  await categories.waitFor({ state: "detached" });
-  await library.waitFor();
+  if (!mobileHitTest.clickable) throw new Error(`Icon category selector is covered at phone width: ${JSON.stringify(mobileHitTest)}`);
+  await category.selectOption("networking");
+  await category.selectOption("all");
   await blank.page.setViewportSize({ width: 1280, height: 800 });
   await library.getByRole("button", { name: "Close icon library" }).click();
-  console.log("PASS: 320×460 library, All category dropdown, compact text, list/grid, and phone containment.");
+  console.log("PASS: 320×460 library, unified category dropdown, compact text, list/grid, and phone containment.");
 
   // Coarse square grid spans the entire editor. Fine squares form a
   // content-bound RECTANGLE that stays put on hover, zoom and pan.
