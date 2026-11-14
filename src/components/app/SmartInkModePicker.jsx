@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import "./SmartInkModePicker.css";
+import { recognizeInk, beautifyInk } from "../../features/canvas/smartInkRecognition.js";
 
 const DRAW_TOOL_LABEL = /^(draw|freedraw|freehand)(?:\s|$)/i;
 
@@ -19,6 +20,48 @@ export function isNativeDrawButton(button) {
 export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, viewModeEnabled }) {
   const [menu, setMenu] = useState(null);
   const [mode, setMode] = useState("draw");
+  const [preview, setPreview] = useState(null);
+  const [recognizedText, setRecognizedText] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const openPreview = useCallback(async () => {
+    const api = apiRef?.current;
+    const ids = api?.getAppState?.()?.selectedElementIds || {};
+    const selected = (api?.getSceneElements?.() || []).filter((el) => el.type === "freedraw" && !el.isDeleted && ids[el.id]);
+    if (!selected.length) {
+      setMessage("Select handwritten strokes with the selection tool first.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      const result = await recognizeInk(selected);
+      setRecognizedText(result.text);
+      setPreview(selected);
+      if (!result.available) setMessage("Browser recognition unavailable. Enter the words manually.");
+      else if (!result.text) setMessage("No words detected. Correct the text before applying.");
+    } catch {
+      setPreview(selected);
+      setRecognizedText("");
+      setMessage("Recognition failed. Enter the words manually; ink is unchanged.");
+    } finally {
+      setBusy(false);
+    }
+  }, [apiRef]);
+  const applyPreview = useCallback(() => {
+    const api = apiRef?.current;
+    const current = api?.getSceneElements?.() || [];
+    if (!preview?.length || !preview.every((el) => current.some((item) => item.id === el.id && !item.isDeleted))) {
+      setMessage("Original ink changed. Select it again.");
+      return;
+    }
+    if (beautifyInk(api, preview, recognizedText)) {
+      setPreview(null);
+      setRecognizedText("");
+      setMessage("");
+    }
+  }, [apiRef, preview, recognizedText]);
+
   const chooseMode = useCallback((nextMode) => {
     setMode(nextMode);
     setMenu(null);
@@ -67,7 +110,22 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
   if (!canEdit || viewModeEnabled) return null;
   return (
     <>
-      {mode === "write" && <div className="sketchizi-smart-ink-indicator" role="status">Write mode · Ink strokes</div>}
+      {mode === "write" && <div className="sketchizi-smart-ink-indicator" role="status">
+        <span>Write mode</span>
+        <button type="button" disabled={busy} onClick={openPreview}>{busy ? "Recognizing…" : "Beautify selected ink"}</button>
+        {message && <span className="sketchizi-smart-ink-message">{message}</span>}
+      </div>}
+      {preview && createPortal(
+        <div className="sketchizi-smart-ink-preview" role="dialog" aria-modal="true" aria-label="Review handwriting recognition">
+          <h3>Review handwriting</h3>
+          <p>Check the words before replacing selected ink. Your original remains until you apply.</p>
+          <textarea aria-label="Recognized handwriting" value={recognizedText} onChange={(event) => setRecognizedText(event.target.value)} rows={4} placeholder="Type or correct your handwritten words" autoFocus />
+          <div className="sketchizi-smart-ink-preview-actions">
+            <button type="button" onClick={() => { setPreview(null); setMessage(""); }}>Keep original</button>
+            <button type="button" disabled={!recognizedText.trim()} onClick={applyPreview}>Apply handwriting</button>
+          </div>
+        </div>, document.body
+      )}
       {menu && createPortal(
         <div className="sketchizi-smart-ink-menu" role="menu" aria-label="Draw mode" style={menu}>
           <button type="button" role="menuitemradio" aria-checked={mode === "draw"} onClick={() => chooseMode("draw")}>
