@@ -313,21 +313,7 @@ export default function IconLibraryPanel({
     { id: "all", label: "All" },
   ];
 
-  const catalogTabs = sourceTabs
-    .filter((tab) => tab.id !== "all")
-    .map((tab) => ({
-      ...tab,
-      shortLabel:
-        tab.id === "networking"
-          ? "Net"
-          : tab.id === "kubernetes"
-            ? "K8s"
-            : tab.id === "mindmaps"
-              ? "Mind"
-              : tab.id === "eraser"
-                ? "Core"
-                : tab.label,
-    }));
+  const catalogTabs = sourceTabs.filter((tab) => tab.id !== "all");
 
   const subcategoryOptions = useMemo(
     () =>
@@ -360,10 +346,8 @@ export default function IconLibraryPanel({
     <aside className="library-panel library-panel-redesign sk-icon-panel" aria-label="Icon Library" role="dialog" aria-modal="false">
       <header className="sk-icon-panel-header">
         <div className="sk-icon-panel-heading">
-          <h2 className="sk-icon-panel-title">{collectionTitle}</h2>
-          <span className="sk-icon-panel-count" aria-live="polite">
-            {displayedIcons.length}
-          </span>
+          <h2 className="sk-icon-panel-title">Icon Library</h2>
+          <span className="sk-icon-panel-subtitle">Find icons for your diagram</span>
         </div>
 
         <div className="sk-icon-panel-header-controls">
@@ -435,7 +419,7 @@ export default function IconLibraryPanel({
               }
             }}
             onBlur={() => rememberSearch()}
-            placeholder="Search icons..."
+            placeholder="Search icons, services, shapes..."
             aria-label="Search icons, tags, or categories"
           />
           {search ? (
@@ -464,7 +448,7 @@ export default function IconLibraryPanel({
             aria-pressed={activeSource === "all"}
             onClick={() => chooseSource("all")}
           >
-            All
+            All icons
           </button>
           <button
             type="button"
@@ -484,6 +468,7 @@ export default function IconLibraryPanel({
           </button>
         </nav>
 
+        <div className="sk-library-section-label" aria-hidden="true">Browse collections</div>
         <nav className="library-source-tabs sk-catalog-tabs" aria-label="Icon collections">
           {catalogTabs.map((tab) => {
             const isActive = activeSource === tab.id;
@@ -498,7 +483,7 @@ export default function IconLibraryPanel({
                 onClick={() => chooseSource(isActive ? "all" : tab.id)}
               >
                 <SourceCategoryIcon id={tab.id} />
-                <span className="sk-catalog-tab-label">{tab.shortLabel}</span>
+                <span className="sk-catalog-tab-label">{tab.label}</span>
               </button>
             );
           })}
@@ -588,6 +573,10 @@ export default function IconLibraryPanel({
           </div>
         )}
 
+        <div className="sk-icon-results-summary" role="status" aria-live="polite">
+          <span className="sk-icon-results-summary-title">{search.trim() ? "Search results" : collectionTitle}</span>
+          <span className="sk-icon-results-summary-meta">{displayedIcons.length.toLocaleString()} icons</span>
+        </div>
         <section className="icons library-results sk-icon-results" aria-label="Icon results">
           {remoteLoading && activeSource === "eraser" && displayedIcons.length === 0 ? (
             <div className="empty sk-icon-empty">Loading icons…</div>
@@ -715,6 +704,7 @@ export default function IconLibraryPanel({
             </div>
           )}
         </section>
+        <p className="sk-icon-panel-hint">Click to insert <span aria-hidden="true">·</span> Drag to place anywhere</p>
       </div>
     </aside>
   );

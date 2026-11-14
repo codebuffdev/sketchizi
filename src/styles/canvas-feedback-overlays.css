@@ -1,0 +1,29 @@
+/* Native Excalidraw notifications must never sit on the drawing dock.
+   Keep the message at the canvas top, below Sketchizi's application header. */
+.app .desktop-canvas-region .excalidraw .Toast {
+  position: fixed !important;
+  top: calc(var(--sketchizi-desktop-header-height, 54px) + 18px) !important;
+  bottom: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 850 !important;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(440px, calc(100vw - 32px));
+  max-height: min(30dvh, 180px);
+  margin: 0 !important;
+  overflow-wrap: anywhere;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.23);
+}
+.app .desktop-canvas-region .excalidraw .Toast__message {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .app .desktop-canvas-region .excalidraw .Toast {
+    top: calc(var(--sketchizi-desktop-header-height, 54px) + 12px) !important;
+    max-width: calc(100vw - 24px);
+  }
+}
