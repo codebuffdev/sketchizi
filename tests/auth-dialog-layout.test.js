@@ -22,6 +22,9 @@ test('auth backdrop centers the dialog with viewport positioning and mobile-safe
 
 test('sign-in keeps Escape and backdrop-click dismissal', () => {
   assert.match(auth, /event\.key === "Escape"\) setDialogOpen\(false\)/);
+  assert.match(auth, /window\.addEventListener\("keydown", close, true\)/);
+  assert.match(auth, /window\.removeEventListener\("keydown", close, true\)/);
+  assert.match(auth, /aria-label="Close sign-in dialog" autoFocus/);
   assert.match(auth, /event\.target === event\.currentTarget\) setDialogOpen\(false\)/);
   assert.match(auth, /onClick=\{\(\) => setDialogOpen\(false\)\}/);
 });
