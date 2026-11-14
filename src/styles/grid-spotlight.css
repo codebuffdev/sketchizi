@@ -1,8 +1,9 @@
-/* A screen-space circular square-line grid centered on the current edit position.
-   Rendered above the static scene background, below interactive overlays.
-   Intentionally visual-only: Excalidraw's native grid/snapping stays intact. */
+/* Work-focused square grid, inspired by the softly faded reference.
+   Idle canvas is clean. Work activity shows a quiet coarse grid with a finer
+   center detail; the grid is NOT a cursor-following halo or a scene element.
+   This is visual-only and never changes Excalidraw's native snap grid. */
 
-/* Remove the old canvas-wide decorative pattern; retain theme fills. */
+/* Clear Sketchizi's previous canvas-wide decorative dot pattern. */
 .app.theme-dark .desktop-canvas-region,
 .app.theme-light .desktop-canvas-region {
   background-image: none !important;
@@ -11,48 +12,101 @@
 .app .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight {
   --sk-grid-focus-x: 50%;
   --sk-grid-focus-y: 50%;
-  --sk-grid-focus-radius: 300px;
+  --sk-grid-focus-rx: 480px;
+  --sk-grid-focus-ry: 320px;
   --sk-grid-size: 20px;
   --sk-grid-offset-x: 0px;
   --sk-grid-offset-y: 0px;
+  --sk-grid-coarse-size: 80px;
+  --sk-grid-coarse-offset-x: 0px;
+  --sk-grid-coarse-offset-y: 0px;
   position: absolute;
   inset: 0;
   z-index: var(--zIndex-canvas, 0);
   box-sizing: border-box;
   pointer-events: none !important;
   user-select: none;
-  /* Orthogonal 1px rules create actual square cells instead of dotted nodes.
-     The identical X/Y spacing and offsets keep squares aligned while panning. */
+  opacity: 0;
+  transition: opacity 340ms ease;
+  contain: paint;
+}
+
+/* The underlying, barely visible architectural grid extends broadly behind
+   the drawing and dissolves gradually into the clean canvas. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight::before,
+.app .desktop-canvas-region .sketchizi-grid-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+}
+
+.app .desktop-canvas-region .sketchizi-grid-spotlight::before {
   background-image:
-    linear-gradient(to right, rgb(87 96 113 / 21%) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(87 96 113 / 21%) 1px, transparent 1px);
+    linear-gradient(to right, rgb(92 105 124 / 12%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(92 105 124 / 12%) 1px, transparent 1px);
+  background-size:
+    var(--sk-grid-coarse-size) var(--sk-grid-coarse-size),
+    var(--sk-grid-coarse-size) var(--sk-grid-coarse-size);
+  background-position:
+    var(--sk-grid-coarse-offset-x) var(--sk-grid-coarse-offset-y),
+    var(--sk-grid-coarse-offset-x) var(--sk-grid-coarse-offset-y);
+  -webkit-mask-image: radial-gradient(
+    ellipse var(--sk-grid-focus-rx) var(--sk-grid-focus-ry) at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
+    #000 0%,
+    rgb(0 0 0 / 80%) 36%,
+    rgb(0 0 0 / 30%) 72%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse var(--sk-grid-focus-rx) var(--sk-grid-focus-ry) at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
+    #000 0%,
+    rgb(0 0 0 / 80%) 36%,
+    rgb(0 0 0 / 30%) 72%,
+    transparent 100%
+  );
+}
+
+/* Small squares are concentrated around the actual work, not the mouse.
+   The grid softly disappears over a broad ellipse, without a hard outline. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight::after {
+  background-image:
+    linear-gradient(to right, rgb(92 105 124 / 10%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(92 105 124 / 10%) 1px, transparent 1px);
   background-size:
     var(--sk-grid-size) var(--sk-grid-size),
     var(--sk-grid-size) var(--sk-grid-size);
   background-position:
     var(--sk-grid-offset-x) var(--sk-grid-offset-y),
     var(--sk-grid-offset-x) var(--sk-grid-offset-y);
-  background-repeat: repeat;
-  clip-path: circle(var(--sk-grid-focus-radius) at var(--sk-grid-focus-x) var(--sk-grid-focus-y));
   -webkit-mask-image: radial-gradient(
-    circle at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
-    #000 0,
-    #000 calc(var(--sk-grid-focus-radius) - 22px),
-    transparent var(--sk-grid-focus-radius)
+    ellipse calc(var(--sk-grid-focus-rx) * 0.82) calc(var(--sk-grid-focus-ry) * 0.78) at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
+    #000 0%,
+    rgb(0 0 0 / 70%) 40%,
+    transparent 100%
   );
   mask-image: radial-gradient(
-    circle at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
-    #000 0,
-    #000 calc(var(--sk-grid-focus-radius) - 22px),
-    transparent var(--sk-grid-focus-radius)
+    ellipse calc(var(--sk-grid-focus-rx) * 0.82) calc(var(--sk-grid-focus-ry) * 0.78) at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
+    #000 0%,
+    rgb(0 0 0 / 70%) 40%,
+    transparent 100%
   );
-  transition: opacity 120ms ease;
 }
 
-.app.theme-dark .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight {
+.app .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight.is-active {
+  opacity: 1;
+}
+
+.app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::before {
   background-image:
-    linear-gradient(to right, rgb(168 177 195 / 19%) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(168 177 195 / 19%) 1px, transparent 1px);
+    linear-gradient(to right, rgb(159 173 196 / 15%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(159 173 196 / 15%) 1px, transparent 1px);
+}
+.app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::after {
+  background-image:
+    linear-gradient(to right, rgb(159 173 196 / 11%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(159 173 196 / 11%) 1px, transparent 1px);
 }
 
 @media (prefers-reduced-motion: reduce) {
