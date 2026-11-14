@@ -76,39 +76,40 @@ try {
   await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
-  // All opens every category; the drawer remains compact and list/grid stays intact.
+  // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
   const library = blank.page.getByRole("dialog", { name: "Icon Library" });
   await library.waitFor();
   const compactLayout = await library.evaluate((panel) => {
-    const collections = panel.querySelector(".sk-catalog-tabs");
+    const selector = panel.querySelector(".sk-unified-category-select");
     const rect = panel.getBoundingClientRect();
     return {
-      width: rect.width,
-      height: rect.height,
-      collectionDisplay: getComputedStyle(collections).display,
-      allVisible: !!panel.querySelector('button[aria-label="All categories"]'),
-      awsVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "AWS"),
-      kubernetesVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "K8s"),
+      width: rect.width, height: rect.height,
+      selectorVisible: !!selector && getComputedStyle(selector).display !== "none",
+      selectorHeight: selector?.getBoundingClientRect().height ?? 0,
+      redundantChips: panel.querySelectorAll(".sk-catalog-tabs .sk-catalog-tab").length,
     };
   });
   if (compactLayout.width > 322 || compactLayout.height > 462 ||
     compactLayout.width < 270 || compactLayout.height < 260 ||
-    compactLayout.collectionDisplay !== "flex" ||
-    !compactLayout.allVisible || !compactLayout.awsVisible || !compactLayout.kubernetesVisible) {
+    !compactLayout.selectorVisible || compactLayout.selectorHeight > 42 ||
+    compactLayout.redundantChips !== 0) {
     throw new Error(`Icon Library is not compact: ${JSON.stringify(compactLayout)}`);
   }
-  await library.getByRole("button", { name: "All categories" }).click();
-  const categories = library.getByRole("menu", { name: "All icon categories" });
-  for (const name of ["All icons", "AWS", "Kubernetes", "Networking", "Mind Maps", "UML", "Essentials"]) {
-    await categories.getByRole("menuitemradio", { name, exact: true }).waitFor();
+  const category = library.getByRole("combobox", { name: "Icon category" });
+  for (const value of ["aws", "kubernetes", "networking", "uml", "eraser", "all"]) {
+    await category.selectOption(value);
+    if (await category.inputValue() !== value) {
+      throw new Error(`Category selection failed: ${value}`);
+    }
   }
-  await categories.getByRole("menuitemradio", { name: "Networking" }).click();
-  await categories.waitFor({ state: "detached" });
-  await library.getByRole("button", { name: "All categories" }).click();
-  await categories.getByRole("menuitemradio", { name: "UML" }).click();
-  await library.getByRole("button", { name: "All categories" }).click();
-  await categories.getByRole("menuitemradio", { name: "All icons" }).click();
+  await category.selectOption("aws");
+  const awsCategory = await category.locator('option[value^="aws:"]').first().getAttribute("value");
+  if (!awsCategory) throw new Error("AWS subcategories missing");
+  await category.selectOption(awsCategory);
+  if (await category.inputValue() !== awsCategory) throw new Error("AWS subcategory selection failed");
+  await category.selectOption("all");
+  console.log("PASS: unified icon category selector switches catalogs and subcategories.");
 
   // Screenshot regression: results and instructions must not become
   // default-size body paragraphs in a 320px-wide toolbox.
