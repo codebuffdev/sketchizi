@@ -36,3 +36,10 @@
   top: 50%;
 }
 .sk-shape-measurement-height { transform: translate(0, -50%); }
+
+
+/* Radius guide is a non-interactive overlay, never part of the scene. */
+.sk-shape-radius-guide{position:absolute;overflow:visible;pointer-events:none;color:#a79bf5}
+.sk-shape-radius-guide line{stroke:currentColor;stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
+.sk-shape-radius-guide circle{fill:currentColor;stroke:var(--sk-measure-canvas-bg);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.sk-shape-radius-label{z-index:1}
