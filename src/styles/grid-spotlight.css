@@ -1,0 +1,52 @@
+/* A screen-space circular dot grid centered on the current edit position.
+   Rendered above the static scene background, below interactive overlays.
+   Intentionally visual-only: Excalidraw's native grid/snapping stays intact. */
+
+/* Remove the old canvas-wide decorative dot pattern; retain theme fills. */
+.app.theme-dark .desktop-canvas-region,
+.app.theme-light .desktop-canvas-region {
+  background-image: none !important;
+}
+
+.app .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight {
+  --sk-grid-focus-x: 50%;
+  --sk-grid-focus-y: 50%;
+  --sk-grid-focus-radius: 300px;
+  --sk-grid-size: 20px;
+  --sk-grid-offset-x: 0px;
+  --sk-grid-offset-y: 0px;
+  position: absolute;
+  inset: 0;
+  z-index: var(--zIndex-canvas, 0);
+  box-sizing: border-box;
+  pointer-events: none !important;
+  user-select: none;
+  background-image: radial-gradient(circle at 1px 1px, rgb(87 96 113 / 20%) 0.8px, transparent 1px);
+  background-size: var(--sk-grid-size) var(--sk-grid-size);
+  background-position: var(--sk-grid-offset-x) var(--sk-grid-offset-y);
+  background-repeat: repeat;
+  clip-path: circle(var(--sk-grid-focus-radius) at var(--sk-grid-focus-x) var(--sk-grid-focus-y));
+  -webkit-mask-image: radial-gradient(
+    circle at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
+    #000 0,
+    #000 calc(var(--sk-grid-focus-radius) - 22px),
+    transparent var(--sk-grid-focus-radius)
+  );
+  mask-image: radial-gradient(
+    circle at var(--sk-grid-focus-x) var(--sk-grid-focus-y),
+    #000 0,
+    #000 calc(var(--sk-grid-focus-radius) - 22px),
+    transparent var(--sk-grid-focus-radius)
+  );
+  transition: opacity 120ms ease;
+}
+
+.app.theme-dark .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight {
+  background-image: radial-gradient(circle at 1px 1px, rgb(168 177 195 / 19%) 0.8px, transparent 1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight {
+    transition: none;
+  }
+}
