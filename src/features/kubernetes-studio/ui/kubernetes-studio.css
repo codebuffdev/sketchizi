@@ -203,3 +203,86 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.104)}
+
+
+/* Shared focused Studio navigation */
+.studio-workspace-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid #28354a;background:#0e1726}
+.studio-workspace-tabs button{appearance:none;border:1px solid transparent;border-radius:8px;background:transparent;color:#aebcd1;font:600 12px/1.3 inherit;padding:9px 14px;cursor:pointer}
+.studio-workspace-tabs button:hover{background:#1c2a40;color:#fff}
+.studio-workspace-tabs button.active{background:#39266e;border-color:#6e4dc4;color:#fff}
+.studio-workspace-tabs button:focus-visible{outline:2px solid #a6c5ff;outline-offset:2px}
+.studio-insights-panel{margin:12px;padding:16px;border:1px solid #344259;border-radius:10px;background:#162236;color:#d8e5f7}
+.studio-insights-panel h3{margin:0 0 8px;font-size:14px}.studio-insights-panel p{font-size:12px;color:#aabbd2;line-height:1.6}
+.studio-insight-grid{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #344259;font-size:12px}
+.studio-insight-grid span{color:#9eb0c9}.studio-insight-grid strong{text-align:right;overflow-wrap:anywhere}
+
+.k8s-studio-workspace:not(.studio-tab-validation) .studio-validation-only{display:none}
+.k8s-studio-workspace:not(.studio-tab-resources) .studio-resources-only{display:none}
+.k8s-studio-workspace.studio-tab-validation .k8s-studio-validation ul{max-height:52vh}
+
+
+/* Studio 2.0: resource-first, single-scroll workspace aligned with Compose Studio. */
+.k8s-studio .studio-workspace-tabs{flex:none;padding:10px 22px;gap:8px}
+.k8s-studio .studio-workspace-tabs button{border-color:#2c3b52;background:#111e30;min-height:36px}
+.k8s-studio .studio-workspace-tabs button.active{background:#2b59bc;border-color:#4b83f3;color:#fff}
+.k8s-studio .k8s-studio-actions{padding:10px 22px;gap:8px;flex-wrap:wrap}
+.k8s-studio .k8s-studio-actions>span.k8s-studio-import-status{font-size:11px;white-space:nowrap;min-width:0}
+.k8s-studio .k8s-studio-workspace{grid-template-columns:minmax(320px,var(--k8s-editor-width,50%)) 8px minmax(0,1fr);gap:0;min-height:0}
+.k8s-studio .k8s-studio-preview{grid-column:1;grid-row:1;padding:16px 18px;overflow-y:auto;overflow-x:hidden;background:#101a2a;border-right:1px solid #29374e}
+.k8s-studio .k8s-studio-splitter{grid-column:2;grid-row:1}
+.k8s-studio .k8s-studio-editor{grid-column:3;grid-row:1;padding:16px 18px;overflow:hidden;border-right:0;background:#0c1422}
+.k8s-studio .k8s-studio-preview>.k8s-studio-section-title{margin-bottom:14px}
+.k8s-studio .k8s-studio-resource-list{display:grid;align-content:start;gap:9px;overflow:visible;max-height:none;padding:0}
+.k8s-studio .k8s-studio-resource{border:1px solid #30415b;border-radius:9px;background:#162439;padding:13px}
+.k8s-studio .k8s-studio-resource:hover{border-color:#6285c6;background:#1c2d46}
+.k8s-studio .k8s-studio-validation-summary{display:flex;align-items:center;gap:9px;width:100%;margin:0 0 14px;padding:11px 12px;text-align:left;border:1px solid #66502b;border-radius:9px;background:#2a251f;color:#f5d08a;font-size:12px}
+.k8s-studio .k8s-studio-validation-summary>span:last-child{margin-left:auto;color:#f5d08a;font-size:11px}
+.k8s-studio .k8s-studio-validation-summary:hover{background:#342c23}
+.k8s-studio .k8s-studio-validation-summary:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+.k8s-studio .k8s-studio-validation{margin:0;border-color:#344259;max-height:none;overflow:visible}
+.k8s-studio .k8s-studio-validation ul{max-height:none;overflow:visible}
+.k8s-studio .k8s-studio-section-title h2{font-size:13px}
+.k8s-studio .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell{min-height:0;flex:1}
+.k8s-studio .studio-insights-panel{margin:0}
+@media(max-width:800px){.k8s-studio .k8s-studio-workspace{display:flex;flex-direction:column;overflow:auto}.k8s-studio .k8s-studio-preview{min-height:200px;max-height:42vh;border-right:0;border-bottom:1px solid #29374e}.k8s-studio .k8s-studio-splitter{display:none}.k8s-studio .k8s-studio-editor{min-height:340px;flex:1}}
+
+
+/* K8s Studio 2.0: compact primary actions, contextual diagnostics, and Insights-only snapshot. */
+.k8s-studio .k8s-studio-header{padding:14px 22px;gap:12px}
+.k8s-studio .k8s-studio-brand{width:44px;height:44px;border-radius:12px}
+.k8s-studio .k8s-studio-heading h1{font-size:19px}
+.k8s-studio .k8s-studio-heading p{font-size:11px}
+.k8s-studio .k8s-studio-header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.k8s-studio .k8s-studio-header-actions button{white-space:nowrap}
+.k8s-studio .k8s-studio-import-tools{flex:none;border-bottom:1px solid #26354a;background:#0e1726}
+.k8s-studio .k8s-studio-import-tools>summary{cursor:pointer;list-style:none;padding:9px 22px;font-size:11px;font-weight:650;color:#aebfd8}
+.k8s-studio .k8s-studio-import-tools>summary::-webkit-details-marker{display:none}
+.k8s-studio .k8s-studio-import-tools>summary::before{content:"▸";margin-right:8px;color:#8aa9e8}
+.k8s-studio .k8s-studio-import-tools[open]>summary::before{content:"▾"}
+.k8s-studio .k8s-studio-import-tools>summary:focus-visible{outline:2px solid #93c5fd;outline-offset:-3px}
+.k8s-studio .k8s-studio-import-tools .k8s-studio-actions{border-top:1px solid #26354a}
+.k8s-studio .k8s-studio-diagnostic-groups{display:grid;gap:10px;padding:10px}
+.k8s-studio .k8s-studio-diagnostic-group{min-width:0;overflow:hidden;border:1px solid #344259;border-radius:9px;background:#172337}
+.k8s-studio .k8s-studio-diagnostic-resource{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #344259;font-size:12px;color:#e3eaf5}
+.k8s-studio .k8s-studio-diagnostic-resource span{font-size:10px;color:#9cacc3}
+.k8s-studio .k8s-studio-diagnostic-group ul{padding:0;margin:0;list-style:none}
+.k8s-studio .k8s-studio-diagnostic-group li{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border-bottom:1px solid #29384f}
+.k8s-studio .k8s-studio-diagnostic-group li:last-child{border-bottom:0}
+.k8s-studio .k8s-studio-diagnostic-severity{font-size:9px;text-transform:uppercase;letter-spacing:.04em;min-width:44px}
+.k8s-studio .k8s-studio-diagnostic-content{min-width:0;flex:1}
+.k8s-studio .k8s-studio-diagnostic-content>p{margin:0;color:#dce5f4;font-size:12px;line-height:1.5}
+.k8s-studio .k8s-studio-diagnostic-actions{display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-top:8px}
+.k8s-studio .k8s-studio-diagnostic-inspect,.k8s-studio .k8s-studio-diagnostic-fix>summary{box-sizing:border-box;display:inline-flex;align-items:center;min-height:29px;padding:5px 10px;border:1px solid #405574;border-radius:6px;background:#23344f;color:#e3ebf8;font-size:11px;font-weight:600;cursor:pointer;list-style:none}
+.k8s-studio .k8s-studio-diagnostic-fix>summary::-webkit-details-marker{display:none}
+.k8s-studio .k8s-studio-diagnostic-inspect:hover,.k8s-studio .k8s-studio-diagnostic-fix>summary:hover{background:#304765}
+.k8s-studio .k8s-studio-diagnostic-inspect:focus-visible,.k8s-studio .k8s-studio-diagnostic-fix>summary:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+.k8s-studio .k8s-studio-diagnostic-fix[open]{flex-basis:100%}
+.k8s-studio .k8s-studio-diagnostic-fix-body{padding:10px;margin-top:8px;border-radius:7px;background:#0d1829;border:1px solid #33445e}
+.k8s-studio .k8s-studio-diagnostic-fix-body p{margin:0 0 7px;white-space:pre-wrap;font-size:11px;color:#dce5f4}
+.k8s-studio .k8s-studio-diagnostic-fix-body small{color:#94a8c5;font-size:10px}
+.k8s-studio .k8s-studio-snapshot-card{margin:12px 0 0;padding:14px;border:1px solid #344259;border-radius:10px;background:#162236;color:#dce5f4}
+.k8s-studio .k8s-studio-snapshot-card>summary{cursor:pointer;font-weight:650;font-size:12px}
+.k8s-studio .k8s-studio-snapshot-card p{font-size:11px;line-height:1.6;color:#aebdd2}
+.k8s-studio .k8s-studio-snapshot-card textarea{box-sizing:border-box;width:100%;resize:vertical;min-height:100px;padding:10px;border-radius:7px;border:1px solid #425570;background:#0d1727;color:#e2eaf8;font:11px/1.5 monospace}
+.k8s-studio .k8s-studio-snapshot-card button{margin-top:8px}
+@media(max-width:800px){.k8s-studio .k8s-studio-header{flex-wrap:wrap}.k8s-studio .k8s-studio-header-actions{order:3;width:100%;justify-content:flex-end}.k8s-studio .k8s-studio-heading{flex:1}}
