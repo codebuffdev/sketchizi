@@ -16,8 +16,8 @@ const styles = read('../src/styles.css');
 test('Excalidraw owns grid display and snapping', () => {
   assert.match(app, /const \[gridEnabled, setGridEnabled\] = useState\(false\)/);
   assert.match(app, /gridEnabled=\{gridEnabled\}/);
-  assert.match(canvas, /gridModeEnabled=\{gridEnabled\}/);
-  assert.match(canvas, /gridModeEnabled: gridEnabled/);
+  assert.doesNotMatch(canvas, /gridModeEnabled=\{gridEnabled\}/);
+  assert.match(canvas, /gridModeEnabled: savedSketch\?\.appState\?\.gridModeEnabled \?\? gridEnabled/);
   assert.match(tools, /gridModeEnabled: enabled/);
   assert.doesNotMatch(canvas, /sketchizi-grid-overlay|gridSnapBaselineRef|snapChangedSceneElements|gridVisible|gridSnappingEnabled/);
   assert.doesNotMatch(styles, /ui-modernization-grid\.css/);
