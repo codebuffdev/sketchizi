@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import "@excalidraw/excalidraw/index.css";
 import "./styles.css";
 import "./styles/icon-panel-v2.css";
+import "./styles/canvas-feedback-overlays.css";
 import App from "./App.jsx";
 import CommunityApp from "./features/community/CommunityApp.jsx";
 import ErrorBoundary from "./ErrorBoundary.jsx";
