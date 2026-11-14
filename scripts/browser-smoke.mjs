@@ -76,39 +76,40 @@ try {
   await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
-  // All opens every category; the drawer remains compact and list/grid stays intact.
+  // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
   const library = blank.page.getByRole("dialog", { name: "Icon Library" });
   await library.waitFor();
   const compactLayout = await library.evaluate((panel) => {
-    const collections = panel.querySelector(".sk-catalog-tabs");
+    const selector = panel.querySelector(".sk-unified-category-select");
     const rect = panel.getBoundingClientRect();
     return {
-      width: rect.width,
-      height: rect.height,
-      collectionDisplay: getComputedStyle(collections).display,
-      allVisible: !!panel.querySelector('button[aria-label="All categories"]'),
-      awsVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "AWS"),
-      kubernetesVisible: [...collections.querySelectorAll("button")].some((b) => b.textContent.trim() === "K8s"),
+      width: rect.width, height: rect.height,
+      selectorVisible: !!selector && getComputedStyle(selector).display !== "none",
+      selectorHeight: selector?.getBoundingClientRect().height ?? 0,
+      redundantChips: panel.querySelectorAll(".sk-catalog-tabs .sk-catalog-tab").length,
     };
   });
   if (compactLayout.width > 322 || compactLayout.height > 462 ||
     compactLayout.width < 270 || compactLayout.height < 260 ||
-    compactLayout.collectionDisplay !== "flex" ||
-    !compactLayout.allVisible || !compactLayout.awsVisible || !compactLayout.kubernetesVisible) {
+    !compactLayout.selectorVisible || compactLayout.selectorHeight > 42 ||
+    compactLayout.redundantChips !== 0) {
     throw new Error(`Icon Library is not compact: ${JSON.stringify(compactLayout)}`);
   }
-  await library.getByRole("button", { name: "All categories" }).click();
-  const categories = library.getByRole("menu", { name: "All icon categories" });
-  for (const name of ["All icons", "AWS", "Kubernetes", "Networking", "Mind Maps", "UML", "Essentials"]) {
-    await categories.getByRole("menuitemradio", { name, exact: true }).waitFor();
+  const category = library.getByRole("combobox", { name: "Icon category" });
+  for (const value of ["aws", "kubernetes", "networking", "uml", "eraser", "all"]) {
+    await category.selectOption(value);
+    if (await category.inputValue() !== value) {
+      throw new Error(`Category selection failed: ${value}`);
+    }
   }
-  await categories.getByRole("menuitemradio", { name: "Networking" }).click();
-  await categories.waitFor({ state: "detached" });
-  await library.getByRole("button", { name: "All categories" }).click();
-  await categories.getByRole("menuitemradio", { name: "UML" }).click();
-  await library.getByRole("button", { name: "All categories" }).click();
-  await categories.getByRole("menuitemradio", { name: "All icons" }).click();
+  await category.selectOption("aws");
+  const awsCategory = await category.locator('option[value^="aws:"]').first().getAttribute("value");
+  if (!awsCategory) throw new Error("AWS subcategories missing");
+  await category.selectOption(awsCategory);
+  if (await category.inputValue() !== awsCategory) throw new Error("AWS subcategory selection failed");
+  await category.selectOption("all");
+  console.log("PASS: unified icon category selector switches catalogs and subcategories.");
 
   // Screenshot regression: results and instructions must not become
   // default-size body paragraphs in a 320px-wide toolbox.
@@ -146,44 +147,22 @@ try {
     throw new Error(`Compact icon panel overflows at phone width: ${JSON.stringify(smallLayout)}`);
   }
   const mobileHitTest = await library.evaluate((panel) => {
-    const button = panel.querySelector('button[aria-label="All categories"]');
-    const header = document.querySelector("#desktop-app-header");
-    const resources = panel.closest(".desktop-resources-region");
-    const workspace = panel.closest(".desktop-workspace");
-    const rect = button.getBoundingClientRect();
+    const control = panel.querySelector('select[aria-label="Icon category"]');
+    if (!control) return { clickable: false, reason: "Category selector missing" };
+    const rect = control.getBoundingClientRect();
     const atPoint = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    const summarize = (element) => {
-      if (!element) return null;
-      const r = element.getBoundingClientRect();
-      return { tag: element.tagName, className: typeof element.className === "string" ? element.className.slice(0, 100) : "", top: r.top, bottom: r.bottom, left: r.left, right: r.right, zIndex: getComputedStyle(element).zIndex, position: getComputedStyle(element).position };
-    };
     return {
-      clickable: atPoint === button || button.contains(atPoint),
-      button: summarize(button),
-      topElement: summarize(atPoint),
-      header: summarize(header),
-      panel: summarize(panel),
-      resources: summarize(resources),
-      workspace: summarize(workspace),
+      clickable: atPoint === control || control.contains(atPoint),
+      rect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
       viewport: [window.innerWidth, window.innerHeight],
     };
   });
-  if (!mobileHitTest.clickable) throw new Error(`Icon category control is covered at phone width: ${JSON.stringify(mobileHitTest)}`);
-  await library.getByRole("button", { name: "All categories" }).click();
-  const menuBounds = await categories.evaluate((menu) => {
-    const rect = menu.getBoundingClientRect();
-    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, vw: window.innerWidth, vh: window.innerHeight };
-  });
-  if (menuBounds.left < 0 || menuBounds.right > menuBounds.vw + 1 ||
-      menuBounds.top < 0 || menuBounds.bottom > menuBounds.vh + 1) {
-    throw new Error(`All category menu overflows mobile viewport: ${JSON.stringify(menuBounds)}`);
-  }
-  await blank.page.keyboard.press("Escape");
-  await categories.waitFor({ state: "detached" });
-  await library.waitFor();
+  if (!mobileHitTest.clickable) throw new Error(`Icon category selector is covered at phone width: ${JSON.stringify(mobileHitTest)}`);
+  await category.selectOption("networking");
+  await category.selectOption("all");
   await blank.page.setViewportSize({ width: 1280, height: 800 });
   await library.getByRole("button", { name: "Close icon library" }).click();
-  console.log("PASS: 320×460 library, All category dropdown, compact text, list/grid, and phone containment.");
+  console.log("PASS: 320×460 library, unified category dropdown, compact text, list/grid, and phone containment.");
 
   // Coarse square grid spans the entire editor. Fine squares form a
   // content-bound RECTANGLE that stays put on hover, zoom and pan.

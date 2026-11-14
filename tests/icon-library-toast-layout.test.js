@@ -7,14 +7,11 @@ const styles = readFileSync(new URL('../src/styles/icon-panel-compact.css', impo
 const feedback = readFileSync(new URL('../src/styles/canvas-feedback-overlays.css', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8');
 
-test('compact catalog exposes all sources through the All dropdown', () => {
-  assert.match(panel, /primaryCatalogTabs/);
-  assert.match(panel, /catalogMenuTabs/);
-  assert.match(panel, /aria-label="All categories"/);
-  assert.match(panel, /aria-label="All icon categories"/);
-  assert.match(panel, /\{tab\.label\}/);
-  assert.match(panel, /onClick=\{\(\) => chooseSource\(isActive \? "all" : tab\.id\)\}/);
-  assert.match(styles, /\.sk-catalog-tabs\s*\{[^}]*display: flex !important;/s);
+test('compact catalog uses a single selector for all real sources', () => {
+  assert.match(panel, /className="sk-unified-category-select"/);
+  assert.match(panel, /aria-label="Icon category"/);
+  assert.match(panel, /getSubcategoryOptions/);
+  assert.doesNotMatch(panel, /primaryCatalogTabs|catalogMenuTabs/);
 });
 
 test('library retains insert, drag, saved, recent and both view-mode controls', () => {
@@ -26,7 +23,7 @@ test('library retains insert, drag, saved, recent and both view-mode controls', 
   assert.match(panel, /handleDragStart\(event, icon\)/);
   assert.match(panel, /toggleFavorite\(icon\)/);
   assert.match(panel, /sk-icon-panel-count/);
-  assert.match(panel, /role="menuitemradio"/);
+  assert.match(panel, /aria-label="Icon category"/);
 });
 
 test('toast is fixed below the header instead of overlapping the bottom toolbar', () => {

@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 const panel = await readFile(new URL("../src/IconLibraryPanel.jsx", import.meta.url), "utf8");
 const catalog = await readFile(new URL("../src/features/icon-library/useIconCatalog.js", import.meta.url), "utf8");
 
-test("redesigned Icon Library exposes source chips in the approved order", () => {
+test("unified Icon Library lists collections in a predictable order", () => {
   const sourceTabsStart = panel.indexOf("const sourceTabs = [");
   const sourceTabsEnd = panel.indexOf("];", sourceTabsStart);
   const sourceTabs = panel.slice(sourceTabsStart, sourceTabsEnd);
@@ -21,8 +21,8 @@ test("redesigned Icon Library exposes source chips in the approved order", () =>
   assert.ok(positions.every((position) => position >= 0));
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
   assert.doesNotMatch(panel, /library-collections-wrap|library-collections-menu|chooseCollection/);
-  assert.match(panel, /primaryCatalogTabs/);
-  assert.match(panel, /catalogMenuTabs/);
+  assert.match(panel, /sk-unified-category-select/);
+  assert.match(panel, /sourceTabs\.filter/);
 });
 
 test("Networking remains a first-class icon source through the All dropdown", () => {
@@ -41,8 +41,8 @@ test("UML and Mind Maps remain available through the All dropdown and existing c
 
 test("Icon Library removes the redundant Collections dropdown without placeholder catalogs", () => {
   assert.doesNotMatch(panel, /library-collections-wrap|library-collections-menu|chooseCollection|activeSource === "collections"/);
-  assert.match(panel, /aria-label="All icon categories"/);
-  assert.match(panel, /role="menuitemradio"/);
+  assert.match(panel, /aria-label="Icon category"/);
+  assert.match(panel, /getSubcategoryOptions/);
   for (const future of ["Security & Identity", "Compute & Runtime", "Data & Storage", "Messaging & Events", "Observability", "CI/CD & DevOps", "AI & Machine Learning", "Hybrid Cloud & Edge"]) {
     assert.equal(panel.includes(`"${future}"`), false, `${future} must not be a visible placeholder`);
   }
