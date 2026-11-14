@@ -1,0 +1,74 @@
+/* Floating segmented header: three distinct functional islands.
+   Retains all existing buttons, popovers, shortcuts and collapse behavior. */
+@media (min-width: 1100px) {
+  .app.canvas-first-header .desktop-app-header {
+    display: grid !important;
+    grid-template-columns: minmax(130px, 1fr) minmax(180px, auto) minmax(380px, 1.5fr);
+    align-items: start;
+    column-gap: clamp(8px, 1.1vw, 18px);
+  }
+  .app.canvas-first-header .desktop-app-header-island-left {
+    justify-self: start;
+    margin: 0;
+    max-width: 100%;
+  }
+  .app.canvas-first-header .desktop-app-header-island-center {
+    justify-self: center;
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(460px, 34vw);
+    border-color: color-mix(in srgb, #8b5cf6 55%, var(--ui-border, #dedee7));
+    box-shadow: 0 6px 28px rgb(109 40 217 / 12%);
+  }
+  .app.canvas-first-header .desktop-app-header-island-right {
+    justify-self: end;
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    max-width: 100%;
+  }
+  .app.canvas-first-header .desktop-app-header-island-center .desktop-app-document-identity {
+    max-width: min(270px, 22vw);
+  }
+}
+@media (min-width: 521px) and (max-width: 1099px) {
+  .app.canvas-first-header .desktop-app-header {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .app.canvas-first-header .desktop-app-header-island-left {
+    order: 0;
+    max-width: 35%;
+  }
+  .app.canvas-first-header .desktop-app-header-island-center {
+    order: 1;
+    max-width: 60%;
+    margin-left: auto;
+  }
+  .app.canvas-first-header .desktop-app-header-island-right {
+    order: 2;
+    max-width: 100%;
+    margin-left: auto;
+  }
+}
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-header-island {
+    border-radius: 16px;
+  }
+  .app.canvas-first-header .desktop-app-header-island-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 9px;
+    pointer-events: auto;
+  }
+  .app.canvas-first-header .desktop-app-header-island-center .desktop-app-document-identity {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0;
+  }
+}

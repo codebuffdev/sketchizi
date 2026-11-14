@@ -341,7 +341,6 @@ export default function DesktopAppHeader({
         data-pinned={headerPinned}
       >
       <div className="desktop-app-header-island desktop-app-header-island-left">
-      {workspaceToggle}
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
@@ -429,6 +428,11 @@ export default function DesktopAppHeader({
         })}
       </nav>
 
+
+
+      </div>
+      <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
+        {workspaceToggle}
       <div
         className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
@@ -480,7 +484,6 @@ export default function DesktopAppHeader({
           </button>
         )}
       </div>
-
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-right">
       {collaborationCreationState === "creating" && (

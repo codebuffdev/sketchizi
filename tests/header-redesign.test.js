@@ -30,9 +30,10 @@ test("Create entry is labeled on desktop and compact on mobile", async () => {
   assert.match(styles, /@media \(max-width: 760px\)/);
 });
 
-test("Workspaces is the first header control before the hamburger menu", async () => {
+test("Create control is grouped with the current drawing in the center island", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
-  assert.ok(header.indexOf("{workspaceToggle}") < header.indexOf('className={nativeMenuOpen ? "desktop-app-menu-trigger'));
+  assert.ok(header.indexOf("{workspaceToggle}") > header.indexOf("desktop-app-header-island-center"));
+  assert.ok(header.indexOf("{workspaceToggle}") < header.indexOf("desktop-app-header-island-right"));
 });
 
 test("header Tool menu is positioned relative to its trigger so it remains visible", async () => {
