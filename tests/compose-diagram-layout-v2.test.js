@@ -49,3 +49,25 @@ test("generator uses explicit foreground text rather than theme-dependent shape 
   assert.match(source, /type: "text", x, y, text, fontSize, fontFamily: 2, strokeColor: color/);
   assert.match(source, /resource\.members\.forEach\(\(member\)/);
 });
+
+test("project boundary has safe clearance below every resource", () => {
+  const plan = planComposeDiagram(compose);
+  const boundaryBottom = plan.top - 90 + plan.height;
+  for (const resource of plan.resources) {
+    const pos = plan.resourcePositions.get(resource.kind + ":" + resource.name);
+    assert.ok(pos.y + plan.resourceHeight + 20 < boundaryBottom);
+  }
+});
+test("card geometry is compact and storage has its own lower row", () => {
+  const plan = planComposeDiagram(compose);
+  assert.ok(plan.cardHeight <= 120);
+  assert.ok(plan.resourcePositions.get("VOLUME:database-data").y > plan.resourcePositions.get("NETWORK:backend").y);
+});
+test("dark theme palette compensation is applied before converting canvas elements", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+  const inversion = source.indexOf('api.getAppState?.().theme === "dark"');
+  const conversion = source.indexOf("convertToExcalidrawElements(skeleton)", inversion);
+  assert.ok(inversion > 0 && conversion > inversion);
+  assert.match(source, /element\.backgroundColor = invertHex\(element\.backgroundColor\)/);
+});
