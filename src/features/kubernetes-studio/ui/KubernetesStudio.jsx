@@ -341,7 +341,6 @@ spec:
   const [bundleValuesFiles, setBundleValuesFiles] = useState([]);
   const [selectedValuesFile, setSelectedValuesFile] = useState("");
   const [renderingBundle, setRenderingBundle] = useState(false);
-  const diagnosticGroups = useMemo(() => { const groups = new Map(); for (const issue of diagnostics) { const key = issue.resource || "General"; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(issue); } return [...groups.entries()]; }, [diagnostics]);
   const [error, setError] = useState("");
   const [snapshotText, setSnapshotText] = useState("");
   const [snapshotSummary, setSnapshotSummary] = useState([]);
@@ -484,6 +483,7 @@ spec:
     }
   }, [yamlText]);
   const diagnostics = useMemo(() => normalizeStudioDiagnostics("kubernetes", parsed.issues), [parsed.issues]);
+  const diagnosticGroups = useMemo(() => { const groups = new Map(); for (const issue of diagnostics) { const key = issue.resource || "General"; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(issue); } return [...groups.entries()]; }, [diagnostics]);
 
 
   const inspectedResource = parsed.resources.find((resource) => resource.id === inspectedResourceId) || null;
