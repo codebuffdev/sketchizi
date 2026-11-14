@@ -100,8 +100,15 @@ try {
   }
   await library.getByRole("button", { name: "All categories" }).click();
   const categories = library.getByRole("menu", { name: "All icon categories" });
-  for (const name of ["All icons", "AWS", "Kubernetes", "Networking", "Mind Maps", "UML", "Essentials"]) {
+  for (const name of ["All icons", "Networking", "Mind Maps", "UML", "Essentials"]) {
     await categories.getByRole("menuitemradio", { name, exact: true }).waitFor();
+  }
+  // AWS and K8s have their own visible shortcuts; they must not appear again
+  // inside All categories.
+  for (const duplicate of ["AWS", "Kubernetes"]) {
+    if (await categories.getByRole("menuitemradio", { name: duplicate, exact: true }).count()) {
+      throw new Error(`Duplicate catalog entry in All dropdown: ${duplicate}`);
+    }
   }
   await categories.getByRole("menuitemradio", { name: "Networking" }).click();
   await categories.waitFor({ state: "detached" });
