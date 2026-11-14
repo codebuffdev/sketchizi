@@ -10,6 +10,7 @@ import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
+import { spotlightRadius, spotlightCenter, spotlightElementCenter, spotlightGridPattern } from "../../features/canvas/gridSpotlight.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -23,6 +24,100 @@ export default function SketchiziCanvas({
   const fitContentButtonRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const spotlightNodeRef = useRef(null);
+  const spotlightPointRef = useRef(null);
+  const spotlightSelectedRef = useRef(selectedElements);
+  spotlightSelectedRef.current = selectedElements;
+
+  const paintSpotlight = useCallback(() => {
+    const root = canvasRootRef.current;
+    const node = spotlightNodeRef.current;
+    if (!root || !node?.isConnected) return;
+    const rect = root.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const appState = apiRef?.current?.getAppState?.() || {};
+    const editingInput = root.querySelector(".excalidraw-textEditorContainer textarea");
+    let current = spotlightPointRef.current;
+    if (editingInput && document.activeElement === editingInput) {
+      const inputBounds = editingInput.getBoundingClientRect();
+      current = {
+        x: inputBounds.left + inputBounds.width / 2 - rect.left,
+        y: inputBounds.top + inputBounds.height / 2 - rect.top,
+      };
+    } else if (!current) {
+      const selected = spotlightSelectedRef.current;
+      current = selected?.length === 1
+        ? spotlightElementCenter(selected[0], appState)
+        : null;
+    }
+    const center = spotlightCenter(current?.x, current?.y, rect.width, rect.height);
+    const radius = spotlightRadius(rect.width, rect.height);
+    const pattern = spotlightGridPattern(appState);
+    node.style.setProperty("--sk-grid-focus-x", `${center.x}px`);
+    node.style.setProperty("--sk-grid-focus-y", `${center.y}px`);
+    node.style.setProperty("--sk-grid-focus-radius", `${radius}px`);
+    node.style.setProperty("--sk-grid-size", `${pattern.spacing}px`);
+    node.style.setProperty("--sk-grid-offset-x", `${pattern.offsetX}px`);
+    node.style.setProperty("--sk-grid-offset-y", `${pattern.offsetY}px`);
+  }, [apiRef]);
+
+  // Decorative focus dots use their own non-interactive layer in Excalidraw's
+  // static-canvas wrapper. Native gridModeEnabled (including snapping) is
+  // intentionally untouched; no drawing elements are masked or clipped.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root) return undefined;
+    let frame = 0;
+    let layer = null;
+    const schedulePaint = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        paintSpotlight();
+      });
+    };
+    const attach = () => {
+      const wrapper = root.querySelector(".excalidraw__canvas-wrapper");
+      if (!wrapper || layer?.parentElement === wrapper) return;
+      layer?.remove();
+      layer = document.createElement("div");
+      layer.className = "sketchizi-grid-spotlight";
+      layer.setAttribute("aria-hidden", "true");
+      wrapper.appendChild(layer);
+      spotlightNodeRef.current = layer;
+      schedulePaint();
+    };
+    const onPointerMove = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element) || target.closest("button, input, textarea, select, .Island, [role='dialog'], .App-toolbar")) return;
+      const bounds = root.getBoundingClientRect();
+      spotlightPointRef.current = {
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      };
+      schedulePaint();
+    };
+    const observer = new MutationObserver(attach);
+    observer.observe(root, { childList: true, subtree: true });
+    attach();
+    root.addEventListener("pointermove", onPointerMove, { passive: true });
+    root.addEventListener("pointerdown", onPointerMove, { passive: true });
+    root.addEventListener("input", schedulePaint, true);
+    root.addEventListener("keyup", schedulePaint, true);
+    window.addEventListener("resize", schedulePaint, { passive: true });
+    return () => {
+      observer.disconnect();
+      root.removeEventListener("pointermove", onPointerMove);
+      root.removeEventListener("pointerdown", onPointerMove);
+      root.removeEventListener("input", schedulePaint, true);
+      root.removeEventListener("keyup", schedulePaint, true);
+      window.removeEventListener("resize", schedulePaint);
+      if (frame) cancelAnimationFrame(frame);
+      layer?.remove();
+      if (spotlightNodeRef.current === layer) spotlightNodeRef.current = null;
+    };
+  }, [paintSpotlight]);
+
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
@@ -37,6 +132,11 @@ export default function SketchiziCanvas({
     handleExcalidrawAPI?.(api);
     setCanvasRevision((revision) => revision + 1);
   }, [handleExcalidrawAPI]);
+
+  useEffect(() => {
+    // Re-anchor the pattern after pan/zoom, selection changes, or scene edits.
+    paintSpotlight();
+  }, [canvasRevision, selectedElements, paintSpotlight]);
 
   useEffect(() => {
     const element = canvasRootRef.current;
