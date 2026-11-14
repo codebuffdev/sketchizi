@@ -24,6 +24,16 @@ export default function SketchiziCanvas({
   const fitContentButtonRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [gridStyle, setGridStyle] = useState(() => {
+    try {
+      return window.localStorage.getItem("sketchizi-grid-style") === "normal" ? "normal" : "focus";
+    } catch {
+      return "focus";
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Storage may be disabled. */ }
+  }, [gridStyle]);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
@@ -44,6 +54,7 @@ export default function SketchiziCanvas({
     // decorative layers. Respect live Excalidraw state, not just saved props.
     const showGrid = state.gridModeEnabled ?? savedSketch?.appState?.gridModeEnabled ?? gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
+    node.classList.toggle("is-focus-style", gridStyle === "focus");
     if (!showGrid) {
       node.classList.remove("has-focus");
       return;
@@ -82,7 +93,7 @@ export default function SketchiziCanvas({
     node.style.setProperty("--sk-grid-focus-top", `${focus.top}px`);
     node.style.setProperty("--sk-grid-focus-width", `${focus.width}px`);
     node.style.setProperty("--sk-grid-focus-height", `${focus.height}px`);
-  }, [apiRef, savedSketch, gridEnabled]);
+  }, [apiRef, savedSketch, gridEnabled, gridStyle]);
 
   useEffect(() => {
     const root = canvasRootRef.current;
@@ -783,6 +794,11 @@ export default function SketchiziCanvas({
 
   return (
     <main ref={canvasRootRef} className={viewModeEnabled ? "canvas viewer-mode" : "canvas"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
+      <div className="sketchizi-grid-style-control" role="group" aria-label="Grid style">
+        <span className="sketchizi-grid-style-label">Grid style</span>
+        <button type="button" aria-pressed={gridStyle === "normal"} onClick={() => setGridStyle("normal")}>Normal</button>
+        <button type="button" aria-pressed={gridStyle === "focus"} onClick={() => setGridStyle("focus")}>Focus</button>
+      </div>
       <Excalidraw
         // Always seed the scene with the active Day/Night background. Legacy
         // saved scenes may contain an old independent canvas color, which must
