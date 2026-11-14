@@ -16,7 +16,7 @@ const entry = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8');
 test('fine grid has no focus on empty idle canvas; coarse grid remains visible', () => {
   assert.equal(workspaceFocusRect({ elements: [], width: 1280, height: 800 }), null);
   assert.deepEqual(workspaceFocusRect({ elements: [], anchor: { x: 640, y: 400 }, width: 1280, height: 800 }), {
-    left: 315, top: 205, width: 650, height: 390,
+    left: 300, top: 165, width: 680, height: 470,
   });
   assert.match(css, /sketchizi-grid-spotlight::before\s*\{\s*inset: 0;/);
   assert.match(css, /\.sketchizi-grid-spotlight::after\s*\{[^}]*opacity: 0;/s);
@@ -26,15 +26,15 @@ test('fine grid has no focus on empty idle canvas; coarse grid remains visible',
 test('rectangular fine grid expands around document content but stays inside the viewport', () => {
   const shape = { x: 500, y: 300, width: 100, height: 70 };
   const rect = workspaceFocusRect({ elements: [shape], width: 1280, height: 800 });
-  assert.deepEqual(rect, { left: 225, top: 140, width: 650, height: 390 });
+  assert.deepEqual(rect, { left: 210, top: 100, width: 680, height: 470 });
   const large = workspaceFocusRect({
     elements: [{ x: -100, y: -200, width: 3000, height: 2800 }],
     width: 1280, height: 800,
   });
   assert.ok(large.left >= 0 && large.top >= 0);
   assert.ok(large.left + large.width <= 1280 && large.top + large.height <= 800);
-  assert.equal(large.width, Math.round(1280 * 0.88));
-  assert.equal(large.height, Math.round(800 * 0.82));
+  assert.equal(large.width, Math.round(1280 * 0.94));
+  assert.equal(large.height, Math.round(800 * 0.90));
   assert.equal(workspaceFocusRect({ elements: [shape], width: 0, height: 800 }), null);
 });
 
@@ -47,8 +47,8 @@ test('selection overrides whole document bounds and pan/zoom move the focus rect
     state: { zoom: { value: 2 }, scrollX: -10, scrollY: 30 },
     width: 1200, height: 800,
   });
-  assert.equal(rect.width, 650);
-  assert.equal(rect.height, 390);
+  assert.equal(rect.width, 680);
+  assert.equal(rect.height, 470);
   assert.equal(rect.left, 0);
   assert.ok(rect.top >= 0);
   assert.deepEqual(spotlightElementCenter(selected, { zoom: 2, scrollX: -10, scrollY: 30 }), { x: 260, y: 500 });
@@ -58,18 +58,18 @@ test('selection overrides whole document bounds and pan/zoom move the focus rect
 test('rectangle scales down on mobile without overflowing the screen', () => {
   const r = workspaceFocusRect({ width: 390, height: 740, anchor: { x: 382, y: 680 } });
   assert.ok(r.left >= 0 && r.top >= 0);
-  assert.ok(r.width <= 390 * 0.88 + 1);
-  assert.ok(r.height <= 740 * 0.82 + 1);
+  assert.ok(r.width <= 390 * 0.94 + 1);
+  assert.ok(r.height <= 740 * 0.90 + 1);
   assert.ok(r.left + r.width <= 390);
   assert.ok(r.top + r.height <= 740);
 });
 
 test('coarse and fine grid patterns preserve world origin while panning and zooming', () => {
-  assert.deepEqual(spotlightGridPattern({ gridSize: 20, zoom: 1, scrollX: -5, scrollY: 8 }), { spacing: 20, offsetX: 15, offsetY: 8 });
+  assert.deepEqual(spotlightGridPattern({ gridSize: 20, zoom: 1, scrollX: -5, scrollY: 8 }), { spacing: 8, offsetX: 3, offsetY: 0 });
   assert.deepEqual(workspaceCoarseGridPattern({ gridSize: 20, zoom: 1, scrollX: -5, scrollY: 8 }), { spacing: 80, offsetX: 75, offsetY: 8 });
   assert.deepEqual(workspaceCoarseGridPattern({ gridSize: 20, zoom: 2, scrollX: 10, scrollY: -10 }), { spacing: 160, offsetX: 20, offsetY: 140 });
-  assert.equal(spotlightGridPattern({ gridSize: 20, zoom: 0.1 }).spacing, 8);
-  assert.equal(spotlightGridPattern({ gridSize: 20, zoom: 10 }).spacing, 72);
+  assert.equal(spotlightGridPattern({ gridSize: 20, zoom: 0.1 }).spacing, 4);
+  assert.equal(spotlightGridPattern({ gridSize: 20, zoom: 10 }).spacing, 32);
 });
 
 test('canvas tracks content and editing rather than hover and does not auto-hide after a timeout', () => {
@@ -115,4 +115,14 @@ test('Show Grid OFF hides both layers and live toggle controls them immediately'
   assert.match(css, /\.sketchizi-grid-spotlight:not\(\.is-grid-enabled\)\s*\{\s*display: none;/);
   assert.match(canvas, /\[canvasRevision, selectedElements, paintWorkspaceGrid\]/);
   assert.match(canvas, /\[apiRef, savedSketch, gridEnabled\]/);
+});
+
+test('focus stays centered on content even if the last pointer location is elsewhere', () => {
+  const shape = { x: 700, y: 320, width: 240, height: 160 };
+  const r = workspaceFocusRect({ elements: [shape], anchor: { x: 20, y: 20 }, width: 1400, height: 900 });
+  assert.ok(r.left <= 700 && r.left + r.width >= 940);
+  assert.ok(r.top <= 320 && r.top + r.height >= 480);
+  assert.ok(r.left > 100 && r.top > 100);
+  const reversed = workspaceFocusRect({ elements: [{ x: 940, y: 480, width: -240, height: -160 }], width: 1400, height: 900 });
+  assert.deepEqual(reversed, r);
 });
