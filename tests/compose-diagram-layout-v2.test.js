@@ -33,3 +33,19 @@ test("cycles and absent dependencies do not crash layout", () => {
   assert.equal(plan.positions.size, 2);
   assert.equal(plan.edges.length, 2);
 });
+
+test("resource nodes are positioned close to members and inside project bounds", () => {
+  const plan = planComposeDiagram(compose);
+  for (const resource of plan.resources) {
+    const pos = plan.resourcePositions.get(resource.kind + ":" + resource.name);
+    assert.ok(pos && pos.y >= plan.top + plan.cardHeight);
+    assert.ok(pos.x + plan.resourceWidth <= plan.left + plan.width);
+    assert.ok(pos.y + plan.resourceHeight <= plan.top + plan.height);
+  }
+});
+test("generator uses explicit foreground text rather than theme-dependent shape labels", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+  assert.match(source, /type: "text", x, y, text, fontSize, fontFamily: 2, strokeColor: color/);
+  assert.match(source, /resource\.members\.forEach\(\(member\)/);
+});
