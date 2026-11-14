@@ -203,6 +203,8 @@ try {
     const canvas = root?.getBoundingClientRect();
     return {
       active: node.classList.contains("has-focus"),
+      enabled: node.classList.contains("is-grid-enabled"),
+      display: style.display,
       pointerEvents: style.pointerEvents,
       baseImage: base.backgroundImage,
       baseWidth: base.width,
@@ -227,8 +229,20 @@ try {
   const y = sceneBounds.y + sceneBounds.height * 0.51;
   await gridSession.page.mouse.move(x, y);
   await gridSession.page.waitForTimeout(90);
+  const off = await readGrid();
+  if (off.enabled || off.display !== "none" || off.active) {
+    throw new Error(`Show Grid OFF must hide all layers: ${JSON.stringify(off)}`);
+  }
+  const toggleShowGrid = async (label) => {
+    await gridSession.page.getByRole("button", { name: "View", exact: true }).click();
+    await gridSession.page.getByRole("menuitem", { name: label, exact: true }).click();
+  };
+  await toggleShowGrid("Show Grid");
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-grid-enabled"),
+  );
   const empty = await readGrid();
-  if (empty.active || empty.detailOpacity > 0.01 ||
+  if (!empty.enabled || empty.display === "none" || empty.active || empty.detailOpacity > 0.01 ||
       empty.pointerEvents !== "none" || empty.canvasBackground !== "none" ||
       !twoLines(empty.baseImage) || empty.baseWidth !== `${empty.canvasWidth}px` ||
       empty.baseHeight !== `${empty.canvasHeight}px` ||
@@ -257,6 +271,15 @@ try {
       !contentGrid.fineSize || contentGrid.fineSize >= contentGrid.coarseSize) {
     throw new Error(`Fine rectangular grid must remain around drawing content: ${JSON.stringify(contentGrid)}`);
   }
+  await toggleShowGrid("Hide Grid");
+  const hiddenAfterDrawing = await readGrid();
+  if (hiddenAfterDrawing.enabled || hiddenAfterDrawing.active || hiddenAfterDrawing.display !== "none") {
+    throw new Error(`Show Grid OFF must hide rectangular focus even with drawing content: ${JSON.stringify(hiddenAfterDrawing)}`);
+  }
+  await toggleShowGrid("Show Grid");
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("has-focus"),
+  );
   await gridSession.page.mouse.move(x - 120, y - 100);
   await gridSession.page.waitForTimeout(100);
   const afterHover = await readGrid();
