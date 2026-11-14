@@ -24,7 +24,7 @@ export function planComposeDiagram(document) {
     if (!groups.has(column)) groups.set(column, []);
     groups.get(column).push(name);
   });
-  const cardWidth = 300, cardHeight = 154, gapX = 120, gapY = 38;
+  const cardWidth = 300, cardHeight = 154, gapX = 72, gapY = 38;
   const left = 170, top = 220;
   const positions = new Map();
   for (const [column, group] of groups) {
@@ -48,13 +48,25 @@ export function planComposeDiagram(document) {
     ...networks.entries().map(([name, members]) => ({ name, kind: "NETWORK", members })),
     ...volumes.entries().map(([name, members]) => ({ name, kind: "VOLUME", members }))
   ];
-  const resourceWidth = 260, resourceHeight = 62, resourceGap = 16;
-  const resourceTop = top + rows * (cardHeight + gapY) + 34;
-  const resourceColumns = Math.min(4, Math.max(1, resources.length));
-  const resourceRows = Math.ceil(resources.length / resourceColumns);
-  const width = Math.max((maxLevel + 1) * (cardWidth + gapX) - gapX, resourceColumns * (resourceWidth + resourceGap) - resourceGap) + 110;
-  const height = resourceTop - top + (resources.length ? resourceRows * (resourceHeight + 12) : 0) + 50;
-  return { positions, edges, resources, cardWidth, cardHeight, left, top, resourceTop, resourceWidth, resourceHeight, resourceGap, width, height };
+  const resourceWidth = 220, resourceHeight = 64, resourceGap = 22;
+  const resourceTop = top + rows * (cardHeight + gapY) + 18;
+  // Put each resource beneath its members, avoiding a disconnected left-aligned legend.
+  const resourcePositions = new Map();
+  const placed = [];
+  for (const resource of resources) {
+    const memberCenters = resource.members.map((name) => positions.get(name)).filter(Boolean).map((pos) => pos.x + cardWidth / 2);
+    const preferred = memberCenters.length ? memberCenters.reduce((a, b) => a + b, 0) / memberCenters.length - resourceWidth / 2 : left;
+    let x = Math.max(left, preferred), y = resourceTop;
+    while (placed.some((pos) => Math.abs(pos.y - y) < resourceHeight + 8 && Math.abs(pos.x - x) < resourceWidth + resourceGap)) y += resourceHeight + 18;
+    resourcePositions.set(resource.kind + ":" + resource.name, { x, y });
+    placed.push({ x, y });
+  }
+  const maxServiceRight = Math.max(left + cardWidth, ...[...positions.values()].map((pos) => pos.x + cardWidth));
+  const maxResourceRight = Math.max(left, ...placed.map((pos) => pos.x + resourceWidth));
+  const maxResourceBottom = Math.max(top + cardHeight, ...placed.map((pos) => pos.y + resourceHeight));
+  const width = Math.max(maxServiceRight, maxResourceRight) - left + 85;
+  const height = maxResourceBottom - top + 60;
+  return { positions, edges, resources, resourcePositions, cardWidth, cardHeight, left, top, resourceTop, resourceWidth, resourceHeight, resourceGap, width, height };
 }
 
 export function composeCardDetails(service) {
