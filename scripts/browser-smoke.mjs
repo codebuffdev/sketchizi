@@ -235,17 +235,22 @@ try {
       !empty.coarseSize || empty.coarseSize <= 0) {
     throw new Error(`Coarse grid must fill an idle canvas without fine detail: ${JSON.stringify(empty)}`);
   }
-  // R is the native Excalidraw rectangle tool shortcut.
-  await gridSession.page.keyboard.press("r");
+  // Select Excalidraw's actual rectangle tool; a keyboard shortcut can
+  // be ignored if another UI control still owns focus.
+  await gridSession.page.locator('[data-testid="toolbar-rectangle"]').click();
   await gridSession.page.mouse.move(x, y);
   await gridSession.page.mouse.down();
   await gridSession.page.mouse.move(x + 160, y + 95, { steps: 6 });
   await gridSession.page.mouse.up();
-  await gridSession.page.waitForTimeout(200);
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("has-focus"),
+    { timeout: 5000 },
+  );
+  await gridSession.page.waitForTimeout(260);
   const contentGrid = await readGrid();
   if (!contentGrid.active || !twoLines(contentGrid.detailImage) ||
       !contentGrid.detailMask.includes("linear-gradient") ||
-      contentGrid.detailMaskComposite !== "intersect" ||
+      !contentGrid.detailMaskComposite.split(",").every((value) => value.trim() === "intersect") ||
       contentGrid.focusWidth < 400 || contentGrid.focusHeight < 260 ||
       contentGrid.focusWidth > contentGrid.canvasWidth * 0.89 ||
       contentGrid.focusHeight > contentGrid.canvasHeight * 0.83 ||
