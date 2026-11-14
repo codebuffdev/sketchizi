@@ -1422,7 +1422,7 @@ function App() {
         type: "rectangle", x, y, width: cardWidth, height: cardHeight,
         strokeColor: "#6474b8", backgroundColor: "#19243a", fillStyle: "solid",
         strokeWidth: 2, roundness: { type: 3 },
-        label: { text: name + "\\n" + details.join("\\n"), fontSize: 15, fontFamily: 2, textAlign: "left", verticalAlign: "middle" }
+        label: { text: name + "\n" + details.join("\n"), fontSize: 15, fontFamily: 2, textAlign: "left", verticalAlign: "middle" }
       });
       if (iconAsset) skeleton.push({
         type: "image", x: x + cardWidth - 48, y: y + 12,
@@ -1439,7 +1439,7 @@ function App() {
         strokeColor: resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8",
         backgroundColor: resource.kind === "VOLUME" ? "#103d38" : "#102f45",
         fillStyle: "solid", strokeWidth: 1, roundness: { type: 3 },
-        label: { text: resource.kind + "  ·  " + resource.name + "\\n" + resource.members.join(" · "), fontSize: 12, fontFamily: 2, textAlign: "center", verticalAlign: "middle" }
+        label: { text: resource.kind + "  ·  " + resource.name + "\n" + resource.members.join(" · "), fontSize: 12, fontFamily: 2, textAlign: "center", verticalAlign: "middle" }
       });
     });
 
