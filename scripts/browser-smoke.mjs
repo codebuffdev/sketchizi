@@ -185,98 +185,96 @@ try {
   await library.getByRole("button", { name: "Close icon library" }).click();
   console.log("PASS: 320×460 library, All category dropdown, compact text, list/grid, and phone containment.");
 
-  // The reference design is an IDLE-HIDDEN, softly faded grid around actual
-  // work. Hovering must NOT show a moving cursor halo.
-  // Use a separate editor page: drawing test interactions must not mutate the
-  // blank editor used by the following save/export smoke checks.
+  // Coarse square grid spans the entire editor. Fine squares form a
+  // content-bound RECTANGLE that stays put on hover, zoom and pan.
+  // Isolate drawing interactions from unrelated smoke checks.
   const gridSession = await makePage({ width: 1280, height: 800 });
   await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
-  const sceneBounds = await gridSession.page.locator(".desktop-canvas-region > .canvas").boundingBox();
+  const canvasLocator = gridSession.page.locator(".desktop-canvas-region > .canvas");
+  const sceneBounds = await canvasLocator.boundingBox();
   if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
-  const firstFocus = {
-    x: sceneBounds.x + sceneBounds.width * 0.52,
-    y: sceneBounds.y + sceneBounds.height * 0.54,
-  };
-  const readFocus = () => focusGrid.evaluate((node) => {
+  const readGrid = () => focusGrid.evaluate((node) => {
+    const base = getComputedStyle(node, "::before");
+    const detail = getComputedStyle(node, "::after");
     const style = getComputedStyle(node);
-    const macro = getComputedStyle(node, "::before");
-    const fine = getComputedStyle(node, "::after");
+    const root = document.querySelector(".desktop-canvas-region > .canvas");
+    const canvas = root?.getBoundingClientRect();
     return {
-      parent: node.parentElement?.className,
-      active: node.classList.contains("is-active"),
-      opacity: Number(style.opacity),
+      active: node.classList.contains("has-focus"),
       pointerEvents: style.pointerEvents,
-      clipPath: style.clipPath,
-      macroBackground: macro.backgroundImage,
-      fineBackground: fine.backgroundImage,
-      macroMask: macro.maskImage,
-      fineMask: fine.maskImage,
-      macroSize: macro.backgroundSize,
-      fineSize: fine.backgroundSize,
-      x: parseFloat(node.style.getPropertyValue("--sk-grid-focus-x")),
-      y: parseFloat(node.style.getPropertyValue("--sk-grid-focus-y")),
-      rx: parseFloat(node.style.getPropertyValue("--sk-grid-focus-rx")),
-      ry: parseFloat(node.style.getPropertyValue("--sk-grid-focus-ry")),
+      baseImage: base.backgroundImage,
+      baseWidth: base.width,
+      baseHeight: base.height,
+      detailImage: detail.backgroundImage,
+      detailOpacity: Number(detail.opacity),
+      detailMask: detail.maskImage,
+      detailMaskComposite: detail.maskComposite,
+      coarseSize: parseFloat(node.style.getPropertyValue("--sk-grid-coarse-size")),
+      fineSize: parseFloat(node.style.getPropertyValue("--sk-grid-size")),
+      focusLeft: parseFloat(node.style.getPropertyValue("--sk-grid-focus-left")),
+      focusTop: parseFloat(node.style.getPropertyValue("--sk-grid-focus-top")),
+      focusWidth: parseFloat(node.style.getPropertyValue("--sk-grid-focus-width")),
+      focusHeight: parseFloat(node.style.getPropertyValue("--sk-grid-focus-height")),
+      canvasWidth: canvas?.width,
+      canvasHeight: canvas?.height,
       canvasBackground: getComputedStyle(document.querySelector(".desktop-canvas-region")).backgroundImage,
     };
   });
-  await gridSession.page.mouse.move(firstFocus.x, firstFocus.y);
+  const twoLines = (image) => (image.match(/linear-gradient\\(/g) || []).length === 2;
+  const x = sceneBounds.x + sceneBounds.width * 0.53;
+  const y = sceneBounds.y + sceneBounds.height * 0.51;
+  await gridSession.page.mouse.move(x, y);
   await gridSession.page.waitForTimeout(90);
-  const idleFocus = await readFocus();
-  if (idleFocus.active || idleFocus.opacity > 0.01 || idleFocus.pointerEvents !== "none" ||
-    idleFocus.canvasBackground !== "none") {
-    throw new Error(`Grid must stay hidden on idle mouse movement: ${JSON.stringify(idleFocus)}`);
+  const empty = await readGrid();
+  if (empty.active || empty.detailOpacity > 0.01 ||
+      empty.pointerEvents !== "none" || empty.canvasBackground !== "none" ||
+      !twoLines(empty.baseImage) || empty.baseWidth !== `${empty.canvasWidth}px` ||
+      empty.baseHeight !== `${empty.canvasHeight}px` ||
+      !empty.coarseSize || empty.coarseSize <= 0) {
+    throw new Error(`Coarse grid must fill an idle canvas without fine detail: ${JSON.stringify(empty)}`);
   }
+  // R is the native Excalidraw rectangle tool shortcut.
+  await gridSession.page.keyboard.press("r");
+  await gridSession.page.mouse.move(x, y);
   await gridSession.page.mouse.down();
-  await gridSession.page.waitForTimeout(100);
-  const desktopFocus = await readFocus();
-  const twoSquareLayers = (value) => (value.match(/linear-gradient\(/g) || []).length === 2;
-  if (!desktopFocus.active ||
-    !desktopFocus.parent?.includes("excalidraw__canvas-wrapper") ||
-    desktopFocus.pointerEvents !== "none" ||
-    desktopFocus.clipPath !== "none" ||
-    !twoSquareLayers(desktopFocus.macroBackground) ||
-    !twoSquareLayers(desktopFocus.fineBackground) ||
-    !desktopFocus.macroMask.includes("radial-gradient") ||
-    !desktopFocus.fineMask.includes("radial-gradient") ||
-    desktopFocus.rx < 250 || desktopFocus.rx > 600 ||
-    desktopFocus.ry < 200 || desktopFocus.ry > 460 ||
-    Math.abs(desktopFocus.x - (firstFocus.x - sceneBounds.x)) > 10 ||
-    Math.abs(desktopFocus.y - (firstFocus.y - sceneBounds.y)) > 10) {
-    throw new Error(`Layered work grid did not activate correctly: ${JSON.stringify(desktopFocus)}`);
-  }
-  await gridSession.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.70, sceneBounds.y + sceneBounds.height * 0.65);
-  await gridSession.page.waitForTimeout(100);
-  const drawingFocus = await readFocus();
-  if (Math.abs(drawingFocus.x - desktopFocus.x) < 40 || Math.abs(drawingFocus.y - desktopFocus.y) < 30) {
-    throw new Error(`Grid did not track an active drawing gesture: ${JSON.stringify({desktopFocus,drawingFocus})}`);
-  }
+  await gridSession.page.mouse.move(x + 160, y + 95, { steps: 6 });
   await gridSession.page.mouse.up();
-  const releasedFocus = await readFocus();
-  await gridSession.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.82, sceneBounds.y + sceneBounds.height * 0.38);
+  await gridSession.page.waitForTimeout(200);
+  const contentGrid = await readGrid();
+  if (!contentGrid.active || !twoLines(contentGrid.detailImage) ||
+      !contentGrid.detailMask.includes("linear-gradient") ||
+      contentGrid.detailMaskComposite !== "intersect" ||
+      contentGrid.focusWidth < 400 || contentGrid.focusHeight < 260 ||
+      contentGrid.focusWidth > contentGrid.canvasWidth * 0.89 ||
+      contentGrid.focusHeight > contentGrid.canvasHeight * 0.83 ||
+      !contentGrid.fineSize || contentGrid.fineSize >= contentGrid.coarseSize) {
+    throw new Error(`Fine rectangular grid must remain around drawing content: ${JSON.stringify(contentGrid)}`);
+  }
+  await gridSession.page.mouse.move(x - 120, y - 100);
   await gridSession.page.waitForTimeout(100);
-  const hoverAfterDrawing = await readFocus();
-  if (hoverAfterDrawing.x !== releasedFocus.x || hoverAfterDrawing.y !== releasedFocus.y) {
-    throw new Error(`Grid followed hover after drawing stopped: ${JSON.stringify({releasedFocus,hoverAfterDrawing})}`);
+  const afterHover = await readGrid();
+  if (afterHover.focusLeft !== contentGrid.focusLeft ||
+      afterHover.focusTop !== contentGrid.focusTop || !afterHover.active) {
+    throw new Error(`Fine grid unexpectedly followed mouse hover: ${JSON.stringify({contentGrid,afterHover})}`);
   }
   await gridSession.page.waitForTimeout(3400);
-  const dormantFocus = await readFocus();
-  if (dormantFocus.active) {
-    throw new Error(`Grid did not return to idle after activity: ${JSON.stringify(dormantFocus)}`);
+  const afterIdle = await readGrid();
+  if (!afterIdle.active || !twoLines(afterIdle.baseImage)) {
+    throw new Error(`Grid disappeared even though the drawing has content: ${JSON.stringify(afterIdle)}`);
   }
   await gridSession.page.setViewportSize({ width: 390, height: 740 });
-  await gridSession.page.waitForTimeout(90);
-  const phoneFocus = await readFocus();
-  if (phoneFocus.rx > 190 || phoneFocus.rx < 110 ||
-    phoneFocus.ry > 350 || phoneFocus.ry < 200 ||
-    phoneFocus.pointerEvents !== "none" || phoneFocus.active) {
-    throw new Error(`Work-area grid does not fit an idle phone viewport: ${JSON.stringify(phoneFocus)}`);
+  await gridSession.page.waitForTimeout(100);
+  const phoneGrid = await readGrid();
+  if (!phoneGrid.active || phoneGrid.focusLeft < 0 || phoneGrid.focusTop < 0 ||
+      phoneGrid.focusLeft + phoneGrid.focusWidth > phoneGrid.canvasWidth + 1 ||
+      phoneGrid.focusTop + phoneGrid.focusHeight > phoneGrid.canvasHeight + 1 ||
+      !twoLines(phoneGrid.baseImage)) {
+    throw new Error(`Responsive rectangular grid overflows phone canvas: ${JSON.stringify(phoneGrid)}`);
   }
-  await gridSession.page.setViewportSize({ width: 1280, height: 800 });
   await gridSession.context.close();
-  console.log("PASS: activity-only layered square grid has a soft fade, ignores hover, follows drawing, then hides.");
+  console.log("PASS: always-on coarse square grid with persistent, content-bound rectangular fine detail.");
 
   // The clipboard toast is owned by Excalidraw, so exercise its native class
   // using a temporary message without needing clipboard permissions.
