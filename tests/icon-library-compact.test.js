@@ -14,16 +14,18 @@ test('compact library CSS is loaded after the expanded panel theme', () => {
   assert.match(styles, /@media \(max-width: 760px\)/);
 });
 
-test('all icon catalogs remain accessible from shortcuts or overflow menu', () => {
+test('All dropdown exposes every real collection without sacrificing quick shortcuts', () => {
   for (const id of ['aws', 'kubernetes', 'networking', 'mindmaps', 'uml', 'eraser']) {
     assert.ok(panel.includes('id: "' + id + '"'), 'missing catalog ' + id);
   }
   assert.match(panel, /primaryCatalogTabs/);
-  assert.match(panel, /extraCatalogTabs/);
+  assert.match(panel, /catalogMenuTabs/);
+  assert.match(panel, /aria-label="All categories"/);
+  assert.match(panel, /aria-label="All icon categories"/);
   assert.match(panel, /aria-haspopup="menu"/);
-  assert.match(panel, /aria-expanded=\{moreCollectionsOpen\}/);
+  assert.match(panel, /aria-expanded=\{allCategoriesOpen\}/);
   assert.match(panel, /role="menuitemradio"/);
-  assert.match(panel, /if \(moreCollectionsOpen\) setMoreCollectionsOpen\(false\)/);
+  assert.match(panel, /if \(allCategoriesOpen\) setAllCategoriesOpen\(false\)/);
   assert.match(panel, /onClick=\{\(\) => chooseSource\(tab\.id\)\}/);
 });
 
@@ -40,6 +42,13 @@ test('icon list defaults to compact while retaining stored grid or list selectio
     if (original === undefined) delete globalThis.localStorage;
     else globalThis.localStorage = original;
   }
+});
+
+test('compact results count and footer guidance have panel-sized typography', () => {
+  assert.match(panel, /sk-icon-compact-results-meta/);
+  assert.match(panel, /sk-icon-compact-hint/);
+  assert.match(styles, /\.sk-icon-compact-results-meta\s*\{[^}]*font-size: 10\.5px !important/s);
+  assert.match(styles, /\.sk-icon-compact-hint\s*\{[^}]*font-size: 10px !important/s);
 });
 
 test('compact presentation retains search, favorites, recent, drag and insert actions', () => {
