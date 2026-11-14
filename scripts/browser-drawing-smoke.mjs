@@ -120,6 +120,7 @@ try {
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
   await page.getByRole("button", { name: /Local document save status: (Autosave ready|Saved locally)/ }).waitFor({ timeout: 15000 });
+  await page.evaluate((original) => { window.__drawingSmokeOriginalBounds = original; }, { id: drawn.id, x: drawn.x, y: drawn.y });
   await awaitScene(async () => {
     const scene = await currentDrawing();
     return scene?.elements?.some((element) => element.id === drawn.id && Math.abs(element.x - drawn.x) > 15) && scene?.appState?.gridModeEnabled === true;
