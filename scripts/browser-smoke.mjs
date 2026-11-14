@@ -121,6 +121,47 @@ try {
   if (overflow) throw new Error("Creation screen has horizontal overflow at 390px viewport width.");
   console.log("PASS: creation screen remains usable at 390px without horizontal overflow.");
 
+  // Sign-in is a true canvas-centered modal, not a popup clipped by the header.
+  // Stub only the current-user endpoint to keep the layout smoke independent
+  // from optional authentication backend availability.
+  const authLayout = await makePage({ width: 1280, height: 800 });
+  await authLayout.page.route("**/api/auth/me", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ authenticated: false, user: null }),
+  }));
+  await authLayout.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await authLayout.page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor();
+
+  const verifyAuthDialogCentered = async (page) => {
+    const layout = await page.evaluate(() => {
+      const dialog = document.querySelector(".auth-dialog");
+      const backdrop = document.querySelector(".auth-dialog-backdrop");
+      const canvas = document.querySelector(".desktop-canvas-region");
+      if (!dialog || !backdrop || !canvas) return null;
+      const rect = dialog.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      return {
+        portalled: backdrop.parentElement?.classList.contains("app") === true,
+        dx: Math.abs(rect.left + rect.width / 2 - (canvasRect.left + canvasRect.width / 2)),
+        dy: Math.abs(rect.top + rect.height / 2 - (canvasRect.top + canvasRect.height / 2)),
+        withinViewport: rect.left >= 0 && rect.top >= 0 &&
+          rect.right <= window.innerWidth && rect.bottom <= window.innerHeight,
+      };
+    });
+    if (!layout?.portalled || layout.dx > 30 || layout.dy > 40 || !layout.withinViewport) {
+      throw new Error(`Sign-in dialog is not centered over the canvas: ${JSON.stringify(layout)}`);
+    }
+  };
+  await verifyAuthDialogCentered(authLayout.page);
+  console.log("PASS: sign-in dialog is centered over the desktop canvas.");
+  await authLayout.page.setViewportSize({ width: 390, height: 740 });
+  await verifyAuthDialogCentered(authLayout.page);
+  console.log("PASS: sign-in dialog remains centered and visible at phone width.");
+  await authLayout.page.keyboard.press("Escape");
+  await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor({ state: "detached" });
+
   if (errors.length) throw new Error(`Browser console exceptions: ${errors.join(" | ")}`);
 } finally {
   await browser.close();
