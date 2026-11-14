@@ -327,10 +327,6 @@ export default function IconLibraryPanel({
     { id: "all", label: "All" },
   ];
 
-  const primaryCatalogTabs = sourceTabs.filter((tab) => ["aws", "kubernetes"].includes(tab.id));
-  // All is the single discoverable entry point for every real catalog.
-  const catalogMenuTabs = [{ id: "all", label: "All icons" }, ...sourceTabs.filter((tab) => tab.id !== "all")];
-
   const subcategoryOptions = useMemo(
     () =>
       getSubcategoryOptions({
@@ -484,109 +480,55 @@ export default function IconLibraryPanel({
           </button>
         </nav>
 
-        <nav className="library-source-tabs sk-catalog-tabs" aria-label="Icon collections">
-          <div className="sk-catalog-all-wrap">
-            <button
-              type="button"
-              className={`sk-catalog-tab sk-catalog-all ${activeSource === "all" ? "is-active" : ""}`}
-              aria-haspopup="menu"
-              aria-expanded={allCategoriesOpen}
-              aria-label="All categories"
-              onClick={() => setAllCategoriesOpen((open) => !open)}
-            >
-              <SourceCategoryIcon id="eraser" />
-              <span className="sk-catalog-tab-label">All</span>
-              <span className="sk-catalog-chevron" aria-hidden="true">⌄</span>
-            </button>
-            {allCategoriesOpen && (
-              <div
-                className="sk-catalog-all-menu"
-                role="menu"
-                aria-label="All icon categories"
-                onKeyDown={(event) => {
-                  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
-                  const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitemradio"]'));
-                  if (!items.length) return;
-                  event.preventDefault();
-                  const current = items.indexOf(document.activeElement);
-                  const next = event.key === "Home" ? 0
-                    : event.key === "End" ? items.length - 1
-                      : event.key === "ArrowDown" ? (current + 1) % items.length
-                        : (current + items.length - 1) % items.length;
-                  items[next]?.focus();
-                }}
-              >
-                {catalogMenuTabs.map((tab) => (
-                  <button
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={activeSource === tab.id}
-                    className={`sk-catalog-all-item ${activeSource === tab.id ? "is-active" : ""}`}
-                    key={tab.id}
-                    autoFocus={activeSource === tab.id}
-                    onClick={() => chooseSource(tab.id)}
-                  >
-                    <SourceCategoryIcon id={tab.id === "all" ? "eraser" : tab.id} />
-                    <span>{tab.label}</span>
-                    {activeSource === tab.id && <span className="sk-catalog-item-selected" aria-hidden="true">✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {primaryCatalogTabs.map((tab) => {
-            const isActive = activeSource === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                className={`library-source-chip library-source-chip-${tab.id} sk-catalog-tab ${isActive ? "active is-active" : ""}`}
-                aria-label={tab.label}
-                title={tab.label}
-                aria-pressed={isActive}
-                onClick={() => chooseSource(isActive ? "all" : tab.id)}
-              >
-                <SourceCategoryIcon id={tab.id} />
-                <span className="sk-catalog-tab-label">{tab.id === "kubernetes" ? "K8s" : tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {subcategoryOptions.length > 0 && !search.trim() && (
-          <div className="sk-subcategory-bar">
-            <select
-              className="sk-subcategory-select"
-              aria-label={`Filter ${collectionTitle} category`}
-              value={activeSubcategory}
-              onChange={(event) => {
-                const value = event.target.value;
-                setIconDisplayLimit(120);
-                if (activeSource === "aws") setActiveAwsCategory(value);
-                if (activeSource === "kubernetes") setActiveKubernetesCategory(value);
-              }}
-            >
-              <option value="All">All categories ({totalBaseCount})</option>
-              {subcategoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label} ({option.count})
-                </option>
+        <div className="sk-unified-category-bar">
+          <label className="sk-unified-category-label" htmlFor="sk-icon-category">Category</label>
+          <select
+            id="sk-icon-category"
+            className="sk-unified-category-select"
+            aria-label="Icon category"
+            value={activeSource === "aws" && activeAwsCategory !== "All"
+              ? `aws:${activeAwsCategory}`
+              : activeSource === "kubernetes" && activeKubernetesCategory !== "All"
+                ? `kubernetes:${activeKubernetesCategory}`
+                : activeSource}
+            onChange={(event) => {
+              const value = event.target.value;
+              const separator = value.indexOf(":");
+              if (separator < 0) {
+                chooseSource(value);
+                return;
+              }
+              const source = value.slice(0, separator);
+              const category = value.slice(separator + 1);
+              chooseSource(source);
+              if (source === "aws") setActiveAwsCategory(category);
+              if (source === "kubernetes") setActiveKubernetesCategory(category);
+            }}
+          >
+            <option value="all">All icons ({allIcons.length.toLocaleString()})</option>
+            <optgroup label="Collections">
+              {sourceTabs.filter((tab) => tab.id !== "all").map((tab) => (
+                <option key={tab.id} value={tab.id}>{tab.label}</option>
               ))}
-            </select>
-            {activeSubcategory !== "All" && (
-              <button
-                type="button"
-                className="sk-subcategory-reset"
-                onClick={() => {
-                  if (activeSource === "aws") setActiveAwsCategory("All");
-                  if (activeSource === "kubernetes") setActiveKubernetesCategory("All");
-                }}
-              >
-                Reset
-              </button>
-            )}
-          </div>
-        )}
+            </optgroup>
+            {["aws", "kubernetes"].map((source) => {
+              const options = getSubcategoryOptions({
+                activeSource: source,
+                awsCategories, awsCategoryCounts,
+                kubernetesCategories, kubernetesCategoryCounts,
+              });
+              return (
+                <optgroup key={source} label={source === "aws" ? "AWS categories" : "Kubernetes categories"}>
+                  {options.map((option) => (
+                    <option key={`${source}:${option.value}`} value={`${source}:${option.value}`}>
+                      {option.label} ({option.count})
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+          </select>
+        </div>
 
         {activeSource === "mindmaps" && createStarterMindMap && !search.trim() && (
           <div className="sk-quick-starter-bar">
