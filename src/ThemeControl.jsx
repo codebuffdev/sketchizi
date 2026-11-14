@@ -34,7 +34,7 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
     };
     update();
     setBackground(api?.getAppState?.().viewBackgroundColor || getCanvasBackground(isDarkTheme));
-    panel.current?.querySelector("button")?.focus();
+    panel.current?.focus({ preventScroll: true });
     const dismiss = (event) => {
       if (!panel.current?.contains(event.target) && !trigger.current?.contains(event.target)) setOpen(false);
     };
@@ -43,7 +43,7 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
       if (event.key === "Tab") {
         const controls = [...panel.current.querySelectorAll("button:not(:disabled), input:not(:disabled)")];
         const first = controls[0], last = controls.at(-1);
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     };
@@ -66,18 +66,17 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
     <button ref={trigger} type="button" className={`theme-toggle desktop-app-theme-toggle appearance-trigger ${isDarkTheme ? "dark" : "light"}`} aria-label="Appearance and canvas background" title="Appearance and canvas background" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? "sketchizi-appearance" : undefined} onClick={() => setOpen(value => !value)}>
       <AppearanceIcon mode={themeMode === "system" ? "system" : isDarkTheme ? "dark" : "light"} />
     </button>
-    {open && createPortal(<div ref={panel} id="sketchizi-appearance" className="sketchizi-appearance" data-dark={isDarkTheme} role="dialog" aria-label="Appearance and canvas background" style={position} onKeyDown={event => { if (event.key !== "Escape") event.stopPropagation(); }}>
-      <div className="appearance-heading">Appearance<button type="button" aria-label="Close appearance settings" onClick={() => { setOpen(false); trigger.current?.focus(); }}>×</button></div>
+    {open && createPortal(<div ref={panel} id="sketchizi-appearance" className="sketchizi-appearance" tabIndex={-1} data-dark={isDarkTheme} role="dialog" aria-label="Appearance and canvas background" style={position} onKeyDown={event => { if (event.key !== "Escape") event.stopPropagation(); }}>
+      <div className="appearance-heading appearance-title"><span>Appearance</span><button className="appearance-close" type="button" aria-label="Close appearance settings" onClick={() => { setOpen(false); trigger.current?.focus(); }}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div>
       <div className="appearance-modes" role="group" aria-label="Theme">
         {[["light", "Light"], ["dark", "Dark"], ["system", "System"]].map(([mode, label]) => <button key={mode} type="button" aria-pressed={themeMode === mode} onClick={() => setThemeMode(mode)}><AppearanceIcon mode={mode} />{label}</button>)}
       </div>
-      <div className="appearance-heading">Canvas background</div>
+      <div className="appearance-heading appearance-background-heading"><span>Canvas background</span><button className="appearance-reset" type="button" title="Use theme default" disabled={!canEdit || !api} onClick={() => chooseBackground(getCanvasBackground(isDarkTheme))}>Reset</button></div>
       <div className="appearance-swatches" role="group" aria-label="Canvas background presets">
-        {PRESETS.map(([color, label]) => <button type="button" key={color} disabled={!canEdit || !api} aria-label={label} title={label} aria-pressed={background.toLowerCase() === color} onClick={() => chooseBackground(color)}><span style={{ background: color }} /></button>)}
+        {PRESETS.map(([color, label]) => <button type="button" key={color} disabled={!canEdit || !api} aria-label={label} title={label} aria-pressed={background.toLowerCase() === color} onClick={() => chooseBackground(color)}><span className="appearance-swatch-color" style={{ background: color }} /><svg className="appearance-swatch-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg></button>)}
       </div>
-      <label className="appearance-custom">Custom color<input type="color" aria-label="Custom canvas background color" disabled={!canEdit || !api} value={canvasColorForDisplay(background, isDarkTheme)} onInput={event => chooseBackground(canvasColorForScene(event.currentTarget.value, isDarkTheme))} onChange={event => chooseBackground(canvasColorForScene(event.currentTarget.value, isDarkTheme))} /></label>
-      <button className="appearance-reset" type="button" disabled={!canEdit || !api} onClick={() => chooseBackground(getCanvasBackground(isDarkTheme))}>Use theme default</button>
-      <p>Background is saved with this drawing.</p>
+      <label className="appearance-custom"><span>Custom color</span><span className="appearance-color-value"><code>{canvasColorForDisplay(background, isDarkTheme).toUpperCase()}</code><input type="color" aria-label="Custom canvas background color" disabled={!canEdit || !api} value={canvasColorForDisplay(background, isDarkTheme)} onInput={event => chooseBackground(canvasColorForScene(event.currentTarget.value, isDarkTheme))} onChange={event => chooseBackground(canvasColorForScene(event.currentTarget.value, isDarkTheme))} /></span></label>
+      <p className="appearance-footer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>Saved with this drawing</p>
     </div>, document.body)}
   </>;
 }
