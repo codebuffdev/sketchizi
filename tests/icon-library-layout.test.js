@@ -29,7 +29,7 @@ test("Icon Panel renders accessible dialog, results count, view mode switcher, a
   assert.match(panel, /aria-label="Close icon library"/);
 });
 
-test("Icon Panel includes search, quick filters, and a single-row catalog with accessible More menu", () => {
+test("Icon Panel includes search, quick filters, and a single-row catalog with accessible All categories dropdown", () => {
   assert.match(panel, /className="search sk-search-input"/);
   assert.match(panel, /className="sk-search-kbd"/);
   assert.match(panel, /className="sk-scope-tabs"/);
@@ -41,7 +41,7 @@ test("Icon Panel includes search, quick filters, and a single-row catalog with a
   assert.match(compact, /\.sk-catalog-tabs\s*\{[^}]*display:\s*flex !important;/s);
   assert.match(panel, /aria-label="All categories"/);
   assert.match(panel, /role="menuitemradio"/);
-  assert.match(panel, /extraCatalogTabs\.map/);
+  assert.match(panel, /catalogMenuTabs\.map/);
   assert.match(panel, /src="\/icons\/aws\.svg"/);
   assert.match(panel, /src="\/icons\/k8s-kubernetes\.svg"/);
 });
