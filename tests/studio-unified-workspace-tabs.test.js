@@ -21,3 +21,13 @@ test("Both Studios retain keyboard-visible navigation and contextual panels", as
     assert.match(css, /\.studio-workspace-tabs button\.active/);
   }
 });
+
+test("Kubernetes mock implementation places resources before YAML and keeps validation contextual", async () => {
+  const source = await read("src/features/kubernetes-studio/ui/KubernetesStudio.jsx");
+  const css = await read("src/features/kubernetes-studio/ui/kubernetes-studio.css");
+  assert.match(source, /k8s-studio-validation-summary/);
+  assert.match(source, /setWorkspaceTab\("validation"\)/);
+  assert.match(source, /aria-label="Parsed Kubernetes resources"/);
+  assert.match(css, /\.k8s-studio \.k8s-studio-preview\{grid-column:1/);
+  assert.match(css, /\.k8s-studio \.k8s-studio-editor\{grid-column:3/);
+});
