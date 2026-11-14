@@ -38,6 +38,15 @@ test('All dropdown exposes every real collection without sacrificing quick short
   assert.match(panel, /onClick=\{\(\) => chooseSource\(tab\.id\)\}/);
 });
 
+test('All category dropdown omits the AWS and Kubernetes quick-access duplicates', () => {
+  assert.match(panel, /const primaryCatalogTabs = sourceTabs\.filter\(\(tab\) => \["aws", "kubernetes"\]\.includes\(tab\.id\)\)/);
+  assert.match(panel, /\.\.\.sourceTabs\.filter\(\(tab\) => !\["all", "aws", "kubernetes"\]\.includes\(tab\.id\)\)/);
+  assert.match(panel, /\{ id: "all", label: "All icons" \}/);
+  for (const id of ['networking', 'mindmaps', 'uml', 'eraser']) {
+    assert.ok(panel.includes('id: "' + id + '"'));
+  }
+});
+
 test('icon list defaults to compact while retaining stored grid or list selection', () => {
   const original = globalThis.localStorage;
   try {

@@ -329,7 +329,12 @@ export default function IconLibraryPanel({
 
   const primaryCatalogTabs = sourceTabs.filter((tab) => ["aws", "kubernetes"].includes(tab.id));
   // All is the single discoverable entry point for every real catalog.
-  const catalogMenuTabs = [{ id: "all", label: "All icons" }, ...sourceTabs.filter((tab) => tab.id !== "all")];
+  // AWS and Kubernetes are already visible as first-level shortcuts.
+  // List only the other collections in the dropdown to avoid duplication.
+  const catalogMenuTabs = [
+    { id: "all", label: "All icons" },
+    ...sourceTabs.filter((tab) => !["all", "aws", "kubernetes"].includes(tab.id)),
+  ];
 
   const subcategoryOptions = useMemo(
     () =>
