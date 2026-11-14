@@ -258,3 +258,15 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
   .k8s-studio-preview:has(.k8s-studio-preview-tabs button[aria-selected="true"]:nth-child(2))>.k8s-studio-validation{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
   .k8s-studio-preview:has(.k8s-studio-preview-tabs button[aria-selected="true"]:nth-child(2))>.k8s-studio-validation>ul{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#50617b transparent}
 }
+
+
+/* Fix: the original 190px list cap was still clipping validation findings. */
+@media(min-width:761px){
+  .k8s-studio-preview:has(.k8s-studio-preview-tabs button[aria-selected="true"]:nth-child(2))>.k8s-studio-validation>ul{
+    max-height:none;
+    height:100%;
+    flex:1 1 auto;
+    overflow-y:auto;
+    align-content:start;
+  }
+}
