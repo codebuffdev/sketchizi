@@ -20,7 +20,7 @@ export function getSelectedShapeBounds(elements) {
   if (width < 1 || height < 1) return null;
   const left = shape.x + Math.min(0, shape.width);
   const top = shape.y + Math.min(0, shape.height);
-  return { left, top, width, height, angle: shape.angle || 0 };
+  return { left, top, width, height, angle: shape.angle || 0, type: shape.type };
 }
 
 export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevision, viewModeEnabled, canvasRootRef, isDarkTheme }) {
@@ -40,13 +40,39 @@ export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevi
   const width = bounds.width * zoom;
   const height = bounds.height * zoom;
   if (![x, y, width, height].every(Number.isFinite)) return null;
+  const isEllipse = bounds.type === "ellipse";
+  const radiusX = bounds.width / 2;
+  const radiusY = bounds.height / 2;
+  // A true circle has one radius; an ellipse has two semi-axes.
+  const isCircle = isEllipse && Math.abs(bounds.width - bounds.height) <= 0.01 * Math.max(bounds.width, bounds.height);
   return createPortal(
     <div className="sk-shape-measurements" aria-hidden="true" style={{ "--sk-measure-canvas-bg": isDarkTheme ? "#12181c" : "#ffffff" }}>
-      <span className="sk-shape-measurement-width-mask" style={{ left: x + width / 2, top: y + height + 21 }}>
-        <span className="sk-shape-measurement sk-shape-measurement-width">{formatCm(bounds.width)}</span>
-      </span>
-      <span className="sk-shape-measurement sk-shape-measurement-height"
-        style={{ left: x + width + 13, top: y + height / 2 }}>{formatCm(bounds.height)}</span>
+      {isEllipse ? (
+        <>
+          <svg className="sk-shape-radius-guide" style={{ left: x, top: y, width, height }}
+            viewBox={`0 0 ${bounds.width} ${bounds.height}`} preserveAspectRatio="none" aria-hidden="true">
+            <line x1={radiusX} y1={radiusY} x2={bounds.width} y2={radiusY} />
+            {!isCircle && <line x1={radiusX} y1={radiusY} x2={radiusX} y2="0" />}
+            <circle cx={radiusX} cy={radiusY} r={Math.min(3 / zoom, 4)} />
+          </svg>
+          <span className="sk-shape-measurement sk-shape-radius-label"
+            style={{ left: x + width * 0.75, top: y + height / 2 - 17 }}>
+            {isCircle ? `r = ${formatCm(radiusX)}` : `rx = ${formatCm(radiusX)}`}
+          </span>
+          {!isCircle && <span className="sk-shape-measurement sk-shape-radius-label"
+            style={{ left: x + width / 2 + 20, top: y + height / 4 }}>
+            {`ry = ${formatCm(radiusY)}`}
+          </span>}
+        </>
+      ) : (
+        <>
+          <span className="sk-shape-measurement-width-mask" style={{ left: x + width / 2, top: y + height + 21 }}>
+            <span className="sk-shape-measurement sk-shape-measurement-width">{formatCm(bounds.width)}</span>
+          </span>
+          <span className="sk-shape-measurement sk-shape-measurement-height"
+            style={{ left: x + width + 13, top: y + height / 2 }}>{formatCm(bounds.height)}</span>
+        </>
+      )}
     </div>,
     document.body
   );
