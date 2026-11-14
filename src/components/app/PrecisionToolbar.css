@@ -4,3 +4,7 @@
 .sk-precision-toolbar button:focus-visible{outline:2px solid #b4aaff;outline-offset:2px}
 .sk-precision-toolbar [role="status"]{font-variant-numeric:tabular-nums}
 .sk-precision-hit-area{position:absolute;inset:0;z-index:110;cursor:crosshair;background:transparent;touch-action:none}
+
+.sk-precision-toolbar label{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.sk-precision-toolbar input{width:66px;padding:4px;border:1px solid #ffffff55;border-radius:5px;background:#151923;color:#fff;font:inherit}
+.sk-precision-toolbar input:focus-visible{outline:2px solid #b4aaff}
