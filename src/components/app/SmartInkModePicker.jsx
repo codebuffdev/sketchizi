@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { polishFinishedInk } from "../../features/canvas/smartInkStrokePolish.js";
+import { supportsOnlineInk } from "../../features/canvas/smartInkOnlineRecognition.js";
 import "./SmartInkModePicker.css";
 import { recognizeInk, beautifyInk } from "../../features/canvas/smartInkRecognition.js";
 
@@ -79,13 +80,13 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
         session.fingerprint = fingerprint;
         session.changedAt = Date.now();
         session.offered = false;
-      } else if (!session.offered && Date.now() - session.changedAt > 1400) {
+      } else if (!session.offered && Date.now() - session.changedAt > (supportsOnlineInk() ? 350 : 1400)) {
         session.offered = true;
         strokes.forEach((el) => session.baseline.add(el.id));
         void openPreview(strokes);
       }
     };
-    const interval = window.setInterval(poll, 300);
+    const interval = window.setInterval(poll, 150);
     return () => window.clearInterval(interval);
   }, [mode, canEdit, viewModeEnabled, apiRef, openPreview]);
   // Refine every finished pen stroke without waiting for OCR or a word boundary.
