@@ -65,7 +65,7 @@ export function planComposeDiagram(document) {
   const maxResourceRight = Math.max(left, ...placed.map((pos) => pos.x + resourceWidth));
   const maxResourceBottom = Math.max(top + cardHeight, ...placed.map((pos) => pos.y + resourceHeight));
   const width = Math.max(maxServiceRight, maxResourceRight) - left + 90;
-  const height = maxResourceBottom - top + 88;
+  const height = maxResourceBottom - top + 156;
   return { positions, edges, resources, resourcePositions, cardWidth, cardHeight, left, top, resourceTop, resourceWidth, resourceHeight, resourceGap, width, height };
 }
 
