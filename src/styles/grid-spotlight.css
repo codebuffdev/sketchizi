@@ -132,46 +132,6 @@
   display: none;
 }
 
-/* Compact grid-style switch, independent of Excalidraw's Show Grid control. */
-.app .canvas .sketchizi-grid-style-control {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 15;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px;
-  border: 1px solid rgb(128 142 158 / 25%);
-  border-radius: 10px;
-  background: var(--color-surface-lowest, #20232a);
-  color: var(--text-primary-color, #e8e8eb);
-  box-shadow: 0 3px 14px rgb(0 0 0 / 14%);
-}
-.app .canvas .sketchizi-grid-style-label {
-  font-size: 12px;
-  padding: 0 8px 0 5px;
-  white-space: nowrap;
-}
-.app .canvas .sketchizi-grid-style-control button {
-  font: inherit;
-  font-size: 12px;
-  padding: 6px 10px;
-  border: 0;
-  border-radius: 6px;
-  color: inherit;
-  background: transparent;
-  cursor: pointer;
-}
-.app .canvas .sketchizi-grid-style-control button[aria-pressed="true"] {
-  background: var(--color-primary-light, rgb(115 108 230 / 24%));
-  outline: 1px solid rgb(139 132 246 / 55%);
-}
-.app .canvas .sketchizi-grid-style-control button:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
-}
-
 /* Restore the original production behavior only for Focus (Local).
    This rule follows the permanent 90% rule, overriding its geometry
    and retaining the original feathered rectangle around drawing content. */
@@ -202,3 +162,41 @@
     transition: none;
   }
 }
+
+/* Header-owned grid settings. No floating controls on the canvas. */
+.sketchizi-header-grid { position: relative; display: inline-flex; align-items: center; }
+.sketchizi-header-grid-trigger {
+  display: grid; place-items: center; width: 34px; height: 34px;
+  border: 1px solid transparent; border-radius: 9px;
+  color: inherit; background: transparent; cursor: pointer;
+}
+.sketchizi-header-grid-trigger:hover { background: rgb(139 132 246 / 12%); }
+.sketchizi-header-grid-trigger.is-active {
+  border-color: rgb(139 132 246 / 65%);
+  background: rgb(139 132 246 / 16%);
+}
+.sketchizi-header-grid-popover {
+  position: absolute; z-index: 200; top: calc(100% + 12px); right: 0;
+  width: min(350px, calc(100vw - 24px)); box-sizing: border-box;
+  padding: 16px; border: 1px solid rgb(130 140 160 / 24%);
+  border-radius: 12px; background: var(--color-surface-lowest, #20232a);
+  color: var(--text-primary-color, #e8e8eb);
+  box-shadow: 0 16px 44px rgb(0 0 0 / 35%);
+}
+.sketchizi-header-grid-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sketchizi-header-grid-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+.sketchizi-header-grid-toggle input { accent-color: #8178ee; width: 17px; height: 17px; cursor: pointer; }
+.sketchizi-header-grid-modes { margin-top: 18px; font-size: 12px; }
+.sketchizi-header-grid-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.sketchizi-header-grid-options button {
+  min-height: 64px; padding: 9px 4px; font: inherit; font-size: 11px;
+  border: 1px solid rgb(130 140 160 / 24%); border-radius: 8px;
+  background: transparent; color: inherit; cursor: pointer;
+}
+.sketchizi-header-grid-options button[aria-pressed="true"] {
+  border-color: #958cff; background: rgb(139 132 246 / 17%);
+}
+.sketchizi-header-grid-options button:disabled { opacity: .38; cursor: not-allowed; }
+.sketchizi-header-grid-popover p { margin: 12px 0 0; font-size: 11px; opacity: .7; line-height: 1.5; }
+.sketchizi-header-grid-trigger:focus-visible,
+.sketchizi-header-grid-options button:focus-visible { outline: 2px solid #958cff; outline-offset: 2px; }
