@@ -31,3 +31,15 @@ test("Kubernetes mock implementation places resources before YAML and keeps vali
   assert.match(css, /\.k8s-studio \.k8s-studio-preview\{grid-column:1/);
   assert.match(css, /\.k8s-studio \.k8s-studio-editor\{grid-column:3/);
 });
+
+test("Kubernetes redesign keeps snapshot inside Insights and groups validation by resource", async () => {
+  const source = await read("src/features/kubernetes-studio/ui/KubernetesStudio.jsx");
+  const css = await read("src/features/kubernetes-studio/ui/kubernetes-studio.css");
+  assert.match(source, /workspaceTab === "insights" && <details className="k8s-studio-snapshot-card"/);
+  assert.equal((source.match(/Inspect read-only Kubernetes snapshot/g) || []).length, 1);
+  assert.match(source, /k8s-studio-diagnostic-groups/);
+  assert.match(source, /k8s-studio-diagnostic-fix/);
+  assert.match(source, /k8s-studio-header-actions/);
+  assert.match(css, /\.k8s-studio \.k8s-studio-snapshot-card textarea/);
+  assert.match(css, /\.k8s-studio \.k8s-studio-diagnostic-inspect:focus-visible/);
+});
