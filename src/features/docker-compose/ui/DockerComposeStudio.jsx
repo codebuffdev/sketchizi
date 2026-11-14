@@ -375,7 +375,7 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   return <div className="docker-studio-overlay docker-studio-k8s-layout" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
     <section className="docker-studio docker-studio-yaml-first" role="dialog" aria-modal="true" aria-labelledby="docker-studio-title">
       <header className="docker-studio-header docker-studio-header-compact">
-        <div className="docker-studio-brand-mark" aria-hidden="true">▦</div>
+        <div className="docker-studio-brand-mark" aria-hidden="true"><svg className="docker-studio-docker-icon" viewBox="0 0 64 48" fill="currentColor" focusable="false"><path d="M8 16h9v9H8zm11 0h9v9h-9zm11 0h9v9h-9zM19 5h9v9h-9zm11 0h9v9h-9zm11 11h9v9h-9zM2 27h50c2-4 5-6 10-6-1 6-4 10-9 12-2 10-11 15-24 15C14 48 5 41 2 27z"/></svg></div>
         <h1 id="docker-studio-title">Docker Compose Studio</h1>
         <div className="docker-studio-toolbar-context" aria-label="Compose project summary">
           <strong>{composeDoc?.name || "Compose project"}</strong>
