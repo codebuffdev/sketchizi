@@ -126,3 +126,13 @@ test('focus stays centered on content even if the last pointer location is elsew
   const reversed = workspaceFocusRect({ elements: [{ x: 940, y: 480, width: -240, height: -160 }], width: 1400, height: 900 });
   assert.deepEqual(reversed, r);
 });
+
+test('a single rectangle or frame is the hard focus boundary, never outside it', () => {
+  const rectangle = { type: 'rectangle', x: 655, y: 268, width: 320, height: 286 };
+  const rect = workspaceFocusRect({ elements: [rectangle], width: 1720, height: 860, anchor: { x: 1400, y: 800 } });
+  assert.deepEqual(rect, { left: 655, top: 268, width: 320, height: 286 });
+  const frame = workspaceFocusRect({ elements: [{ ...rectangle, type: 'frame' }], width: 1720, height: 860 });
+  assert.deepEqual(frame, rect);
+  const clipped = workspaceFocusRect({ elements: [{ ...rectangle, x: -20, y: -10 }], width: 1720, height: 860 });
+  assert.deepEqual(clipped, { left: 0, top: 0, width: 300, height: 276 });
+});
