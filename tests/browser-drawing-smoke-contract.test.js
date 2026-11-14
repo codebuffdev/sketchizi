@@ -12,7 +12,7 @@ test("production verification exercises native canvas drawing and persistence", 
   assert.match(script, /indexedDB\.open\("sketchizi-local-state"\)/);
   assert.match(script, /objectStore\("documents"\)\.get\("main"\)/);
   assert.match(script, /keyboard\.press\("v"\)/);
-  assert.match(script, /keyboard\.press\("g"\)/);
+  assert.match(script, /keyboard\.press\("ControlOrMeta\+Quote"\)/);
   assert.match(script, /page\.reload\(/);
   assert.match(script, /sketchizi-alignment-guides line/);
 });
