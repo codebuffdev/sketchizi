@@ -39,7 +39,7 @@ test("Icon Panel includes search, quick filters, and a single-row catalog with a
   assert.match(panel, /className="library-source-tabs sk-catalog-tabs"/);
   assert.match(panel, /className="sk-catalog-tab-label"/);
   assert.match(compact, /\.sk-catalog-tabs\s*\{[^}]*display:\s*flex !important;/s);
-  assert.match(panel, /aria-label="More icon collections"/);
+  assert.match(panel, /aria-label="All categories"/);
   assert.match(panel, /role="menuitemradio"/);
   assert.match(panel, /extraCatalogTabs\.map/);
   assert.match(panel, /src="\/icons\/aws\.svg"/);
