@@ -42,7 +42,7 @@ export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevi
   if (![x, y, width, height].every(Number.isFinite)) return null;
   return createPortal(
     <div className="sk-shape-measurements" aria-hidden="true" style={{ "--sk-measure-canvas-bg": isDarkTheme ? "#12181c" : "#ffffff" }}>
-      <span className="sk-shape-measurement-width-mask" style={{ left: x + width / 2, top: y + height + 15 }}>
+      <span className="sk-shape-measurement-width-mask" style={{ left: x + width / 2, top: y + height + 21 }}>
         <span className="sk-shape-measurement sk-shape-measurement-width">{formatCm(bounds.width)}</span>
       </span>
       <span className="sk-shape-measurement sk-shape-measurement-height"
