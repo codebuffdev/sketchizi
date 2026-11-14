@@ -283,3 +283,16 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-studio-header-end .k8s-studio-close{position:static;flex:none}
 .k8s-studio-header-end .k8s-studio-secondary{min-height:34px;padding:7px 12px;font-size:11px}
 @media(max-width:900px){.k8s-studio .k8s-studio-header-compact{flex-wrap:wrap;gap:8px;padding:10px 14px}.k8s-studio-header-compact .k8s-studio-actions{order:3;flex-basis:100%;padding:0;overflow-x:auto}.k8s-studio-header-end{margin-left:auto}}
+
+
+/* Match the finished Docker Studio header: 52px, right-aligned controls. */
+.k8s-studio .k8s-studio-header-compact{min-height:52px;padding:7px 14px;gap:10px;flex-wrap:nowrap}
+.k8s-studio-header-compact .k8s-studio-brand{width:30px;height:30px;border-radius:8px;font-size:10px}
+.k8s-studio-header-compact h1{font-size:14px}
+.k8s-studio-header-compact .k8s-studio-actions{flex:0 1 auto;margin-left:auto;padding:0;gap:6px;justify-content:flex-end}
+.k8s-studio-header-compact .k8s-studio-actions button,.k8s-studio-header-end .k8s-studio-secondary{min-height:28px;padding:5px 8px;font-size:10px}
+.k8s-studio-header-compact .k8s-studio-actions .k8s-studio-primary{background:#1b2a40;border:1px solid #35445e;color:#dce7f8}
+.k8s-studio-header-compact .k8s-studio-actions .k8s-studio-primary:hover{background:#2b3e5a}
+.k8s-studio-header-end{margin-left:0;gap:6px}
+.k8s-studio-header-end .k8s-studio-close{width:29px;height:29px;border-radius:8px;font-size:18px}
+@media(max-width:900px){.k8s-studio .k8s-studio-header-compact{flex-wrap:wrap;padding:8px 12px}.k8s-studio-header-compact .k8s-studio-actions{order:3;flex:1 0 100%;justify-content:flex-start;overflow-x:auto;margin-left:0}.k8s-studio-header-end{margin-left:auto}}
