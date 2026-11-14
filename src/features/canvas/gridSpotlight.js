@@ -67,3 +67,15 @@ export function spotlightGridPattern(appState) {
     offsetY: positiveModulo(finite(appState?.scrollY) * zoom, spacing),
   };
 }
+
+/** The larger underlying square grid stays aligned with the same scene origin. */
+export function workspaceCoarseGridPattern(appState) {
+  const fine = spotlightGridPattern(appState);
+  const zoom = Math.max(0.01, finite(appState?.zoom?.value ?? appState?.zoom, 1));
+  const spacing = fine.spacing * 4;
+  return {
+    spacing,
+    offsetX: positiveModulo(finite(appState?.scrollX) * zoom, spacing),
+    offsetY: positiveModulo(finite(appState?.scrollY) * zoom, spacing),
+  };
+}
