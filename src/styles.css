@@ -1054,3 +1054,21 @@
     min-height: 0;
   }
 }
+
+/* Phone editor must occupy the viewport rather than the residual flex lane
+ * left by mobile header and overlay controls. */
+@media (max-width: 480px) {
+  .app .desktop-workspace {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    flex: none;
+  }
+  .app .desktop-canvas-region,
+  .app .desktop-canvas-region > .canvas {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
