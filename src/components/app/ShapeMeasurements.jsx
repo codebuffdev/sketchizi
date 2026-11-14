@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { createPortal } from "react-dom";
 import "./ShapeMeasurements.css";
 
 const CM_PER_CSS_PX = 2.54 / 96;
@@ -33,17 +34,19 @@ export default function ShapeMeasurements({ apiRef, selectedElements, canvasRevi
   const offsetTop = state.offsetTop ?? 0;
   const rootRect = canvasRootRef?.current?.getBoundingClientRect?.();
   if (!rootRect) return null;
-  const x = (bounds.left + scrollX) * zoom + offsetLeft - rootRect.left;
-  const y = (bounds.top + scrollY) * zoom + offsetTop - rootRect.top;
+  const x = (bounds.left + scrollX) * zoom + offsetLeft;
+  const y = (bounds.top + scrollY) * zoom + offsetTop;
   const width = bounds.width * zoom;
   const height = bounds.height * zoom;
   if (![x, y, width, height].every(Number.isFinite)) return null;
-  return (
-    <div className="sk-shape-measurements" aria-hidden="true">
-      <span className="sk-shape-measurement sk-shape-measurement-width"
-        style={{ left: x + width / 2, top: y + height + 13 }}>{formatCm(bounds.width)}</span>
+  return createPortal(
+    <div className="sk-shape-measurements" aria-hidden="true" style={{ "--sk-measure-canvas-bg": state.viewBackgroundColor || "#101619" }}>
+      <span className="sk-shape-measurement-width-mask" style={{ left: x + width / 2, top: y + height + 15 }}>
+        <span className="sk-shape-measurement sk-shape-measurement-width">{formatCm(bounds.width)}</span>
+      </span>
       <span className="sk-shape-measurement sk-shape-measurement-height"
         style={{ left: x + width + 13, top: y + height / 2 }}>{formatCm(bounds.height)}</span>
-    </div>
+    </div>,
+    document.body
   );
 }
