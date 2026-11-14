@@ -1,7 +1,7 @@
 .sk-shape-measurements {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 2147483000;
   pointer-events: none;
   overflow: hidden;
 }
@@ -12,8 +12,8 @@
   padding: 4px 7px;
   border: 1px solid rgb(142 132 242 / 35%);
   border-radius: 6px;
-  background: var(--color-surface-lowest, #252935);
-  color: var(--text-primary-color, #f2f1f7);
+  background: #252935;
+  color: #f2f1f7;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
@@ -21,17 +21,18 @@
   font-variant-numeric: tabular-nums;
   box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
 }
-/* Excalidraw renders its own px dimensions beneath a selection. Mask that
-   badge locally so the centimeter width is the only visible size readout. */
-.sk-shape-measurement-width {
-  isolation: isolate;
-}
-.sk-shape-measurement-width::before {
-  content: "";
+/* A single opaque replacement region hides the native pixel badge and
+   displays only the width in centimeters, above Excalidraw's stacking context. */
+.sk-shape-measurement-width-mask {
   position: absolute;
-  z-index: -1;
-  inset: -5px -38px;
-  border-radius: 7px;
-  background: var(--sk-canvas-background, #101619);
+  width: 170px;
+  height: 39px;
+  transform: translate(-50%, -50%);
+  background: var(--sk-measure-canvas-bg);
+  border-radius: 5px;
+}
+.sk-shape-measurement-width {
+  left: 50%;
+  top: 50%;
 }
 .sk-shape-measurement-height { transform: translate(0, -50%); }
