@@ -187,9 +187,13 @@ try {
 
   // The reference design is an IDLE-HIDDEN, softly faded grid around actual
   // work. Hovering must NOT show a moving cursor halo.
-  const focusGrid = blank.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
+  // Use a separate editor page: drawing test interactions must not mutate the
+  // blank editor used by the following save/export smoke checks.
+  const gridSession = await makePage({ width: 1280, height: 800 });
+  await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
-  const sceneBounds = await blank.page.locator(".desktop-canvas-region > .canvas").boundingBox();
+  const sceneBounds = await gridSession.page.locator(".desktop-canvas-region > .canvas").boundingBox();
   if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
   const firstFocus = {
     x: sceneBounds.x + sceneBounds.width * 0.52,
@@ -218,15 +222,15 @@ try {
       canvasBackground: getComputedStyle(document.querySelector(".desktop-canvas-region")).backgroundImage,
     };
   });
-  await blank.page.mouse.move(firstFocus.x, firstFocus.y);
-  await blank.page.waitForTimeout(90);
+  await gridSession.page.mouse.move(firstFocus.x, firstFocus.y);
+  await gridSession.page.waitForTimeout(90);
   const idleFocus = await readFocus();
   if (idleFocus.active || idleFocus.opacity > 0.01 || idleFocus.pointerEvents !== "none" ||
     idleFocus.canvasBackground !== "none") {
     throw new Error(`Grid must stay hidden on idle mouse movement: ${JSON.stringify(idleFocus)}`);
   }
-  await blank.page.mouse.down();
-  await blank.page.waitForTimeout(100);
+  await gridSession.page.mouse.down();
+  await gridSession.page.waitForTimeout(100);
   const desktopFocus = await readFocus();
   const twoSquareLayers = (value) => (value.match(/linear-gradient\(/g) || []).length === 2;
   if (!desktopFocus.active ||
@@ -243,34 +247,35 @@ try {
     Math.abs(desktopFocus.y - (firstFocus.y - sceneBounds.y)) > 10) {
     throw new Error(`Layered work grid did not activate correctly: ${JSON.stringify(desktopFocus)}`);
   }
-  await blank.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.70, sceneBounds.y + sceneBounds.height * 0.65);
-  await blank.page.waitForTimeout(100);
+  await gridSession.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.70, sceneBounds.y + sceneBounds.height * 0.65);
+  await gridSession.page.waitForTimeout(100);
   const drawingFocus = await readFocus();
   if (Math.abs(drawingFocus.x - desktopFocus.x) < 40 || Math.abs(drawingFocus.y - desktopFocus.y) < 30) {
     throw new Error(`Grid did not track an active drawing gesture: ${JSON.stringify({desktopFocus,drawingFocus})}`);
   }
-  await blank.page.mouse.up();
+  await gridSession.page.mouse.up();
   const releasedFocus = await readFocus();
-  await blank.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.82, sceneBounds.y + sceneBounds.height * 0.38);
-  await blank.page.waitForTimeout(100);
+  await gridSession.page.mouse.move(sceneBounds.x + sceneBounds.width * 0.82, sceneBounds.y + sceneBounds.height * 0.38);
+  await gridSession.page.waitForTimeout(100);
   const hoverAfterDrawing = await readFocus();
   if (hoverAfterDrawing.x !== releasedFocus.x || hoverAfterDrawing.y !== releasedFocus.y) {
     throw new Error(`Grid followed hover after drawing stopped: ${JSON.stringify({releasedFocus,hoverAfterDrawing})}`);
   }
-  await blank.page.waitForTimeout(3400);
+  await gridSession.page.waitForTimeout(3400);
   const dormantFocus = await readFocus();
   if (dormantFocus.active) {
     throw new Error(`Grid did not return to idle after activity: ${JSON.stringify(dormantFocus)}`);
   }
-  await blank.page.setViewportSize({ width: 390, height: 740 });
-  await blank.page.waitForTimeout(90);
+  await gridSession.page.setViewportSize({ width: 390, height: 740 });
+  await gridSession.page.waitForTimeout(90);
   const phoneFocus = await readFocus();
   if (phoneFocus.rx > 190 || phoneFocus.rx < 110 ||
     phoneFocus.ry > 350 || phoneFocus.ry < 200 ||
     phoneFocus.pointerEvents !== "none" || phoneFocus.active) {
     throw new Error(`Work-area grid does not fit an idle phone viewport: ${JSON.stringify(phoneFocus)}`);
   }
-  await blank.page.setViewportSize({ width: 1280, height: 800 });
+  await gridSession.page.setViewportSize({ width: 1280, height: 800 });
+  await gridSession.context.close();
   console.log("PASS: activity-only layered square grid has a soft fade, ignores hover, follows drawing, then hides.");
 
   // The clipboard toast is owned by Excalidraw, so exercise its native class
