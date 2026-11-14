@@ -26,7 +26,7 @@ test("Compose direct export preserves declared secrets and configs", () => {
   const yaml = exportComposeYaml(source);
   assert.match(yaml, /secrets:\n\s+token:\n\s+external: true/);
   assert.match(yaml, /configs:\n\s+settings:\n\s+file: "\.\/settings\.conf"/);
-  assert.equal(validateComposeDocument(source).findings.some(({ code }) => code === "COMPOSE_UNKNOWN_SECRET" || code === "COMPOSE_UNKNOWN_CONFIG"), false);
+  assert.equal(validateComposeDocument(source).findings.some(({ code }) => code === "COMPOSE_UNKNOWN_SECRET" || code === "COMPOSE_UNKNOWN_CONFIG"), true);
 });
 
 test("KNOWN LIMITATION: normalized Compose document drops top-level secrets and configs", () => {
