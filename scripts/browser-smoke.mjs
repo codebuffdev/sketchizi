@@ -205,6 +205,8 @@ try {
       clipPath: style.clipPath,
       maskImage: style.maskImage,
       backgroundImage: style.backgroundImage,
+      backgroundSize: style.backgroundSize,
+      backgroundPosition: style.backgroundPosition,
       x: parseFloat(node.style.getPropertyValue("--sk-grid-focus-x")),
       y: parseFloat(node.style.getPropertyValue("--sk-grid-focus-y")),
       radius: parseFloat(node.style.getPropertyValue("--sk-grid-focus-radius")),
@@ -217,7 +219,16 @@ try {
     desktopFocus.pointerEvents !== "none" ||
     !desktopFocus.clipPath.startsWith("circle(") ||
     !desktopFocus.maskImage.includes("radial-gradient") ||
-    !desktopFocus.backgroundImage.includes("radial-gradient") ||
+    // CSS must paint continuous horizontal and vertical rules (square cells),
+    // not the former circular dot stamps. Both layers share the same tiling.
+    (desktopFocus.backgroundImage.match(/linear-gradient\\(/g) || []).length !== 2 ||
+    desktopFocus.backgroundImage.includes("radial-gradient") ||
+    !/to right/.test(desktopFocus.backgroundImage) ||
+    !/to bottom/.test(desktopFocus.backgroundImage) ||
+    desktopFocus.backgroundSize.split(",").length !== 2 ||
+    desktopFocus.backgroundSize.split(",").map((value) => value.trim())[0] !== desktopFocus.backgroundSize.split(",").map((value) => value.trim())[1] ||
+    desktopFocus.backgroundPosition.split(",").length !== 2 ||
+    desktopFocus.backgroundPosition.split(",").map((value) => value.trim())[0] !== desktopFocus.backgroundPosition.split(",").map((value) => value.trim())[1] ||
     desktopFocus.canvasBackground !== "none" ||
     Math.abs(desktopFocus.x - (firstFocus.x - sceneBounds.x)) > 10 ||
     Math.abs(desktopFocus.y - (firstFocus.y - sceneBounds.y)) > 10 ||
@@ -239,7 +250,7 @@ try {
     throw new Error(`Circular focus does not fit a phone viewport: ${JSON.stringify(phoneFocus)}`);
   }
   await blank.page.setViewportSize({ width: 1280, height: 800 });
-  console.log("PASS: circular grid remains clipped, pointer-transparent, responsive, and follows editing position.");
+  console.log("PASS: circular square-line grid stays clipped, pointer-transparent, responsive, and follows editing position.");
 
   // The clipboard toast is owned by Excalidraw, so exercise its native class
   // using a temporary message without needing clipboard permissions.
