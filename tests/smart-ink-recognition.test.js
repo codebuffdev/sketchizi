@@ -3,19 +3,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../src/features/canvas/smartInkRecognition.js", import.meta.url), "utf8");
 const picker = readFileSync(new URL("../src/components/app/SmartInkModePicker.jsx", import.meta.url), "utf8");
-
-test("recognition uses native browser detector with explicit fallback", () => {
+test("recognition has server and browser fallbacks", () => {
   assert.match(source, /globalThis\.TextDetector/);
-  assert.match(source, /available: false/);
   assert.match(source, /renderInkForRecognition/);
-  assert.match(picker, /Browser recognition unavailable/);
+  assert.match(source, /VITE_SMART_INK_RECOGNITION_URL/);
 });
-test("conversion is gated on review and preserves original ink until apply", () => {
-  assert.match(picker, /Review handwriting/);
-  assert.match(picker, /Keep original/);
-  assert.match(picker, /Apply handwriting/);
-  assert.match(picker, /recognizedText\.trim\(\)/);
+test("successful recognition converts automatically; failures retain ink", () => {
+  assert.match(picker, /beautifyInk\(api, selected, result\.text\)/);
+  assert.match(picker, /item\.version === el\.version/);
+  assert.match(picker, /Original ink preserved/);
+  assert.doesNotMatch(picker, /<textarea/);
   assert.match(source, /convertToExcalidrawElements/);
-  assert.match(source, /fontFamily: 1/);
-  assert.match(source, /api\.updateScene/);
 });
