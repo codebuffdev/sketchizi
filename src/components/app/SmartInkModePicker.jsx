@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { polishFinishedInk } from "../../features/canvas/smartInkStrokePolish.js";
 import "./SmartInkModePicker.css";
 import { recognizeInk, beautifyInk } from "../../features/canvas/smartInkRecognition.js";
 
@@ -39,7 +41,7 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
     try {
       const result = await recognizeInk(selected);
       if (!result.text?.trim()) {
-        setMessage("Couldn't recognize that handwriting. Original ink preserved.");
+        if (!Array.isArray(automaticStrokes)) setMessage("Couldn't recognize those strokes. Original ink preserved.");
         return;
       }
       // Never replace strokes that were changed or deleted while OCR was running.
@@ -54,13 +56,13 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
         setMessage("Unable to convert handwriting. Original ink preserved.");
       }
     } catch {
-      setMessage("Recognition unavailable. Original ink preserved; no retyping required.");
+      if (!Array.isArray(automaticStrokes)) setMessage("Recognition unavailable. Original ink preserved; no retyping required.");
     } finally {
       requestRef.current = false;
       setBusy(false);
     }
   }, [apiRef]);
-  const sessionRef = useRef({ baseline: new Set(), fingerprint: "", changedAt: 0, offered: false });
+  const sessionRef = useRef({ baseline: new Set(), polishedIds: new Set(), fingerprint: "", changedAt: 0, offered: false });
   const stateRef = useRef({ busy: false });
   const requestRef = useRef(false);
   useEffect(() => { stateRef.current = { busy }; }, [busy]);
@@ -86,8 +88,45 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
     const interval = window.setInterval(poll, 300);
     return () => window.clearInterval(interval);
   }, [mode, canEdit, viewModeEnabled, apiRef, openPreview]);
+  // Refine every finished pen stroke without waiting for OCR or a word boundary.
+  useEffect(() => {
+    if (mode !== "write" || !canEdit || viewModeEnabled) return undefined;
+    const root = canvasRootRef.current;
+    if (!root) return undefined;
+    let activePointer = null;
+    const pending = new Set();
+    const onInkDown = (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      if (!(event.target instanceof Element) || !event.target.closest("canvas.excalidraw__canvas.interactive")) return;
+      if (apiRef?.current?.getAppState?.()?.activeTool?.type !== "freedraw") return;
+      activePointer = event.pointerId;
+    };
+    const onInkFinish = (event) => {
+      if (activePointer !== event.pointerId) return;
+      activePointer = null;
+      const handle = window.setTimeout(() => {
+        pending.delete(handle);
+        if (activePointer !== null) return;
+        polishFinishedInk(apiRef?.current, sessionRef.current.polishedIds, CaptureUpdateAction.NEVER);
+      }, 100);
+      pending.add(handle);
+    };
+    root.addEventListener("pointerdown", onInkDown, true);
+    window.addEventListener("pointerup", onInkFinish, true);
+    window.addEventListener("pointercancel", onInkFinish, true);
+    return () => {
+      root.removeEventListener("pointerdown", onInkDown, true);
+      window.removeEventListener("pointerup", onInkFinish, true);
+      window.removeEventListener("pointercancel", onInkFinish, true);
+      pending.forEach((handle) => window.clearTimeout(handle));
+    };
+  }, [mode, canEdit, viewModeEnabled, apiRef, canvasRootRef]);
+
   const chooseMode = useCallback((nextMode) => {
-    if (nextMode === "write") sessionRef.current = { baseline: new Set((apiRef?.current?.getSceneElements?.() || []).map((el) => el.id)), fingerprint: "", changedAt: 0, offered: false };
+    if (nextMode === "write") {
+      const existingIds = new Set((apiRef?.current?.getSceneElements?.() || []).map((el) => el.id));
+      sessionRef.current = { baseline: new Set(existingIds), polishedIds: new Set(existingIds), fingerprint: "", changedAt: 0, offered: false };
+    }
     setMode(nextMode);
     setMenu(null);
     apiRef?.current?.setActiveTool?.({ type: "freedraw" });
@@ -136,7 +175,7 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
   return (
     <>
       {mode === "write" && <div className="sketchizi-smart-ink-indicator" role="status">
-        <span>Write mode</span>
+        <span>Write mode · live ink cleanup</span>
         <button type="button" disabled={busy} onClick={() => openPreview()}>{busy ? "Recognizing…" : "Recognize selected ink"}</button>
         {message && <span className="sketchizi-smart-ink-message">{message}</span>}
       </div>}
