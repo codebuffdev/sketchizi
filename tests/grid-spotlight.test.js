@@ -38,7 +38,7 @@ test('selected element center follows Excalidraw pan and zoom', () => {
   assert.equal(spotlightElementCenter(shape, { zoom: 0 }), null);
 });
 
-test('dot spacing and offsets adapt to zoom and pan', () => {
+test('square-cell spacing and offsets adapt to zoom and pan', () => {
   assert.deepEqual(spotlightGridPattern({ gridSize: 20, zoom: { value: 1 }, scrollX: -5, scrollY: 8 }), { spacing: 20, offsetX: 15, offsetY: 8 });
   assert.deepEqual(spotlightGridPattern({ gridSize: 20, zoom: { value: 2 }, scrollX: 10, scrollY: -10 }), { spacing: 40, offsetX: 20, offsetY: 20 });
   assert.equal(spotlightGridPattern({ gridSize: 20, zoom: { value: 0.1 } }).spacing, 8);
@@ -56,6 +56,13 @@ test('grid spotlight only decorates the static canvas and cannot intercept point
   assert.match(css, /pointer-events: none !important/);
   assert.match(css, /clip-path: circle\(var\(--sk-grid-focus-radius\) at/);
   assert.match(css, /mask-image: radial-gradient/);
+  // Two orthogonal continuous rules form square cells; radial gradients
+  // are used only for fading the circular boundary, never for dot texture.
+  assert.match(css, /linear-gradient\(to right,/);
+  assert.match(css, /linear-gradient\(to bottom,/);
+  assert.match(css, /background-size:\s*var\(--sk-grid-size\) var\(--sk-grid-size\),\s*var\(--sk-grid-size\) var\(--sk-grid-size\);/s);
+  assert.match(css, /background-position:\s*var\(--sk-grid-offset-x\) var\(--sk-grid-offset-y\),\s*var\(--sk-grid-offset-x\) var\(--sk-grid-offset-y\);/s);
+  assert.doesNotMatch(css, /background-image:\s*radial-gradient\(/);
   assert.match(css, /\.app\.theme-dark \.desktop-canvas-region,\s*\.app\.theme-light \.desktop-canvas-region\s*\{\s*background-image: none !important;/);
 });
 
