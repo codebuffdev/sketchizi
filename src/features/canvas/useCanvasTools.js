@@ -1,11 +1,12 @@
 import { useCallback } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { getActiveSelectedElementIds } from "./selectedElementIds.js";
 
 export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit = true }) {
   const getSelectedElements = useCallback(() => {
     const api = apiRef.current;
     if (!api) return [];
-    const selectedIds = Object.keys(api.getAppState().selectedElementIds || {});
+    const selectedIds = getActiveSelectedElementIds(api.getAppState().selectedElementIds);
     return api.getSceneElements().filter((element) => selectedIds.includes(element.id) && !element.isDeleted);
   }, [apiRef]);
 

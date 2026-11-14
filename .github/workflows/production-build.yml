@@ -73,6 +73,9 @@ jobs:
       - name: Run template creation browser smoke test
         run: node scripts/browser-smoke.mjs
 
+      - name: Verify drawing interactions and local persistence
+        run: node scripts/browser-drawing-smoke.mjs
+
       - name: Write CI verification summary
         if: always()
         shell: bash

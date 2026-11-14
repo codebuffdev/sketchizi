@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { getActiveSelectedElementIds } from "./selectedElementIds.js";
 import {
   DEFAULT_FONT_FAMILY_ID,
   detectFontFamilyPreferenceChange,
@@ -88,7 +89,7 @@ export function useExcalidrawScene({
       if (relationshipSyncChanged) {
         apiRef.current?.updateScene({ elements: effectiveElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
       }
-      const selectedIds = Object.keys(appState.selectedElementIds || {});
+      const selectedIds = getActiveSelectedElementIds(appState.selectedElementIds);
       const effectiveElementsById = new Map(effectiveElements.map((element) => [element.id, element]));
       const elementById = selectedIds.length ? effectiveElementsById : null;
       const selected = selectedIds.map((id) => elementById?.get(id)).filter(Boolean);

@@ -14,11 +14,13 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       return undefined;
     }
     let dragging = false;
+    let activePointerId = null;
     let frame = 0;
     let lastPointer = null;
 
     const clear = () => {
       dragging = false;
+      activePointerId = null;
       lastPointer = null;
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
@@ -71,26 +73,33 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       // listening only for .layer-canvas misses those normal drag gestures.
       if (target.closest("button, input, textarea, select, [role='menu'], .App-menu, .Island, .popover")) return;
       const appState = apiRef?.current?.getAppState?.() || {};
-      const selectedIds = Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id);
-      if (!selectedIds.length) return;
+      // An object can be selected by this very pointerdown. Do not require
+      // a pre-existing selection, or the first drag of an unselected object
+      // will never display guides. Scene selection is read on each frame.
+      if (appState.activeTool?.type && appState.activeTool.type !== "selection") return;
+      if (event.isPrimary === false) return;
       dragging = true;
+      activePointerId = event.pointerId;
       lastPointer = { x: event.clientX, y: event.clientY };
       scheduleUpdate();
     };
     const onPointerMove = (event) => {
-      if (!dragging) return;
+      if (!dragging || event.pointerId !== activePointerId) return;
       lastPointer = { x: event.clientX, y: event.clientY };
       scheduleUpdate();
     };
+    const onPointerEnd = (event) => {
+      if (event.pointerId === activePointerId) clear();
+    };
     root.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("pointerup", clear);
-    window.addEventListener("pointercancel", clear);
+    window.addEventListener("pointerup", onPointerEnd);
+    window.addEventListener("pointercancel", onPointerEnd);
     return () => {
       root.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", clear);
-      window.removeEventListener("pointercancel", clear);
+      window.removeEventListener("pointerup", onPointerEnd);
+      window.removeEventListener("pointercancel", onPointerEnd);
       clear();
     };
   }, [apiRef, canvasRootRef, canEdit, viewModeEnabled]);
