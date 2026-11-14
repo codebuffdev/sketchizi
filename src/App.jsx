@@ -1304,14 +1304,15 @@ function App() {
     }
 
     const layout = planComposeDiagram(composeDocument);
-    const { positions, edges, resources, cardWidth, cardHeight, left, top, resourceTop, resourceWidth, resourceHeight, resourceGap } = layout;
+    const { positions, edges, resources, cardWidth, cardHeight, left, top, resourceWidth, resourceHeight } = layout;
     const skeleton = [];
     const projectName = composeDocument.name || "Docker Compose project";
     skeleton.push({
       type: "rectangle", x: left - 40, y: top - 90, width: layout.width, height: layout.height,
       strokeColor: "#64748b", backgroundColor: "transparent", fillStyle: "solid",
-      strokeStyle: "dashed", label: { text: "COMPOSE  /  " + projectName, fontSize: 18, fontFamily: 2, textAlign: "left", verticalAlign: "top" }
+      strokeStyle: "dashed"
     });
+    skeleton.push({ type: "text", x: left - 24, y: top - 68, text: "COMPOSE  /  " + projectName, fontSize: 18, fontFamily: 2, strokeColor: "#a7b6cb" });
     // Place arrows between card edges, not through their labels.
     edges.forEach(({ from, to }) => {
       const start = positions.get(from), end = positions.get(to);
@@ -1428,12 +1429,12 @@ function App() {
         strokeColor: "#6685bd", backgroundColor: "#18263b", fillStyle: "solid",
         strokeWidth: 2, roundness: { type: 3 }
       });
-      skeleton.push({ type: "line", x: x + 12, y: y + 47, width: cardWidth - 24, height: 0, points: [[0, 0], [cardWidth - 24, 0]], strokeColor: "#344b68", strokeWidth: 1 });
+      skeleton.push({ type: "line", x: x + 12, y: y + 41, width: cardWidth - 24, height: 0, points: [[0, 0], [cardWidth - 24, 0]], strokeColor: "#344b68", strokeWidth: 1 });
       addText(x + 16, y + 13, name, 20, "#f1f5ff", cardWidth - 76);
-      details.forEach((detail, index) => addText(x + 16, y + 60 + index * 25, detail, 14, "#c1d1e9", cardWidth - 32));
+      details.forEach((detail, index) => addText(x + 16, y + 50 + index * 23, detail, 13, "#c1d1e9", cardWidth - 32));
       if (iconAsset) skeleton.push({
-        type: "image", x: x + cardWidth - 48, y: y + 10,
-        width: 32, height: 32, fileId: iconAsset.fileId, status: "saved", scale: [1, 1]
+        type: "image", x: x + cardWidth - 43, y: y + 8,
+        width: 28, height: 28, fileId: iconAsset.fileId, status: "saved", scale: [1, 1]
       });
     });
     // Resource membership is a real relationship: connect each network or named
@@ -1452,7 +1453,7 @@ function App() {
         skeleton.push({
           type: "line", x: startX, y: startY, width: resourceCenterX - startX, height: endY - startY,
           points: [[0, 0], [0, midY - startY], [resourceCenterX - startX, midY - startY], [resourceCenterX - startX, endY - startY]],
-          strokeColor: resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8", strokeWidth: 1, strokeStyle: "dashed"
+          strokeColor: resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8", strokeWidth: 1.5, strokeStyle: resource.kind === "VOLUME" ? "solid" : "dashed"
         });
       });
     });
@@ -1470,6 +1471,19 @@ function App() {
       addText(x + 12, y + 35, resource.members.join(" · "), 12, "#a6c8da", resourceWidth - 24);
     });
 
+    // Excalidraw inverts element colors in dark mode. Pre-invert our authored
+    // palette so the visible diagram keeps its intended dark cards and light text.
+    const invertHex = (value) => {
+      if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) return value;
+      return "#" + [1, 3, 5].map((index) => (255 - parseInt(value.slice(index, index + 2), 16)).toString(16).padStart(2, "0")).join("");
+    };
+    if (api.getAppState?.().theme === "dark") {
+      skeleton.forEach((element) => {
+        if (element.type === "image") return;
+        element.strokeColor = invertHex(element.strokeColor);
+        element.backgroundColor = invertHex(element.backgroundColor);
+      });
+    }
     const elements = convertToExcalidrawElements(skeleton);
     api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     api.scrollToContent?.(elements, { fitToContent: true, animate: true });
