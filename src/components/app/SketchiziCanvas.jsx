@@ -24,7 +24,6 @@ export default function SketchiziCanvas({
   const fitContentButtonRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
-  const [showGridStyleControl, setShowGridStyleControl] = useState(() => Boolean(savedSketch?.appState?.gridModeEnabled ?? gridEnabled));
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
@@ -203,7 +202,6 @@ export default function SketchiziCanvas({
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
     setCanvasRevision((revision) => revision + 1);
-    setShowGridStyleControl(Boolean(appState?.gridModeEnabled));
     onGridVisibilityChange?.(Boolean(appState?.gridModeEnabled));
     handleChange?.(elements, appState, files);
   }, [canEdit, handleChange, viewModeEnabled, onGridVisibilityChange]);
