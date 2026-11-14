@@ -40,6 +40,14 @@ export default function SketchiziCanvas({
     if (!rect.width || !rect.height) return;
     const api = apiRef?.current;
     const state = api?.getAppState?.() || {};
+    // The native Show Grid toggle is the single source of truth for BOTH
+    // decorative layers. Respect live Excalidraw state, not just saved props.
+    const showGrid = state.gridModeEnabled ?? savedSketch?.appState?.gridModeEnabled ?? gridEnabled;
+    node.classList.toggle("is-grid-enabled", !!showGrid);
+    if (!showGrid) {
+      node.classList.remove("has-focus");
+      return;
+    }
     const fine = spotlightGridPattern(state);
     const coarse = workspaceCoarseGridPattern(state);
     node.style.setProperty("--sk-grid-size", `${fine.spacing}px`);
@@ -66,7 +74,7 @@ export default function SketchiziCanvas({
       height: rect.height,
       anchor,
     });
-    // The broad grid is always present. Detail exists only when there is
+    // The broad grid appears only when Show Grid is on. Detail exists when there is
     // content or a real editing gesture, never because the pointer hovered.
     node.classList.toggle("has-focus", !!focus);
     if (!focus) return;
@@ -74,7 +82,7 @@ export default function SketchiziCanvas({
     node.style.setProperty("--sk-grid-focus-top", `${focus.top}px`);
     node.style.setProperty("--sk-grid-focus-width", `${focus.width}px`);
     node.style.setProperty("--sk-grid-focus-height", `${focus.height}px`);
-  }, [apiRef, savedSketch]);
+  }, [apiRef, savedSketch, gridEnabled]);
 
   useEffect(() => {
     const root = canvasRootRef.current;
