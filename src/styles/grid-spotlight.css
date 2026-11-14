@@ -171,3 +171,34 @@
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+/* Restore the original production behavior only for Focus (Local).
+   This rule follows the permanent 90% rule, overriding its geometry
+   and retaining the original feathered rectangle around drawing content. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-local-style::after {
+  left: var(--sk-grid-focus-left);
+  top: var(--sk-grid-focus-top);
+  width: var(--sk-grid-focus-width);
+  height: var(--sk-grid-focus-height);
+  opacity: 0;
+  background-position:
+    calc(var(--sk-grid-offset-x) - var(--sk-grid-focus-left))
+    calc(var(--sk-grid-offset-y) - var(--sk-grid-focus-top));
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  transition: opacity 260ms ease;
+}
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-local-style.has-focus::after {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-local-style::after {
+    transition: none;
+  }
+}
