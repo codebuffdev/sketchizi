@@ -1,0 +1,336 @@
+/* Sketchizi Compact Icon Library: ~320 × 460 px, list-first, all collections reachable. */
+/* A root-level portal avoids the workspace's stacking context (z-index: 0).
+   The mobile header can otherwise cover the All dropdown's hit targets. */
+.app > .sk-icon-library-portal-host.mobile-resource-open {
+  position: fixed !important;
+  inset: calc(var(--sketchizi-desktop-header-height, 54px) + 12px) auto auto 14px !important;
+  z-index: 900 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  width: min(320px, calc(100vw - 28px)) !important;
+  height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 24px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+.app > .sk-icon-library-portal-host.mobile-resource-closed {
+  display: none !important;
+}
+@media (max-width: 760px) {
+  .app > .sk-icon-library-portal-host.mobile-resource-open {
+    inset: calc(var(--sketchizi-desktop-header-height, 54px) + 8px) auto auto 10px !important;
+    width: min(320px, calc(100vw - 20px)) !important;
+    max-width: calc(100vw - 20px) !important;
+    height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 20px)) !important;
+  }
+}
+
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel {
+  border-radius: 12px !important;
+  box-shadow: 0 14px 40px rgb(0 0 0 / 38%) !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-header {
+  align-items: center;
+  padding: 8px 11px !important;
+  gap: 6px;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-heading {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-title {
+  font-size: 13px !important;
+  font-weight: 690 !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-count {
+  font-size: 10.5px !important;
+  color: var(--skp-text-muted) !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-view-toggle-btn,
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-close {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 7px !important;
+}
+.app .library-panel-redesign.sk-icon-panel > .sk-icon-panel-body {
+  gap: 7px !important;
+  padding: 9px 10px 8px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-search-input {
+  height: 34px !important;
+  min-height: 34px !important;
+  font-size: 11.5px !important;
+  border-radius: 8px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tabs {
+  justify-content: flex-start !important;
+  gap: 17px !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--skp-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tab {
+  flex: 0 0 auto !important;
+  height: 27px !important;
+  padding: 0 1px 3px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 11px !important;
+  font-weight: 540 !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tab.is-active {
+  color: var(--skp-text) !important;
+  font-weight: 650 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tab.is-active::after {
+  display: block !important;
+  background: var(--skp-accent) !important;
+}
+
+/* Compact single-row shortcuts with the complete catalog inside the All dropdown. */
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-tabs {
+  position: relative;
+  z-index: 4;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 5px !important;
+  padding: 1px 0 3px !important;
+  overflow: visible !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab {
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  gap: 4px !important;
+  padding: 0 6px !important;
+  border: 1px solid var(--skp-border) !important;
+  border-radius: 8px !important;
+  background: var(--skp-surface) !important;
+  color: var(--skp-text-muted) !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.is-active,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.is-active {
+  border-color: var(--skp-accent) !important;
+  background: var(--skp-accent-soft) !important;
+  color: var(--skp-text) !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-tab-label {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-wrap {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-all-wrap .sk-catalog-all {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-chevron {
+  margin-left: auto;
+  color: var(--skp-text-muted);
+  font-size: 12px;
+  line-height: 1;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 12;
+  width: min(216px, calc(100vw - 34px));
+  max-height: min(280px, 50dvh);
+  padding: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--skp-border-strong);
+  border-radius: 10px;
+  background: var(--skp-bg);
+  color: var(--skp-text);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 36%);
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 530;
+  text-align: left;
+  cursor: pointer;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-item svg,
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-item img {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-item:hover,
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-item:focus-visible,
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-all-item.is-active {
+  background: var(--skp-accent-soft);
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-item-selected {
+  margin-left: auto;
+  color: var(--skp-accent);
+  font-size: 12px;
+}
+
+.app .library-panel-redesign.sk-icon-panel .sk-subcategory-select {
+  height: 27px;
+  font-size: 11px;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-recent-searches {
+  max-height: 25px;
+}
+/* Small, readable metadata that never becomes a full-size paragraph. */
+.app .library-panel-redesign.sk-icon-panel .sk-icon-compact-results-meta {
+  flex: 0 0 auto;
+  display: block;
+  min-height: 14px;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  color: var(--skp-text-muted) !important;
+  font-size: 10.5px !important;
+  font-weight: 540 !important;
+  line-height: 14px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-compact-hint {
+  flex: 0 0 auto;
+  display: block;
+  margin: 0 !important;
+  padding: 5px 1px 1px !important;
+  border-top: 1px solid var(--skp-border);
+  color: var(--skp-text-muted) !important;
+  font-size: 10px !important;
+  font-weight: 400 !important;
+  line-height: 13px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app .library-panel-redesign.sk-icon-panel .sk-icon-results {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid {
+  min-height: 0 !important;
+  padding: 1px 1px 4px 0 !important;
+}
+
+/* List rows are the default for new visitors. The saved grid preference wins. */
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view {
+  gap: 2px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card {
+  min-height: 40px !important;
+  padding: 3px 5px !important;
+  border-radius: 7px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-stage {
+  width: 29px !important;
+  height: 29px !important;
+  flex-basis: 29px !important;
+  border-radius: 7px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-stage img {
+  width: 22px !important;
+  height: 22px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card-text {
+  gap: 1px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-name {
+  font-size: 11px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-subtitle {
+  font-size: 9.5px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-actions {
+  gap: 1px !important;
+  opacity: 1 !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-fav-btn,
+.app .library-panel-redesign.sk-icon-panel .sk-add-btn {
+  width: 25px !important;
+  height: 25px !important;
+}
+
+/* Grid remains available for visual browsing without increasing drawer size. */
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card {
+  min-height: 80px !important;
+  border-radius: 8px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card-main {
+  min-height: 78px !important;
+  gap: 4px !important;
+  padding: 7px 3px 5px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-stage {
+  width: 34px !important;
+  height: 34px !important;
+  flex-basis: 34px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-stage img {
+  width: 25px !important;
+  height: 25px !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-name,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-name {
+  font-size: 9.5px !important;
+  line-height: 1.2 !important;
+}
+@media (max-width: 360px) {
+  .app .library-panel-redesign.sk-icon-panel .sk-catalog-tabs {
+    gap: 3px !important;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab {
+    padding: 0 3px !important;
+  }
+  .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign.sk-icon-panel .sk-catalog-all-menu *,
+  .app .library-panel-redesign.sk-icon-panel .sk-catalog-tab {
+    transition: none !important;
+  }
+}

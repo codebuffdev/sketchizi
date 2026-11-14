@@ -255,8 +255,8 @@ export function getActiveCollectionTitle(activeSource) {
 export function loadStoredViewMode() {
   try {
     const value = localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-    return value === "list" || value === "grid" ? value : "grid";
+    return value === "list" || value === "grid" ? value : "list";
   } catch {
-    return "grid";
+    return "list";
   }
 }
