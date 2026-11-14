@@ -146,7 +146,6 @@ export default function IconLibraryPanel({
   const [activeSource, setActiveSource] = useState("all");
   const [viewMode, setViewMode] = useState(loadStoredViewMode);
   const [selectedIconId, setSelectedIconId] = useState(null);
-  const [allCategoriesOpen, setAllCategoriesOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || "[]");
@@ -178,8 +177,7 @@ export default function IconLibraryPanel({
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
-        if (allCategoriesOpen) setAllCategoriesOpen(false);
-        else onClose?.();
+        onClose?.();
         return;
       }
       if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -194,21 +192,9 @@ export default function IconLibraryPanel({
     };
     window.addEventListener("keydown", handleShortcut, true);
     return () => window.removeEventListener("keydown", handleShortcut, true);
-  }, [searchRef, onClose, allCategoriesOpen]);
-
-  useEffect(() => {
-    if (!allCategoriesOpen) return undefined;
-    const dismiss = (event) => {
-      if (!(event.target instanceof Element) || !event.target.closest(".sk-catalog-all-wrap")) {
-        setAllCategoriesOpen(false);
-      }
-    };
-    window.addEventListener("pointerdown", dismiss, true);
-    return () => window.removeEventListener("pointerdown", dismiss, true);
-  }, [allCategoriesOpen]);
+  }, [searchRef, onClose]);
 
   const chooseSource = (source) => {
-    setAllCategoriesOpen(false);
     setActiveSource(source);
     setIconDisplayLimit(120);
     if (source !== "kubernetes") setActiveKubernetesCategory("All");
@@ -327,33 +313,7 @@ export default function IconLibraryPanel({
     { id: "all", label: "All" },
   ];
 
-  const subcategoryOptions = useMemo(
-    () =>
-      getSubcategoryOptions({
-        activeSource,
-        awsCategories,
-        awsCategoryCounts,
-        kubernetesCategories,
-        kubernetesCategoryCounts,
-      }),
-    [activeSource, awsCategories, awsCategoryCounts, kubernetesCategories, kubernetesCategoryCounts],
-  );
-
-  const activeSubcategory =
-    activeSource === "aws"
-      ? activeAwsCategory
-      : activeSource === "kubernetes"
-        ? activeKubernetesCategory
-        : "All";
-
   const collectionTitle = getActiveCollectionTitle(activeSource);
-  const totalBaseCount =
-    activeSource === "aws"
-      ? awsIcons?.length || 0
-      : activeSource === "kubernetes"
-        ? kubernetesIcons?.length || 0
-        : displayedIcons.length;
-
   return (
     <aside className="library-panel library-panel-redesign sk-icon-panel" aria-label="Icon Library" role="dialog" aria-modal="false">
       <header className="sk-icon-panel-header">
