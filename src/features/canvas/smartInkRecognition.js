@@ -42,14 +42,42 @@ export function renderInkForRecognition(elements) {
   return canvas;
 }
 
+/**
+ * Optional recognition service contract:
+ * POST image/png to VITE_SMART_INK_RECOGNITION_URL, returns { text: string }.
+ * Never embed service secrets in client configuration. The endpoint must be
+ * same-origin or explicitly CORS-enabled and authenticate server-side.
+ */
 export async function recognizeInk(elements) {
-  if (typeof globalThis.TextDetector !== "function") return { text: "", available: false };
   const canvas = renderInkForRecognition(elements);
-  if (!canvas) return { text: "", available: true };
+  if (!canvas) return { text: "", available: false };
+  const endpoint = import.meta.env?.VITE_SMART_INK_RECOGNITION_URL;
+  if (endpoint) {
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Unable to render ink");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "image/png" },
+        body: blob,
+        signal: controller.signal,
+        credentials: "same-origin",
+      });
+      if (!response.ok) throw new Error("Recognition service unavailable");
+      const data = await response.json();
+      if (typeof data.text !== "string") throw new Error("Invalid recognition response");
+      return { text: data.text.trim(), available: true, provider: "service" };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  if (typeof globalThis.TextDetector !== "function") return { text: "", available: false };
   const detector = new globalThis.TextDetector();
   const blocks = await detector.detect(canvas);
-  const text = (blocks || []).map((block) => block.rawValue || "").filter(Boolean).join("\n");
-  return { text, available: true };
+  const text = (blocks || []).map((block) => block.rawValue || "").filter(Boolean).join("\\n");
+  return { text, available: true, provider: "browser" };
 }
 
 export function beautifyInk(api, elements, text) {

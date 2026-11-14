@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./SmartInkModePicker.css";
 import { recognizeInk, beautifyInk } from "../../features/canvas/smartInkRecognition.js";
@@ -24,10 +24,10 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
   const [recognizedText, setRecognizedText] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const openPreview = useCallback(async () => {
+  const openPreview = useCallback(async (automaticStrokes = null) => {
     const api = apiRef?.current;
     const ids = api?.getAppState?.()?.selectedElementIds || {};
-    const selected = (api?.getSceneElements?.() || []).filter((el) => el.type === "freedraw" && !el.isDeleted && ids[el.id]);
+    const selected = automaticStrokes || (api?.getSceneElements?.() || []).filter((el) => el.type === "freedraw" && !el.isDeleted && ids[el.id]);
     if (!selected.length) {
       setMessage("Select handwritten strokes with the selection tool first.");
       return;
@@ -48,6 +48,31 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
       setBusy(false);
     }
   }, [apiRef]);
+  const sessionRef = useRef({ baseline: new Set(), fingerprint: "", changedAt: 0, offered: false });
+  const stateRef = useRef({ busy: false, preview: false });
+  useEffect(() => { stateRef.current = { busy, preview: Boolean(preview) }; }, [busy, preview]);
+  useEffect(() => {
+    if (mode !== "write" || !canEdit || viewModeEnabled) return undefined;
+    const poll = () => {
+      if (stateRef.current.busy || stateRef.current.preview) return;
+      const session = sessionRef.current;
+      const strokes = (apiRef?.current?.getSceneElements?.() || []).filter((el) =>
+        el.type === "freedraw" && !el.isDeleted && !session.baseline.has(el.id));
+      if (!strokes.length) return;
+      const fingerprint = strokes.map((el) => [el.id, el.version, el.points?.length].join(":")).join("|");
+      if (fingerprint !== session.fingerprint) {
+        session.fingerprint = fingerprint;
+        session.changedAt = Date.now();
+        session.offered = false;
+      } else if (!session.offered && Date.now() - session.changedAt > 1400) {
+        session.offered = true;
+        strokes.forEach((el) => session.baseline.add(el.id));
+        void openPreview(strokes);
+      }
+    };
+    const interval = window.setInterval(poll, 300);
+    return () => window.clearInterval(interval);
+  }, [mode, canEdit, viewModeEnabled, apiRef, openPreview]);
   const applyPreview = useCallback(() => {
     const api = apiRef?.current;
     const current = api?.getSceneElements?.() || [];
@@ -63,6 +88,7 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
   }, [apiRef, preview, recognizedText]);
 
   const chooseMode = useCallback((nextMode) => {
+    if (nextMode === "write") sessionRef.current = { baseline: new Set((apiRef?.current?.getSceneElements?.() || []).map((el) => el.id)), fingerprint: "", changedAt: 0, offered: false };
     setMode(nextMode);
     setMenu(null);
     apiRef?.current?.setActiveTool?.({ type: "freedraw" });
@@ -133,7 +159,7 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
             {mode === "draw" && <span aria-hidden="true">✓</span>}
           </button>
           <button type="button" role="menuitemradio" aria-checked={mode === "write"} onClick={() => chooseMode("write")}>
-            <span aria-hidden="true">✍</span><span><strong>Write</strong><small>Handwriting strokes · Smart conversion coming next</small></span>
+            <span aria-hidden="true">✍</span><span><strong>Write</strong><small>Preview clean handwriting after a pause</small></span>
             {mode === "write" && <span aria-hidden="true">✓</span>}
           </button>
         </div>, document.body
