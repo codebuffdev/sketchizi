@@ -10,7 +10,7 @@ import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
-import { workspaceGridRadii, spotlightCenter, spotlightElementCenter, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
+import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -25,91 +25,69 @@ export default function SketchiziCanvas({
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
   const spotlightNodeRef = useRef(null);
-  const spotlightPointRef = useRef(null);
+  const drawingPointerRef = useRef(null);
+  const textEditingRef = useRef(false);
+  const dropActiveRef = useRef(false);
+  const workAnchorRef = useRef(null);
   const spotlightSelectedRef = useRef(selectedElements);
   spotlightSelectedRef.current = selectedElements;
 
-  const paintSpotlight = useCallback(() => {
+  const paintWorkspaceGrid = useCallback(() => {
     const root = canvasRootRef.current;
     const node = spotlightNodeRef.current;
     if (!root || !node?.isConnected) return;
     const rect = root.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const appState = apiRef?.current?.getAppState?.() || {};
-    const editor = root.querySelector(".excalidraw-textEditorContainer textarea");
-    const textEditing = !!editor && document.activeElement === editor;
-    let point = spotlightPointRef.current;
-    if (textEditing) {
-      const bounds = editor.getBoundingClientRect();
-      point = {
-        x: bounds.left + bounds.width / 2 - rect.left,
-        y: bounds.top + bounds.height / 2 - rect.top,
-      };
-    } else if (!point) {
-      const selected = spotlightSelectedRef.current;
-      point = selected?.length === 1
-        ? spotlightElementCenter(selected[0], appState)
-        : null;
-    }
-    const center = spotlightCenter(point?.x, point?.y, rect.width, rect.height);
-    const radii = workspaceGridRadii(rect.width, rect.height);
-    const pattern = spotlightGridPattern(appState);
-    node.style.setProperty("--sk-grid-focus-x", `${center.x}px`);
-    node.style.setProperty("--sk-grid-focus-y", `${center.y}px`);
-    node.style.setProperty("--sk-grid-focus-rx", `${radii.x}px`);
-    node.style.setProperty("--sk-grid-focus-ry", `${radii.y}px`);
-    node.style.setProperty("--sk-grid-size", `${pattern.spacing}px`);
-    node.style.setProperty("--sk-grid-offset-x", `${pattern.offsetX}px`);
-    node.style.setProperty("--sk-grid-offset-y", `${pattern.offsetY}px`);
-    const coarse = workspaceCoarseGridPattern(appState);
+    const api = apiRef?.current;
+    const state = api?.getAppState?.() || {};
+    const fine = spotlightGridPattern(state);
+    const coarse = workspaceCoarseGridPattern(state);
+    node.style.setProperty("--sk-grid-size", `${fine.spacing}px`);
+    node.style.setProperty("--sk-grid-offset-x", `${fine.offsetX}px`);
+    node.style.setProperty("--sk-grid-offset-y", `${fine.offsetY}px`);
     node.style.setProperty("--sk-grid-coarse-size", `${coarse.spacing}px`);
     node.style.setProperty("--sk-grid-coarse-offset-x", `${coarse.offsetX}px`);
     node.style.setProperty("--sk-grid-coarse-offset-y", `${coarse.offsetY}px`);
-  }, [apiRef]);
 
-  // The vignette is visual-only; it appears on actual canvas interaction, not
-  // on hover. No scene state, grid snapping, or exported content is modified.
+    const editor = root.querySelector(".excalidraw-textEditorContainer textarea");
+    const textActive = textEditingRef.current && !!editor;
+    const editorBounds = textActive ? editor.getBoundingClientRect() : null;
+    const anchor = textActive ? {
+      x: editorBounds.left + editorBounds.width / 2 - rect.left,
+      y: editorBounds.top + editorBounds.height / 2 - rect.top,
+    } : (drawingPointerRef.current !== null || dropActiveRef.current)
+      ? workAnchorRef.current
+      : null;
+    const focus = workspaceFocusRect({
+      elements: api?.getSceneElements?.() || savedSketch?.elements || [],
+      selectedElements: spotlightSelectedRef.current,
+      state,
+      width: rect.width,
+      height: rect.height,
+      anchor,
+    });
+    // The broad grid is always present. Detail exists only when there is
+    // content or a real editing gesture, never because the pointer hovered.
+    node.classList.toggle("has-focus", !!focus);
+    if (!focus) return;
+    node.style.setProperty("--sk-grid-focus-left", `${focus.left}px`);
+    node.style.setProperty("--sk-grid-focus-top", `${focus.top}px`);
+    node.style.setProperty("--sk-grid-focus-width", `${focus.width}px`);
+    node.style.setProperty("--sk-grid-focus-height", `${focus.height}px`);
+  }, [apiRef, savedSketch]);
+
   useEffect(() => {
     const root = canvasRootRef.current;
-    if (!root || !canEdit || viewModeEnabled) return undefined;
+    if (!root) return undefined;
     let layer = null;
     let frame = 0;
-    let hideTimer = null;
-    let drawingPointerId = null;
-    let textEditing = false;
+    let dropTimer = null;
     const schedulePaint = () => {
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        paintSpotlight();
+        paintWorkspaceGrid();
       });
-    };
-    const clearHideTimer = () => {
-      if (hideTimer !== null) {
-        window.clearTimeout(hideTimer);
-        hideTimer = null;
-      }
-    };
-    const showFocus = () => {
-      clearHideTimer();
-      layer?.classList.add("is-active");
-      schedulePaint();
-    };
-    const delayHide = () => {
-      clearHideTimer();
-      if (drawingPointerId !== null || textEditing) return;
-      hideTimer = window.setTimeout(() => {
-        hideTimer = null;
-        layer?.classList.remove("is-active");
-      }, 3200);
-    };
-    const anchorToEvent = (event) => {
-      const bounds = root.getBoundingClientRect();
-      spotlightPointRef.current = {
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      };
-      schedulePaint();
     };
     const attach = () => {
       const wrapper = root.querySelector(".excalidraw__canvas-wrapper");
@@ -122,50 +100,60 @@ export default function SketchiziCanvas({
       spotlightNodeRef.current = layer;
       schedulePaint();
     };
-    const isNativeDrawingSurface = (target) =>
+    const isDrawingCanvas = (target) =>
       target instanceof Element &&
       !!target.closest("canvas.excalidraw__canvas.interactive");
     const onPointerDown = (event) => {
-      if (!isNativeDrawingSurface(event.target) || (event.pointerType === "mouse" && event.button !== 0)) return;
-      drawingPointerId = event.pointerId;
-      anchorToEvent(event);
-      showFocus();
+      if (!canEdit || viewModeEnabled || !isDrawingCanvas(event.target) ||
+        (event.pointerType === "mouse" && event.button !== 0)) return;
+      drawingPointerRef.current = event.pointerId;
+      const rect = root.getBoundingClientRect();
+      workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      schedulePaint();
     };
     const onPointerMove = (event) => {
-      // Merely moving the mouse must NOT turn on or move the focus grid.
-      if (drawingPointerId !== event.pointerId || drawingPointerId === null) return;
-      anchorToEvent(event);
+      // Never move or show detail for plain hover. Only an active gesture
+      // can update the work anchor.
+      if (drawingPointerRef.current === null || drawingPointerRef.current !== event.pointerId) return;
+      const rect = root.getBoundingClientRect();
+      workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      schedulePaint();
     };
     const onPointerEnd = (event) => {
-      if (drawingPointerId !== event.pointerId) return;
-      drawingPointerId = null;
-      delayHide();
+      if (drawingPointerRef.current !== event.pointerId) return;
+      drawingPointerRef.current = null;
+      workAnchorRef.current = null;
+      schedulePaint();
     };
+    const isTextEditor = (event) =>
+      event.target instanceof Element &&
+      event.target.matches(".excalidraw-textEditorContainer textarea");
     const onTextFocus = (event) => {
-      if (!(event.target instanceof Element) ||
-        !event.target.matches(".excalidraw-textEditorContainer textarea")) return;
-      textEditing = true;
-      spotlightPointRef.current = null;
-      showFocus();
+      if (!canEdit || viewModeEnabled || !isTextEditor(event)) return;
+      textEditingRef.current = true;
+      schedulePaint();
     };
     const onTextBlur = (event) => {
-      if (!(event.target instanceof Element) ||
-        !event.target.matches(".excalidraw-textEditorContainer textarea")) return;
-      textEditing = false;
-      delayHide();
+      if (!isTextEditor(event)) return;
+      textEditingRef.current = false;
+      schedulePaint();
     };
     const onTextInput = (event) => {
-      if (event.target instanceof Element &&
-        event.target.matches(".excalidraw-textEditorContainer textarea")) {
-        showFocus();
-      }
+      if (isTextEditor(event)) schedulePaint();
     };
     const onDrop = (event) => {
-      // Dragging an icon onto the canvas also counts as actual editing.
-      if (!(event.target instanceof Element) || !event.target.closest(".excalidraw")) return;
-      anchorToEvent(event);
-      showFocus();
-      delayHide();
+      if (!canEdit || viewModeEnabled || !(event.target instanceof Element) ||
+        !event.target.closest(".excalidraw")) return;
+      const rect = root.getBoundingClientRect();
+      workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      dropActiveRef.current = true;
+      schedulePaint();
+      if (dropTimer !== null) window.clearTimeout(dropTimer);
+      dropTimer = window.setTimeout(() => {
+        dropActiveRef.current = false;
+        workAnchorRef.current = null;
+        schedulePaint();
+      }, 650);
     };
     const observer = new MutationObserver(attach);
     observer.observe(root, { childList: true, subtree: true });
@@ -190,12 +178,15 @@ export default function SketchiziCanvas({
       root.removeEventListener("input", onTextInput, true);
       root.removeEventListener("drop", onDrop, true);
       window.removeEventListener("resize", schedulePaint);
-      clearHideTimer();
+      if (dropTimer !== null) window.clearTimeout(dropTimer);
       if (frame) cancelAnimationFrame(frame);
       layer?.remove();
       if (spotlightNodeRef.current === layer) spotlightNodeRef.current = null;
+      drawingPointerRef.current = null;
+      textEditingRef.current = false;
+      dropActiveRef.current = false;
     };
-  }, [canEdit, viewModeEnabled, paintSpotlight]);
+  }, [canEdit, viewModeEnabled, paintWorkspaceGrid]);
 
   const handleSceneChange = useCallback((elements, appState, files) => {
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
@@ -213,9 +204,9 @@ export default function SketchiziCanvas({
   }, [handleExcalidrawAPI]);
 
   useEffect(() => {
-    // Re-anchor the grid after pan/zoom, selection, or scene edits (without making it visible).
-    paintSpotlight();
-  }, [canvasRevision, selectedElements, paintSpotlight]);
+    // Follow scene content and the viewport, not arbitrary mouse movement.
+    paintWorkspaceGrid();
+  }, [canvasRevision, selectedElements, paintWorkspaceGrid]);
 
   useEffect(() => {
     const element = canvasRootRef.current;
