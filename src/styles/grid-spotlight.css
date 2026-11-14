@@ -99,3 +99,21 @@
     transition: none;
   }
 }
+
+/* Permanent dual-density workspace grid.
+   Regular squares cover 100%; fine squares cover the centered 90%,
+   leaving a regular-grid-only 5% margin on every edge.
+   Scene-aligned background offsets continue to be supplied by the canvas. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled::after {
+  left: 5%;
+  top: 5%;
+  width: 90%;
+  height: 90%;
+  opacity: 1;
+  -webkit-mask-image: none;
+  mask-image: none;
+  transition: none;
+}
+
+/* No separate focus activation: drawing, selection and pointer events do
+   not change the permanent grid's coverage or visibility. */
