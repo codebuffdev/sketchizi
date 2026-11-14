@@ -3,6 +3,7 @@ import { parseAllDocuments, stringify } from "yaml";
 import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
 import { readZipTextFiles } from "../zipBundleReader.js";
 import { renderHelmBundle, renderKustomizeBundle } from "../browserBundleRenderer.js";
+import { summarizeKubernetesSnapshot } from "../readOnlySnapshot.js";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -340,6 +341,18 @@ spec:
   const [selectedValuesFile, setSelectedValuesFile] = useState("");
   const [renderingBundle, setRenderingBundle] = useState(false);
   const [error, setError] = useState("");
+  const [snapshotText, setSnapshotText] = useState("");
+  const [snapshotSummary, setSnapshotSummary] = useState([]);
+  const [snapshotError, setSnapshotError] = useState("");
+  const inspectSnapshot = () => {
+    try {
+      const data = JSON.parse(snapshotText);
+      const items = Array.isArray(data) ? data : data?.items;
+      const summary = summarizeKubernetesSnapshot(items);
+      setSnapshotSummary(summary);
+      setSnapshotError("");
+    } catch (cause) { setSnapshotSummary([]); setSnapshotError(cause?.message || "Invalid snapshot JSON"); }
+  };
   const [inspectedResourceId, setInspectedResourceId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorDraft, setInspectorDraft] = useState("");
@@ -844,6 +857,14 @@ spec:
         </div>
 
         {(error || parsed.parseError || notice) && <div className={error || parsed.parseError ? "k8s-studio-message error" : "k8s-studio-message"} role={error || parsed.parseError ? "alert" : "status"}>{error || parsed.parseError || notice}</div>}
+        <details style={{ padding: "12px 16px" }}>
+          <summary>Inspect read-only Kubernetes snapshot</summary>
+          <p>Paste an authorized Kubernetes resource list as JSON. Only minimal status fields are displayed; no cluster connection or deployment occurs. Avoid pasting sensitive cluster data.</p>
+          <textarea aria-label="Kubernetes snapshot JSON" rows={4} style={{ width: "100%" }} value={snapshotText} onChange={(event) => setSnapshotText(event.target.value)} placeholder={'{"items":[{"kind":"Pod","metadata":{"name":"api"},"status":{"phase":"Running"}}]}'}/>
+          <button type="button" className="k8s-studio-secondary" onClick={inspectSnapshot}>Inspect snapshot</button>
+          {snapshotError && <p role="alert">{snapshotError}</p>}
+          {snapshotSummary.length > 0 && <ul>{snapshotSummary.map((resource, index) => <li key={resource.kind + resource.namespace + resource.name + index}>{resource.kind} / {resource.namespace} / {resource.name} · {resource.phase || resource.type || (resource.ready + "/" + resource.desired + " ready")}</li>)}</ul>}
+        </details>
         <footer className="k8s-studio-footer">
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
           <div><button type="button" className="k8s-studio-secondary" onClick={requestClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
