@@ -39,8 +39,10 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
       event.stopImmediatePropagation?.();
       const rect = button.getBoundingClientRect();
       setMenu((current) => current ? null : {
-        left: Math.min(window.innerWidth - 222, Math.max(8, rect.left)),
-        top: rect.top > window.innerHeight / 2 ? rect.top - 110 : rect.bottom + 8,
+        left: Math.min(Math.max(8, rect.left + rect.width / 2 - 107), Math.max(8, window.innerWidth - 222)),
+        ...(rect.top >= 190
+          ? { bottom: window.innerHeight - rect.top + 12 }
+          : { top: rect.bottom + 12 }),
       });
     };
     const onKeyDown = (event) => {
@@ -67,9 +69,9 @@ export default function SmartInkModePicker({ canvasRootRef, apiRef, canEdit, vie
     <>
       {mode === "write" && <div className="sketchizi-smart-ink-indicator" role="status">Write mode · Ink strokes</div>}
       {menu && createPortal(
-        <div className="sketchizi-smart-ink-menu" role="menu" aria-label="Draw mode" style={{ left: menu.left, top: menu.top }}>
+        <div className="sketchizi-smart-ink-menu" role="menu" aria-label="Draw mode" style={menu}>
           <button type="button" role="menuitemradio" aria-checked={mode === "draw"} onClick={() => chooseMode("draw")}>
-            <span aria-hidden="true">✎</span><span><strong>Draw over canvas</strong><small>Freehand shapes and sketches</small></span>
+            <span aria-hidden="true">✎</span><span><strong>Freehand</strong><small>Freehand shapes and sketches</small></span>
             {mode === "draw" && <span aria-hidden="true">✓</span>}
           </button>
           <button type="button" role="menuitemradio" aria-checked={mode === "write"} onClick={() => chooseMode("write")}>
