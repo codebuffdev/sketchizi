@@ -24,6 +24,7 @@ export default function SketchiziCanvas({
   const fitContentButtonRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [showGridStyleControl, setShowGridStyleControl] = useState(() => Boolean(savedSketch?.appState?.gridModeEnabled ?? gridEnabled));
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const saved = window.localStorage.getItem("sketchizi-grid-style");
@@ -213,6 +214,7 @@ export default function SketchiziCanvas({
     const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
     setCanvasRevision((revision) => revision + 1);
+    setShowGridStyleControl(Boolean(appState?.gridModeEnabled));
     handleChange?.(elements, appState, files);
   }, [canEdit, handleChange, viewModeEnabled]);
   const handleViewportChange = useCallback((...args) => {
@@ -796,12 +798,12 @@ export default function SketchiziCanvas({
 
   return (
     <main ref={canvasRootRef} className={viewModeEnabled ? "canvas viewer-mode" : "canvas"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
-      <div className="sketchizi-grid-style-control" role="group" aria-label="Grid style">
+      {showGridStyleControl && <div className="sketchizi-grid-style-control" role="group" aria-label="Grid style">
         <span className="sketchizi-grid-style-label">Grid style</span>
         <button type="button" aria-pressed={gridStyle === "normal"} onClick={() => setGridStyle("normal")}>Normal</button>
         <button type="button" aria-pressed={gridStyle === "focus"} onClick={() => setGridStyle("focus")}>Focus (Canvas)</button>
         <button type="button" aria-pressed={gridStyle === "local"} onClick={() => setGridStyle("local")}>Focus (Local)</button>
-      </div>
+      </div>}
       <Excalidraw
         // Always seed the scene with the active Day/Night background. Legacy
         // saved scenes may contain an old independent canvas color, which must
