@@ -1082,3 +1082,29 @@
     max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+
+/* Center the sign-in modal over the canvas, not the animated header.
+   AuthenticationControl portals its backdrop directly into .app. */
+.app .auth-dialog-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10000 !important;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app .auth-dialog-backdrop .auth-dialog {
+  box-sizing: border-box;
+  flex: 0 1 390px;
+  width: min(390px, 100%);
+  max-width: 100%;
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  margin: auto;
+  overflow-y: auto;
+}
