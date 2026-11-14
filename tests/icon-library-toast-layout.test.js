@@ -3,16 +3,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const panel = readFileSync(new URL('../src/IconLibraryPanel.jsx', import.meta.url), 'utf8');
-const styles = readFileSync(new URL('../src/styles/icon-panel-v2.css', import.meta.url), 'utf8');
+const styles = readFileSync(new URL('../src/styles/icon-panel-compact.css', import.meta.url), 'utf8');
 const feedback = readFileSync(new URL('../src/styles/canvas-feedback-overlays.css', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8');
 
-test('library categories have readable full names and preserve source selection', () => {
-  assert.match(panel, /sk-library-section-label/);
-  assert.match(panel, /Browse collections/);
+test('compact catalog exposes all sources with top-level shortcuts and More menu', () => {
+  assert.match(panel, /primaryCatalogTabs/);
+  assert.match(panel, /extraCatalogTabs/);
   assert.match(panel, /\{tab\.label\}/);
   assert.match(panel, /onClick=\{\(\) => chooseSource\(isActive \? "all" : tab\.id\)\}/);
-  assert.match(styles, /\.sk-catalog-tabs\s*\{[^}]*display: grid !important;[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/s);
+  assert.match(styles, /\.sk-catalog-tabs\s*\{[^}]*display: flex !important;/s);
 });
 
 test('library retains insert, drag, saved, recent and both view-mode controls', () => {
@@ -23,8 +23,8 @@ test('library retains insert, drag, saved, recent and both view-mode controls', 
   assert.match(panel, /handleIconClick\(icon\)/);
   assert.match(panel, /handleDragStart\(event, icon\)/);
   assert.match(panel, /toggleFavorite\(icon\)/);
-  assert.match(panel, /sk-icon-results-summary/);
-  assert.match(panel, /sk-icon-panel-hint/);
+  assert.match(panel, /sk-icon-panel-count/);
+  assert.match(panel, /role="menuitemradio"/);
 });
 
 test('toast is fixed below the header instead of overlapping the bottom toolbar', () => {
@@ -36,6 +36,6 @@ test('toast is fixed below the header instead of overlapping the bottom toolbar'
 
 test('narrow viewports keep category labels and icon thumbnails usable', () => {
   assert.match(styles, /@media \(max-width: 360px\)/);
-  assert.match(styles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\) !important/);
+  assert.match(styles, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\) !important/);
   assert.match(feedback, /@media \(max-width: 760px\)/);
 });
