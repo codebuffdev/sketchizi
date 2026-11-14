@@ -18,7 +18,7 @@ test("floating segmented header separates navigation, workspace and utilities", 
 });
 
 test("segmented header retains original controls and responsive fallback", () => {
-  assert.match(header, /desktop-app-header-grid/);
+  assert.match(header, /sketchizi-header-grid/);
   assert.match(header, /desktop-app-save-status-wrap/);
   assert.match(header, /desktop-app-start-collaboration-button/);
   assert.match(header, /desktop-app-header-visibility-button/);
