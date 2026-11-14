@@ -926,3 +926,253 @@
     transition: none !important;
   }
 }
+
+
+/* Library discovery refresh: legible collections, visible results, useful space. */
+@media (min-width: 761px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    width: min(388px, calc(100vw - 28px)) !important;
+    height: min(640px, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 24px)) !important;
+  }
+}
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    height: min(80dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 54px) - 20px)) !important;
+  }
+}
+
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel {
+  --skp-border: rgba(175, 188, 215, 0.15);
+  --skp-surface-hover: #222a3a;
+  --skp-text-muted: #aeb8ce;
+  border-radius: 15px !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel {
+  --skp-border: #e3e7ef;
+  --skp-surface-hover: #edf1f8;
+  --skp-text-muted: #5a657d;
+}
+
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-header {
+  align-items: flex-start;
+  padding: 13px 15px 12px;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-heading {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-title {
+  font-size: 15px;
+  font-weight: 720;
+}
+.sk-icon-panel-subtitle {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--skp-text-muted);
+}
+.app .library-panel-redesign.sk-icon-panel .sk-view-toggle-btn,
+.app .library-panel-redesign.sk-icon-panel .sk-icon-panel-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.app .library-panel-redesign.sk-icon-panel > .sk-icon-panel-body {
+  padding: 12px 14px 10px !important;
+  gap: 10px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-search-wrap {
+  flex: 0 0 auto;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-search-input {
+  min-height: 40px !important;
+  font-size: 12px !important;
+  border-radius: 10px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tabs {
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--skp-border);
+  border-radius: 10px;
+  background: var(--skp-surface);
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tab {
+  flex: 1 1 0;
+  justify-content: center;
+  height: 30px;
+  padding: 0 7px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 580;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tab.is-active {
+  background: var(--skp-surface-active);
+  color: var(--skp-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
+}
+.app .library-panel-redesign.sk-icon-panel .sk-scope-tab.is-active::after {
+  display: none;
+}
+.sk-library-section-label {
+  margin: 1px 1px -3px;
+  color: var(--skp-text-muted);
+  font-size: 10px;
+  font-weight: 680;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+/* Six readable category buttons in two rows, instead of six tiny labels. */
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  padding: 2px 0 0 !important;
+  overflow: visible !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 34px !important;
+  height: 34px !important;
+  gap: 6px !important;
+  padding: 0 7px !important;
+  border: 1px solid var(--skp-border) !important;
+  border-radius: 8px !important;
+  background: var(--skp-surface) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.is-active,
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.active,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.is-active,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-catalog-tab.active {
+  border-color: var(--skp-accent) !important;
+  background: var(--skp-accent-soft) !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-catalog-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sk-icon-results-summary {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 7px;
+  border-top: 1px solid var(--skp-border);
+}
+.sk-icon-results-summary-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--skp-text);
+  font-size: 12px;
+  font-weight: 690;
+}
+.sk-icon-results-summary-meta {
+  flex: 0 0 auto;
+  color: var(--skp-text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.sk-icon-panel-hint {
+  flex: 0 0 auto;
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--skp-border);
+  color: var(--skp-text-muted);
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+/* Larger preview cards; preserve both grid/list modes and quick actions. */
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card {
+  min-height: 104px !important;
+  border: 1px solid var(--skp-border) !important;
+  background: var(--skp-surface) !important;
+  border-radius: 10px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-card-main {
+  min-height: 101px;
+  gap: 7px;
+  padding: 10px 5px 7px;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-stage {
+  width: 44px !important;
+  height: 44px !important;
+  flex-basis: 44px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-stage img {
+  width: 32px !important;
+  height: 32px !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-name,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view .sk-icon-name {
+  font-size: 11px !important;
+  color: var(--skp-text) !important;
+  font-weight: 580 !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view {
+  gap: 3px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card {
+  min-height: 51px !important;
+  padding: 5px 8px !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card:hover,
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card:focus-within {
+  border-color: var(--skp-border) !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-stage {
+  width: 36px !important;
+  height: 36px !important;
+  flex-basis: 36px !important;
+  border-radius: 9px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-stage img {
+  width: 26px !important;
+  height: 26px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card-text {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-subtitle {
+  max-width: 100% !important;
+  font-size: 10px !important;
+  color: var(--skp-text-muted) !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-actions {
+  opacity: 1 !important;
+}
+.app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-list-view .sk-icon-card.has-favorite:not(:hover):not(:focus-within) .sk-add-btn {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+@media (max-width: 360px) {
+  .app .library-panel-redesign.sk-icon-panel .sk-catalog-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .app .library-panel-redesign.sk-icon-panel .sk-icon-grid.is-grid-view {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign.sk-icon-panel .sk-catalog-tab,
+  .app .library-panel-redesign.sk-icon-panel .sk-icon-card {
+    transition: none !important;
+  }
+}
