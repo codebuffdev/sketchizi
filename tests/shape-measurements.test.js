@@ -24,6 +24,8 @@ test("labels are placed on the bottom and right edges and update with scene chan
 
 test("measurement overlay does not intercept drawing gestures", () => {
   assert.match(css, /pointer-events: none/);
+  assert.match(overlay, /createPortal/);
+  assert.match(css, /sk-shape-measurement-width-mask/);
   assert.match(overlay, /shapes\.length !== 1/);
   assert.match(overlay, /Math\.abs\(bounds\.angle\) > 0\.001/);
 });
