@@ -641,7 +641,7 @@ export default function SketchiziCanvas({
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: getCanvasBackground(isDarkTheme),
-            gridModeEnabled: gridEnabled,
+            gridModeEnabled: savedSketch?.appState?.gridModeEnabled ?? gridEnabled,
           },
           files: savedSketch?.files || {},
         }}
@@ -649,7 +649,6 @@ export default function SketchiziCanvas({
         onExcalidrawAPI={registerExcalidrawAPI}
         theme={isDarkTheme ? "dark" : "light"}
         viewModeEnabled={viewModeEnabled}
-        gridModeEnabled={gridEnabled}
         aiEnabled={true}
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
