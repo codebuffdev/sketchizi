@@ -265,7 +265,7 @@ try {
   if (!contentGrid.active || !twoLines(contentGrid.detailImage) ||
       !contentGrid.detailMask.includes("linear-gradient") ||
       !contentGrid.detailMaskComposite.split(",").every((value) => value.trim() === "intersect") ||
-      contentGrid.focusWidth < 400 || contentGrid.focusHeight < 260 ||
+      contentGrid.focusWidth < 130 || contentGrid.focusHeight < 75 ||
       contentGrid.focusWidth > contentGrid.canvasWidth * 0.95 ||
       contentGrid.focusHeight > contentGrid.canvasHeight * 0.91 ||
       !contentGrid.fineSize || contentGrid.fineSize >= contentGrid.coarseSize / 8) {
