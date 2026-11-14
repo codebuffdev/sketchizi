@@ -15,6 +15,22 @@ export function spotlightRadius(width, height, radiusCm = GRID_SPOTLIGHT_RADIUS_
   return Math.round(Math.min(preferred, w * GRID_SPOTLIGHT_VIEWPORT_FRACTION, h * GRID_SPOTLIGHT_VIEWPORT_FRACTION));
 }
 
+/**
+ * A broad, softly faded workspace grid (like the reference image), not a
+ * hard-edged circular spotlight. CSS radii describe an elliptical vignette.
+ * The radius target is approximate CSS centimeters, never physical display cm.
+ */
+export function workspaceGridRadii(width, height) {
+  const w = Math.max(0, finite(width));
+  const h = Math.max(0, finite(height));
+  if (!w || !h) return { x: 0, y: 0 };
+  const preferred = GRID_SPOTLIGHT_RADIUS_CM * CSS_PIXELS_PER_CM;
+  return {
+    x: Math.round(Math.min(preferred * 1.2, w * 0.48)),
+    y: Math.round(Math.min(preferred * 0.92, h * 0.47)),
+  };
+}
+
 export function spotlightCenter(x, y, width, height) {
   const w = Math.max(0, finite(width));
   const h = Math.max(0, finite(height));
@@ -40,7 +56,7 @@ export function spotlightElementCenter(element, appState) {
 
 const positiveModulo = (value, divisor) => ((value % divisor) + divisor) % divisor;
 
-/** Match the scene's pan and zoom so the dot pattern does not slide on camera movement. */
+/** Match the scene's pan and zoom so square-cell grid lines stay aligned with the drawing. */
 export function spotlightGridPattern(appState) {
   const zoom = Math.max(0.01, finite(appState?.zoom?.value ?? appState?.zoom, 1));
   const size = clamp(finite(appState?.gridSize, 20), 5, 100);
