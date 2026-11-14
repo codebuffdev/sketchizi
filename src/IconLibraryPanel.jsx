@@ -146,7 +146,7 @@ export default function IconLibraryPanel({
   const [activeSource, setActiveSource] = useState("all");
   const [viewMode, setViewMode] = useState(loadStoredViewMode);
   const [selectedIconId, setSelectedIconId] = useState(null);
-  const [moreCollectionsOpen, setMoreCollectionsOpen] = useState(false);
+  const [allCategoriesOpen, setAllCategoriesOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || "[]");
@@ -178,7 +178,7 @@ export default function IconLibraryPanel({
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
-        if (moreCollectionsOpen) setMoreCollectionsOpen(false);
+        if (allCategoriesOpen) setAllCategoriesOpen(false);
         else onClose?.();
         return;
       }
@@ -194,18 +194,18 @@ export default function IconLibraryPanel({
     };
     window.addEventListener("keydown", handleShortcut, true);
     return () => window.removeEventListener("keydown", handleShortcut, true);
-  }, [searchRef, onClose, moreCollectionsOpen]);
+  }, [searchRef, onClose, allCategoriesOpen]);
 
   useEffect(() => {
-    if (!moreCollectionsOpen) return undefined;
+    if (!allCategoriesOpen) return undefined;
     const dismiss = (event) => {
-      if (!(event.target instanceof Element) || !event.target.closest(".sk-catalog-more")) {
-        setMoreCollectionsOpen(false);
+      if (!(event.target instanceof Element) || !event.target.closest(".sk-catalog-all-wrap")) {
+        setAllCategoriesOpen(false);
       }
     };
     window.addEventListener("pointerdown", dismiss, true);
     return () => window.removeEventListener("pointerdown", dismiss, true);
-  }, [moreCollectionsOpen]);
+  }, [allCategoriesOpen]);
 
   const chooseSource = (source) => {
     setMoreCollectionsOpen(false);
@@ -328,8 +328,8 @@ export default function IconLibraryPanel({
   ];
 
   const primaryCatalogTabs = sourceTabs.filter((tab) => ["aws", "kubernetes"].includes(tab.id));
-  const extraCatalogTabs = sourceTabs.filter((tab) => ["networking", "mindmaps", "uml", "eraser"].includes(tab.id));
-  const extraCatalogActive = extraCatalogTabs.some((tab) => tab.id === activeSource);
+  // All is the single discoverable entry point for every real catalog.
+  const catalogMenuTabs = [{ id: "all", label: "All icons" }, ...sourceTabs.filter((tab) => tab.id !== "all")];
 
   const subcategoryOptions = useMemo(
     () =>
@@ -485,10 +485,55 @@ export default function IconLibraryPanel({
         </nav>
 
         <nav className="library-source-tabs sk-catalog-tabs" aria-label="Icon collections">
-          <button type="button" className={`sk-catalog-tab sk-catalog-all ${activeSource === "all" ? "is-active" : ""}`} aria-pressed={activeSource === "all"} onClick={() => chooseSource("all")}>
-            <SourceCategoryIcon id="eraser" />
-            <span className="sk-catalog-tab-label">All</span>
-          </button>
+          <div className="sk-catalog-all-wrap">
+            <button
+              type="button"
+              className={`sk-catalog-tab sk-catalog-all ${activeSource === "all" ? "is-active" : ""}`}
+              aria-haspopup="menu"
+              aria-expanded={allCategoriesOpen}
+              aria-label="All categories"
+              onClick={() => setAllCategoriesOpen((open) => !open)}
+            >
+              <SourceCategoryIcon id="eraser" />
+              <span className="sk-catalog-tab-label">All</span>
+              <span className="sk-catalog-chevron" aria-hidden="true">⌄</span>
+            </button>
+            {allCategoriesOpen && (
+              <div
+                className="sk-catalog-all-menu"
+                role="menu"
+                aria-label="All icon categories"
+                onKeyDown={(event) => {
+                  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+                  const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitemradio"]'));
+                  if (!items.length) return;
+                  event.preventDefault();
+                  const current = items.indexOf(document.activeElement);
+                  const next = event.key === "Home" ? 0
+                    : event.key === "End" ? items.length - 1
+                      : event.key === "ArrowDown" ? (current + 1) % items.length
+                        : (current + items.length - 1) % items.length;
+                  items[next]?.focus();
+                }}
+              >
+                {catalogMenuTabs.map((tab) => (
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={activeSource === tab.id}
+                    className={`sk-catalog-all-item ${activeSource === tab.id ? "is-active" : ""}`}
+                    key={tab.id}
+                    autoFocus={activeSource === tab.id}
+                    onClick={() => chooseSource(tab.id)}
+                  >
+                    <SourceCategoryIcon id={tab.id === "all" ? "eraser" : tab.id} />
+                    <span>{tab.label}</span>
+                    {activeSource === tab.id && <span className="sk-catalog-item-selected" aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {primaryCatalogTabs.map((tab) => {
             const isActive = activeSource === tab.id;
             return (
@@ -502,40 +547,10 @@ export default function IconLibraryPanel({
                 onClick={() => chooseSource(isActive ? "all" : tab.id)}
               >
                 <SourceCategoryIcon id={tab.id} />
-                <span className="sk-catalog-tab-label">{tab.label}</span>
+                <span className="sk-catalog-tab-label">{tab.id === "kubernetes" ? "K8s" : tab.label}</span>
               </button>
             );
           })}
-          <div className="sk-catalog-more">
-            <button
-              type="button"
-              className={`sk-catalog-tab sk-catalog-more-trigger ${extraCatalogActive ? "is-active" : ""}`}
-              aria-haspopup="menu"
-              aria-expanded={moreCollectionsOpen}
-              aria-label="More icon collections"
-              onClick={() => setMoreCollectionsOpen((open) => !open)}
-            >
-              <span className="sk-catalog-tab-label">More</span>
-              <span aria-hidden="true">⌄</span>
-            </button>
-            {moreCollectionsOpen && (
-              <div className="sk-catalog-more-menu" role="menu" aria-label="More icon collections">
-                {extraCatalogTabs.map((tab) => (
-                  <button
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={activeSource === tab.id}
-                    className={`sk-catalog-more-item ${activeSource === tab.id ? "is-active" : ""}`}
-                    key={tab.id}
-                    onClick={() => chooseSource(tab.id)}
-                  >
-                    <SourceCategoryIcon id={tab.id} />
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </nav>
 
         {subcategoryOptions.length > 0 && !search.trim() && (
@@ -622,7 +637,9 @@ export default function IconLibraryPanel({
           </div>
         )}
 
-        <span className="sr-only" role="status" aria-live="polite">{displayedIcons.length.toLocaleString()} {collectionTitle} icons available</span>
+        <div className="sk-icon-compact-results-meta" role="status" aria-live="polite">
+          {displayedIcons.length.toLocaleString()} {search.trim() ? "results" : "icons"}{activeSource !== "all" ? ` · ${collectionTitle}` : ""}
+        </div>
         <section className="icons library-results sk-icon-results" aria-label="Icon results">
           {remoteLoading && activeSource === "eraser" && displayedIcons.length === 0 ? (
             <div className="empty sk-icon-empty">Loading icons…</div>
@@ -750,7 +767,7 @@ export default function IconLibraryPanel({
             </div>
           )}
         </section>
-        <span className="sr-only">Click an icon to insert, or drag it onto the drawing.</span>
+        <p className="sk-icon-compact-hint">Click to insert <span aria-hidden="true">·</span> Drag to place</p>
       </div>
     </aside>
   );
