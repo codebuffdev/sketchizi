@@ -8,6 +8,18 @@ import { canvasColorForDisplay, canvasColorForScene } from "./features/navigatio
 // Swatches use Excalidraw's scene colors and the same dark canvas filter.
 const PRESETS = [["#ffffff", "White / Near black"], ["#f3faff", "Paper / Charcoal"], ["#e9eef5", "Pale blue / Slate"], ["#faf5df", "Cream / Deep olive"], ["#f4ece6", "Warm paper / Warm gray"], ["#e9f3e9", "Soft green / Forest"]];
 
+function AppearanceIcon({ mode }) {
+  return <svg className="appearance-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    {mode === "light" ? <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+    </> : mode === "system" ? <>
+      <rect x="3" y="4" width="18" height="13" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </> : <path d="M20.9 13.1A8.5 8.5 0 0 1 10.9 3.1a8.5 8.5 0 1 0 10 10Z" />}
+  </svg>;
+}
+
 export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api, canEdit = true }) {
   const [open, setOpen] = useState(false);
   const [background, setBackground] = useState(getCanvasBackground(isDarkTheme));
@@ -51,13 +63,13 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
     setBackground(color);
   };
   return <>
-    <button ref={trigger} type="button" className={`theme-toggle desktop-app-theme-toggle ${isDarkTheme ? "dark" : "light"}`} aria-label="Appearance and canvas background" title="Appearance and canvas background" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? "sketchizi-appearance" : undefined} onClick={() => setOpen(value => !value)}>
-      <span className="theme-toggle-icon" aria-hidden="true">{isDarkTheme ? "☾" : "☀"}</span>
+    <button ref={trigger} type="button" className={`theme-toggle desktop-app-theme-toggle appearance-trigger ${isDarkTheme ? "dark" : "light"}`} aria-label="Appearance and canvas background" title="Appearance and canvas background" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? "sketchizi-appearance" : undefined} onClick={() => setOpen(value => !value)}>
+      <AppearanceIcon mode={themeMode === "system" ? "system" : isDarkTheme ? "dark" : "light"} />
     </button>
     {open && createPortal(<div ref={panel} id="sketchizi-appearance" className="sketchizi-appearance" data-dark={isDarkTheme} role="dialog" aria-label="Appearance and canvas background" style={position} onKeyDown={event => { if (event.key !== "Escape") event.stopPropagation(); }}>
       <div className="appearance-heading">Appearance<button type="button" aria-label="Close appearance settings" onClick={() => { setOpen(false); trigger.current?.focus(); }}>×</button></div>
       <div className="appearance-modes" role="group" aria-label="Theme">
-        {[["light", "☀", "Light"], ["dark", "☾", "Dark"], ["system", "▣", "System"]].map(([mode, icon, label]) => <button key={mode} type="button" aria-pressed={themeMode === mode} onClick={() => setThemeMode(mode)}><span aria-hidden="true">{icon}</span>{label}</button>)}
+        {[["light", "Light"], ["dark", "Dark"], ["system", "System"]].map(([mode, label]) => <button key={mode} type="button" aria-pressed={themeMode === mode} onClick={() => setThemeMode(mode)}><AppearanceIcon mode={mode} />{label}</button>)}
       </div>
       <div className="appearance-heading">Canvas background</div>
       <div className="appearance-swatches" role="group" aria-label="Canvas background presets">
