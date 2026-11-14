@@ -208,7 +208,7 @@ export default function IconLibraryPanel({
   }, [allCategoriesOpen]);
 
   const chooseSource = (source) => {
-    setMoreCollectionsOpen(false);
+    setAllCategoriesOpen(false);
     setActiveSource(source);
     setIconDisplayLimit(120);
     if (source !== "kubernetes") setActiveKubernetesCategory("All");
