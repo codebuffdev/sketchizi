@@ -738,26 +738,23 @@ spec:
   return (
     <div className="k8s-studio-overlay" role="presentation">
       <section className="k8s-studio" role="dialog" aria-modal="true" aria-labelledby="k8s-studio-title">
-        <header className="k8s-studio-header">
+        <header className="k8s-studio-header k8s-studio-header-compact">
           <div className="k8s-studio-brand">K8s</div>
-          <div className="k8s-studio-heading">
-            <span className="k8s-studio-eyebrow">KUBERNETES WORKSPACE</span>
-            <h1 id="k8s-studio-title">K8s Studio</h1>
-            <p>Build a Kubernetes architecture from resources or existing YAML manifests.</p>
-          </div>
-          <button type="button" className="k8s-studio-close" onClick={requestClose} aria-label="Close K8s Studio">×</button>
-        </header>
-
-        <div className="k8s-studio-actions">
+          <h1 id="k8s-studio-title">K8s Studio</h1>
+          <div className="k8s-studio-actions" role="group" aria-label="Import Kubernetes manifests">
           <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
           <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
-          <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Kustomize / Helm bundle</button>
+          <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Bundle</button>
           <input id="k8s-studio-source-bundle" type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden onChange={importFile} aria-label="Choose a ZIP containing a Kustomize bundle or Helm chart" />
           <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-folder")?.click()}>Import folder</button>
           <input id="k8s-studio-source-folder" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
-          <span>{importedFileNames.length ? importedFileNames.length + " file(s) loaded" : "Import Kubernetes YAML, or choose a source bundle for render instructions."}</span>
+          {importedFileNames.length > 0 && <span className="k8s-studio-import-status" role="status">{importedFileNames.length} file(s) loaded</span>}
+          </div>
+          <div className="k8s-studio-header-end">
           <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setBundleSources([]); setSelectedBundleSource(""); setBundleFile(null); setBundleFiles([]); setBundleValuesFiles([]); setSelectedValuesFile(""); setNotice(""); setError(""); }}>Clear</button>
-        </div>
+            <button type="button" className="k8s-studio-close" onClick={requestClose} aria-label="Close K8s Studio">×</button>
+          </div>
+        </header>
 
         {bundleSources.length > 0 && (
           <section className="k8s-studio-bundle-panel" aria-label="Bundle source selection">
