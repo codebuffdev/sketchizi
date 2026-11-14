@@ -341,7 +341,6 @@ spec:
   const [bundleValuesFiles, setBundleValuesFiles] = useState([]);
   const [selectedValuesFile, setSelectedValuesFile] = useState("");
   const [renderingBundle, setRenderingBundle] = useState(false);
-  const diagnostics = useMemo(() => normalizeStudioDiagnostics("kubernetes", parsed.issues), [parsed.issues]);
   const [error, setError] = useState("");
   const [snapshotText, setSnapshotText] = useState("");
   const [snapshotSummary, setSnapshotSummary] = useState([]);
@@ -483,6 +482,8 @@ spec:
       return { resources: [], unsupported: [], parseError: cause?.message || "Unable to parse YAML.", issues: [] };
     }
   }, [yamlText]);
+  const diagnostics = useMemo(() => normalizeStudioDiagnostics("kubernetes", parsed.issues), [parsed.issues]);
+
 
   const inspectedResource = parsed.resources.find((resource) => resource.id === inspectedResourceId) || null;
   const inspectResource = (resource) => {
