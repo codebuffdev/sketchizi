@@ -5,6 +5,11 @@ import { readFile } from "node:fs/promises";
 test("Kubernetes Studio groups validation findings per resource without editing YAML", async () => {
   const source = await readFile(new URL("../src/features/kubernetes-studio/ui/KubernetesStudio.jsx", import.meta.url), "utf8");
   assert.match(source, /const diagnosticGroups = useMemo/);
+  const parsedIndex = source.indexOf("const parsed = useMemo(");
+  const diagnosticsIndex = source.indexOf("const diagnostics = useMemo(");
+  const groupsIndex = source.indexOf("const diagnosticGroups = useMemo(");
+  assert.ok(parsedIndex >= 0 && diagnosticsIndex > parsedIndex && groupsIndex > diagnosticsIndex, "Memo hooks must initialize in dependency order");
+
   assert.match(source, /diagnosticGroups\.map\(\(\[resourceName, findings\]\)/);
   assert.match(source, /findings\.map\(\(issue\)/);
   assert.match(source, /inspectResource\(target\)/);
