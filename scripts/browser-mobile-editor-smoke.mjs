@@ -17,7 +17,21 @@ try {
       page.on("pageerror", (error) => pageErrors.push(error.message));
       await page.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
       const editor = page.locator(".excalidraw");
-      await editor.waitFor({ state: "visible", timeout: 30000 });
+      await editor.waitFor({ state: "attached", timeout: 30000 });
+      const canvasVisibility = await editor.isVisible();
+      if (!canvasVisibility) {
+        const diagnostics = await page.evaluate(() => {
+          const el = document.querySelector(".excalidraw");
+          const parents = [];
+          for (let node = el, depth = 0; node && depth < 7; node = node.parentElement, depth++) {
+            const css = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            parents.push({ tag: node.tagName, className: String(node.className).slice(0, 160), display: css.display, visibility: css.visibility, opacity: css.opacity, width: rect.width, height: rect.height });
+          }
+          return { parents, bodyText: document.body.innerText.slice(0, 500) };
+        });
+        throw new Error("Mobile editor is hidden at " + width + "px: " + JSON.stringify(diagnostics));
+      }
       await page.getByRole("button", { name: /Local document save status: (Autosave ready|Saved locally)/ }).waitFor({ timeout: 15000 });
       const geometry = await page.evaluate(() => {
         const editor = document.querySelector(".excalidraw");
