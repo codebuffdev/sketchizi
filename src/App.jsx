@@ -1,3 +1,4 @@
+import { planComposeDiagram, composeCardDetails } from "./features/docker-compose/composeDiagramLayout.js";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import IconLibraryPanel from "./IconLibraryPanel";
@@ -1302,108 +1303,27 @@ function App() {
       return;
     }
 
-    // Create a readable architecture overview: project boundary, service cards,
-    // dependency connectors, and explicit shared-resource nodes.
-    const cardWidth = 360;
-    const cardHeight = 240;
-    const gapX = 100;
-    const gapY = 72;
-    const dependenciesOf = (service) => Array.isArray(service.depends_on)
-      ? service.depends_on
-      : Object.keys(service.depends_on || {});
-    const serviceNames = new Set(services.map(([name]) => name));
-    const levels = new Map();
-    const resolving = new Set();
-    const getLevel = (name) => {
-      if (levels.has(name)) return levels.get(name);
-      if (resolving.has(name)) return 0; // Break dependency cycles safely.
-      resolving.add(name);
-      const service = composeDocument.services[name] || {};
-      const dependencyLevels = dependenciesOf(service)
-        .filter((dependency) => serviceNames.has(dependency))
-        .map((dependency) => getLevel(dependency) + 1);
-      resolving.delete(name);
-      const level = dependencyLevels.length ? Math.max(...dependencyLevels) : 0;
-      levels.set(name, level);
-      return level;
-    };
-    services.forEach(([name]) => getLevel(name));
-    const layerGroups = new Map();
-    services.forEach(([name]) => {
-      const level = levels.get(name) || 0;
-      if (!layerGroups.has(level)) layerGroups.set(level, []);
-      layerGroups.get(level).push(name);
-    });
-    const layerKeys = [...layerGroups.keys()].sort((a, b) => a - b);
-    const columns = layerKeys.length;
-    const rows = Math.max(1, ...[...layerGroups.values()].map((group) => group.length));
-    const left = 180;
-    const top = 210;
-    const positions = new Map();
+    const layout = planComposeDiagram(composeDocument);
+    const { positions, edges, resources, cardWidth, cardHeight, left, top, resourceTop, resourceWidth, resourceHeight, resourceGap } = layout;
     const skeleton = [];
     const projectName = composeDocument.name || "Docker Compose project";
-    const volumeNames = Object.keys(composeDocument.volumes || {});
-    const networkNames = Object.keys(composeDocument.networks || {});
-
-    const maxServiceX = left + Math.max(0, columns - 1) * (cardWidth + gapX);
-    const maxServiceY = top + Math.max(0, rows - 1) * (cardHeight + gapY);
-    const resourceTop = maxServiceY + cardHeight + 200;
-    const resourceCount = volumeNames.length + networkNames.length;
-    const resourceWidth = 230;
-    const resourceHeight = 86;
-    const resourceGap = 34;
-    const resourceTotalWidth = resourceCount ? resourceCount * resourceWidth + (resourceCount - 1) * resourceGap : 0;
-    const projectWidth = Math.max(maxServiceX - left + cardWidth + 120, resourceTotalWidth + 120);
-    const projectHeight = resourceCount
-      ? resourceTop - top + resourceHeight + 95
-      : maxServiceY - top + cardHeight + 100;
-
-    // The background is first so all generated elements remain visually inside it.
     skeleton.push({
-      type: "rectangle",
-      x: left - 60,
-      y: top - 120,
-      width: projectWidth,
-      height: projectHeight,
-      strokeColor: "#64748b",
-      backgroundColor: "transparent",
-      fillStyle: "solid",
-      strokeStyle: "dashed",
-      label: { text: `▦  COMPOSE PROJECT  ·  ${projectName}`, fontSize: 18, textAlign: "left", verticalAlign: "top" }
+      type: "rectangle", x: left - 40, y: top - 90, width: layout.width, height: layout.height,
+      strokeColor: "#64748b", backgroundColor: "transparent", fillStyle: "solid",
+      strokeStyle: "dashed", label: { text: "COMPOSE  /  " + projectName, fontSize: 18, fontFamily: 2, textAlign: "left", verticalAlign: "top" }
     });
-
-    layerKeys.forEach((level, columnIndex) => {
-      const names = layerGroups.get(level);
-      names.forEach((name, rowIndex) => {
-        const x = left + columnIndex * (cardWidth + gapX);
-        const y = top + rowIndex * (cardHeight + gapY);
-        positions.set(name, { x, y });
-      });
-    });
-
-    // Dependency connectors are emitted before cards so they never cross card text.
-    services.forEach(([name, service]) => {
-      const from = positions.get(name);
-      const dependencies = Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {});
-      dependencies.forEach((dependency) => {
-        const to = positions.get(dependency);
-        if (!to) return;
-        const startX = from.x + cardWidth / 2;
-        const startY = from.y + cardHeight / 2;
-        const endX = to.x + cardWidth / 2;
-        const endY = to.y + cardHeight / 2;
-        skeleton.push({
-          type: "arrow",
-          x: startX,
-          y: startY,
-          width: endX - startX,
-          height: endY - startY,
-          points: [[0, 0], [endX - startX, endY - startY]],
-          strokeColor: "#64748b",
-          strokeWidth: 2,
-          endArrowhead: "arrow",
-          label: { text: "depends on", fontSize: 13 }
-        });
+    // Place arrows between card edges, not through their labels.
+    edges.forEach(({ from, to }) => {
+      const start = positions.get(from), end = positions.get(to);
+      if (!start || !end) return;
+      const rightward = end.x > start.x;
+      const x1 = rightward ? start.x + cardWidth : start.x;
+      const x2 = rightward ? end.x : end.x + cardWidth;
+      const y1 = start.y + cardHeight / 2, y2 = end.y + cardHeight / 2;
+      skeleton.push({
+        type: "arrow", x: x1, y: y1, width: x2 - x1, height: y2 - y1,
+        points: [[0, 0], [x2 - x1, y2 - y1]], strokeColor: "#8aa3c1", strokeWidth: 2,
+        endArrowhead: "arrow"
       });
     });
 
@@ -1497,119 +1417,31 @@ function App() {
     services.forEach(([name, service]) => {
       const { x, y } = positions.get(name);
       const iconAsset = iconAssets.get(serviceIconSources.get(name));
-      const ports = (service.ports || []).map((port) => typeof port === "string" ? port : [port.published, port.target].filter(Boolean).join(":")).filter(Boolean);
-      const environment = service.environment
-        ? (Array.isArray(service.environment) ? service.environment.map((entry) => typeof entry === "string" ? entry.split("=")[0] : Object.keys(entry || {})[0]) : Object.keys(service.environment))
-        : [];
-      const dependencies = Array.isArray(service.depends_on) ? service.depends_on : Object.keys(service.depends_on || {});
-      const details = [
-        service.image ? `Image  ·  ${service.image}` : service.build?.context ? `Build  ·  ${service.build.context}` : "Image not specified",
-        ports.length ? `↔  Ports  ·  ${ports.slice(0, 3).join(", ")}` : "",
-        dependencies.length ? `⇢  Depends on  ·  ${dependencies.join(", ")}` : "",
-        environment.length ? `⚙  Environment  ·  ${environment.slice(0, 3).join(", ")}` : "",
-        service.restart ? `↻  Restart  ·  ${service.restart}` : ""
-      ].filter(Boolean);
+      const details = composeCardDetails(service);
       skeleton.push({
-        type: "rectangle",
-        x,
-        y,
-        width: cardWidth,
-        height: cardHeight,
-        strokeColor: "#7c3aed",
-        backgroundColor: "#f5f3ff",
-        fillStyle: "solid",
-        strokeWidth: 2,
-        roundness: { type: 3 },
-        label: {
-          text: `▣  CONTAINER  ·  ${name.toUpperCase()}\n\n${details.join("\n")}`,
-          fontSize: 13,
-          textAlign: "left",
-          verticalAlign: "middle"
-        }
+        type: "rectangle", x, y, width: cardWidth, height: cardHeight,
+        strokeColor: "#6474b8", backgroundColor: "#19243a", fillStyle: "solid",
+        strokeWidth: 2, roundness: { type: 3 },
+        label: { text: name + "\\n" + details.join("\\n"), fontSize: 15, fontFamily: 2, textAlign: "left", verticalAlign: "middle" }
       });
-      // Add the image after its card so it is rendered above the card background.
-      if (iconAsset) {
-        skeleton.push({
-          type: "image",
-          x: x + cardWidth - 66,
-          y: y + 12,
-          width: 54,
-          height: 54,
-          fileId: iconAsset.fileId,
-          status: "saved",
-          scale: [1, 1]
-        });
-      }
-    });
-
-    // Keep resource relationships legible: show volume mounts and network
-    // membership as compact badges inside each service card instead of long
-    // cross-canvas connector lines. Keep resource definitions as a small legend.
-    services.forEach(([serviceName, service]) => {
-      const servicePosition = positions.get(serviceName);
-      const declaredVolumes = (service.volumes || []).map((mount) => {
-        if (typeof mount === "string") return mount.split(":")[0];
-        return mount?.source || "";
-      }).filter(Boolean);
-      const declaredNetworks = Array.isArray(service.networks) ? service.networks : Object.keys(service.networks || {});
-      const badges = [
-        ...declaredVolumes.map((name) => ({ text: `● ${name}`, kind: "VOLUME" })),
-        ...declaredNetworks.map((name) => ({ text: `◇ ${name}`, kind: "NETWORK" }))
-      ];
-      if (!badges.length) return;
-      const maxBadgesPerRow = 2;
-      const badgeWidth = 138;
-      const badgeHeight = 25;
-      badges.forEach((badge, index) => {
-        const column = index % maxBadgesPerRow;
-        const row = Math.floor(index / maxBadgesPerRow);
-        const badgeX = servicePosition.x + 14 + column * (badgeWidth + 8);
-        const badgeY = servicePosition.y + cardHeight - 32 - row * (badgeHeight + 4);
-        skeleton.push({
-          type: "rectangle",
-          x: badgeX,
-          y: badgeY,
-          width: badgeWidth,
-          height: badgeHeight,
-          strokeColor: badge.kind === "VOLUME" ? "#0f766e" : "#0369a1",
-          backgroundColor: badge.kind === "VOLUME" ? "#ccfbf1" : "#e0f2fe",
-          fillStyle: "solid",
-          strokeWidth: 1,
-          roundness: { type: 3 },
-          label: { text: badge.text, fontSize: 11, textAlign: "center", verticalAlign: "middle" }
-        });
+      if (iconAsset) skeleton.push({
+        type: "image", x: x + cardWidth - 48, y: y + 12,
+        width: 34, height: 34, fileId: iconAsset.fileId, status: "saved", scale: [1, 1]
       });
     });
-
-    const resources = [
-      ...volumeNames.map((name) => ({ name, kind: "VOLUME", color: "#0f766e", background: "#ccfbf1" })),
-      ...networkNames.map((name) => ({ name, kind: "NETWORK", color: "#0369a1", background: "#e0f2fe" }))
-    ];
-    if (resources.length) {
-      const legendY = resourceTop;
-      const legendWidth = 230;
-      const legendHeight = 56;
-      const legendGap = 20;
-      const legendColumns = Math.min(4, resources.length);
-      const legendRows = Math.ceil(resources.length / legendColumns);
-      resources.forEach((resource, index) => {
-        const column = index % legendColumns;
-        const row = Math.floor(index / legendColumns);
-        skeleton.push({
-          type: "rectangle",
-          x: left + column * (legendWidth + legendGap),
-          y: legendY + row * (legendHeight + 12),
-          width: legendWidth,
-          height: legendHeight,
-          strokeColor: resource.color,
-          backgroundColor: resource.background,
-          fillStyle: "solid",
-          strokeWidth: 1,
-          roundness: { type: 3 },
-          label: { text: `${resource.kind === "VOLUME" ? "● STORAGE" : "◇ NETWORK"}\n${resource.name}`, fontSize: 13, textAlign: "center", verticalAlign: "middle" }
-        });
+    resources.forEach((resource, index) => {
+      const column = index % Math.min(4, resources.length);
+      const row = Math.floor(index / Math.min(4, resources.length));
+      const x = left + column * (resourceWidth + resourceGap);
+      const y = resourceTop + row * (resourceHeight + 12);
+      skeleton.push({
+        type: "rectangle", x, y, width: resourceWidth, height: resourceHeight,
+        strokeColor: resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8",
+        backgroundColor: resource.kind === "VOLUME" ? "#103d38" : "#102f45",
+        fillStyle: "solid", strokeWidth: 1, roundness: { type: 3 },
+        label: { text: resource.kind + "  ·  " + resource.name + "\\n" + resource.members.join(" · "), fontSize: 12, fontFamily: 2, textAlign: "center", verticalAlign: "middle" }
       });
-    }
+    });
 
     const elements = convertToExcalidrawElements(skeleton);
     api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
