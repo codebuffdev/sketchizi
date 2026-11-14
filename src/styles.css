@@ -1072,3 +1072,15 @@
     max-width: 100vw;
   }
 }
+
+/* On phones the full-viewport canvas must stay behind interactive header
+ * controls; desktop floating-header layering only applies above 520px. */
+@media (max-width: 480px) {
+  .app.canvas-first-header .desktop-app-header {
+    position: relative;
+    z-index: 620;
+  }
+  .app.canvas-first-header .desktop-workspace {
+    z-index: 0;
+  }
+}
