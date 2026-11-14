@@ -203,3 +203,17 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
 .k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.1105)}
 .k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.104)}
+
+
+/* Kubernetes Studio 2.0: focused preview navigation and compact resources. */
+.k8s-studio-preview-tabs{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid #304158}
+.k8s-studio-preview-tabs button{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:1;min-width:0;padding:9px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#a8bad2;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.k8s-studio-preview-tabs button:hover{background:#1b2b42;color:#e6efff}
+.k8s-studio-preview-tabs button.active{background:#292342;color:#e5dfff;border-color:#7355a8}
+.k8s-studio-preview-tabs button:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
+.k8s-studio-preview-tabs button span{padding:2px 6px;border-radius:99px;background:#34435a;font-size:10px}
+.k8s-studio-preview .k8s-studio-resource-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;padding:12px;align-content:start}
+.k8s-studio-preview .k8s-studio-resource{min-width:0;border:1px solid #30435c;border-radius:10px;padding:11px;background:#15253b;flex-wrap:wrap}
+.k8s-studio-preview .k8s-studio-resource>div{min-width:0;flex:1}
+.k8s-studio-preview .k8s-studio-resource>div strong,.k8s-studio-preview .k8s-studio-resource>div small{overflow-wrap:anywhere}
+@media(max-width:700px){.k8s-studio-preview .k8s-studio-resource-list{grid-template-columns:1fr}}
