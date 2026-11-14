@@ -361,6 +361,16 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
               <p>Static Compose depends_on path for {selectedService}. This is not a live network request trace.</p>
               {dependencyTrace?.steps.length ? dependencyTrace.steps.map((step, index) => <button type="button" key={step.from + step.to + index} className={step.exists ? "docker-studio-relationship" : "docker-studio-relationship missing"} onClick={() => { if (step.exists) setSelectedService(step.to); }}><strong>{step.from}</strong><span>→</span><strong>{step.to}</strong><small>{step.exists ? "declared dependency" : "missing service"}</small></button>) : <p>No declared downstream dependencies.</p>}
               {dependencyTrace?.warnings.map((warning, index) => <p key={index} role="status">{warning}</p>)}
+              {dependencyTrace && <svg role="img" aria-label={"Declared dependency path from " + selectedService} viewBox={"0 0 520 " + Math.max(96, (dependencyTrace.steps.length + 1) * 72)} style={{ width: "100%", maxHeight: 360, background: "var(--color-surface, transparent)" }}>
+                <rect x="12" y="12" width="180" height="44" rx="8" fill="#2563eb" />
+                <text x="102" y="39" textAnchor="middle" fill="white" fontSize="14">{selectedService.slice(0, 23)}</text>
+                {dependencyTrace.steps.map((step, index) => <g key={step.from + step.to + index}>
+                  <line x1="102" y1={56 + index * 72} x2="102" y2={84 + index * 72} stroke={step.exists ? "#64748b" : "#dc2626"} strokeWidth="2" strokeDasharray={step.exists ? "none" : "5 4"} />
+                  <rect x="12" y={84 + index * 72} width="180" height="44" rx="8" fill={step.exists ? "#0f766e" : "#991b1b"} />
+                  <text x="102" y={111 + index * 72} textAnchor="middle" fill="white" fontSize="14">{step.to.slice(0, 23)}</text>
+                  <text x="212" y={111 + index * 72} fill="currentColor" fontSize="12">{step.exists ? "depends_on: " + step.from : "missing dependency"}</text>
+                </g>)}
+              </svg>}
               <strong>Potential network peers</strong>
               <p>Shared Compose networks permit possible connectivity; they do not prove HTTP traffic.</p>
               {networkReachability?.peers.length ? networkReachability.peers.map((peer) => <button type="button" className="docker-studio-relationship" key={peer.name} onClick={() => setSelectedService(peer.name)}><strong>{selectedService}</strong><span>↔</span><strong>{peer.name}</strong><small>Shared: {peer.sharedNetworks.join(", ")}</small></button>) : <p>No other services share this service's declared networks.</p>}
