@@ -1,4 +1,5 @@
 import { convertToExcalidrawElements } from "@excalidraw/excalidraw";
+import { recognizeOnlineInk } from "./smartInkOnlineRecognition.js";
 
 /** Draw selected ink into an isolated white canvas for native OCR.
  * Browser TextDetector is experimental; callers must provide a correction path.
@@ -49,6 +50,9 @@ export function renderInkForRecognition(elements) {
  * same-origin or explicitly CORS-enabled and authenticate server-side.
  */
 export async function recognizeInk(elements) {
+  // Prefer pen-stroke recognition when the local operating system provides it.
+  const online = await recognizeOnlineInk(elements);
+  if (online.text) return online;
   const canvas = renderInkForRecognition(elements);
   if (!canvas) return { text: "", available: false };
   const endpoint = import.meta.env?.VITE_SMART_INK_RECOGNITION_URL || "/api/smart-ink/recognize";
