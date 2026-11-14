@@ -51,9 +51,9 @@
 .appearance-custom { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 11px; background: var(--appearance-inset); border: 1px solid var(--appearance-border); border-radius: 9px; }
 .appearance-color-value { display: inline-flex; align-items: center; gap: 9px; }
 .appearance-color-value code { color: var(--appearance-muted); font: 11px/1.5 ui-monospace, monospace; }
-.appearance-custom input { width: 27px; height: 27px; border: 0; padding: 0; border-radius: 5px; background: transparent; cursor: pointer; }
-.appearance-custom input::-webkit-color-swatch-wrapper { padding: 2px; }
-.appearance-custom input::-webkit-color-swatch { border: 1px solid #8886; border-radius: 4px; }
+.appearance-custom input[type="color"] { width: 27px; height: 27px; border: 0; padding: 0; border-radius: 5px; background: transparent; cursor: pointer; }
+.appearance-custom input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+.appearance-custom input[type="color"]::-webkit-color-swatch { border: 1px solid #8886; border-radius: 4px; }
 .sketchizi-appearance .appearance-footer { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--appearance-muted); font-size: 11px; margin: 15px 0 0; }
 .appearance-footer svg { color: var(--appearance-accent); }
 .sketchizi-appearance :focus-visible { outline: 2px solid var(--appearance-accent); outline-offset: 3px; }
@@ -85,3 +85,7 @@
 }
 .appearance-icon { display: block; width: 20px; height: 20px; flex-shrink: 0; }
 .appearance-modes .appearance-icon { margin-inline: auto; }
+
+.appearance-custom .appearance-hex-input { width: 76px; height: 28px; min-width: 0; padding: 3px 5px; box-sizing: border-box; border: 1px solid var(--appearance-border); border-radius: 5px; background: var(--appearance-surface); color: var(--appearance-text); font: 11px/1.5 ui-monospace, monospace; text-transform: uppercase; }
+.appearance-custom .appearance-hex-input[aria-invalid="true"] { border-color: #e06472; }
+.sketchizi-appearance .appearance-hex-error { color: #e06472; font-size: 11px; margin: 8px 0 0; }

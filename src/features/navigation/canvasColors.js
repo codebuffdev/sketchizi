@@ -16,3 +16,10 @@ function transform(color, dark, inverse) {
   const output = inverse ? rotated.map(value => (.93 - value) / .86) : rotated;
   return "#" + output.map(value => Math.round(Math.max(0, Math.min(1, value)) * 255).toString(16).padStart(2, "0")).join("");
 }
+
+// Accept pasted CSS-style hex values with an optional hash and short form.
+export function normalizeCanvasHex(value) {
+  const hex = String(value ?? "").trim().replace(/^#/, "");
+  if (/^[\da-f]{3}$/i.test(hex)) return "#" + [...hex].map(char => char + char).join("").toLowerCase();
+  return /^[\da-f]{6}$/i.test(hex) ? "#" + hex.toLowerCase() : null;
+}

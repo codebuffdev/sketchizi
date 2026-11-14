@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canvasColorForDisplay, canvasColorForScene } from "../src/features/navigation/canvasColors.js";
+import { canvasColorForDisplay, canvasColorForScene, normalizeCanvasHex } from "../src/features/navigation/canvasColors.js";
 
 test("light canvas colors preserve the selected RGB", () => {
   assert.equal(canvasColorForScene("#ABCDEF", false), "#abcdef");
@@ -22,4 +22,14 @@ test("out of gamut and invalid colors produce valid RGB values", () => {
   for (const color of ["#000000", "#ffffff", "#ff0000", null, "garbage"]) {
     assert.match(canvasColorForScene(color, true), /^#[\da-f]{6}$/);
   }
+});
+
+test("hex entry accepts full, short, and pasted colors", () => {
+  assert.equal(normalizeCanvasHex(" #AbC123 "), "#abc123");
+  assert.equal(normalizeCanvasHex("12181C"), "#12181c");
+  assert.equal(normalizeCanvasHex("#abc"), "#aabbcc");
+  assert.equal(normalizeCanvasHex("ABC"), "#aabbcc");
+});
+test("hex entry rejects incomplete and malformed colors", () => {
+  for (const value of ["", "#", "#12", "#1234", "#1234567", "#GGGGGG", "##12181c", null]) assert.equal(normalizeCanvasHex(value), null);
 });
