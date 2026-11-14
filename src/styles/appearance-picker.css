@@ -19,3 +19,28 @@
 .sketchizi-appearance :focus-visible { outline: 2px solid #a89cff; outline-offset: 3px; }
 
 .app .desktop-app-header button.desktop-app-theme-toggle { display: inline-flex; }
+
+/* One centered action, replacing the old two-position pill geometry. */
+.app .desktop-app-header button.appearance-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ui-text-muted);
+}
+.app .desktop-app-header button.appearance-trigger:hover,
+.app .desktop-app-header button.appearance-trigger[aria-expanded="true"] {
+  background: var(--ui-active);
+  border-color: var(--ui-border);
+  color: var(--ui-text-strong);
+}
+.appearance-icon { display: block; width: 20px; height: 20px; flex-shrink: 0; }
+.appearance-modes .appearance-icon { margin-inline: auto; }
