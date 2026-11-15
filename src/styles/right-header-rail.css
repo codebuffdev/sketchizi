@@ -8,14 +8,18 @@
     justify-content: flex-start;
     left: auto;
     right: calc(18px + var(--safe-right, 0px));
-    top: calc(50% + (var(--safe-top, 0px) - var(--safe-bottom, 0px)) / 2);
+    top: var(--safe-top, 0px);
+    bottom: var(--safe-bottom, 0px);
     width: 56px !important;
-    max-height: calc(100dvh - 36px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    height: fit-content;
+    max-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    margin-block: auto;
     overflow: visible !important;
     scrollbar-width: thin;
     gap: 10px;
-    /* Center the complete rail in the usable viewport height. */
-    transform: translateY(-50%);
+    /* Auto vertical margins center the rail without creating a fixed-position
+       containing block that would change the flyouts' viewport positioning. */
+    transform: none;
     transition: opacity .16s ease, visibility .18s linear;
   }
 
