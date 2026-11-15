@@ -380,8 +380,17 @@ export default function DesktopAppHeader({
                 onClick={() => setOpenMenu((current) => current === menu.label ? null : menu.label)}
               >
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M2.5 12s3.4-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.4 6.5-9.5 6.5S2.5 12 2.5 12Z" />
-                  <circle cx="12" cy="12" r="2.8" />
+                  {openMenu === menu.label ? (
+                    <>
+                      <path d="M2.5 12s3.4-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.4 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+                      <circle cx="12" cy="12" r="2.8" />
+                    </>
+                  ) : (
+                    <>
+                      <path d="M3 13.5c2.2-3 5.2-4.5 9-4.5s6.8 1.5 9 4.5" />
+                      <path d="m6 13-1 2M12 12.8v2.4M18 13l1 2" />
+                    </>
+                  )}
                 </svg>
               </button>
 
