@@ -24,3 +24,31 @@ test("theme toggle and AI Ask retain their existing callbacks and props", () => 
   assert.match(source, /<ThemeControl setThemeMode=\{setThemeMode\} themeMode=\{themeMode\} isDarkTheme=\{isDarkTheme\} api=\{canvasApi\} canEdit=\{canEditCanvas\} \/>/);
   assert.match(source, /<div className="desktop-app-header-panel-actions">\{children\}<\/div>/);
 });
+
+test("desktop right header rail uses the same frameless shell as the canvas dock", async () => {
+  const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
+  assert.match(styles, /\.desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*\{/);
+  assert.match(styles, /background:\s*transparent\s*!important/);
+  assert.match(styles, /box-shadow:\s*none\s*!important/);
+  assert.match(styles, /backdrop-filter:\s*none\s*!important/);
+});
+
+
+test("desktop right header rail aligns controls on one vertical axis", async () => {
+  const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
+  assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*\{[\s\S]*?flex-direction:\s*column\s*!important/);
+  assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*>\s*\*\s*\{[\s\S]*?align-self:\s*center/);
+  assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-save-status-trigger[\s\S]*?width:\s*36px/);
+  assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
+});
+
+
+test("all desktop right-rail controls share a 36px slot and one vertical axis", async () => {
+  const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
+  const alignment = styles.slice(styles.lastIndexOf("Flatten the header's legacy horizontal groups"));
+  assert.match(alignment, /desktop-app-header-right-rail\s*\{[\s\S]*?flex-direction:\s*column\s*!important/);
+  assert.match(alignment, /desktop-app-header-island,[\s\S]*?desktop-app-header-actions,[\s\S]*?display:\s*contents\s*!important/);
+  assert.match(alignment, /desktop-app-header-right-rail\s+:is\([\s\S]*?sketchizi-more-tools-header[\s\S]*?width:\s*36px\s*!important[\s\S]*?height:\s*36px\s*!important/);
+  assert.match(alignment, /sketchizi-more-tools-trigger[\s\S]*?width:\s*36px\s*!important[\s\S]*?height:\s*36px\s*!important/);
+  assert.match(alignment, /desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
+});
