@@ -387,8 +387,9 @@ export default function DesktopAppHeader({
                     </>
                   ) : (
                     <>
-                      <path d="M3 10.5c2.5 4.2 5.5 6.3 9 6.3s6.5-2.1 9-6.3" strokeWidth="2.3" />
-                      <path d="m5.5 9.5-1.7-1.2M18.5 9.5l1.7-1.2" strokeWidth="2" />
+                      <path d="M3.5 13.5c2.2 3.1 5.1 4.7 8.5 4.7s6.3-1.6 8.5-4.7" strokeWidth="2.4" />
+                      <path d="m6.5 16.5-1.2 2M12 18.2v2M17.5 16.5l1.2 2" strokeWidth="1.9" />
+                      <path d="M16.5 3.5h4l-4 4h4" strokeWidth="1.8" />
                     </>
                   )}
                 </svg>
