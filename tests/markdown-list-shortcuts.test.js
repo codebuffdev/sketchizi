@@ -10,9 +10,9 @@ const edit = (value, key, cursor = value.length) => getMarkdownListEdit({
 });
 
 test("converts dash and asterisk prefixes to bullet markers only after a space", () => {
-  assert.deepEqual(edit("-", " "), { start: 0, end: 2, text: "• " });
-  assert.deepEqual(edit("*", " "), { start: 0, end: 2, text: "• " });
-  assert.equal(edit("-", " "), null);
+  assert.deepEqual(edit("-", " "), { start: 0, end: 1, text: "• " });
+  assert.deepEqual(edit("*", " "), { start: 0, end: 1, text: "• " });
+  assert.equal(edit("x-", " "), null);
   assert.equal(edit("ordinary text", " "), null);
 });
 
@@ -46,7 +46,7 @@ test("Backspace on an empty list item removes its marker", () => {
 
 test("supports list items after existing paragraphs and preserves indentation", () => {
   assert.deepEqual(edit("Intro\n  - ", " "), {
-    start: 6, end: 8, text: "  • ",
+    start: 6, end: 9, text: "  • ",
   });
   assert.deepEqual(edit("Intro\n  • Item", "Enter"), {
     start: 14, end: 14, text: "\n  • ",
