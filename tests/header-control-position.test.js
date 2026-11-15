@@ -43,8 +43,9 @@ test("desktop right header rail aligns controls on one vertical axis", async () 
 });
 
 
-test("Minimal Plus control uses the same centered 36px hit area as the right rail", async () => {
+test("Minimal Plus keeps a 36px alignment slot with a compact 28px icon control", async () => {
   const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
-  assert.match(styles, /sketchizi-more-tools-header\s*\{[\s\S]*?width:\s*36px[\s\S]*?height:\s*36px/);
-  assert.match(styles, /sketchizi-more-tools-trigger\s*\{[\s\S]*?width:\s*36px[\s\S]*?height:\s*36px/);
+  const plusRules = styles.slice(styles.lastIndexOf("Keep a 36px alignment slot"));
+  assert.match(plusRules, /sketchizi-more-tools-header\s*\{[\s\S]*?width:\s*36px[\s\S]*?height:\s*36px/);
+  assert.match(plusRules, /sketchizi-more-tools-trigger\s*\{[\s\S]*?width:\s*28px[\s\S]*?height:\s*28px[\s\S]*?border:\s*0/);
 });
