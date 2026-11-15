@@ -290,3 +290,77 @@
     -webkit-backdrop-filter: none !important;
   }
 }
+
+
+/* Keep every control in the desktop right rail on one shared vertical axis.
+   The rail is a column; nested groups must not introduce their own offsets. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center;
+    gap: 6px;
+    box-sizing: border-box;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island > * {
+    align-self: center;
+    justify-self: center;
+    margin-inline: auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav {
+    display: flex;
+    width: 36px;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-wrap,
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid {
+    display: flex;
+    width: 36px;
+    min-width: 36px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-trigger,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-start-collaboration-button,
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid-trigger,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-to-cloud-button,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-menu-trigger,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-menu-trigger,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav-button,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-icon-button,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-visibility-button {
+    box-sizing: border-box;
+    flex: 0 0 36px;
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    margin-inline: auto;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-action-divider {
+    width: 24px;
+    margin-inline: auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-spacer {
+    display: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
+    width: 36px;
+    min-width: 36px;
+    margin-inline: auto;
+    justify-content: center;
+  }
+}
