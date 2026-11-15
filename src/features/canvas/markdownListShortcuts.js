@@ -29,7 +29,7 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
       return { start: lineStart, end: selectionStart, text: "\n" };
     }
     const number = marker.match(/^(\d+)\.$/);
-    const nextMarker = number ? `${Number(number[1]) + 1}. ` : "● ";
+    const nextMarker = number ? `${Number(number[1]) + 1}․ ` : "● ";
     return { start: selectionStart, end: selectionStart, text: `\n${indent}${nextMarker}` };
   }
 
