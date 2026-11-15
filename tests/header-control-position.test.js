@@ -43,9 +43,12 @@ test("desktop right header rail aligns controls on one vertical axis", async () 
 });
 
 
-test("Minimal Plus keeps a 36px alignment slot with a compact 28px icon control", async () => {
+test("all desktop right-rail controls share a 36px slot and one vertical axis", async () => {
   const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
-  const plusRules = styles.slice(styles.lastIndexOf("Keep a 36px alignment slot"));
-  assert.match(plusRules, /sketchizi-more-tools-header\s*\{[\s\S]*?width:\s*36px[\s\S]*?height:\s*36px/);
-  assert.match(plusRules, /sketchizi-more-tools-trigger\s*\{[\s\S]*?width:\s*28px[\s\S]*?height:\s*28px[\s\S]*?border:\s*0/);
+  const alignment = styles.slice(styles.lastIndexOf("Flatten the header's legacy horizontal groups"));
+  assert.match(alignment, /desktop-app-header-right-rail\\s*\\{[\\s\\S]*?flex-direction:\\s*column\\s*!important/);
+  assert.match(alignment, /desktop-app-header-island,[\\s\\S]*?desktop-app-header-actions,[\\s\\S]*?display:\\s*contents\\s*!important/);
+  assert.match(alignment, /desktop-app-header-right-rail\\s+:is\\([\\s\\S]*?sketchizi-more-tools-header[\\s\\S]*?width:\\s*36px\\s*!important[\\s\\S]*?height:\\s*36px\\s*!important/);
+  assert.match(alignment, /sketchizi-more-tools-trigger[\\s\\S]*?width:\\s*36px\\s*!important[\\s\\S]*?height:\\s*36px\\s*!important/);
+  assert.match(alignment, /desktop-app-header-spacer\\s*\\{[\\s\\S]*?display:\\s*none\\s*!important/);
 });
