@@ -10,8 +10,8 @@ const edit = (value, key, cursor = value.length) => getMarkdownListEdit({
 });
 
 test("converts dash and asterisk prefixes to bullet markers only after a space", () => {
-  assert.deepEqual(edit("- ", " "), { start: 0, end: 2, text: "• " });
-  assert.deepEqual(edit("* ", " "), { start: 0, end: 2, text: "• " });
+  assert.deepEqual(edit("-", " "), { start: 0, end: 2, text: "• " });
+  assert.deepEqual(edit("*", " "), { start: 0, end: 2, text: "• " });
   assert.equal(edit("-", " "), null);
   assert.equal(edit("ordinary text", " "), null);
 });
