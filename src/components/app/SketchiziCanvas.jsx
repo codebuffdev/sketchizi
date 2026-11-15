@@ -779,6 +779,7 @@ export default function SketchiziCanvas({
       });
       if (!edit) return;
       event.preventDefault();
+      event.stopPropagation();
       applyMarkdownListEdit(textarea, edit);
     };
     root.addEventListener("keydown", handleMarkdownListKeyDown, true);
