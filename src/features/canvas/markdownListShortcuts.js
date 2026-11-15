@@ -16,26 +16,26 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
     if (afterCursor.length) return null;
     const bullet = beforeCursor.match(/^(\s*)([-*])$/);
     if (bullet) {
-      return { start: lineStart, end: selectionStart, text: `${bullet[1]}• ` };
+      return { start: lineStart, end: selectionStart, text: `${bullet[1]}● ` };
     }
     return null;
   }
 
   if (key === "Enter") {
-    const listItem = beforeCursor.match(/^(\s*)(•|\d+\.)\s+(.*)$/);
+    const listItem = beforeCursor.match(/^(\s*)(●|\d+\.)\s+(.*)$/);
     if (!listItem) return null;
     const [, indent, marker, content] = listItem;
     if (!content.trim() && !afterCursor.length) {
       return { start: lineStart, end: selectionStart, text: "\n" };
     }
     const number = marker.match(/^(\d+)\.$/);
-    const nextMarker = number ? `${Number(number[1]) + 1}. ` : "• ";
+    const nextMarker = number ? `${Number(number[1]) + 1}. ` : "● ";
     return { start: selectionStart, end: selectionStart, text: `\n${indent}${nextMarker}` };
   }
 
   if (key === "Backspace") {
     // Undo unordered-list conversion: restore the typed hyphen.
-    const bulletMarker = beforeCursor.match(/^(\s*)•\s+$/);
+    const bulletMarker = beforeCursor.match(/^(\s*)●\s+$/);
     if (bulletMarker) {
       return {
         start: lineStart,
