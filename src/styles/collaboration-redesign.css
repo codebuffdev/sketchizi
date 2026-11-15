@@ -216,3 +216,79 @@ html[data-sketchizi-theme="dark"] .collaboration-lifecycle-header-button:hover {
 .collaboration-join-progress { display:flex; align-items:center; gap:9px; padding:10px 12px; border:1px solid var(--ui-border, #d9d9df); border-radius:9px; color:var(--ui-text, #202024); font-size:12px; line-height:1.4; }
 .collaboration-join-progress .collaboration-header-spinner { display:inline-block; width:15px; height:15px; flex:0 0 15px; border:2px solid var(--ui-border, #d9d9df); border-top-color:var(--ui-accent, #2563eb); border-radius:50%; animation:collaboration-join-spin .75s linear infinite; }
 @keyframes collaboration-join-spin { to { transform:rotate(360deg); } }
+
+
+/* Collaboration controls are a dedicated floating workspace bar. Keep them
+   outside the account/header DOM so the canvas header remains independent. */
+.app .collaboration-floating-bar {
+  position: fixed;
+  z-index: 860;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  min-height: 48px;
+  padding: 6px 9px;
+  overflow: visible;
+  border: 1px solid var(--ui-border, #d9dfe8);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--ui-surface-solid, #fff) 94%, transparent);
+  box-shadow: 0 8px 28px rgb(15 23 42 / 13%), 0 1px 3px rgb(15 23 42 / 8%);
+  backdrop-filter: blur(18px) saturate(1.25);
+  transform: translateX(-50%);
+}
+.app .collaboration-floating-bar .collaboration-header-session {
+  max-width: min(260px, 30vw);
+  gap: 7px;
+  padding: 0 5px 0 3px;
+}
+.app .collaboration-floating-bar .collaboration-header-live-state {
+  color: #15803d;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .025em;
+}
+.app .collaboration-floating-bar .collaboration-header-live-state.reconnecting,
+.app .collaboration-floating-bar .collaboration-header-live-state.connecting {
+  color: #b45309;
+}
+.app .collaboration-floating-bar .collaboration-header-session-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text, #24242a);
+  font-size: 12px;
+  font-weight: 680;
+}
+.app.theme-dark .collaboration-floating-bar {
+  border-color: rgb(255 255 255 / 13%);
+  background: color-mix(in srgb, var(--ui-surface-solid, #171b24) 94%, transparent);
+  box-shadow: 0 10px 32px rgb(0 0 0 / 32%), 0 1px 3px rgb(0 0 0 / 24%);
+}
+@media (max-width: 760px) {
+  .app .collaboration-floating-bar {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    justify-content: flex-start;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: visible;
+    transform: none;
+    scrollbar-width: none;
+  }
+  .app .collaboration-floating-bar::-webkit-scrollbar { display: none; }
+  .app .collaboration-floating-bar .collaboration-header-session { max-width: 42vw; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app .collaboration-floating-bar { animation: collaboration-bar-enter 180ms ease-out both; }
+  @keyframes collaboration-bar-enter {
+    from { opacity: 0; translate: 0 -6px; }
+    to { opacity: 1; translate: 0 0; }
+  }
+}
