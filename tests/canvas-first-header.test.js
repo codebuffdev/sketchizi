@@ -25,13 +25,15 @@ test("header hides on canvas pointer interaction without listening to canvas whe
   assert.doesNotMatch(header, /addEventListener\(["']wheel["']/);
 });
 
-test("header supports pinning, top-edge reveal, and a keyboard visibility shortcut", async () => {
+test("header supports pinning, responsive edge reveal, and a keyboard visibility shortcut", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const css = await read("../src/styles/canvas-first-header.css");
 
   assert.match(header, /setHeaderPinned\(\(pinned\) => !pinned\)/);
   assert.match(header, /aria-pressed=\{headerPinned\}/);
   assert.match(header, /event\.clientY <= 20/);
+  assert.match(header, /event\.clientX >= document\.documentElement\.clientWidth - 20/);
+  assert.match(header, /window\.matchMedia\("\(min-width: 1025px\)"\)\.matches/);
   assert.match(header, /event\.key\.toLowerCase\(\) !== "h"/);
   assert.match(header, /desktop-app-header-reveal-handle/);
   assert.match(css, /desktop-app-header-reveal-handle\.is-visible/);

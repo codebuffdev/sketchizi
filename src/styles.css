@@ -27,6 +27,7 @@
 @import "./styles/create-menu.css";
 @import "./styles/document-location.css";
 @import "./styles/floating-segmented-header.css";
+@import "./styles/right-header-rail.css";
 @import "./styles/advanced-canvas-suite.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
@@ -1072,5 +1073,67 @@
   }
   .app.canvas-first-header .desktop-workspace {
     z-index: 0;
+  }
+}
+
+
+/* Keep sign-in/account access independent from the right-side header rail. */
+.app .desktop-app-auth-corner {
+  position: fixed;
+  top: 12px;
+  right: 14px;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+.app .desktop-app-auth-corner .auth-control-root {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+@media (max-width: 520px) {
+  .app .desktop-app-auth-corner {
+    top: 8px;
+    right: 8px;
+    z-index: 640;
+  }
+}
+
+/* Match the signed-in avatar footprint for the signed-out sign-in control. */
+.app .desktop-app-auth-corner .auth-header-sign-in-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.app .desktop-app-auth-corner .auth-header-sign-in-icon svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+/* Keep the floating canvas identity and auth control in sync with header
+   auto-hide/reveal so the whole header layer moves as one unit. */
+.app .desktop-app-auth-corner,
+.app .desktop-app-document-title-float {
+  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+}
+.app .desktop-app-auth-corner.is-header-hidden,
+.app .desktop-app-document-title-float.is-header-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-auth-corner,
+  .app .desktop-app-document-title-float {
+    transition: none;
   }
 }

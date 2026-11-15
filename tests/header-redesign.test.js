@@ -18,14 +18,15 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /Ctrl\+K/);
 });
 
-test("Create entry is labeled on desktop and compact on mobile", async () => {
+test("Create icon retains an accessible name and menu semantics", async () => {
   const app = await read("../src/App.jsx");
   const menu = await read("../src/components/app/CreateMenu.jsx");
   const styles = await read("../src/styles/create-menu.css");
   assert.match(app, /<CreateMenu/);
-  assert.match(menu, /aria-label="Create drawing"/);
-  assert.match(menu, /title="Create a drawing or open a design workspace"/);
-  assert.match(menu, /<span>Create<\/span>/);
+  assert.match(menu, /aria-label="Create"/);
+  assert.match(menu, /title="Create"/);
+  assert.match(menu, /aria-haspopup="menu"/);
+  assert.match(menu, /aria-expanded=\{open\}/);
   assert.match(styles, /min-width: 88px/);
   assert.match(styles, /@media \(max-width: 760px\)/);
 });
@@ -206,4 +207,18 @@ test("Create menu dismisses on overlays, Escape and outside pointerdown", async 
   assert.match(menu, /event\.key === "Escape"/);
   assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
   assert.match(menu, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);
+});
+
+
+test("canvas title floats independently at the top center and retains rename controls", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  const styles = await read("../src/styles/right-header-rail.css");
+  const title = header.indexOf("desktop-app-document-title-float");
+  const headerEnd = header.indexOf("</header>");
+  assert.ok(title > headerEnd, "document title must be outside the hideable header rail");
+  assert.match(header, /aria-label="Rename canvas"/);
+  assert.match(header, /onRenameDocument\?\.\(nextName\)/);
+  assert.match(styles, /\.desktop-app-document-title-float\s*\{[\s\S]*?left:\s*50%/);
+  assert.match(styles, /\.desktop-app-document-title-float \.desktop-app-document-identity-name-input\s*\{[\s\S]*?position:\s*absolute/);
+  assert.match(styles, /\.app\.theme-dark\.canvas-first-header \.desktop-app-document-title-float/);
 });

@@ -1556,9 +1556,9 @@
     box-shadow: none !important;
   }
 
-  .app .desktop-app-header > *,
-  .app .desktop-app-header > *::before,
-  .app .desktop-app-header > *::after,
+  .app .desktop-app-header > :not(.desktop-app-header-island),
+  .app .desktop-app-header > :not(.desktop-app-header-island)::before,
+  .app .desktop-app-header > :not(.desktop-app-header-island)::after,
   .app .desktop-app-header .desktop-app-document-identity,
   .app .desktop-app-header .desktop-app-nav,
   .app .desktop-app-header .desktop-app-header-panel-actions,

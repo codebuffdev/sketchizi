@@ -286,7 +286,12 @@ export default function AuthenticationControl() {
           )}
         </div>
       ) : (
-        <button className="auth-header-button" type="button" onClick={() => { setSignInContext({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" }); setDialogOpen(true); }}>Sign in</button>
+        <button className="auth-header-button auth-header-sign-in-icon" type="button" aria-label="Sign in" title="Sign in" onClick={() => { setSignInContext({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" }); setDialogOpen(true); }}>
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.5" />
+            <path d="M5 20c.7-3.2 3.2-5 7-5s6.3 1.8 7 5" />
+          </svg>
+        </button>
       )}
 
       {loginError && auth.status !== "authenticated" && <span className="auth-inline-error" role="status">{loginError}</span>}

@@ -10,9 +10,9 @@
   .app.canvas-first-header .desktop-app-header {
     position: absolute !important;
     z-index: 620 !important;
-    top: calc(10px + var(--safe-top, 0px));
-    right: calc(12px + var(--safe-right, 0px));
-    left: calc(12px + var(--safe-left, 0px));
+    top: calc(18px + var(--safe-top, 0px));
+    right: calc(18px + var(--safe-right, 0px));
+    left: calc(18px + var(--safe-left, 0px));
     display: flex !important;
     align-items: flex-start;
     justify-content: space-between;
@@ -45,19 +45,18 @@
   .app.canvas-first-header .desktop-app-header-island {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     flex: 0 1 auto;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 6px 9px;
-    border: 1px solid color-mix(in srgb, var(--ui-border, #dedee7) 82%, transparent);
+    min-height: 50px;
+    padding: 8px 10px;
+    border: 1px solid #e1e4ec;
     border-radius: 14px;
-    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 90%, transparent);
+    background: #ffffff;
     color: var(--ui-text, #252631);
-    box-shadow: 0 8px 28px rgb(15 23 42 / 10%);
-    -webkit-backdrop-filter: blur(16px) saturate(1.08);
-    backdrop-filter: blur(16px) saturate(1.08);
+    box-shadow: 0 1px 4px rgb(12 12 13 / 10%), 0 1px 4px rgb(12 12 13 / 5%);
     pointer-events: auto;
   }
 
@@ -206,10 +205,10 @@
   }
 
   .app.theme-dark.canvas-first-header .desktop-app-header-island {
-    border-color: color-mix(in srgb, var(--ui-border, #3a3d46) 86%, transparent);
-    background: color-mix(in srgb, var(--ui-surface-solid, #171a21) 91%, transparent);
+    border-color: #384252;
+    background: #202733;
     color: var(--ui-text, #f2f2f4);
-    box-shadow: 0 8px 28px rgb(0 0 0 / 28%);
+    box-shadow: 0 1px 4px rgb(12 12 13 / 10%), 0 1px 4px rgb(12 12 13 / 5%);
   }
 
   .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle {

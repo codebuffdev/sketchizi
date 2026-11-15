@@ -159,8 +159,12 @@ export default function DesktopAppHeader({
 
     // Only pointer position is observed for reveal. Canvas wheel gestures
     // remain dedicated to zooming and navigation.
-    const revealFromTopEdge = (event) => {
-      if (event.clientY <= 20) setHeaderVisible(true);
+    const revealFromEdge = (event) => {
+      const rightRail = window.matchMedia("(min-width: 1025px)").matches;
+      const nearEdge = rightRail
+        ? event.clientX >= document.documentElement.clientWidth - 20
+        : event.clientY <= 20;
+      if (nearEdge) setHeaderVisible(true);
     };
 
     const toggleHeaderShortcut = (event) => {
@@ -178,12 +182,12 @@ export default function DesktopAppHeader({
     };
 
     document.addEventListener("pointerdown", collapseOnCanvasInteraction, true);
-    document.addEventListener("pointermove", revealFromTopEdge, { passive: true });
+    document.addEventListener("pointermove", revealFromEdge, { passive: true });
     document.addEventListener("keydown", toggleHeaderShortcut, true);
 
     return () => {
       document.removeEventListener("pointerdown", collapseOnCanvasInteraction, true);
-      document.removeEventListener("pointermove", revealFromTopEdge, { passive: true });
+      document.removeEventListener("pointermove", revealFromEdge, { passive: true });
       document.removeEventListener("keydown", toggleHeaderShortcut, true);
     };
   }, [headerPinned]);
@@ -339,7 +343,7 @@ export default function DesktopAppHeader({
       <header
         id="desktop-app-header"
         ref={headerRef}
-        className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
+        className={`desktop-app-header desktop-app-header-right-rail${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
         aria-hidden={!headerVisible}
         data-pinned={headerPinned}
       >
@@ -450,57 +454,6 @@ export default function DesktopAppHeader({
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
         {workspaceToggle}
-      <div
-        className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
-        title={`${currentDocumentName} — ${documentStatusLabel}`}
-        aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
-      >
-        <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M6 3.75h8l4 4v12.5H6z" />
-          <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
-        </svg>
-        <span className="desktop-app-document-identity-copy">
-          {documentNameEditing ? (
-            <input
-              className="desktop-app-document-identity-name-input"
-              aria-label="Canvas name"
-              autoFocus
-              maxLength={120}
-              value={documentNameDraft}
-              onChange={(event) => setDocumentNameDraft(event.target.value)}
-              onBlur={commitDocumentRename}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                } else if (event.key === "Escape") {
-                  event.preventDefault();
-                  cancelDocumentRenameRef.current = true;
-                  setDocumentNameDraft(currentDocumentName);
-                  setDocumentNameEditing(false);
-                }
-              }}
-            />
-          ) : (
-            <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
-          )}
-        </span>
-        <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
-        {!documentNameEditing && (
-          <button
-            type="button"
-            className="desktop-app-document-rename"
-            aria-label="Rename canvas"
-            title="Rename canvas"
-            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
-          >
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
-            </svg>
-          </button>
-        )}
-      </div>
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-right">
       {collaborationCreationState === "creating" && (
@@ -525,15 +478,17 @@ export default function DesktopAppHeader({
         <button
           type="button"
           className={`desktop-app-save-status-trigger is-${saveState}`}
-          aria-label={`Local document save status: ${saveStateLabel}. Open save and recovery options.`}
+          aria-label="Download and save options"
           aria-haspopup="dialog"
           aria-expanded={saveDetailsOpen}
-          title={`${saveStateLabel}. Click for save and recovery options.`}
+          title="Download and save options"
           onClick={() => { setOpenMenu(null); setSaveDetailsOpen((open) => !open); }}
         >
-          <span className="desktop-app-save-status-dot" aria-hidden="true" />
-          <span className="desktop-app-save-status-label" role="status" aria-live="polite">{saveStateLabel}</span>
-          <span className="desktop-app-save-status-chevron" aria-hidden="true">⌄</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3v12" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M4 17v4h16v-4" />
+          </svg>
         </button>
         {saveDetailsOpen && (
           <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
@@ -549,7 +504,20 @@ export default function DesktopAppHeader({
             {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
             {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
             <div className="desktop-app-save-status-actions">
-              <button type="button" onClick={() => { onSaveNow?.(); }}>Save locally</button>
+              <button
+                type="button"
+                className="desktop-app-save-locally-button"
+                onClick={() => { onSaveNow?.(); }}
+                aria-label="Save locally"
+                title="Save locally"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3v12" />
+                  <path d="m7 10 5 5 5-5" />
+                  <path d="M5 18v3h14v-3" />
+                </svg>
+                <span className="sr-only">Save locally</span>
+              </button>
               <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
               {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
               <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
@@ -662,7 +630,7 @@ export default function DesktopAppHeader({
           <span className="desktop-app-search-label">Search…</span>
           <kbd className="desktop-app-search-shortcut">Ctrl+K</kbd>
         </button>
-        <AuthenticationControl />
+
       </div>
 
       <button
@@ -681,19 +649,64 @@ export default function DesktopAppHeader({
           <path d="M12 15v6" />
         </svg>
       </button>
-      <button
-        type="button"
-        className="desktop-app-header-visibility-button desktop-app-header-collapse-button"
-        onClick={() => setHeaderVisible(false)}
-        aria-label="Hide application header"
-        title="Hide header (Ctrl+Shift+H)"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="m6 14 6-6 6 6" />
-        </svg>
-      </button>
     </div>
     </header>
+      <div className={`desktop-app-auth-corner${headerVisible ? "" : " is-header-hidden"}`} aria-hidden={!headerVisible}>
+        <AuthenticationControl />
+      </div>
+
+      <div
+        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}${headerVisible ? "" : " is-header-hidden"}`}
+        title={`${currentDocumentName} — ${documentStatusLabel}`}
+        aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
+      >
+        <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 3.75h8l4 4v12.5H6z" />
+          <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
+        </svg>
+        <span className="desktop-app-document-identity-copy">
+          {documentNameEditing ? (
+            <input
+              className="desktop-app-document-identity-name-input"
+              aria-label="Canvas name"
+              autoFocus
+              maxLength={120}
+              value={documentNameDraft}
+              onChange={(event) => setDocumentNameDraft(event.target.value)}
+              onBlur={commitDocumentRename}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  cancelDocumentRenameRef.current = true;
+                  setDocumentNameDraft(currentDocumentName);
+                  setDocumentNameEditing(false);
+                }
+              }}
+            />
+          ) : (
+            <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
+          )}
+        </span>
+        <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
+        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        {!documentNameEditing && (
+          <button
+            type="button"
+            className="desktop-app-document-rename"
+            aria-label="Rename canvas"
+            title="Rename canvas"
+            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
+          >
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
+            </svg>
+          </button>
+        )}
+      </div>
+
 
       <button
         type="button"

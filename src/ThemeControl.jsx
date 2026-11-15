@@ -32,7 +32,13 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
     if (!open) return;
     const update = () => {
       const rect = trigger.current?.getBoundingClientRect();
-      if (rect) setPosition({ top: rect.bottom + 8, right: Math.max(12, window.innerWidth - rect.right) });
+      if (rect) {
+        const rail = trigger.current.closest(".desktop-app-header-right-rail");
+        const rightRail = rail && window.matchMedia("(min-width: 1025px)").matches;
+        setPosition(rightRail
+          ? { top: 18, right: window.innerWidth - rail.getBoundingClientRect().left + 12 }
+          : { top: rect.bottom + 8, right: Math.max(12, window.innerWidth - rect.right) });
+      }
     };
     update();
     setBackground(api?.getAppState?.().viewBackgroundColor || getCanvasBackground(isDarkTheme));
