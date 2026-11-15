@@ -5,6 +5,8 @@ import { validateKubernetesResources } from "../validation/validateKubernetesRes
 import { readZipTextFiles } from "../zipBundleReader.js";
 import { renderHelmBundle, renderKustomizeBundle } from "../browserBundleRenderer.js";
 import { summarizeKubernetesSnapshot } from "../readOnlySnapshot.js";
+import { inspectKubeLabDraft, KUBE_LAB_DRAFTS_KEY, kubeLabLessons, readKubeLabDrafts, servicePracticePods } from "../practice/kubeLab.js";
+import KubeLabPanel from "./KubeLabPanel.jsx";
 import "./kubernetes-studio.css";
 
 const COMPLETION_KINDS = [
@@ -19,7 +21,7 @@ const COMPLETION_KINDS = [
 ];
 const COMPLETION_API_VERSIONS = ["v1", "apps/v1", "batch/v1", "networking.k8s.io/v1", "rbac.authorization.k8s.io/v1", "autoscaling/v2", "storage.k8s.io/v1", "policy/v1"];
 
-function highlightYaml(source) {
+function highlightYaml(source, highlightedLine) {
   return source.split("\n").map((line, index) => {
     const commentIndex = line.indexOf("#");
     const content = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
@@ -43,7 +45,7 @@ function highlightYaml(source) {
     } else {
       rendered = <>{indentMarkup}{content.slice(indent.length)}{comment ? <span className="yaml-token-comment">{comment}</span> : null}</>;
     }
-    return <span className="yaml-highlight-line" key={index}>{rendered}{"\n"}</span>;
+    return <span className={`yaml-highlight-line${index === highlightedLine ? " k8s-lab-highlight" : ""}`} key={index}>{rendered}{"\n"}</span>;
   });
 }
 
@@ -261,8 +263,54 @@ function normalizeManifest(value, index) {
   };
 }
 
+function parseStudioYaml(yamlText, locateServiceSelector = false) {
+  const empty = { resources: [], unsupported: [], issues: [], parseError: "", skippedDocuments: 0 };
+  if (!yamlText.trim()) return empty;
+  try {
+    const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
+    const resources = [];
+    const unsupported = [];
+    let skippedDocuments = 0;
+    for (const [index, document] of documents.entries()) {
+      if (document.errors.length) throw document.errors[0];
+      const value = document.toJSON();
+      if (value == null) continue;
+      const resource = normalizeManifest(value, index + 1);
+      if (!resource) {
+        unsupported.push(`Document ${index + 1}: missing kind or metadata.name`);
+        skippedDocuments++;
+        continue;
+      }
+      if (!resource.supported) unsupported.push(`${resource.kind}/${resource.name}: valid Kubernetes kind, rendered as a generic resource`);
+      resources.push(resource);
+    }
+    const selectorOffset = locateServiceSelector && documents[0]?.getIn(["spec", "selector", "app"], true)?.range?.[0];
+    const selectorLine = typeof selectorOffset === "number" ? yamlText.slice(0, selectorOffset).split("\n").length - 1 : null;
+    return { resources, unsupported, skippedDocuments, selectorLine, parseError: "", issues: validateKubernetesResources(resources) };
+  } catch (cause) {
+    return { ...empty, parseError: cause?.message || "Unable to parse YAML." };
+  }
+}
+
 export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyResourceYaml }) {
   const [previewTab, setPreviewTab] = useState("resources");
+  const manifestPreviewTab = useRef("resources");
+  const isKubeLab = previewTab === "kube-lab";
+  const [lessonId, setLessonId] = useState(kubeLabLessons[0].id);
+  const lesson = kubeLabLessons.find(({ id }) => id === lessonId);
+  const [labDrafts, setLabDrafts] = useState(readKubeLabDrafts);
+  const labDraft = labDrafts[lessonId] ?? lesson.starter;
+  const [labChecked, setLabChecked] = useState(false);
+  const [labDiagramMessage, setLabDiagramMessage] = useState(null);
+  const [creatingLabDiagram, setCreatingLabDiagram] = useState(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(KUBE_LAB_DRAFTS_KEY, JSON.stringify(labDrafts));
+    } catch {
+      // Practice remains available in the current session when storage is blocked.
+    }
+  }, [labDrafts]);
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
@@ -271,7 +319,10 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
 
   const [manifestFontSize, setManifestFontSize] = useState(12);
   const [yamlScrollTop, setYamlScrollTop] = useState(0);
-  const [previewSplit, setPreviewSplit] = useState(50);
+  const [manifestSplit, setManifestSplit] = useState(50);
+  const [labSplit, setLabSplit] = useState(59);
+  const previewSplit = isKubeLab ? labSplit : manifestSplit;
+  const setPreviewSplit = isKubeLab ? setLabSplit : setManifestSplit;
   const workspaceRef = useRef(null);
   const splitDragRef = useRef(false);
   useEffect(() => {
@@ -285,7 +336,7 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); document.body.classList.remove("k8s-studio-resizing"); };
-  }, []);
+  }, [setPreviewSplit]);
   const [yamlText, setYamlText] = useState(`apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -315,6 +366,7 @@ spec:
   ports:
     - port: 80
       targetPort: 8080`);
+  const activeYamlText = isKubeLab ? labDraft : yamlText;
   useEffect(() => {
     if (!completion.items.length) return undefined;
     const dismissOnEscape = (event) => {
@@ -324,13 +376,13 @@ spec:
       if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
       const editor = yamlEditorRef.current;
       const caret = editor?.selectionStart ?? 0;
-      const lineStart = yamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+      const lineStart = activeYamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
       setDismissedCompletionLine(lineStart);
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
     };
     window.addEventListener("keydown", dismissOnEscape, true);
     return () => window.removeEventListener("keydown", dismissOnEscape, true);
-  }, [completion.items.length, yamlText]);
+  }, [completion.items.length, activeYamlText]);
   const [savedYamlText, setSavedYamlText] = useState(yamlText);
   const [importedFileNames, setImportedFileNames] = useState([]);
   const hasUnsavedChanges = yamlText !== savedYamlText;
@@ -370,7 +422,53 @@ spec:
     return () => window.removeEventListener("beforeunload", warnBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  const resetEditorView = () => {
+    setCompletion((current) => ({ ...current, items: [], selectedIndex: 0 }));
+    setDismissedCompletionLine(null);
+    setYamlScrollTop(0);
+    const editor = yamlEditorRef.current;
+    if (editor) {
+      // Switching drafts remounts the editor to clear native undo history.
+      editor.scrollTop = 0;
+      editor.scrollLeft = 0;
+    }
+  };
+
+  const selectPreviewTab = (tab) => {
+    if (creatingLabDiagram || tab === previewTab) return;
+    if (tab === "kube-lab" || isKubeLab) resetEditorView();
+    if (tab !== "kube-lab") manifestPreviewTab.current = tab;
+    setPreviewTab(tab);
+  };
+
+  const selectLesson = (id) => {
+    if (id === lessonId) return;
+    resetEditorView();
+    setLabChecked(false);
+    setLabDiagramMessage(null);
+    setLessonId(id);
+  };
+
+  const updateEditorText = (nextText) => {
+    if (isKubeLab) {
+      setLabDrafts((drafts) => ({ ...drafts, [lessonId]: nextText }));
+      setLabChecked(false);
+      setLabDiagramMessage(null);
+    } else {
+      setYamlText(nextText);
+      setError("");
+      setNotice("");
+    }
+  };
+
+  const resetLabDraft = () => {
+    if (labDraft !== lesson.starter && !window.confirm("Reset this practice draft to the starting YAML?")) return;
+    resetEditorView();
+    updateEditorText(lesson.starter);
+  };
+
   const requestClose = () => {
+    if (creatingLabDiagram) return;
     if (hasUnsavedChanges && !window.confirm("You have unsaved YAML changes. Close K8s Studio and discard them?")) return;
     onClose?.();
   };
@@ -408,11 +506,9 @@ spec:
     if (!editor || !item) return;
     const start = completion.replaceStart;
     const end = completion.replaceEnd;
-    const nextText = yamlText.slice(0, start) + item.insert + yamlText.slice(end);
+    const nextText = activeYamlText.slice(0, start) + item.insert + activeYamlText.slice(end);
     const nextCaret = start + item.insert.length;
-    setYamlText(nextText);
-    setError("");
-    setNotice("");
+    updateEditorText(nextText);
     setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
     requestAnimationFrame(() => {
       editor.focus();
@@ -420,9 +516,10 @@ spec:
     });
   };
   const handleYamlKeyDown = (event) => {
+    if (creatingLabDiagram) return;
     if ((event.ctrlKey || event.metaKey) && event.code === "Space") {
       event.preventDefault();
-      updateCompletions(yamlText, event.currentTarget.selectionStart, true);
+      updateCompletions(activeYamlText, event.currentTarget.selectionStart, true);
       return;
     }
     if (completion.items.length && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
@@ -439,50 +536,30 @@ spec:
       event.preventDefault();
       event.stopPropagation();
       const caret = event.currentTarget.selectionStart;
-      const lineStart = yamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+      const lineStart = activeYamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
       setDismissedCompletionLine(lineStart);
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
       return;
     }
     if (event.key === "Enter" && !completion.items.length) {
       const editor = event.currentTarget;
-      const before = yamlText.slice(0, editor.selectionStart);
+      const before = activeYamlText.slice(0, editor.selectionStart);
       const line = before.slice(before.lastIndexOf("\n") + 1);
       const indentation = (line.match(/^\s*/) || [""])[0];
       const extraIndent = line.trim().endsWith(":") ? "  " : "";
       event.preventDefault();
       const inserted = "\n" + indentation + extraIndent;
-      const nextText = yamlText.slice(0, editor.selectionStart) + inserted + yamlText.slice(editor.selectionEnd);
+      const nextText = activeYamlText.slice(0, editor.selectionStart) + inserted + activeYamlText.slice(editor.selectionEnd);
       const nextCaret = editor.selectionStart + inserted.length;
-      setYamlText(nextText);
+      updateEditorText(nextText);
       setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
       requestAnimationFrame(() => { editor.focus(); editor.setSelectionRange(nextCaret, nextCaret); updateCompletions(nextText, nextCaret); });
     }
   };
-  const parsed = useMemo(() => {
-    if (!yamlText.trim()) return { resources: [], unsupported: [], parseError: "", issues: [] };
-    try {
-      const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
-      const resources = [];
-      const unsupported = [];
-      for (const [index, document] of documents.entries()) {
-        if (document.errors.length) throw document.errors[0];
-        const value = document.toJSON();
-        if (value == null) continue;
-        const resource = normalizeManifest(value, index + 1);
-        if (!resource) {
-          unsupported.push(`Document ${index + 1}: missing kind or metadata.name`);
-          continue;
-        }
-        if (resource.supported) resources.push(resource);
-        else unsupported.push(`${resource.kind}/${resource.name}: valid Kubernetes kind, rendered as a generic resource`);
-        if (!resource.supported) resources.push(resource);
-      }
-      return { resources, unsupported, parseError: "", issues: validateKubernetesResources(resources) };
-    } catch (cause) {
-      return { resources: [], unsupported: [], parseError: cause?.message || "Unable to parse YAML.", issues: [] };
-    }
-  }, [yamlText]);
+  const parsed = useMemo(() => parseStudioYaml(yamlText), [yamlText]);
+  const labParsed = useMemo(() => isKubeLab ? parseStudioYaml(labDraft, lesson.id === "services") : null, [isKubeLab, labDraft, lesson.id]);
+  const labResult = useMemo(() => labParsed && inspectKubeLabDraft(lesson.id, labParsed), [lesson.id, labParsed]);
+  const labPassed = labChecked && labResult && !labResult.problem && labResult.failures.length === 0;
   const diagnostics = useMemo(() => normalizeStudioDiagnostics("kubernetes", parsed.issues), [parsed.issues]);
 
 
@@ -710,6 +787,26 @@ spec:
     }
   };
 
+  const createLabDiagram = async () => {
+    if (!labPassed || creatingLabDiagram) return;
+    setCreatingLabDiagram(true);
+    setLabDiagramMessage(null);
+    try {
+      const resources = lessonId === "services"
+        ? [...labParsed.resources, ...servicePracticePods.map((pod, index) => normalizeManifest(pod, index + 2))]
+        : labParsed.resources;
+      if (await onCreateDiagram?.(resources, { appendToCanvas: true }) === false) {
+        throw new Error("The canvas is unavailable. Try again when you can edit the drawing.");
+      }
+      if (hasUnsavedChanges) setLabDiagramMessage({ text: "Practice diagram added to the canvas. Your manifest draft is available under Back to manifest." });
+      else onClose?.();
+    } catch (cause) {
+      setLabDiagramMessage({ text: cause?.message || "Could not create the practice diagram.", error: true });
+    } finally {
+      setCreatingLabDiagram(false);
+    }
+  };
+
   const createDiagram = async () => {
     if (!parsed.resources.length) {
       setError(parsed.parseError || "Add at least one Kubernetes resource with kind and metadata.name.");
@@ -742,21 +839,22 @@ spec:
           <div className="k8s-studio-brand">K8s</div>
           <h1 id="k8s-studio-title">K8s Studio</h1>
           <div className="k8s-studio-actions" role="group" aria-label="Import Kubernetes manifests">
-          <button type="button" className="k8s-studio-primary" onClick={() => fileInputRef.current?.click()}>Import YAML</button>
+          <button type="button" className="k8s-studio-primary" disabled={isKubeLab} onClick={() => fileInputRef.current?.click()}>Import YAML</button>
           <input ref={fileInputRef} type="file" accept=".yaml,.yml,application/yaml,text/yaml" multiple hidden onChange={importFile} />
-          <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Bundle</button>
+          <button type="button" className="k8s-studio-secondary" disabled={isKubeLab} onClick={() => document.getElementById("k8s-studio-source-bundle")?.click()}>Import Bundle</button>
           <input id="k8s-studio-source-bundle" type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden onChange={importFile} aria-label="Choose a ZIP containing a Kustomize bundle or Helm chart" />
-          <button type="button" className="k8s-studio-secondary" onClick={() => document.getElementById("k8s-studio-source-folder")?.click()}>Import folder</button>
+          <button type="button" className="k8s-studio-secondary" disabled={isKubeLab} onClick={() => document.getElementById("k8s-studio-source-folder")?.click()}>Import folder</button>
           <input id="k8s-studio-source-folder" type="file" webkitdirectory="" multiple hidden onChange={importFile} aria-label="Choose a Kustomize overlay or Helm chart directory" />
-          {importedFileNames.length > 0 && <span className="k8s-studio-import-status" role="status">{importedFileNames.length} file(s) loaded</span>}
+          {!isKubeLab && importedFileNames.length > 0 && <span className="k8s-studio-import-status" role="status">{importedFileNames.length} file(s) loaded</span>}
           </div>
           <div className="k8s-studio-header-end">
-          <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setBundleSources([]); setSelectedBundleSource(""); setBundleFile(null); setBundleFiles([]); setBundleValuesFiles([]); setSelectedValuesFile(""); setNotice(""); setError(""); }}>Clear</button>
-            <button type="button" className="k8s-studio-close" onClick={requestClose} aria-label="Close K8s Studio">×</button>
+          {isKubeLab ? <button type="button" className="k8s-studio-secondary" onClick={resetLabDraft} disabled={creatingLabDiagram || labDraft === lesson.starter}>Reset draft</button>
+            : <button type="button" className="k8s-studio-secondary" onClick={() => { setYamlText(""); setSavedYamlText(""); setImportedFileNames([]); setBundleSources([]); setSelectedBundleSource(""); setBundleFile(null); setBundleFiles([]); setBundleValuesFiles([]); setSelectedValuesFile(""); setNotice(""); setError(""); }}>Clear</button>}
+            <button type="button" className="k8s-studio-close" onClick={requestClose} disabled={creatingLabDiagram} aria-label="Close K8s Studio">×</button>
           </div>
         </header>
 
-        {bundleSources.length > 0 && (
+        {!isKubeLab && bundleSources.length > 0 && (
           <section className="k8s-studio-bundle-panel" aria-label="Bundle source selection">
             <label htmlFor="k8s-studio-bundle-source">Detected source</label>
             <select id="k8s-studio-bundle-source" value={selectedBundleSource} onChange={(event) => setSelectedBundleSource(event.target.value)}>
@@ -775,42 +873,42 @@ spec:
           </section>
         )}
 
-        <div className="k8s-studio-workspace" ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
+        <div className={`k8s-studio-workspace${isKubeLab ? " k8s-lab-workspace" : ""}`} ref={workspaceRef} style={{ "--k8s-editor-width": previewSplit + "%" }}>
           <section className="k8s-studio-editor">
-            <div className="k8s-studio-section-title k8s-studio-manifest-title"><button type="button" className="k8s-studio-secondary" onClick={exportYaml} disabled={!yamlText.trim() || Boolean(parsed.parseError)}>Export YAML</button>
-              <div><span>01</span><h2>Manifest YAML</h2></div>
+            <div className="k8s-studio-section-title k8s-studio-manifest-title">
+              {!isKubeLab && <button type="button" className="k8s-studio-secondary" onClick={exportYaml} disabled={!yamlText.trim() || Boolean(parsed.parseError)}>Export YAML</button>}
+              <div>{!isKubeLab && <span>01</span>}<h2>Manifest YAML</h2>{isKubeLab && <small className="k8s-lab-draft-label">Practice draft</small>}</div>
               <div className="k8s-yaml-editor-controls" aria-label="Manifest font size controls">
                 <button type="button" onClick={() => setManifestFontSize((size) => Math.max(10, size - 1))} disabled={manifestFontSize <= 10} aria-label="Decrease manifest font size" title="Decrease font size">A−</button>
                 <output aria-live="polite" title="Manifest font size">{manifestFontSize}px</output>
                 <button type="button" onClick={() => setManifestFontSize((size) => Math.min(20, size + 1))} disabled={manifestFontSize >= 20} aria-label="Increase manifest font size" title="Increase font size">A+</button>
-                <small>{yamlText.length.toLocaleString()} characters</small>
+                {!isKubeLab && <small>{yamlText.length.toLocaleString()} characters</small>}
               </div>
             </div>
-            <div className={yamlText ? "k8s-yaml-editor-shell has-content" : "k8s-yaml-editor-shell"}>
-              <div className="k8s-yaml-line-numbers" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + yamlScrollTop + "px)" }}>{Array.from({ length: Math.max(1, yamlText.split(String.fromCharCode(10)).length) }, (_, index) => <span key={index}>{index + 1}</span>)}</div></div>
-              <pre className="k8s-yaml-highlight" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}>{highlightYaml(yamlText)}</pre>
+            <div key={isKubeLab ? lesson.id : "manifest"} className={activeYamlText ? "k8s-yaml-editor-shell has-content" : "k8s-yaml-editor-shell"}>
+              <div className="k8s-yaml-line-numbers" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}><div style={{ transform: "translateY(-" + yamlScrollTop + "px)" }}>{Array.from({ length: Math.max(1, activeYamlText.split(String.fromCharCode(10)).length) }, (_, index) => <span key={index}>{index + 1}</span>)}</div></div>
+              <pre className="k8s-yaml-highlight" aria-hidden="true" style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}>{highlightYaml(activeYamlText, labResult?.highlightSelector ? labParsed.selectorLine : null)}</pre>
               <textarea
                 ref={yamlEditorRef}
-                aria-label="Kubernetes YAML manifest"
+                aria-label={isKubeLab ? "Kubernetes practice YAML" : "Kubernetes YAML manifest"}
                 spellCheck="false"
                 autoCapitalize="off"
                 autoCorrect="off"
-                value={yamlText}
+                value={activeYamlText}
+                readOnly={creatingLabDiagram}
                 style={{ fontSize: `${manifestFontSize}px`, lineHeight: 1.65 }}
                 onChange={(event) => {
                   const value = event.target.value;
                   const caret = event.target.selectionStart;
-                  setYamlText(value);
-                  setError("");
-                  setNotice("");
+                  updateEditorText(value);
                   updateCompletions(value, caret);
                 }}
-                onClick={(event) => updateCompletions(yamlText, event.currentTarget.selectionStart)}
+                onClick={(event) => updateCompletions(activeYamlText, event.currentTarget.selectionStart)}
                 onKeyUp={(event) => {
                   // ArrowUp/ArrowDown navigate the visible suggestion list; do not
                   // recompute completions on keyup or the selection jumps back to item 1.
                   if (completion.items.length && ["ArrowUp", "ArrowDown"].includes(event.key)) return;
-                  if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) updateCompletions(yamlText, event.currentTarget.selectionStart);
+                  if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) updateCompletions(activeYamlText, event.currentTarget.selectionStart);
                 }}
                 onKeyDown={handleYamlKeyDown}
                 onBlur={() => window.setTimeout(() => setCompletion((current) => ({ ...current, items: [] })), 120)}
@@ -836,17 +934,19 @@ spec:
               )}
             </div>
             <div className="k8s-yaml-editor-status"><span>YAML</span><span>Ctrl+Space for completions</span><span>Indent: 2 spaces</span></div>
-            <p className="k8s-studio-help">Paste one manifest or a multi-document Kubernetes YAML file. Your current canvas is preserved when the diagram is added.</p>
+            {!isKubeLab && <p className="k8s-studio-help">Paste one manifest or a multi-document Kubernetes YAML file. Your current canvas is preserved when the diagram is added.</p>}
           </section>
           <div className="k8s-studio-splitter" role="separator" aria-label="Resize manifest and resource preview" aria-orientation="vertical" aria-valuemin={28} aria-valuemax={72} aria-valuenow={Math.round(previewSplit)} tabIndex={0} onPointerDown={(event) => { splitDragRef.current = true; document.body.classList.add("k8s-studio-resizing"); }} onKeyDown={(event) => { if (event.key === "ArrowLeft") { event.preventDefault(); setPreviewSplit((value) => Math.max(28, value - 3)); } if (event.key === "ArrowRight") { event.preventDefault(); setPreviewSplit((value) => Math.min(72, value + 3)); } }} />
           <aside className="k8s-studio-preview">
-            <div className="k8s-studio-section-title"><div><span>02</span><h2>Resource preview</h2></div><strong>{parsed.resources.length}</strong></div>
+            <div className="k8s-studio-section-title"><div>{!isKubeLab && <span>02</span>}<h2>Resource preview</h2></div>{!isKubeLab && <strong>{parsed.resources.length}</strong>}</div>
             <div className="k8s-studio-preview-tabs" role="tablist" aria-label="Resource preview views">
-              <button type="button" role="tab" aria-selected={previewTab === "resources"} className={previewTab === "resources" ? "active" : ""} onClick={() => setPreviewTab("resources")}>Resources <span>{parsed.resources.length}</span></button>
-              <button type="button" role="tab" aria-selected={previewTab === "validation"} className={previewTab === "validation" ? "active" : ""} onClick={() => setPreviewTab("validation")}>Validation <span>{parsed.issues?.length || 0}</span></button>
+              <button type="button" role="tab" aria-selected={previewTab === "resources"} className={previewTab === "resources" ? "active" : ""} onClick={() => selectPreviewTab("resources")} disabled={creatingLabDiagram}>Resources {!isKubeLab && <span>{parsed.resources.length}</span>}</button>
+              <button type="button" role="tab" aria-selected={previewTab === "validation"} className={previewTab === "validation" ? "active" : ""} onClick={() => selectPreviewTab("validation")} disabled={creatingLabDiagram}>Validation {!isKubeLab && <span>{parsed.issues?.length || 0}</span>}</button>
+              <button type="button" role="tab" id="k8s-lab-tab" aria-selected={isKubeLab} aria-controls={isKubeLab ? "k8s-lab-panel" : undefined} className={isKubeLab ? "active" : ""} onClick={() => selectPreviewTab("kube-lab")}>Kube Lab</button>
             </div>
-            {parsed.parseError ? <div className="k8s-studio-error" role="alert"><strong>YAML parsing failed</strong><p>{parsed.parseError}</p></div> : null}
-            {!parsed.parseError && !parsed.resources.length ? <div className="k8s-studio-empty">Resources will appear here after valid YAML is provided.</div> : null}
+            {isKubeLab && <KubeLabPanel key={lesson.id} lesson={lesson} result={labResult} checked={labChecked} diagramMessage={labDiagramMessage} busy={creatingLabDiagram} onLessonChange={selectLesson} onCheck={() => setLabChecked(true)} />}
+            {!isKubeLab && parsed.parseError ? <div className="k8s-studio-error" role="alert"><strong>YAML parsing failed</strong><p>{parsed.parseError}</p></div> : null}
+            {!isKubeLab && !parsed.parseError && !parsed.resources.length ? <div className="k8s-studio-empty">Resources will appear here after valid YAML is provided.</div> : null}
             {previewTab === "validation" && parsed.issues?.length > 0 && <section className="k8s-studio-validation" aria-label="Manifest validation">
               <div className="k8s-studio-validation-heading"><strong>Manifest checks</strong><span>{parsed.issues.filter((issue) => issue.severity === "error").length} errors · {parsed.issues.filter((issue) => issue.severity === "warning").length} warnings</span></div>
               <ul>{diagnostics.map((issue) => <li key={issue.id} className={"k8s-studio-validation-" + issue.severity}><span>{issue.severity === "error" ? "Error" : issue.severity === "warning" ? "Warning" : "Info"}</span><div><strong>{issue.resource}</strong><p>{issue.message}</p>{parsed.resources.some((resource) => resource.kind + "/" + resource.name === issue.resource) && <button type="button" onClick={() => { const target = parsed.resources.find((resource) => resource.kind + "/" + resource.name === issue.resource); if (target) inspectResource(target); }} aria-label={"Inspect " + issue.resource}>Inspect resource</button>}<details><summary>Review suggested correction</summary><p>{issue.remediation || "Review the affected resource and update the manifest to resolve this validation finding. No changes will be applied automatically."}</p><small>Preview only — YAML remains unchanged.</small></details></div></li>)}</ul>
@@ -859,23 +959,28 @@ spec:
                 {!resource.supported && <em>Generic</em>}
               </article>)}
             </div>}
-            {parsed.unsupported.length > 0 && <details className="k8s-studio-notes"><summary>Import notes ({parsed.unsupported.length})</summary><ul>{parsed.unsupported.map((item, index) => <li key={index}>{item}</li>)}</ul></details>}
+            {!isKubeLab && parsed.unsupported.length > 0 && <details className="k8s-studio-notes"><summary>Import notes ({parsed.unsupported.length})</summary><ul>{parsed.unsupported.map((item, index) => <li key={index}>{item}</li>)}</ul></details>}
           </aside>
         </div>
 
-        {(error || parsed.parseError || notice) && <div className={error || parsed.parseError ? "k8s-studio-message error" : "k8s-studio-message"} role={error || parsed.parseError ? "alert" : "status"}>{error || parsed.parseError || notice}</div>}
-        <details className="k8s-studio-snapshot-panel">
+        {!isKubeLab && (error || parsed.parseError || notice) && <div className={error || parsed.parseError ? "k8s-studio-message error" : "k8s-studio-message"} role={error || parsed.parseError ? "alert" : "status"}>{error || parsed.parseError || notice}</div>}
+        {!isKubeLab && <details className="k8s-studio-snapshot-panel">
           <summary aria-label="Inspect read-only Kubernetes snapshot"><span className="k8s-studio-snapshot-icon" aria-hidden="true">▦</span><span><strong>Cluster snapshot</strong><small>Optional · Inspect exported resource status locally</small></span><span className="k8s-studio-snapshot-chevron" aria-hidden="true">⌄</span></summary>
           <p>Paste an authorized Kubernetes resource list as JSON. Inspection is local and read-only; no cluster connection or deployment occurs. Do not include sensitive cluster data.</p>
           <textarea aria-label="Kubernetes snapshot JSON" rows={4} value={snapshotText} onChange={(event) => setSnapshotText(event.target.value)} placeholder={'{"items":[{"kind":"Pod","metadata":{"name":"api"},"status":{"phase":"Running"}}]}'}/>
           <div className="k8s-studio-snapshot-actions"><button type="button" className="k8s-studio-secondary" onClick={inspectSnapshot}>Inspect snapshot</button><small>JSON resource list · No changes applied</small></div>
           {snapshotError && <p role="alert">{snapshotError}</p>}
           {snapshotSummary.length > 0 && <ul>{snapshotSummary.map((resource, index) => <li key={resource.kind + resource.namespace + resource.name + index}>{resource.kind} / {resource.namespace} / {resource.name} · {resource.phase || resource.type || (resource.ready + "/" + resource.desired + " ready")}</li>)}</ul>}
-        </details>
-        <footer className="k8s-studio-footer">
+        </details>}
+        {isKubeLab ? <footer className="k8s-studio-footer k8s-lab-footer">
+          <div>
+            <button type="button" className="k8s-studio-secondary" onClick={() => selectPreviewTab(manifestPreviewTab.current)} disabled={creatingLabDiagram}>Back to manifest</button>
+            <button type="button" className="k8s-studio-primary" disabled={!labPassed || creatingLabDiagram || (labDiagramMessage && !labDiagramMessage.error)} onClick={createLabDiagram}>{creatingLabDiagram ? "Creating…" : "Create diagram"}</button>
+          </div>
+        </footer> : <footer className="k8s-studio-footer">
           <span>{parsed.resources.length} resource(s) ready · Existing canvas will not be replaced</span>
           <div><button type="button" className="k8s-studio-secondary" onClick={requestClose}>Cancel</button><button type="button" className="k8s-studio-primary" disabled={!parsed.resources.length || Boolean(parsed.parseError) || parsed.issues.some((issue) => issue.severity === "error")} onClick={createDiagram}>Create diagram</button></div>
-        </footer>
+        </footer>}
       {inspectorOpen && inspectedResource && <div className="k8s-studio-inspector-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInspectorOpen(false); }}><section className="k8s-studio-inspector" role="dialog" aria-modal="true" aria-labelledby="k8s-inspector-title"><header className="k8s-studio-inspector-header"><div className="k8s-studio-inspector-identity"><span className="k8s-studio-inspector-kind">K8s Resource</span><strong id="k8s-inspector-title">{inspectedResource.kind}<span>/</span>{inspectedResource.name}</strong><small>{inspectedResource.namespace} <span>·</span> {inspectedResource.apiVersion}</small></div><button type="button" className="k8s-studio-inspector-close" aria-label="Close resource editor" onClick={() => setInspectorOpen(false)}>×</button></header><div className="k8s-studio-inspector-body"><div className="k8s-studio-inspector-editor-label"><span>Manifest YAML</span><span>{inspectorDraft.split("\n").length} lines</span></div><div className="k8s-studio-inspector-code"><div className="k8s-studio-inspector-line-numbers" aria-hidden="true"><div style={{ transform: "translateY(-" + inspectorScrollTop + "px)" }}>{Array.from({ length: Math.max(1, inspectorDraft.split("\n").length) }, (_, index) => <span key={index}>{index + 1}</span>)}</div></div><textarea className="k8s-studio-inspector-editor" aria-label={"Edit YAML for " + inspectedResource.kind + "/" + inspectedResource.name} spellCheck="false" value={inspectorDraft} onScroll={(event) => setInspectorScrollTop(event.currentTarget.scrollTop)} onChange={(event) => { setInspectorDraft(event.target.value); setError(""); }} /></div></div><footer className="k8s-studio-inspector-footer"><span className="k8s-studio-inspector-note">Edits apply to this manifest, not the live cluster.</span><div className="k8s-studio-inspector-actions"><button type="button" className="k8s-studio-secondary" onClick={copyInspectedResource}>Copy YAML</button><button type="button" className="k8s-studio-secondary" onClick={() => setInspectorOpen(false)}>Cancel</button><button type="button" className="k8s-studio-primary" onClick={applyInspectedResource}>Apply changes</button></div></footer></section></div>}
       </section>
     </div>

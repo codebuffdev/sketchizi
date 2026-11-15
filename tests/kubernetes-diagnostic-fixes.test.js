@@ -257,15 +257,27 @@ test("K8s Studio checks Ingress TLS, StatefulSet services, NetworkPolicy selecto
 });
 
 
-test("K8s Studio evaluates Kubernetes matchExpressions for PDB and NetworkPolicy selectors", async () => {
-  const studio = await readFile(resolve(root, "src/features/kubernetes-studio/validation/validateKubernetesResources.js"), "utf8");
-  assert.match(studio, /const matchesKubernetesSelector = \(selector, labels\) =>/);
-  assert.match(studio, /expression\.operator === "In"/);
-  assert.match(studio, /expression\.operator === "NotIn"/);
-  assert.match(studio, /expression\.operator === "Exists"/);
-  assert.match(studio, /expression\.operator === "DoesNotExist"/);
-  assert.match(studio, /matchesKubernetesSelector\(spec\.selector, workloadLabels\(workload\)\)/);
-  assert.match(studio, /matchesKubernetesSelector\(spec\.podSelector, workloadLabels\(workload\)\)/);
+test("K8s Studio evaluates Kubernetes matchExpressions for PDB and NetworkPolicy selectors", () => {
+  const studioResource = (kind, apiVersion, fields) => ({
+    id: kind, name: kind, kind, apiVersion, namespace: "default", manifest: fields,
+  });
+  const pod = studioResource("Pod", "v1", {
+    metadata: { labels: { app: "web", env: "dev" } },
+    spec: { containers: [{ name: "web", image: "nginx:alpine" }] },
+  });
+  const matchExpressions = [
+    { key: "env", operator: "In", values: ["dev", "staging"] },
+    { key: "env", operator: "NotIn", values: ["production"] },
+    { key: "app", operator: "Exists" },
+    { key: "maintenance", operator: "DoesNotExist" },
+  ];
+  const pdb = studioResource("PodDisruptionBudget", "policy/v1", { spec: { minAvailable: 1, selector: { matchExpressions } } });
+  const policy = studioResource("NetworkPolicy", "networking.k8s.io/v1", { spec: { podSelector: { matchExpressions } } });
+  const selectorWarnings = () => validateKubernetesResources([pod, pdb, policy])
+    .filter(({ message }) => message.includes("selector does not match a workload"));
+  assert.deepEqual(selectorWarnings(), []);
+  pod.manifest.metadata.labels.env = "production";
+  assert.deepEqual(selectorWarnings().map(({ kind }) => kind), ["PodDisruptionBudget", "NetworkPolicy"]);
 });
 
 

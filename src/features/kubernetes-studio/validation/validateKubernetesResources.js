@@ -1,22 +1,10 @@
+import { hasSelectorRequirements, matchesKubernetesSelector } from "./kubernetesSelector.js";
+
 export function validateKubernetesResources(resources) {
   const issues = [];
   const expectedApiVersions = { Pod: "v1", Service: "v1", Namespace: "v1", ConfigMap: "v1", Secret: "v1", PersistentVolume: "v1", PersistentVolumeClaim: "v1", ServiceAccount: "v1", Deployment: "apps/v1", StatefulSet: "apps/v1", DaemonSet: "apps/v1", ReplicaSet: "apps/v1", Job: "batch/v1", CronJob: "batch/v1", Ingress: "networking.k8s.io/v1", NetworkPolicy: "networking.k8s.io/v1", Role: "rbac.authorization.k8s.io/v1", RoleBinding: "rbac.authorization.k8s.io/v1", ClusterRole: "rbac.authorization.k8s.io/v1", ClusterRoleBinding: "rbac.authorization.k8s.io/v1", HorizontalPodAutoscaler: "autoscaling/v2", PodDisruptionBudget: "policy/v1", StorageClass: "storage.k8s.io/v1", ResourceQuota: "v1", LimitRange: "v1" };
   const add = (resource, severity, message) => issues.push({ id: resource.id + ":" + severity + ":" + message, resource: resource.name, kind: resource.kind, severity, message });
   const matches = (selector, labels) => Boolean(selector && labels && Object.keys(selector).length && Object.entries(selector).every(([key, value]) => labels[key] === value));
-  const matchesKubernetesSelector = (selector, labels) => {
-    if (!selector || typeof selector !== "object" || !labels || typeof labels !== "object") return false;
-    if (!Object.entries(selector.matchLabels || {}).every(([key, value]) => labels[key] === value)) return false;
-    for (const expression of selector.matchExpressions || []) {
-      const values = Array.isArray(expression.values) ? expression.values : [];
-      const exists = Object.prototype.hasOwnProperty.call(labels, expression.key);
-      if (expression.operator === "In" && (!exists || !values.includes(labels[expression.key]))) return false;
-      if (expression.operator === "NotIn" && exists && values.includes(labels[expression.key])) return false;
-      if (expression.operator === "Exists" && !exists) return false;
-      if (expression.operator === "DoesNotExist" && exists) return false;
-      if (!["In", "NotIn", "Exists", "DoesNotExist"].includes(expression.operator)) return false;
-    }
-    return true;
-  };
   const workloadLabels = (workload) => workload.kind === "Pod"
     ? workload.manifest?.metadata?.labels
     : workload.manifest?.spec?.template?.metadata?.labels;
@@ -28,10 +16,10 @@ export function validateKubernetesResources(resources) {
     const expected = expectedApiVersions[resource.kind];
     if (expected && resource.apiVersion !== expected) add(resource, "error", "Expected apiVersion " + expected + ", found " + resource.apiVersion + ".");
     if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind)) {
-      const selector = spec.selector?.matchLabels;
+      const selector = spec.selector;
       const labels = spec.template?.metadata?.labels;
-      if (!selector || !Object.keys(selector).length) add(resource, "error", "spec.selector.matchLabels is required.");
-      else if (!matches(selector, labels)) add(resource, "error", "Selector labels must match spec.template.metadata.labels.");
+      if (!hasSelectorRequirements(selector)) add(resource, "error", "spec.selector must include matchLabels or matchExpressions.");
+      else if (!matchesKubernetesSelector(selector, labels)) add(resource, "error", "Selector rules must match spec.template.metadata.labels.");
       const containers = spec.template?.spec?.containers;
       if (!Array.isArray(containers) || !containers.length) add(resource, "error", "At least one container is required in the pod template.");
       else containers.forEach((container, index) => { if (!container.image) add(resource, "error", "Container " + (container.name || index + 1) + " is missing an image."); });
