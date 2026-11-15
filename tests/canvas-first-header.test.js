@@ -31,8 +31,14 @@ test("header supports pinning, responsive edge reveal, and a keyboard visibility
 
   assert.match(header, /setHeaderPinned\(\(pinned\) => !pinned\)/);
   assert.match(header, /aria-pressed=\{headerPinned\}/);
-  assert.match(header, /event\.clientY <= 20/);
-  assert.match(header, /event\.clientX >= document\.documentElement\.clientWidth - 20/);
+  assert.match(header, /event\.clientY <= 24/);
+  assert.match(header, /Math\.abs\(event\.clientX - viewportWidth \/ 2\) <= 190/);
+  assert.match(header, /event\.clientX >= viewportWidth - 100/);
+  assert.match(header, /event\.clientX >= viewportWidth - 20 && event\.clientY > 64/);
+  assert.match(header, /setDocumentTitleVisible\(true\)/);
+  assert.match(header, /setAuthControlVisible\(true\)/);
+  assert.match(header, /is-title-hidden/);
+  assert.match(header, /is-auth-hidden/);
   assert.match(header, /window\.matchMedia\("\(min-width: 1025px\)"\)\.matches/);
   assert.match(header, /event\.key\.toLowerCase\(\) !== "h"/);
   assert.match(header, /desktop-app-header-reveal-handle/);
