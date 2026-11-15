@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
 import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
-import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, convertToExcalidrawElements, getCommonBounds, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
@@ -872,15 +872,15 @@ function App() {
     showToast(`Updated ${kind}/${name} and rebuilt ${relationshipArrows.length} generated Kubernetes relationships.`);
   }, [collaborationCanEdit, queueSketchSave, showToast]);
 
-  const createKubernetesDiagram = useCallback(async (resources) => {
+  const createKubernetesDiagram = useCallback(async (resources, { appendToCanvas = false } = {}) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit) {
       showToast("The editor is not ready or you do not have permission to edit.", "error");
-      return;
+      return false;
     }
     if (!Array.isArray(resources) || !resources.length) {
       showToast("No Kubernetes resources were found in the YAML.", "error");
-      return;
+      return false;
     }
 
     const cardWidth = 284;
@@ -979,7 +979,8 @@ function App() {
     iconAssets.forEach(({ resource, x, y, icon, fileId }) => {
       const manifest = resource.manifest || {};
       const spec = manifest.spec || {};
-      const resourceGroup = `k8s-import-${resource.id}`;
+      const resourceElementId = resourceElementIds.get(resource.id);
+      const resourceGroup = `k8s-import-${appendToCanvas ? resourceElementId : resource.id}`;
       const workloadKinds = ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"];
       const podSpec = resource.kind === "CronJob" ? spec.jobTemplate?.spec?.template?.spec
         : resource.kind === "Job" ? spec.template?.spec
@@ -1001,11 +1002,11 @@ function App() {
       ].filter(Boolean).slice(0, 5).join("\n");
       const metadata = {
         provider: "kubernetes", resourceType: String(resource.kind || "resource").toLowerCase(),
-        catalog: "kubernetes", importedFromYaml: true,
+        catalog: "kubernetes", importedFromYaml: !appendToCanvas,
         properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion, manifestResourceId: resource.id },
         manifest,
       };
-      const resourceElementId = resourceElementIds.get(resource.id);
+      const resourceMetadata = appendToCanvas ? { kubernetesPracticeResource: metadata } : { kubernetesManifestResource: metadata };
       const resourceRectangle = {
         id: resourceElementId,
         type: "rectangle", x, y, width: cardWidth, height: cardHeight,
@@ -1014,7 +1015,7 @@ function App() {
         backgroundColor: resource.kind === "Service" ? "#e6f8fb" : resource.kind === "Ingress" ? "#f1eaff" : "#eaf2ff",
         fillStyle: "solid", strokeWidth: 1.5, roughness: 0, roundness: { type: 3 },
         groupIds: [resourceGroup],
-        customData: { diagramIcon: true, iconId: icon?.id || null, iconName: icon?.name || resource.kind, iconCategory: icon?.category || "Kubernetes", iconSource: "kubernetes", kubernetesManifestResource: metadata },
+        customData: { diagramIcon: true, iconId: icon?.id || null, iconName: icon?.name || resource.kind, iconCategory: icon?.category || "Kubernetes", iconSource: "kubernetes", ...resourceMetadata },
       };
       resourceRectangles.set(resource.id, resourceRectangle);
       nodes.push(resourceRectangle);
@@ -1022,26 +1023,26 @@ function App() {
         nodes.push({
           type: "image", x: x + 16, y: y + 31, width: 52, height: 52, fileId,
           groupIds: [resourceGroup],
-          customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+          customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", ...resourceMetadata },
         });
       } else {
         nodes.push({
           type: "text", x: x + 16, y: y + 34, width: 66, height: 44, text: String(resource.kind).replace(/([a-z])([A-Z])/g, "$1 $2").split(/\s+/).map((part) => part.slice(0, 1)).join("").slice(0, 4).toUpperCase(),
           fontSize: 15, fontFamily: 2, textAlign: "center", verticalAlign: "middle", strokeColor: "#9fc5ff",
-          groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+          groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", ...resourceMetadata },
         });
       }
       nodes.push({
         type: "text", x: x + 82, y: y + 14, width: cardWidth - 98, height: 38,
         text: `${resource.kind}\n${resource.name}`, fontSize: 15, fontFamily: 2, textAlign: "left",
         verticalAlign: "top", strokeColor: "#182b45", backgroundColor: "transparent", autoResize: false,
-        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", ...resourceMetadata },
       });
       nodes.push({
         type: "text", x: x + 82, y: y + 54, width: cardWidth - 98, height: 70,
         text: details, fontSize: 11, fontFamily: 2, textAlign: "left",
         verticalAlign: "top", strokeColor: "#475b73", backgroundColor: "transparent", autoResize: false,
-        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", kubernetesManifestResource: metadata },
+        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", ...resourceMetadata },
       });
     });
 
@@ -1086,7 +1087,7 @@ function App() {
         startBinding: { elementId: fromElementId, focus: 0, gap: 8 },
         endBinding: { elementId: toElementId, focus: 0, gap: 8 },
         strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
-        customData: { kubernetesRelationship: { fromResourceId: fromResource.id, toResourceId: toResource.id, label } },
+        customData: { [appendToCanvas ? "kubernetesPracticeRelationship" : "kubernetesRelationship"]: { fromResourceId: fromResource.id, toResourceId: toResource.id, label } },
         label: { text: label, fontSize: 11 },
       });
     };
@@ -1231,6 +1232,18 @@ function App() {
       });
     });
 
+    const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+    if (appendToCanvas) {
+      const drawings = existing.filter((element) => !element.isDeleted);
+      if (drawings.length) {
+        const [, top, right] = getCommonBounds(drawings);
+        [...edges, ...nodes].forEach((element) => {
+          element.x += right + gapX - 120;
+          element.y += top - 90;
+        });
+      }
+    }
+
     // Preserve authored element IDs so the arrow start/end references remain
     // valid when the skeletons are converted into fully qualified elements.
     const converted = convertToExcalidrawElements([...edges, ...nodes], { regenerateIds: false });
@@ -1256,17 +1269,16 @@ function App() {
         { id: arrow.id, type: "arrow" },
       ];
     });
-    const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-    const importedResourceIds = new Set(existing.filter((element) => {
+    const importedResourceIds = new Set(appendToCanvas ? [] : existing.filter((element) => {
       const metadata = element.customData?.kubernetesManifestResource;
       return !element.isDeleted && Boolean(metadata?.importedFromYaml || metadata?.properties?.importedFromYaml);
     }).map((element) => element.customData?.kubernetesManifestResource?.properties?.manifestResourceId).filter(Boolean));
-    const staleRelationshipIds = new Set(existing.filter((element) => {
+    const staleRelationshipIds = new Set(appendToCanvas ? [] : existing.filter((element) => {
       const relationship = element.customData?.kubernetesRelationship;
       return !element.isDeleted && element.type === "arrow" && relationship
         && (importedResourceIds.has(relationship.fromResourceId) || importedResourceIds.has(relationship.toResourceId));
     }).map((element) => element.id));
-    const retained = existing.filter((element) => {
+    const retained = appendToCanvas ? existing : existing.filter((element) => {
       if (element.isDeleted) return true;
       const metadata = element.customData?.kubernetesManifestResource;
       if (metadata?.importedFromYaml || metadata?.properties?.importedFromYaml) return false;
@@ -1284,6 +1296,7 @@ function App() {
     api.scrollToContent?.(created, { fitToContent: true, animate: true });
     queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || created, api.getAppState?.() || {});
     showToast(`Created Kubernetes diagram with ${resources.length} resources`);
+    return true;
   }, [collaborationCanEdit, queueSketchSave, showToast]);
   const createComposeDiagram = useCallback(async (composeDocument) => {
     const api = apiRef.current;
