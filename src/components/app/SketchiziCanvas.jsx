@@ -10,6 +10,7 @@ import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
+import { applyMarkdownListEdit, getMarkdownListEdit } from "../../features/canvas/markdownListShortcuts.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 
@@ -760,6 +761,29 @@ export default function SketchiziCanvas({
       if (fitContentButtonRef.current === fitButton) fitContentButtonRef.current = null;
     };
   }, [apiRef, canEdit, viewModeEnabled]);
+
+  // Markdown-style list shortcuts are handled by the existing Excalidraw text
+  // textarea. Keep list markers as plain text for native scene compatibility.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root || !canEdit || viewModeEnabled) return undefined;
+    const handleMarkdownListKeyDown = (event) => {
+      const textarea = event.target;
+      if (!(textarea instanceof HTMLTextAreaElement) ||
+        !textarea.matches(".excalidraw-textEditorContainer textarea")) return;
+      const edit = getMarkdownListEdit({
+        value: textarea.value,
+        selectionStart: textarea.selectionStart,
+        selectionEnd: textarea.selectionEnd,
+        key: event.key,
+      });
+      if (!edit) return;
+      event.preventDefault();
+      applyMarkdownListEdit(textarea, edit);
+    };
+    root.addEventListener("keydown", handleMarkdownListKeyDown, true);
+    return () => root.removeEventListener("keydown", handleMarkdownListKeyDown, true);
+  }, [canEdit, viewModeEnabled]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
