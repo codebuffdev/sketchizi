@@ -38,13 +38,16 @@ export function rankCommands(commands, query) {
   const terms = normalizedQuery.split(" ").filter(Boolean);
   return commands
     .map((command, index) => {
-      const fields = [
-        normalize(command.label),
-        normalize(command.description),
-        normalize(command.category),
-        normalize(command.shortcut),
-        ...(command.keywords || []).map(normalize),
-      ];
+      const isShortcutQuery = /^(ctrl|control|shift|alt|meta|cmd)\\b/.test(normalizedQuery);
+      const fields = isShortcutQuery
+        ? [normalize(command.shortcut)]
+        : [
+          normalize(command.label),
+          normalize(command.description),
+          normalize(command.category),
+          normalize(command.shortcut),
+          ...(command.keywords || []).map(normalize),
+        ];
       const scores = terms.map((term) => scoreTerm(term, fields));
       if (scores.some((score) => score === 0)) return null;
       const label = normalize(command.label);
