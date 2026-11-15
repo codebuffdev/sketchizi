@@ -22,12 +22,15 @@
     height: auto !important;
     min-height: 0 !important;
     margin: 0;
-    padding: 0 !important;
+    padding: 6px 10px !important;
     overflow: visible !important;
     border: 0 !important;
-    background: transparent !important;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 72%, transparent) !important;
     color: var(--ui-text, #252631);
-    box-shadow: none !important;
+    box-shadow: 0 10px 30px rgb(15 23 42 / 7%);
+    -webkit-backdrop-filter: blur(18px) saturate(1.04);
+    backdrop-filter: blur(18px) saturate(1.04);
     pointer-events: none;
     transform: translateY(0);
     opacity: 1;
@@ -50,14 +53,14 @@
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 6px 9px;
-    border: 1px solid color-mix(in srgb, var(--ui-border, #dedee7) 82%, transparent);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 90%, transparent);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--ui-text, #252631);
-    box-shadow: 0 8px 28px rgb(15 23 42 / 10%);
-    -webkit-backdrop-filter: blur(16px) saturate(1.08);
-    backdrop-filter: blur(16px) saturate(1.08);
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     pointer-events: auto;
   }
 
@@ -205,11 +208,15 @@
     border: 0;
   }
 
-  .app.theme-dark.canvas-first-header .desktop-app-header-island {
-    border-color: color-mix(in srgb, var(--ui-border, #3a3d46) 86%, transparent);
-    background: color-mix(in srgb, var(--ui-surface-solid, #171a21) 91%, transparent);
+  .app.theme-dark.canvas-first-header .desktop-app-header {
+    background: color-mix(in srgb, var(--ui-surface-solid, #171a21) 76%, transparent) !important;
     color: var(--ui-text, #f2f2f4);
-    box-shadow: 0 8px 28px rgb(0 0 0 / 28%);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 20%);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-island {
+    background: transparent;
+    box-shadow: none;
   }
 
   .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle {
