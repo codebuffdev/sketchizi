@@ -208,3 +208,17 @@ test("Create menu dismisses on overlays, Escape and outside pointerdown", async 
   assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
   assert.match(menu, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);
 });
+
+
+test("canvas title floats independently at the top center and retains rename controls", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  const styles = await read("../src/styles/right-header-rail.css");
+  const title = header.indexOf("desktop-app-document-title-float");
+  const headerEnd = header.indexOf("</header>");
+  assert.ok(title > headerEnd, "document title must be outside the hideable header rail");
+  assert.match(header, /aria-label="Rename canvas"/);
+  assert.match(header, /onRenameDocument\?\.\(nextName\)/);
+  assert.match(styles, /\.desktop-app-document-title-float\s*\{[\s\S]*?left:\s*50%/);
+  assert.match(styles, /\.desktop-app-document-title-float \.desktop-app-document-identity-name-input\s*\{[\s\S]*?position:\s*absolute/);
+  assert.match(styles, /\.app\.theme-dark\.canvas-first-header \.desktop-app-document-title-float/);
+});
