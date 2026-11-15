@@ -1650,3 +1650,19 @@
     margin: 0;
   }
 }
+
+
+/* The View menu uses a compact eye control instead of a text label. */
+.app .desktop-app-header .desktop-app-nav-button-icon-only {
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+  justify-content: center;
+  gap: 0;
+}
+
+.app .desktop-app-header .desktop-app-nav-button-icon-only svg {
+  display: block;
+  flex: 0 0 auto;
+}
