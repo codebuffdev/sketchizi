@@ -59,7 +59,7 @@ export default function CollaborationUI({
   useEffect(() => {
     // Collaboration controls live in their own floating layer, never inside
     // the account/header DOM. This keeps the canvas header independent.
-    setHeaderTarget(document.body);
+    setHeaderTarget(document.querySelector(".app") || document.body);
     return () => setHeaderTarget(null);
   }, []);
   useEffect(() => {
