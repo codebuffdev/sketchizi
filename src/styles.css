@@ -1117,3 +1117,23 @@
   display: block;
   flex: 0 0 auto;
 }
+
+/* Keep the floating canvas identity and auth control in sync with header
+   auto-hide/reveal so the whole header layer moves as one unit. */
+.app .desktop-app-auth-corner,
+.app .desktop-app-document-title-float {
+  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+}
+.app .desktop-app-auth-corner.is-header-hidden,
+.app .desktop-app-document-title-float.is-header-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-auth-corner,
+  .app .desktop-app-document-title-float {
+    transition: none;
+  }
+}
