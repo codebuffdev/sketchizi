@@ -41,3 +41,10 @@ test("desktop right header rail aligns controls on one vertical axis", async () 
   assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-save-status-trigger[\s\S]*?width:\s*36px/);
   assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
 });
+
+
+test("Minimal Plus control uses the same centered 36px hit area as the right rail", async () => {
+  const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
+  assert.match(styles, /desktop-app-header-right-rail\\s+\\.sketchizi-more-tools-header\\s*\\{[\\s\\S]*?width:\\s*36px[\\s\\S]*?height:\\s*36px/);
+  assert.match(styles, /desktop-app-header-right-rail\\s+\\.sketchizi-more-tools-header\\s+\\.sketchizi-more-tools-trigger\\s*\\{[\\s\\S]*?width:\\s*36px[\\s\\S]*?height:\\s*36px/);
+});
