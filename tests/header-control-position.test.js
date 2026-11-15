@@ -46,9 +46,9 @@ test("desktop right header rail aligns controls on one vertical axis", async () 
 test("all desktop right-rail controls share a 36px slot and one vertical axis", async () => {
   const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
   const alignment = styles.slice(styles.lastIndexOf("Flatten the header's legacy horizontal groups"));
-  assert.match(alignment, /desktop-app-header-right-rail\\s*\\{[\\s\\S]*?flex-direction:\\s*column\\s*!important/);
-  assert.match(alignment, /desktop-app-header-island,[\\s\\S]*?desktop-app-header-actions,[\\s\\S]*?display:\\s*contents\\s*!important/);
-  assert.match(alignment, /desktop-app-header-right-rail\\s+:is\\([\\s\\S]*?sketchizi-more-tools-header[\\s\\S]*?width:\\s*36px\\s*!important[\\s\\S]*?height:\\s*36px\\s*!important/);
-  assert.match(alignment, /sketchizi-more-tools-trigger[\\s\\S]*?width:\\s*36px\\s*!important[\\s\\S]*?height:\\s*36px\\s*!important/);
-  assert.match(alignment, /desktop-app-header-spacer\\s*\\{[\\s\\S]*?display:\\s*none\\s*!important/);
+  assert.match(alignment, /desktop-app-header-right-rail\s*\{[\s\S]*?flex-direction:\s*column\s*!important/);
+  assert.match(alignment, /desktop-app-header-island,[\s\S]*?desktop-app-header-actions,[\s\S]*?display:\s*contents\s*!important/);
+  assert.match(alignment, /desktop-app-header-right-rail\s+:is\([\s\S]*?sketchizi-more-tools-header[\s\S]*?width:\s*36px\s*!important[\s\S]*?height:\s*36px\s*!important/);
+  assert.match(alignment, /sketchizi-more-tools-trigger[\s\S]*?width:\s*36px\s*!important[\s\S]*?height:\s*36px\s*!important/);
+  assert.match(alignment, /desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
 });
