@@ -944,7 +944,7 @@ spec:
               <button type="button" role="tab" aria-selected={previewTab === "validation"} className={previewTab === "validation" ? "active" : ""} onClick={() => selectPreviewTab("validation")} disabled={creatingLabDiagram}>Validation {!isKubeLab && <span>{parsed.issues?.length || 0}</span>}</button>
               <button type="button" role="tab" id="k8s-lab-tab" aria-selected={isKubeLab} aria-controls={isKubeLab ? "k8s-lab-panel" : undefined} className={isKubeLab ? "active" : ""} onClick={() => selectPreviewTab("kube-lab")}>Kube Lab</button>
             </div>
-            {isKubeLab && <KubeLabPanel key={lesson.id} lesson={lesson} result={labResult} checked={labChecked} diagramMessage={labDiagramMessage} busy={creatingLabDiagram} onLessonChange={selectLesson} onCheck={() => setLabChecked(true)} />}
+            {isKubeLab && <KubeLabPanel lesson={lesson} result={labResult} checked={labChecked} diagramMessage={labDiagramMessage} busy={creatingLabDiagram} onLessonChange={selectLesson} onCheck={() => setLabChecked(true)} />}
             {!isKubeLab && parsed.parseError ? <div className="k8s-studio-error" role="alert"><strong>YAML parsing failed</strong><p>{parsed.parseError}</p></div> : null}
             {!isKubeLab && !parsed.parseError && !parsed.resources.length ? <div className="k8s-studio-empty">Resources will appear here after valid YAML is provided.</div> : null}
             {previewTab === "validation" && parsed.issues?.length > 0 && <section className="k8s-studio-validation" aria-label="Manifest validation">

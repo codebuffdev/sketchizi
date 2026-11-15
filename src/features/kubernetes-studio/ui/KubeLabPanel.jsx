@@ -1,11 +1,9 @@
-import { kubeLabLessons } from "../practice/kubeLab.js";
+import KubeLabTopicPicker from "./KubeLabTopicPicker.jsx";
 
 export default function KubeLabPanel({ lesson, result, checked, diagramMessage, busy, onLessonChange, onCheck }) {
   return (
     <div className="k8s-lab" role="tabpanel" id="k8s-lab-panel" aria-labelledby="k8s-lab-tab">
-      <select aria-label="Practice topic" value={lesson.id} onChange={(event) => onLessonChange(event.target.value)} disabled={busy}>
-        {kubeLabLessons.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
-      </select>
+      <KubeLabTopicPicker lesson={lesson} disabled={busy} onLessonChange={onLessonChange} />
 
       <div className="k8s-lab-goal">
         <h3>{lesson.title}</h3>
@@ -25,7 +23,7 @@ export default function KubeLabPanel({ lesson, result, checked, diagramMessage, 
       <p className={`k8s-lab-feedback${result.connected ? "" : " warning"}`}>{result.problem || result.summary}</p>
 
       <div className="k8s-lab-actions">
-        <details><summary>Show hint</summary><p>{lesson.hint}</p></details>
+        <details key={lesson.id}><summary>Show hint</summary><p>{lesson.hint}</p></details>
         <button type="button" className="k8s-studio-primary" onClick={onCheck} disabled={busy}>Check answer</button>
       </div>
 
