@@ -793,45 +793,34 @@
 }
 
 
-/* Workspaces is a destination switcher, not an add action. */
-.create-design-menu .workspaces-menu-icon {
-  display: block;
-  width: 15px;
-  height: 15px;
-  flex: 0 0 15px;
-  color: currentColor;
-}
-.create-design-menu .design-studio-header-toggle {
-  gap: 8px;
-}
-
-/* Keep the Workspaces entry as an icon-only header control. */
+/* Keep Create visually lightweight: only the plus glyph, not a filled button tile. */
 .create-design-menu .design-studio-header-toggle {
   box-sizing: border-box;
-  width: 36px;
-  min-width: 36px;
-  max-width: 36px;
-  height: 34px;
-  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  height: 24px;
+  min-height: 24px;
   padding: 0;
   gap: 0;
   border-color: transparent;
   background: transparent;
   color: var(--ui-muted, #9ba5bb);
 }
-.create-design-menu .design-studio-header-toggle > span,
-.create-design-menu .design-studio-header-toggle .devops-studio-chevron {
-  display: none;
-}
 .create-design-menu .design-studio-header-toggle .workspaces-menu-icon {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 17px;
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: currentColor;
 }
 .create-design-menu .design-studio-header-toggle:hover,
 .create-design-menu .design-studio-header-toggle.active {
-  border-color: var(--ui-border, #303847);
-  background: var(--ui-hover, #1b2029);
+  border-color: transparent;
+  background: transparent;
   color: var(--ui-text, #e6e8ef);
 }
 
