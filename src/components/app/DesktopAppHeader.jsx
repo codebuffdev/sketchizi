@@ -630,7 +630,7 @@ export default function DesktopAppHeader({
           <span className="desktop-app-search-label">Search…</span>
           <kbd className="desktop-app-search-shortcut">Ctrl+K</kbd>
         </button>
-        <AuthenticationControl />
+
       </div>
 
       <button
@@ -662,6 +662,10 @@ export default function DesktopAppHeader({
       </button>
     </div>
     </header>
+      <div className="desktop-app-auth-corner">
+        <AuthenticationControl />
+      </div>
+
       <div
         className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
