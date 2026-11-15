@@ -18,14 +18,15 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /Ctrl\+K/);
 });
 
-test("Create entry is labeled on desktop and compact on mobile", async () => {
+test("Create icon retains an accessible name and menu semantics", async () => {
   const app = await read("../src/App.jsx");
   const menu = await read("../src/components/app/CreateMenu.jsx");
   const styles = await read("../src/styles/create-menu.css");
   assert.match(app, /<CreateMenu/);
-  assert.match(menu, /aria-label="Create drawing"/);
-  assert.match(menu, /title="Create a drawing or open a design workspace"/);
-  assert.match(menu, /<span>Create<\/span>/);
+  assert.match(menu, /aria-label="Create"/);
+  assert.match(menu, /title="Create"/);
+  assert.match(menu, /aria-haspopup="menu"/);
+  assert.match(menu, /aria-expanded=\{open\}/);
   assert.match(styles, /min-width: 88px/);
   assert.match(styles, /@media \(max-width: 760px\)/);
 });

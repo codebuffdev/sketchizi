@@ -27,6 +27,7 @@
 @import "./styles/create-menu.css";
 @import "./styles/document-location.css";
 @import "./styles/floating-segmented-header.css";
+@import "./styles/right-header-rail.css";
 @import "./styles/advanced-canvas-suite.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }

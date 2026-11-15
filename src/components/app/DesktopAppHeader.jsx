@@ -159,8 +159,12 @@ export default function DesktopAppHeader({
 
     // Only pointer position is observed for reveal. Canvas wheel gestures
     // remain dedicated to zooming and navigation.
-    const revealFromTopEdge = (event) => {
-      if (event.clientY <= 20) setHeaderVisible(true);
+    const revealFromEdge = (event) => {
+      const rightRail = window.matchMedia("(min-width: 1025px)").matches;
+      const nearEdge = rightRail
+        ? event.clientX >= document.documentElement.clientWidth - 20
+        : event.clientY <= 20;
+      if (nearEdge) setHeaderVisible(true);
     };
 
     const toggleHeaderShortcut = (event) => {
@@ -178,12 +182,12 @@ export default function DesktopAppHeader({
     };
 
     document.addEventListener("pointerdown", collapseOnCanvasInteraction, true);
-    document.addEventListener("pointermove", revealFromTopEdge, { passive: true });
+    document.addEventListener("pointermove", revealFromEdge, { passive: true });
     document.addEventListener("keydown", toggleHeaderShortcut, true);
 
     return () => {
       document.removeEventListener("pointerdown", collapseOnCanvasInteraction, true);
-      document.removeEventListener("pointermove", revealFromTopEdge, { passive: true });
+      document.removeEventListener("pointermove", revealFromEdge, { passive: true });
       document.removeEventListener("keydown", toggleHeaderShortcut, true);
     };
   }, [headerPinned]);
@@ -339,7 +343,7 @@ export default function DesktopAppHeader({
       <header
         id="desktop-app-header"
         ref={headerRef}
-        className={`desktop-app-header${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
+        className={`desktop-app-header desktop-app-header-right-rail${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
         aria-hidden={!headerVisible}
         data-pinned={headerPinned}
       >
