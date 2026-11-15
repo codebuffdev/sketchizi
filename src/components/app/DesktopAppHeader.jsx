@@ -170,8 +170,8 @@ export default function DesktopAppHeader({
       const rightRail = window.matchMedia("(min-width: 1025px)").matches;
       const nearTop = event.clientY <= 24;
       const nearTitle = nearTop && Math.abs(event.clientX - viewportWidth / 2) <= 190;
-      const nearAccount = nearTop && event.clientX >= viewportWidth - 76;
-      const nearRightRail = rightRail && event.clientX >= viewportWidth - 20;
+      const nearAccount = nearTop && event.clientX >= viewportWidth - 100;
+      const nearRightRail = rightRail && event.clientX >= viewportWidth - 20 && event.clientY > 64;
 
       if (nearTitle) setDocumentTitleVisible(true);
       if (nearAccount) setAuthControlVisible(true);
