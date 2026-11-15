@@ -308,13 +308,39 @@
 
   /* These are structural groups only; flatten them so they cannot create
      independent horizontal rows or shift their children off the rail axis. */
-  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island,
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island:not(.desktop-app-header-island-right),
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-actions,
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-account-zone,
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-panel-actions,
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav,
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav-item {
     display: contents !important;
+  }
+
+  /* The right-side controls share one compact rounded-rectangle surface. */
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island-right {
+    display: flex !important;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 56px;
+    max-width: 56px;
+    box-sizing: border-box;
+    padding: 8px 6px;
+    border: 1px solid var(--ui-border, #dfe3eb) !important;
+    border-radius: 16px;
+    background: var(--ui-surface-solid, rgb(255 255 255 / 92%)) !important;
+    box-shadow: 0 4px 16px rgb(15 23 42 / 10%) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island-right {
+    border-color: var(--ui-border, #384252) !important;
+    background: var(--ui-surface-solid, rgb(32 39 51 / 92%)) !important;
+    box-shadow: 0 4px 18px rgb(0 0 0 / 26%) !important;
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-spacer {
