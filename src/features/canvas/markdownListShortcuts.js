@@ -1,7 +1,6 @@
 /**
- * Markdown-style list shortcuts for Excalidraw's plain-text editor.
- * List markers remain ordinary text so existing Excalidraw persistence,
- * collaboration and undo/redo continue to use the native text element model.
+ * Markdown-style list shortcuts for Excalidraw plain-text editor.
+ * Markers remain text for native scene persistence and collaboration.
  */
 
 export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }) {
@@ -15,59 +14,44 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
 
   if (key === " ") {
     if (afterCursor.length) return null;
-    // Keep the hyphen visible as the actual bullet marker. An asterisk prefix
-    // is normalized to the same marker for consistent list continuation.
-    const bullet = beforeCursor.match(/^(\s*)\*$/);
+    const bullet = beforeCursor.match(/^(\s*)([-*])$/);
     if (bullet) {
-      return {
-        start: lineStart,
-        end: selectionStart,
-        text: `${bullet[1]}- `,
-      };
+      return { start: lineStart, end: selectionStart, text: `${bullet[1]}• ` };
     }
-    // A typed "- " or "1. " is already the visible list-start indicator.
     return null;
   }
 
   if (key === "Enter") {
-    const listItem = beforeCursor.match(/^(\s*)(-|\d+\.)\s+(.*)$/);
+    const listItem = beforeCursor.match(/^(\s*)(•|\d+\.)\s+(.*)$/);
     if (!listItem) return null;
     const [, indent, marker, content] = listItem;
     if (!content.trim() && !afterCursor.length) {
-      // Enter on an empty item exits the list and leaves a blank paragraph.
       return { start: lineStart, end: selectionStart, text: "\n" };
     }
     const number = marker.match(/^(\d+)\.$/);
-    const nextMarker = number ? `${Number(number[1]) + 1}. ` : "- ";
-    return {
-      start: selectionStart,
-      end: selectionStart,
-      text: `\n${indent}${nextMarker}`,
-    };
+    const nextMarker = number ? `${Number(number[1]) + 1}. ` : "• ";
+    return { start: selectionStart, end: selectionStart, text: `\n${indent}${nextMarker}` };
   }
 
   if (key === "Backspace") {
-    // Backspace at the boundary between a numbered marker and its content
-    // switches the current item to a hyphen bullet, preserving its text.
-    const numberedMarker = beforeCursor.match(/^(\s*)\d+\.\s+$/);
+    // Undo unordered-list conversion: restore the typed hyphen.
+    const bulletMarker = beforeCursor.match(/^(\s*)•\s+$/);
+    if (bulletMarker) {
+      return {
+        start: lineStart,
+        end: selectionStart,
+        text: afterCursor.length ? `${bulletMarker[1]}- ` : `${bulletMarker[1]}-`,
+      };
+    }
+
+    // Undo ordered-list conversion: restore the literal number.
+    const numberedMarker = beforeCursor.match(/^(\s*)(\d+)\.\s+$/);
     if (numberedMarker) {
       return {
         start: lineStart,
         end: selectionStart,
-        text: `${numberedMarker[1]}- `,
+        text: afterCursor.length ? `${numberedMarker[1]}${numberedMarker[2]} ` : `${numberedMarker[1]}${numberedMarker[2]}`,
       };
-    }
-
-    // Backspace on an empty bullet item removes its marker and exits the list.
-    if (!afterCursor.length) {
-      const emptyBullet = beforeCursor.match(/^(\s*)-\s+$/);
-      if (emptyBullet) {
-        return {
-          start: lineStart,
-          end: selectionStart,
-          text: emptyBullet[1],
-        };
-      }
     }
   }
 
