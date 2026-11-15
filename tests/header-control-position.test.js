@@ -52,3 +52,15 @@ test("all desktop right-rail controls share a 36px slot and one vertical axis", 
   assert.match(alignment, /sketchizi-more-tools-trigger[\s\S]*?width:\s*36px\s*!important[\s\S]*?height:\s*36px\s*!important/);
   assert.match(alignment, /desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
 });
+
+
+test("desktop right header controls are wrapped in one rounded rectangle", async () => {
+  const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
+  const rectangle = styles.slice(styles.lastIndexOf("The right-side controls share one compact rounded-rectangle surface."));
+  assert.match(rectangle, /desktop-app-header-island-right\s*\{[\s\S]*?display:\s*flex\s*!important/);
+  assert.match(rectangle, /desktop-app-header-island-right\s*\{[\s\S]*?border:\s*1px solid var\(--ui-border/);
+  assert.match(rectangle, /desktop-app-header-island-right\s*\{[\s\S]*?border-radius:\s*16px/);
+  assert.match(rectangle, /desktop-app-header-island-right\s*\{[\s\S]*?box-shadow:/);
+  assert.match(rectangle, /theme-dark[\s\S]*?desktop-app-header-island-right[\s\S]*?background:/);
+  assert.match(rectangle, /desktop-app-header-island:not\(\.desktop-app-header-island-right\)/);
+});
