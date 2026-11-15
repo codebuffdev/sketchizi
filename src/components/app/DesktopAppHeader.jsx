@@ -454,57 +454,6 @@ export default function DesktopAppHeader({
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
         {workspaceToggle}
-      <div
-        className={`desktop-app-document-identity${currentDocumentDirty ? " is-dirty" : ""}`}
-        title={`${currentDocumentName} — ${documentStatusLabel}`}
-        aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
-      >
-        <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M6 3.75h8l4 4v12.5H6z" />
-          <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
-        </svg>
-        <span className="desktop-app-document-identity-copy">
-          {documentNameEditing ? (
-            <input
-              className="desktop-app-document-identity-name-input"
-              aria-label="Canvas name"
-              autoFocus
-              maxLength={120}
-              value={documentNameDraft}
-              onChange={(event) => setDocumentNameDraft(event.target.value)}
-              onBlur={commitDocumentRename}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                } else if (event.key === "Escape") {
-                  event.preventDefault();
-                  cancelDocumentRenameRef.current = true;
-                  setDocumentNameDraft(currentDocumentName);
-                  setDocumentNameEditing(false);
-                }
-              }}
-            />
-          ) : (
-            <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
-          )}
-        </span>
-        <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
-        {!documentNameEditing && (
-          <button
-            type="button"
-            className="desktop-app-document-rename"
-            aria-label="Rename canvas"
-            title="Rename canvas"
-            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
-          >
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
-            </svg>
-          </button>
-        )}
-      </div>
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-right">
       {collaborationCreationState === "creating" && (
@@ -698,6 +647,58 @@ export default function DesktopAppHeader({
       </button>
     </div>
     </header>
+      <div
+        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
+        title={`${currentDocumentName} — ${documentStatusLabel}`}
+        aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
+      >
+        <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 3.75h8l4 4v12.5H6z" />
+          <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
+        </svg>
+        <span className="desktop-app-document-identity-copy">
+          {documentNameEditing ? (
+            <input
+              className="desktop-app-document-identity-name-input"
+              aria-label="Canvas name"
+              autoFocus
+              maxLength={120}
+              value={documentNameDraft}
+              onChange={(event) => setDocumentNameDraft(event.target.value)}
+              onBlur={commitDocumentRename}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  cancelDocumentRenameRef.current = true;
+                  setDocumentNameDraft(currentDocumentName);
+                  setDocumentNameEditing(false);
+                }
+              }}
+            />
+          ) : (
+            <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
+          )}
+        </span>
+        <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
+        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        {!documentNameEditing && (
+          <button
+            type="button"
+            className="desktop-app-document-rename"
+            aria-label="Rename canvas"
+            title="Rename canvas"
+            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
+          >
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
+            </svg>
+          </button>
+        )}
+      </div>
+
 
       <button
         type="button"
