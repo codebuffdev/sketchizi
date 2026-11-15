@@ -21,6 +21,8 @@ test("header hides on canvas pointer interaction without listening to canvas whe
 
   assert.match(header, /collapseOnCanvasInteraction/);
   assert.match(header, /event\.target\.closest\("\.desktop-canvas-region"\)/);
+  assert.match(header, /setDocumentTitleVisible\(false\)/);
+  assert.match(header, /setAuthControlVisible\(false\)/);
   assert.match(header, /document\.addEventListener\("pointerdown", collapseOnCanvasInteraction, true\)/);
   assert.doesNotMatch(header, /addEventListener\(["']wheel["']/);
 });
