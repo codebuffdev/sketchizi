@@ -38,7 +38,7 @@ export function rankCommands(commands, query) {
   const terms = normalizedQuery.split(" ").filter(Boolean);
   return commands
     .map((command, index) => {
-      const isShortcutQuery = /^(ctrl|control|shift|alt|meta|cmd)\\b/.test(normalizedQuery);
+      const isShortcutQuery = /^(ctrl|control|shift|alt|meta|cmd)\b/.test(normalizedQuery);
       const fields = isShortcutQuery
         ? [normalize(command.shortcut)]
         : [
