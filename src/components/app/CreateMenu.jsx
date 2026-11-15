@@ -80,16 +80,14 @@ export default function CreateMenu({
         type="button"
         className={open ? "design-studio-header-toggle active" : "design-studio-header-toggle"}
         onClick={toggle}
-        title="Create a drawing or open a design workspace"
-        aria-label="Create drawing"
+        title="Create"
+        aria-label="Create"
         aria-haspopup="menu"
         aria-expanded={open}
       >
         <svg className="workspaces-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
         </svg>
-        <span>Create</span>
-        <svg className="devops-studio-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4.5 6 3.5 3.5L11.5 6" /></svg>
       </button>
       {open && (
         <div ref={menuRef} className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Create a drawing">
