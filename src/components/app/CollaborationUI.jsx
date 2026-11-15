@@ -57,13 +57,10 @@ export default function CollaborationUI({
 
   const refreshRecovery = useCallback(() => setRecoverySessions(getRecoveredSessions()), []);
   useEffect(() => {
-    const updateTarget = () => {
-      const target = document.querySelector(".desktop-app-header-account-zone");
-      setHeaderTarget(window.innerWidth >= 1200 && target && window.getComputedStyle(target).display !== "none" ? target : null);
-    };
-    updateTarget();
-    window.addEventListener("resize", updateTarget);
-    return () => window.removeEventListener("resize", updateTarget);
+    // Collaboration controls live in their own floating layer, never inside
+    // the account/header DOM. This keeps the canvas header independent.
+    setHeaderTarget(document.body);
+    return () => setHeaderTarget(null);
   }, []);
   useEffect(() => {
     if (role === "host" && status === "reconnecting") {
@@ -201,10 +198,11 @@ export default function CollaborationUI({
   };
 
   const controls = role && status !== "disconnected" ? (
-    <div className="collaboration-header-controls" aria-label="Collaboration controls">
+    <div className="collaboration-header-controls collaboration-floating-bar" aria-label="Collaboration controls">
       <div className="collaboration-header-session" title={sessionName || "Collaboration"}>
         <span className={`collaboration-header-status-dot ${status}`} />
-        <span>{sessionName || "Collaboration"}</span>
+        <span className={`collaboration-header-live-state ${status}`}>{status === "connected" ? "Live" : status === "reconnecting" ? "Reconnecting" : "Connecting"}</span>
+        <span className="collaboration-header-session-name">{sessionName || "Collaboration"}</span>
       </div>
       <CollaborationPresence participants={participants} selfId={selfId} activityLabel={activityLabel} role={role} onRevokeEditAccess={onRevokeEditAccess} />
       {role === "host" && requests.length > 0 && <button type="button" className="collaboration-header-button collaboration-request-pill" onClick={() => onOpenDetails?.()}>{requests.length} edit request{requests.length === 1 ? "" : "s"}</button>}
