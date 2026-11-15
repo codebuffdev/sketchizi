@@ -32,3 +32,12 @@ test("desktop right header rail uses the same frameless shell as the canvas dock
   assert.match(styles, /box-shadow:\s*none\s*!important/);
   assert.match(styles, /backdrop-filter:\s*none\s*!important/);
 });
+
+
+test("desktop right header rail aligns controls on one vertical axis", async () => {
+  const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
+  assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*\{[\s\S]*?flex-direction:\s*column\s*!important/);
+  assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*>\s*\*\s*\{[\s\S]*?align-self:\s*center/);
+  assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-save-status-trigger[\s\S]*?width:\s*36px/);
+  assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
+});
