@@ -366,8 +366,8 @@
 }
 
 
-/* The Minimal Plus (Create/Tools) control sits outside the header islands.
-   Give its wrapper and hit target the same 36px alignment box as the rail buttons. */
+/* Keep a 36px alignment slot for the Minimal Plus, but make the visible
+   icon control compact so it does not look wider/heavier than neighboring icons. */
 @media (min-width: 1025px) {
   .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header {
     display: flex;
@@ -383,14 +383,19 @@
   .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
     box-sizing: border-box;
     display: inline-flex;
-    flex: 0 0 36px;
+    flex: 0 0 28px;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    height: 28px;
+    min-height: 28px;
     margin: 0;
     padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    box-shadow: none;
   }
 }
