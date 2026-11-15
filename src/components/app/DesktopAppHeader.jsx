@@ -510,8 +510,9 @@ export default function DesktopAppHeader({
                 title="Save locally"
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
-                  <path d="M17 21v-8H7v8M7 3v5h8" />
+                  <path d="M12 3v12" />
+                  <path d="m7 10 5 5 5-5" />
+                  <path d="M5 18v3h14v-3" />
                 </svg>
                 <span className="sr-only">Save locally</span>
               </button>
