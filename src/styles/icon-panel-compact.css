@@ -366,3 +366,39 @@
   outline: 2px solid #9185f6;
   outline-offset: 2px;
 }
+
+
+/*
+ * Native category select theme fix.
+ * The option popup is painted by the browser, so the control must explicitly
+ * declare its color scheme and option colors instead of inheriting dark
+ * fallbacks from global UI tokens.
+ */
+.app.theme-light .sk-icon-panel .sk-unified-category-label {
+  color: #667085 !important;
+}
+
+.app.theme-light .sk-icon-panel .sk-unified-category-select {
+  color-scheme: light;
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+  border-color: #d0d5dd !important;
+}
+
+.app.theme-light .sk-icon-panel .sk-unified-category-select option,
+.app.theme-light .sk-icon-panel .sk-unified-category-select optgroup {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+}
+
+.app.theme-dark .sk-icon-panel .sk-unified-category-select {
+  color-scheme: dark;
+  color: var(--skp-text, #f5f7fb) !important;
+  background-color: var(--skp-bg, #202532) !important;
+}
+
+.app.theme-dark .sk-icon-panel .sk-unified-category-select option,
+.app.theme-dark .sk-icon-panel .sk-unified-category-select optgroup {
+  color: var(--skp-text, #f5f7fb) !important;
+  background-color: var(--skp-bg, #202532) !important;
+}
