@@ -24,3 +24,11 @@ test("theme toggle and AI Ask retain their existing callbacks and props", () => 
   assert.match(source, /<ThemeControl setThemeMode=\{setThemeMode\} themeMode=\{themeMode\} isDarkTheme=\{isDarkTheme\} api=\{canvasApi\} canEdit=\{canEditCanvas\} \/>/);
   assert.match(source, /<div className="desktop-app-header-panel-actions">\{children\}<\/div>/);
 });
+
+test("desktop right header rail uses the same frameless shell as the canvas dock", async () => {
+  const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
+  assert.match(styles, /\.desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*\{/);
+  assert.match(styles, /background:\s*transparent\s*!important/);
+  assert.match(styles, /box-shadow:\s*none\s*!important/);
+  assert.match(styles, /backdrop-filter:\s*none\s*!important/);
+});
