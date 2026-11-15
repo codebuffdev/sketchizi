@@ -478,15 +478,17 @@ export default function DesktopAppHeader({
         <button
           type="button"
           className={`desktop-app-save-status-trigger is-${saveState}`}
-          aria-label={`Local document save status: ${saveStateLabel}. Open save and recovery options.`}
+          aria-label="Download and save options"
           aria-haspopup="dialog"
           aria-expanded={saveDetailsOpen}
-          title={`${saveStateLabel}. Click for save and recovery options.`}
+          title="Download and save options"
           onClick={() => { setOpenMenu(null); setSaveDetailsOpen((open) => !open); }}
         >
-          <span className="desktop-app-save-status-dot" aria-hidden="true" />
-          <span className="desktop-app-save-status-label" role="status" aria-live="polite">{saveStateLabel}</span>
-          <span className="desktop-app-save-status-chevron" aria-hidden="true">⌄</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3v12" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M4 17v4h16v-4" />
+          </svg>
         </button>
         {saveDetailsOpen && (
           <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
