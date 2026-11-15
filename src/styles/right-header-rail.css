@@ -292,110 +292,159 @@
 }
 
 
-/* Keep every control in the desktop right rail on one shared vertical axis.
-   The rail is a column; nested groups must not introduce their own offsets. */
+/* Flatten the header's legacy horizontal groups into one vertical control rail.
+   Every interactive control gets the same 36px slot and shared centerline. */
 @media (min-width: 1025px) {
-  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island {
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: center;
-    gap: 6px;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 56px !important;
+    padding: 0 !important;
     box-sizing: border-box;
   }
 
-  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island > * {
-    align-self: center;
-    justify-self: center;
-    margin-inline: auto;
+  /* These are structural groups only; flatten them so they cannot create
+     independent horizontal rows or shift their children off the rail axis. */
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-actions,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-account-zone,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-panel-actions,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav-item {
+    display: contents !important;
   }
 
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav {
-    display: flex;
-    width: 36px;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-spacer {
+    display: none !important;
+  }
+
+  /* Normalize every actual control and control wrapper to the same slot. */
+  .app.canvas-first-header .desktop-app-header-right-rail :is(
+    .desktop-app-menu-trigger,
+    .desktop-app-library-toggle,
+    .desktop-app-nav-button,
+    .desktop-app-save-status-wrap,
+    .desktop-app-start-collaboration-button,
+    .sketchizi-header-grid,
+    .desktop-app-save-to-cloud-button,
+    .desktop-app-theme-toggle,
+    .properties-toggle,
+    .architecture-validation-toggle,
+    .ai-ask-toggle,
+    .sketchizi-more-tools-header,
+    .desktop-app-search-button,
+    .desktop-app-header-pin-button,
+    .auth-control-root
+  ) {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 36px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    justify-self: center;
+    align-self: center;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail :is(
+    .desktop-app-menu-trigger,
+    .desktop-app-library-toggle,
+    .desktop-app-nav-button,
+    .desktop-app-save-status-trigger,
+    .desktop-app-start-collaboration-button,
+    .sketchizi-header-grid-trigger,
+    .desktop-app-save-to-cloud-button,
+    .desktop-app-theme-toggle,
+    .properties-toggle,
+    .architecture-validation-toggle,
+    .ai-ask-toggle,
+    .sketchizi-more-tools-trigger,
+    .desktop-app-search-button,
+    .desktop-app-header-pin-button
+  ) {
+    display: inline-flex;
+    flex: 0 0 36px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-wrap,
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid {
-    display: flex;
-    width: 36px;
-    min-width: 36px;
-    justify-content: center;
-    align-items: center;
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid,
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header,
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-trigger,
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-start-collaboration-button,
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid-trigger,
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-to-cloud-button,
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-menu-trigger,
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-menu-trigger,
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav-button,
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-icon-button,
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-visibility-button {
-    box-sizing: border-box;
-    flex: 0 0 36px;
-    width: 36px;
-    min-width: 36px;
-    max-width: 36px;
-    height: 36px;
-    min-height: 36px;
-    margin-inline: auto;
-    padding: 0;
-    justify-content: center;
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-trigger {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-start-collaboration-label,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-search-label,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-search-shortcut,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-label {
+    display: none !important;
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-action-divider {
+    display: block;
+    flex: 0 0 1px;
     width: 24px;
-    margin-inline: auto;
+    height: 1px;
+    margin: 2px auto !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
+    border: 0 !important;
+    border-radius: 7px;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-spacer {
     display: none !important;
   }
 
-  .app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
-    width: 36px;
-    min-width: 36px;
-    margin-inline: auto;
-    justify-content: center;
-  }
-}
-
-
-/* Keep a 36px alignment slot for the Minimal Plus, but make the visible
-   icon control compact so it does not look wider/heavier than neighboring icons. */
-@media (min-width: 1025px) {
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header {
-    display: flex;
-    flex: 0 0 36px;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    margin: 0 auto;
-  }
-
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
+  /* Keep the flyouts anchored to the corresponding control while opening
+     leftward, clear of the rail. */
+  .app.canvas-first-header .desktop-app-header-right-rail :is(
+    .desktop-app-dropdown, .devops-studio-dropdown, .desktop-app-save-status-popover,
+    .sketchizi-header-grid-popover, .sketchizi-more-tools-menu, .auth-account-menu,
+    .collaboration-header-status
+  ) {
+    position: fixed;
+    top: calc(18px + var(--safe-top, 0px));
+    right: calc(86px + var(--safe-right, 0px));
+    left: auto;
+    bottom: auto;
+    max-width: calc(100vw - 104px - var(--safe-right, 0px));
+    max-height: calc(100dvh - 36px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    overflow-y: auto;
     box-sizing: border-box;
-    display: inline-flex;
-    flex: 0 0 28px;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    min-width: 28px;
-    max-width: 28px;
-    height: 28px;
-    min-height: 28px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    box-shadow: none;
+    transform: none;
+    z-index: 1000;
   }
 }
