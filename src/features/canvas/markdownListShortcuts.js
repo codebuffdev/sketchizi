@@ -14,6 +14,10 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
 
   if (key === " ") {
     if (afterCursor.length) return null;
+    const numbered = beforeCursor.match(/^(\s*)(\d+)\.$/);
+    if (numbered) {
+      return { start: lineStart, end: selectionStart, text: numbered[1] + numbered[2] + "․ " };
+    }
     const bullet = beforeCursor.match(/^(\s*)([-*])$/);
     if (bullet) {
       return { start: lineStart, end: selectionStart, text: `${bullet[1]}● ` };
