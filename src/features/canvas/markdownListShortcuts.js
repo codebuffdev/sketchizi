@@ -1,6 +1,6 @@
 /**
  * Markdown-style list shortcuts for Excalidraw's plain-text editor.
- * The list markers remain ordinary text so existing Excalidraw persistence,
+ * List markers remain ordinary text so existing Excalidraw persistence,
  * collaboration and undo/redo continue to use the native text element model.
  */
 
@@ -15,34 +15,30 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
 
   if (key === " ") {
     if (afterCursor.length) return null;
-    const bullet = beforeCursor.match(/^(\s*)([-*])$/);
+    // Keep the hyphen visible as the actual bullet marker. An asterisk prefix
+    // is normalized to the same marker for consistent list continuation.
+    const bullet = beforeCursor.match(/^(\s*)\*$/);
     if (bullet) {
       return {
         start: lineStart,
         end: selectionStart,
-        text: `${bullet[1]}• `,
+        text: `${bullet[1]}- `,
       };
     }
-    const numbered = beforeCursor.match(/^(\s*)(\d+)\.$/);
-    if (numbered) {
-      return {
-        start: lineStart,
-        end: selectionStart,
-        text: `${numbered[1]}${numbered[2]}. `,
-      };
-    }
+    // A typed "- " or "1. " is already the visible list-start indicator.
     return null;
   }
 
   if (key === "Enter") {
-    const listItem = beforeCursor.match(/^(\s*)(•|(\d+)\.)\s+(.*)$/);
+    const listItem = beforeCursor.match(/^(\s*)(-|\d+\.)\s+(.*)$/);
     if (!listItem) return null;
-    const [, indent, marker, number, content] = listItem;
+    const [, indent, marker, content] = listItem;
     if (!content.trim() && !afterCursor.length) {
       // Enter on an empty item exits the list and leaves a blank paragraph.
       return { start: lineStart, end: selectionStart, text: "\n" };
     }
-    const nextMarker = number ? `${Number(number) + 1}. ` : "• ";
+    const number = marker.match(/^(\d+)\.$/);
+    const nextMarker = number ? `${Number(number[1]) + 1}. ` : "- ";
     return {
       start: selectionStart,
       end: selectionStart,
@@ -50,14 +46,28 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
     };
   }
 
-  if (key === "Backspace" && !afterCursor.length) {
-    const emptyItem = beforeCursor.match(/^(\s*)(?:•|(\d+)\.)\s+$/);
-    if (emptyItem) {
+  if (key === "Backspace") {
+    // Backspace at the boundary between a numbered marker and its content
+    // switches the current item to a hyphen bullet, preserving its text.
+    const numberedMarker = beforeCursor.match(/^(\s*)\d+\.\s+$/);
+    if (numberedMarker) {
       return {
         start: lineStart,
         end: selectionStart,
-        text: emptyItem[1],
+        text: `${numberedMarker[1]}- `,
       };
+    }
+
+    // Backspace on an empty bullet item removes its marker and exits the list.
+    if (!afterCursor.length) {
+      const emptyBullet = beforeCursor.match(/^(\s*)-\s+$/);
+      if (emptyBullet) {
+        return {
+          start: lineStart,
+          end: selectionStart,
+          text: emptyBullet[1],
+        };
+      }
     }
   }
 
