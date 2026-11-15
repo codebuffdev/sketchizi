@@ -651,12 +651,12 @@ export default function DesktopAppHeader({
       </button>
     </div>
     </header>
-      <div className="desktop-app-auth-corner">
+      <div className={`desktop-app-auth-corner${headerVisible ? "" : " is-header-hidden"}`} aria-hidden={!headerVisible}>
         <AuthenticationControl />
       </div>
 
       <div
-        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
+        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}${headerVisible ? "" : " is-header-hidden"}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
         aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
       >
