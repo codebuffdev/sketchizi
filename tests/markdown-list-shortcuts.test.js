@@ -45,7 +45,7 @@ test("Backspace on an empty list item removes its marker", () => {
 });
 
 test("supports list items after existing paragraphs and preserves indentation", () => {
-  assert.deepEqual(edit("Intro\n  - ", " "), {
+  assert.deepEqual(edit("Intro\n  -", " "), {
     start: 6, end: 9, text: "  • ",
   });
   assert.deepEqual(edit("Intro\n  • Item", "Enter"), {
