@@ -372,13 +372,17 @@ export default function DesktopAppHeader({
             <div className="desktop-app-nav-item" key={menu.label}>
               <button
                 type="button"
-                className={openMenu === menu.label ? "desktop-app-nav-button active" : "desktop-app-nav-button"}
+                className={openMenu === menu.label ? "desktop-app-nav-button desktop-app-nav-button-icon-only active" : "desktop-app-nav-button desktop-app-nav-button-icon-only"}
+                aria-label={`${menu.label} options`}
+                title={`${menu.label} options`}
                 aria-haspopup="menu"
                 aria-expanded={openMenu === menu.label}
                 onClick={() => setOpenMenu((current) => current === menu.label ? null : menu.label)}
               >
-                <span>{menu.label}</span>
-                <svg className={`desktop-app-nav-chevron${openMenu === menu.label ? " is-open" : ""}`} viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4.5 6 3.5 3.5L11.5 6" /></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2.5 12s3.4-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.4 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+                  <circle cx="12" cy="12" r="2.8" />
+                </svg>
               </button>
 
               {openMenu === menu.label && (
