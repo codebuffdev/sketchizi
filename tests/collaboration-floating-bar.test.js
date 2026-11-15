@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 test("active collaboration controls render in an independent floating bar", async () => {
   const source = await readFile(new URL("../src/components/app/CollaborationUI.jsx", import.meta.url), "utf8");
-  assert.match(source, /setHeaderTarget\(document\.body\)/);
+  assert.match(source, /setHeaderTarget\\(document\\.querySelector\\(\"\\.app\"\\) \\|\\| document\\.body\\)/);
   assert.match(source, /createPortal\(controls, headerTarget\)/);
   assert.match(source, /collaboration-header-controls collaboration-floating-bar/);
   assert.match(source, /collaboration-header-live-state/);
