@@ -22,13 +22,13 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
   }
 
   if (key === "Enter") {
-    const listItem = beforeCursor.match(/^(\s*)(●|\d+\.)\s+(.*)$/);
+    const listItem = beforeCursor.match(/^(\s*)(●|\d+․)\s+(.*)$/);
     if (!listItem) return null;
     const [, indent, marker, content] = listItem;
     if (!content.trim() && !afterCursor.length) {
       return { start: lineStart, end: selectionStart, text: "\n" };
     }
-    const number = marker.match(/^(\d+)\.$/);
+    const number = marker.match(/^(\d+)․$/);
     const nextMarker = number ? `${Number(number[1]) + 1}․ ` : "● ";
     return { start: selectionStart, end: selectionStart, text: `\n${indent}${nextMarker}` };
   }
@@ -45,7 +45,7 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
     }
 
     // Undo ordered-list conversion: restore the literal number.
-    const numberedMarker = beforeCursor.match(/^(\s*)(\d+)\.\s+$/);
+    const numberedMarker = beforeCursor.match(/^(\s*)(\d+)․\s+$/);
     if (numberedMarker) {
       return {
         start: lineStart,
