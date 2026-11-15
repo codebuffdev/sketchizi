@@ -172,10 +172,11 @@
   justify-content: center;
   min-height: 34px;
   padding: 7px 10px;
-  border: 1px solid var(--ui-accent, #7463e8);
+  border: 1px solid var(--ui-border, #dfe1e9);
   border-radius: 8px;
-  background: var(--ui-accent, #7463e8);
-  color: #fff;
+  background: var(--ui-surface-soft, #f8f8fb);
+  /* Header controls can be frameless: keep labels readable without a fill. */
+  color: var(--ui-text, #353846);
   font: inherit;
   font-size: 11px;
   font-weight: 650;
