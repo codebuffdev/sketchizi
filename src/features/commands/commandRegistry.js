@@ -112,6 +112,7 @@ export function createSketchiziCommandRegistry(context) {
       shortcut: "P",
       icon: "◧",
       available: () => canEdit && selectedCount > 0,
+      contextual: () => selectedCount > 0,
       execute: () => openPanel("properties"),
     },
     {
@@ -151,7 +152,7 @@ export function createSketchiziCommandRegistry(context) {
       id: "view.fit-canvas",
       label: "Fit to Canvas",
       description: "Fit the drawing into the viewport",
-      keywords: ["fit", "canvas", "viewport", "diagram"],
+      keywords: ["fit", "canvas", "viewport", "diagram", "center", "center canvas", "show everything"],
       category: "View",
       shortcut: "F",
       icon: "□",
@@ -211,6 +212,7 @@ export function createSketchiziCommandRegistry(context) {
       shortcut: "",
       icon: "◎",
       available: () => Boolean(collaborationRoom),
+      contextual: () => Boolean(collaborationRoom),
       execute: startCollaboration,
     },
     {
@@ -222,6 +224,7 @@ export function createSketchiziCommandRegistry(context) {
       shortcut: "",
       icon: "→",
       available: () => Boolean(collaborationRoom) && collaborationPermission === "viewer",
+      contextual: () => Boolean(collaborationRoom) && collaborationPermission === "viewer",
       execute: requestEditAccess,
     },
     {
@@ -233,6 +236,7 @@ export function createSketchiziCommandRegistry(context) {
       shortcut: "",
       icon: "×",
       available: () => Boolean(collaborationRoom),
+      contextual: () => Boolean(collaborationRoom),
       execute: leaveOrEndCollaboration,
     },
     {

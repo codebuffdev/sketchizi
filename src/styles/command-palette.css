@@ -398,3 +398,148 @@ html[data-sketchizi-theme="dark"] .sketchizi-command-palette-footer kbd {
   transform: translateX(2px);
   transition: transform 0.12s ease, background-color 0.12s ease !important;
 }
+
+
+/* Command Palette 2.0 — centered, compact and neutral. */
+html[data-sketchizi-theme="dark"] .sketchizi-command-palette {
+  --ui-accent: #9aa8b8;
+}
+.sketchizi-command-palette-overlay {
+  align-items: center;
+  padding: 24px 16px;
+  background: rgba(15, 20, 28, .48);
+  backdrop-filter: blur(7px);
+}
+.sketchizi-command-palette {
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(680px, calc(100dvh - 48px));
+  border-radius: 15px;
+  border-color: var(--ui-border, #d7dce3);
+  box-shadow: 0 24px 72px rgba(15, 23, 42, .24), 0 4px 14px rgba(15, 23, 42, .08);
+}
+.sketchizi-command-heading {
+  padding: 15px 18px 11px;
+  gap: 11px;
+}
+.sketchizi-command-heading-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #344253;
+  box-shadow: none;
+  font-size: 19px;
+}
+.sketchizi-command-heading strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+.sketchizi-command-heading small {
+  font-size: 10px;
+}
+.sketchizi-command-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+.sketchizi-command-search-wrap {
+  margin: 0 14px 8px;
+}
+.sketchizi-command-search {
+  height: 44px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+.sketchizi-command-search:focus {
+  border-color: var(--ui-border, #aab3c0);
+  box-shadow: inset 0 0 0 1px rgba(100, 116, 139, .12);
+}
+.sketchizi-command-results-heading {
+  padding: 7px 20px 5px;
+  font-size: 10px;
+}
+.sketchizi-command-results {
+  padding: 3px 10px 10px;
+}
+.sketchizi-command-group + .sketchizi-command-group {
+  margin-top: 5px;
+}
+.sketchizi-command-group-title {
+  padding: 9px 9px 5px;
+  font-size: 9px;
+  letter-spacing: .075em;
+}
+.sketchizi-command-group[data-category="Relevant now"] .sketchizi-command-group-title,
+.sketchizi-command-group[data-category="Recently used"] .sketchizi-command-group-title {
+  color: var(--ui-text-muted, #64748b);
+}
+.sketchizi-command-item {
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 44px;
+  gap: 10px;
+  padding: 6px 9px;
+  border-radius: 8px;
+}
+.sketchizi-command-item.selected {
+  box-shadow: inset 2px 0 0 #64748b;
+  transform: none;
+}
+.sketchizi-command-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+.sketchizi-command-copy strong {
+  font-size: 12px;
+}
+.sketchizi-command-copy small {
+  font-size: 9px;
+}
+.sketchizi-command-item > kbd,
+.sketchizi-command-search-hints kbd,
+.sketchizi-command-palette-footer kbd {
+  font-size: 9px;
+}
+.sketchizi-command-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 32px 18px;
+}
+.sketchizi-command-empty strong {
+  color: var(--ui-text, #334155);
+  font-size: 12px;
+  font-weight: 650;
+}
+.sketchizi-command-empty span {
+  color: var(--ui-text-faint, #94a3b8);
+  font-size: 10px;
+}
+.sketchizi-command-palette-footer {
+  gap: 14px;
+  padding: 9px 15px;
+  font-size: 9px;
+}
+.sketchizi-command-footer-count {
+  margin-left: auto;
+}
+html[data-sketchizi-theme="dark"] .sketchizi-command-heading-mark {
+  background: #344253;
+}
+@media (max-width: 640px) {
+  .sketchizi-command-palette-overlay {
+    align-items: flex-start;
+    padding: 40px 10px 10px;
+  }
+  .sketchizi-command-palette {
+    max-height: calc(100dvh - 50px);
+  }
+  .sketchizi-command-heading {
+    padding: 13px 13px 9px;
+  }
+  .sketchizi-command-search-wrap {
+    margin: 0 11px 7px;
+  }
+  .sketchizi-command-footer-count {
+    display: none;
+  }
+}
