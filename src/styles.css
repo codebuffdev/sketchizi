@@ -793,40 +793,29 @@
 }
 
 
-/* Workspaces is a destination switcher, not an add action. */
-.create-design-menu .workspaces-menu-icon {
-  display: block;
-  width: 15px;
-  height: 15px;
-  flex: 0 0 15px;
-  color: currentColor;
-}
-.create-design-menu .design-studio-header-toggle {
-  gap: 8px;
-}
-
-/* Keep the Workspaces entry as an icon-only header control. */
+/* Minimal icon-only Create control, sized to match the View eye button. */
 .create-design-menu .design-studio-header-toggle {
   box-sizing: border-box;
-  width: 36px;
-  min-width: 36px;
-  max-width: 36px;
-  height: 34px;
-  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  height: 32px;
+  min-height: 32px;
   padding: 0;
   gap: 0;
   border-color: transparent;
   background: transparent;
   color: var(--ui-muted, #9ba5bb);
 }
-.create-design-menu .design-studio-header-toggle > span,
-.create-design-menu .design-studio-header-toggle .devops-studio-chevron {
-  display: none;
-}
 .create-design-menu .design-studio-header-toggle .workspaces-menu-icon {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 17px;
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: currentColor;
 }
 .create-design-menu .design-studio-header-toggle:hover,
 .create-design-menu .design-studio-header-toggle.active {
