@@ -37,7 +37,11 @@
 
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
 .canvas-pages-mask { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
-.canvas-pages-mask > div { position: fixed; pointer-events: auto; }
+.canvas-pages-mask > div { position: fixed; pointer-events: none; }
+/* Only the outside-page gutters block input. Inside-page overlays (grid,
+   outline and page label) must always pass drawing/text events through. */
+.canvas-pages-mask > .canvas-pages-mask-panel { pointer-events: auto; }
+.canvas-pages-mask > .canvas-pages-resize-handle { pointer-events: auto; }
 
 
 /* Pages mode: turn the existing canvas into a continuous artboard workspace.
@@ -71,10 +75,8 @@
 }
 .canvas-pages-mask > .canvas-pages-mask-panel {
   position: fixed;
-  /* Gutter panels are visual-only. Never let the Pages overlay intercept
-     pointer input intended for Excalidraw, including when viewport bounds
-     are rounded or temporarily stale during zoom/resize. */
-  pointer-events: none;
+  /* Gutter panels intentionally block input outside the active page. */
+  pointer-events: auto;
   background-color: var(--canvas-pages-gutter, #111820);
   background-image:
     linear-gradient(var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
