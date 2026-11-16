@@ -513,14 +513,26 @@ export default function SketchiziCanvas({
         const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""} ${button.dataset.testid || ""}`.trim().toLowerCase();
         const normalized = label.split(/[(:\\s-]/)[0];
         const group = groupStarts.find((entry) => entry.pattern.test(normalized));
-        if (!group) return;
-        if (previousGroup && previousGroup !== group.name &&
-          !anchor.previousElementSibling?.classList.contains("sketchizi-dock-separator")) {
-          const separator = document.createElement("span");
-          separator.className = "sketchizi-dock-separator";
-          separator.dataset.group = group.name;
-          separator.setAttribute("aria-hidden", "true");
-          toolbar.insertBefore(separator, anchor);
+        if (!group) {
+          delete anchor.dataset.sketchiziToolGroup;
+          delete button.dataset.sketchiziToolGroup;
+          delete anchor.dataset.sketchiziGroupStart;
+          return;
+        }
+        anchor.dataset.sketchiziToolGroup = group.name;
+        button.dataset.sketchiziToolGroup = group.name;
+        if (previousGroup !== group.name) {
+          anchor.dataset.sketchiziGroupStart = "true";
+          if (previousGroup &&
+            !anchor.previousElementSibling?.classList.contains("sketchizi-dock-separator")) {
+            const separator = document.createElement("span");
+            separator.className = "sketchizi-dock-separator";
+            separator.dataset.group = group.name;
+            separator.setAttribute("aria-hidden", "true");
+            toolbar.insertBefore(separator, anchor);
+          }
+        } else {
+          delete anchor.dataset.sketchiziGroupStart;
         }
         previousGroup = group.name;
       });
