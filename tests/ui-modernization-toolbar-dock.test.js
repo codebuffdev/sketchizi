@@ -42,3 +42,12 @@ test('canvas dock uses the same bordered translucent surface treatment as the ri
   assert.match(css, /box-shadow:\s*0 4px 16px rgb\(15 23 42 \/ 8%\) !important/);
   assert.match(css, /\.app\.theme-dark \.excalidraw \.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?background:\s*rgb\(32 38 46 \/ 55%\) !important/);
 });
+
+
+test('bottom-left navigation keeps only the zoom percentage visible', () => {
+  assert.match(css, /\.zoom-actions \.zoom-out[\s\S]*?display:\s*none !important/);
+  assert.match(css, /\.zoom-actions \.zoom-in[\s\S]*?display:\s*none !important/);
+  assert.match(css, /\.zoom-actions \.sketchizi-fit-content-button[\s\S]*?display:\s*none !important/);
+  assert.match(css, /\.undo-redo-buttons[\s\S]*?display:\s*none !important/);
+  assert.match(css, /\.zoom-actions \.reset-zoom[\s\S]*?background:\s*transparent !important/);
+});
