@@ -1,7 +1,7 @@
 .canvas-pages-control { position: relative; display: flex; }
 .canvas-pages-trigger { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-text-strong); cursor: pointer; }
 .canvas-pages-trigger:hover, .canvas-pages-trigger[aria-expanded=true] { background: var(--ui-hover, #7061a833); }
-.app .canvas-pages-menu { position: absolute; right: 48px; top: 0; width: min(280px, calc(100vw - 84px)); max-height: calc(100dvh - 100px); overflow-y: auto; padding: 14px; border-radius: 14px; border: 1px solid var(--ui-border); background: var(--ui-surface-solid); color: var(--ui-text-strong); box-shadow: 0 16px 48px #0004; z-index: 1000; box-sizing: border-box; }
+.canvas-pages-menu { position: absolute; right: 48px; top: 0; width: min(280px, calc(100vw - 84px)); max-height: calc(100dvh - 100px); overflow-y: auto; padding: 14px; border-radius: 14px; border: 1px solid var(--ui-border); background: var(--ui-surface-solid); color: var(--ui-text-strong); box-shadow: 0 16px 48px #0004; z-index: 1000; box-sizing: border-box; }
 .canvas-pages-menu > strong { display:block; margin-bottom:10px; }
 .canvas-pages-menu button, .canvas-pages-panel button, .canvas-pages-navigation button { font: inherit; color: inherit; cursor: pointer; border: 1px solid transparent; border-radius: 8px; background: transparent; padding: 8px; }
 .canvas-pages-menu > button { display:block; width:100%; text-align:left; margin: 4px 0; }
@@ -33,7 +33,7 @@
 /* Keep the canvas selector available even when the utility rail is collapsed. */
 .app .canvas-pages-control { position:relative; right:auto; top:auto; z-index:96; flex:0 0 auto; }
 .app .canvas-pages-menu { top:calc(100% + 24px); left:auto; right:0; width:min(280px, calc(100vw - 24px)); }
-@media (max-width:767px) { .app .canvas-pages-menu { top:calc(100% + 24px); left:auto; right:0; width:min(280px, calc(100vw - 24px)); } }
+
 
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
 .canvas-pages-mask { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
