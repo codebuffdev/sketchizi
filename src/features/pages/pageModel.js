@@ -5,6 +5,35 @@ export const getPages = (elements) => elements.filter(e => !e.isDeleted && e.typ
 export function validSize(width, height) {
   return [width, height].every(n => Number.isFinite(n) && n >= 320 && n <= 10000);
 }
+export function getPageViewportMask(page, appState) {
+  if (!page || !appState) return null;
+  const zoom = Number(appState.zoom?.value ?? appState.zoom ?? 1);
+  const viewport = {
+    left: Number(appState.offsetLeft || 0),
+    top: Number(appState.offsetTop || 0),
+    right: Number(appState.offsetLeft || 0) + Number(appState.width || 0),
+    bottom: Number(appState.offsetTop || 0) + Number(appState.height || 0),
+  };
+  if (!Number.isFinite(zoom) || zoom <= 0 || viewport.right <= viewport.left || viewport.bottom <= viewport.top) return null;
+
+  const pageLeft = viewport.left + (page.x + Number(appState.scrollX || 0)) * zoom;
+  const pageTop = viewport.top + (page.y + Number(appState.scrollY || 0)) * zoom;
+  const left = Math.max(viewport.left, Math.min(viewport.right, pageLeft));
+  const top = Math.max(viewport.top, Math.min(viewport.bottom, pageTop));
+  const right = Math.max(viewport.left, Math.min(viewport.right, pageLeft + page.width * zoom));
+  const bottom = Math.max(viewport.top, Math.min(viewport.bottom, pageTop + page.height * zoom));
+  if (right <= left || bottom <= top) return null;
+
+  return {
+    backgroundColor: appState.viewBackgroundColor || (appState.theme === 'dark' ? '#1e1e1e' : '#f8f9fa'),
+    panels: [
+      { left: viewport.left, top: viewport.top, width: viewport.right - viewport.left, height: top - viewport.top },
+      { left: viewport.left, top: bottom, width: viewport.right - viewport.left, height: viewport.bottom - bottom },
+      { left: viewport.left, top, width: left - viewport.left, height: bottom - top },
+      { left: right, top, width: viewport.right - right, height: bottom - top },
+    ].filter(panel => panel.width > 0 && panel.height > 0),
+  };
+}
 export function nextPagePosition(elements) {
   const live = elements.filter(e => !e.isDeleted);
   // Keep sheets far enough apart that fitting one page cannot expose a
