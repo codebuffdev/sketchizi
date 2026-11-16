@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements, exportToSvg } from '@excalidraw/excalidraw';
-import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask } from './pageModel.js';
+import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, isElementWithinPage, PAGE_MARKER } from './pageModel.js';
 import './pages.css';
 
 export default function CanvasPages({ api, canEdit = true }) {
@@ -19,6 +19,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const initialFitRef = useRef(false);
   const root = useRef(null);
   const signature = useRef('');
+  const sceneSnapshot = useRef(null);
   const active = pages.find(p => p.id === activeId) || pages[0];
   const index = pages.findIndex(p => p.id === active?.id);
   const host = document.querySelector('.app');
@@ -31,6 +32,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     if (!api) return;
     let timer;
     let disposed = false;
+    sceneSnapshot.current = api.getSceneElementsIncludingDeleted();
     const sync = (elements, appState) => {
       const next = getPages(elements);
       // Native frame dragging/resizing must carry its paper surface too.
@@ -47,11 +49,47 @@ export default function CanvasPages({ api, canEdit = true }) {
         return;
       }
       const selected = next.find(p => p.id === activeIdRef.current) || next[0];
+      if (mode === 'pages' && selected) {
+        const previous = new Map((sceneSnapshot.current || []).map(element => [element.id, element]));
+        let rejected = false;
+        const guarded = api.getSceneElementsIncludingDeleted().map(element => {
+          if (element.isDeleted || element.id === selected.id ||
+              element.customData?.sketchiziPagePaper === selected.id ||
+              (element.type === 'frame' && element.customData?.[PAGE_MARKER])) return element;
+          const before = previous.get(element.id);
+          if (!before) {
+            if (isElementWithinPage(element, selected)) {
+              return element.frameId === selected.id ? element : { ...element, frameId: selected.id };
+            }
+            rejected = true;
+            return { ...element, isDeleted: true, version: (element.version || 0) + 1,
+              versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+          }
+          const changed = ['x','y','width','height','angle','frameId','text','points'].some(key =>
+            JSON.stringify(before[key]) !== JSON.stringify(element[key]));
+          if (!changed) return element;
+          if (before.frameId !== selected.id && element.frameId !== selected.id) {
+            rejected = true;
+            return before;
+          }
+          if (!isElementWithinPage(element, selected)) {
+            rejected = true;
+            return before;
+          }
+          return element;
+        });
+        if (rejected) {
+          sceneSnapshot.current = guarded;
+          api.updateScene({ elements: guarded, captureUpdate: CaptureUpdateAction.NEVER });
+          return;
+        }
+      }
       if (selected && !activeIdRef.current) {
         activeIdRef.current = selected.id;
         setActiveId(selected.id);
       }
       setPageMask(mode === 'pages' ? getPageViewportMask(selected, appState || api.getAppState()) : null);
+      sceneSnapshot.current = api.getSceneElementsIncludingDeleted();
       const key = JSON.stringify(next.map(p => [p.id,p.version,p.name,p.width,p.height,p.customData.pageOrder]));
       if (signature.current !== key) { signature.current = key; setPages(next); }
       clearTimeout(timer);
@@ -69,7 +107,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     };
     sync(api.getSceneElements());
     const unsubscribe = api.onChange(sync);
-    return () => { disposed = true; clearTimeout(timer); unsubscribe(); signature.current = ''; };
+    return () => { disposed = true; clearTimeout(timer); unsubscribe(); signature.current = ''; sceneSnapshot.current = null; };
   }, [api, canEdit, mode]);
 
   useEffect(() => {
