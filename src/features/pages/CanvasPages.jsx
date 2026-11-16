@@ -12,6 +12,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState('');
   const [pageMask, setPageMask] = useState(null);
+  const [resizeMode, setResizeMode] = useState(false);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
@@ -191,6 +192,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       window.removeEventListener('pointermove', move, true);
       window.removeEventListener('pointerup', finish, true);
       window.removeEventListener('pointercancel', finish, true);
+      setResizeMode(false);
     };
     window.addEventListener('pointermove', move, true);
     window.addEventListener('pointerup', finish, true);
@@ -261,7 +263,7 @@ export default function CanvasPages({ api, canEdit = true }) {
         <strong>Canvas</strong>
         <button type="button" aria-pressed={mode === 'infinite'} onClick={() => changeMode('infinite')}>∞ Infinite canvas<small>Draw without boundaries</small></button>
         <button type="button" disabled={!api || (!canEdit && !pages.length)} aria-pressed={mode === 'pages'} onClick={() => changeMode('pages')}>▧ Pages<small>Organize into separate pages</small></button>
-        <small>Resize pages by dragging a corner handle. New pages use the default page size.</small>
+        <small>Use the Resize control in the page toolbar to show page handles. New pages use the default page size.</small>
         {error && <p role="alert">{error}</p>}
       </div>}
     </div>, headerHost)}
@@ -272,7 +274,7 @@ export default function CanvasPages({ api, canEdit = true }) {
         <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
         <div className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }}>{active?.name || `Page ${index + 1}`}</div>
       </div>, host)}
-    {mode === 'pages' && pageMask && host && createPortal(<>
+    {mode === 'pages' && resizeMode && pageMask && host && createPortal(<>
       {['nw','n','ne','e','se','s','sw','w'].map(edge => {
         const rect = pageMask.pageRect;
         const positions = {
@@ -288,7 +290,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       })}
     </>,host)}
     {mode === 'pages' && host && createPortal(<>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" disabled={!active || !canEdit} onClick={() => rename(active)}>Rename</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
+      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active || !canEdit} aria-pressed={resizeMode} onClick={() => setResizeMode(value => !value)}>{resizeMode ? 'Done' : 'Resize'}</button><button type="button" disabled={!active} onClick={() => { setResizeMode(false); fit(active); }}>Fit page</button><button type="button" disabled={!active || !canEdit} onClick={() => rename(active)}>Rename</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
     </>,host)}
   </>;
 }
