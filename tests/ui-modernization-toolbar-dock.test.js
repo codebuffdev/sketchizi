@@ -24,7 +24,7 @@ test('toolbar redesign is loaded last and retains responsive, theme, and motion 
   assert.match(css, /\.app\.theme-light/);
   assert.match(css, /max-width:\s*700px/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.match(css, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?background: transparent !important/);
+  assert.match(css, /\.app\.theme-light[\s\S]*?background: color-mix\(in srgb, var\(--ui-surface-solid, #fff\) 55%, transparent\) !important/);
 });
 
 
