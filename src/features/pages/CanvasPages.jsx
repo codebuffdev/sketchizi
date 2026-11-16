@@ -170,9 +170,11 @@ export default function CanvasPages({ api, canEdit = true }) {
       if (e.pointerId !== pointerId) return;
       const dx = (e.clientX - start.x) / zoom;
       const dy = (e.clientY - start.y) / zoom;
-      const width = Math.max(320, Math.min(10000, original.width + (corner.includes('e') ? dx : -dx)));
+      // Pages keep a fixed breadth; dragging a corner changes only length.
+      // North handles move the top edge while preserving the bottom edge.
+      const width = original.width;
       const height = Math.max(320, Math.min(10000, original.height + (corner.includes('s') ? dy : -dy)));
-      const x = corner.includes('w') ? original.x + original.width - width : original.x;
+      const x = original.x;
       const y = corner.includes('n') ? original.y + original.height - height : original.y;
       const elements = api.getSceneElementsIncludingDeleted().map(e =>
         e.id === active.id || e.customData?.sketchiziPagePaper === active.id
