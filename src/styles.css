@@ -1136,3 +1136,44 @@
     transition: none;
   }
 }
+
+/* Floating canvas surface: preserve the editor's full layout dimensions.
+   Elevate the existing Excalidraw surface in place rather than adding padding
+   or an inset that reduces the usable drawing area. */
+@media (min-width: 641px) {
+  .app .desktop-canvas-region {
+    background-color: #e9edf2 !important;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(102 119 139 / 13%) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .app .desktop-canvas-region > .canvas {
+    background: transparent !important;
+  }
+
+  .app .desktop-canvas-region > .canvas > .excalidraw {
+    border: 1px solid rgb(128 143 160 / 34%);
+    border-radius: 14px;
+    box-shadow:
+      0 1px 3px rgb(24 35 50 / 8%),
+      0 8px 24px rgb(24 35 50 / 13%),
+      0 22px 54px rgb(24 35 50 / 8%);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .app.theme-dark .desktop-canvas-region {
+    background-color: #0c121b !important;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(148 163 184 / 11%) 1px, transparent 0);
+  }
+
+  .app.theme-dark .desktop-canvas-region > .canvas > .excalidraw {
+    border-color: rgb(116 132 153 / 34%);
+    box-shadow:
+      0 1px 4px rgb(0 0 0 / 30%),
+      0 10px 28px rgb(0 0 0 / 38%),
+      0 24px 58px rgb(0 0 0 / 24%);
+  }
+}
