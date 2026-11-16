@@ -235,7 +235,8 @@
 .canvas-pages-page-outline { z-index: 2; }
 .canvas-pages-page-name {
   position: fixed;
-  z-index: 5;
+  /* Keep the full rename target above the north-edge resize hit area. */
+  z-index: 10032 !important;
   pointer-events: none;
   max-width: 40vw;
   overflow: hidden;
