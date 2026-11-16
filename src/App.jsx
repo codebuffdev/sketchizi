@@ -401,7 +401,7 @@ function App() {
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, resetLocalSketch, setSavedSketch, documentMetadataRef,
     lastSelectionSignature, startCollaboration,
   });
-  const { recentFiles, recentFolders, currentFolder, currentFolderFiles, currentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef, refreshCurrentFolderFiles, handleFileError } = fileManager;
+  const { recentFiles, recentFolders, currentFolder, currentFolderFiles, currentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef, refreshCurrentFolderFiles, handleFileError, replacementPrompt, resolveReplacementPrompt } = fileManager;
 
   useEffect(() => {
     if (!apiReady || !currentFile) return;
@@ -1848,6 +1848,20 @@ function App() {
         </div>
       )}
       <Suspense fallback={<div className="sketchizi-toast" role="status" aria-live="polite">Opening tool…</div>}>
+      {replacementPrompt && <div className="canvas-replacement-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) resolveReplacementPrompt(false); }}>
+        <section className="canvas-replacement-dialog" role="alertdialog" aria-modal="true" aria-labelledby="canvas-replacement-title" aria-describedby="canvas-replacement-description">
+          <div className="canvas-replacement-icon" aria-hidden="true">!</div>
+          <div className="canvas-replacement-copy">
+            <h2 id="canvas-replacement-title">Replace the current canvas?</h2>
+            <p>{replacementPrompt.reason}</p>
+            <p id="canvas-replacement-description">{replacementPrompt.recovery}</p>
+          </div>
+          <div className="canvas-replacement-actions">
+            <button type="button" className="canvas-replacement-cancel" onClick={() => resolveReplacementPrompt(false)}>Cancel</button>
+            <button type="button" className="canvas-replacement-continue" onClick={() => resolveReplacementPrompt(true)}>Continue</button>
+          </div>
+        </section>
+      </div>}
       {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudDiagramId && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
       {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
