@@ -9,6 +9,7 @@ test('adding a page preserves existing artwork and places the sheet beyond its b
  assert(paper.x > 600);
  assert(paper.x - (100 + 500) >= 10000, 'separate sheets far enough that fitting one page cannot reveal its neighbor');
  assert.equal(page.width,1600); assert.equal(page.height,1400);
+ assert.equal(paper.backgroundColor,'transparent'); assert.equal(paper.strokeColor,'transparent');
  assert.deepEqual(page.children,[paper.id]); assert.equal(paper.locked,true);
 });
 test('page discovery survives serialization, ignores deleted pages and ordinary frames', () => {
@@ -39,7 +40,7 @@ test('page viewport mask leaves only the selected page visible and blocks the su
   {x:500,y:200,width:1000,height:800},
   {offsetLeft:100,offsetTop:50,width:1200,height:900,scrollX:0,scrollY:0,zoom:{value:0.5},viewBackgroundColor:'#f4f5f7'}
  );
- assert.equal(mask.backgroundColor,'#10171b');
+ assert.equal(mask.backgroundColor,'#111820');
  assert.deepEqual(mask.pageRect,{left:350,top:150,width:500,height:400});
  assert.deepEqual(mask.panels,[
   {left:100,top:50,width:1200,height:100},
