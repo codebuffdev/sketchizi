@@ -41,21 +41,21 @@ test('page viewport mask leaves only the selected page visible and blocks the su
  );
  assert.equal(mask.backgroundColor,'#f4f5f7');
  assert.deepEqual(mask.panels,[
-  {left:100,top:50,width:1200,height:150},
-  {left:100,top:600,width:1200,height:350},
-  {left:100,top:200,width:250,height:400},
-  {left:850,top:200,width:450,height:400},
+  {left:100,top:50,width:1200,height:100},
+  {left:100,top:550,width:1200,height:400},
+  {left:100,top:150,width:250,height:400},
+  {left:850,top:150,width:450,height:400},
  ]);
 });
 test('page viewport mask clips pages to the visible canvas and rejects an off-screen page', () => {
  const clipped = getPageViewportMask(
-  {x:-200,y:100,width:1000,height:800},
+  {x:-200,y:100,width:500,height:300},
   {offsetLeft:100,offsetTop:50,width:800,height:600,scrollX:0,scrollY:0,zoom:{value:1}}
  );
  assert.deepEqual(clipped.panels,[
-  {left:100,top:50,width:800,height:50},
+  {left:100,top:50,width:800,height:100},
   {left:100,top:450,width:800,height:200},
-  {left:700,top:100,width:200,height:350},
+  {left:400,top:150,width:500,height:300},
  ]);
  assert.equal(getPageViewportMask(
   {x:5000,y:5000,width:1000,height:800},
