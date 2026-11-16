@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/excalidraw';
-import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport } from './pageModel.js';
+import { DEFAULT_PAGE_SIZE, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport } from './pageModel.js';
 import './pages.css';
 
 export default function CanvasPages({ api, canEdit = true }) {
@@ -200,31 +200,16 @@ export default function CanvasPages({ api, canEdit = true }) {
       return i < 0 ? e : {...e, customData:{...e.customData,pageOrder:i+1}, version:e.version+1,versionNonce:Math.floor(Math.random()*2147483647),updated:Date.now()};
     }));
   };
-  const resize = () => {
-    const width = Number(size.width), height = Number(size.height);
-    if (!canEdit || !active) return;
-    if (!validSize(width,height)) { setError('Use dimensions between 320 and 10,000 pixels.'); return; }
-    const elements = api.getSceneElementsIncludingDeleted();
-    const outside = elements.some(e => !e.isDeleted && e.frameId === active.id && !e.customData?.sketchiziPagePaper && (e.x < active.x || e.y < active.y || e.x + e.width > active.x + width || e.y + e.height > active.y + height));
-    const overlaps = pages.some(p => p.id !== active.id && active.x < p.x+p.width && active.x+width > p.x && active.y < p.y+p.height && active.y+height > p.y);
-    if (overlaps) { setError('This size would overlap another page. Move that page first or choose a smaller size.'); return; }
-    if (outside) { setError('This size would clip artwork. Choose a larger page.'); return; }
-    update(elements.map(e => e.id === active.id || e.customData?.sketchiziPagePaper === active.id ? { ...e, width, height, version: e.version + 1, versionNonce: Math.floor(Math.random()*2147483647), updated: Date.now() } : e));
-    setError(''); fit({ ...active,width,height });
-  };
   return <>
     {headerHost && createPortal(<div className="canvas-pages-control" ref={root}>
-      <button type="button" className="canvas-pages-trigger" aria-label="Canvas options" title="Canvas options" aria-haspopup="dialog" aria-expanded={open} onClick={() => { setOpen(!open); setError(''); if (active) setSize({width:active.width,height:active.height}); }}>
+      <button type="button" className="canvas-pages-trigger" aria-label="Canvas options" title="Canvas options" aria-haspopup="dialog" aria-expanded={open} onClick={() => { setOpen(!open); setError(''); }}>
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/></svg>
       </button>
       {open && <div className="canvas-pages-menu" role="dialog" aria-label="Canvas options">
         <strong>Canvas</strong>
         <button type="button" aria-pressed={mode === 'infinite'} onClick={() => changeMode('infinite')}>∞ Infinite canvas<small>Draw without boundaries</small></button>
         <button type="button" disabled={!api || (!canEdit && !pages.length)} aria-pressed={mode === 'pages'} onClick={() => changeMode('pages')}>▧ Pages<small>Organize into separate pages</small></button>
-        <label>Page size<select aria-label="Page size" onChange={e => { if (PAGE_PRESETS[e.target.value]) setSize(PAGE_PRESETS[e.target.value]); }} value={Object.keys(PAGE_PRESETS).find(k => PAGE_PRESETS[k].width === Number(size.width) && PAGE_PRESETS[k].height === Number(size.height)) || 'Custom'}>{[...Object.keys(PAGE_PRESETS),'Custom'].map(k => <option key={k}>{k}</option>)}</select></label>
-        {['width','height'].map(key => <label key={key}>{key === 'width' ? 'Width (px)' : 'Height (px)'}<input aria-label={`Page ${key}`} type="number" min="320" max="10000" value={size[key]} onChange={e => setSize({...size,[key]:e.target.value})}/></label>)}
-        {mode === 'pages' && active && <button type="button" disabled={!canEdit} onClick={resize}>Apply size to current page</button>}
-        <small>Existing artwork stays intact. New pages are added beside it.</small>
+        <small>Resize pages by dragging a corner handle. New pages use the default page size.</small>
         {error && <p role="alert">{error}</p>}
       </div>}
     </div>, headerHost)}
