@@ -7,6 +7,8 @@ import './pages.css';
 export default function CanvasPages({ api, canEdit = true }) {
   const [open, setOpen] = useState(false);
   const [headerHost, setHeaderHost] = useState(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+  const menuRoot = useRef(null);
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
   const [collapsed, setCollapsed] = useState(false);
   const [pages, setPages] = useState([]);
@@ -74,10 +76,19 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   useEffect(() => {
     if (!open) return;
-    const close = e => { if (e.type === 'keydown' ? e.key === 'Escape' : !root.current?.contains(e.target)) setOpen(false); };
+    const close = e => { if (e.type === 'keydown' ? e.key === 'Escape' : !root.current?.contains(e.target) && !menuRoot.current?.contains(e.target)) setOpen(false); };
+    const position = () => {
+      const trigger = root.current?.querySelector('.canvas-pages-trigger');
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      setMenuPosition({ top: rect.bottom + 12, right: Math.max(12, window.innerWidth - rect.right) });
+    };
+    position();
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', position, true);
     document.addEventListener('pointerdown', close, true);
     document.addEventListener('keydown', close, true);
-    return () => { document.removeEventListener('pointerdown', close, true); document.removeEventListener('keydown', close, true); };
+    return () => { document.removeEventListener('pointerdown', close, true); document.removeEventListener('keydown', close, true); window.removeEventListener('resize', position); window.removeEventListener('scroll', position, true); };
   }, [open]);
 
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);
@@ -161,7 +172,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       <button type="button" className="canvas-pages-trigger" aria-label="Canvas options" title="Canvas options" aria-haspopup="dialog" aria-expanded={open} onClick={() => { setOpen(!open); setError(''); if (active) setSize({width:active.width,height:active.height}); }}>
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/></svg>
       </button>
-      {open && <div className="canvas-pages-menu" role="dialog" aria-label="Canvas options">
+      {open && menuPosition && createPortal(<div ref={menuRoot} className="canvas-pages-menu" style={{ position: 'fixed', top: menuPosition.top, right: menuPosition.right, left: 'auto' }} role="dialog" aria-label="Canvas options">
         <strong>Canvas</strong>
         <button type="button" aria-pressed={mode === 'infinite'} onClick={() => changeMode('infinite')}>∞ Infinite canvas<small>Draw without boundaries</small></button>
         <button type="button" disabled={!api || (!canEdit && !pages.length)} aria-pressed={mode === 'pages'} onClick={() => changeMode('pages')}>▧ Pages<small>Organize into separate pages</small></button>
@@ -170,7 +181,7 @@ export default function CanvasPages({ api, canEdit = true }) {
         {mode === 'pages' && active && <button type="button" disabled={!canEdit} onClick={resize}>Apply size to current page</button>}
         <small>Existing artwork stays intact. New pages are added beside it.</small>
         {error && <p role="alert">{error}</p>}
-      </div>}
+      </div>, document.body)}
     </div>, headerHost)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask" aria-hidden="true">
