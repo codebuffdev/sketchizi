@@ -40,28 +40,22 @@ try {
   console.log("PASS: configured AWS template opens the editor.");
 
   // Replacing a populated drawing must be explicitly confirmed. Cancel first
-  // to verify that Create does not bypass the existing unsaved-work safeguard.
+  // to verify that Create does not bypass the replacement safeguard.
   await openCreateMenu(page);
-  let cancelledConfirmation = null;
-  page.once("dialog", async (dialog) => {
-    cancelledConfirmation = { type: dialog.type(), message: dialog.message() };
-    await dialog.dismiss();
-  });
   await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  if (cancelledConfirmation?.type !== "confirm" || !cancelledConfirmation.message.includes("create a new drawing")) {
-    throw new Error("Create > Blank drawing did not request confirmation for existing work.");
-  }
+  const cancelledPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
+  await cancelledPrompt.waitFor();
+  await cancelledPrompt.getByRole("button", { name: "Cancel" }).click();
+  await cancelledPrompt.waitFor({ state: "detached" });
   console.log("PASS: replacing an existing drawing requires confirmation.");
 
   // Confirming replacement returns the user to an empty, editable canvas.
   await openCreateMenu(page);
-  let confirmedReplacement = false;
-  page.once("dialog", async (dialog) => {
-    confirmedReplacement = dialog.type() === "confirm";
-    await dialog.accept();
-  });
   await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  if (!confirmedReplacement) throw new Error("Confirmation was not shown when replacing the drawing.");
+  const confirmedPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
+  await confirmedPrompt.waitFor();
+  await confirmedPrompt.getByRole("button", { name: "Continue" }).click();
+  await confirmedPrompt.waitFor({ state: "detached" });
   await page.getByText("New drawing", { exact: true }).waitFor({ timeout: 10000 });
   await page.locator(".excalidraw").waitFor();
   console.log("PASS: confirmed replacement creates a blank drawing.");
