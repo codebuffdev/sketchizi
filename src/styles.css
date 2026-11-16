@@ -29,6 +29,7 @@
 @import "./styles/floating-segmented-header.css";
 @import "./styles/right-header-rail.css";
 @import "./styles/advanced-canvas-suite.css";
+@import "./styles/editor-visual-system.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
@@ -1177,4 +1178,3 @@
       0 24px 58px rgb(0 0 0 / 24%);
   }
 }
-@import "./styles/editor-visual-system.css";
