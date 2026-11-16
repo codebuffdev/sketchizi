@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import CanvasPages from "../../features/pages/CanvasPages.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
@@ -356,6 +357,7 @@ export default function DesktopAppHeader({
 
   return (
     <>
+      <CanvasPages api={canvasApi} canEdit={canEditCanvas} />
       <header
         id="desktop-app-header"
         ref={headerRef}

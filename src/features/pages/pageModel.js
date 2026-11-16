@@ -1,0 +1,44 @@
+export const PAGE_MARKER = 'sketchiziPage';
+export const DEFAULT_PAGE_SIZE = { width: 1600, height: 1400 };
+export const PAGE_PRESETS = { Wide: DEFAULT_PAGE_SIZE, A4: { width: 1123, height: 1587 }, Letter: { width: 1275, height: 1650 } };
+export const getPages = (elements) => elements.filter(e => !e.isDeleted && e.type === 'frame' && e.customData?.[PAGE_MARKER]).sort((a,b) => (a.customData.pageOrder ?? 0) - (b.customData.pageOrder ?? 0));
+export function validSize(width, height) {
+  return [width, height].every(n => Number.isFinite(n) && n >= 320 && n <= 10000);
+}
+export function nextPagePosition(elements) {
+  const live = elements.filter(e => !e.isDeleted);
+  return { x: live.length ? Math.max(...live.map(e => e.x + Math.abs(e.width || 0))) + 160 : 0, y: 0 };
+}
+export function pageSkeleton(elements, size, id) {
+  if (!validSize(size.width, size.height)) throw new Error('Use dimensions between 320 and 10,000 pixels.');
+  const position = nextPagePosition(elements);
+  const order = getPages(elements).reduce((n,p) => Math.max(n, p.customData.pageOrder || 0), 0) + 1;
+  return [
+    { type: 'rectangle', id: `${id}-paper`, ...position, ...size, backgroundColor: '#ffffff', strokeColor: '#d9dce3', fillStyle: 'solid', roughness: 0, strokeWidth: 1, locked: true, customData: { sketchiziPagePaper: id } },
+    { type: 'frame', id, ...position, ...size, children: [`${id}-paper`], name: `Page ${order}`, locked: false, customData: { [PAGE_MARKER]: true, pageOrder: order } },
+  ];
+}
+
+export function duplicatePage(elements, pageId, newId) {
+  const page = getPages(elements).find(p => p.id === pageId);
+  if (!page) return [];
+  const source = elements.filter(e => !e.isDeleted && (e.id === page.id || e.frameId === page.id));
+  const ids = new Map(source.map((e,i) => [e.id, e.id === pageId ? newId : `${newId}-${i}`]));
+  const groups = new Map();
+  const target = nextPagePosition(elements);
+  const order = Math.max(...getPages(elements).map(p => p.customData.pageOrder || 0)) + 1;
+  return source.map(original => {
+    const e = structuredClone(original);
+    e.id = ids.get(original.id);
+    e.x += target.x - page.x; e.y += target.y - page.y;
+    e.frameId = original.frameId === pageId ? newId : null;
+    e.containerId = ids.get(original.containerId) || null;
+    e.boundElements = original.boundElements?.filter(b => ids.has(b.id)).map(b => ({...b,id:ids.get(b.id)})) || null;
+    for (const key of ['startBinding','endBinding']) if (e[key]) e[key] = ids.has(e[key].elementId) ? {...e[key],elementId:ids.get(e[key].elementId)} : null;
+    e.groupIds = (original.groupIds || []).map(id => { if (!groups.has(id)) groups.set(id,`${newId}-group-${groups.size}`); return groups.get(id); });
+    if (e.customData?.sketchiziPagePaper) e.customData.sketchiziPagePaper = newId;
+    if (original.id === pageId) { e.name = `${page.name || 'Page'} copy`; e.customData.pageOrder = order; }
+    e.version = 1; e.versionNonce = 0; e.updated = Date.now(); e.index = null;
+    return e;
+  });
+}
