@@ -49,6 +49,7 @@ export default function SketchiziCanvas({
     node.classList.toggle("is-grid-enabled", !!showGrid);
     node.classList.toggle("is-focus-style", gridStyle === "focus");
     node.classList.toggle("is-local-style", gridStyle === "local");
+    ["dots", "ruled", "columns", "coordinates"].forEach((style) => node.classList.toggle(`is-${style}-style`, gridStyle === style));
     if (!showGrid) {
       node.classList.remove("has-focus");
       return;

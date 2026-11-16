@@ -1,0 +1,27 @@
+/* Canvas style patterns — decorative only; never intercept drawing input. */
+.sketchizi-grid-spotlight.is-dots-style {
+  background-image: radial-gradient(circle, var(--sk-grid-dot-color, rgba(110,125,145,.32)) 1.15px, transparent 1.3px) !important;
+  background-size: 20px 20px !important;
+}
+.sketchizi-grid-spotlight.is-ruled-style {
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--sk-grid-line-color, rgba(100,130,165,.24)) 28px, transparent 29px) !important;
+  background-size: 100% 29px !important;
+}
+.sketchizi-grid-spotlight.is-columns-style {
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(100% / 12 - 1px), var(--sk-grid-line-color, rgba(100,130,165,.24)) calc(100% / 12 - 1px), var(--sk-grid-line-color, rgba(100,130,165,.24)) calc(100% / 12)) !important;
+}
+.sketchizi-grid-spotlight.is-coordinates-style {
+  background-image:
+    linear-gradient(to right, transparent calc(50% - .5px), var(--sk-grid-axis-color, rgba(65,105,145,.55)) 50%, transparent calc(50% + .5px)),
+    linear-gradient(to bottom, transparent calc(50% - .5px), var(--sk-grid-axis-color, rgba(65,105,145,.55)) 50%, transparent calc(50% + .5px)),
+    linear-gradient(var(--sk-grid-line-color, rgba(100,130,165,.16)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--sk-grid-line-color, rgba(100,130,165,.16)) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px !important;
+}
+.sketchizi-grid-spotlight.is-dots-style,
+.sketchizi-grid-spotlight.is-ruled-style,
+.sketchizi-grid-spotlight.is-columns-style,
+.sketchizi-grid-spotlight.is-coordinates-style {
+  pointer-events: none !important;
+  opacity: 1 !important;
+}

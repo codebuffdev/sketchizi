@@ -589,31 +589,35 @@ export default function DesktopAppHeader({
 
       <div className="sketchizi-header-grid" ref={gridPopoverRef}>
         <button type="button" className={gridEnabled ? "sketchizi-header-grid-trigger is-active" : "sketchizi-header-grid-trigger"}
-          aria-label="Grid settings" title="Grid settings" aria-haspopup="dialog" aria-expanded={gridPopoverOpen}
+          aria-label="Canvas style" title="Canvas style" aria-haspopup="dialog" aria-expanded={gridPopoverOpen}
           onClick={() => { setOpenMenu(null); setGridPopoverOpen((open) => !open); }}>
           <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
           </svg>
         </button>
         {gridPopoverOpen && (
-          <section className="sketchizi-header-grid-popover" role="dialog" aria-label="Grid settings">
+          <section className="sketchizi-header-grid-popover" role="dialog" aria-label="Canvas style">
             <div className="sketchizi-header-grid-top">
               <div className="sketchizi-header-grid-heading">
                 <ViewCommandIcon name="grid" />
-                <div><strong>Grid</strong><small>Configure canvas grid and focus mode.</small></div>
+                <div><strong>Canvas Style</strong><small>Choose how your canvas looks.</small></div>
               </div>
               <label className="sketchizi-header-grid-toggle">
-                <span>Show Grid</span>
+                <span>Show pattern</span>
                 <input type="checkbox" checked={gridEnabled} onChange={() => onToggleGrid?.()} />
                 <span className="sketchizi-header-grid-switch" aria-hidden="true" />
               </label>
             </div>
             <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
-              <strong>Grid Mode</strong>
+              <strong>Canvas patterns</strong>
               <div className="sketchizi-header-grid-options" role="group" aria-label="Grid mode">
-                {[["normal", "Normal", "Uniform grid across the canvas."],
-                  ["focus", "Focus (Canvas)", "Dense central grid (90%)."],
-                  ["local", "Focus (Local)", "Dense grid near content."]].map(([value, label, description]) => (
+                {[["normal", "Grid", "Uniform grid across the canvas."],
+                  ["focus", "Focus Grid", "Dense central grid with soft edges."],
+                  ["local", "Local Focus Grid", "Dense grid around drawing content."],
+                  ["dots", "Dot Grid", "Subtle dotted drafting surface."],
+                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."],
+                  ["columns", "Column Guides", "Vertical layout columns."],
+                  ["coordinates", "Coordinate Grid", "Grid with X and Y axes."]].map(([value, label, description]) => (
                   <button key={value} type="button" disabled={!gridEnabled} aria-pressed={gridStyle === value}
                     onClick={() => onGridStyleChange?.(value)}>
                     <span className={`sketchizi-grid-preview is-${value}`} aria-hidden="true"><span /></span>
@@ -626,10 +630,14 @@ export default function DesktopAppHeader({
             </div>
             <p className="sketchizi-header-grid-description">
               <span aria-hidden="true">ⓘ</span>
-              {!gridEnabled ? "Turn on Show Grid to choose a mode." :
-                gridStyle === "normal" ? "Normal shows a uniform grid across the canvas." :
-                gridStyle === "local" ? "Focus (Local) shows a denser grid around drawing content." :
-                "Focus (Canvas) shows a denser grid in the central area with smooth edges."}
+              {!gridEnabled ? "Turn on Show pattern to choose a canvas style." :
+                gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
+                gridStyle === "ruled" ? "Ruled Paper adds evenly spaced horizontal guides." :
+                gridStyle === "columns" ? "Column Guides add vertical layout guides." :
+                gridStyle === "coordinates" ? "Coordinate Grid adds reference axes and grid lines." :
+                gridStyle === "local" ? "Local Focus Grid concentrates detail around drawing content." :
+                gridStyle === "focus" ? "Focus Grid emphasizes the central canvas area." :
+                "Grid displays a uniform pattern across the canvas."}
             </p>
           </section>
         )}
