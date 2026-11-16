@@ -253,29 +253,6 @@
     box-shadow: 0 16px 40px rgba(20, 22, 40, .17);
   }
 
-  .ai-ask-toggle {
-    min-height: 32px;
-    padding: 5px 10px;
-    border-color: #ded6ff;
-    border-radius: 8px;
-    background: #f4f0ff;
-    color: #4e35a6;
-    font-size: 11px;
-    font-weight: 680;
-  }
-
-  .ai-ask-toggle:hover,
-  .ai-ask-toggle.active {
-    border-color: #bca9ff;
-    background: #ece5ff;
-    color: #4629a0;
-  }
-
-  .ai-ask-toggle-icon {
-    color: #7651e8;
-    font-size: 15px;
-  }
-
   .desktop-app-header-account-zone {
     display: flex;
     align-items: center;
@@ -657,23 +634,6 @@
     border-color: #6550a5;
     background: #2b2540;
     color: #d0c1ff;
-  }
-
-  .app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle {
-    border-color: #4b3c72;
-    background: #29213d;
-    color: #d8c8ff;
-  }
-
-  .app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle:hover,
-  .app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle.active {
-    border-color: #755bb6;
-    background: #352850;
-    color: #f2edff;
-  }
-
-  .app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle-icon {
-    color: #c6aaff;
   }
 
   .app.theme-dark .desktop-app-theme-toggle {
