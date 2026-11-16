@@ -11,7 +11,7 @@ const makePage = async (viewport) => {
 };
 
 const openCreateMenu = async (page) => {
-  await page.getByRole("button", { name: "Create drawing" }).click();
+  await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("menu", { name: "Create a drawing" }).waitFor();
 };
 
@@ -73,7 +73,7 @@ try {
   await openCreateMenu(blank.page);
   await blank.page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
-  await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
+  await blank.page.getByRole("button", { name: "Create" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
