@@ -31,7 +31,7 @@ function getPagePaperBackground(appState) {
   return canvasColorForScene(tintedColor, isDarkTheme);
 }
 
-export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }) {
+export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange }) {
   const [open, setOpen] = useState(false);
   const [headerHost, setHeaderHost] = useState(null);
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
@@ -155,6 +155,14 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }
   }, [open]);
 
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);
+  useEffect(() => {
+    const page = mode === 'pages' && active ? {
+      id: active.id,
+      name: active.name || `Page ${index + 1}`,
+      order: active.customData?.pageOrder ?? index + 1,
+    } : null;
+    onPageContextChange?.({ mode, page, pageCount: pages.length });
+  }, [active?.id, active?.name, active?.customData?.pageOrder, index, mode, onPageContextChange, pages.length]);
   useEffect(() => {
     setRevealedResizeEdge(null);
     window.clearTimeout(touchResizeTimerRef.current);

@@ -228,9 +228,10 @@ function withRequestDiagnostics(message, error) {
   return details.length ? `${message} (${details.join(" · ")})` : message;
 }
 
-export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, saveTimerRef }) {
+export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, saveTimerRef, pageContext = null }) {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
   const [chat, setChat] = useState(() => readTranscript());
+  const [diagramScope, setDiagramScope] = useState("page");
   const [pendingRequest, setPendingRequest] = useState(() => chat.pendingRequest || null);
   const [usage, setUsage] = useState(null);
   const [usageStatus, setUsageStatus] = useState("loading");
@@ -248,6 +249,12 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
   const [announcement, setAnnouncement] = useState("");
   const [authAttempt, setAuthAttempt] = useState(0);
   const [newAnswerQuestion, setNewAnswerQuestion] = useState(() => chat.newAnswerQuestion || "");
+  const inPagesMode = pageContext?.mode === "pages";
+  const activePage = pageContext?.page || null;
+  const scopeUsesCurrentPage = inPagesMode && diagramScope === "page";
+  const diagramScopeDescription = scopeUsesCurrentPage
+    ? `the current page${activePage?.name ? ` (${activePage.name})` : ""}`
+    : "the entire current canvas";
   const transcriptRef = useRef(null);
   const hydratedAccountRef = useRef(null);
   const activeAccountRef = useRef(null);
@@ -574,7 +581,9 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       }
       const api = apiRef.current;
       if (!api?.getSceneElements) throw new Error("The canvas is still loading. Wait a moment and try again.");
-      const diagramContext = buildDiagramContext(api.getSceneElements());
+      const diagramContext = inPagesMode && diagramScope === "page"
+        ? buildDiagramContext(api.getSceneElements(), { scope: "current-page", page: activePage })
+        : buildDiagramContext(api.getSceneElements());
       const history = chat.messages
         .filter((message) => !(message.role === "user" && (message.messageId === messageId || message.requestId === retryAttempt?.requestId)))
         .slice(-12)
@@ -800,7 +809,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       requestInFlightRef.current = false;
       setBusy(false);
     }
-  }, [apiKey, keyApplied, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage, ensureConversation, usage, usageStatus]);
+  }, [apiKey, keyApplied, auth, busy, chat, apiRef, updateChat, pendingRequest, refreshUsage, ensureConversation, usage, usageStatus, inPagesMode, diagramScope, activePage]);
 
   const checkPendingRequest = useCallback(async () => {
     if (!pendingRequest || !auth.user?.id || busy || requestInFlightRef.current) return;
@@ -1058,6 +1067,29 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
         </div>
       </header>
 
+      {inPagesMode && (
+        <div className="ai-ask-scope-row">
+          <div className="ai-ask-scope-caption">
+            <strong>Scope</strong>
+            <small>{diagramScope === "page" ? (activePage?.name || "Current page") : "All pages and canvas content"}</small>
+          </div>
+          <div className="ai-ask-scope-switch" role="group" aria-label="Diagram scope">
+            <button
+              type="button"
+              aria-pressed={diagramScope === "page"}
+              disabled={busy || Boolean(pendingRequest) || !activePage?.id}
+              onClick={() => setDiagramScope("page")}
+            >Current page</button>
+            <button
+              type="button"
+              aria-pressed={diagramScope === "canvas"}
+              disabled={busy || Boolean(pendingRequest)}
+              onClick={() => setDiagramScope("canvas")}
+            >Entire canvas</button>
+          </div>
+        </div>
+      )}
+
       {auth.status === "loading" && <div className="ai-ask-auth-state" role="status">Connecting to Sketchizi services and checking your sign-in session…</div>}
       {auth.status === "unavailable" && <div className="ai-ask-auth-state"><p>{auth.error}</p><button type="button" onClick={() => setAuthAttempt((value) => value + 1)}>Retry</button></div>}
       {auth.status === "anonymous" && (
@@ -1076,7 +1108,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
             {!chat.messages.length ? (
               <div className="ai-ask-empty-state">
                 <h3>What would you like to understand?</h3>
-                <p>Each question uses a fresh structured snapshot of the entire current canvas. AI Ask is read-only and never edits your diagram.</p>
+                <p>Each question uses a fresh structured snapshot of {diagramScopeDescription}. AI Ask is read-only and never edits your diagram.</p>
                 <div className="ai-ask-starters">{STARTER_PROMPTS.map((prompt) => <button key={prompt} type="button" onClick={() => sendQuestion(prompt)} disabled={busy || Boolean(pendingRequest) || (chat.provider === "builtin" && usageStatus === "loaded" && !usage?.admin && (usage?.accountRemaining <= 0 || usage?.conversationRemaining <= 0))}>{prompt}</button>)}</div>
               </div>
             ) : chat.messages.map((message, index) => (

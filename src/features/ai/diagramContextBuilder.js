@@ -1,3 +1,5 @@
+import { isElementWithinPage, PAGE_MARKER } from "../pages/pageModel.js";
+
 const SCHEMA_VERSION = 1;
 export const MAX_DIAGRAM_ELEMENTS = 1500;
 export const MAX_DIAGRAM_CONTEXT_CHARS = 180_000;
@@ -137,9 +139,38 @@ function normalizeElement(element, elementsById, textByContainer, includedResour
 }
 
 /** Build a fresh, allow-listed representation from the current Excalidraw scene. */
-export function buildDiagramContext(sceneElements) {
+export function buildDiagramContext(sceneElements, options = {}) {
   if (!Array.isArray(sceneElements)) throw new DiagramContextError("The current diagram is not available. Please try again.");
-  const liveElements = sceneElements.filter((element) => element && !element.isDeleted && typeof element.id === "string");
+  const allLiveElements = sceneElements.filter((element) => element && !element.isDeleted && typeof element.id === "string");
+  let liveElements = allLiveElements;
+  let pageMetadata;
+  if (options.scope === "current-page") {
+    const requestedPageId = typeof options.page?.id === "string" ? options.page.id : "";
+    const page = allLiveElements.find((element) => element.id === requestedPageId &&
+      element.type === "frame" && element.customData?.[PAGE_MARKER]);
+    if (!page) throw new DiagramContextError("The active page is unavailable. Select a page and try again.");
+
+    const elementsById = new Map(allLiveElements.map((element) => [element.id, element]));
+    liveElements = allLiveElements.filter((element) => {
+      if (element.id === page.id || element.customData?.sketchiziPagePaper === page.id) return false;
+      const visitedFrames = new Set();
+      let frameId = element.frameId;
+      while (frameId) {
+        if (frameId === page.id) return true;
+        if (visitedFrames.has(frameId)) break;
+        visitedFrames.add(frameId);
+        frameId = elementsById.get(frameId)?.frameId;
+      }
+      if (element.frameId) return false;
+      return isElementWithinPage(element, page);
+    });
+    const requestedOrder = Number(page.customData?.pageOrder ?? options.page?.order ?? 1);
+    const pageOrder = Number.isFinite(requestedOrder) ? requestedOrder : 1;
+    pageMetadata = {
+      name: safeText(page.name || options.page?.name || `Page ${pageOrder}`, 200),
+      order: pageOrder,
+    };
+  }
   if (liveElements.length > MAX_DIAGRAM_ELEMENTS) {
     throw new DiagramContextError(`This diagram has ${liveElements.length} elements. AI Ask currently supports up to ${MAX_DIAGRAM_ELEMENTS}; no elements were omitted.`);
   }
@@ -159,7 +190,8 @@ export function buildDiagramContext(sceneElements) {
     schemaVersion: SCHEMA_VERSION,
     snapshotId: globalThis.crypto?.randomUUID?.() || `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     capturedAt: new Date().toISOString(),
-    scope: "complete-current-canvas",
+    scope: pageMetadata ? "current-page" : "complete-current-canvas",
+    ...(pageMetadata ? { page: pageMetadata } : {}),
     elementCount: normalizedElements.length,
     elements: normalizedElements,
   };

@@ -90,6 +90,7 @@ export default function DesktopAppHeader({
   themeMode,
   canvasApi,
   aiAskOpen = false,
+  onPageContextChange,
   canEditCanvas,
   isDarkTheme,
   saveStatus = { state: "ready", lastSavedAt: null },
@@ -377,7 +378,7 @@ export default function DesktopAppHeader({
 
   return (
     <>
-      <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} />
+      <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} />
       <header
         id="desktop-app-header"
         ref={headerRef}
