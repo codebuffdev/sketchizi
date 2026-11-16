@@ -28,8 +28,6 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   useEffect(() => {
     if (!api) return;
-    let timer;
-    let disposed = false;
     const sync = (elements, appState) => {
       const next = getPages(elements);
       // Native frame dragging/resizing must carry its paper surface too.
@@ -57,7 +55,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     };
     sync(api.getSceneElements());
     const unsubscribe = api.onChange(sync);
-    return () => { disposed = true; clearTimeout(timer); unsubscribe(); signature.current = ''; };
+    return () => { unsubscribe(); signature.current = ''; };
   }, [api, canEdit, mode]);
 
   useEffect(() => {
