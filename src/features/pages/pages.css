@@ -166,3 +166,12 @@
   pointer-events: none;
   background: var(--ui-surface-solid, #fff);
 }
+
+/* The page is a plain sheet; resize handles are portaled above Excalidraw UI. */
+.canvas-pages-page-surface {
+  position: fixed;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--ui-surface-solid, #fff);
+}
+.canvas-pages-resize-handle { z-index: 10031 !important; }
