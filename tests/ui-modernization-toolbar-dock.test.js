@@ -66,3 +66,15 @@ test('dock uses semantic tool-family separators and a neutral active accent', ()
   assert.match(css, /#477f91/);
   assert.doesNotMatch(css, /#7669e8/);
 });
+
+
+test('tool families render as distinct compact clusters rather than a flat toolbar row', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /data\.sketchiziToolGroup = group\.name/);
+  assert.match(canvas, /data\.sketchiziGroupStart = "true"/);
+  assert.match(css, /\[data-sketchizi-tool-group\][\s\S]*?border-radius:\s*9px/);
+  assert.match(css, /\[data-sketchizi-tool-group="navigation"\]/);
+  assert.match(css, /\[data-sketchizi-group-start="true"\]/);
+  assert.match(css, /width:\s*36px !important/);
+  assert.match(css, /background:\s*#477f91 !important/);
+});
