@@ -701,7 +701,7 @@
 .app .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
 .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
 .app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
-.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
   border: 1px solid var(--ui-border, #dfe3eb) !important;
   border-radius: 12px !important;
   background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
@@ -712,7 +712,7 @@
 }
 
 .app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
-.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+.app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
   border-color: rgb(60 68 78 / 65%) !important;
   background: rgb(32 38 46 / 55%) !important;
   box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
@@ -1751,7 +1751,7 @@
   padding: 4px 8px !important;
 }
 
-.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+.app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
   border-color: rgb(60 68 78 / 65%) !important;
   background: rgb(32 38 46 / 55%) !important;
   box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
@@ -2001,7 +2001,7 @@
   color: #626a70 !important;
   background: transparent !important;
 }
-.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+.app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
   --sk-toolbar-ink: #e7e9e8;
   --sk-toolbar-muted: #a2a8aa;
   --sk-toolbar-surface: rgb(37 40 42 / 94%);
@@ -2010,18 +2010,18 @@
   --sk-toolbar-active: #414648;
   box-shadow: 0 6px 22px rgb(0 0 0 / 22%), 0 1px 3px rgb(0 0 0 / 16%) !important;
 }
-.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
-.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button,
-.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool {
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button,
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool {
   color: var(--sk-toolbar-muted) !important;
 }
-.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon.active .ToolIcon__icon,
-.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon:has(input:checked) .ToolIcon__icon,
-.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool[aria-pressed="true"] {
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon.active .ToolIcon__icon,
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app.theme-dark .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool[aria-pressed="true"] {
   color: #f5f6f5 !important;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%) !important;
 }
-.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
   --sk-toolbar-ink: #34383c;
   --sk-toolbar-muted: #777e84;
   --sk-toolbar-surface: rgb(250 250 248 / 94%);
@@ -2029,8 +2029,8 @@
   --sk-toolbar-hover: #eceeec;
   --sk-toolbar-active: #e4e7e5;
 }
-.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon.active .ToolIcon__icon,
-.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon:has(input:checked) .ToolIcon__icon {
   color: #202428 !important;
 }
 .app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] > [data-sketchizi-group-start="true"] {
