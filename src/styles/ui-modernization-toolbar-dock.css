@@ -12,7 +12,7 @@
   --sk-toolbar-surface: #1b1e27;
   --sk-toolbar-border: #353a49;
   --sk-toolbar-hover: #2a2e3b;
-  --sk-toolbar-active: #6558d3;
+  --sk-toolbar-active: #356f82;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -63,10 +63,10 @@
 .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
 .app .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
 .app .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
-  border-color: #8075ec !important;
-  background: linear-gradient(145deg, #7669e8, #5b50bc) !important;
+  border-color: #6c9aaa !important;
+  background: linear-gradient(145deg, #477f91, #356779) !important;
   color: #fff !important;
-  box-shadow: 0 4px 12px rgb(101 88 211 / 34%), inset 0 1px 0 rgb(255 255 255 / 18%) !important;
+  box-shadow: 0 3px 9px rgb(45 101 119 / 24%), inset 0 1px 0 rgb(255 255 255 / 18%) !important;
 }
 
 .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
@@ -1789,4 +1789,145 @@
   border-radius: 5px !important;
   background: transparent !important;
   box-shadow: none !important;
+}
+
+
+/* Grouped dock refinement: separators clarify tool families without
+   introducing nested pills or changing Excalidraw's native control order. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-group-divider: rgb(137 151 165 / 34%);
+  column-gap: 5px;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator {
+  flex: 0 0 1px;
+  width: 1px;
+  min-height: 22px;
+  align-self: center;
+  margin: 0 6px;
+  border-radius: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--sk-dock-group-divider) 18%,
+    var(--sk-dock-group-divider) 82%,
+    transparent 100%
+  );
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-group-divider: rgb(104 119 135 / 30%);
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-group-divider: rgb(174 185 201 / 25%);
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #6c9aaa !important;
+  background: linear-gradient(145deg, #477f91, #356779) !important;
+  box-shadow: 0 3px 9px rgb(45 101 119 / 24%), inset 0 1px 0 rgb(255 255 255 / 18%) !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+  color: #fff !important;
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator {
+    margin-inline: 3px;
+    min-height: 18px;
+  }
+}
+
+
+/* Make the tool families read as separate compact clusters, not one flat row.
+   Each native control remains in place; only its visual surface and group spacing change. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-cluster-surface: rgb(104 119 135 / 8%);
+  --sk-dock-cluster-border: rgb(104 119 135 / 13%);
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 2px !important;
+  border: 1px solid var(--sk-dock-cluster-border) !important;
+  border-radius: 9px !important;
+  background: var(--sk-dock-cluster-surface) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%) !important;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:hover {
+  background: rgb(104 119 135 / 15%) !important;
+  border-color: rgb(104 119 135 / 28%) !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(79 125 139 / 13%);
+  --sk-dock-cluster-border: rgb(79 125 139 / 25%);
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-group-start="true"] {
+  margin-left: 7px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator {
+  display: none !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator + [data-sketchizi-tool-group] {
+  margin-left: 7px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] .ToolIcon__icon {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) {
+  border-color: #477f91 !important;
+  background: #477f91 !important;
+  box-shadow: 0 2px 7px rgb(45 101 119 / 22%), inset 0 1px 0 rgb(255 255 255 / 20%) !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) .ToolIcon__icon {
+  color: #fff !important;
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-cluster-surface: rgb(255 255 255 / 5%);
+  --sk-dock-cluster-border: rgb(255 255 255 / 9%);
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(90 151 169 / 15%);
+  --sk-dock-cluster-border: rgb(90 151 169 / 25%);
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    margin-inline: 1px !important;
+  }
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-group-start="true"] {
+    margin-left: 4px !important;
+  }
 }
