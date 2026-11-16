@@ -173,12 +173,14 @@ function App() {
   const [cloudDetached, setCloudDetached] = useState(false);
   const cloudSceneReadyRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+  const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
   useEffect(() => {
     const detachCloudDocument = () => {
       cloudDetachedRef.current = true;
+      cloudManualSaveRequestedRef.current = false;
       setCloudDetached(true);
       cloudSceneReadyRef.current = false;
       if (cloudSaveTimerRef.current) {
@@ -267,9 +269,14 @@ function App() {
           session.revision = revision + 1;
         }
         setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
+        if (cloudManualSaveRequestedRef.current) {
+          cloudManualSaveRequestedRef.current = false;
+          showToast("Saved to Cloud Workspace", "success");
+        }
       }).catch((error) => {
         if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
         const conflict = error?.status === 409 || error?.status === 412 || error?.code === "revision_conflict";
+        cloudManualSaveRequestedRef.current = false;
         setCloudSaveState({
           state: conflict ? "conflict" : "error",
           error: conflict
@@ -278,11 +285,12 @@ function App() {
         });
       });
     }, cloudFlushImmediatelyRef.current ? 0 : 700);
-  }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
+  }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave, showToast]);
 
   const saveCloudDiagramNow = useCallback(() => {
     const api = apiRef.current;
     if (!cloudDiagramId || !cloudSessionRef.current.active || !api) return;
+    cloudManualSaveRequestedRef.current = true;
     cloudFlushImmediatelyRef.current = true;
     queueSketchSave(api.getSceneElements?.() || [], api.getAppState?.() || {});
     cloudFlushImmediatelyRef.current = false;
