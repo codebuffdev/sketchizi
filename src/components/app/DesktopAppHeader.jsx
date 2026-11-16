@@ -683,8 +683,10 @@ export default function DesktopAppHeader({
         aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
       >
         <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M6 3.75h8l4 4v12.5H6z" />
-          <path d="M14 3.75v4h4M9 12h6M9 15.5h6" />
+          <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
+          <path d="m7 16.5 3.2-3.7 2.8 1.7 4-6" />
+          <circle cx="7" cy="16.5" r="1" fill="currentColor" stroke="none" />
+          <circle cx="17" cy="8.5" r="1" fill="currentColor" stroke="none" />
         </svg>
         <span className="desktop-app-document-identity-copy">
           {documentNameEditing ? (
