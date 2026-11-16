@@ -1,0 +1,149 @@
+/* Canvas-stable desktop workspace.
+ *
+ * The drawing surface is the permanent base layer. Resource and context
+ * panels are overlays, not grid columns, so opening either panel never
+ * changes the canvas viewport or Excalidraw's coordinate space.
+ *
+ * Tablet and phone layouts intentionally retain their existing behavior.
+ */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-workspace {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--ui-canvas, #fff);
+  }
+
+  .app.canvas-first-header .desktop-canvas-region {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    background: transparent;
+  }
+
+  /* The resource catalog is portaled to .app, outside .desktop-workspace. */
+  .app.canvas-first-header > .desktop-resources-region {
+    position: absolute;
+    z-index: 610;
+    top: calc(82px + var(--safe-top, 0px));
+    bottom: calc(78px + var(--safe-bottom, 0px));
+    left: calc(18px + var(--safe-left, 0px));
+    display: flex !important;
+    width: min(316px, calc(100vw - 124px));
+    max-width: calc(100vw - 124px);
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--ui-border, #dfe3eb);
+    border-radius: 16px;
+    background: var(--ui-surface-solid, #fff);
+    box-shadow: 0 18px 48px rgb(15 23 42 / 16%), 0 2px 8px rgb(15 23 42 / 6%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-14px);
+    transition:
+      opacity 160ms ease,
+      transform 190ms cubic-bezier(.2, .75, .25, 1),
+      visibility 190ms linear;
+  }
+
+  .app.canvas-first-header > .desktop-resources-region.mobile-resource-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .app.canvas-first-header > .desktop-resources-region > .library-panel {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    min-height: 0;
+    border: 0;
+    border-radius: inherit;
+    background: var(--ui-surface-solid, #fff);
+    box-shadow: none;
+  }
+
+  /* Right inspector floats inside the workspace, clear of the right rail. */
+  .app.canvas-first-header .desktop-workspace .desktop-context-region {
+    position: absolute;
+    z-index: 610;
+    top: calc(82px + var(--safe-top, 0px));
+    right: calc(86px + var(--safe-right, 0px));
+    bottom: calc(78px + var(--safe-bottom, 0px));
+    display: flex !important;
+    flex-direction: column;
+    width: min(352px, calc(100vw - 132px));
+    max-width: calc(100vw - 132px);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--ui-border, #dfe3eb);
+    border-radius: 16px;
+    background: var(--ui-surface-solid, #fff);
+    box-shadow: 0 18px 48px rgb(15 23 42 / 16%), 0 2px 8px rgb(15 23 42 / 6%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(14px);
+    transition:
+      opacity 160ms ease,
+      transform 190ms cubic-bezier(.2, .75, .25, 1),
+      visibility 190ms linear;
+  }
+
+  .app.canvas-first-header .desktop-workspace-context-open .desktop-context-region {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .app.canvas-first-header .desktop-context-region > .desktop-validation-host {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app.canvas-first-header .desktop-context-region .properties-panel,
+  .app.canvas-first-header .desktop-context-region .architecture-validation-panel {
+    background: var(--ui-surface-solid, #fff);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-resources-region,
+  .app.theme-dark.canvas-first-header .desktop-resources-region > .library-panel,
+  .app.theme-dark.canvas-first-header .desktop-context-region,
+  .app.theme-dark.canvas-first-header .desktop-context-region .properties-panel,
+  .app.theme-dark.canvas-first-header .desktop-context-region .architecture-validation-panel {
+    background: var(--ui-surface-solid, #202733);
+    border-color: var(--ui-border, #384252);
+  }
+
+  @media (max-height: 700px) {
+    .app.canvas-first-header > .desktop-resources-region,
+    .app.canvas-first-header .desktop-workspace .desktop-context-region {
+      top: calc(58px + var(--safe-top, 0px));
+      bottom: calc(58px + var(--safe-bottom, 0px));
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app.canvas-first-header > .desktop-resources-region,
+  .app.canvas-first-header .desktop-workspace .desktop-context-region {
+    transition: none;
+    transform: none;
+  }
+}
