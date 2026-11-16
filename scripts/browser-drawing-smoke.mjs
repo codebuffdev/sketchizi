@@ -92,7 +92,7 @@ try {
   const drawn = (await currentDrawing()).elements.find((element) => element.type === "rectangle" && !element.isDeleted);
   console.log("PASS: native canvas drag creates a rectangle and autosaves it to IndexedDB.");
 
-  const addName = page.getByRole("button", { name: "Add name to rectangle", exact: true });
+  // Rectangle creation leaves Excalidraw in the rectangle tool; switch back to selection\n  // so the contextual title action is expected to be available.\n  await page.keyboard.press("v");\n  const addName = page.getByRole("button", { name: "Add name to rectangle", exact: true });
   const nameInput = page.getByRole("textbox", { name: "Rectangle name", exact: true });
   const rectangleName = "Backend services";
   const title = page.getByRole("button", { name: `Rename rectangle: ${rectangleName}`, exact: true });
