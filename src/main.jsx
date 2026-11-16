@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import "@excalidraw/excalidraw/index.css";
 import "./styles.css";
+import "./styles/canvas-stable-workspace.css";
 import "./styles/icon-panel-v2.css";
 import "./styles/icon-panel-compact.css";
 import "./styles/canvas-feedback-overlays.css";
