@@ -113,9 +113,15 @@ export default function CanvasPages({ api, canEdit = true }) {
     if (!api || !canEdit) return;
     if (!validSize(Number(size.width), Number(size.height))) { setError('Use dimensions between 320 and 10,000 pixels.'); return; }
     const elements = api.getSceneElementsIncludingDeleted();
+    const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
+    const name = window.prompt('Name your new page', `Page ${nextOrder}`);
+    if (name === null) return;
+    const pageName = name.trim().slice(0, 80) || `Page ${nextOrder}`;
     const created = convertToExcalidrawElements(pageSkeleton(elements, { width: Number(size.width), height: Number(size.height) }, crypto.randomUUID()), { regenerateIds: false });
+    const frame = created.find(e => e.type === 'frame');
+    if (frame) frame.name = pageName;
     update([...elements, ...created]);
-    setError(''); setMode('pages'); setOpen(false); fit(created.find(e => e.type === 'frame'));
+    setError(''); setMode('pages'); setOpen(false); fit(frame);
   };
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
@@ -186,7 +192,7 @@ export default function CanvasPages({ api, canEdit = true }) {
           {canEdit && <div className="canvas-page-actions"><button className="canvas-page-rename" type="button" aria-label={`Rename ${page.name}`} onClick={() => rename(page)}>Rename</button><button type="button" aria-label={`Duplicate ${page.name}`} onClick={() => duplicate(page)}>Copy</button><button type="button" aria-label={`Move ${page.name} up`} disabled={i === 0} onClick={() => move(page,-1)}>↑</button><button type="button" aria-label={`Move ${page.name} down`} disabled={i === pages.length-1} onClick={() => move(page,1)}>↓</button></div>}
         </div>)}</div><button type="button" disabled={!canEdit} onClick={add}>＋ Add page</button></>}
       </aside>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button></nav>
+      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
     </>,host)}
   </>;
 }
