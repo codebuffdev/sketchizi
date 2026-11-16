@@ -499,12 +499,13 @@
 /* Sketchizi quick-access tool: Bucket Fill. */
 .app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool,
 .app .excalidraw .App-toolbar .sketchizi-dock-quick-tool {
-  width: 42px;
-  min-width: 42px;
-  flex: 0 0 42px;
+  box-sizing: border-box;
+  width: 34px;
+  min-width: 34px;
+  flex: 0 0 34px;
   position: relative;
-  height: 42px;
-  min-height: 42px;
+  height: 34px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -549,7 +550,7 @@
   gap: 0;
   width: max-content;
   min-width: max-content;
-  min-height: 42px;
+  min-height: 34px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -695,27 +696,26 @@
 }
 
 
-/* Frameless dock: keep the tool controls, separators and active state, but
-   remove the rounded shell that visually looks like a container around them. */
+/* Match the dock wrapper to the right-side header rail.
+   Keep all tool controls frameless inside one continuous rectangular surface. */
 .app .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
-.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
-  background: transparent !important;
-  border-color: transparent !important;
-  border-width: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  border: 1px solid var(--ui-border, #dfe3eb) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
+  box-shadow: 0 4px 16px rgb(15 23 42 / 8%) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  padding: 2px 0 !important;
+  padding: 4px 8px !important;
 }
 
-.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
-.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
 .app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
 .app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
-  background: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
+  border-color: rgb(60 68 78 / 65%) !important;
+  background: rgb(32 38 46 / 55%) !important;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
 }
 
 
@@ -1701,4 +1701,92 @@
   min-width: 0;
   font-size: 11px;
   gap: 4px;
+}
+
+
+/* Keep every native and custom dock control on one shared center line.
+   The compact native controls are 34px; custom quick tools now use the same
+   footprint so their wrapper cannot lift or visually offset the dock row. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-grip,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-separator,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-quick-tools {
+  align-self: center !important;
+  box-sizing: border-box !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tools {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 34px !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 34px !important;
+  align-self: center !important;
+}
+
+
+/* Match the canvas dock's outer surface to the right-side header rail.
+   Keep all native tool groups frameless inside one continuous container. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  border: 1px solid var(--ui-border, #dfe3eb) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
+  box-shadow: 0 4px 16px rgb(15 23 42 / 8%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 4px 8px !important;
+}
+
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  border-color: rgb(60 68 78 / 65%) !important;
+  background: rgb(32 38 46 / 55%) !important;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
+}
+
+
+/* Keep only the zoom percentage in the bottom-left navigation area.
+   Zoom actions and history remain available through their existing shortcuts. */
+.app .excalidraw .zoom-actions .zoom-out,
+.app .excalidraw .zoom-actions .zoom-in,
+.app .excalidraw .zoom-actions .sketchizi-fit-content-button,
+.app .excalidraw .undo-redo-buttons {
+  display: none !important;
+}
+
+.app .excalidraw .zoom-actions {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app .excalidraw .zoom-actions .reset-zoom {
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 2px 5px !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
