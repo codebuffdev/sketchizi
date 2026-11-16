@@ -76,3 +76,22 @@ export function duplicatePage(elements, pageId, newId) {
     return e;
   });
 }
+
+export function isElementWithinPage(element, page) {
+  if (!element || !page) return false;
+  const x = Number(element.x), y = Number(element.y);
+  const width = Math.abs(Number(element.width)), height = Math.abs(Number(element.height));
+  if (![x,y,width,height].every(Number.isFinite)) return false;
+  const angle = Number(element.angle || 0);
+  const rotatedWidth = width * Math.abs(Math.cos(angle)) + height * Math.abs(Math.sin(angle));
+  const rotatedHeight = width * Math.abs(Math.sin(angle)) + height * Math.abs(Math.cos(angle));
+  const centerX = x + Number(element.width) / 2;
+  const centerY = y + Number(element.height) / 2;
+  const left = centerX - rotatedWidth / 2;
+  const top = centerY - rotatedHeight / 2;
+  const right = centerX + rotatedWidth / 2;
+  const bottom = centerY + rotatedHeight / 2;
+  const epsilon = 0.01;
+  return left >= page.x - epsilon && top >= page.y - epsilon &&
+    right <= page.x + page.width + epsilon && bottom <= page.y + page.height + epsilon;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements, exportToSvg } from '@excalidraw/excalidraw';
-import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask } from './pageModel.js';
+import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, isElementWithinPage, PAGE_MARKER } from './pageModel.js';
 import './pages.css';
 
 export default function CanvasPages({ api, canEdit = true }) {
@@ -19,6 +19,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const initialFitRef = useRef(false);
   const root = useRef(null);
   const signature = useRef('');
+  const sceneSnapshot = useRef(null);
   const active = pages.find(p => p.id === activeId) || pages[0];
   const index = pages.findIndex(p => p.id === active?.id);
   const host = document.querySelector('.app');
@@ -31,6 +32,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     if (!api) return;
     let timer;
     let disposed = false;
+    sceneSnapshot.current = api.getSceneElementsIncludingDeleted();
     const sync = (elements, appState) => {
       const next = getPages(elements);
       // Native frame dragging/resizing must carry its paper surface too.
@@ -47,11 +49,48 @@ export default function CanvasPages({ api, canEdit = true }) {
         return;
       }
       const selected = next.find(p => p.id === activeIdRef.current) || next[0];
+      if (mode === 'pages' && selected) {
+        const previous = new Map((sceneSnapshot.current || []).map(element => [element.id, element]));
+        let rejected = false;
+        const guarded = api.getSceneElementsIncludingDeleted().map(element => {
+          if (element.isDeleted || element.id === selected.id ||
+              element.customData?.sketchiziPagePaper ||
+              (element.type === 'frame' && element.customData?.[PAGE_MARKER])) return element;
+          const before = previous.get(element.id);
+          if (!before) {
+            if (isElementWithinPage(element, selected)) {
+              return element.frameId === selected.id ? element : { ...element, frameId: selected.id };
+            }
+            rejected = true;
+            return { ...element, isDeleted: true, version: (element.version || 0) + 1,
+              versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+          }
+          const changed = [...new Set([...Object.keys(before), ...Object.keys(element)])]
+            .filter(key => !['version','versionNonce','updated','index'].includes(key))
+            .some(key => JSON.stringify(before[key]) !== JSON.stringify(element[key]));
+          if (!changed) return element;
+          if (before.frameId !== selected.id && element.frameId !== selected.id) {
+            rejected = true;
+            return before;
+          }
+          if (!isElementWithinPage(element, selected)) {
+            rejected = true;
+            return before;
+          }
+          return element;
+        });
+        if (rejected) {
+          sceneSnapshot.current = guarded;
+          api.updateScene({ elements: guarded, captureUpdate: CaptureUpdateAction.NEVER });
+          return;
+        }
+      }
       if (selected && !activeIdRef.current) {
         activeIdRef.current = selected.id;
         setActiveId(selected.id);
       }
       setPageMask(mode === 'pages' ? getPageViewportMask(selected, appState || api.getAppState()) : null);
+      sceneSnapshot.current = api.getSceneElementsIncludingDeleted();
       const key = JSON.stringify(next.map(p => [p.id,p.version,p.name,p.width,p.height,p.customData.pageOrder]));
       if (signature.current !== key) { signature.current = key; setPages(next); }
       clearTimeout(timer);
@@ -69,7 +108,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     };
     sync(api.getSceneElements());
     const unsubscribe = api.onChange(sync);
-    return () => { disposed = true; clearTimeout(timer); unsubscribe(); signature.current = ''; };
+    return () => { disposed = true; clearTimeout(timer); unsubscribe(); signature.current = ''; sceneSnapshot.current = null; };
   }, [api, canEdit, mode]);
 
   useEffect(() => {
@@ -109,6 +148,8 @@ export default function CanvasPages({ api, canEdit = true }) {
   }, [api, mode, active?.id, active?.x, active?.y, active?.width, active?.height]);
 
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+  // The opaque gutters are an interaction boundary, not just a visual mask.
+  const blockOutsidePage = event => { event.preventDefault(); event.stopPropagation(); };
   const add = () => {
     if (!api || !canEdit) return;
     if (!validSize(Number(size.width), Number(size.height))) { setError('Use dimensions between 320 and 10,000 pixels.'); return; }
@@ -180,7 +221,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     </div>, headerHost)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask" aria-hidden="true">
-        {pageMask.panels.map((panel, i) => <div key={i} style={{ ...panel, backgroundColor: pageMask.backgroundColor }} />)}
+        {pageMask.panels.map((panel, i) => <div key={i} className="canvas-pages-mask-panel" style={{ ...panel, backgroundColor: pageMask.backgroundColor }} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
       </div>, host)}
     {mode === 'pages' && host && createPortal(<>
       <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
