@@ -22,7 +22,6 @@ import { useCanvasTools } from "./features/canvas/useCanvasTools";
 import { useMinimapController } from "./features/canvas/useMinimapController";
 import { useExcalidrawScene } from "./features/canvas/useExcalidrawScene";
 import SketchiziCanvas from "./components/app/SketchiziCanvas";
-import CanvasPages from "./features/pages/CanvasPages.jsx";
 import CollaborationUI from "./components/app/CollaborationUI";
 import MoreTools from "./components/app/MoreTools";
 import { useIconInsertion } from "./features/icon-library/useIconInsertion";
@@ -1710,7 +1709,6 @@ function App() {
              onGridVisibilityChange={setGridEnabled}
              gridEnabled={gridEnabled}
           />
-          <CanvasPages api={apiRef.current} canEdit={collaborationCanEdit} />
 
           {draggingIcon && (
             <div
