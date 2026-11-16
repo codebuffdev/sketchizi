@@ -74,6 +74,8 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   const currentFileSceneSignatureRef = useRef(null);
   const documentDirtyRef = useRef(false);
   const [documentDirty, setDocumentDirty] = useState(false);
+  const [replacementPrompt, setReplacementPrompt] = useState(null);
+  const replacementPromptResolverRef = useRef(null);
   const updateDocumentDirty = useCallback((value) => {
     const nextValue = Boolean(value);
     documentDirtyRef.current = nextValue;
@@ -196,7 +198,17 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       ? `Changes to “${title}” have not been saved back to that file.`
       : `“${title}” is currently a browser-local canvas without an associated file.`;
     const recovery = "Continuing may replace the current browser-local autosave. Cancel and save/export the drawing or download a recovery backup to keep an extra copy.";
-    return window.confirm(`${reason}\n\n${recovery}\n\nContinue to ${actionLabel}?`);
+    return new Promise((resolve) => {
+      replacementPromptResolverRef.current = resolve;
+      setReplacementPrompt({ reason, recovery, actionLabel });
+    });
+  };
+
+  const resolveReplacementPrompt = (confirmed) => {
+    const resolve = replacementPromptResolverRef.current;
+    replacementPromptResolverRef.current = null;
+    setReplacementPrompt(null);
+    resolve?.(Boolean(confirmed));
   };
 
   const handleFileError = (error, fallback) => {
@@ -288,14 +300,14 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       if (getFileSystemSupport().open) {
         const handle = await pickDrawingToOpen();
         const { name, text } = await readDrawingFromHandle(handle);
-        if (!confirmCanvasReplacement(`open “${name}”`)) return;
+        if (!(await confirmCanvasReplacement(`open “${name}”`))) return;
         const loadedSignature = loadDrawingIntoCanvas(text);
         await registerFile(handle, name, loadedSignature, Date.now());
         logger.info("Document opened", { category: "file", fileName: name, source: "browser-file-input" });
         showToast(`Opened ${name}`);
       } else {
         const { name, text } = await pickDrawingViaInput();
-        if (!confirmCanvasReplacement(`open “${name}”`)) return;
+        if (!(await confirmCanvasReplacement(`open “${name}”`))) return;
         const loadedSignature = loadDrawingIntoCanvas(text);
         // No handle in this browser: keep a local copy so Recent files works.
         setCurrentFile({ id: null, name, handle: null }, loadedSignature);
@@ -322,7 +334,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     try {
       if (fileEntry?.file) {
         const text = await fileEntry.file.text();
-        if (!confirmCanvasReplacement(`open “${fileEntry.file.name}”`)) return;
+        if (!(await confirmCanvasReplacement(`open “${fileEntry.file.name}”`))) return;
         const loadedSignature = loadDrawingIntoCanvas(text);
         setCurrentFile({ id: null, name: fileEntry.file.name, handle: null }, loadedSignature);
         const record = await saveRecentSketch({
@@ -343,7 +355,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
       const fileHandle = fileEntry?.handle || fileEntry;
       if (!(await ensureHandlePermission(fileHandle, "read"))) { showToast("File permission was denied", "error"); return; }
       const { name, text } = await readDrawingFromHandle(fileHandle);
-      if (!confirmCanvasReplacement(`open “${name}”`)) return;
+      if (!(await confirmCanvasReplacement(`open “${name}”`))) return;
       const loadedSignature = loadDrawingIntoCanvas(text);
       await registerFile(fileHandle, name, loadedSignature, Date.now());
       logger.info("Document opened", { category: "file", fileName: name, source: "folder-handle" });
@@ -359,11 +371,11 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     showToast("Folder closed");
   };
 
-  const createNewFile = () => {
+  const createNewFile = async () => {
     closeNativeMenu();
     const api = apiRef.current;
     if (!api) return;
-    if (!confirmCanvasReplacement("create a new drawing")) return;
+    if (!(await confirmCanvasReplacement("create a new drawing"))) return;
     // Starting a new local drawing must detach it from any cloud diagram
     // currently open in the editor before the canvas is cleared.
     window.dispatchEvent(new CustomEvent("sketchizi:detach-cloud-document"));
@@ -585,7 +597,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
           return;
         }
         const { name, text } = await readDrawingFromHandle(handle);
-        if (!confirmCanvasReplacement(`open “${name}”`)) return;
+        if (!(await confirmCanvasReplacement(`open “${name}”`))) return;
         const loadedSignature = loadDrawingIntoCanvas(text);
         const actualName = handle?.name || name;
         setCurrentFile({ id, name: actualName, handle }, loadedSignature);
@@ -602,7 +614,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         showToast("This drawing is no longer available. You can remove it from Recent files or try again later.", "error");
         return;
       }
-      if (!confirmCanvasReplacement(`open “${record.name}”`)) return;
+      if (!(await confirmCanvasReplacement(`open “${record.name}”`))) return;
       const loadedSignature = loadDrawingIntoCanvas(serializeDrawing({ elements: record.elements || [], appState: record.appState, files: record.files, format: record.format || getDrawingFormat(record.name), metadata: record.metadata, extensions: record.extensions }));
       setCurrentFile({ id: null, name: record.name, handle: null }, loadedSignature);
       rememberRecentFile({ ...record, lastOpenedAt: Date.now(), availability: "available", kind: "snapshot" });
@@ -711,6 +723,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,
     currentFile, currentFileRef, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef,
+    replacementPrompt, resolveReplacementPrompt,
     rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, markRecentFolderOpened, updateRecentFolderStatus, forgetRecentFolder, clearRecentFolders,
     handleFileError, currentSceneText, loadDrawingIntoCanvas, openFolderFromDisk, openRecentFolder, openDrawingFromDisk,
     openDrawingFromCurrentFolder, closeCurrentFolder, createNewFile, saveDrawingAs, saveCurrentDrawing, renameCurrentDocument, openRecentFile,
