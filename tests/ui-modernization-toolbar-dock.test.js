@@ -34,3 +34,11 @@ test('native and custom quick tools share a 34px footprint and centered dock ali
   assert.match(css, /\.sketchizi-dock-quick-tool[\s\S]*?height:\s*34px\s*!important/);
   assert.match(css, /\.sketchizi-dock-quick-tools[\s\S]*?min-height:\s*34px\s*!important/);
 });
+
+test('canvas dock uses the same bordered translucent surface treatment as the right header rail', () => {
+  assert.match(css, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?border:\s*1px solid var\(--ui-border, #dfe3eb\) !important/);
+  assert.match(css, /border-radius:\s*12px !important/);
+  assert.match(css, /background:\s*color-mix\(in srgb, var\(--ui-surface-solid, #fff\) 55%, transparent\) !important/);
+  assert.match(css, /box-shadow:\s*0 4px 16px rgb\(15 23 42 \/ 8%\) !important/);
+  assert.match(css, /\.app\.theme-dark \.excalidraw \.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?background:\s*rgb\(32 38 46 \/ 55%\) !important/);
+});
