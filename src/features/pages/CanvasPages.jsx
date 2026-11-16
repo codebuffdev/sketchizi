@@ -14,6 +14,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [pageMask, setPageMask] = useState(null);
   const [revealedResizeEdge, setRevealedResizeEdge] = useState(null);
   const [inlineName, setInlineName] = useState(null);
+  const inlineNameInputRef = useRef(null);
   const cancelInlineNameRef = useRef(false);
   const touchResizeTimerRef = useRef(null);
   const activeIdRef = useRef(null);
@@ -288,6 +289,18 @@ export default function CanvasPages({ api, canEdit = true }) {
     }
     setInlineName(null);
   };
+  useEffect(() => {
+    if (!inlineName?.pageId) return undefined;
+    const finishRenameOnOutsideClick = (event) => {
+      const input = inlineNameInputRef.current;
+      if (!input || input.contains(event.target)) return;
+      // Canvas clicks do not necessarily move focus, so explicitly blur the
+      // editor to commit the name before the outside action continues.
+      input.blur();
+    };
+    document.addEventListener('pointerdown', finishRenameOnOutsideClick, true);
+    return () => document.removeEventListener('pointerdown', finishRenameOnOutsideClick, true);
+  }, [inlineName?.pageId]);
   const duplicate = page => {
     if (!canEdit) return;
     const elements = api.getSceneElementsIncludingDeleted();
@@ -371,6 +384,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       </div>, host)}
     {mode === 'pages' && pageMask && host && createPortal(
       inlineName?.pageId === active?.id ? <input
+        ref={inlineNameInputRef}
         className="canvas-pages-page-name-input"
         style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 31) }}
         aria-label="Edit page name"
