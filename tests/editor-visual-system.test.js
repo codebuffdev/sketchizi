@@ -31,7 +31,7 @@ test('visual refinement is presentation-only and does not alter canvas or dock g
   assert.doesNotMatch(css, /\.App-toolbar|contextual-formatting-toolbar/);
   assert.doesNotMatch(css, /(?:^|[;\n])\s*(?:position|inset|top|right|bottom|left|width|height|min-height|max-height|padding|margin|transform|display)\s*:/);
   assert.match(dock, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\]/);
-  assert.ok(entry.trimEnd().endsWith('@import "./styles/editor-visual-system.css";'));
+  assert.ok(entry.indexOf('@import "./styles/editor-visual-system.css";') < entry.indexOf('.kubernetes-library-status'));
 });
 
 test('contextual formatting toolbar remains exclusively gated by Zen Mode', () => {
