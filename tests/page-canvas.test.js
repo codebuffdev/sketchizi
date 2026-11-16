@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getPages, validSize, pageSkeleton, DEFAULT_PAGE_SIZE, getPageViewportMask } from '../src/features/pages/pageModel.js';
+import { getPages, validSize, pageSkeleton, DEFAULT_PAGE_SIZE, getPageViewportMask, getPageFitViewport } from '../src/features/pages/pageModel.js';
 test('adding a page preserves existing artwork and places the sheet beyond its bounds', () => {
  const existing = [{id:'drawing',type:'rectangle',x:100,y:40,width:500,height:20}];
  const snapshot = structuredClone(existing);
@@ -70,4 +70,14 @@ test('page viewport mask clips pages to the visible canvas and rejects an off-sc
   {x:5000,y:5000,width:1000,height:800},
   {offsetLeft:100,offsetTop:50,width:800,height:600,scrollX:0,scrollY:0,zoom:{value:1}}
  ),null);
+});
+
+test('page fit keeps a visible workspace gutter and recenters the page', () => {
+ const page = { x: 300, y:: 100, width: 1600, height: 1400 };
+ const viewport = { width: 1200, height: 900, zoom: { value: 0.5 }, scrollX: 0, scrollY: 0 };
+ const fitted = getPageFitViewport(page, viewport, 0.82);
+ assert.equal(fitted.zoom.value, 0.41);
+ assert(Math.abs((page.x + fitted.scrollX + page.width / 2) * fitted.zoom.value - 600) < 1e-9);
+ assert(Math.abs((page.y + fitted.scrollY + page.height / 2) * fitted.zoom.value - 450) < 1e-9);
+ assert.equal(getPageFitViewport(page, viewport, 1), null);
 });
