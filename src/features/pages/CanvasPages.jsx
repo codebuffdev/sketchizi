@@ -31,6 +31,36 @@ function getPagePaperBackground(appState) {
   return canvasColorForScene(tintedColor, isDarkTheme);
 }
 
+function runAfterCanvasLayoutSettles(api, callback) {
+  let frame = 0;
+  let attempts = 0;
+  let stableFrames = 0;
+  let previousSize = '';
+
+  const measure = () => {
+    attempts += 1;
+    const appState = api.getAppState?.() || {};
+    const canvasBounds = document.querySelector('.desktop-canvas-region')?.getBoundingClientRect();
+    const size = [
+      appState.width,
+      appState.height,
+      canvasBounds?.width,
+      canvasBounds?.height,
+    ].map(value => Number(value || 0).toFixed(2)).join(':');
+    stableFrames = size === previousSize ? stableFrames + 1 : 0;
+    previousSize = size;
+
+    if (stableFrames >= 2 || attempts >= 12) {
+      callback(appState);
+      return;
+    }
+    frame = window.requestAnimationFrame(measure);
+  };
+
+  frame = window.requestAnimationFrame(measure);
+  return () => window.cancelAnimationFrame(frame);
+}
+
 export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange }) {
   const [open, setOpen] = useState(false);
   const [headerHost, setHeaderHost] = useState(null);
@@ -48,9 +78,10 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
   const panelViewportRef = useRef(null);
-  const panelFittedViewportRef = useRef(null);
   const panelPageBoundsRef = useRef(null);
   const panelWasOpenRef = useRef(false);
+  const panelViewportInteractionRef = useRef(false);
+  const spacePanHeldRef = useRef(false);
   const root = useRef(null);
   const signature = useRef('');
   const sceneSnapshot = useRef(null);
@@ -231,69 +262,90 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
         scrollY: state.scrollY,
         zoom: state.zoom,
       } : null;
-      panelFittedViewportRef.current = null;
-      panelPageBoundsRef.current = { x: page.x, y: page.y, width: page.width, height: page.height };
-      let firstFrame = 0;
-      let secondFrame = 0;
-      let thirdFrame = 0;
-      firstFrame = window.requestAnimationFrame(() => {
-        secondFrame = window.requestAnimationFrame(() => {
-          fitViewportToPage(activePageRef.current);
-          thirdFrame = window.requestAnimationFrame(() => {
-            const fittedState = api.getAppState?.();
-            if (fittedState) panelFittedViewportRef.current = {
-              scrollX: fittedState.scrollX,
-              scrollY: fittedState.scrollY,
-              zoom: fittedState.zoom,
-            };
-          });
-        });
-      });
+      panelPageBoundsRef.current = { id: page.id, x: page.x, y: page.y, width: page.width, height: page.height };
+      panelViewportInteractionRef.current = false;
+
+      const canvasRegion = document.querySelector('.desktop-canvas-region');
+      const isCanvasTarget = target => target instanceof Element && canvasRegion?.contains(target);
+      const markWheelNavigation = event => {
+        if (isCanvasTarget(event.target)) panelViewportInteractionRef.current = true;
+      };
+      const markPointerNavigation = event => {
+        if (!isCanvasTarget(event.target)) return;
+        const stateAtPointer = api.getAppState?.();
+        const target = event.target instanceof Element ? event.target : null;
+        const zoomControl = target?.closest('.zoom-actions, .zoom-in, .zoom-out, .reset-zoom');
+        if (zoomControl || event.pointerType === 'touch' || event.button === 1 ||
+            spacePanHeldRef.current || stateAtPointer?.activeTool?.type === 'hand') {
+          panelViewportInteractionRef.current = true;
+        }
+      };
+      const markPageNavigation = event => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest('.canvas-pages-navigation')) panelViewportInteractionRef.current = true;
+      };
+      const markKeyboardNavigation = event => {
+        if (event.code === 'Space') spacePanHeldRef.current = true;
+        if (['+', '=', '-', '_', '0'].includes(event.key) && (event.ctrlKey || event.metaKey || event.shiftKey)) {
+          panelViewportInteractionRef.current = true;
+        }
+      };
+      const releaseSpacePan = event => {
+        if (event.code === 'Space') spacePanHeldRef.current = false;
+      };
+      const releaseSpaceOnBlur = () => { spacePanHeldRef.current = false; };
+      canvasRegion?.addEventListener('wheel', markWheelNavigation, { capture: true, passive: true });
+      canvasRegion?.addEventListener('pointerdown', markPointerNavigation, true);
+      document.addEventListener('pointerdown', markPageNavigation, true);
+      window.addEventListener('keydown', markKeyboardNavigation, true);
+      window.addEventListener('keyup', releaseSpacePan, true);
+      window.addEventListener('blur', releaseSpaceOnBlur);
+      const cancelOpenFit = runAfterCanvasLayoutSettles(api, () => fitViewportToPage(activePageRef.current));
       return () => {
-        window.cancelAnimationFrame(firstFrame);
-        window.cancelAnimationFrame(secondFrame);
-        window.cancelAnimationFrame(thirdFrame);
+        cancelOpenFit();
+        canvasRegion?.removeEventListener('wheel', markWheelNavigation, true);
+        canvasRegion?.removeEventListener('pointerdown', markPointerNavigation, true);
+        document.removeEventListener('pointerdown', markPageNavigation, true);
+        window.removeEventListener('keydown', markKeyboardNavigation, true);
+        window.removeEventListener('keyup', releaseSpacePan, true);
+        window.removeEventListener('blur', releaseSpaceOnBlur);
       };
     }
 
     const previousViewport = panelViewportRef.current;
-    const fittedViewport = panelFittedViewportRef.current;
     const previousPageBounds = panelPageBoundsRef.current;
+    const userChangedViewport = panelViewportInteractionRef.current;
     panelViewportRef.current = null;
-    panelFittedViewportRef.current = null;
     panelPageBoundsRef.current = null;
+    panelViewportInteractionRef.current = false;
+    spacePanHeldRef.current = false;
     if (mode !== 'pages' || !previousViewport) return undefined;
-    let firstFrame = 0;
-    let secondFrame = 0;
-    firstFrame = window.requestAnimationFrame(() => {
-      secondFrame = window.requestAnimationFrame(() => {
-        const currentState = api.getAppState?.() || {};
-        const currentPage = activePageRef.current;
-        const currentZoom = Number(currentState.zoom?.value ?? currentState.zoom ?? 1);
-        const fittedZoom = Number(fittedViewport?.zoom?.value ?? fittedViewport?.zoom ?? 1);
-        const pageUnchanged = currentPage && previousPageBounds &&
-          ['x', 'y', 'width', 'height'].every(key => currentPage[key] === previousPageBounds[key]);
-        const viewportUnchanged = fittedViewport &&
-          Math.abs(Number(currentState.scrollX) - Number(fittedViewport.scrollX)) < 0.5 &&
-          Math.abs(Number(currentState.scrollY) - Number(fittedViewport.scrollY)) < 0.5 &&
-          Math.abs(currentZoom - fittedZoom) < 0.001;
-        const restoredState = mode === 'pages' && pageUnchanged && viewportUnchanged
-          ? { ...currentState, ...previousViewport }
-          : currentState;
-        if (restoredState !== currentState) api.updateScene({ appState: previousViewport, captureUpdate: CaptureUpdateAction.NEVER });
-        setPageMask(getPageViewportMask(currentPage, restoredState));
-      });
+    return runAfterCanvasLayoutSettles(api, currentState => {
+      const currentPage = activePageRef.current;
+      const pageUnchanged = currentPage && previousPageBounds && currentPage.id === previousPageBounds.id &&
+        ['x', 'y', 'width', 'height'].every(key => currentPage[key] === previousPageBounds[key]);
+      const previousZoom = Number(previousViewport.zoom?.value ?? previousViewport.zoom ?? 1);
+      const centeredViewport = !userChangedViewport && pageUnchanged
+        ? getPageFitViewport(currentPage, currentState, previousZoom)
+        : null;
+
+      if (centeredViewport) {
+        const nextViewport = {
+          zoom: { value: previousZoom },
+          scrollX: centeredViewport.scrollX,
+          scrollY: centeredViewport.scrollY,
+        };
+        api.updateScene({ appState: nextViewport, captureUpdate: CaptureUpdateAction.NEVER });
+        setPageMask(getPageViewportMask(currentPage, { ...currentState, ...nextViewport }));
+        return;
+      }
+      setPageMask(getPageViewportMask(currentPage, currentState));
     });
-    return () => {
-      window.cancelAnimationFrame(firstFrame);
-      window.cancelAnimationFrame(secondFrame);
-    };
   }, [aiPanelOpen, api, mode]);
 
   useEffect(() => {
     if (mode !== 'pages') {
       panelViewportRef.current = null;
-      panelFittedViewportRef.current = null;
       panelPageBoundsRef.current = null;
     }
   }, [mode]);
