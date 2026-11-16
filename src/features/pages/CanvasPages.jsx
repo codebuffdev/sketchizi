@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/excalidraw';
-import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask } from './pageModel.js';
+import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport } from './pageModel.js';
 import './pages.css';
 
 export default function CanvasPages({ api, canEdit = true }) {
@@ -79,6 +79,19 @@ export default function CanvasPages({ api, canEdit = true }) {
       captureUpdate: CaptureUpdateAction.NEVER,
     });
     api.scrollToContent?.([page], { fitToContent: true, animate: false });
+    // Excalidraw's fit-to-content uses nearly all available canvas space.
+    // Scale the fitted view down slightly and recenter it to retain a visible
+    // workspace gutter around the page on every page switch and Fit page.
+    window.requestAnimationFrame(() => {
+      const fittedState = api.getAppState();
+      const pageViewport = getPageFitViewport(page, fittedState, 0.82);
+      if (pageViewport) {
+        api.updateScene({
+          appState: pageViewport,
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+      }
+    });
   };
   useEffect(() => {
     if (mode !== 'pages') { initialFitRef.current = false; return; }
