@@ -147,7 +147,6 @@
 /* Only the outside-page gutters block input. Inside-page overlays (grid,
    outline and page label) must always pass drawing/text events through. */
 .canvas-pages-mask > .canvas-pages-mask-panel { pointer-events: auto; }
-.canvas-pages-mask > .canvas-pages-resize-handle { pointer-events: auto; }
 
 
 /* Pages mode: turn the existing canvas into a continuous artboard workspace.
@@ -247,24 +246,6 @@
   font-weight: 600;
   letter-spacing: .02em;
 }
-.canvas-pages-resize-handle {
-  position: fixed;
-  z-index: 6;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
-  padding: 0;
-  border: 1px solid #a79de0;
-  border-radius: 3px;
-  background: var(--ui-surface-solid, #fff);
-  box-shadow: 0 1px 4px #0004;
-  pointer-events: auto;
-  touch-action: none;
-  cursor: nwse-resize;
-}
-.canvas-pages-resize-handle.is-ne,
-.canvas-pages-resize-handle.is-sw { cursor: nesw-resize; }
-
 /* Pages start as a clean sheet; the workspace grid remains outside the page. */
 .canvas-pages-page-surface {
   position: fixed;
@@ -285,14 +266,100 @@
     linear-gradient(90deg, var(--canvas-pages-page-grid, rgba(30,41,59,.065)) 1px, transparent 1px);
   background-size: 24px 24px;
 }
-.canvas-pages-resize-handle { z-index: 10031 !important; }
+/* Invisible edge hit areas become small drag grips on hover. This keeps page
+   resizing discoverable without a persistent Resize mode or visible handles. */
+.canvas-pages-resize-hit {
+  position: fixed;
+  z-index: 10031 !important;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  outline: none;
+  background: transparent;
+  pointer-events: auto !important;
+  touch-action: none;
+  user-select: none;
+}
 
-/* Eight resize grips: edge grips change one dimension; corners change both. */
-.canvas-pages-resize-handle { width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:4px; touch-action:none; pointer-events:auto !important; user-select:none; }
-.canvas-pages-resize-handle.is-n,.canvas-pages-resize-handle.is-s { cursor:ns-resize; }
-.canvas-pages-resize-handle.is-e,.canvas-pages-resize-handle.is-w { cursor:ew-resize; }
-.canvas-pages-resize-handle.is-nw,.canvas-pages-resize-handle.is-se { cursor:nwse-resize; }
-.canvas-pages-resize-handle.is-ne,.canvas-pages-resize-handle.is-sw { cursor:nesw-resize; }
+.canvas-pages-resize-hit::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 4px;
+  border-radius: 999px;
+  background: #a79de0;
+  box-shadow: 0 0 0 4px rgb(167 157 224 / 12%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 120ms ease;
+}
+
+.canvas-pages-resize-hit.is-e::after,
+.canvas-pages-resize-hit.is-w::after {
+  width: 4px;
+  height: 30px;
+}
+
+.canvas-pages-resize-hit.is-n::after {
+  top: 100%;
+  transform: translate(-50%, 50%);
+}
+
+.canvas-pages-resize-hit.is-e::after {
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+
+.canvas-pages-resize-hit.is-s::after {
+  top: 0;
+  transform: translate(-50%, -50%);
+}
+
+.canvas-pages-resize-hit.is-w::after {
+  left: 100%;
+  transform: translate(50%, -50%);
+}
+
+.canvas-pages-resize-hit.is-nw::after,
+.canvas-pages-resize-hit.is-ne::after,
+.canvas-pages-resize-hit.is-se::after,
+.canvas-pages-resize-hit.is-sw::after {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #a79de0;
+  border-radius: 3px;
+  background: var(--ui-surface-solid, #fff);
+  box-shadow: 0 0 0 4px rgb(167 157 224 / 12%);
+}
+
+.canvas-pages-resize-hit.is-nw::after { top: 100%; left: 100%; transform: translate(-50%, -50%); }
+.canvas-pages-resize-hit.is-ne::after { top: 100%; left: 0; transform: translate(-50%, -50%); }
+.canvas-pages-resize-hit.is-se::after { top: 0; left: 0; transform: translate(-50%, -50%); }
+.canvas-pages-resize-hit.is-sw::after { top: 0; left: 100%; transform: translate(-50%, -50%); }
+
+.canvas-pages-resize-hit:hover::after,
+.canvas-pages-resize-hit:focus-visible::after,
+.canvas-pages-resize-hit.is-revealed::after {
+  opacity: 1;
+}
+
+.canvas-pages-resize-hit.is-n,
+.canvas-pages-resize-hit.is-s { cursor: ns-resize; }
+.canvas-pages-resize-hit.is-e,
+.canvas-pages-resize-hit.is-w { cursor: ew-resize; }
+.canvas-pages-resize-hit.is-nw,
+.canvas-pages-resize-hit.is-se { cursor: nwse-resize; }
+.canvas-pages-resize-hit.is-ne,
+.canvas-pages-resize-hit.is-sw { cursor: nesw-resize; }
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-pages-resize-hit::after { transition: none; }
+}
 
 /* The page title is an inline rename target, not a passive overlay label. */
 .canvas-pages-page-name {
