@@ -11,7 +11,7 @@ const makePage = async (viewport) => {
 };
 
 const openCreateMenu = async (page) => {
-  await page.getByRole("button", { name: "Create drawing" }).click();
+  await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("menu", { name: "Create a drawing" }).waitFor();
 };
 
@@ -40,28 +40,22 @@ try {
   console.log("PASS: configured AWS template opens the editor.");
 
   // Replacing a populated drawing must be explicitly confirmed. Cancel first
-  // to verify that Create does not bypass the existing unsaved-work safeguard.
+  // to verify that Create does not bypass the replacement safeguard.
   await openCreateMenu(page);
-  let cancelledConfirmation = null;
-  page.once("dialog", async (dialog) => {
-    cancelledConfirmation = { type: dialog.type(), message: dialog.message() };
-    await dialog.dismiss();
-  });
   await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  if (cancelledConfirmation?.type !== "confirm" || !cancelledConfirmation.message.includes("create a new drawing")) {
-    throw new Error("Create > Blank drawing did not request confirmation for existing work.");
-  }
+  const cancelledPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
+  await cancelledPrompt.waitFor();
+  await cancelledPrompt.getByRole("button", { name: "Cancel" }).click();
+  await cancelledPrompt.waitFor({ state: "detached" });
   console.log("PASS: replacing an existing drawing requires confirmation.");
 
   // Confirming replacement returns the user to an empty, editable canvas.
   await openCreateMenu(page);
-  let confirmedReplacement = false;
-  page.once("dialog", async (dialog) => {
-    confirmedReplacement = dialog.type() === "confirm";
-    await dialog.accept();
-  });
   await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  if (!confirmedReplacement) throw new Error("Confirmation was not shown when replacing the drawing.");
+  const confirmedPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
+  await confirmedPrompt.waitFor();
+  await confirmedPrompt.getByRole("button", { name: "Continue" }).click();
+  await confirmedPrompt.waitFor({ state: "detached" });
   await page.getByText("New drawing", { exact: true }).waitFor({ timeout: 10000 });
   await page.locator(".excalidraw").waitFor();
   console.log("PASS: confirmed replacement creates a blank drawing.");
@@ -73,7 +67,7 @@ try {
   await openCreateMenu(blank.page);
   await blank.page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
-  await blank.page.getByRole("button", { name: "Create drawing" }).waitFor();
+  await blank.page.getByRole("button", { name: "Create" }).waitFor();
   console.log("PASS: Create > Blank drawing opens the editor.");
 
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
@@ -230,10 +224,11 @@ try {
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-local-style"),
   );
   const empty = await readGrid();
+  const gridWidthMatchesCanvas = Math.abs(parseFloat(empty.baseWidth) - empty.canvasWidth) <= 2;
+  const gridHeightMatchesCanvas = Math.abs(parseFloat(empty.baseHeight) - empty.canvasHeight) <= 2;
   if (!empty.enabled || empty.display === "none" || empty.active || empty.detailOpacity > 0.01 ||
       empty.pointerEvents !== "none" || empty.canvasBackground !== "none" ||
-      !twoLines(empty.baseImage) || empty.baseWidth !== `${empty.canvasWidth}px` ||
-      empty.baseHeight !== `${empty.canvasHeight}px` ||
+      !twoLines(empty.baseImage) || !gridWidthMatchesCanvas || !gridHeightMatchesCanvas ||
       !empty.coarseSize || empty.coarseSize <= 0) {
     throw new Error(`Coarse grid must fill an idle canvas without fine detail: ${JSON.stringify(empty)}`);
   }
@@ -319,7 +314,7 @@ try {
   console.log("PASS: native Excalidraw clipboard notification clears the drawing toolbar.");
 
   // Advanced work remains accessible without crowding the main drawing UI.
-  await blank.page.getByRole("button", { name: /Local document save status/ }).click();
+  await blank.page.getByRole("button", { name: /Download and save options/ }).click();
   await blank.page.getByRole("button", { name: /Export studio/ }).click();
   await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("button", { name: "Close export studio" }).click();

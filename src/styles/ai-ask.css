@@ -375,3 +375,156 @@
   .ai-ask-scope-row { align-items: stretch; flex-direction: column; gap: 6px; }
   .ai-ask-scope-switch { display: grid; grid-template-columns: 1fr 1fr; }
 }
+
+
+/* AI Ask uses a calm teal identity without changing the rest of the app theme. */
+.ai-ask-panel {
+  --ui-accent: #087f79;
+  --ui-active: #e4f4f2;
+  --ai-ask-accent: #159b92;
+  --ai-ask-accent-strong: #087f79;
+  --ai-ask-accent-soft: color-mix(in srgb, var(--ai-ask-accent) 13%, var(--ui-surface-solid, #fff));
+  --ai-ask-accent-border: color-mix(in srgb, var(--ai-ask-accent) 34%, var(--ui-border, #dedede));
+  --ai-ask-accent-ink: #062d2a;
+}
+
+.app.theme-dark .ai-ask-panel {
+  --ui-accent: #57d1c6;
+  --ui-active: #173537;
+  --ai-ask-accent: #37bdb2;
+  --ai-ask-accent-strong: #70ddd3;
+  --ai-ask-accent-soft: #173537;
+  --ai-ask-accent-border: #28635f;
+  --ai-ask-accent-ink: #062523;
+}
+
+.ai-ask-mark,
+.ai-ask-signin-icon,
+.ai-ask-assistant-mark {
+  background: var(--ai-ask-accent-soft);
+  color: var(--ai-ask-accent-strong);
+}
+.ai-ask-mark svg { width: 100%; height: 100%; }
+.ai-ask-signin-icon svg { width: 28px; height: 28px; }
+.ai-ask-assistant-mark svg { display: block; width: 100%; height: 100%; }
+.ai-ask-provider-manage,
+.ai-ask-retry,
+.ai-ask-markdown a { color: var(--ai-ask-accent-strong); }
+.ai-ask-primary {
+  border-color: transparent;
+  background: var(--ai-ask-accent);
+  color: var(--ai-ask-accent-ink);
+}
+.ai-ask-primary:hover:not(:disabled) { background: var(--ai-ask-accent-strong); }
+.ai-ask-primary:focus-visible,
+.ai-ask-provider-summary:focus-visible,
+.ai-ask-key-actions button:focus-visible {
+  outline: 2px solid var(--ai-ask-accent-strong);
+  outline-offset: 2px;
+}
+.ai-ask-scope-switch button[aria-pressed="true"] {
+  color: var(--ai-ask-accent-strong);
+}
+.ai-ask-scope-switch button:focus-visible,
+.ai-ask-composer textarea:focus,
+.ai-ask-key-row input:focus,
+.ai-ask-provider-row select:focus {
+  outline-color: var(--ai-ask-accent-strong);
+}
+.ai-ask-starters button:hover {
+  border-color: var(--ai-ask-accent-border);
+  background: var(--ai-ask-accent-soft);
+}
+.ai-ask-spinner { border-top-color: var(--ai-ask-accent-strong); }
+.ai-ask-markdown blockquote { border-left-color: var(--ai-ask-accent); }
+
+/* Keep key setup in the drawer's layout so it pushes chat content down instead
+   of covering starter prompts and messages. */
+.ai-ask-provider-settings {
+  position: static;
+  z-index: auto;
+  flex: 0 0 auto;
+  width: auto;
+  max-height: min(42vh, 360px);
+  margin: 0 12px 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--ui-border, #dedede);
+  border-radius: 11px;
+  background: var(--ui-surface-soft, #f7f7f8);
+  box-shadow: none;
+}
+.ai-ask-provider-settings .ai-ask-provider-row {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--ui-border-soft, #eee);
+}
+.ai-ask-provider-settings .ai-ask-byok-settings {
+  padding: 12px;
+  border-bottom: 0;
+}
+.ai-ask-provider-settings .ai-ask-usage { padding: 10px 12px; }
+.ai-ask-provider-summary { border-color: var(--ai-ask-accent-border); }
+.ai-ask-provider-disclosure.is-open .ai-ask-provider-summary {
+  border-color: var(--ai-ask-accent-border);
+  background: var(--ai-ask-accent-soft);
+}
+.ai-ask-key-actions .ai-ask-primary { min-width: 92px; }
+.ai-ask-key-row input:focus,
+.ai-ask-provider-row select:focus,
+.ai-ask-composer textarea:focus { border-color: var(--ai-ask-accent); }
+
+.app .ai-ask-toggle {
+  border-color: #b8ddd9;
+  background: #edf8f7;
+  color: #155c58;
+}
+.app .ai-ask-toggle .ai-ask-toggle-icon { color: #128d84; }
+.app .ai-ask-toggle:hover,
+.app .ai-ask-toggle.active {
+  border-color: #64bcb4;
+  background: #dff2f0;
+  color: #104e4b;
+}
+.app.theme-dark .ai-ask-toggle {
+  border-color: #28504e;
+  background: #172827;
+  color: #c8eeea;
+}
+.app.theme-dark .ai-ask-toggle .ai-ask-toggle-icon { color: #65d4c9; }
+.app.theme-dark .ai-ask-toggle:hover,
+.app.theme-dark .ai-ask-toggle.active {
+  border-color: #347a74;
+  background: #203a38;
+  color: #e2fbf8;
+}
+.app .desktop-app-header-panel-actions .ai-ask-toggle {
+  border-color: #b8ddd9;
+  background: #edf8f7;
+  color: #155c58;
+}
+.app .desktop-app-header-panel-actions .ai-ask-toggle .ai-ask-toggle-icon { color: #128d84; }
+.app .desktop-app-header-panel-actions .ai-ask-toggle:hover,
+.app .desktop-app-header-panel-actions .ai-ask-toggle.active {
+  border-color: #64bcb4;
+  background: #dff2f0;
+  color: #104e4b;
+}
+.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle {
+  border-color: #28504e;
+  background: #172827;
+  color: #c8eeea;
+}
+.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle .ai-ask-toggle-icon { color: #65d4c9; }
+.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle:hover,
+.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle.active {
+  border-color: #347a74;
+  background: #203a38;
+  color: #e2fbf8;
+}
+
+@media (max-width: 460px) {
+  .ai-ask-provider-settings { max-height: 38vh; margin-right: 8px; margin-left: 8px; }
+  .ai-ask-provider-settings .ai-ask-provider-row { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .ai-ask-provider-settings .ai-ask-provider-row select { width: 100%; }
+  .ai-ask-provider-settings .ai-ask-byok-settings { padding: 10px; }
+}
