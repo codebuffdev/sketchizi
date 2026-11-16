@@ -41,7 +41,6 @@ export default function CanvasPages({ api, canEdit = true }) {
       }
       if (repairs.size) {
         api.updateScene({elements:api.getSceneElementsIncludingDeleted().map(e => repairs.get(e.id) || e),captureUpdate:CaptureUpdateAction.NEVER});
-        return;
       }
       const selected = next.find(p => p.id === activeIdRef.current) || next[0];
       if (selected && !activeIdRef.current) {
