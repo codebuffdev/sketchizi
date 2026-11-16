@@ -158,29 +158,29 @@ export default function CanvasPages({ api, canEdit = true }) {
     return () => window.removeEventListener('resize', refresh);
   }, [api, mode, active?.id]);
 
-  const startResize = (event, corner) => {
+  const startResize = (event, edge) => {
     if (!canEdit || !active || !api) return;
     event.preventDefault();
     event.stopPropagation();
     const start = { x: event.clientX, y: event.clientY };
     const original = { x: active.x, y: active.y, width: active.width, height: active.height };
-    const zoom = Math.max(0.01, Number(api.getAppState()?.zoom?.value || 1));
     const pointerId = event.pointerId;
     const move = e => {
       if (e.pointerId !== pointerId) return;
+      const zoom = Math.max(0.01, Number(api.getAppState()?.zoom?.value || 1));
       const dx = (e.clientX - start.x) / zoom;
       const dy = (e.clientY - start.y) / zoom;
-      // Each corner resizes both dimensions. West/north edges move while
-      // preserving the opposite (east/south) edge of the page.
-      const width = Math.max(320, Math.min(10000, original.width + (corner.includes('w') ? -dx : dx)));
-      const height = Math.max(320, Math.min(10000, original.height + (corner.includes('n') ? -dy : dy)));
-      const x = corner.includes('w') ? original.x + original.width - width : original.x;
-      const y = corner.includes('n') ? original.y + original.height - height : original.y;
-      const elements = api.getSceneElementsIncludingDeleted().map(e =>
-        e.id === active.id || e.customData?.sketchiziPagePaper === active.id
-          ? { ...e, x, y, width, height, version: e.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
-          : e
-      );
+      const horizontal = edge.includes('w') || edge.includes('e');
+      const vertical = edge.includes('n') || edge.includes('s');
+      const width = horizontal ? Math.max(320, Math.min(10000, original.width + (edge.includes('w') ? -dx : dx))) : original.width;
+      const height = vertical ? Math.max(320, Math.min(10000, original.height + (edge.includes('n') ? -dy : dy))) : original.height;
+      const x = edge.includes('w') ? original.x + original.width - width : original.x;
+      const y = edge.includes('n') ? original.y + original.height - height : original.y;
+      const elements = api.getSceneElementsIncludingDeleted().map(element => {
+        if (element.id !== active.id && element.customData?.sketchiziPagePaper !== active.id) return element;
+        return { ...element, x, y, width, height, version: (element.version || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+      });
       api.updateScene({ elements, captureUpdate: CaptureUpdateAction.EVENTUALLY });
       const nextPage = { ...active, x, y, width, height };
       setPageMask(getPageViewportMask(nextPage, api.getAppState()));
@@ -273,10 +273,19 @@ export default function CanvasPages({ api, canEdit = true }) {
         <div className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }}>{active?.name || `Page ${index + 1}`}</div>
       </div>, host)}
     {mode === 'pages' && pageMask && host && createPortal(<>
-      {['nw','ne','sw','se'].map(corner => <button key={corner} type="button" className={`canvas-pages-resize-handle is-${corner}`} style={{
-        left: corner.includes('w') ? pageMask.pageRect.left : pageMask.pageRect.left + pageMask.pageRect.width,
-        top: corner.includes('n') ? pageMask.pageRect.top : pageMask.pageRect.top + pageMask.pageRect.height,
-      }} aria-label={`Resize page from ${corner.toUpperCase()} corner`} title="Drag to change page length" onPointerDown={event => startResize(event, corner)} />)}
+      {['nw','n','ne','e','se','s','sw','w'].map(edge => {
+        const rect = pageMask.pageRect;
+        const positions = {
+          nw: [rect.left, rect.top], n: [rect.left + rect.width / 2, rect.top],
+          ne: [rect.left + rect.width, rect.top], e: [rect.left + rect.width, rect.top + rect.height / 2],
+          se: [rect.left + rect.width, rect.top + rect.height], s: [rect.left + rect.width / 2, rect.top + rect.height],
+          sw: [rect.left, rect.top + rect.height], w: [rect.left, rect.top + rect.height / 2],
+        };
+        const [left, top] = positions[edge];
+        return <button key={edge} type="button" className={`canvas-pages-resize-handle is-${edge}`}
+          style={{ left, top }} aria-label={`Resize page from ${edge.toUpperCase()} ${edge.length === 1 ? 'edge' : 'corner'}`}
+          title="Drag to resize page" onPointerDown={event => startResize(event, edge)} />;
+      })}
     </>,host)}
     {mode === 'pages' && host && createPortal(<>
       <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" disabled={!active || !canEdit} onClick={() => rename(active)}>Rename</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
