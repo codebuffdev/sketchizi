@@ -314,7 +314,7 @@ try {
   console.log("PASS: native Excalidraw clipboard notification clears the drawing toolbar.");
 
   // Advanced work remains accessible without crowding the main drawing UI.
-  await blank.page.getByRole("button", { name: /Local document save status/ }).click();
+  await blank.page.getByRole("button", { name: /Download and save options/ }).click();
   await blank.page.getByRole("button", { name: /Export studio/ }).click();
   await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("button", { name: "Close export studio" }).click();
