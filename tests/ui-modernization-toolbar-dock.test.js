@@ -51,3 +51,17 @@ test('bottom-left navigation keeps only the zoom percentage visible', () => {
   assert.match(css, /\.undo-redo-buttons[\s\S]*?display:\s*none !important/);
   assert.match(css, /\.zoom-actions \.reset-zoom[\s\S]*?background:\s*transparent !important/);
 });
+
+
+test('dock uses semantic tool-family separators and a neutral active accent', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /name: "selection-shapes"/);
+  assert.match(canvas, /name: "connectors"/);
+  assert.match(canvas, /name: "drawing"/);
+  assert.match(canvas, /name: "annotation-editing"/);
+  assert.match(canvas, /data-sketchizi-dock-layout/);
+  assert.match(css, /data-sketchizi-dock-layout="grouped"/);
+  assert.match(css, /--sk-dock-group-divider/);
+  assert.match(css, /#477f91/);
+  assert.doesNotMatch(css, /linear-gradient\\(145deg, #7669e8, #5b50bc\\)/);
+});
