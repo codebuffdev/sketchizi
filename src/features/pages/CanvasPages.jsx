@@ -170,8 +170,10 @@ export default function CanvasPages({ api, canEdit = true }) {
       if (e.pointerId !== pointerId) return;
       const dx = (e.clientX - start.x) / zoom;
       const dy = (e.clientY - start.y) / zoom;
-      const width = Math.max(320, Math.min(10000, original.width + (corner.includes('e') ? dx : -dx)));
-      const height = Math.max(320, Math.min(10000, original.height + (corner.includes('s') ? dy : -dy)));
+      // Each corner resizes both dimensions. West/north edges move while
+      // preserving the opposite (east/south) edge of the page.
+      const width = Math.max(320, Math.min(10000, original.width + (corner.includes('w') ? -dx : dx)));
+      const height = Math.max(320, Math.min(10000, original.height + (corner.includes('n') ? -dy : dy)));
       const x = corner.includes('w') ? original.x + original.width - width : original.x;
       const y = corner.includes('n') ? original.y + original.height - height : original.y;
       const elements = api.getSceneElementsIncludingDeleted().map(e =>
@@ -266,16 +268,18 @@ export default function CanvasPages({ api, canEdit = true }) {
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
-        <div className="canvas-pages-page-grid" style={pageMask.pageRect} aria-hidden="true" />
+        <div className="canvas-pages-page-surface" style={pageMask.pageRect} aria-hidden="true" />
         <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
         <div className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }}>{active?.name || `Page ${index + 1}`}</div>
-        {['nw','ne','sw','se'].map(corner => <button key={corner} type="button" className={`canvas-pages-resize-handle is-${corner}`} style={{
-          left: corner.includes('w') ? pageMask.pageRect.left : pageMask.pageRect.left + pageMask.pageRect.width,
-          top: corner.includes('n') ? pageMask.pageRect.top : pageMask.pageRect.top + pageMask.pageRect.height,
-        }} aria-label={`Resize page from ${corner.toUpperCase()} corner`} title="Drag to resize page" onPointerDown={event => startResize(event, corner)} />)}
       </div>, host)}
+    {mode === 'pages' && pageMask && host && createPortal(<>
+      {['nw','ne','sw','se'].map(corner => <button key={corner} type="button" className={`canvas-pages-resize-handle is-${corner}`} style={{
+        left: corner.includes('w') ? pageMask.pageRect.left : pageMask.pageRect.left + pageMask.pageRect.width,
+        top: corner.includes('n') ? pageMask.pageRect.top : pageMask.pageRect.top + pageMask.pageRect.height,
+      }} aria-label={`Resize page from ${corner.toUpperCase()} corner`} title="Drag to change page length" onPointerDown={event => startResize(event, corner)} />)}
+    </>,host)}
     {mode === 'pages' && host && createPortal(<>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
+      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" disabled={!active || !canEdit} onClick={() => rename(active)}>Rename</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
     </>,host)}
   </>;
 }
