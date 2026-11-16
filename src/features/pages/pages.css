@@ -167,12 +167,16 @@
   background: var(--ui-surface-solid, #fff);
 }
 
-/* The page is a plain sheet; resize handles are portaled above Excalidraw UI. */
+/* Restore the subtle default grid on the page surface. */
 .canvas-pages-page-surface {
   position: fixed;
   z-index: 1;
   pointer-events: none;
-  background: var(--ui-surface-solid, #fff);
+  background-color: var(--ui-surface-solid, #fff);
+  background-image:
+    linear-gradient(var(--canvas-pages-page-grid, rgba(30,41,59,.065)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-pages-page-grid, rgba(30,41,59,.065)) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 .canvas-pages-resize-handle { z-index: 10031 !important; }
 
