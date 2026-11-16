@@ -1756,3 +1756,37 @@
   background: rgb(32 38 46 / 55%) !important;
   box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
 }
+
+
+/* Keep only the zoom percentage in the bottom-left navigation area.
+   Zoom actions and history remain available through their existing shortcuts. */
+.app .excalidraw .zoom-actions .zoom-out,
+.app .excalidraw .zoom-actions .zoom-in,
+.app .excalidraw .zoom-actions .sketchizi-fit-content-button,
+.app .excalidraw .undo-redo-buttons {
+  display: none !important;
+}
+
+.app .excalidraw .zoom-actions {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app .excalidraw .zoom-actions .reset-zoom {
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 2px 5px !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
