@@ -1931,3 +1931,211 @@
     margin-left: 4px !important;
   }
 }
+
+
+/* Sketchizi Canvas First — soft floating monochrome toolbar (Direction B).
+   Presentation-only: native Excalidraw controls, order, shortcuts and handlers remain intact. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  --sk-toolbar-ink: #34383c;
+  --sk-toolbar-muted: #777e84;
+  --sk-toolbar-surface: rgb(250 250 248 / 94%);
+  --sk-toolbar-border: rgb(35 40 45 / 10%);
+  --sk-toolbar-hover: #eceeec;
+  --sk-toolbar-active: #e4e7e5;
+  min-height: 44px !important;
+  gap: 2px !important;
+  padding: 4px 7px !important;
+  border: 1px solid var(--sk-toolbar-border) !important;
+  border-radius: 15px !important;
+  background: var(--sk-toolbar-surface) !important;
+  box-shadow: 0 5px 18px rgb(20 25 30 / 9%), 0 1px 3px rgb(20 25 30 / 5%) !important;
+  backdrop-filter: blur(18px) saturate(115%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(115%) !important;
+  color: var(--sk-toolbar-ink) !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--sk-toolbar-muted) !important;
+  box-shadow: none !important;
+  transition: background-color 130ms ease, color 130ms ease, transform 130ms ease !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon:hover,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button:hover,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool:hover {
+  border-color: transparent !important;
+  background: var(--sk-toolbar-hover) !important;
+  color: var(--sk-toolbar-ink) !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool[aria-pressed="true"] {
+  border-color: transparent !important;
+  background: var(--sk-toolbar-active) !important;
+  color: #202428 !important;
+  box-shadow: inset 0 0 0 1px rgb(40 48 52 / 5%) !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon svg,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-separator {
+  display: none !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] > [data-sketchizi-group-start="true"] {
+  margin-inline-start: 7px !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-grip {
+  color: #a0a5a8 !important;
+  opacity: .65;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-grip:hover {
+  color: #626a70 !important;
+  background: transparent !important;
+}
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  --sk-toolbar-ink: #e7e9e8;
+  --sk-toolbar-muted: #a2a8aa;
+  --sk-toolbar-surface: rgb(37 40 42 / 94%);
+  --sk-toolbar-border: rgb(235 239 240 / 10%);
+  --sk-toolbar-hover: #34383a;
+  --sk-toolbar-active: #414648;
+  box-shadow: 0 6px 22px rgb(0 0 0 / 22%), 0 1px 3px rgb(0 0 0 / 16%) !important;
+}
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button,
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool {
+  color: var(--sk-toolbar-muted) !important;
+}
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon.active .ToolIcon__icon,
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool[aria-pressed="true"] {
+  color: #f5f6f5 !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%) !important;
+}
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  --sk-toolbar-ink: #34383c;
+  --sk-toolbar-muted: #777e84;
+  --sk-toolbar-surface: rgb(250 250 248 / 94%);
+  --sk-toolbar-border: rgb(35 40 45 / 10%);
+  --sk-toolbar-hover: #eceeec;
+  --sk-toolbar-active: #e4e7e5;
+}
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+  color: #202428 !important;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] > [data-sketchizi-group-start="true"] {
+  margin-inline-start: 0 !important;
+  margin-block-start: 7px !important;
+}
+
+/* Contextual formatting is a compact sibling surface: it exists only while a
+   tool or selection needs it, and uses the same neutral floating language. */
+.app .contextual-formatting-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px !important;
+  border: 1px solid rgb(55 62 67 / 10%) !important;
+  border-radius: 13px !important;
+  background: rgb(250 250 248 / 96%) !important;
+  box-shadow: 0 5px 18px rgb(20 25 30 / 10%) !important;
+  backdrop-filter: blur(16px) saturate(110%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(110%) !important;
+}
+.app .contextual-formatting-toolbar .format-icon-rail {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #687076 !important;
+  box-shadow: none !important;
+  transition: background-color 130ms ease, color 130ms ease !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button:hover,
+.app .contextual-formatting-toolbar .format-icon-button.is-active,
+.app .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  border-color: transparent !important;
+  background: #e9ecea !important;
+  color: #252a2d !important;
+}
+.app .contextual-formatting-toolbar .format-options-popover {
+  border: 1px solid rgb(55 62 67 / 12%) !important;
+  border-radius: 12px !important;
+  background: #fbfbfa !important;
+  color: #30363a !important;
+  box-shadow: 0 10px 30px rgb(20 25 30 / 13%) !important;
+}
+.app .contextual-formatting-toolbar .format-option-button {
+  border-color: transparent !important;
+  border-radius: 7px !important;
+  background: #f0f1ef !important;
+  color: #41484c !important;
+}
+.app .contextual-formatting-toolbar .format-option-button:hover,
+.app .contextual-formatting-toolbar .format-option-button.is-selected {
+  border-color: transparent !important;
+  background: #e0e4e1 !important;
+  color: #202629 !important;
+}
+.app.theme-dark .contextual-formatting-toolbar {
+  border-color: rgb(235 239 240 / 10%) !important;
+  background: rgb(37 40 42 / 96%) !important;
+  color: #e7e9e8 !important;
+  box-shadow: 0 6px 22px rgb(0 0 0 / 25%) !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button {
+  color: #aab0b2 !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button:hover,
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button.is-active,
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  background: #414648 !important;
+  color: #f5f6f5 !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-options-popover {
+  border-color: rgb(235 239 240 / 12%) !important;
+  background: #292d2f !important;
+  color: #e7e9e8 !important;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 35%) !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-option-button {
+  background: #363b3d !important;
+  color: #d1d6d6 !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-option-button:hover,
+.app.theme-dark .contextual-formatting-toolbar .format-option-button.is-selected {
+  background: #484e50 !important;
+  color: #fff !important;
+}
+.app .contextual-formatting-toolbar :is(button, input, select):focus-visible {
+  outline: 2px solid #747d80 !important;
+  outline-offset: 2px !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"] :is(.ToolIcon__icon, .dropdown-menu-button, .sketchizi-dock-quick-tool),
+  .app .contextual-formatting-toolbar * {
+    transition: none !important;
+  }
+}
