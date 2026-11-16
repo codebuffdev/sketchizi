@@ -15,7 +15,7 @@ test('toolbar dock defines a visibly larger premium floating surface', () => {
 test('toolbar buttons have consistent hit areas and a strong selected state', () => {
   assert.match(css, /width:\s*42px !important/);
   assert.match(css, /\.ToolIcon\.active \.ToolIcon__icon/);
-  assert.match(css, /linear-gradient\(145deg, #7669e8, #5b50bc\)/);
+  assert.match(css, /#477f91/);
   assert.match(css, /:focus-visible/);
 });
 
@@ -63,5 +63,5 @@ test('dock uses semantic tool-family separators and a neutral active accent', ()
   assert.match(css, /data-sketchizi-dock-layout="grouped"/);
   assert.match(css, /--sk-dock-group-divider/);
   assert.match(css, /#477f91/);
-  assert.doesNotMatch(css, /linear-gradient\\(145deg, #7669e8, #5b50bc\\)/);
+  assert.doesNotMatch(css, /#7669e8/);
 });
