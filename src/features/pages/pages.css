@@ -10,7 +10,7 @@
 .canvas-pages-menu label { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; margin-top:12px; }
 .canvas-pages-menu input, .canvas-pages-menu select { box-sizing:border-box; width:120px; padding:7px; border:1px solid var(--ui-border); border-radius:7px; color:var(--ui-text-strong); background:var(--ui-surface-solid); }
 .canvas-pages-menu > small { margin-top:12px; }
-.canvas-pages-panel, .canvas-pages-navigation { position:fixed; z-index:90; background:var(--ui-surface-solid); color:var(--ui-text-strong); border:1px solid var(--ui-border); border-radius:14px; box-shadow:0 8px 28px #0002; font-size:12px; }
+.canvas-pages-panel, .canvas-pages-navigation { position:fixed; z-index:10030; background:var(--ui-surface-solid); color:var(--ui-text-strong); border:1px solid var(--ui-border); border-radius:14px; box-shadow:0 8px 28px #0002; font-size:12px; }
 .canvas-pages-panel { left:16px; top:110px; bottom:100px; width:166px; padding:10px; display:flex; flex-direction:column; gap:8px; }
 .canvas-pages-panel.is-collapsed { bottom:auto; width:82px; }
 .canvas-pages-heading { display:flex; justify-content:space-between; font-weight:700 !important; }
@@ -36,8 +36,125 @@
 @media (max-width:767px) { .app .canvas-pages-menu { top:calc(100% + 24px); left:auto; right:0; width:min(280px, calc(100vw - 24px)); } }
 
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
-.canvas-pages-mask { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
-.canvas-pages-mask > div { position: fixed; pointer-events: auto; }
+.canvas-pages-mask { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.canvas-pages-mask > div { position: fixed; pointer-events: none; }
+/* Only the outside-page gutters block input. Inside-page overlays (grid,
+   outline and page label) must always pass drawing/text events through. */
+.canvas-pages-mask > .canvas-pages-mask-panel { pointer-events: auto; }
+.canvas-pages-mask > .canvas-pages-resize-handle { pointer-events: auto; }
 
-/* Gutter panels are hard input shields: clicks, touch, wheel, and drops never reach the canvas. */
-.canvas-pages-mask-panel { pointer-events:auto; touch-action:none; user-select:none; }
+
+/* Pages mode: turn the existing canvas into a continuous artboard workspace.
+   The page remains a native Excalidraw frame; this styling only removes the
+   floating-canvas presentation and gives the surrounding workspace its grid. */
+.app:has(.canvas-pages-mask) .desktop-canvas-region {
+  background-color: var(--canvas-pages-gutter, #111820) !important;
+  background-image:
+    linear-gradient(var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    radial-gradient(circle at 1px 1px, var(--canvas-pages-dot, rgba(148,163,184,.12)) 1px, transparent 0) !important;
+  background-size: 24px 24px !important;
+}
+.app:has(.canvas-pages-mask) .desktop-canvas-region > .canvas {
+  background: transparent !important;
+}
+.app:has(.canvas-pages-mask) .desktop-canvas-region > .canvas > .excalidraw {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  /* The normal canvas surface isolates stacking contexts; Pages must let the
+     native toolbar dock rise above the page-isolation masks. */
+  isolation: auto !important;
+}
+.canvas-pages-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.canvas-pages-mask > .canvas-pages-mask-panel {
+  position: fixed;
+  /* Gutter panels intentionally block input outside the active page. */
+  pointer-events: auto;
+  background-color: var(--canvas-pages-gutter, #111820);
+  background-image:
+    linear-gradient(var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    radial-gradient(circle at 1px 1px, var(--canvas-pages-dot, rgba(148,163,184,.12)) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+.canvas-pages-mask > .canvas-pages-page-outline {
+  pointer-events: none !important;
+}
+.app.theme-dark { --canvas-pages-gutter:#111820; --canvas-pages-grid:rgba(255,255,255,.035); --canvas-pages-dot:rgba(148,163,184,.12); --canvas-pages-page-grid:rgba(255,255,255,.045); }
+.app.theme-light { --canvas-pages-gutter:#f7f9fc; --canvas-pages-grid:rgba(30,41,59,.055); --canvas-pages-dot:rgba(71,85,105,.13); --canvas-pages-page-grid:rgba(30,41,59,.065); }
+.canvas-pages-page-outline {
+  position: fixed;
+  z-index: 1;
+  box-sizing: border-box;
+  border: 1px solid rgba(151, 143, 207, .92);
+  box-shadow: 0 0 0 1px rgba(151, 143, 207, .12);
+  pointer-events: none;
+}
+.canvas-pages-page-outline i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border: 1px solid #a79de0;
+  border-radius: 2px;
+  background: var(--canvas-pages-gutter, #111820);
+}
+.canvas-pages-page-outline i:nth-child(1) { left: -4px; top: -4px; }
+.canvas-pages-page-outline i:nth-child(2) { right: -4px; top: -4px; }
+.canvas-pages-page-outline i:nth-child(3) { left: -4px; bottom: -4px; }
+.canvas-pages-page-outline i:nth-child(4) { right: -4px; bottom: -4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .canvas-pages-page-outline { transition: left 100ms ease, top 100ms ease, width 100ms ease, height 100ms ease; }
+}
+
+/* Keep Excalidraw's native UI layer above the page-isolation mask. */
+.app:has(.canvas-pages-mask) .desktop-canvas-region .excalidraw .layer-ui__wrapper { z-index: 10020 !important; }
+.app:has(.canvas-pages-mask) .excalidraw .App-toolbar-container { z-index: 10021 !important; }
+.app:has(.canvas-pages-mask) .excalidraw .App-toolbar { z-index: 10022 !important; }
+.canvas-pages-page-grid {
+  position: fixed;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--canvas-pages-page-grid, rgba(255,255,255,.045)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-pages-page-grid, rgba(255,255,255,.045)) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.canvas-pages-page-outline { z-index: 2; }
+.canvas-pages-page-name {
+  position: fixed;
+  z-index: 5;
+  pointer-events: none;
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.canvas-pages-resize-handle {
+  position: fixed;
+  z-index: 6;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  padding: 0;
+  border: 1px solid #a79de0;
+  border-radius: 3px;
+  background: var(--ui-surface-solid, #fff);
+  box-shadow: 0 1px 4px #0004;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: nwse-resize;
+}
+.canvas-pages-resize-handle.is-ne,
+.canvas-pages-resize-handle.is-sw { cursor: nesw-resize; }
