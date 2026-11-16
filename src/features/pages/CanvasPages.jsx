@@ -19,6 +19,8 @@ export default function CanvasPages({ api, canEdit = true }) {
   const signature = useRef('');
   const sceneSnapshot = useRef(null);
   const active = pages.find(p => p.id === activeId) || pages[0];
+  const activePageRef = useRef(active);
+  activePageRef.current = active;
   const index = pages.findIndex(p => p.id === active?.id);
   const host = document.querySelector('.app');
 
@@ -142,14 +144,19 @@ export default function CanvasPages({ api, canEdit = true }) {
   }, [api, mode, active?.id]);
 
   useEffect(() => {
-    if (mode !== 'pages' || !active || !api) { setPageMask(null); return; }
-    // Refit the active page when the available window changes so its display
-    // size remains responsive without changing its saved artboard dimensions.
-    const refresh = () => fit(active);
+    if (mode !== 'pages' || !activePageRef.current || !api) { setPageMask(null); return; }
+    // Fit only when entering Pages mode or switching pages. Resizing updates
+    // the active page dimensions on every pointer move; fitting on those
+    // updates changes the zoom under the pointer and makes the page appear
+    // to shrink while it is being dragged.
+    const refresh = () => {
+      const page = activePageRef.current;
+      if (page) fit(page);
+    };
     refresh();
     window.addEventListener('resize', refresh);
     return () => window.removeEventListener('resize', refresh);
-  }, [api, mode, active?.id, active?.x, active?.y, active?.width, active?.height]);
+  }, [api, mode, active?.id]);
 
   const startResize = (event, corner) => {
     if (!canEdit || !active || !api) return;
