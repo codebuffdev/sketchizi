@@ -5,6 +5,22 @@ export const getPages = (elements) => elements.filter(e => !e.isDeleted && e.typ
 export function validSize(width, height) {
   return [width, height].every(n => Number.isFinite(n) && n >= 320 && n <= 10000);
 }
+// Fit the active artboard with a consistent workspace gutter instead of
+// scaling it edge-to-edge. Recenter after reducing zoom so the page stays put.
+export function getPageFitViewport(page, appState, scale = 0.82) {
+  if (!page || !appState || !Number.isFinite(scale) || scale <= 0 || scale >= 1) return null;
+  const currentZoom = Number(appState.zoom?.value ?? appState.zoom ?? 1);
+  const width = Number(appState.width || 0);
+  const height = Number(appState.height || 0);
+  if (!Number.isFinite(currentZoom) || currentZoom <= 0 || width <= 0 || height <= 0) return null;
+  const zoom = currentZoom * scale;
+  return {
+    zoom: { value: zoom },
+    scrollX: width / (2 * zoom) - page.x - page.width / 2,
+    scrollY: height / (2 * zoom) - page.y - page.height / 2,
+  };
+}
+
 export function getPageViewportMask(page, appState) {
   if (!page || !appState) return null;
   const zoom = Number(appState.zoom?.value ?? appState.zoom ?? 1);
