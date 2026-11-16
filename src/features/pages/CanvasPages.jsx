@@ -6,6 +6,7 @@ import './pages.css';
 
 export default function CanvasPages({ api, canEdit = true }) {
   const [open, setOpen] = useState(false);
+  const [headerHost, setHeaderHost] = useState(null);
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
   const [collapsed, setCollapsed] = useState(false);
   const [pages, setPages] = useState([]);
@@ -21,6 +22,10 @@ export default function CanvasPages({ api, canEdit = true }) {
   const active = pages.find(p => p.id === activeId) || pages[0];
   const index = pages.findIndex(p => p.id === active?.id);
   const host = document.querySelector('.app');
+
+  useEffect(() => {
+    setHeaderHost(document.querySelector('.desktop-app-header-island-center'));
+  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -152,7 +157,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     setError(''); fit({ ...active,width,height });
   };
   return <>
-    <div className="canvas-pages-control" ref={root}>
+    {headerHost && createPortal(<div className="canvas-pages-control" ref={root}>
       <button type="button" className="canvas-pages-trigger" aria-label="Canvas options" title="Canvas options" aria-haspopup="dialog" aria-expanded={open} onClick={() => { setOpen(!open); setError(''); if (active) setSize({width:active.width,height:active.height}); }}>
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/></svg>
       </button>
@@ -166,7 +171,7 @@ export default function CanvasPages({ api, canEdit = true }) {
         <small>Existing artwork stays intact. New pages are added beside it.</small>
         {error && <p role="alert">{error}</p>}
       </div>}
-    </div>
+    </div>, headerHost)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask" aria-hidden="true">
         {pageMask.panels.map((panel, i) => <div key={i} style={{ ...panel, backgroundColor: pageMask.backgroundColor }} />)}
