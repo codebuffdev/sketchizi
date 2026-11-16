@@ -38,3 +38,65 @@
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
 .canvas-pages-mask { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
 .canvas-pages-mask > div { position: fixed; pointer-events: auto; }
+
+
+/* Pages mode: turn the existing canvas into a continuous artboard workspace.
+   The page remains a native Excalidraw frame; this styling only removes the
+   floating-canvas presentation and gives the surrounding workspace its grid. */
+.app:has(.canvas-pages-mask) .desktop-canvas-region {
+  background-color: #10171b !important;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+    radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0) !important;
+  background-size: 24px 24px, 24px 24px, 24px 24px !important;
+}
+.app:has(.canvas-pages-mask) .desktop-canvas-region > .canvas {
+  background: transparent !important;
+}
+.app:has(.canvas-pages-mask) .desktop-canvas-region > .canvas > .excalidraw {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+.canvas-pages-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+.canvas-pages-mask > .canvas-pages-mask-panel {
+  position: fixed;
+  pointer-events: auto;
+  background-color: #10171b;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+    radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+.canvas-pages-page-outline {
+  position: fixed;
+  z-index: 1;
+  box-sizing: border-box;
+  border: 1px solid rgba(151, 143, 207, .92);
+  box-shadow: 0 0 0 1px rgba(151, 143, 207, .12);
+  pointer-events: none;
+}
+.canvas-pages-page-outline i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border: 1px solid #a79de0;
+  border-radius: 2px;
+  background: #10171b;
+}
+.canvas-pages-page-outline i:nth-child(1) { left: -4px; top: -4px; }
+.canvas-pages-page-outline i:nth-child(2) { right: -4px; top: -4px; }
+.canvas-pages-page-outline i:nth-child(3) { left: -4px; bottom: -4px; }
+.canvas-pages-page-outline i:nth-child(4) { right: -4px; bottom: -4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .canvas-pages-page-outline { transition: left 100ms ease, top 100ms ease, width 100ms ease, height 100ms ease; }
+}
