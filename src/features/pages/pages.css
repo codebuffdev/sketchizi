@@ -71,7 +71,10 @@
 }
 .canvas-pages-mask > .canvas-pages-mask-panel {
   position: fixed;
-  pointer-events: auto;
+  /* Gutter panels are visual-only. Never let the Pages overlay intercept
+     pointer input intended for Excalidraw, including when viewport bounds
+     are rounded or temporarily stale during zoom/resize. */
+  pointer-events: none;
   background-color: var(--canvas-pages-gutter, #111820);
   background-image:
     linear-gradient(var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
