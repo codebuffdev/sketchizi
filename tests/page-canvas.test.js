@@ -39,7 +39,8 @@ test('page viewport mask leaves only the selected page visible and blocks the su
   {x:500,y:200,width:1000,height:800},
   {offsetLeft:100,offsetTop:50,width:1200,height:900,scrollX:0,scrollY:0,zoom:{value:0.5},viewBackgroundColor:'#f4f5f7'}
  );
- assert.equal(mask.backgroundColor,'#f4f5f7');
+ assert.equal(mask.backgroundColor,'#10171b');
+ assert.deepEqual(mask.pageRect,{left:350,top:150,width:500,height:400});
  assert.deepEqual(mask.panels,[
   {left:100,top:50,width:1200,height:100},
   {left:100,top:550,width:1200,height:400},
