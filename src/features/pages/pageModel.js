@@ -14,7 +14,7 @@ export function getResponsivePageSize(appState, margin = 0.96) {
   // Convert available screen space into Excalidraw world units, preserving
   // the requested physical-page aspect ratio at every viewport size.
   const width = Math.min(viewportWidth * margin / zoom, viewportHeight * margin / zoom * PAGE_ASPECT_RATIO, 10000);
-  const safeWidth = Math.max(80, width);
+  const safeWidth = Math.max(80 * PAGE_ASPECT_RATIO, width);
   return { width: Math.round(safeWidth), height: Math.round(safeWidth / PAGE_ASPECT_RATIO) };
 }
 export const PAGE_PRESETS = { Wide: DEFAULT_PAGE_SIZE, A4: { width: 1123, height: 1587 }, Letter: { width: 1275, height: 1650 } };
