@@ -76,12 +76,12 @@ export function nextPagePosition(elements) {
   const isolationGap = Math.max(10000, pageWidth * 4);
   return { x: live.length ? right + isolationGap : 0, y: 0 };
 }
-export function pageSkeleton(elements, size, id) {
+export function pageSkeleton(elements, size, id, paperBackground = 'transparent') {
   if (!validSize(size.width, size.height)) throw new Error('Use dimensions between 320 and 10,000 pixels.');
   const position = nextPagePosition(elements);
   const order = getPages(elements).reduce((n,p) => Math.max(n, p.customData.pageOrder || 0), 0) + 1;
   return [
-    { type: 'rectangle', id: `${id}-paper`, ...position, ...size, backgroundColor: 'transparent', strokeColor: 'transparent', fillStyle: 'solid', roughness: 0, strokeWidth: 1, locked: true, customData: { sketchiziPagePaper: id } },
+    { type: 'rectangle', id: `${id}-paper`, ...position, ...size, backgroundColor: paperBackground, strokeColor: 'transparent', fillStyle: 'solid', roughness: 0, strokeWidth: 1, locked: true, customData: { sketchiziPagePaper: id } },
     { type: 'frame', id, ...position, ...size, children: [`${id}-paper`], name: `Page ${order}`, locked: false, customData: { [PAGE_MARKER]: true, pageOrder: order } },
   ];
 }
