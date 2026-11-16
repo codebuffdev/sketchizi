@@ -15,6 +15,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [previews, setPreviews] = useState({});
   const [pageMask, setPageMask] = useState(null);
   const activeIdRef = useRef(null);
+  const initialFitRef = useRef(false);
   const root = useRef(null);
   const signature = useRef('');
   const active = pages.find(p => p.id === activeId) || pages[0];
@@ -79,6 +80,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const fit = page => {
     if (!page || !api) return;
     activeIdRef.current = page.id;
+    initialFitRef.current = true;
     setActiveId(page.id);
     api.setViewport({
       target: {x:page.x,y:page.y,width:page.width,height:page.height},
@@ -87,6 +89,12 @@ export default function CanvasPages({ api, canEdit = true }) {
       lock: {scroll:true,zoom:true,overscroll:false},
     });
   };
+  useEffect(() => {
+    if (mode !== 'pages') { initialFitRef.current = false; return; }
+    if (!active || !api || initialFitRef.current) return;
+    fit(active);
+  }, [api, mode, active?.id]);
+
   useEffect(() => {
     if (mode !== 'pages' || !active || !api) { setPageMask(null); return; }
     const refresh = () => setPageMask(getPageViewportMask(active, api.getAppState()));
