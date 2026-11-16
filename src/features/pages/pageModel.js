@@ -1,10 +1,43 @@
 export const PAGE_MARKER = 'sketchiziPage';
-export const DEFAULT_PAGE_SIZE = { width: 1600, height: 1400 };
+// Default artboard proportions are 55 cm × 27 cm. Pixel dimensions are
+// calculated from the available canvas viewport whenever a page is created.
+export const DEFAULT_PAGE_SIZE = { width: 1600, height: Math.round(1600 * 27 / 55) };
+export const PAGE_ASPECT_RATIO = 55 / 27;
+
+export function getResponsivePageSize(appState, margin = 0.96) {
+  const zoom = Number(appState?.zoom?.value ?? appState?.zoom ?? 1);
+  const viewportWidth = Number(appState?.width || 0);
+  const viewportHeight = Number(appState?.height || 0);
+  if (!Number.isFinite(zoom) || zoom <= 0 || viewportWidth <= 0 || viewportHeight <= 0) {
+    return { ...DEFAULT_PAGE_SIZE };
+  }
+  // Convert available screen space into Excalidraw world units, preserving
+  // the requested physical-page aspect ratio at every viewport size.
+  const width = Math.min(viewportWidth * margin / zoom, viewportHeight * margin / zoom * PAGE_ASPECT_RATIO, 10000);
+  const safeWidth = Math.max(80 * PAGE_ASPECT_RATIO, width);
+  return { width: Math.round(safeWidth), height: Math.round(safeWidth / PAGE_ASPECT_RATIO) };
+}
 export const PAGE_PRESETS = { Wide: DEFAULT_PAGE_SIZE, A4: { width: 1123, height: 1587 }, Letter: { width: 1275, height: 1650 } };
 export const getPages = (elements) => elements.filter(e => !e.isDeleted && e.type === 'frame' && e.customData?.[PAGE_MARKER]).sort((a,b) => (a.customData.pageOrder ?? 0) - (b.customData.pageOrder ?? 0));
 export function validSize(width, height) {
-  return [width, height].every(n => Number.isFinite(n) && n >= 320 && n <= 10000);
+  return [width, height].every(n => Number.isFinite(n) && n >= 80 && n <= 10000);
 }
+// Fit the active artboard with a consistent workspace gutter instead of
+// scaling it edge-to-edge. Recenter after reducing zoom so the page stays put.
+export function getPageFitViewport(page, appState, scale = 0.82) {
+  if (!page || !appState || !Number.isFinite(scale) || scale <= 0 || scale >= 1) return null;
+  const currentZoom = Number(appState.zoom?.value ?? appState.zoom ?? 1);
+  const width = Number(appState.width || 0);
+  const height = Number(appState.height || 0);
+  if (!Number.isFinite(currentZoom) || currentZoom <= 0 || width <= 0 || height <= 0) return null;
+  const zoom = currentZoom * scale;
+  return {
+    zoom: { value: zoom },
+    scrollX: width / (2 * zoom) - page.x - page.width / 2,
+    scrollY: height / (2 * zoom) - page.y - page.height / 2,
+  };
+}
+
 export function getPageViewportMask(page, appState) {
   if (!page || !appState) return null;
   const zoom = Number(appState.zoom?.value ?? appState.zoom ?? 1);
@@ -25,7 +58,9 @@ export function getPageViewportMask(page, appState) {
   if (right <= left || bottom <= top) return null;
 
   return {
-    backgroundColor: appState.viewBackgroundColor || (appState.theme === 'dark' ? '#1e1e1e' : '#f8f9fa'),
+    // Match the workspace gutters to the active Excalidraw theme.
+    backgroundColor: appState.theme === 'dark' ? '#111820' : '#f7f9fc',
+    pageRect: { left, top, width: right - left, height: bottom - top },
     panels: [
       { left: viewport.left, top: viewport.top, width: viewport.right - viewport.left, height: top - viewport.top },
       { left: viewport.left, top: bottom, width: viewport.right - viewport.left, height: viewport.bottom - bottom },
@@ -48,7 +83,7 @@ export function pageSkeleton(elements, size, id) {
   const position = nextPagePosition(elements);
   const order = getPages(elements).reduce((n,p) => Math.max(n, p.customData.pageOrder || 0), 0) + 1;
   return [
-    { type: 'rectangle', id: `${id}-paper`, ...position, ...size, backgroundColor: '#ffffff', strokeColor: '#d9dce3', fillStyle: 'solid', roughness: 0, strokeWidth: 1, locked: true, customData: { sketchiziPagePaper: id } },
+    { type: 'rectangle', id: `${id}-paper`, ...position, ...size, backgroundColor: 'transparent', strokeColor: 'transparent', fillStyle: 'solid', roughness: 0, strokeWidth: 1, locked: true, customData: { sketchiziPagePaper: id } },
     { type: 'frame', id, ...position, ...size, children: [`${id}-paper`], name: `Page ${order}`, locked: false, customData: { [PAGE_MARKER]: true, pageOrder: order } },
   ];
 }

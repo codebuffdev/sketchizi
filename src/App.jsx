@@ -1710,8 +1710,6 @@ function App() {
              gridEnabled={gridEnabled}
           />
 
-
-
           {draggingIcon && (
             <div
               className="icon-drag-ghost"
