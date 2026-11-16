@@ -10,7 +10,7 @@
 .canvas-pages-menu label { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; margin-top:12px; }
 .canvas-pages-menu input, .canvas-pages-menu select { box-sizing:border-box; width:120px; padding:7px; border:1px solid var(--ui-border); border-radius:7px; color:var(--ui-text-strong); background:var(--ui-surface-solid); }
 .canvas-pages-menu > small { margin-top:12px; }
-.canvas-pages-panel, .canvas-pages-navigation { position:fixed; z-index:90; background:var(--ui-surface-solid); color:var(--ui-text-strong); border:1px solid var(--ui-border); border-radius:14px; box-shadow:0 8px 28px #0002; font-size:12px; }
+.canvas-pages-panel, .canvas-pages-navigation { position:fixed; z-index:10030; background:var(--ui-surface-solid); color:var(--ui-text-strong); border:1px solid var(--ui-border); border-radius:14px; box-shadow:0 8px 28px #0002; font-size:12px; }
 .canvas-pages-panel { left:16px; top:110px; bottom:100px; width:166px; padding:10px; display:flex; flex-direction:column; gap:8px; }
 .canvas-pages-panel.is-collapsed { bottom:auto; width:82px; }
 .canvas-pages-heading { display:flex; justify-content:space-between; font-weight:700 !important; }
@@ -36,7 +36,7 @@
 @media (max-width:767px) { .app .canvas-pages-menu { top:calc(100% + 24px); left:auto; right:0; width:min(280px, calc(100vw - 24px)); } }
 
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
-.canvas-pages-mask { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
+.canvas-pages-mask { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
 .canvas-pages-mask > div { position: fixed; pointer-events: auto; }
 
 
@@ -63,22 +63,24 @@
 .canvas-pages-mask {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 2;
   pointer-events: none;
 }
 .canvas-pages-mask > .canvas-pages-mask-panel {
   position: fixed;
   pointer-events: auto;
-  background-color: #10171b;
+  background-color: var(--canvas-pages-gutter, #111820);
   background-image:
-    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
-    radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0);
+    linear-gradient(var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    radial-gradient(circle at 1px 1px, var(--canvas-pages-dot, rgba(148,163,184,.12)) 1px, transparent 0);
   background-size: 24px 24px;
 }
 .canvas-pages-mask > .canvas-pages-page-outline {
   pointer-events: none !important;
 }
+.app.theme-dark { --canvas-pages-gutter:#111820; --canvas-pages-grid:rgba(255,255,255,.035); --canvas-pages-dot:rgba(148,163,184,.12); --canvas-pages-page-grid:rgba(255,255,255,.045); }
+.app.theme-light { --canvas-pages-gutter:#f7f9fc; --canvas-pages-grid:rgba(30,41,59,.055); --canvas-pages-dot:rgba(71,85,105,.13); --canvas-pages-page-grid:rgba(30,41,59,.065); }
 .canvas-pages-page-outline {
   position: fixed;
   z-index: 1;
@@ -103,3 +105,53 @@
 @media (prefers-reduced-motion: no-preference) {
   .canvas-pages-page-outline { transition: left 100ms ease, top 100ms ease, width 100ms ease, height 100ms ease; }
 }
+
+/* Pages mode overlays stay below the native drawing dock. */
+.app .excalidraw .App-toolbar-container {
+  position: fixed !important;
+  z-index: 10020 !important;
+}
+.app .excalidraw .App-toolbar {
+  position: relative;
+  z-index: 10021 !important;
+}
+.canvas-pages-page-grid {
+  position: fixed;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--canvas-pages-page-grid, rgba(255,255,255,.045)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-pages-page-grid, rgba(255,255,255,.045)) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.canvas-pages-page-outline { z-index: 2; }
+.canvas-pages-page-name {
+  position: fixed;
+  z-index: 5;
+  pointer-events: none;
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.canvas-pages-resize-handle {
+  position: fixed;
+  z-index: 6;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  padding: 0;
+  border: 1px solid #a79de0;
+  border-radius: 3px;
+  background: var(--ui-surface-solid, #fff);
+  box-shadow: 0 1px 4px #0004;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: nwse-resize;
+}
+.canvas-pages-resize-handle.is-ne,
+.canvas-pages-resize-handle.is-sw { cursor: nesw-resize; }
