@@ -49,6 +49,13 @@ test('page viewport mask leaves only the selected page visible and blocks the su
   {left:850,top:150,width:450,height:400},
  ]);
 });
+test('page viewport mask follows the light theme', () => {
+ const mask = getPageViewportMask(
+  {x:0,y:0,width:800,height:600},
+  {offsetLeft:0,offsetTop:0,width:1000,height:800,scrollX:0,scrollY:0,zoom:{value:1},theme:'light'}
+ );
+ assert.equal(mask.backgroundColor,'#f7f9fc');
+});
 test('page viewport mask clips pages to the visible canvas and rejects an off-screen page', () => {
  const clipped = getPageViewportMask(
   {x:-200,y:100,width:500,height:300},
