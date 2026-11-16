@@ -1137,13 +1137,11 @@
   }
 }
 
-/* Floating canvas surface: the editor scene sits above a quiet workspace
-   backdrop. Keep the Excalidraw scene itself unchanged so saved backgrounds,
-   zoom, pointer coordinates, and drawing behavior remain native. */
+/* Floating canvas surface: preserve the editor's full layout dimensions.
+   Elevate the existing Excalidraw surface in place rather than adding padding
+   or an inset that reduces the usable drawing area. */
 @media (min-width: 641px) {
   .app .desktop-canvas-region {
-    position: relative;
-    overflow: hidden;
     background-color: #e9edf2 !important;
     background-image:
       radial-gradient(circle at 1px 1px, rgb(102 119 139 / 13%) 1px, transparent 0);
@@ -1151,25 +1149,17 @@
   }
 
   .app .desktop-canvas-region > .canvas {
-    position: relative;
-    box-sizing: border-box;
-    padding: 16px;
     background: transparent !important;
   }
 
   .app .desktop-canvas-region > .canvas > .excalidraw {
-    position: absolute !important;
-    inset: 16px !important;
-    width: auto !important;
-    height: auto !important;
-    overflow: hidden !important;
-    border: 1px solid rgb(128 143 160 / 28%);
-    border-radius: 16px;
-    background: var(--color-surface-low, #fff);
+    border: 1px solid rgb(128 143 160 / 34%);
+    border-radius: 14px;
     box-shadow:
-      0 2px 5px rgb(24 35 50 / 7%),
-      0 14px 36px rgb(24 35 50 / 12%),
-      0 30px 70px rgb(24 35 50 / 7%);
+      0 1px 3px rgb(24 35 50 / 8%),
+      0 8px 24px rgb(24 35 50 / 13%),
+      0 22px 54px rgb(24 35 50 / 8%);
+    overflow: hidden;
     isolation: isolate;
   }
 
@@ -1180,21 +1170,10 @@
   }
 
   .app.theme-dark .desktop-canvas-region > .canvas > .excalidraw {
-    border-color: rgb(116 132 153 / 28%);
+    border-color: rgb(116 132 153 / 34%);
     box-shadow:
-      0 2px 6px rgb(0 0 0 / 28%),
-      0 16px 42px rgb(0 0 0 / 34%),
-      0 32px 76px rgb(0 0 0 / 22%);
-  }
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .app .desktop-canvas-region > .canvas {
-    padding: 12px;
-  }
-
-  .app .desktop-canvas-region > .canvas > .excalidraw {
-    inset: 12px !important;
-    border-radius: 13px;
+      0 1px 4px rgb(0 0 0 / 30%),
+      0 10px 28px rgb(0 0 0 / 38%),
+      0 24px 58px rgb(0 0 0 / 24%);
   }
 }
