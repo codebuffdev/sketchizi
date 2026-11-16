@@ -89,6 +89,7 @@ export default function DesktopAppHeader({
   setThemeMode,
   themeMode,
   canvasApi,
+  aiAskOpen = false,
   canEditCanvas,
   isDarkTheme,
   saveStatus = { state: "ready", lastSavedAt: null },
@@ -141,6 +142,13 @@ export default function DesktopAppHeader({
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
   const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
   const cancelDocumentRenameRef = useRef(false);
+
+  useEffect(() => {
+    if (!aiAskOpen) return;
+    setOpenMenu(null);
+    setGridPopoverOpen(false);
+    setSaveDetailsOpen(false);
+  }, [aiAskOpen]);
 
   useEffect(() => {
     document.title = getCanvasBrowserTitle(currentDocumentName);
@@ -369,7 +377,7 @@ export default function DesktopAppHeader({
 
   return (
     <>
-      <CanvasPages api={canvasApi} canEdit={canEditCanvas} />
+      <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} />
       <header
         id="desktop-app-header"
         ref={headerRef}

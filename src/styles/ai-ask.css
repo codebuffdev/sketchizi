@@ -299,3 +299,68 @@
 @media (max-width: 460px) {
   .ai-ask-mark { width: 30px; height: 30px; padding: 3px; }
 }
+
+/* Keep the AI drawer in its own lane beside the desktop tool rail. In Pages
+   mode, leave a separate bottom lane for the page navigator as well. */
+@media (min-width: 1025px) {
+  .app.ai-ask-open {
+    --ai-ask-panel-width: clamp(400px, calc(100vw - 625px), 540px);
+    --ai-ask-workspace-width: max(420px, calc(100vw - var(--header-rail-right, calc(18px + var(--safe-right, 0px))) - var(--header-rail-width, 56px) - 14px - var(--ai-ask-panel-width) - 16px));
+  }
+
+  .app.ai-ask-open .desktop-workspace {
+    flex: 0 0 var(--ai-ask-workspace-width);
+    width: var(--ai-ask-workspace-width);
+    max-width: var(--ai-ask-workspace-width);
+  }
+
+  .app.ai-ask-open .ai-ask-panel {
+    top: max(66px, calc(var(--header-top, 18px) + var(--header-top-control-height, 40px) + 12px));
+    right: calc(var(--header-rail-right, calc(18px + var(--safe-right, 0px))) + var(--header-rail-width, 56px) + 14px);
+    bottom: 14px;
+    box-sizing: border-box;
+    width: var(--ai-ask-panel-width);
+  }
+
+  .app:has(.canvas-pages-mask) .ai-ask-panel { bottom: 80px; z-index: 10060; }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  .app.ai-ask-open {
+    --ai-ask-panel-width: min(480px, calc(100vw - 390px));
+    --ai-ask-workspace-width: max(360px, calc(100vw - var(--ai-ask-panel-width) - 30px));
+  }
+
+  .app.ai-ask-open .desktop-workspace {
+    flex: 0 0 var(--ai-ask-workspace-width);
+    width: var(--ai-ask-workspace-width);
+    max-width: var(--ai-ask-workspace-width);
+  }
+
+  .app.ai-ask-open .ai-ask-panel {
+    top: 66px;
+    right: 14px;
+    bottom: 14px;
+    box-sizing: border-box;
+    width: var(--ai-ask-panel-width);
+  }
+
+  .app:has(.canvas-pages-mask) .ai-ask-panel { bottom: 80px; z-index: 10060; }
+}
+
+@media (min-width: 461px) and (max-width: 760px) {
+  .app.ai-ask-open .ai-ask-panel {
+    top: 58px;
+    right: 7px;
+    bottom: 7px;
+    width: min(540px, calc(100vw - 14px));
+  }
+
+  .app:has(.canvas-pages-mask) .ai-ask-panel { bottom: 150px; z-index: 10060; }
+}
+
+@media (max-width: 460px) {
+  .app.ai-ask-open .ai-ask-panel { z-index: 10060; }
+  .app:has(.canvas-pages-mask) .ai-ask-panel { z-index: 10060; }
+  .app:has(.canvas-pages-mask) .canvas-pages-navigation { visibility: hidden; pointer-events: none; }
+}

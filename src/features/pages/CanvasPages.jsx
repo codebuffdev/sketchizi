@@ -31,7 +31,7 @@ function getPagePaperBackground(appState) {
   return canvasColorForScene(tintedColor, isDarkTheme);
 }
 
-export default function CanvasPages({ api, canEdit = true }) {
+export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }) {
   const [open, setOpen] = useState(false);
   const [headerHost, setHeaderHost] = useState(null);
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
@@ -47,6 +47,8 @@ export default function CanvasPages({ api, canEdit = true }) {
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
+  const panelViewportRef = useRef(null);
+  const panelWasOpenRef = useRef(false);
   const root = useRef(null);
   const signature = useRef('');
   const sceneSnapshot = useRef(null);
@@ -195,6 +197,52 @@ export default function CanvasPages({ api, canEdit = true }) {
       }
     });
   };
+
+  useEffect(() => {
+    const wasOpen = panelWasOpenRef.current;
+    panelWasOpenRef.current = aiPanelOpen;
+    if (!api || wasOpen === aiPanelOpen) return undefined;
+
+    if (aiPanelOpen) {
+      if (mode !== 'pages' || !activePageRef.current) return undefined;
+      const state = api.getAppState?.();
+      panelViewportRef.current = state ? {
+        scrollX: state.scrollX,
+        scrollY: state.scrollY,
+        zoom: state.zoom,
+      } : null;
+      let firstFrame = 0;
+      let secondFrame = 0;
+      firstFrame = window.requestAnimationFrame(() => {
+        secondFrame = window.requestAnimationFrame(() => fit(activePageRef.current));
+      });
+      return () => {
+        window.cancelAnimationFrame(firstFrame);
+        window.cancelAnimationFrame(secondFrame);
+      };
+    }
+
+    const previousViewport = panelViewportRef.current;
+    panelViewportRef.current = null;
+    if (mode !== 'pages' || !previousViewport) return undefined;
+    let firstFrame = 0;
+    let secondFrame = 0;
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        api.updateScene({ appState: previousViewport, captureUpdate: CaptureUpdateAction.NEVER });
+        setPageMask(getPageViewportMask(activePageRef.current, { ...(api.getAppState?.() || {}), ...previousViewport }));
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [aiPanelOpen, api, mode]);
+
+  useEffect(() => {
+    if (mode !== 'pages') panelViewportRef.current = null;
+  }, [mode]);
+
   useEffect(() => {
     if (mode !== 'pages') { initialFitRef.current = false; return; }
     if (!active || !api || initialFitRef.current) return;
