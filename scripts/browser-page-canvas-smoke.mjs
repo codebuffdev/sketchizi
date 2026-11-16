@@ -20,7 +20,7 @@ try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
  await page.locator('.excalidraw').waitFor();
- await page.getByRole('button',{name:/Local document save status: (Autosave ready|Saved locally)/}).waitFor({timeout:20000});
+ await page.locator('.desktop-app-save-status-trigger.is-ready, .desktop-app-save-status-trigger.is-saved').waitFor({state:'attached',timeout:20000});
  await page.getByRole('button',{name:'Canvas options',exact:true}).click();
  await page.getByRole('button',{name:/Pages Organize/}).click();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
@@ -56,4 +56,8 @@ try {
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
  assert.deepEqual(errors,[]);
  console.log('PASS: pages, drawing membership, duplication, rename, reorder, reload, infinite view and mobile selector');
+} catch (error) {
+ await page.screenshot({path:'/tmp/sketchizi-page-failure.png'});
+ console.error('Page diagnostics:', await page.locator('body').innerText(), errors);
+ throw error;
 } finally { await browser.close(); }
