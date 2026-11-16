@@ -268,7 +268,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
-        <div className="canvas-pages-page-grid" style={pageMask.pageRect} aria-hidden="true" />
+        <div className="canvas-pages-page-surface" style={pageMask.pageRect} aria-hidden="true" />
         <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
         <div className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }}>{active?.name || `Page ${index + 1}`}</div>
         {['nw','ne','sw','se'].map(corner => <button key={corner} type="button" className={`canvas-pages-resize-handle is-${corner}`} style={{
