@@ -282,9 +282,6 @@
   box-shadow: var(--sk-editor-shadow-raised);
 }
 
-.app :is(button, a, input, select, textarea, [role="button"]):focus-visible {
-  outline-offset: 2px;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .app.theme-light .desktop-app-header *,
