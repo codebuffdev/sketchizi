@@ -1,0 +1,55 @@
+.excalidraw .sk-rectangle-titles {
+  position: absolute;
+  inset: 0;
+  z-index: var(--zIndex-canvasButtons, 3);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.excalidraw .sk-rectangle-titles .sk-rectangle-title {
+  position: absolute;
+  box-sizing: border-box;
+  display: block;
+  height: var(--rectangle-title-height);
+  min-height: 0;
+  min-width: 0;
+  padding: 0 6px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ui-text-strong, var(--text-primary-color));
+  font: 600 13px / calc(var(--rectangle-title-height) - 2px) var(--ui-font);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.excalidraw .sk-rectangle-titles :is(button, input) {
+  pointer-events: auto;
+  cursor: text;
+}
+
+.excalidraw .sk-rectangle-titles .sk-rectangle-title-add {
+  background: var(--ui-active);
+  color: var(--ui-accent);
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.excalidraw .sk-rectangle-titles .sk-rectangle-title-add > span {
+  margin-inline-end: 3px;
+  font-size: 15px;
+}
+
+.excalidraw .sk-rectangle-titles button:hover {
+  border-color: var(--ui-border);
+  background: var(--ui-surface-soft);
+}
+
+.excalidraw .sk-rectangle-titles .sk-rectangle-title-input {
+  width: 220px;
+  border-color: var(--ui-border);
+  background: var(--ui-surface-solid);
+  user-select: text;
+}

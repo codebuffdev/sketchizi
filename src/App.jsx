@@ -1707,6 +1707,7 @@ function App() {
           <SketchiziCanvas
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
+            pageContext={canvasPageContext}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
             handleDrop={handleDrop}
