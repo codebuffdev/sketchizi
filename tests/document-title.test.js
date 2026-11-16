@@ -13,5 +13,5 @@ test("uses the canvas name in the browser tab title", () => {
 });
 
 test("trims whitespace from canvas names", () => {
-  assert.equal(getCanvasBrowserTitle("  Kubernetes Cluster  "), "Sketchizi - Kubernetes Cluster");
+  assert.equal(getCanvasBrowserTitle("  Kubernetes Cluster  "), "Kubernetes Cluster - Sketchizi");
 });
