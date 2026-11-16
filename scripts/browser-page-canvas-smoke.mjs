@@ -34,6 +34,13 @@ try {
  await page.getByRole('button',{name:'Duplicate Page 1',exact:true}).click();
  es=await waitScene(es=>pages(es).length===2);
  assert(es.some(e=>!e.customData?.sketchiziPagePaper && e.type==='rectangle' && e.frameId && e.frameId!==originalId));
+ const navigation=page.getByRole('navigation',{name:'Page navigation'});
+ await page.locator('.canvas-pages-mask').waitFor();
+ await navigation.getByRole('button').nth(0).click();
+ await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('1 / 2'));
+ await navigation.getByRole('button').nth(1).click();
+ await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('2 / 2'));
+ await page.locator('.canvas-pages-mask > div').first().waitFor();
  page.once('dialog',dialog=>dialog.accept('Overview'));
  await page.getByRole('button',{name:'Rename Page 1',exact:true}).click();
  await waitScene(es=>pages(es).some(p=>p.name==='Overview'));
