@@ -1177,3 +1177,16 @@
       0 24px 58px rgb(0 0 0 / 24%);
   }
 }
+
+
+/* Create a Cloud project directly from the save dialog. */
+.cloud-save-create-project-trigger{justify-self:start;padding:0;border:0;background:transparent;color:var(--app-accent,#a89bff);font:600 12px system-ui,sans-serif;cursor:pointer}
+.cloud-save-create-project-trigger:hover{text-decoration:underline}
+.cloud-save-create-project{display:grid;gap:9px;padding:12px;border:1px solid var(--app-border,#303849);border-radius:9px;background:var(--app-surface,#0f131a)}
+.cloud-save-create-project label{display:grid;gap:6px;font-size:12px;font-weight:650}
+.cloud-save-create-project input{width:100%;height:36px;padding:0 10px;border:1px solid var(--app-border,#303849);border-radius:8px;background:var(--app-panel,#141922);color:inherit;font:inherit;font-size:13px}
+.cloud-save-create-project input:focus{outline:2px solid #8c7bff66;border-color:#8c7bff}
+.cloud-save-create-project-actions{display:flex;justify-content:flex-end;gap:8px}
+.cloud-save-create-project-actions button{min-height:32px;padding:0 10px;border:1px solid var(--app-border,#303849);border-radius:7px;background:transparent;color:inherit;font:600 11px system-ui,sans-serif;cursor:pointer}
+.cloud-save-create-project-actions button.primary{border-color:#7865f4;background:#7865f4;color:white}
+.cloud-save-create-project-actions button:disabled,.cloud-save-create-project-trigger:disabled{opacity:.5;cursor:not-allowed}
