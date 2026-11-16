@@ -55,6 +55,7 @@ test('bottom-left navigation keeps only the zoom percentage visible', () => {
 
 test('dock uses semantic tool-family separators and a neutral active accent', () => {
   const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /name: "navigation"/);
   assert.match(canvas, /name: "selection-shapes"/);
   assert.match(canvas, /name: "connectors"/);
   assert.match(canvas, /name: "drawing"/);
