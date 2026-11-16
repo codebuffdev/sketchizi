@@ -15,6 +15,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [pageMask, setPageMask] = useState(null);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
+  const previousViewportRef = useRef(null);
   const root = useRef(null);
   const signature = useRef('');
   const active = pages.find(p => p.id === activeId) || pages[0];
@@ -80,12 +81,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       appState: { selectedElementIds: { [page.id]: true }, selectedGroupIds: {} },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
-    api.setViewport({
-      target: {x:page.x,y:page.y,width:page.width,height:page.height},
-      fit: 'contain', animation: false,
-      offsets: {left:window.innerWidth < 768 ? 140 : 220,right:90,top:110,bottom:120},
-      lock: {scroll:true,zoom:true,overscroll:false},
-    });
+    api.scrollToContent?.([page], { fitToContent: true, animate: false });
   };
   useEffect(() => {
     if (mode !== 'pages') { initialFitRef.current = false; return; }
@@ -151,12 +147,23 @@ export default function CanvasPages({ api, canEdit = true }) {
     const frame = created.find(e => e.type === 'frame');
     if (frame) frame.name = pageName;
     update([...elements, ...created]);
+    const currentView = api.getAppState?.();
+    previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
     setError(''); setMode('pages'); setOpen(false); fit(frame);
   };
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
+    if (value === 'pages' && mode !== 'pages') {
+      const currentView = api?.getAppState?.();
+      previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
+    }
     setMode(value); setOpen(false);
-    if (value === 'infinite') { setPageMask(null); activeIdRef.current = null; api?.updateScene({ appState: { selectedElementIds: {}, selectedGroupIds: {} }, captureUpdate: CaptureUpdateAction.NEVER }); api?.setViewport(null); }
+    if (value === 'infinite') {
+      setPageMask(null);
+      activeIdRef.current = null;
+      api?.updateScene({ appState: { selectedElementIds: {}, selectedGroupIds: {}, ...(previousViewportRef.current || {}) }, captureUpdate: CaptureUpdateAction.NEVER });
+      previousViewportRef.current = null;
+    }
     if (value === 'pages') fit(active);
   };
   const rename = page => {
