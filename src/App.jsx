@@ -331,7 +331,6 @@ function App() {
       cloudSceneReadyRef.current = true;
       if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
       setCloudSaveState({ state: "saved", error: "" });
-      document.title = `${diagram.name || "Cloud diagram"} · Sketchizi`;
     }).catch((error) => {
       if (cancelled) return;
       cloudSessionRef.current.active = false;
@@ -421,7 +420,6 @@ function App() {
         const savedName = diagram?.name || normalizedName;
         cloudSessionRef.current.name = savedName;
         setCloudDocumentName(savedName);
-        document.title = `${savedName} · Sketchizi`;
         showToast("Canvas renamed");
       } catch (error) {
         showToast(error?.message || "Unable to rename this cloud canvas.", "error");
