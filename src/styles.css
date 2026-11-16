@@ -1136,3 +1136,65 @@
     transition: none;
   }
 }
+
+/* Floating canvas surface: the editor scene sits above a quiet workspace
+   backdrop. Keep the Excalidraw scene itself unchanged so saved backgrounds,
+   zoom, pointer coordinates, and drawing behavior remain native. */
+@media (min-width: 641px) {
+  .app .desktop-canvas-region {
+    position: relative;
+    overflow: hidden;
+    background-color: #e9edf2 !important;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(102 119 139 / 13%) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .app .desktop-canvas-region > .canvas {
+    position: relative;
+    box-sizing: border-box;
+    padding: 16px;
+    background: transparent !important;
+  }
+
+  .app .desktop-canvas-region > .canvas > .excalidraw {
+    position: absolute !important;
+    inset: 16px !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: hidden !important;
+    border: 1px solid rgb(128 143 160 / 28%);
+    border-radius: 16px;
+    background: var(--color-surface-low, #fff);
+    box-shadow:
+      0 2px 5px rgb(24 35 50 / 7%),
+      0 14px 36px rgb(24 35 50 / 12%),
+      0 30px 70px rgb(24 35 50 / 7%);
+    isolation: isolate;
+  }
+
+  .app.theme-dark .desktop-canvas-region {
+    background-color: #0c121b !important;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(148 163 184 / 11%) 1px, transparent 0);
+  }
+
+  .app.theme-dark .desktop-canvas-region > .canvas > .excalidraw {
+    border-color: rgb(116 132 153 / 28%);
+    box-shadow:
+      0 2px 6px rgb(0 0 0 / 28%),
+      0 16px 42px rgb(0 0 0 / 34%),
+      0 32px 76px rgb(0 0 0 / 22%);
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .app .desktop-canvas-region > .canvas {
+    padding: 12px;
+  }
+
+  .app .desktop-canvas-region > .canvas > .excalidraw {
+    inset: 12px !important;
+    border-radius: 13px;
+  }
+}
