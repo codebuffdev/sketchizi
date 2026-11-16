@@ -9,7 +9,7 @@ test("uses the default product title when the canvas is unnamed", () => {
 });
 
 test("uses the canvas name in the browser tab title", () => {
-  assert.equal(getCanvasBrowserTitle("AWS Architecture"), "Sketchizi - AWS Architecture");
+  assert.equal(getCanvasBrowserTitle("AWS Architecture"), "AWS Architecture - Sketchizi");
 });
 
 test("trims whitespace from canvas names", () => {
