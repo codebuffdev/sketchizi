@@ -1,27 +1,99 @@
-/* Canvas style patterns — decorative only; never intercept drawing input. */
-.sketchizi-grid-spotlight.is-grid-enabled.is-dots-style {
-  background-image: radial-gradient(circle, var(--sk-grid-dot-color, rgba(110,125,145,.32)) 1.15px, transparent 1.3px) !important;
-  background-size: 20px 20px !important;
+/* Distinct canvas surfaces. The grid spotlight's pseudo-elements are the
+   visible layers; styling the parent background would sit underneath them. */
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::before {
+  inset: 0;
+  background-image: radial-gradient(circle, var(--sk-grid-dot-color, rgb(105 122 145 / 38%)) 1.15px, transparent 1.35px);
+  background-size: 20px 20px;
+  background-position: 0 0;
 }
-.sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style {
-  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--sk-grid-line-color, rgba(100,130,165,.24)) 28px, transparent 29px) !important;
-  background-size: 100% 29px !important;
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::after {
+  display: none;
 }
-.sketchizi-grid-spotlight.is-grid-enabled.is-columns-style {
-  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(100% / 12 - 1px), var(--sk-grid-line-color, rgba(100,130,165,.24)) calc(100% / 12 - 1px), var(--sk-grid-line-color, rgba(100,130,165,.24)) calc(100% / 12)) !important;
+
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::before {
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    rgb(90 132 180 / 28%) 32px,
+    transparent 33px
+  );
+  background-size: 100% 33px;
 }
-.sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style {
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::after {
+  display: block;
+  inset: 0 auto 0 64px;
+  width: 1px;
+  height: auto;
+  opacity: 1;
+  background: rgb(205 105 105 / 30%);
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style::before {
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(8.333333% - 1px),
+    rgb(83 135 173 / 34%) calc(8.333333% - 1px),
+    rgb(83 135 173 / 34%) 8.333333%
+  );
+  background-size: 100% 100%;
+}
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style::after {
+  display: block;
+  left: 8.333333%;
+  top: 0;
+  width: 83.333334%;
+  height: 100%;
+  opacity: 1;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(20% - 1px),
+    rgb(83 135 173 / 16%) calc(20% - 1px),
+    rgb(83 135 173 / 16%) 20%
+  );
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style::before {
+  inset: 0;
   background-image:
-    linear-gradient(to right, transparent calc(50% - .5px), var(--sk-grid-axis-color, rgba(65,105,145,.55)) 50%, transparent calc(50% + .5px)),
-    linear-gradient(to bottom, transparent calc(50% - .5px), var(--sk-grid-axis-color, rgba(65,105,145,.55)) 50%, transparent calc(50% + .5px)),
-    linear-gradient(var(--sk-grid-line-color, rgba(100,130,165,.16)) 1px, transparent 1px),
-    linear-gradient(90deg, var(--sk-grid-line-color, rgba(100,130,165,.16)) 1px, transparent 1px) !important;
-  background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px !important;
+    linear-gradient(rgb(100 125 155 / 17%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(100 125 155 / 17%) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: center center;
 }
-.sketchizi-grid-spotlight.is-grid-enabled.is-dots-style,
-.sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style,
-.sketchizi-grid-spotlight.is-grid-enabled.is-columns-style,
-.sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style {
-  pointer-events: none !important;
-  opacity: 1 !important;
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style::after {
+  display: block;
+  inset: 0;
+  width: auto;
+  height: auto;
+  opacity: 1;
+  background-image:
+    linear-gradient(to right, transparent calc(50% - 1px), rgb(55 115 170 / 72%) 50%, transparent calc(50% + 1px)),
+    linear-gradient(to bottom, transparent calc(50% - 1px), rgb(55 115 170 / 72%) 50%, transparent calc(50% + 1px));
+  background-size: 100% 100%;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::before {
+  background-image: radial-gradient(circle, rgb(170 190 215 / 42%) 1.15px, transparent 1.35px);
+}
+.app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::before {
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgb(120 165 210 / 34%) 32px, transparent 33px);
+}
+.app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style::before {
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(8.333333% - 1px), rgb(120 165 210 / 38%) calc(8.333333% - 1px), rgb(120 165 210 / 38%) 8.333333%);
+}
+.app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style::before {
+  background-image:
+    linear-gradient(rgb(155 180 210 / 24%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(155 180 210 / 24%) 1px, transparent 1px);
 }
