@@ -512,3 +512,50 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }
       inlineName?.pageId === active?.id ? <input
         ref={inlineNameInputRef}
         className="canvas-pages-page-name-input"
+        style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 31) }}
+        aria-label="Edit page name"
+        autoFocus
+        maxLength={80}
+        value={inlineName.value}
+        onChange={event => setInlineName(current => ({ ...current, value: event.target.value }))}
+        onBlur={saveInlineName}
+        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } if (event.key === 'Escape') { event.preventDefault(); cancelInlineNameRef.current = true; setInlineName(null); } }}
+      /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>,
+      host,
+    )}
+    {mode === 'pages' && canEdit && active && pageMask && host && createPortal(<>
+      {['nw','n','ne','e','se','s','sw','w'].map(edge => {
+        const rect = pageMask.pageRect;
+        const reach = 28;
+        const inset = reach / 2;
+        const positions = {
+          nw: { left: rect.left - reach, top: rect.top - reach, width: reach, height: reach },
+          n: { left: rect.left + inset, top: rect.top - reach, width: Math.max(0, rect.width - reach), height: reach },
+          ne: { left: rect.left + rect.width, top: rect.top - reach, width: reach, height: reach },
+          e: { left: rect.left + rect.width, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
+          se: { left: rect.left + rect.width, top: rect.top + rect.height, width: reach, height: reach },
+          s: { left: rect.left + inset, top: rect.top + rect.height, width: Math.max(0, rect.width - reach), height: reach },
+          sw: { left: rect.left - reach, top: rect.top + rect.height, width: reach, height: reach },
+          w: { left: rect.left - reach, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
+        };
+        const isCorner = edge.length === 2;
+        const label = isCorner
+          ? `Drag page from ${edge.toUpperCase()} corner to adjust width and height`
+          : `Drag page ${edge === 'n' || edge === 's' ? 'edge to adjust height' : 'edge to adjust width'}`;
+        return <button
+          key={edge}
+          type="button"
+          className={`canvas-pages-resize-hit is-${edge}${revealedResizeEdge === edge ? ' is-revealed' : ''}`}
+          style={positions[edge]}
+          aria-label={label}
+          title={label}
+          onPointerDown={event => handleResizePointerDown(event, edge)}
+          onContextMenu={event => event.preventDefault()}
+        />;
+      })}
+    </>,host)}
+    {mode === 'pages' && host && createPortal(<>
+      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
+    </>,host)}
+  </>;
+}
