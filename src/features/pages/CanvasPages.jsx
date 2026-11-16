@@ -254,6 +254,41 @@ export default function CanvasPages({ api, canEdit = true }) {
     const copied = duplicatePage(elements, page.id, crypto.randomUUID());
     update([...elements,...copied]); fit(copied.find(e => e.type === 'frame'));
   };
+  const deletePage = page => {
+    if (!page || !canEdit || !api) return;
+    const remainingPages = pages.filter(item => item.id !== page.id);
+    const nextPage = remainingPages[Math.min(Math.max(index, 0), remainingPages.length - 1)];
+    const elements = api.getSceneElementsIncludingDeleted().map(element => {
+      if (element.id === page.id || element.frameId === page.id ||
+          element.customData?.sketchiziPagePaper === page.id) {
+        if (element.isDeleted) return element;
+        return { ...element, isDeleted: true, version: (element.version || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+      }
+      const orderIndex = remainingPages.findIndex(item => item.id === element.id);
+      if (orderIndex >= 0 && element.customData?.pageOrder !== orderIndex + 1) {
+        return { ...element, customData: { ...element.customData, pageOrder: orderIndex + 1 },
+          version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+      }
+      return element;
+    });
+    setInlineName(null);
+    setResizeMode(false);
+    update(elements);
+    if (nextPage) {
+      fit(nextPage);
+    } else {
+      setPageMask(null);
+      activeIdRef.current = null;
+      setActiveId(null);
+      setMode('infinite');
+      api.updateScene({
+        appState: { selectedElementIds: {}, selectedGroupIds: {}, ...(previousViewportRef.current || {}) },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+      previousViewportRef.current = null;
+    }
+  };
   const move = (page, direction) => {
     if (!canEdit) return;
     const from = pages.findIndex(p => p.id === page.id), to = from + direction;
@@ -310,7 +345,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       })}
     </>,host)}
     {mode === 'pages' && host && createPortal(<>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active || !canEdit} aria-pressed={resizeMode} onClick={() => setResizeMode(value => !value)}>{resizeMode ? 'Done' : 'Resize'}</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" disabled={!active || !canEdit} onClick={() => rename(active)}>Rename</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
+      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active || !canEdit} aria-pressed={resizeMode} onClick={() => setResizeMode(value => !value)}>{resizeMode ? 'Done' : 'Resize'}</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
     </>,host)}
   </>;
 }
