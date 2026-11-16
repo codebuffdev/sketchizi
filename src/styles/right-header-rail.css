@@ -305,15 +305,16 @@
     box-sizing: border-box;
     border: 1px solid var(--ui-border, #dfe3eb) !important;
     border-radius: 12px;
-    background: var(--ui-surface-solid, #fff) !important;
-    box-shadow: 0 4px 16px rgb(15 23 42 / 12%) !important;
+    /* Tint only the surface so the canvas shows through without fading icons. */
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
+    box-shadow: 0 4px 16px rgb(15 23 42 / 8%) !important;
     backdrop-filter: none;
   }
 
   .app.theme-dark.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
-    border-color: #3c444e !important;
-    background: #20262e !important;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 24%) !important;
+    border-color: rgb(60 68 78 / 65%) !important;
+    background: rgb(32 38 46 / 55%) !important;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail:not(.is-hidden) {
