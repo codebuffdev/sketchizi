@@ -68,7 +68,16 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);
 
-  const fit = page => { if (page) { setActiveId(page.id); api.scrollToContent(page, { fitToViewport: true, viewportZoomFactor: 0.68, animate: false }); } };
+  const fit = page => {
+    if (!page || !api) return;
+    setActiveId(page.id);
+    api.setViewport({
+      target: {x:page.x,y:page.y,width:page.width,height:page.height},
+      fit: 'contain', animation: false,
+      offsets: {left:window.innerWidth < 768 ? 140 : 220,right:90,top:110,bottom:120},
+      lock: {scroll:true,zoom:true,overscroll:false},
+    });
+  };
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   const add = () => {
     if (!api || !canEdit) return;
@@ -81,6 +90,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
     setMode(value); setOpen(false);
+    if (value === 'infinite') api?.setViewport(null);
     if (value === 'pages') fit(active);
   };
   const rename = page => {
