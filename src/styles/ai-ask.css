@@ -16,9 +16,8 @@
   font-weight: 650;
 }
 .ai-ask-toggle:hover, .ai-ask-toggle.active { border-color: var(--ui-accent, #5b55c7); background: var(--ui-active, #f0eff9); color: var(--ui-text-strong, #202020); }
-.ai-ask-toggle-icon { color: var(--ui-accent, #5b55c7); font-size: 16px; line-height: 1; }
 .ai-ask-toggle.is-icon-only { width: 36px; min-width: 36px; padding: 0; gap: 0; }
-.ai-ask-toggle.is-icon-only .ai-ask-toggle-icon { width: 18px; height: 18px; flex: 0 0 18px; }
+.ai-ask-toggle.is-icon-only .ai-ask-toggle-icon { width: 22px; height: 22px; flex: 0 0 22px; }
 .ai-ask-panel {
   position: fixed;
   z-index: 1200;
@@ -472,55 +471,6 @@
 .ai-ask-key-row input:focus,
 .ai-ask-provider-row select:focus,
 .ai-ask-composer textarea:focus { border-color: var(--ai-ask-accent); }
-
-.app .ai-ask-toggle {
-  border-color: #b8ddd9;
-  background: #edf8f7;
-  color: #155c58;
-}
-.app .ai-ask-toggle .ai-ask-toggle-icon { color: #128d84; }
-.app .ai-ask-toggle:hover,
-.app .ai-ask-toggle.active {
-  border-color: #64bcb4;
-  background: #dff2f0;
-  color: #104e4b;
-}
-.app.theme-dark .ai-ask-toggle {
-  border-color: #28504e;
-  background: #172827;
-  color: #c8eeea;
-}
-.app.theme-dark .ai-ask-toggle .ai-ask-toggle-icon { color: #65d4c9; }
-.app.theme-dark .ai-ask-toggle:hover,
-.app.theme-dark .ai-ask-toggle.active {
-  border-color: #347a74;
-  background: #203a38;
-  color: #e2fbf8;
-}
-.app .desktop-app-header-panel-actions .ai-ask-toggle {
-  border-color: #b8ddd9;
-  background: #edf8f7;
-  color: #155c58;
-}
-.app .desktop-app-header-panel-actions .ai-ask-toggle .ai-ask-toggle-icon { color: #128d84; }
-.app .desktop-app-header-panel-actions .ai-ask-toggle:hover,
-.app .desktop-app-header-panel-actions .ai-ask-toggle.active {
-  border-color: #64bcb4;
-  background: #dff2f0;
-  color: #104e4b;
-}
-.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle {
-  border-color: #28504e;
-  background: #172827;
-  color: #c8eeea;
-}
-.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle .ai-ask-toggle-icon { color: #65d4c9; }
-.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle:hover,
-.app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle.active {
-  border-color: #347a74;
-  background: #203a38;
-  color: #e2fbf8;
-}
 
 @media (max-width: 460px) {
   .ai-ask-provider-settings { max-height: 38vh; margin-right: 8px; margin-left: 8px; }
