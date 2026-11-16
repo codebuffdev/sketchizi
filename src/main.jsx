@@ -6,6 +6,7 @@ import "./styles/icon-panel-v2.css";
 import "./styles/icon-panel-compact.css";
 import "./styles/canvas-feedback-overlays.css";
 import "./styles/grid-spotlight.css";
+import "./styles/editor-visual-system.css";
 import App from "./App.jsx";
 import CommunityApp from "./features/community/CommunityApp.jsx";
 import ErrorBoundary from "./ErrorBoundary.jsx";
