@@ -1,0 +1,298 @@
+/* Sketchizi editor visual system — monochrome refinement.
+ * Presentation-only: preserves editor geometry, canvas dimensions, dock,
+ * Zen Mode toolbar, and all existing interaction/state contracts. */
+
+.app.theme-light {
+  --sk-editor-surface: rgb(255 255 255 / 94%);
+  --sk-editor-surface-solid: #ffffff;
+  --sk-editor-surface-soft: #f7f8fa;
+  --sk-editor-border: #e4e7eb;
+  --sk-editor-border-strong: #d4d9df;
+  --sk-editor-ink: #20242a;
+  --sk-editor-muted: #747b84;
+  --sk-editor-hover: #f1f3f5;
+  --sk-editor-selected: #e8ebef;
+  --sk-editor-focus: #68717c;
+  --sk-editor-shadow: 0 8px 24px rgb(15 23 42 / 7%), 0 1px 3px rgb(15 23 42 / 4%);
+  --sk-editor-shadow-raised: 0 14px 34px rgb(15 23 42 / 10%), 0 2px 6px rgb(15 23 42 / 4%);
+}
+
+.app.theme-dark {
+  --sk-editor-surface: rgb(25 29 35 / 94%);
+  --sk-editor-surface-solid: #191d23;
+  --sk-editor-surface-soft: #20252c;
+  --sk-editor-border: #343b44;
+  --sk-editor-border-strong: #454e59;
+  --sk-editor-ink: #edf0f3;
+  --sk-editor-muted: #a2aab4;
+  --sk-editor-hover: #292f37;
+  --sk-editor-selected: #343c46;
+  --sk-editor-focus: #aeb7c2;
+  --sk-editor-shadow: 0 10px 28px rgb(0 0 0 / 24%), 0 1px 3px rgb(0 0 0 / 18%);
+  --sk-editor-shadow-raised: 0 16px 38px rgb(0 0 0 / 32%), 0 2px 7px rgb(0 0 0 / 20%);
+}
+
+/* Header islands and the right-side rail share one restrained surface language.
+   Positioning, dimensions, visibility, and control order remain owned by the
+   existing header layout styles. */
+@media (min-width: 521px) {
+  .app.theme-light.canvas-first-header .desktop-app-header-island,
+  .app.theme-light.canvas-first-header .desktop-app-header-right-rail {
+    border-color: var(--sk-editor-border) !important;
+    background: var(--sk-editor-surface) !important;
+    box-shadow: var(--sk-editor-shadow) !important;
+    color: var(--sk-editor-ink);
+    -webkit-backdrop-filter: blur(14px) saturate(110%);
+    backdrop-filter: blur(14px) saturate(110%);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-island,
+  .app.theme-dark.canvas-first-header .desktop-app-header-right-rail {
+    border-color: var(--sk-editor-border) !important;
+    background: var(--sk-editor-surface) !important;
+    box-shadow: var(--sk-editor-shadow) !important;
+    color: var(--sk-editor-ink);
+    -webkit-backdrop-filter: blur(14px) saturate(110%);
+    backdrop-filter: blur(14px) saturate(110%);
+  }
+}
+
+/* Neutralize accent-heavy header states without changing their meaning. */
+.app.theme-light.canvas-first-header .desktop-app-header-right-rail :is(
+  .desktop-app-menu-trigger,
+  .desktop-app-library-toggle,
+  .desktop-app-nav-button,
+  .desktop-app-theme-toggle,
+  .desktop-app-search-button,
+  .desktop-app-header-visibility-button,
+  .desktop-app-header-pin-button,
+  .properties-toggle,
+  .architecture-validation-toggle,
+  .ai-ask-toggle,
+  .sketchizi-more-tools-trigger
+),
+.app.theme-light.canvas-first-header .desktop-app-header-island :is(
+  .desktop-app-menu-trigger,
+  .desktop-app-library-toggle,
+  .desktop-app-nav-button,
+  .desktop-app-theme-toggle,
+  .desktop-app-search-button,
+  .desktop-app-header-visibility-button,
+  .desktop-app-header-pin-button,
+  .properties-toggle,
+  .architecture-validation-toggle,
+  .ai-ask-toggle,
+  .sketchizi-more-tools-trigger
+) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--sk-editor-muted);
+  box-shadow: none;
+  transition:
+    background-color var(--sk-motion-fast) var(--sk-ease-standard),
+    border-color var(--sk-motion-fast) var(--sk-ease-standard),
+    color var(--sk-motion-fast) var(--sk-ease-standard);
+}
+
+.app.theme-dark.canvas-first-header .desktop-app-header-right-rail :is(
+  .desktop-app-menu-trigger,
+  .desktop-app-library-toggle,
+  .desktop-app-nav-button,
+  .desktop-app-theme-toggle,
+  .desktop-app-search-button,
+  .desktop-app-header-visibility-button,
+  .desktop-app-header-pin-button,
+  .properties-toggle,
+  .architecture-validation-toggle,
+  .ai-ask-toggle,
+  .sketchizi-more-tools-trigger
+),
+.app.theme-dark.canvas-first-header .desktop-app-header-island :is(
+  .desktop-app-menu-trigger,
+  .desktop-app-library-toggle,
+  .desktop-app-nav-button,
+  .desktop-app-theme-toggle,
+  .desktop-app-search-button,
+  .desktop-app-header-visibility-button,
+  .desktop-app-header-pin-button,
+  .properties-toggle,
+  .architecture-validation-toggle,
+  .ai-ask-toggle,
+  .sketchizi-more-tools-trigger
+) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--sk-editor-muted);
+  box-shadow: none;
+  transition:
+    background-color var(--sk-motion-fast) var(--sk-ease-standard),
+    border-color var(--sk-motion-fast) var(--sk-ease-standard),
+    color var(--sk-motion-fast) var(--sk-ease-standard);
+}
+
+.app.canvas-first-header .desktop-app-header-right-rail :is(
+  .desktop-app-menu-trigger,
+  .desktop-app-library-toggle,
+  .desktop-app-nav-button,
+  .desktop-app-theme-toggle,
+  .desktop-app-search-button,
+  .desktop-app-header-visibility-button,
+  .desktop-app-header-pin-button,
+  .properties-toggle,
+  .architecture-validation-toggle,
+  .ai-ask-toggle,
+  .sketchizi-more-tools-trigger
+):is(:hover, :focus-visible, .active, [aria-expanded="true"]),
+.app.canvas-first-header .desktop-app-header-island :is(
+  .desktop-app-menu-trigger,
+  .desktop-app-library-toggle,
+  .desktop-app-nav-button,
+  .desktop-app-theme-toggle,
+  .desktop-app-search-button,
+  .desktop-app-header-visibility-button,
+  .desktop-app-header-pin-button,
+  .properties-toggle,
+  .architecture-validation-toggle,
+  .ai-ask-toggle,
+  .sketchizi-more-tools-trigger
+):is(:hover, :focus-visible, .active, [aria-expanded="true"]) {
+  border-color: var(--sk-editor-border) !important;
+  background: var(--sk-editor-hover) !important;
+  color: var(--sk-editor-ink) !important;
+}
+
+/* The resource and properties regions stay integrated into the workspace;
+   only their surfaces, separators, and control states are refined. */
+.app.theme-light .desktop-resources-region,
+.app.theme-light .desktop-context-region {
+  border-color: var(--sk-editor-border);
+  background: var(--sk-editor-surface-solid);
+  box-shadow: none;
+}
+
+.app.theme-dark .desktop-resources-region,
+.app.theme-dark .desktop-context-region {
+  border-color: var(--sk-editor-border);
+  background: var(--sk-editor-surface-solid);
+  box-shadow: none;
+}
+
+.app.theme-light .desktop-context-region .properties-header,
+.app.theme-light .desktop-context-region .properties-section,
+.app.theme-dark .desktop-context-region .properties-header,
+.app.theme-dark .desktop-context-region .properties-section {
+  border-color: var(--sk-editor-border);
+}
+
+.app.theme-light .desktop-context-region .properties-title,
+.app.theme-dark .desktop-context-region .properties-title {
+  color: var(--sk-editor-ink);
+}
+
+.app.theme-light .desktop-context-region .properties-subtitle,
+.app.theme-dark .desktop-context-region .properties-subtitle,
+.app.theme-light .desktop-context-region .properties-section-title,
+.app.theme-dark .desktop-context-region .properties-section-title {
+  color: var(--sk-editor-muted);
+}
+
+/* Form controls use a quiet neutral surface. Focus remains clearly visible
+   but no longer introduces a colored glow into the monochrome editor chrome. */
+.app.theme-light .desktop-context-region .properties-panel :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  select,
+  textarea,
+  .property-number
+),
+.app.theme-light .desktop-resources-region .search {
+  border-color: var(--sk-editor-border-strong);
+  border-radius: 8px;
+  background: var(--sk-editor-surface-soft);
+  color: var(--sk-editor-ink);
+  transition:
+    background-color var(--sk-motion-fast) var(--sk-ease-standard),
+    border-color var(--sk-motion-fast) var(--sk-ease-standard),
+    box-shadow var(--sk-motion-fast) var(--sk-ease-standard);
+}
+
+.app.theme-dark .desktop-context-region .properties-panel :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  select,
+  textarea,
+  .property-number
+),
+.app.theme-dark .desktop-resources-region .search {
+  border-color: var(--sk-editor-border-strong);
+  border-radius: 8px;
+  background: var(--sk-editor-surface-soft);
+  color: var(--sk-editor-ink);
+  transition:
+    background-color var(--sk-motion-fast) var(--sk-ease-standard),
+    border-color var(--sk-motion-fast) var(--sk-ease-standard),
+    box-shadow var(--sk-motion-fast) var(--sk-ease-standard);
+}
+
+.app.theme-light .desktop-context-region .properties-panel :is(input, select, textarea):focus,
+.app.theme-light .desktop-resources-region .search:focus,
+.app.theme-dark .desktop-context-region .properties-panel :is(input, select, textarea):focus,
+.app.theme-dark .desktop-resources-region .search:focus {
+  border-color: var(--sk-editor-focus);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sk-editor-focus) 16%, transparent);
+}
+
+/* Quiet, consistent hover/selected states for property controls only.
+   Validation status colors and diagram colors are intentionally untouched. */
+.app.theme-light .desktop-context-region .properties-panel button,
+.app.theme-dark .desktop-context-region .properties-panel button {
+  transition:
+    background-color var(--sk-motion-fast) var(--sk-ease-standard),
+    border-color var(--sk-motion-fast) var(--sk-ease-standard),
+    color var(--sk-motion-fast) var(--sk-ease-standard),
+    box-shadow var(--sk-motion-fast) var(--sk-ease-standard);
+}
+
+.app.theme-light .desktop-context-region .properties-panel button:hover,
+.app.theme-dark .desktop-context-region .properties-panel button:hover {
+  border-color: var(--sk-editor-border-strong);
+  background: var(--sk-editor-hover);
+  color: var(--sk-editor-ink);
+}
+
+.app.theme-light .desktop-context-region .properties-panel button[aria-pressed="true"],
+.app.theme-light .desktop-context-region .properties-panel button.selected,
+.app.theme-dark .desktop-context-region .properties-panel button[aria-pressed="true"],
+.app.theme-dark .desktop-context-region .properties-panel button.selected {
+  border-color: var(--sk-editor-border-strong);
+  background: var(--sk-editor-selected);
+  color: var(--sk-editor-ink);
+}
+
+.app.theme-light .desktop-app-dropdown,
+.app.theme-light .devops-studio-dropdown {
+  border-color: var(--sk-editor-border);
+  background: var(--sk-editor-surface-solid);
+  box-shadow: var(--sk-editor-shadow-raised);
+}
+
+.app.theme-dark .desktop-app-dropdown,
+.app.theme-dark .devops-studio-dropdown {
+  border-color: var(--sk-editor-border);
+  background: var(--sk-editor-surface-solid);
+  box-shadow: var(--sk-editor-shadow-raised);
+}
+
+.app :is(button, a, input, select, textarea, [role="button"]):focus-visible {
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app.theme-light .desktop-app-header *,
+  .app.theme-dark .desktop-app-header *,
+  .app.theme-light .desktop-context-region .properties-panel *,
+  .app.theme-dark .desktop-context-region .properties-panel * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
