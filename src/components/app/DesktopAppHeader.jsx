@@ -617,7 +617,7 @@ export default function DesktopAppHeader({
         type="button"
         className={`desktop-app-save-to-cloud-button is-icon-only${isCloudDocument ? ` is-cloud-${cloudSaveState}` : ""}`}
         onClick={() => { setOpenMenu(null); onSaveToCloud?.(); }}
-        disabled={cloudSaveState === "loading" || cloudSaveState === "saving" || cloudSaveState === "pending"}
+        disabled={cloudSaveState === "loading" || cloudSaveState === "saving"}
         title={isCloudDocument
           ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved cloud changes" : cloudSaveState === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save the current diagram to Cloud Workspace now"
           : "Save this drawing to Cloud Workspace"}
