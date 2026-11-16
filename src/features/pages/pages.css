@@ -201,3 +201,35 @@
 }
 .canvas-pages-page-name:hover:not(:disabled) { border-color: var(--ui-border); background: var(--ui-surface-solid); }
 .canvas-pages-page-name:disabled { cursor: default; opacity: 1; }
+
+
+/* Consistent in-app naming dialog for creating and renaming pages. */
+.canvas-pages-dialog-backdrop {
+  position: fixed; inset: 0; z-index: 10060; display: grid; place-items: center;
+  padding: 20px; background: rgba(8, 12, 20, .48); backdrop-filter: blur(3px);
+}
+.canvas-pages-name-dialog {
+  box-sizing: border-box; width: min(420px, 100%); padding: 26px;
+  border: 1px solid var(--ui-border); border-radius: 18px;
+  background: var(--ui-surface-solid); color: var(--ui-text-strong);
+  box-shadow: 0 24px 80px rgba(0,0,0,.28); font: inherit;
+}
+.canvas-pages-dialog-icon {
+  display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 16px;
+  border-radius: 11px; background: #9e88ed20; color: var(--ui-text-strong); font-size: 21px;
+}
+.canvas-pages-name-dialog h2 { margin: 0; font-size: 19px; font-weight: 650; letter-spacing: -.02em; }
+.canvas-pages-name-dialog p { margin: 7px 0 22px; color: var(--ui-text-muted); font-size: 13px; line-height: 1.5; }
+.canvas-pages-name-dialog label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 600; }
+.canvas-pages-name-dialog input {
+  box-sizing: border-box; width: 100%; height: 42px; padding: 0 12px;
+  border: 1px solid var(--ui-border); border-radius: 9px; outline: none;
+  background: var(--ui-surface-solid); color: var(--ui-text-strong); font: inherit; font-size: 14px;
+}
+.canvas-pages-name-dialog input:focus { border-color: #9e88ed; box-shadow: 0 0 0 3px #9e88ed2b; }
+.canvas-pages-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
+.canvas-pages-dialog-actions button { min-height: 36px; padding: 0 14px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.canvas-pages-dialog-cancel { border: 1px solid var(--ui-border); background: transparent; color: var(--ui-text-strong); }
+.canvas-pages-dialog-save { border: 1px solid #8b78dc; background: #8b78dc; color: white; }
+.canvas-pages-dialog-save:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 480px) { .canvas-pages-name-dialog { padding: 21px; } }
