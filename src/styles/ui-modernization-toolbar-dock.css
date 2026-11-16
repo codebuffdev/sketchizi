@@ -1841,3 +1841,93 @@
     min-height: 18px;
   }
 }
+
+
+/* Make the tool families read as separate compact clusters, not one flat row.
+   Each native control remains in place; only its visual surface and group spacing change. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-cluster-surface: rgb(104 119 135 / 8%);
+  --sk-dock-cluster-border: rgb(104 119 135 / 13%);
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 2px !important;
+  border: 1px solid var(--sk-dock-cluster-border) !important;
+  border-radius: 9px !important;
+  background: var(--sk-dock-cluster-surface) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%) !important;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:hover {
+  background: rgb(104 119 135 / 15%) !important;
+  border-color: rgb(104 119 135 / 28%) !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(79 125 139 / 13%);
+  --sk-dock-cluster-border: rgb(79 125 139 / 25%);
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-group-start="true"] {
+  margin-left: 7px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator {
+  display: none !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator + [data-sketchizi-tool-group] {
+  margin-left: 7px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] .ToolIcon__icon {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) {
+  border-color: #477f91 !important;
+  background: #477f91 !important;
+  box-shadow: 0 2px 7px rgb(45 101 119 / 22%), inset 0 1px 0 rgb(255 255 255 / 20%) !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) .ToolIcon__icon {
+  color: #fff !important;
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-cluster-surface: rgb(255 255 255 / 5%);
+  --sk-dock-cluster-border: rgb(255 255 255 / 9%);
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(90 151 169 / 15%);
+  --sk-dock-cluster-border: rgb(90 151 169 / 25%);
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    margin-inline: 1px !important;
+  }
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-group-start="true"] {
+    margin-left: 4px !important;
+  }
+}
