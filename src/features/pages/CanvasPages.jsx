@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/excalidraw';
-import { DEFAULT_PAGE_SIZE, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport } from './pageModel.js';
+import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport, getResponsivePageSize } from './pageModel.js';
 import './pages.css';
 
 export default function CanvasPages({ api, canEdit = true }) {
@@ -10,7 +10,6 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
   const [pages, setPages] = useState([]);
   const [activeId, setActiveId] = useState(null);
-  const [size, setSize] = useState(DEFAULT_PAGE_SIZE);
   const [error, setError] = useState('');
   const [pageMask, setPageMask] = useState(null);
   const activeIdRef = useRef(null);
@@ -104,7 +103,9 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   useEffect(() => {
     if (mode !== 'pages' || !active || !api) { setPageMask(null); return; }
-    const refresh = () => setPageMask(getPageViewportMask(active, api.getAppState()));
+    // Refit the active page when the available window changes so its display
+    // size remains responsive without changing its saved artboard dimensions.
+    const refresh = () => fit(active);
     refresh();
     window.addEventListener('resize', refresh);
     return () => window.removeEventListener('resize', refresh);
@@ -150,13 +151,14 @@ export default function CanvasPages({ api, canEdit = true }) {
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   const add = () => {
     if (!api || !canEdit) return;
-    if (!validSize(Number(size.width), Number(size.height))) { setError('Use dimensions between 320 and 10,000 pixels.'); return; }
     const elements = api.getSceneElementsIncludingDeleted();
+    const responsiveSize = getResponsivePageSize(api.getAppState());
+    if (!validSize(responsiveSize.width, responsiveSize.height)) { setError('The available canvas area is too small to create a page.'); return; }
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
     const name = window.prompt('Name your new page', `Page ${nextOrder}`);
     if (name === null) return;
     const pageName = name.trim().slice(0, 80) || `Page ${nextOrder}`;
-    const created = convertToExcalidrawElements(pageSkeleton(elements, { width: Number(size.width), height: Number(size.height) }, crypto.randomUUID()), { regenerateIds: false });
+    const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID()), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
     if (frame) frame.name = pageName;
     update([...elements, ...created]);
