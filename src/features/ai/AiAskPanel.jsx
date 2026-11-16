@@ -15,6 +15,16 @@ const STARTER_PROMPTS = [
 const EMPTY_STATE = { schemaVersion: 1, accountId: null, conversationId: null, messages: [], provider: "builtin", draft: "", pendingRequest: null, retryAttempt: null, newAnswerQuestion: null };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+export function AiAskIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      <path d="M19.4 12.3a7.25 7.25 0 0 1-7.5 7.05c-1.36 0-2.63-.36-3.72-.99L4 19.55l1.32-3.42a7 7 0 0 1-1.05-3.78c0-4.02 3.4-7.28 7.6-7.28 4.12 0 7.48 3.12 7.53 7.23Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16.9 2.5 18 5.45l2.95 1.1L18 7.65l-1.1 2.95-1.1-2.95-2.95-1.1 2.95-1.1 1.1-2.95Z" fill="currentColor" />
+      <path d="M8 11.3h4.25M8 14.5h2.9" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function readTranscript() {
   try {
     const value = sessionStorage.getItem(TRANSCRIPT_KEY);
@@ -1008,12 +1018,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       <header className="ai-ask-header">
         <div className="ai-ask-heading">
           <span className="ai-ask-mark" role="img" aria-label="AI Ask">
-            <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-              <path d="M43 9H20C12.8 9 7 14.8 7 22v20c0 7.2 5.8 13 13 13h18" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M43 9v23" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round"/>
-              <path d="M19 39l7-18 7 18m-11-7h9" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M49 35l3.7 8.3L61 47l-8.3 3.7L49 59l-3.7-8.3L37 47l8.3-3.7L49 35Z" fill="currentColor" stroke="currentColor" strokeLinejoin="round"/>
-            </svg>
+            <AiAskIcon />
           </span>
         </div>
         {auth.status === "authenticated" && (
@@ -1024,7 +1029,18 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
                         <span className="ai-ask-provider-manage">{providerSettingsOpen ? "Done" : "Manage"}</span>
                         <span className="ai-ask-provider-chevron" aria-hidden="true">⌄</span>
                       </button>
-                      {providerSettingsOpen && <div className="ai-ask-provider-settings" id="ai-ask-provider-settings">
+
+                    </div>
+        )}
+        <div className="ai-ask-header-actions">
+          <button type="button" onClick={clearTranscript} disabled={!chat.messages.length || Boolean(pendingRequest)} title="Clear visible messages" aria-label="Clear conversation messages">Clear</button>
+          <button type="button" onClick={startNewConversation} disabled={busy || Boolean(pendingRequest) || auth.status !== "authenticated" || (chat.provider === "builtin" && !usage?.admin && usage?.accountRemaining <= 0)} title="Start a new conversation" aria-label="New conversation">New</button>
+          <button type="button" className="ai-ask-close" onClick={onClose} aria-label="Close AI Ask">×</button>
+        </div>
+      </header>
+
+      {auth.status === "authenticated" && providerSettingsOpen && (
+        <div className="ai-ask-provider-settings" id="ai-ask-provider-settings">
                         <div className="ai-ask-provider-row">
                           <label htmlFor="ai-ask-provider">Provider</label>
                           <select id="ai-ask-provider" value={chat.provider} onChange={(event) => chooseProvider(event.target.value)} disabled={busy || Boolean(pendingRequest)}>
@@ -1057,15 +1073,8 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
                             <p>{keyApplied ? "Key ready for BYOK requests. It is stored in this tab's session storage and sent to Sketchizi's AI backend only for BYOK requests." : "Paste your Gemini API key and select Use key before sending a BYOK question."} Session storage is not a secure vault; the key is removed when you select Remove key or the tab session ends. Removing it does not cancel a request already sent.</p>
                           </div>
                         )}
-                      </div>}
-                    </div>
-        )}
-        <div className="ai-ask-header-actions">
-          <button type="button" onClick={clearTranscript} disabled={!chat.messages.length || Boolean(pendingRequest)} title="Clear visible messages" aria-label="Clear conversation messages">Clear</button>
-          <button type="button" onClick={startNewConversation} disabled={busy || Boolean(pendingRequest) || auth.status !== "authenticated" || (chat.provider === "builtin" && !usage?.admin && usage?.accountRemaining <= 0)} title="Start a new conversation" aria-label="New conversation">New</button>
-          <button type="button" className="ai-ask-close" onClick={onClose} aria-label="Close AI Ask">×</button>
-        </div>
-      </header>
+                      </div>
+      )}
 
       {inPagesMode && (
         <div className="ai-ask-scope-row">
@@ -1094,7 +1103,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
       {auth.status === "unavailable" && <div className="ai-ask-auth-state"><p>{auth.error}</p><button type="button" onClick={() => setAuthAttempt((value) => value + 1)}>Retry</button></div>}
       {auth.status === "anonymous" && (
         <div className="ai-ask-signin-state">
-          <div className="ai-ask-signin-icon" aria-hidden="true">✦</div>
+          <div className="ai-ask-signin-icon" aria-hidden="true"><AiAskIcon /></div>
           <h3>Sign in to use AI Ask</h3>
           <p>AI Ask requires your existing Google sign-in. Choose included AI access or use your own Gemini API key (BYOK). Drawing and collaboration remain available without signing in.</p>
           <button className="ai-ask-primary" type="button" onClick={beginSignIn} disabled={signInBusy}>{signInBusy ? "Starting Sketchizi services…" : "Continue with Google"}</button>
@@ -1113,7 +1122,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
               </div>
             ) : chat.messages.map((message, index) => (
               <article key={`${message.requestId || message.timestamp || index}-${message.role}-${index}`} className={`ai-ask-message ${message.role}`}>
-                <div className="ai-ask-message-role"><span className="ai-ask-message-author">{message.role === "user" ? "You" : <><span className="ai-ask-assistant-mark" aria-hidden="true">✳</span>{message.provider === "byok" ? "Gemini" : "AI Ask"}</>}</span><time>{timeLabel(message.timestamp)}</time></div>
+                <div className="ai-ask-message-role"><span className="ai-ask-message-author">{message.role === "user" ? "You" : <><span className="ai-ask-assistant-mark" aria-hidden="true"><AiAskIcon /></span>{message.provider === "byok" ? "Gemini" : "AI Ask"}</>}</span><time>{timeLabel(message.timestamp)}</time></div>
                 {message.role === "assistant" ? <MarkdownResponse content={message.text} /> : <div className="ai-ask-user-text">{message.text}</div>}
                 {message.role === "assistant" && <div className="ai-ask-message-actions"><button type="button" onClick={() => copyAssistantResponse(message)} title="Copy response">{copiedMessageId === (message.messageId || message.requestId || String(message.timestamp || "response")) ? "Copied" : "Copy"}</button>{message.question && <button type="button" onClick={() => sendQuestion(message.question)} disabled={busy || Boolean(pendingRequest)} title="Generate another answer to this question">Regenerate</button>}</div>}
               </article>
