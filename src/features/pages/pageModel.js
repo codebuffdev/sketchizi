@@ -1,9 +1,26 @@
 export const PAGE_MARKER = 'sketchiziPage';
-export const DEFAULT_PAGE_SIZE = { width: 1600, height: 1400 };
+// Default artboard proportions are 55 cm × 27 cm. Pixel dimensions are
+// calculated from the available canvas viewport whenever a page is created.
+export const DEFAULT_PAGE_SIZE = { width: 1600, height: Math.round(1600 * 27 / 55) };
+export const PAGE_ASPECT_RATIO = 55 / 27;
+
+export function getResponsivePageSize(appState, margin = 0.96) {
+  const zoom = Number(appState?.zoom?.value ?? appState?.zoom ?? 1);
+  const viewportWidth = Number(appState?.width || 0);
+  const viewportHeight = Number(appState?.height || 0);
+  if (!Number.isFinite(zoom) || zoom <= 0 || viewportWidth <= 0 || viewportHeight <= 0) {
+    return { ...DEFAULT_PAGE_SIZE };
+  }
+  // Convert available screen space into Excalidraw world units, preserving
+  // the requested physical-page aspect ratio at every viewport size.
+  const width = Math.min(viewportWidth * margin / zoom, viewportHeight * margin / zoom * PAGE_ASPECT_RATIO, 10000);
+  const safeWidth = Math.max(80, width);
+  return { width: Math.round(safeWidth), height: Math.round(safeWidth / PAGE_ASPECT_RATIO) };
+}
 export const PAGE_PRESETS = { Wide: DEFAULT_PAGE_SIZE, A4: { width: 1123, height: 1587 }, Letter: { width: 1275, height: 1650 } };
 export const getPages = (elements) => elements.filter(e => !e.isDeleted && e.type === 'frame' && e.customData?.[PAGE_MARKER]).sort((a,b) => (a.customData.pageOrder ?? 0) - (b.customData.pageOrder ?? 0));
 export function validSize(width, height) {
-  return [width, height].every(n => Number.isFinite(n) && n >= 320 && n <= 10000);
+  return [width, height].every(n => Number.isFinite(n) && n >= 80 && n <= 10000);
 }
 // Fit the active artboard with a consistent workspace gutter instead of
 // scaling it edge-to-edge. Recenter after reducing zoom so the page stays put.
