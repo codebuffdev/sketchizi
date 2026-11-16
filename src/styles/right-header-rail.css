@@ -327,6 +327,7 @@
     .desktop-app-library-toggle,
     .desktop-app-nav-button,
     .desktop-app-save-status-wrap,
+    .sketchizi-create-menu,
     .desktop-app-start-collaboration-button,
     .sketchizi-header-grid,
     .desktop-app-save-to-cloud-button,
@@ -361,6 +362,7 @@
     .desktop-app-library-toggle,
     .desktop-app-nav-button,
     .desktop-app-save-status-trigger,
+    .design-studio-header-toggle,
     .desktop-app-start-collaboration-button,
     .sketchizi-header-grid-trigger,
     .desktop-app-save-to-cloud-button,
@@ -387,6 +389,7 @@
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-wrap,
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-create-menu,
   .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid,
   .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header,
   .app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
