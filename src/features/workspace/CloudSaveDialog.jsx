@@ -9,6 +9,9 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
   const [name, setName] = useState(() => (initialName || "Untitled drawing").replace(/\.(excalidraw|sketchizi)$/i, ""));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [projectCreating, setProjectCreating] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -29,6 +32,27 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
       .catch(() => { if (active) setIsAdmin(false); });
     return () => { active = false; };
   }, []);
+
+  const createProject = async (event) => {
+    event.preventDefault();
+    const trimmedName = newProjectName.trim();
+    if (!trimmedName || projectCreating || saving) return;
+    setProjectCreating(true);
+    setError("");
+    try {
+      const result = await workspaceClient.createProject({ name: trimmedName, description: "" });
+      const project = result?.project || result;
+      if (!project?.id) throw new Error("The project was created, but its ID was not returned. Refresh your projects and try again.");
+      setProjects((current) => [...current.filter((item) => item.id !== project.id), project]);
+      setProjectId(project.id);
+      setNewProjectName("");
+      setCreatingProject(false);
+    } catch (cause) {
+      setError(cause.message || "Could not create Cloud project.");
+    } finally {
+      setProjectCreating(false);
+    }
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -53,7 +77,7 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
           </div>
           <button type="button" className="cloud-save-dialog-close" aria-label="Close dialog" disabled={saving} onClick={onClose}>×</button>
         </div>
-        {loading ? <div className="cloud-save-dialog-empty" role="status">Loading your cloud projects…</div> : projects.length ? (
+        {loading ? <div className="cloud-save-dialog-empty" role="status">Loading your cloud projects…</div> : (
           <form onSubmit={submit}>
             <div className="cloud-save-dialog-fields">
               <label htmlFor="cloud-save-name">Diagram name
@@ -61,24 +85,30 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
               </label>
               <label htmlFor="cloud-save-project">Cloud project
                 <select id="cloud-save-project" required value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+                  <option value="" disabled>{projects.length ? "Select a project" : "No projects yet"}</option>
                   {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
                 </select>
               </label>
+              {!creatingProject ? (
+                <button type="button" className="cloud-save-create-project-trigger" disabled={saving || projectCreating} onClick={() => { setCreatingProject(true); setError(""); }}>+ Create Cloud project</button>
+              ) : (
+                <div className="cloud-save-create-project">
+                  <label htmlFor="cloud-save-new-project">New project name
+                    <input id="cloud-save-new-project" autoFocus required maxLength={120} value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="e.g. System Design" />
+                  </label>
+                  <div className="cloud-save-create-project-actions">
+                    <button type="button" disabled={projectCreating} onClick={() => { setCreatingProject(false); setNewProjectName(""); }}>Cancel</button>
+                    <button type="button" className="primary" disabled={projectCreating || !newProjectName.trim()} onClick={createProject}>{projectCreating ? "Creating…" : "Create project"}</button>
+                  </div>
+                </div>
+              )}
             </div>
             {error && <p className="cloud-save-dialog-error" role="alert">{error}</p>}
             <div className="cloud-save-dialog-actions">
-              <button type="button" disabled={saving} onClick={onClose}>Cancel</button>
-              <button type="submit" className="primary" disabled={saving || !projectId || !name.trim()}>{saving ? "Saving…" : "Save to Cloud"}</button>
+              <button type="button" disabled={saving || projectCreating} onClick={onClose}>Cancel</button>
+              <button type="submit" className="primary" disabled={saving || projectCreating || !projectId || !name.trim()}>{saving ? "Saving…" : "Save to Cloud"}</button>
             </div>
           </form>
-        ) : (
-          <>
-            <div className="cloud-save-dialog-empty">{error || "You don't have a Cloud Workspace project yet. Create a project first, then save this drawing to it."}</div>
-            <div className="cloud-save-dialog-actions">
-              <button type="button" onClick={onClose}>Cancel</button>
-              <button type="button" className="primary" onClick={() => window.location.assign("/workspace")}>Open Cloud Workspace</button>
-            </div>
-          </>
         )}
       </section>
     </div>
