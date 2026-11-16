@@ -1,3 +1,22 @@
+// Recover open tabs when a deployment removes a lazy-loaded, hashed Vite chunk.
+// This commonly happens when an editor tab stays open across a new deployment.
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", (event) => {
+    const failedAsset = String(event.payload?.request || "unknown");
+    const retryKey = `sketchizi:preload-retry:${failedAsset}`;
+    let alreadyRetried = false;
+    try {
+      alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
+      if (!alreadyRetried) window.sessionStorage.setItem(retryKey, "1");
+    } catch {
+      // If storage is unavailable, still make one best-effort reload.
+    }
+    if (alreadyRetried) return;
+    event.preventDefault();
+    window.location.reload();
+  });
+}
+
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import "@excalidraw/excalidraw/index.css";
