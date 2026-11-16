@@ -33,6 +33,7 @@ export default function CreateMenu({
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation?.();
         setOpen(false);
         triggerRef.current?.focus();
         return;

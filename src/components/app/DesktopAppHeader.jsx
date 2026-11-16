@@ -118,13 +118,17 @@ export default function DesktopAppHeader({
       if (!gridPopoverRef.current?.contains(event.target)) setGridPopoverOpen(false);
     };
     const closeEscape = (event) => {
-      if (event.key === "Escape") setGridPopoverOpen(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      setGridPopoverOpen(false);
     };
     document.addEventListener("pointerdown", closeOutside);
-    document.addEventListener("keydown", closeEscape);
+    window.addEventListener("keydown", closeEscape, true);
     return () => {
       document.removeEventListener("pointerdown", closeOutside);
-      document.removeEventListener("keydown", closeEscape);
+      window.removeEventListener("keydown", closeEscape, true);
     };
   }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
@@ -271,13 +275,17 @@ export default function DesktopAppHeader({
       setOpenMenu(null);
     };
     const onKeyDown = (event) => {
-      if (event.key === "Escape") setOpenMenu(null);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      setOpenMenu(null);
     };
     document.addEventListener("pointerdown", close, true);
-    document.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
     return () => {
       document.removeEventListener("pointerdown", close, true);
-      document.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, [openMenu]);
 
@@ -289,13 +297,17 @@ export default function DesktopAppHeader({
       setSaveDetailsOpen(false);
     };
     const onKeyDown = (event) => {
-      if (event.key === "Escape") setSaveDetailsOpen(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      setSaveDetailsOpen(false);
     };
     document.addEventListener("pointerdown", close, true);
-    document.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
     return () => {
       document.removeEventListener("pointerdown", close, true);
-      document.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, [saveDetailsOpen]);
 

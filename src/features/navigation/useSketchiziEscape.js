@@ -9,10 +9,21 @@ import { useEffect } from "react";
  */
 export function useSketchiziEscape({
   activePanel,
-  iconLibraryPinned,
   commandPaletteOpen,
   closeCommandPalette,
   closePanel,
+  aiAskOpen,
+  setAiAskOpen,
+  minimapOpen,
+  setMinimapOpen,
+  nativeMenuOpen,
+  closeNativeMenu,
+  designStudioOpen,
+  setDesignStudioOpen,
+  exportStudioOpen,
+  setExportStudioOpen,
+  templatesModalOpen,
+  setTemplatesModalOpen,
   collaborationOpen,
   setCollaborationOpen,
   connectionMode,
@@ -25,60 +36,79 @@ export function useSketchiziEscape({
     const handleKeyDown = (event) => {
       if (event.key !== "Escape") return;
 
+      const consumeEscape = (close) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        close();
+      };
+
       // Excalidraw owns the image export dialog state. Keep Escape in the
       // centralized Sketchizi dismissal path so it closes before lower-priority
       // panels or Excalidraw canvas handling can consume the event.
       if (apiRef.current?.getAppState?.().openDialog?.name === "imageExport") {
-        event.preventDefault();
-        event.stopPropagation();
-        closeExportDialog();
+        consumeEscape(closeExportDialog);
         return;
       }
 
       // The command palette is the topmost Sketchizi overlay. Close only it
       // so an underlying panel remains open for a later Escape press.
       if (commandPaletteOpen) {
-        event.preventDefault();
-        event.stopPropagation();
-        closeCommandPalette();
+        consumeEscape(closeCommandPalette);
         return;
       }
 
       // Collaboration is a modal dialog/backdrop, so it has dismissal
       // priority over an underlying Sketchizi panel.
       if (collaborationOpen) {
-        event.preventDefault();
-        event.stopPropagation();
-        setCollaborationOpen(false);
+        consumeEscape(() => setCollaborationOpen(false));
         return;
       }
 
-      // The pinned Icon Library intentionally consumes Escape without closing.
-      if (activePanel === "icon-library" && iconLibraryPinned) {
-        event.preventDefault();
-        event.stopPropagation();
+      // Close app-level overlays before panels underneath them.
+      if (templatesModalOpen) {
+        consumeEscape(() => setTemplatesModalOpen(false));
+        return;
+      }
+      if (exportStudioOpen) {
+        consumeEscape(() => setExportStudioOpen(false));
+        return;
+      }
+      if (designStudioOpen) {
+        consumeEscape(() => setDesignStudioOpen(false));
+        return;
+      }
+      if (aiAskOpen) {
+        consumeEscape(() => setAiAskOpen(false));
+        return;
+      }
+      if (minimapOpen) {
+        consumeEscape(() => setMinimapOpen(false));
+        return;
+      }
+      if (nativeMenuOpen) {
+        consumeEscape(closeNativeMenu);
         return;
       }
 
-      // All application panels share the single activePanel state.
+      // All application panels share the single activePanel state. A pinned
+      // panel can still be dismissed explicitly with Escape.
       if (activePanel) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (activePanel === "icon-library") searchRef.current?.blur();
-        closePanel(activePanel);
+        consumeEscape(() => {
+          if (activePanel === "icon-library") searchRef.current?.blur();
+          closePanel(activePanel);
+        });
         return;
       }
 
       // Preserve the existing Sketchizi connection-mode dismissal. With no
       // Sketchizi panel/mode active, do nothing so Excalidraw owns Escape.
       if (connectionMode) {
-        event.preventDefault();
-        event.stopPropagation();
-        activateSelectionTool();
+        consumeEscape(activateSelectionTool);
       }
     };
 
     document.addEventListener("keydown", handleKeyDown, true);
     return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [activePanel, iconLibraryPinned, closePanel, collaborationOpen, setCollaborationOpen, commandPaletteOpen, closeCommandPalette, connectionMode, activateSelectionTool, searchRef, apiRef, closeExportDialog]);
+  }, [activePanel, closePanel, commandPaletteOpen, closeCommandPalette, aiAskOpen, setAiAskOpen, minimapOpen, setMinimapOpen, nativeMenuOpen, closeNativeMenu, designStudioOpen, setDesignStudioOpen, exportStudioOpen, setExportStudioOpen, templatesModalOpen, setTemplatesModalOpen, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef, apiRef, closeExportDialog]);
 }

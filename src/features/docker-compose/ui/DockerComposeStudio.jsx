@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseDocument, stringify } from "yaml";
 import { normalizeStudioDiagnostics } from "../../studio-validation/diagnostics.js";
 import { convertComposeToKubernetes } from "../composeToKubernetes.js";
@@ -233,7 +233,28 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     catch { return null; }
   }, [composeDoc, selectedService]);
   const dirty = yamlText !== savedYaml;
-  const close = () => { if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return; onClose?.(); };
+  const close = useCallback(() => {
+    if (dirty && !window.confirm("You have unsaved Compose YAML changes. Close Docker Compose Studio and discard them?")) return;
+    onClose?.();
+  }, [dirty, onClose]);
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      if (completion.items.length) {
+        const caret = editorRef.current?.selectionStart ?? 0;
+        setDismissedCompletionLine(yamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1);
+        setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+        return;
+      }
+      close();
+    };
+    window.addEventListener("keydown", closeOnEscape, true);
+    return () => window.removeEventListener("keydown", closeOnEscape, true);
+  }, [close, completion.items.length, yamlText]);
 
 
   const updateCompletions = (text, caret, force = false) => {

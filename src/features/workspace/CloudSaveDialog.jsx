@@ -15,6 +15,18 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      if (!saving && !projectCreating) onClose?.();
+    };
+    window.addEventListener("keydown", closeOnEscape, true);
+    return () => window.removeEventListener("keydown", closeOnEscape, true);
+  }, [onClose, saving, projectCreating]);
+
+  useEffect(() => {
     let active = true;
     workspaceClient.listProjects()
       .then((result) => {

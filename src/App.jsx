@@ -601,7 +601,31 @@ function App() {
     apiRef.current.updateScene({ elements: result.elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   }, [collaborationCanEdit, selectedKubernetesRelationship?.relationshipId]);
 
-  useSketchiziEscape({ activePanel, closePanel, iconLibraryPinned, commandPaletteOpen, closeCommandPalette, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef, apiRef, closeExportDialog });
+  useSketchiziEscape({
+    activePanel,
+    closePanel,
+    commandPaletteOpen,
+    closeCommandPalette,
+    aiAskOpen,
+    setAiAskOpen,
+    minimapOpen,
+    setMinimapOpen,
+    nativeMenuOpen,
+    closeNativeMenu,
+    designStudioOpen,
+    setDesignStudioOpen,
+    exportStudioOpen,
+    setExportStudioOpen,
+    templatesModalOpen,
+    setTemplatesModalOpen,
+    collaborationOpen,
+    setCollaborationOpen,
+    connectionMode,
+    activateSelectionTool,
+    searchRef,
+    apiRef,
+    closeExportDialog,
+  });
   useSketchiziExportLifecycle({ apiRef, showToast, closeExportDialog });
   useEffect(() => {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
