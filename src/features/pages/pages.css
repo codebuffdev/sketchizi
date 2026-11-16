@@ -31,8 +31,8 @@
 .canvas-page-actions { display:flex; align-items:center; justify-content:space-between; }
 .canvas-page-actions button { padding:5px; font-size:10px; }
 /* Keep the canvas selector available even when the utility rail is collapsed. */
-.app .canvas-pages-control { position:fixed; right:78px; top:calc(16px + var(--safe-top, 0px)); z-index:96; }
-.app .canvas-pages-menu { top:44px; right:0; }
+.app .canvas-pages-control { position:relative; right:auto; top:auto; z-index:96; flex:0 0 auto; }
+.app .canvas-pages-menu { top:42px; left:0; right:auto; }
 @media (max-width:767px) { .app .canvas-pages-menu { left:0; right:auto; } }
 
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
