@@ -38,7 +38,7 @@ test('duplicating a page remaps internal bindings and preserves the source and i
 test('page viewport mask leaves only the selected page visible and blocks the surrounding canvas', () => {
  const mask = getPageViewportMask(
   {x:500,y:200,width:1000,height:800},
-  {offsetLeft:100,offsetTop:50,width:1200,height:900,scrollX:0,scrollY:0,zoom:{value:0.5},viewBackgroundColor:'#f4f5f7'}
+  {offsetLeft:100,offsetTop:50,width:1200,height:900,scrollX:0,scrollY:0,zoom:{value:0.5},theme:'dark',viewBackgroundColor:'#f4f5f7'}
  );
  assert.equal(mask.backgroundColor,'#111820');
  assert.deepEqual(mask.pageRect,{left:350,top:150,width:500,height:400});
