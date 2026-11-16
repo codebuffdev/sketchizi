@@ -54,7 +54,7 @@ export default function CanvasPages({ api, canEdit = true }) {
         let rejected = false;
         const guarded = api.getSceneElementsIncludingDeleted().map(element => {
           if (element.isDeleted || element.id === selected.id ||
-              element.customData?.sketchiziPagePaper === selected.id ||
+              element.customData?.sketchiziPagePaper ||
               (element.type === 'frame' && element.customData?.[PAGE_MARKER])) return element;
           const before = previous.get(element.id);
           if (!before) {
@@ -65,8 +65,9 @@ export default function CanvasPages({ api, canEdit = true }) {
             return { ...element, isDeleted: true, version: (element.version || 0) + 1,
               versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
           }
-          const changed = ['x','y','width','height','angle','frameId','text','points'].some(key =>
-            JSON.stringify(before[key]) !== JSON.stringify(element[key]));
+          const changed = [...new Set([...Object.keys(before), ...Object.keys(element)])]
+            .filter(key => !['version','versionNonce','updated','index'].includes(key))
+            .some(key => JSON.stringify(before[key]) !== JSON.stringify(element[key]));
           if (!changed) return element;
           if (before.frameId !== selected.id && element.frameId !== selected.id) {
             rejected = true;
