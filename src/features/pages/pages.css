@@ -76,6 +76,9 @@
     radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0);
   background-size: 24px 24px;
 }
+.canvas-pages-mask > .canvas-pages-page-outline {
+  pointer-events: none !important;
+}
 .canvas-pages-page-outline {
   position: fixed;
   z-index: 1;
