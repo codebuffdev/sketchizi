@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ThemeControl from "../../ThemeControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
+import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
 
 const MENU_DEFINITIONS = [
   {
@@ -135,6 +136,10 @@ export default function DesktopAppHeader({
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
   const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
   const cancelDocumentRenameRef = useRef(false);
+
+  useEffect(() => {
+    document.title = getCanvasBrowserTitle(currentDocumentName);
+  }, [currentDocumentName]);
 
   useEffect(() => {
     if (!documentNameEditing) setDocumentNameDraft(currentDocumentName);
