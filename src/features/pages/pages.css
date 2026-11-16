@@ -109,9 +109,10 @@
   .canvas-pages-page-outline { transition: left 100ms ease, top 100ms ease, width 100ms ease, height 100ms ease; }
 }
 
-/* Pages mode overlays stay below the native drawing dock. */
-.app .excalidraw .App-toolbar-container { z-index: 10020 !important; }
-.app .excalidraw .App-toolbar { z-index: 10021 !important; }
+/* Keep Excalidraw's native UI layer above the page-isolation mask. */
+.app:has(.canvas-pages-mask) .desktop-canvas-region .excalidraw .layer-ui__wrapper { z-index: 10020 !important; }
+.app:has(.canvas-pages-mask) .excalidraw .App-toolbar-container { z-index: 10021 !important; }
+.app:has(.canvas-pages-mask) .excalidraw .App-toolbar { z-index: 10022 !important; }
 .canvas-pages-page-grid {
   position: fixed;
   z-index: 1;
