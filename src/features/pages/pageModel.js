@@ -7,7 +7,12 @@ export function validSize(width, height) {
 }
 export function nextPagePosition(elements) {
   const live = elements.filter(e => !e.isDeleted);
-  return { x: live.length ? Math.max(...live.map(e => e.x + Math.abs(e.width || 0))) + 160 : 0, y: 0 };
+  // Keep sheets far enough apart that fitting one page cannot expose a
+  // neighboring sheet at the edge of a wide or portrait viewport.
+  const right = live.length ? Math.max(...live.map(e => e.x + Math.abs(e.width || 0))) : 0;
+  const pageWidth = Math.max(DEFAULT_PAGE_SIZE.width, ...getPages(live).map(page => page.width || 0));
+  const isolationGap = Math.max(10000, pageWidth * 4);
+  return { x: live.length ? right + isolationGap : 0, y: 0 };
 }
 export function pageSkeleton(elements, size, id) {
   if (!validSize(size.width, size.height)) throw new Error('Use dimensions between 320 and 10,000 pixels.');
