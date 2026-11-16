@@ -167,12 +167,13 @@
   background: var(--ui-surface-solid, #fff);
 }
 
-/* Restore the subtle default grid on the page surface. */
+/* Keep the page grid transparent so native Excalidraw strokes and text
+   remain visible beneath this non-interactive overlay. */
 .canvas-pages-page-surface {
   position: fixed;
   z-index: 1;
   pointer-events: none;
-  background-color: var(--ui-surface-solid, #fff);
+  background-color: transparent;
   background-image:
     linear-gradient(var(--canvas-pages-page-grid, rgba(30,41,59,.065)) 1px, transparent 1px),
     linear-gradient(90deg, var(--canvas-pages-page-grid, rgba(30,41,59,.065)) 1px, transparent 1px);
