@@ -35,6 +35,7 @@ export function useSketchiziEscape({
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key !== "Escape") return;
+      if (event.target instanceof HTMLElement && event.target.hasAttribute("data-sketchizi-inline-editor")) return;
 
       const consumeEscape = (close) => {
         event.preventDefault();

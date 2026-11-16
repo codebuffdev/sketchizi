@@ -6,6 +6,7 @@ import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import ShapeMeasurements from "./ShapeMeasurements";
+import RectangleTitles from "./RectangleTitles";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
@@ -16,6 +17,7 @@ import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } 
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
+  pageContext,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
@@ -837,6 +839,13 @@ export default function SketchiziCanvas({
       )}
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
+      <RectangleTitles
+        api={apiRef.current}
+        canvasRootRef={canvasRootRef}
+        elements={visibleSceneElements}
+        pageContext={pageContext}
+        canEdit={canEdit && !viewModeEnabled}
+      />
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
