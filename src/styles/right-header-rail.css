@@ -7,10 +7,10 @@
     align-items: stretch;
     justify-content: flex-start;
     left: auto;
-    right: calc(18px + var(--safe-right, 0px));
+    right: var(--header-rail-right, calc(18px + var(--safe-right, 0px)));
     top: 50% !important;
     bottom: auto !important;
-    width: 56px !important;
+    width: var(--header-rail-width, 56px) !important;
     height: auto !important;
     max-height: calc(100dvh - 36px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
     margin: 0 !important;
@@ -300,7 +300,7 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
-    width: 56px !important;
+    width: var(--header-rail-width, 56px) !important;
     padding: 10px 0 !important;
     box-sizing: border-box;
     border: 1px solid var(--ui-border, #dfe3eb) !important;
@@ -473,5 +473,47 @@
 @media (min-width: 1025px) and (max-height: 700px) {
   .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
     justify-content: flex-start !important;
+  }
+}
+
+/* Share geometry so title, login and rail stay aligned across auth states. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header {
+    --header-rail-width: 56px;
+    --header-rail-right: calc(18px + var(--safe-right, 0px));
+    --header-top: calc(18px + var(--safe-top, 0px));
+    --header-top-control-height: 40px;
+  }
+
+  .app.canvas-first-header .desktop-app-document-title-float {
+    top: var(--header-top);
+    height: var(--header-top-control-height);
+    min-height: var(--header-top-control-height);
+  }
+
+  .app.canvas-first-header .desktop-app-auth-corner {
+    top: var(--header-top);
+    right: calc(var(--header-rail-right) + (var(--header-rail-width) - var(--header-top-control-height)) / 2);
+    height: var(--header-top-control-height);
+  }
+
+  /* Status/retry controls extend left without moving the login center. */
+  .app.canvas-first-header .desktop-app-auth-corner .auth-control-root {
+    flex-direction: row-reverse;
+    gap: 6px;
+    min-height: var(--header-top-control-height);
+  }
+
+  .app.canvas-first-header .desktop-app-auth-corner :is(.auth-account-trigger, .auth-header-sign-in-icon) {
+    box-sizing: border-box;
+    flex: 0 0 var(--header-top-control-height);
+    width: var(--header-top-control-height);
+    min-width: var(--header-top-control-height);
+    height: var(--header-top-control-height);
+    min-height: var(--header-top-control-height);
+  }
+
+  .app.canvas-first-header .desktop-app-auth-corner .auth-inline-error {
+    margin-left: 0;
   }
 }
