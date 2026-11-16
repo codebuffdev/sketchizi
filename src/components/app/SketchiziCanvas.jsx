@@ -823,18 +823,16 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
-        <ContextualFormattingToolbar
-          apiRef={apiRef}
-          canvasRootRef={canvasRootRef}
-          canvasRevision={canvasRevision}
-          selectedElements={selectedElements}
-          applyToSelected={applyToSelected}
-          onOpenProperties={onOpenProperties}
-          propertiesOpen={propertiesOpen}
-          canEdit={canEdit && !viewModeEnabled}
-        />
-      )}
+      <ContextualFormattingToolbar
+        apiRef={apiRef}
+        canvasRootRef={canvasRootRef}
+        canvasRevision={canvasRevision}
+        selectedElements={selectedElements}
+        applyToSelected={applyToSelected}
+        onOpenProperties={onOpenProperties}
+        propertiesOpen={propertiesOpen}
+        canEdit={canEdit && !viewModeEnabled}
+      />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
