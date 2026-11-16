@@ -187,3 +187,17 @@
 .canvas-pages-resize-handle.is-e,.canvas-pages-resize-handle.is-w { cursor:ew-resize; }
 .canvas-pages-resize-handle.is-nw,.canvas-pages-resize-handle.is-se { cursor:nwse-resize; }
 .canvas-pages-resize-handle.is-ne,.canvas-pages-resize-handle.is-sw { cursor:nesw-resize; }
+
+/* The page title is an inline rename target, not a passive overlay label. */
+.canvas-pages-page-name {
+  pointer-events: auto;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+  cursor: text;
+  font: inherit;
+}
+.canvas-pages-page-name:hover:not(:disabled) { border-color: var(--ui-border); background: var(--ui-surface-solid); }
+.canvas-pages-page-name:disabled { cursor: default; opacity: 1; }

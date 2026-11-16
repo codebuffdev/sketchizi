@@ -24,13 +24,11 @@ export function validSize(width, height) {
 }
 // Fit the active artboard with a consistent workspace gutter instead of
 // scaling it edge-to-edge. Recenter after reducing zoom so the page stays put.
-export function getPageFitViewport(page, appState, scale = 0.82) {
-  if (!page || !appState || !Number.isFinite(scale) || scale <= 0 || scale >= 1) return null;
-  const currentZoom = Number(appState.zoom?.value ?? appState.zoom ?? 1);
+export function getPageFitViewport(page, appState, zoom = 1) {
+  if (!page || !appState || !Number.isFinite(zoom) || zoom <= 0) return null;
   const width = Number(appState.width || 0);
   const height = Number(appState.height || 0);
-  if (!Number.isFinite(currentZoom) || currentZoom <= 0 || width <= 0 || height <= 0) return null;
-  const zoom = currentZoom * scale;
+  if (width <= 0 || height <= 0) return null;
   return {
     zoom: { value: zoom },
     scrollX: width / (2 * zoom) - page.x - page.width / 2,
