@@ -72,10 +72,12 @@ export default function CanvasPages({ api, canEdit = true }) {
     activeIdRef.current = page.id;
     initialFitRef.current = true;
     setActiveId(page.id);
-    // Selecting the frame makes the page itself feel like an editable
-    // artboard and exposes Excalidraw's native resize handles and measurements.
+    // Keep the frame unselected: selecting the frame can capture pointer
+    // interactions in Excalidraw and prevent the normal drawing/text tools
+    // from starting strokes inside the page. The page boundary and resize
+    // affordances are provided by the Pages overlay instead.
     api.updateScene({
-      appState: { selectedElementIds: { [page.id]: true }, selectedGroupIds: {} },
+      appState: { selectedElementIds: {}, selectedGroupIds: {} },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
     api.scrollToContent?.([page], { fitToContent: true, animate: false });
