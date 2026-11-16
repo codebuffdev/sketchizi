@@ -7,6 +7,7 @@ test('adding a page preserves existing artwork and places the sheet beyond its b
  const [paper,page] = pageSkeleton(existing,DEFAULT_PAGE_SIZE,'new-page');
  assert.deepEqual(existing,snapshot);
  assert(paper.x > 600);
+ assert(paper.x - (100 + 500) >= 10000, 'separate sheets far enough that fitting one page cannot reveal its neighbor');
  assert.equal(page.width,1600); assert.equal(page.height,1400);
  assert.deepEqual(page.children,[paper.id]); assert.equal(paper.locked,true);
 });
