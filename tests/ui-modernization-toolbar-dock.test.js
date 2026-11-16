@@ -26,3 +26,11 @@ test('toolbar redesign is loaded last and retains responsive, theme, and motion 
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?background: transparent !important/);
 });
+
+
+test('native and custom quick tools share a 34px footprint and centered dock alignment', () => {
+  assert.match(css, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?align-items:\s*center\s*!important/);
+  assert.match(css, /\.sketchizi-dock-quick-tool[\s\S]*?width:\s*34px\s*!important/);
+  assert.match(css, /\.sketchizi-dock-quick-tool[\s\S]*?height:\s*34px\s*!important/);
+  assert.match(css, /\.sketchizi-dock-quick-tools[\s\S]*?min-height:\s*34px\s*!important/);
+});

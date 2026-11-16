@@ -499,12 +499,13 @@
 /* Sketchizi quick-access tool: Bucket Fill. */
 .app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool,
 .app .excalidraw .App-toolbar .sketchizi-dock-quick-tool {
-  width: 42px;
-  min-width: 42px;
-  flex: 0 0 42px;
+  box-sizing: border-box;
+  width: 34px;
+  min-width: 34px;
+  flex: 0 0 34px;
   position: relative;
-  height: 42px;
-  min-height: 42px;
+  height: 34px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -549,7 +550,7 @@
   gap: 0;
   width: max-content;
   min-width: max-content;
-  min-height: 42px;
+  min-height: 34px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -1701,4 +1702,39 @@
   min-width: 0;
   font-size: 11px;
   gap: 4px;
+}
+
+
+/* Keep every native and custom dock control on one shared center line.
+   The compact native controls are 34px; custom quick tools now use the same
+   footprint so their wrapper cannot lift or visually offset the dock row. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-grip,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-separator,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-quick-tools {
+  align-self: center !important;
+  box-sizing: border-box !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tools {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 34px !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 34px !important;
+  align-self: center !important;
 }

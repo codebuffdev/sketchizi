@@ -597,10 +597,10 @@ export default function SketchiziCanvas({
         button.style.display = "inline-flex";
         button.style.visibility = "visible";
         button.style.opacity = "1";
-        button.style.flex = "0 0 42px";
-        button.style.width = "42px";
-        button.style.minWidth = "42px";
-        button.style.height = "42px";
+        button.style.flex = "0 0 34px";
+        button.style.width = "34px";
+        button.style.minWidth = "34px";
+        button.style.height = "34px";
         button.innerHTML = `<span aria-hidden="true">${icon}</span>`;
         // appendChild also restores the intended order when Excalidraw mutates
         // the toolbar; only move nodes when they are not already in order.
