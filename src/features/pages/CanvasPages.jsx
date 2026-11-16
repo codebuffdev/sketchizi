@@ -15,6 +15,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [resizeMode, setResizeMode] = useState(false);
   const [nameDialog, setNameDialog] = useState(null);
   const [inlineName, setInlineName] = useState(null);
+  const cancelInlineNameRef = useRef(false);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
@@ -242,6 +243,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     setInlineName({ pageId: page.id, value: page.name || 'Page' });
   };
   const saveInlineName = () => {
+    if (cancelInlineNameRef.current) { cancelInlineNameRef.current = false; return; }
     if (!inlineName || !canEdit) return setInlineName(null);
     const value = inlineName.value.trim().slice(0, 80);
     if (value && value !== (pages.find(page => page.id === inlineName.pageId)?.name || 'Page')) {
@@ -315,7 +317,7 @@ export default function CanvasPages({ api, canEdit = true }) {
           value={inlineName.value}
           onChange={event => setInlineName(current => ({ ...current, value: event.target.value }))}
           onBlur={saveInlineName}
-          onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); saveInlineName(); } if (event.key === 'Escape') { event.preventDefault(); setInlineName(null); } }}
+          onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } if (event.key === 'Escape') { event.preventDefault(); cancelInlineNameRef.current = true; setInlineName(null); } }}
         /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>}
       </div>, host)}
     {mode === 'pages' && resizeMode && pageMask && host && createPortal(<>
