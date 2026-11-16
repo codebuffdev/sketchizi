@@ -44,12 +44,12 @@
    The page remains a native Excalidraw frame; this styling only removes the
    floating-canvas presentation and gives the surrounding workspace its grid. */
 .app:has(.canvas-pages-mask) .desktop-canvas-region {
-  background-color: #10171b !important;
+  background-color: var(--canvas-pages-gutter, #111820) !important;
   background-image:
-    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
-    radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0) !important;
-  background-size: 24px 24px, 24px 24px, 24px 24px !important;
+    linear-gradient(var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-pages-grid, rgba(255,255,255,.035)) 1px, transparent 1px),
+    radial-gradient(circle at 1px 1px, var(--canvas-pages-dot, rgba(148,163,184,.12)) 1px, transparent 0) !important;
+  background-size: 24px 24px !important;
 }
 .app:has(.canvas-pages-mask) .desktop-canvas-region > .canvas {
   background: transparent !important;
@@ -96,7 +96,7 @@
   box-sizing: border-box;
   border: 1px solid #a79de0;
   border-radius: 2px;
-  background: #10171b;
+  background: var(--canvas-pages-gutter, #111820);
 }
 .canvas-pages-page-outline i:nth-child(1) { left: -4px; top: -4px; }
 .canvas-pages-page-outline i:nth-child(2) { right: -4px; top: -4px; }
@@ -107,14 +107,8 @@
 }
 
 /* Pages mode overlays stay below the native drawing dock. */
-.app .excalidraw .App-toolbar-container {
-  position: fixed !important;
-  z-index: 10020 !important;
-}
-.app .excalidraw .App-toolbar {
-  position: relative;
-  z-index: 10021 !important;
-}
+.app .excalidraw .App-toolbar-container { z-index: 10020 !important; }
+.app .excalidraw .App-toolbar { z-index: 10021 !important; }
 .canvas-pages-page-grid {
   position: fixed;
   z-index: 1;
