@@ -59,6 +59,9 @@
   border-radius: 0 !important;
   box-shadow: none !important;
   overflow: visible !important;
+  /* The normal canvas surface isolates stacking contexts; Pages must let the
+     native toolbar dock rise above the page-isolation masks. */
+  isolation: auto !important;
 }
 .canvas-pages-mask {
   position: fixed;
