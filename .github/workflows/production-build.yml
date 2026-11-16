@@ -79,6 +79,9 @@ jobs:
       - name: Verify mobile drawing canvas at phone widths
         run: node scripts/browser-mobile-editor-smoke.mjs
 
+      - name: Verify signed-in account dropdown layout
+        run: node scripts/browser-account-menu-smoke.mjs
+
       - name: Write CI verification summary
         if: always()
         shell: bash
