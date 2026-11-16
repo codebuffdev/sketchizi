@@ -495,7 +495,8 @@ export default function SketchiziCanvas({
       // Insert separators before known native tool groups only when the DOM
       // exposes a direct toolbar child boundary. Never reorder or wrap tools.
       const groupStarts = [
-        { name: "selection-shapes", pattern: /^(select|selection|rectangle|rect)$/i },
+        { name: "navigation", pattern: /^(hand|pan|zoom)$/i },
+        { name: "selection-shapes", pattern: /^(select|selection|rectangle|rect|diamond|ellipse)$/i },
         { name: "connectors", pattern: /^(arrow|line|elbow|connector)$/i },
         { name: "drawing", pattern: /^(draw|freedraw|freehand|pen)$/i },
         { name: "annotation-editing", pattern: /^(text|note|image|eraser)$/i },
@@ -505,19 +506,23 @@ export default function SketchiziCanvas({
       const nativeTools = directChildren.filter((node) =>
         node.matches(".ToolIcon, .dropdown-menu-button, button, [role='button']"),
       );
+      let previousGroup = null;
       nativeTools.forEach((anchor) => {
         const button = anchor.matches("button, [role='button']") ? anchor : anchor.querySelector("button, [role='button']");
         if (!button || button.classList.contains("sketchizi-dock-grip")) return;
         const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""} ${button.dataset.testid || ""}`.trim().toLowerCase();
         const normalized = label.split(/[(:\\s-]/)[0];
         const group = groupStarts.find((entry) => entry.pattern.test(normalized));
-        if (!group || group.name === "selection-shapes" ||
-          anchor.previousElementSibling?.classList.contains("sketchizi-dock-separator")) return;
-        const separator = document.createElement("span");
-        separator.className = "sketchizi-dock-separator";
-        separator.dataset.group = group.name;
-        separator.setAttribute("aria-hidden", "true");
-        toolbar.insertBefore(separator, anchor);
+        if (!group) return;
+        if (previousGroup && previousGroup !== group.name &&
+          !anchor.previousElementSibling?.classList.contains("sketchizi-dock-separator")) {
+          const separator = document.createElement("span");
+          separator.className = "sketchizi-dock-separator";
+          separator.dataset.group = group.name;
+          separator.setAttribute("aria-hidden", "true");
+          toolbar.insertBefore(separator, anchor);
+        }
+        previousGroup = group.name;
       });
 
       // Keep Bucket Fill as the only custom quick tool in the native dock.
