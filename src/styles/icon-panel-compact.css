@@ -21,6 +21,12 @@
 .app > .sk-icon-library-portal-host.mobile-resource-closed {
   display: none !important;
 }
+
+/* Page resize and rename controls share the app root with this portal. */
+.app:has(.canvas-pages-mask) > .sk-icon-library-portal-host.mobile-resource-open {
+  z-index: 10050 !important;
+}
+
 @media (max-width: 760px) {
   .app > .sk-icon-library-portal-host.mobile-resource-open {
     inset: calc(var(--sketchizi-desktop-header-height, 54px) + 8px) auto auto 10px !important;
