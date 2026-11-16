@@ -73,7 +73,7 @@ test('page viewport mask clips pages to the visible canvas and rejects an off-sc
 });
 
 test('page fit keeps a visible workspace gutter and recenters the page', () => {
- const page = { x: 300, y:: 100, width: 1600, height: 1400 };
+ const page = { x: 300, y: 100, width: 1600, height: 1400 };
  const viewport = { width: 1200, height: 900, zoom: { value: 0.5 }, scrollX: 0, scrollY: 0 };
  const fitted = getPageFitViewport(page, viewport, 0.82);
  assert.equal(fitted.zoom.value, 0.41);
