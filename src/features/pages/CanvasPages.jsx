@@ -83,6 +83,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     // Scale the fitted view down slightly and recenter it to retain a visible
     // workspace gutter around the page on every page switch and Fit page.
     window.requestAnimationFrame(() => {
+      if (activeIdRef.current !== page.id) return;
       const fittedState = api.getAppState();
       const pageViewport = getPageFitViewport(page, fittedState, 0.82);
       if (pageViewport) {
