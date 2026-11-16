@@ -183,15 +183,6 @@ export default function CanvasPages({ api, canEdit = true }) {
         {pageMask.panels.map((panel, i) => <div key={i} style={{ ...panel, backgroundColor: pageMask.backgroundColor }} />)}
       </div>, host)}
     {mode === 'pages' && host && createPortal(<>
-      <aside className={`canvas-pages-panel${collapsed ? ' is-collapsed' : ''}`} aria-label="Pages">
-        <button className="canvas-pages-heading" type="button" aria-expanded={!collapsed} onClick={() => setCollapsed(!collapsed)}>Pages <span>{collapsed ? '›' : '‹'}</span></button>
-        {!collapsed && <><div className="canvas-pages-list">{pages.map((page,i) => <div key={page.id}>
-          <button className="canvas-page-card" type="button" aria-current={active?.id === page.id ? 'page' : undefined} onClick={() => fit(page)}>
-            {previews[page.id] ? <img src={previews[page.id]} alt=""/> : <span className="canvas-page-placeholder" style={{aspectRatio: `${page.width}/${page.height}`}}/>}<span>{i+1} · {page.name}</span>
-          </button>
-          {canEdit && <div className="canvas-page-actions"><button className="canvas-page-rename" type="button" aria-label={`Rename ${page.name}`} onClick={() => rename(page)}>Rename</button><button type="button" aria-label={`Duplicate ${page.name}`} onClick={() => duplicate(page)}>Copy</button><button type="button" aria-label={`Move ${page.name} up`} disabled={i === 0} onClick={() => move(page,-1)}>↑</button><button type="button" aria-label={`Move ${page.name} down`} disabled={i === pages.length-1} onClick={() => move(page,1)}>↓</button></div>}
-        </div>)}</div><button type="button" disabled={!canEdit} onClick={add}>＋ Add page</button></>}
-      </aside>
       <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
     </>,host)}
   </>;
