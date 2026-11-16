@@ -4,12 +4,13 @@ if (typeof window !== "undefined") {
   window.addEventListener("vite:preloadError", (event) => {
     const failedAsset = String(event.payload?.request || "unknown");
     const retryKey = `sketchizi:preload-retry:${failedAsset}`;
-    let alreadyRetried = false;
+    let alreadyRetried;
     try {
       alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
       if (!alreadyRetried) window.sessionStorage.setItem(retryKey, "1");
     } catch {
-      // If storage is unavailable, still make one best-effort reload.
+      // Without session storage we cannot guarantee a single retry.
+      return;
     }
     if (alreadyRetried) return;
     event.preventDefault();
