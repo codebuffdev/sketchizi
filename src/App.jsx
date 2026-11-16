@@ -180,6 +180,7 @@ function App() {
   useEffect(() => {
     const detachCloudDocument = () => {
       cloudDetachedRef.current = true;
+      cloudManualSaveRequestedRef.current = false;
       setCloudDetached(true);
       cloudSceneReadyRef.current = false;
       if (cloudSaveTimerRef.current) {
@@ -284,7 +285,7 @@ function App() {
         });
       });
     }, cloudFlushImmediatelyRef.current ? 0 : 700);
-  }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave]);
+  }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave, showToast]);
 
   const saveCloudDiagramNow = useCallback(() => {
     const api = apiRef.current;
