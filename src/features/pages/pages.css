@@ -33,7 +33,7 @@
 /* Keep the canvas selector available even when the utility rail is collapsed. */
 .app .canvas-pages-control { position:fixed; right:78px; top:calc(16px + var(--safe-top, 0px)); z-index:96; }
 .app .canvas-pages-menu { top:44px; right:0; }
-@media (max-width:767px) { .app .canvas-pages-control { right:58px; top:calc(10px + var(--safe-top, 0px)); } }
+@media (max-width:767px) { .app .canvas-pages-menu { left:0; right:auto; } }
 
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
 .canvas-pages-mask { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
