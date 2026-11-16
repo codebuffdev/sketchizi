@@ -78,3 +78,22 @@ test('tool families render as distinct compact clusters rather than a flat toolb
   assert.match(css, /width:\s*36px !important/);
   assert.match(css, /background:\s*#477f91 !important/);
 });
+
+
+test('Canvas First direction B uses a soft monochrome floating dock', () => {
+  assert.match(css, /Sketchizi Canvas First — soft floating monochrome toolbar/);
+  assert.match(css, /--sk-toolbar-active:s*#e4e7e5/);
+  assert.match(css, /--sk-toolbar-active:s*#414648/);
+  assert.match(css, /\.sketchizi-dock-separators*\{\s*display:s*none !important/);
+  assert.match(css, /border-radius:s*15px !important/);
+  assert.match(css, /backdrop-filter:s*blur\(18px\)/);
+});
+
+test('contextual formatting is mounted in normal mode and self-hides without a selection or active tool', () => {
+  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  const contextualMount = canvas.slice(canvas.indexOf('<ContextualFormattingToolbar'), canvas.indexOf('/>', canvas.indexOf('<ContextualFormattingToolbar')) + 2);
+  assert.match(contextualMount, /selectedElements=\{selectedElements\}/);
+  assert.doesNotMatch(canvas, /zenModeEnabled\s*\?\?\s*true\)\s*&&\s*\(/);
+  const component = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
+  assert.match(component, /!liveSelection\.length\s*&&\s*!toolMode/);
+});
