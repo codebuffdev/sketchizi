@@ -158,3 +158,11 @@
 }
 .canvas-pages-resize-handle.is-ne,
 .canvas-pages-resize-handle.is-sw { cursor: nesw-resize; }
+
+/* Pages start as a clean sheet; the workspace grid remains outside the page. */
+.canvas-pages-page-surface {
+  position: fixed;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--ui-surface-solid, #fff);
+}
