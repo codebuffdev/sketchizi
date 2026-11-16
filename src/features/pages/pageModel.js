@@ -1,18 +1,18 @@
 export const PAGE_MARKER = 'sketchiziPage';
 // Default artboard proportions are 55 cm × 27 cm. Pixel dimensions are
-// calculated from the available canvas viewport whenever a page is created.
+// calculated from 80% of the available canvas viewport whenever a page is created.
 export const DEFAULT_PAGE_SIZE = { width: 1600, height: Math.round(1600 * 27 / 55) };
 export const PAGE_ASPECT_RATIO = 55 / 27;
 
-export function getResponsivePageSize(appState, margin = 0.96) {
+export function getResponsivePageSize(appState, margin = 0.8) {
   const zoom = Number(appState?.zoom?.value ?? appState?.zoom ?? 1);
   const viewportWidth = Number(appState?.width || 0);
   const viewportHeight = Number(appState?.height || 0);
   if (!Number.isFinite(zoom) || zoom <= 0 || viewportWidth <= 0 || viewportHeight <= 0) {
     return { ...DEFAULT_PAGE_SIZE };
   }
-  // Convert available screen space into Excalidraw world units, preserving
-  // the requested physical-page aspect ratio at every viewport size.
+  // Fit the page within 80% of the available screen space, preserving its
+  // requested physical-page aspect ratio at every viewport size.
   const width = Math.min(viewportWidth * margin / zoom, viewportHeight * margin / zoom * PAGE_ASPECT_RATIO, 10000);
   const safeWidth = Math.max(80 * PAGE_ASPECT_RATIO, width);
   return { width: Math.round(safeWidth), height: Math.round(safeWidth / PAGE_ASPECT_RATIO) };
