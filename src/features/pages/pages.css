@@ -175,3 +175,10 @@
   background: var(--ui-surface-solid, #fff);
 }
 .canvas-pages-resize-handle { z-index: 10031 !important; }
+
+/* Eight resize grips: edge grips change one dimension; corners change both. */
+.canvas-pages-resize-handle { width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:4px; touch-action:none; pointer-events:auto !important; user-select:none; }
+.canvas-pages-resize-handle.is-n,.canvas-pages-resize-handle.is-s { cursor:ns-resize; }
+.canvas-pages-resize-handle.is-e,.canvas-pages-resize-handle.is-w { cursor:ew-resize; }
+.canvas-pages-resize-handle.is-nw,.canvas-pages-resize-handle.is-se { cursor:nwse-resize; }
+.canvas-pages-resize-handle.is-ne,.canvas-pages-resize-handle.is-sw { cursor:nesw-resize; }
