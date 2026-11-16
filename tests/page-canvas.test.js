@@ -62,3 +62,13 @@ test('page viewport mask clips pages to the visible canvas and rejects an off-sc
   {offsetLeft:100,offsetTop:50,width:800,height:600,scrollX:0,scrollY:0,zoom:{value:1}}
  ),null);
 });
+
+test('page edit bounds reject geometry extending beyond the active sheet, including rotation', async () => {
+ const { isElementWithinPage } = await import('../src/features/pages/pageModel.js');
+ const page = {x:100,y:100,width:500,height:400};
+ assert.equal(isElementWithinPage({x:120,y:120,width:100,height:80},page),true);
+ assert.equal(isElementWithinPage({x:550,y:120,width:100,height:80},page),false);
+ assert.equal(isElementWithinPage({x:120,y:80,width:100,height:80},page),false);
+ assert.equal(isElementWithinPage({x:100,y:100,width:500,height:400},page),true);
+ assert.equal(isElementWithinPage({x:100,y:100,width:500,height:400,angle:Math.PI/4},page),false);
+});
