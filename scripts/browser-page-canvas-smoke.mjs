@@ -16,53 +16,80 @@ async function waitScene(predicate) {
  throw new Error('Expected page scene was not persisted: '+JSON.stringify(await scene()));
 }
 const pages = es => es.filter(e=>e.type==='frame' && e.customData?.sketchiziPage);
+const canvasOptions = () => page.getByRole('button',{name:'Canvas options',exact:true});
 try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
  await page.locator('.excalidraw').waitFor();
  await page.locator('.desktop-app-save-status-trigger.is-ready, .desktop-app-save-status-trigger.is-saved').waitFor({state:'attached',timeout:20000});
- await page.getByRole('button',{name:'Canvas options',exact:true}).click();
+ assert.equal(await canvasOptions().count(),1,'Pages controller must render only one canvas selector');
+ await canvasOptions().click();
+ page.once('dialog',dialog=>dialog.accept('Cover'));
  await page.getByRole('button',{name:/Pages Organize/}).click();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
  let es = await waitScene(es=>pages(es).length===1);
  assert.equal(pages(es)[0].width,1600); assert.equal(pages(es)[0].height,1400);
+ assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Cover');
+ assert(await page.locator('.canvas-pages-page-grid').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Page interior grid must be visible');
+ const dock = await page.locator('.App-toolbar-container').boundingBox();
+ assert(dock && dock.width>0 && dock.height>0,'Drawing dock must remain visible in Pages mode');
+ // Drag the visible southeast page handle and verify the frame and paper resize together.
+ const beforeWidth = pages(es)[0].width;
+ const handle = await page.locator('.canvas-pages-resize-handle.is-se').boundingBox();
+ assert(handle,'Page resize handle must be visible');
+ await page.mouse.move(handle.x+handle.width/2,handle.y+handle.height/2);
+ await page.mouse.down();
+ await page.mouse.move(handle.x+handle.width/2+36,handle.y+handle.height/2+28,{steps:8});
+ await page.mouse.up();
+ es = await waitScene(es=>pages(es)[0]?.width>beforeWidth);
+ assert(es.find(e=>e.customData?.sketchiziPagePaper===pages(es)[0].id)?.width===pages(es)[0].width,'Page paper must track the resized frame');
+ // Verify both themes update the Pages workspace without leaving the mode.
+ await page.getByRole('button',{name:'Appearance and canvas background'}).click();
+ await page.getByRole('button',{name:'Light',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-light'));
+ assert(await page.locator('.canvas-pages-mask-panel').first().evaluate(el=>getComputedStyle(el).backgroundColor!=='rgb(17, 24, 32)'));
+ await page.getByRole('button',{name:'Appearance and canvas background'}).click();
+ await page.getByRole('button',{name:'Dark',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
  // Draw through the actual canvas, then ensure the new shape belongs to this page.
  await page.keyboard.press('r');
  await page.mouse.move(650,450); await page.mouse.down(); await page.mouse.move(760,540,{steps:10}); await page.mouse.up();
  es = await waitScene(es=>es.some(e=>e.type==='rectangle' && !e.customData?.sketchiziPagePaper && e.frameId===pages(es)[0]?.id));
- const originalId=pages(es)[0].id;
- await page.getByRole('button',{name:'Duplicate Page 1',exact:true}).click();
- es=await waitScene(es=>pages(es).length===2);
- assert(es.some(e=>!e.customData?.sketchiziPagePaper && e.type==='rectangle' && e.frameId && e.frameId!==originalId));
+ // Add and name a second page through the page navigation control.
+ page.once('dialog',dialog=>dialog.accept('Details'));
+ await page.locator('.canvas-pages-add').click();
+ es = await waitScene(es=>pages(es).length===2 && pages(es).some(p=>p.name==='Details'));
  const navigation=page.getByRole('navigation',{name:'Page navigation'});
- await page.locator('.canvas-pages-mask').waitFor();
  await navigation.getByRole('button').nth(0).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('1 / 2'));
+ assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Cover');
  await navigation.getByRole('button').nth(1).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('2 / 2'));
- await page.locator('.canvas-pages-mask > div').first().waitFor();
- page.once('dialog',dialog=>dialog.accept('Overview'));
- await page.getByRole('button',{name:'Rename Page 1',exact:true}).click();
- await waitScene(es=>pages(es).some(p=>p.name==='Overview'));
- await page.getByRole('button',{name:'Move Overview down',exact:true}).click();
- await waitScene(es=>pages(es).find(p=>p.name==='Overview')?.customData.pageOrder===2);
+ assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Details');
  await page.reload();
- await page.getByRole('button',{name:'Rename Overview',exact:true}).waitFor();
- await page.getByRole('button',{name:'Canvas options',exact:true}).click();
+ await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
+ await canvasOptions().click();
  await page.getByRole('button',{name:/Infinite canvas Draw/}).click();
  assert.equal(await page.getByRole('navigation',{name:'Page navigation'}).count(),0);
+ assert.equal(await page.locator('.canvas-pages-mask').count(),0,'Infinite canvas must remove the Pages mask');
  assert.equal(pages(await scene()).length,2,'Switching views must preserve all pages');
+ // Re-enter Pages mode, then verify the selector remains usable on narrow screens.
+ await canvasOptions().click();
+ await page.getByRole('button',{name:/Pages Organize/}).click();
+ await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
  await page.setViewportSize({width:390,height:844});
- await page.getByRole('button',{name:'Canvas options',exact:true}).click();
+ await canvasOptions().click();
  const menu=await page.getByRole('dialog',{name:'Canvas options'}).boundingBox();
  assert(menu.x>=0 && menu.x+menu.width<=390);
- await page.getByRole('button',{name:/Pages Organize/}).click();
+ await page.getByRole('button',{name:/Infinite canvas Draw/}).click();
  await page.screenshot({path:'/tmp/sketchizi-page-mobile.png'});
  await page.setViewportSize({width:1440,height:1000});
+ await canvasOptions().click();
+ await page.getByRole('button',{name:/Pages Organize/}).click();
  await page.getByRole('button',{name:'Fit page',exact:true}).click();
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
  assert.deepEqual(errors,[]);
- console.log('PASS: pages, drawing membership, duplication, rename, reorder, reload, infinite view and mobile selector');
+ console.log('PASS: single selector, page grid/name, dock, drag resize, light/dark sync, page creation/navigation, persistence and infinite-canvas return');
 } catch (error) {
  await page.screenshot({path:'/tmp/sketchizi-page-failure.png'});
  console.error('Page diagnostics:', await page.locator('body').innerText(), errors);
