@@ -13,6 +13,8 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [error, setError] = useState('');
   const [pageMask, setPageMask] = useState(null);
   const [resizeMode, setResizeMode] = useState(false);
+  const [inlineName, setInlineName] = useState(null);
+  const cancelInlineNameRef = useRef(false);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
@@ -200,22 +202,23 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   const blockOutsidePage = event => { event.preventDefault(); event.stopPropagation(); };
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-  const add = () => {
+  const createPage = () => {
     if (!api || !canEdit) return;
     const elements = api.getSceneElementsIncludingDeleted();
     const responsiveSize = getResponsivePageSize(api.getAppState());
     if (!validSize(responsiveSize.width, responsiveSize.height)) { setError('The available canvas area is too small to create a page.'); return; }
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
-    const name = window.prompt('Name your new page', `Page ${nextOrder}`);
-    if (name === null) return;
-    const pageName = name.trim().slice(0, 80) || `Page ${nextOrder}`;
     const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID()), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
-    if (frame) frame.name = pageName;
+    if (frame) frame.name = `Page ${nextOrder}`;
     update([...elements, ...created]);
     const currentView = api.getAppState?.();
     previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
     setError(''); setMode('pages'); setOpen(false); fit(frame);
+  };
+  const add = () => {
+    setOpen(false);
+    createPage();
   };
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
@@ -233,9 +236,17 @@ export default function CanvasPages({ api, canEdit = true }) {
     if (value === 'pages') fit(active);
   };
   const rename = page => {
-    const name = window.prompt('Page name', page.name || 'Page');
-    if (!name?.trim() || !canEdit) return;
-    update(api.getSceneElementsIncludingDeleted().map(e => e.id === page.id ? { ...e, name: name.trim().slice(0,80), version: e.version + 1, versionNonce: Math.floor(Math.random()*2147483647), updated: Date.now() } : e));
+    if (!page || !canEdit) return;
+    setInlineName({ pageId: page.id, value: page.name || 'Page' });
+  };
+  const saveInlineName = () => {
+    if (cancelInlineNameRef.current) { cancelInlineNameRef.current = false; return; }
+    if (!inlineName || !canEdit) return setInlineName(null);
+    const value = inlineName.value.trim().slice(0, 80);
+    if (value && value !== (pages.find(page => page.id === inlineName.pageId)?.name || 'Page')) {
+      update(api.getSceneElementsIncludingDeleted().map(e => e.id === inlineName.pageId ? { ...e, name: value, version: e.version + 1, versionNonce: Math.floor(Math.random()*2147483647), updated: Date.now() } : e));
+    }
+    setInlineName(null);
   };
   const duplicate = page => {
     if (!canEdit) return;
@@ -271,7 +282,17 @@ export default function CanvasPages({ api, canEdit = true }) {
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
         <div className="canvas-pages-page-surface" style={pageMask.pageRect} aria-hidden="true" />
         <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
-        <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>
+        {inlineName?.pageId === active?.id ? <input
+          className="canvas-pages-page-name-input"
+          style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 31) }}
+          aria-label="Edit page name"
+          autoFocus
+          maxLength={80}
+          value={inlineName.value}
+          onChange={event => setInlineName(current => ({ ...current, value: event.target.value }))}
+          onBlur={saveInlineName}
+          onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } if (event.key === 'Escape') { event.preventDefault(); cancelInlineNameRef.current = true; setInlineName(null); } }}
+        /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>}
       </div>, host)}
     {mode === 'pages' && resizeMode && pageMask && host && createPortal(<>
       {['nw','n','ne','e','se','s','sw','w'].map(edge => {

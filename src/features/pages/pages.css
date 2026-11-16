@@ -201,3 +201,12 @@
 }
 .canvas-pages-page-name:hover:not(:disabled) { border-color: var(--ui-border); background: var(--ui-surface-solid); }
 .canvas-pages-page-name:disabled { cursor: default; opacity: 1; }
+
+/* Inline rename should blend into the page label without a bright focus halo. */
+.canvas-pages-page-name-input {
+  position: fixed; z-index: 10040; box-sizing: border-box; width: min(260px, 40vw);
+  height: 24px; padding: 1px 6px; border: 0; border-bottom: 1px solid var(--ui-border);
+  border-radius: 0; outline: none; background: transparent; color: var(--ui-text-strong);
+  box-shadow: none; font: inherit; font-size: 11px; font-weight: 600;
+}
+.canvas-pages-page-name-input:focus { outline: none; box-shadow: none; }
