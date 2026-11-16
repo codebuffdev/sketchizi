@@ -177,6 +177,7 @@ export default function IconLibraryPanel({
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation?.();
         onClose?.();
         return;
       }

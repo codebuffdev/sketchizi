@@ -28,6 +28,7 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
   const [position, setPosition] = useState({ top: 60, right: 12 });
   const trigger = useRef(null);
   const panel = useRef(null);
+  const skipHexBlurRef = useRef(false);
   useEffect(() => {
     if (!open) return;
     const update = () => {
@@ -58,7 +59,16 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
       if (!panel.current?.contains(event.target) && !trigger.current?.contains(event.target)) setOpen(false);
     };
     const keydown = (event) => {
-      if (event.key === "Escape") { event.stopPropagation(); setOpen(false); trigger.current?.focus(); }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        skipHexBlurRef.current = document.activeElement === panel.current?.querySelector(".appearance-hex-input");
+        setHexDraft(null);
+        setHexError(false);
+        setOpen(false);
+        trigger.current?.focus();
+      }
       if (event.key === "Tab") {
         const controls = [...panel.current.querySelectorAll("button:not(:disabled), input:not(:disabled)")];
         const first = controls[0], last = controls.at(-1);
@@ -67,11 +77,11 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
       }
     };
     document.addEventListener("pointerdown", dismiss);
-    document.addEventListener("keydown", keydown);
+    window.addEventListener("keydown", keydown, true);
     window.addEventListener("resize", update);
     return () => {
       document.removeEventListener("pointerdown", dismiss);
-      document.removeEventListener("keydown", keydown);
+      window.removeEventListener("keydown", keydown, true);
       window.removeEventListener("resize", update);
     };
   }, [open, api, isDarkTheme]);
@@ -102,9 +112,19 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
       <div className="appearance-swatches" role="group" aria-label="Canvas background presets">
         {PRESETS.map(([color, label]) => <button type="button" key={color} disabled={!canEdit || !api} aria-label={label} title={label} aria-pressed={background.toLowerCase() === color} onClick={() => chooseBackground(color)}><span className="appearance-swatch-color" style={{ background: color }} /><svg className="appearance-swatch-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg></button>)}
       </div>
-      <div className="appearance-custom"><span>Custom color</span><span className="appearance-color-value"><input className="appearance-hex-input" type="text" aria-label="Canvas background hex color" aria-invalid={hexError} aria-describedby={hexError ? "appearance-hex-error" : undefined} disabled={!canEdit || !api} value={hexDraft ?? canvasColorForDisplay(background, isDarkTheme).toUpperCase()} spellCheck={false} autoComplete="off" placeholder="#12181C" onChange={event => { setHexDraft(event.target.value); setHexError(false); }} onBlur={applyHex} onKeyDown={event => {
+      <div className="appearance-custom"><span>Custom color</span><span className="appearance-color-value"><input className="appearance-hex-input" type="text" aria-label="Canvas background hex color" aria-invalid={hexError} aria-describedby={hexError ? "appearance-hex-error" : undefined} disabled={!canEdit || !api} value={hexDraft ?? canvasColorForDisplay(background, isDarkTheme).toUpperCase()} spellCheck={false} autoComplete="off" placeholder="#12181C" onChange={event => { setHexDraft(event.target.value); setHexError(false); }} onBlur={() => {
+        if (skipHexBlurRef.current) { skipHexBlurRef.current = false; return; }
+        applyHex();
+      }} onKeyDown={event => {
         if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); applyHex(); }
-        if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setHexDraft(null); setHexError(false); }
+        if (event.key === "Escape") {
+          event.preventDefault(); event.stopPropagation();
+          skipHexBlurRef.current = document.activeElement === event.currentTarget;
+          setHexDraft(null);
+          setHexError(false);
+          setOpen(false);
+          trigger.current?.focus();
+        }
       }} /><input type="color" aria-label="Custom canvas background color" disabled={!canEdit || !api} value={canvasColorForDisplay(background, isDarkTheme)} onInput={event => chooseBackground(canvasColorForScene(event.currentTarget.value, isDarkTheme))} onChange={event => chooseBackground(canvasColorForScene(event.currentTarget.value, isDarkTheme))} /></span></div>
       {hexError && <p id="appearance-hex-error" className="appearance-hex-error" role="alert">Enter 3 or 6 hex digits, such as #12181C.</p>}
       <p className="appearance-footer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>Saved with this drawing</p>

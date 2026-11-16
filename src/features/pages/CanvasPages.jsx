@@ -104,10 +104,20 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   useEffect(() => {
     if (!open) return;
-    const close = e => { if (e.type === 'keydown' ? e.key === 'Escape' : !root.current?.contains(e.target)) setOpen(false); };
+    const close = e => {
+      if (e.type === 'keydown') {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
+        setOpen(false);
+        return;
+      }
+      if (!root.current?.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('pointerdown', close, true);
-    document.addEventListener('keydown', close, true);
-    return () => { document.removeEventListener('pointerdown', close, true); document.removeEventListener('keydown', close, true); };
+    window.addEventListener('keydown', close, true);
+    return () => { document.removeEventListener('pointerdown', close, true); window.removeEventListener('keydown', close, true); };
   }, [open]);
 
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);

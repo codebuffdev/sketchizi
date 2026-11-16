@@ -23,6 +23,7 @@ export default function KubeLabTopicPicker({ lesson, disabled, onLessonChange })
       if (event.key !== "Escape" || !pickerRef.current?.contains(event.target)) return;
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation?.();
       setActiveIndex(null);
     };
 

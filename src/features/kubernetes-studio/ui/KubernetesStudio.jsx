@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
 import { normalizeStudioDiagnostics } from "../../studio-validation/diagnostics.js";
 import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
@@ -313,6 +313,7 @@ export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyReso
   }, [labDrafts]);
   const fileInputRef = useRef(null);
   const yamlEditorRef = useRef(null);
+  const requestCloseRef = useRef(() => {});
   const [completion, setCompletion] = useState({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
   const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 24 });
   const [dismissedCompletionLine, setDismissedCompletionLine] = useState(null);
@@ -368,17 +369,20 @@ spec:
       targetPort: 8080`);
   const activeYamlText = isKubeLab ? labDraft : yamlText;
   useEffect(() => {
-    if (!completion.items.length) return undefined;
     const dismissOnEscape = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
       if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
-      const editor = yamlEditorRef.current;
-      const caret = editor?.selectionStart ?? 0;
-      const lineStart = activeYamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
-      setDismissedCompletionLine(lineStart);
-      setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+      if (completion.items.length) {
+        const editor = yamlEditorRef.current;
+        const caret = editor?.selectionStart ?? 0;
+        const lineStart = activeYamlText.lastIndexOf("\n", Math.max(0, caret - 1)) + 1;
+        setDismissedCompletionLine(lineStart);
+        setCompletion({ items: [], replaceStart: 0, replaceEnd: 0, selectedIndex: 0 });
+        return;
+      }
+      requestCloseRef.current();
     };
     window.addEventListener("keydown", dismissOnEscape, true);
     return () => window.removeEventListener("keydown", dismissOnEscape, true);
@@ -467,11 +471,12 @@ spec:
     updateEditorText(lesson.starter);
   };
 
-  const requestClose = () => {
+  const requestClose = useCallback(() => {
     if (creatingLabDiagram) return;
     if (hasUnsavedChanges && !window.confirm("You have unsaved YAML changes. Close K8s Studio and discard them?")) return;
     onClose?.();
-  };
+  }, [creatingLabDiagram, hasUnsavedChanges, onClose]);
+  requestCloseRef.current = requestClose;
 
   const updateCompletions = (text, caret, force = false) => {
     const editor = yamlEditorRef.current;

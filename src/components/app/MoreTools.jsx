@@ -37,13 +37,14 @@ export default function MoreTools({ open, anchor, position, activateTool, openPa
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation?.();
       toggle("more-tools");
     };
     document.addEventListener("pointerdown", closeOnOutsidePointer, true);
-    document.addEventListener("keydown", closeOnEscape, true);
+    window.addEventListener("keydown", closeOnEscape, true);
     return () => {
       document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
-      document.removeEventListener("keydown", closeOnEscape, true);
+      window.removeEventListener("keydown", closeOnEscape, true);
     };
   }, [open, toggle]);
 
