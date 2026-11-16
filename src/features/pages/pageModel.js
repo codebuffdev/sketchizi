@@ -50,7 +50,7 @@ export function pageSkeleton(elements, size, id) {
   const position = nextPagePosition(elements);
   const order = getPages(elements).reduce((n,p) => Math.max(n, p.customData.pageOrder || 0), 0) + 1;
   return [
-    { type: 'rectangle', id: `${id}-paper`, ...position, ...size, backgroundColor: '#ffffff', strokeColor: '#d9dce3', fillStyle: 'solid', roughness: 0, strokeWidth: 1, locked: true, customData: { sketchiziPagePaper: id } },
+    { type: 'rectangle', id: `${id}-paper`, ...position, ...size, backgroundColor: 'transparent', strokeColor: 'transparent', fillStyle: 'solid', roughness: 0, strokeWidth: 1, locked: true, customData: { sketchiziPagePaper: id } },
     { type: 'frame', id, ...position, ...size, children: [`${id}-paper`], name: `Page ${order}`, locked: false, customData: { [PAGE_MARKER]: true, pageOrder: order } },
   ];
 }
