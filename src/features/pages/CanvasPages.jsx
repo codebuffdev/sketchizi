@@ -12,9 +12,10 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState('');
   const [pageMask, setPageMask] = useState(null);
-  const [resizeMode, setResizeMode] = useState(false);
+  const [revealedResizeEdge, setRevealedResizeEdge] = useState(null);
   const [inlineName, setInlineName] = useState(null);
   const cancelInlineNameRef = useRef(false);
+  const touchResizeTimerRef = useRef(null);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
@@ -110,6 +111,11 @@ export default function CanvasPages({ api, canEdit = true }) {
   }, [open]);
 
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);
+  useEffect(() => {
+    setRevealedResizeEdge(null);
+    window.clearTimeout(touchResizeTimerRef.current);
+  }, [mode, active?.id]);
+  useEffect(() => () => window.clearTimeout(touchResizeTimerRef.current), []);
 
   // Keep the canvas mode available to CSS so navigation controls can adopt
   // the visual treatment chosen for Pages or the infinite canvas.
@@ -209,6 +215,21 @@ export default function CanvasPages({ api, canEdit = true }) {
     window.addEventListener('pointercancel', finish, true);
   };
 
+  const handleResizePointerDown = (event, edge) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (event.pointerType === 'touch' && revealedResizeEdge !== edge) {
+      event.preventDefault();
+      event.stopPropagation();
+      setRevealedResizeEdge(edge);
+      window.clearTimeout(touchResizeTimerRef.current);
+      touchResizeTimerRef.current = window.setTimeout(() => setRevealedResizeEdge(null), 3000);
+      return;
+    }
+    window.clearTimeout(touchResizeTimerRef.current);
+    setRevealedResizeEdge(null);
+    startResize(event, edge);
+  };
+
   const blockOutsidePage = event => { event.preventDefault(); event.stopPropagation(); };
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   const createPage = () => {
@@ -282,7 +303,6 @@ export default function CanvasPages({ api, canEdit = true }) {
       return element;
     });
     setInlineName(null);
-    setResizeMode(false);
     update(elements);
     if (nextPage) {
       fit(nextPage);
@@ -329,7 +349,7 @@ export default function CanvasPages({ api, canEdit = true }) {
         <strong>Canvas</strong>
         <button type="button" aria-pressed={mode === 'infinite'} onClick={() => changeMode('infinite')}>∞ Infinite canvas<small>Draw without boundaries</small></button>
         <button type="button" disabled={!api || (!canEdit && !pages.length)} aria-pressed={mode === 'pages'} onClick={() => changeMode('pages')}>▧ Pages<small>Organize into separate pages</small></button>
-        <small>Use the Resize control in the page toolbar to show page handles. New pages use the default page size.</small>
+        <small>Hover near a page edge to reveal its grip and drag to extend. On touch, tap near an edge to reveal its grip. Drag a corner to adjust both dimensions.</small>
         {error && <p role="alert">{error}</p>}
       </div>}
     </div>, headerHost)}
@@ -350,23 +370,39 @@ export default function CanvasPages({ api, canEdit = true }) {
           onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } if (event.key === 'Escape') { event.preventDefault(); cancelInlineNameRef.current = true; setInlineName(null); } }}
         /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>}
       </div>, host)}
-    {mode === 'pages' && resizeMode && pageMask && host && createPortal(<>
+    {mode === 'pages' && canEdit && active && pageMask && host && createPortal(<>
       {['nw','n','ne','e','se','s','sw','w'].map(edge => {
         const rect = pageMask.pageRect;
+        const reach = 28;
+        const inset = reach / 2;
         const positions = {
-          nw: [rect.left, rect.top], n: [rect.left + rect.width / 2, rect.top],
-          ne: [rect.left + rect.width, rect.top], e: [rect.left + rect.width, rect.top + rect.height / 2],
-          se: [rect.left + rect.width, rect.top + rect.height], s: [rect.left + rect.width / 2, rect.top + rect.height],
-          sw: [rect.left, rect.top + rect.height], w: [rect.left, rect.top + rect.height / 2],
+          nw: { left: rect.left - reach, top: rect.top - reach, width: reach, height: reach },
+          n: { left: rect.left + inset, top: rect.top - reach, width: Math.max(0, rect.width - reach), height: reach },
+          ne: { left: rect.left + rect.width, top: rect.top - reach, width: reach, height: reach },
+          e: { left: rect.left + rect.width, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
+          se: { left: rect.left + rect.width, top: rect.top + rect.height, width: reach, height: reach },
+          s: { left: rect.left + inset, top: rect.top + rect.height, width: Math.max(0, rect.width - reach), height: reach },
+          sw: { left: rect.left - reach, top: rect.top + rect.height, width: reach, height: reach },
+          w: { left: rect.left - reach, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
         };
-        const [left, top] = positions[edge];
-        return <button key={edge} type="button" className={`canvas-pages-resize-handle is-${edge}`}
-          style={{ left, top }} aria-label={`Resize page from ${edge.toUpperCase()} ${edge.length === 1 ? 'edge' : 'corner'}`}
-          title="Drag to resize page" onPointerDown={event => startResize(event, edge)} />;
+        const isCorner = edge.length === 2;
+        const label = isCorner
+          ? `Drag page from ${edge.toUpperCase()} corner to adjust width and height`
+          : `Drag page ${edge === 'n' || edge === 's' ? 'edge to adjust height' : 'edge to adjust width'}`;
+        return <button
+          key={edge}
+          type="button"
+          className={`canvas-pages-resize-hit is-${edge}${revealedResizeEdge === edge ? ' is-revealed' : ''}`}
+          style={positions[edge]}
+          aria-label={label}
+          title={label}
+          onPointerDown={event => handleResizePointerDown(event, edge)}
+          onContextMenu={event => event.preventDefault()}
+        />;
       })}
     </>,host)}
     {mode === 'pages' && host && createPortal(<>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active || !canEdit} aria-pressed={resizeMode} onClick={() => setResizeMode(value => !value)}>{resizeMode ? 'Done' : 'Resize'}</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
+      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
     </>,host)}
   </>;
 }
