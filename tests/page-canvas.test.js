@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getPages, validSize, pageSkeleton, DEFAULT_PAGE_SIZE } from '../src/features/pages/pageModel.js';
+import { getPages, validSize, pageSkeleton, DEFAULT_PAGE_SIZE, getPageViewportMask } from '../src/features/pages/pageModel.js';
 test('adding a page preserves existing artwork and places the sheet beyond its bounds', () => {
  const existing = [{id:'drawing',type:'rectangle',x:100,y:40,width:500,height:20}];
  const snapshot = structuredClone(existing);
@@ -32,4 +32,33 @@ test('duplicating a page remaps internal bindings and preserves the source and i
  assert.equal(copy[0].frameId,'copy'); assert.equal(copy[1].startBinding.elementId,copy[0].id);
  assert.equal(copy[1].endBinding,null); assert.equal(copy[2].fileId,'file-1');
  assert.equal(copy[3].customData.pageOrder,2); assert(copy[3].x > 1600);
+});
+
+test('page viewport mask leaves only the selected page visible and blocks the surrounding canvas', () => {
+ const mask = getPageViewportMask(
+  {x:500,y:200,width:1000,height:800},
+  {offsetLeft:100,offsetTop:50,width:1200,height:900,scrollX:0,scrollY:0,zoom:{value:0.5},viewBackgroundColor:'#f4f5f7'}
+ );
+ assert.equal(mask.backgroundColor,'#f4f5f7');
+ assert.deepEqual(mask.panels,[
+  {left:100,top:50,width:1200,height:150},
+  {left:100,top:600,width:1200,height:350},
+  {left:100,top:200,width:250,height:400},
+  {left:850,top:200,width:450,height:400},
+ ]);
+});
+test('page viewport mask clips pages to the visible canvas and rejects an off-screen page', () => {
+ const clipped = getPageViewportMask(
+  {x:-200,y:100,width:1000,height:800},
+  {offsetLeft:100,offsetTop:50,width:800,height:600,scrollX:0,scrollY:0,zoom:{value:1}}
+ );
+ assert.deepEqual(clipped.panels,[
+  {left:100,top:50,width:800,height:50},
+  {left:100,top:450,width:800,height:200},
+  {left:700,top:100,width:200,height:350},
+ ]);
+ assert.equal(getPageViewportMask(
+  {x:5000,y:5000,width:1000,height:800},
+  {offsetLeft:100,offsetTop:50,width:800,height:600,scrollX:0,scrollY:0,zoom:{value:1}}
+ ),null);
 });
