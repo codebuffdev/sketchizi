@@ -1,0 +1,1969 @@
+/* Sketchizi Icon Library redesign: floating modal with fixed controls and an independently scrolling result grid. */
+@media (min-width: 1px) {
+  .app .desktop-workspace-library-open.desktop-workspace-context-closed {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .app .desktop-workspace-library-open.desktop-workspace-context-open {
+    grid-template-columns: minmax(0, 1fr) var(--sketchizi-desktop-context-width, 320px) !important;
+  }
+
+  .app .desktop-workspace-library-open::before {
+    content: "";
+    position: fixed;
+    inset: var(--sketchizi-desktop-header-height, 58px) 0 0;
+    z-index: 280;
+    background: rgba(5, 7, 15, .38);
+    backdrop-filter: blur(1.5px);
+    pointer-events: none;
+  }
+
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    position: fixed !important;
+    inset: 0;
+    z-index: 400;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    position: relative !important;
+    inset: auto !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    width: min(780px, 68vw);
+    height: min(590px, 68dvh);
+    min-width: 0;
+    min-height: min(360px, calc(100dvh - 64px));
+    max-width: calc(100vw - 48px);
+    max-height: calc(100dvh - 64px);
+    padding: 0;
+    border: 1px solid #34394b;
+    border-radius: 17px;
+    background: linear-gradient(145deg, rgba(17, 23, 34, .91) 0%, rgba(13, 17, 26, .88) 72%, rgba(16, 21, 34, .91) 100%);
+    backdrop-filter: blur(18px) saturate(125%);
+    -webkit-backdrop-filter: blur(18px) saturate(125%);
+    color: #f1f2fb;
+    box-shadow: 0 28px 88px rgba(0, 0, 0, .58), 0 0 0 1px rgba(139, 92, 246, .08);
+    overflow: hidden;
+    pointer-events: auto;
+  }
+
+  .app .library-panel-redesign .library-panel-header-compact {
+  min-height: 0;
+  height: 34px;
+  padding: 0 0 8px;
+  justify-content: flex-end;
+  border-bottom: 0;
+  gap: 0;
+}
+.app .library-panel-redesign .library-panel-header {
+    align-items: center;
+    gap: 13px;
+    min-height: 82px;
+    padding: 15px 19px 13px;
+    border-bottom: 1px solid #252b3a;
+  }
+
+  .library-brand-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border: 1px solid rgba(192, 132, 252, .45);
+    border-radius: 12px;
+    background: linear-gradient(145deg, #7939ff, #4820cb);
+    box-shadow: 0 0 26px rgba(124, 58, 237, .25);
+  }
+
+  .library-brand-icon svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .app .library-panel-redesign .library-panel-heading { flex: 1 1 auto; }
+  .app .library-panel-redesign .library-panel-header .label {
+    padding: 0;
+    color: #f5f4fc;
+    font-size: 20px;
+    font-weight: 740;
+    letter-spacing: -.035em;
+    line-height: 1.2;
+  }
+  .app .library-panel-redesign .library-panel-label-desktop,
+  .app .library-panel-redesign .library-panel-label-mobile { display: inline; }
+  .app .library-panel-redesign .library-panel-subtitle {
+    margin-top: 4px;
+    color: #a9b2cb;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .app .library-panel-redesign .library-panel-header-actions { gap: 8px; }
+  .app .library-panel-redesign .library-pin-button,
+  .app .library-panel-redesign .mobile-panel-close {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    border-color: #293143;
+    border-radius: 11px;
+    background: #171d2a;
+    color: #c3cbe3;
+  }
+  .app .library-panel-redesign .library-pin-button svg { width: 21px; height: 21px; }
+  .app .library-panel-redesign .mobile-panel-close {
+    display: inline-flex;
+    font-size: 25px;
+    font-weight: 300;
+    line-height: 1;
+  }
+  .app .library-panel-redesign .library-pin-button:hover,
+  .app .library-panel-redesign .library-pin-button.active,
+  .app .library-panel-redesign .mobile-panel-close:hover {
+    border-color: #7c3aed;
+    background: #27203f;
+    color: #d9c8ff;
+  }
+
+  .app .library-panel-redesign-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    padding: 14px 18px 15px;
+  }
+
+  .app .library-panel-redesign .library-search-wrap {
+    position: relative;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    margin: 0 0 12px;
+  }
+  .app .library-panel-redesign .library-search-wrap .search {
+    width: 100%;
+    height: 47px;
+    min-height: 47px;
+    padding: 0 48px 0 43px;
+    border: 1px solid #8b3dff;
+    border-radius: 10px;
+    outline: 0;
+    background: #121724;
+    color: #f4f2ff;
+    font-size: 14px;
+    box-shadow: 0 0 0 1px rgba(124, 58, 237, .12), inset 0 1px 0 rgba(255,255,255,.025);
+  }
+  .app .library-panel-redesign .library-search-wrap .search::placeholder { color: #929bb5; opacity: 1; }
+  .app .library-panel-redesign .library-search-wrap .search:focus {
+    border-color: #a855f7;
+    background: #141a29;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .14);
+  }
+  .library-search-icon {
+    position: absolute;
+    z-index: 1;
+    left: 14px;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #a9b3d3;
+    stroke-width: 2;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+  .app .library-panel-redesign .library-search-wrap kbd {
+    position: absolute;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 28px;
+    border: 1px solid #2b3346;
+    border-radius: 7px;
+    background: #171d2b;
+    color: #aeb8d4;
+    font-size: 12px;
+  }
+
+  .library-filter-row { position: relative; flex: 0 0 auto; }
+  .library-source-tabs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .app .library-panel-redesign .library-source-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 37px;
+    padding: 0 16px;
+    border: 1px solid #272e3e;
+    border-radius: 9px;
+    background: #1a202d;
+    color: #c2cbe2;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 560;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .app .library-panel-redesign .library-source-chip:hover { border-color: #574078; background: #252238; color: #f1eaff; }
+  .app .library-panel-redesign .library-source-chip.active {
+    border-color: #8b3dff;
+    background: linear-gradient(135deg, #7c2dff, #5520d9);
+    color: #fff;
+    box-shadow: 0 3px 14px rgba(124, 58, 237, .2);
+  }
+  .library-chip-chevron { margin-left: 1px; font-size: 14px; opacity: .8; }
+  .library-collections-wrap { position: relative; }
+  .library-collections-menu {
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 0;
+    z-index: 10;
+    width: 250px;
+    max-height: min(320px, 42dvh);
+    padding: 5px;
+    overflow: auto;
+    border: 1px solid #343b50;
+    border-radius: 11px;
+    background: #151b28;
+    box-shadow: 0 18px 42px rgba(0,0,0,.48);
+  }
+  .library-collections-menu button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+    padding: 10px 11px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #e5e9f7;
+    text-align: left;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .library-collections-menu button:hover { background: #25223b; color: #d9c5ff; }
+  .library-collections-menu small { color: #929db9; font-size: 10px; }
+
+  .library-recent-searches {
+    flex: 0 0 auto;
+    margin-top: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #282f40;
+  }
+  .library-recent-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: #dfe4f4; font-size: 12px; font-weight: 680; }
+  .library-recent-heading button { padding: 3px 0; border: 0; background: transparent; color: #b36aff; cursor: pointer; font-size: 11px; }
+  .library-recent-heading button:hover { color: #d4a8ff; text-decoration: underline; }
+  .library-recent-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .app .library-panel-redesign .library-recent-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 31px;
+    padding: 0 12px;
+    border: 1px solid #242b3b;
+    border-radius: 999px;
+    background: #1b2130;
+    color: #cbd4eb;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .app .library-panel-redesign .library-recent-chip:hover { border-color: #6d3cb2; background: #27203c; }
+  .library-recent-chip span { color: #9ba9d1; font-size: 14px; }
+
+  .library-subcategory-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+    margin-top: 10px;
+    color: #9da9c4;
+    font-size: 11px;
+  }
+  .library-subcategory-row select {
+    min-width: 0;
+    max-width: min(440px, 70%);
+    height: 31px;
+    padding: 0 10px;
+    border: 1px solid #30384b;
+    border-radius: 8px;
+    background: #171d2a;
+    color: #e5e9f7;
+  }
+  .library-inline-status { margin-top: 8px; color: #fca5a5; font-size: 11px; }
+
+  .app .library-panel-redesign .library-results {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .app .library-panel-redesign .library-results-heading {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 38px;
+    margin: 0 0 8px;
+    padding: 0 1px;
+  }
+  .library-results-title-wrap { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+  .app .library-panel-redesign .library-results-heading .section-title { color: #f0f2fc; font-size: 16px; font-weight: 730; }
+  .app .library-panel-redesign .library-results-heading .icon-total { color: #aab5d0; font-size: 11px; white-space: nowrap; }
+  .library-results-controls { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+  .library-layout-select-label { display: block; }
+  .app .library-panel-redesign .library-layout-select {
+    width: 165px;
+    height: 34px;
+    padding: 0 9px;
+    border: 1px solid #2e3548;
+    border-radius: 9px;
+    background: #151b28;
+    color: #c7d0e7;
+    font-size: 11px;
+  }
+  .library-view-toggle { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid #292f40; border-radius: 10px; background: #171d29; }
+  .app .library-panel-redesign .library-view-toggle button {
+    display: grid;
+    place-items: center;
+    width: 31px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #9ba8c4;
+    cursor: pointer;
+  }
+  .app .library-panel-redesign .library-view-toggle button.active { background: linear-gradient(135deg, #7c2dff, #5520d9); color: #fff; }
+  .library-view-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .app .library-panel-redesign .library-sync-button { padding: 7px 9px; border: 1px solid #3c365a; border-radius: 8px; background: #211c36; color: #d3c2ff; cursor: pointer; font-size: 10px; white-space: nowrap; }
+  .app .library-panel-redesign .library-sync-button:disabled { opacity: .5; cursor: default; }
+
+  .app .library-panel-redesign .library-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    align-items: stretch;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 1px 9px 8px 1px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #783cf6 #171d29;
+  }
+  .app .library-panel-redesign .library-icon-grid::-webkit-scrollbar { width: 10px; }
+  .app .library-panel-redesign .library-icon-grid::-webkit-scrollbar-track { border-radius: 99px; background: #171d29; }
+  .app .library-panel-redesign .library-icon-grid::-webkit-scrollbar-thumb { min-height: 38px; border: 2px solid #171d29; border-radius: 99px; background: linear-gradient(180deg, #9b4dff, #6128e8); }
+  .app .library-panel-redesign .library-icon-grid::-webkit-scrollbar-thumb:hover { background: #b16aff; }
+
+  .app .library-panel-redesign .library-icon-card {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    min-height: 94px;
+    padding: 9px 10px;
+    border: 1px solid #252d3c;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #171d28, #141923);
+    color: #f0f2fc;
+    text-align: left;
+    cursor: grab;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease;
+  }
+  .app .library-panel-redesign .library-icon-card:hover { border-color: #6040a5; background: linear-gradient(145deg, #1d2032, #171c2a); box-shadow: 0 5px 18px rgba(0,0,0,.18); transform: translateY(-1px); }
+  .app .library-panel-redesign .library-icon-card:focus-visible { outline: 2px solid #a855f7; outline-offset: 2px; }
+  .app .library-panel-redesign .library-icon-card.is-drag-source { opacity: .55; }
+  .app .library-panel-redesign .library-icon-card.has-favorite { border-color: #3a3155; }
+  .app .library-panel-redesign .library-icon-card:has(.favorite-button.active) { border-color: #3c315a; }
+  .app .library-panel-redesign .library-icon-card:has(.library-icon-card-content) .icon-preview { margin: 0; }
+  .app .library-panel-redesign .library-icon-preview {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 70px;
+    border: 1px solid #2a3142;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #202634, #1a202c);
+  }
+  .app .library-panel-redesign .library-icon-preview img { width: 40px; height: 40px; object-fit: contain; filter: none; }
+  .app .library-panel-redesign .library-icon-card-content { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; gap: 3px; }
+  .app .library-panel-redesign .library-icon-card .icon-name { display: block; width: 100%; min-height: 0; margin: 0; overflow: hidden; color: #f0f2fc; font-size: 12px; font-weight: 700; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+  .app .library-panel-redesign .library-icon-card .icon-subtitle { display: block; min-height: 0; margin: 0; color: #a6b2d0; font-size: 10px; line-height: 1.3; }
+  .library-icon-tags { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; margin-top: 3px; }
+  .library-icon-tag { display: inline-block; max-width: 120px; padding: 4px 9px; overflow: hidden; border: 1px solid transparent; border-radius: 999px; background: #252b3d; color: #c2cce5; font-size: 9px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+  .library-icon-card-actions { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+  .app .library-panel-redesign .library-icon-card .favorite-button {
+    position: static;
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #9ca9d0;
+    font-size: 22px;
+    line-height: 1;
+    opacity: 1;
+    cursor: pointer;
+  }
+  .app .library-panel-redesign .library-icon-card .favorite-button:hover,
+  .app .library-panel-redesign .library-icon-card .favorite-button.active { background: #29233e; color: #c6a2ff; }
+  .app .library-panel-redesign .library-icon-card .library-add-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(196, 154, 255, .3);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #8838ff, #5d24e9);
+    color: #fff;
+    font-size: 25px;
+    font-weight: 400;
+    line-height: 1;
+    box-shadow: 0 3px 12px rgba(109, 40, 217, .22);
+    cursor: pointer;
+  }
+  .app .library-panel-redesign .library-icon-card .library-add-icon:hover { background: linear-gradient(145deg, #a14dff, #7333ff); }
+  .app .library-panel-redesign .library-icon-card .favorite-button:focus-visible,
+  .app .library-panel-redesign .library-icon-card .library-add-icon:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+  .app .library-panel-redesign .library-icon-grid.is-list-view { grid-template-columns: minmax(0, 1fr); }
+  .app .library-panel-redesign .library-icon-grid.is-compact-layout .library-icon-card { min-height: 78px; grid-template-columns: 48px minmax(0, 1fr) 32px; gap: 9px; padding: 7px 8px; }
+  .app .library-panel-redesign .library-icon-grid.is-compact-layout .library-icon-preview { width: 48px; height: 52px; }
+  .app .library-panel-redesign .library-icon-grid.is-compact-layout .library-icon-preview img { width: 32px; height: 32px; }
+  .app .library-panel-redesign .library-icon-grid.is-compact-layout .library-icon-tag { padding: 3px 7px; }
+  .app .library-panel-redesign .library-scroll-hint { flex: 0 0 auto; padding: 4px 0 0; color: #7f8ba8; font-size: 10px; text-align: center; }
+  .app .library-panel-redesign .library-empty { color: #a5aec7; }
+  .app .library-panel-redesign .empty { padding: 18px 8px; font-size: 12px; }
+
+  .app.theme-light .library-panel-redesign {
+    border-color: #d9dced;
+    background: linear-gradient(145deg, #fbfbff, #f2f3fa);
+    color: #22243a;
+    box-shadow: 0 24px 70px rgba(31, 35, 66, .25);
+  }
+  .app.theme-light .library-panel-redesign .library-panel-header { border-bottom-color: #e2e5f0; }
+  .app.theme-light .library-panel-redesign .library-panel-header .label,
+  .app.theme-light .library-panel-redesign .library-results-heading .section-title,
+  .app.theme-light .library-panel-redesign .library-icon-card .icon-name { color: #25263b; }
+  .app.theme-light .library-panel-redesign .library-panel-subtitle,
+  .app.theme-light .library-panel-redesign .library-results-heading .icon-total,
+  .app.theme-light .library-panel-redesign .library-icon-card .icon-subtitle { color: #727995; }
+  .app.theme-light .library-panel-redesign .library-search-wrap .search { background: #fff; color: #25263b; }
+  .app.theme-light .library-panel-redesign .library-source-chip { background: #f0f1f8; border-color: #e0e3ef; color: #505875; }
+  .app.theme-light .library-panel-redesign .library-source-chip.active { color: #fff; }
+  .app.theme-light .library-panel-redesign .library-recent-heading { color: #33364d; }
+  .app.theme-light .library-panel-redesign .library-recent-chip { background: #f0f1f8; border-color: #e1e4ef; color: #535b78; }
+  .app.theme-light .library-panel-redesign .library-recent-searches { border-bottom-color: #e0e3ef; }
+  .app.theme-light .library-panel-redesign .library-layout-select,
+  .app.theme-light .library-panel-redesign .library-view-toggle { background: #f5f6fb; border-color: #e0e3ef; color: #535b78; }
+  .app.theme-light .library-panel-redesign .library-icon-card { background: #fff; border-color: #e0e3ed; color: #25263b; }
+  .app.theme-light .library-panel-redesign .library-icon-card:hover { background: #faf8ff; border-color: #b8a0ee; }
+  .app.theme-light .library-panel-redesign .library-icon-preview { background: #f2f3fa; border-color: #e0e3ed; }
+  .app.theme-light .library-panel-redesign .library-icon-tag { background: #f0f1f8; color: #5a627e; }
+  .app.theme-light .library-panel-redesign .library-collections-menu { background: #fff; border-color: #e0e3ed; }
+  .app.theme-light .library-panel-redesign .library-collections-menu button { color: #33364d; }
+  .app.theme-light .library-panel-redesign .library-collections-menu button:hover { background: #f3efff; }
+  .app.theme-light .library-panel-redesign .library-subcategory-row select { background: #fff; color: #33364d; border-color: #dce0ed; }
+
+  @media (max-width: 760px) {
+    .app .desktop-workspace-library-open::before { inset: 0; background: rgba(5, 7, 15, .48); }
+    .app .desktop-resources-region > .library-panel.library-panel-redesign {
+      width: calc(100vw - 24px);
+      height: min(86dvh, 820px);
+      min-height: min(340px, calc(100dvh - 24px));
+      max-width: calc(100vw - 24px);
+      max-height: calc(100dvh - 24px);
+      border-radius: 14px;
+    }
+    .app .library-panel-redesign .library-panel-header { min-height: 66px; padding: 11px 12px; gap: 9px; }
+    .library-brand-icon { width: 39px; height: 39px; flex-basis: 39px; border-radius: 10px; }
+    .library-brand-icon svg { width: 22px; height: 22px; }
+    .app .library-panel-redesign .library-panel-header .label { font-size: 17px; }
+    .app .library-panel-redesign .library-panel-subtitle { font-size: 10px; }
+    .app .library-panel-redesign .library-pin-button,
+    .app .library-panel-redesign .mobile-panel-close { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
+    .app .library-panel-redesign-body { padding: 11px 11px 10px; }
+    .app .library-panel-redesign .library-search-wrap .search { height: 42px; min-height: 42px; font-size: 12px; }
+    .library-source-tabs { gap: 6px; }
+    .app .library-panel-redesign .library-source-chip { min-height: 32px; padding: 0 11px; font-size: 11px; }
+    .library-recent-searches { margin-top: 11px; padding-bottom: 10px; }
+    .library-recent-chips { gap: 5px; }
+    .app .library-panel-redesign .library-recent-chip { min-height: 27px; padding: 0 9px; font-size: 10px; }
+    .app .library-panel-redesign .library-results { margin-top: 8px; }
+    .app .library-panel-redesign .library-results-heading { flex-wrap: wrap; gap: 7px; margin-bottom: 6px; }
+    .app .library-panel-redesign .library-results-heading .section-title { font-size: 14px; }
+    .library-results-title-wrap { gap: 7px; }
+    .library-results-controls { gap: 5px; }
+    .app .library-panel-redesign .library-layout-select { width: 125px; height: 30px; font-size: 10px; }
+    .app .library-panel-redesign .library-icon-grid { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-right: 5px; }
+    .app .library-panel-redesign .library-icon-card { min-height: 76px; grid-template-columns: 48px minmax(0, 1fr) 31px; gap: 8px; padding: 7px; }
+    .app .library-panel-redesign .library-icon-preview { width: 48px; height: 52px; }
+    .app .library-panel-redesign .library-icon-preview img { width: 32px; height: 32px; }
+    .app .library-panel-redesign .library-icon-card .icon-name { font-size: 11px; }
+    .app .library-panel-redesign .library-icon-card .icon-subtitle { font-size: 9px; }
+    .library-icon-tag { padding: 3px 7px; font-size: 8px; }
+    .app .library-panel-redesign .library-icon-card .library-add-icon { width: 29px; height: 29px; font-size: 21px; }
+    .app .library-panel-redesign .library-icon-card .favorite-button { width: 25px; height: 24px; font-size: 19px; }
+    .library-subcategory-row { align-items: flex-start; flex-direction: column; gap: 5px; }
+    .library-subcategory-row select { width: 100%; max-width: none; }
+  }
+
+  @media (max-width: 420px) {
+    .app .library-panel-redesign .library-panel-header .label { font-size: 15px; }
+    .app .library-panel-redesign .library-panel-subtitle { max-width: 190px; }
+    .app .library-panel-redesign .library-layout-select-label { display: none; }
+    .app .library-panel-redesign .library-source-chip { padding: 0 9px; }
+    .library-recent-searches { display: none; }
+  }
+}
+
+
+/* Sketchizi-owned catalog identity: the general-purpose icon collection is
+   presented as Essentials rather than exposing the upstream provider name. */
+.app .library-panel-redesign .library-source-chip-eraser {
+  gap: 7px;
+  border-color: #34304f;
+  background: linear-gradient(180deg, #211e32, #1a202d);
+  color: #d7ccff;
+  letter-spacing: .005em;
+}
+
+.app .library-panel-redesign .library-source-chip-eraser:hover {
+  border-color: #7655c5;
+  background: linear-gradient(180deg, #2a2343, #211e32);
+  color: #f4efff;
+}
+
+.app .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #9a75ff;
+  background: linear-gradient(135deg, #8b5cf6, #6435d8);
+  color: #fff;
+  box-shadow: 0 4px 14px rgb(124 58 237 / 24%);
+}
+
+.app .library-panel-redesign .library-source-chip-mark {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .95;
+}
+
+.app .library-panel-redesign .library-icon-card {
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.app .library-panel-redesign .library-icon-tag {
+  border: 1px solid rgb(143 155 190 / 8%);
+}
+
+.app.theme-light .library-panel-redesign .library-source-chip-eraser {
+  border-color: #e1d8ff;
+  background: linear-gradient(180deg, #f8f5ff, #f0edfa);
+  color: #6541b5;
+}
+
+.app.theme-light .library-panel-redesign .library-source-chip-eraser:hover {
+  border-color: #c4b2f7;
+  background: #eee7ff;
+  color: #5030a2;
+}
+
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #8b5cf6, #6435d8);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign .library-icon-card {
+    transition: none;
+  }
+}
+
+
+/* Essential icon tint controls */
+.app .library-panel-redesign .library-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #2a3345;
+  border-radius: 10px;
+  background: #141a25;
+}
+
+.app .library-panel-redesign .library-color-picker-label {
+  color: #aab5d0;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.app .library-panel-redesign .library-color-swatches {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app .library-panel-redesign .library-color-swatch {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.app .library-panel-redesign .library-color-swatch span {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 50%;
+  background: var(--swatch-color);
+  transition: transform .14s ease;
+}
+
+.app .library-panel-redesign .library-color-swatch:hover span {
+  transform: scale(1.12);
+}
+
+.app .library-panel-redesign .library-color-swatch.active {
+  border-color: #c4b5fd;
+  box-shadow: 0 0 0 2px rgb(139 92 246 / 18%);
+}
+
+.app .library-panel-redesign .library-color-swatch:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 2px;
+}
+
+.app .library-panel-redesign .library-color-picker-value {
+  margin-left: auto;
+  color: #c5b8ff;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.app.theme-light .library-panel-redesign .library-color-picker {
+  border-color: #e1e4ef;
+  background: #f7f8fc;
+}
+
+.app.theme-light .library-panel-redesign .library-color-picker-label {
+  color: #626b85;
+}
+
+.app.theme-light .library-panel-redesign .library-color-picker-value {
+  color: #6541b5;
+}
+
+@media (max-width: 640px) {
+  .app .library-panel-redesign .library-color-picker {
+    gap: 7px;
+    padding: 6px 7px;
+  }
+  .app .library-panel-redesign .library-color-swatches { gap: 2px; }
+  .app .library-panel-redesign .library-color-swatch { width: 21px; height: 21px; }
+  .app .library-panel-redesign .library-color-swatch span { width: 13px; height: 13px; }
+  .app .library-panel-redesign .library-color-picker-value { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign .library-color-swatch span { transition: none; }
+}
+
+
+.app .library-panel-redesign .library-custom-color-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 9px;
+  border-left: 1px solid #30384a;
+  color: #aab5d0;
+  font-size: 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.app .library-panel-redesign .library-custom-color-label input[type="color"] {
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border: 1px solid #46506a;
+  border-radius: 7px;
+  background: #1a202d;
+  cursor: pointer;
+}
+
+.app.theme-light .library-panel-redesign .library-custom-color-label {
+  border-left-color: #dce1ee;
+  color: #626b85;
+}
+
+.app.theme-light .library-panel-redesign .library-custom-color-label input[type="color"] {
+  border-color: #d8dced;
+  background: #fff;
+}
+
+@media (max-width: 640px) {
+  .app .library-panel-redesign .library-custom-color-label {
+    gap: 0;
+    padding-left: 5px;
+    font-size: 0;
+  }
+  .app .library-panel-redesign .library-custom-color-label input[type="color"] {
+    width: 21px;
+    height: 21px;
+  }
+}
+
+
+/* Keep focused search fields neutral; violet is reserved for selected actions. */
+.app .library-panel-redesign .library-search-wrap .search:focus,
+.app .library-panel-redesign .library-search-wrap .search:focus-visible {
+  border-color: #465166 !important;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(180, 190, 210, .08) !important;
+  background: #141a25;
+}
+.app.theme-light .library-panel-redesign .library-search-wrap .search:focus,
+.app.theme-light .library-panel-redesign .library-search-wrap .search:focus-visible {
+  border-color: #aab2c4 !important;
+  box-shadow: inset 0 0 0 1px rgba(80, 90, 110, .06) !important;
+  background: #fff;
+}
+
+
+/* Docked library UX overrides: preserve the full component styling above. */
+@media (min-width: 761px) {
+  .app .desktop-workspace-library-open::before { content: none !important; }
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    position: fixed !important;
+    inset: var(--sketchizi-desktop-header-height, 58px) auto 0 0;
+    z-index: 400;
+    display: flex !important;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: min(440px, 38vw);
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px));
+    min-width: 0; min-height: 0; padding: 0; border: 0;
+    background: transparent; overflow: visible; pointer-events: none;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    position: relative !important; inset: auto !important; left: auto !important; top: auto !important;
+    transform: none !important; display: flex; flex: 1 1 auto; flex-direction: column;
+    width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%;
+    padding: 0; border: 1px solid #2b3243; border-left: 0; border-radius: 0 16px 16px 0;
+    background: rgba(16, 21, 31, .98); backdrop-filter: blur(20px) saturate(120%);
+    -webkit-backdrop-filter: blur(20px) saturate(120%); color: #f1f2fb;
+    box-shadow: 14px 8px 44px rgba(0,0,0,.22); overflow: hidden; pointer-events: auto;
+  }
+  .app .library-panel-redesign .library-panel-header { min-height: 68px; padding: 12px 15px; }
+  .app .library-panel-redesign .library-panel-header .label { font-size: 16px; }
+  .app .library-panel-redesign-body { padding: 12px; }
+  .app .library-panel-redesign .library-icon-card { cursor: grab; user-select: none; -webkit-user-select: none; }
+  .app .library-panel-redesign .library-icon-card:active { cursor: grabbing; }
+  .app .library-panel-redesign .library-icon-card .icon-preview img { pointer-events: none; -webkit-user-drag: none; }
+}
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    inset: var(--sketchizi-desktop-header-height, 58px) 0 0; width: 100vw;
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px));
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    border-left: 1px solid #2b3243; border-radius: 0;
+  }
+}
+
+/* Selection is a preview state; the plus action inserts and dragging places precisely. */
+.app .library-panel-redesign .library-icon-card.is-selected {
+  border-color: #9a70ff !important;
+  background: linear-gradient(145deg, #24213b, #191e2d) !important;
+  box-shadow: inset 0 0 0 1px rgba(154,112,255,.28), 0 0 0 2px rgba(124,58,237,.1);
+}
+.app.theme-light .library-panel-redesign .library-icon-card.is-selected {
+  border-color: #8b5cf6 !important;
+  background: #f4efff !important;
+}
+
+
+/* Direct-placement feedback: keep the dragged asset attached to the pointer. */
+.icon-drag-ghost {
+  position: fixed;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 260px;
+  padding: 9px 12px;
+  border: 1px solid rgba(167, 139, 250, .78);
+  border-radius: 12px;
+  background: rgba(20, 24, 38, .96);
+  color: #f5f3ff;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .38), 0 0 0 3px rgba(139, 92, 246, .15);
+  pointer-events: none;
+  transform: translate(12px, 12px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.icon-drag-ghost img {
+  display: block;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  object-fit: contain;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .06);
+}
+.icon-drag-ghost span {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-icon-card {
+  -webkit-tap-highlight-color: transparent;
+}
+.app .library-panel-redesign .library-icon-card:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign .library-icon-card { transition: none !important; }
+}
+
+
+/* Persistent selected-asset action: keep the next step visible without covering results. */
+.app .library-panel-redesign .library-selected-action {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 11px;
+  border: 1px solid rgba(139, 92, 246, .42);
+  border-radius: 12px;
+  background: linear-gradient(110deg, rgba(124, 58, 237, .13), rgba(30, 35, 52, .72));
+}
+.app .library-panel-redesign .library-selected-preview {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+.app .library-panel-redesign .library-selected-preview > img {
+  display: block;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  object-fit: contain;
+  padding: 5px;
+  border: 1px solid #343b51;
+  border-radius: 9px;
+  background: rgba(10, 14, 23, .72);
+}
+.app .library-panel-redesign .library-selected-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.app .library-panel-redesign .library-selected-copy strong {
+  overflow: hidden;
+  color: #f5f3ff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-selected-copy > span:last-child {
+  overflow: hidden;
+  color: #aab4cd;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-selected-copy .library-selected-eyebrow {
+  color: #bca6ff;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.app .library-panel-redesign .library-selected-add {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 35px;
+  padding: 0 11px;
+  border: 1px solid #8756f6;
+  border-radius: 9px;
+  background: #7137e8;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.app .library-panel-redesign .library-selected-add:hover {
+  border-color: #b29aff;
+  background: #824cf3;
+}
+.app .library-panel-redesign .library-selected-add:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 2px;
+}
+.app.theme-light .library-panel-redesign .library-selected-action {
+  border-color: #d6c7fb;
+  background: linear-gradient(110deg, #f4efff, #fff);
+}
+.app.theme-light .library-panel-redesign .library-selected-copy strong { color: #25263b; }
+.app.theme-light .library-panel-redesign .library-selected-copy > span:last-child { color: #727995; }
+@media (max-width: 420px) {
+  .app .library-panel-redesign .library-selected-action { align-items: stretch; flex-direction: column; }
+  .app .library-panel-redesign .library-selected-add { width: 100%; }
+}
+
+
+/* Search affordance and compact navigation behavior. */
+.app .library-panel-redesign .library-search-wrap .search { padding-right: 70px; }
+.app .library-panel-redesign .library-search-clear {
+  position: absolute;
+  z-index: 2;
+  right: 34px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #aab4cd;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.app .library-panel-redesign .library-search-clear:hover {
+  background: rgba(139, 92, 246, .18);
+  color: #fff;
+}
+.app .library-panel-redesign .library-search-clear:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 1px;
+}
+.app .library-panel-redesign .library-filter-row { min-width: 0; }
+.app .library-panel-redesign .library-source-tabs {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #5d438e transparent;
+}
+.app .library-panel-redesign .library-source-chip { flex: 0 0 auto; }
+.app .library-panel-redesign .library-source-tabs::-webkit-scrollbar { height: 4px; }
+.app .library-panel-redesign .library-source-tabs::-webkit-scrollbar-thumb { border-radius: 4px; background: #5d438e; }
+.app.theme-light .library-panel-redesign .library-search-clear { color: #69718b; }
+.app.theme-light .library-panel-redesign .library-search-clear:hover { color: #39206c; }
+@media (max-width: 520px) {
+  .app .library-panel-redesign .library-recent-searches { padding-block: 7px; }
+  .app .library-panel-redesign .library-recent-chips { flex-wrap: nowrap; overflow-x: auto; }
+  .app .library-panel-redesign .library-recent-chip { flex: 0 0 auto; }
+}
+
+
+/* Final polish: make results and empty states feel deliberate and legible. */
+.app .library-panel-redesign .library-results-heading {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 9px 0 10px;
+  background: linear-gradient(180deg, rgba(16,21,31,.99), rgba(16,21,31,.94));
+  backdrop-filter: blur(12px);
+}
+.app .library-panel-redesign .library-results-title-wrap { min-width: 0; }
+.app .library-panel-redesign .library-results-title-wrap .section-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-results-title-wrap .icon-total {
+  margin-top: 3px;
+  color: #909bb7;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.app .library-panel-redesign .library-empty,
+.app .library-panel-redesign .library-results > .empty {
+  display: grid;
+  min-height: 150px;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  border: 1px dashed #394157;
+  border-radius: 13px;
+  background: rgba(10,14,23,.3);
+  color: #aab4cd;
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
+.app .library-panel-redesign .library-icon-card .library-icon-card-actions {
+  opacity: .72;
+  transition: opacity .15s ease;
+}
+.app .library-panel-redesign .library-icon-card:hover .library-icon-card-actions,
+.app .library-panel-redesign .library-icon-card:focus-within .library-icon-card-actions,
+.app .library-panel-redesign .library-icon-card.is-selected .library-icon-card-actions {
+  opacity: 1;
+}
+.app.theme-light .library-panel-redesign .library-results-heading {
+  background: linear-gradient(180deg, rgba(250,251,255,.99), rgba(250,251,255,.94));
+}
+.app.theme-light .library-panel-redesign .library-results-title-wrap .icon-total { color: #727995; }
+.app.theme-light .library-panel-redesign .library-empty,
+.app.theme-light .library-panel-redesign .library-results > .empty {
+  border-color: #d9dce9;
+  background: #fbfbfe;
+  color: #727995;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .library-panel-redesign .library-icon-card .library-icon-card-actions { transition: none; }
+}
+
+
+/* Calm the Icon Library palette: violet is an accent, not a surface color. */
+.app .library-panel-redesign .library-panel-brand-icon {
+  background: #252b39 !important;
+  border-color: #353d4d !important;
+  color: #c8d0df !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-source-chip.active,
+.app .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #65718a !important;
+  background: #30394a !important;
+  color: #f1f4fa !important;
+  box-shadow: inset 0 0 0 1px rgba(190, 202, 224, .04) !important;
+}
+.app .library-panel-redesign .library-source-chip:hover,
+.app .library-panel-redesign .library-source-chip-eraser:hover {
+  border-color: #4a566b !important;
+  background: #222a38 !important;
+  color: #edf1f8 !important;
+}
+.app .library-panel-redesign .library-source-chip-eraser {
+  border-color: #343d4e !important;
+  background: #1a202b !important;
+  color: #c4ccdc !important;
+}
+.app .library-panel-redesign .library-icon-card .library-add-icon {
+  border-color: #48556b !important;
+  background: #2c374a !important;
+  color: #e3e9f3 !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-icon-card .library-add-icon:hover {
+  border-color: #71809a !important;
+  background: #39465b !important;
+}
+.app .library-panel-redesign .library-icon-card .favorite-button:hover,
+.app .library-panel-redesign .library-icon-card .favorite-button.active {
+  background: #293242 !important;
+  color: #e0e7f2 !important;
+}
+.app .library-panel-redesign .library-scroll-hint,
+.app .library-panel-redesign .icons::-webkit-scrollbar-thumb {
+  background-color: #536078 !important;
+}
+.app .library-panel-redesign .icons::-webkit-scrollbar-thumb {
+  border-color: #121720 !important;
+}
+.app .library-panel-redesign .library-source-chip:focus-visible,
+.app .library-panel-redesign .library-icon-card .library-add-icon:focus-visible,
+.app .library-panel-redesign .library-pin-button:focus-visible,
+.app .library-panel-redesign .mobile-panel-close:focus-visible {
+  outline-color: #9aa9c1 !important;
+}
+
+
+/* Subtle Icon Library branding: quiet neutral icon tile, no violet glow. */
+.app .library-panel-redesign .library-brand-icon {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border: 1px solid #343d4b !important;
+  border-radius: 11px !important;
+  background: #202733 !important;
+  color: #c5cedd !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-brand-icon svg {
+  width: 21px !important;
+  height: 21px !important;
+  stroke: currentColor !important;
+}
+.app .library-panel-redesign .library-panel-header .label {
+  color: #e1e6ef !important;
+  font-weight: 680 !important;
+  letter-spacing: -.02em !important;
+}
+.app .library-panel-redesign .library-panel-subtitle {
+  color: #929db0 !important;
+}
+.app .library-panel-redesign .library-pin-button,
+.app .library-panel-redesign .mobile-panel-close {
+  border-color: #303949 !important;
+  background: #171e29 !important;
+  color: #aeb9ca !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-pin-button:hover,
+.app .library-panel-redesign .mobile-panel-close:hover {
+  border-color: #4b586c !important;
+  background: #222b39 !important;
+  color: #e1e7f0 !important;
+}
+.app .library-panel-redesign .library-pin-button.active {
+  border-color: #53647c !important;
+  background: #293548 !important;
+  color: #e2eaf5 !important;
+}
+.app .library-panel-redesign .library-source-chip.active,
+.app .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #536178 !important;
+  background: #293344 !important;
+  color: #edf1f7 !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-source-chip-eraser {
+  border-color: #343d4b !important;
+  background: #1a202a !important;
+  color: #c2cad8 !important;
+}
+.app .library-panel-redesign .library-icon-card .library-add-icon {
+  width: 31px !important;
+  height: 31px !important;
+  border: 1px solid #414d60 !important;
+  border-radius: 10px !important;
+  background: #293344 !important;
+  color: #dce4ef !important;
+  font-size: 22px !important;
+  box-shadow: none !important;
+}
+.app .library-panel-redesign .library-icon-card .library-add-icon:hover {
+  border-color: #66768f !important;
+  background: #344157 !important;
+}
+.app .library-panel-redesign .library-icon-card .favorite-button:hover,
+.app .library-panel-redesign .library-icon-card .favorite-button.active {
+  background: #293344 !important;
+  color: #e1e7f0 !important;
+}
+.app .library-panel-redesign .library-source-chip:focus-visible,
+.app .library-panel-redesign .library-icon-card .library-add-icon:focus-visible,
+.app .library-panel-redesign .library-pin-button:focus-visible,
+.app .library-panel-redesign .mobile-panel-close:focus-visible {
+  outline-color: #9baac0 !important;
+}
+
+
+/* Compact mobile library: keep it to roughly two-thirds of the viewport and put search at the top. */
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12px;
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px));
+    box-sizing: border-box;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    align-self: center;
+    width: 100%;
+    height: min(66dvh, 620px);
+    min-height: 0;
+    max-height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px);
+    border: 1px solid #2b3243;
+    border-radius: 14px;
+  }
+  .app .library-panel-redesign .library-panel-header-compact {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 8px 4px;
+    border-bottom: 0;
+  }
+  .app .library-panel-redesign-body {
+    min-height: 0;
+    overflow: hidden;
+    padding: 4px 11px 10px;
+  }
+}
+
+
+/* Narrow mobile view: let the icon catalog expand upward into the available blank area. */
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    align-items: stretch;
+    justify-content: center;
+    padding: 0 12px;
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px));
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 12px);
+    max-height: none;
+    min-height: 0;
+  }
+  .app .library-panel-redesign .library-panel-header-compact {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 8px 4px;
+    flex: 0 0 30px;
+  }
+  .app .library-panel-redesign-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+
+/* No standalone header: start the search row at the top of the library panel. */
+.app .library-panel-redesign .library-panel-header-compact { display: none !important; }
+.app .library-panel-redesign .library-panel-redesign-body { padding-top: 12px; }
+@media (max-width: 760px) {
+  .app .library-panel-redesign .library-panel-redesign-body { padding-top: 10px; }
+}
+
+
+/* Keep the Icon Library compact on narrow viewports instead of stretching edge to edge. */
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    width: min(440px, 78vw) !important;
+    max-width: calc(100vw - 24px) !important;
+    height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px);
+    max-height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px);
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid #2b3243;
+    border-radius: 14px;
+  }
+}
+
+
+/* Floating compact catalog: preserve the canvas as the primary workspace. */
+@media (min-width: 761px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    position: fixed !important;
+    inset: calc(var(--sketchizi-desktop-header-height, 58px) + 16px) auto auto 16px !important;
+    z-index: 400;
+    display: flex !important;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: min(390px, calc(100vw - 32px)) !important;
+    height: min(650px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 32px)) !important;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    display: flex !important;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border: 1px solid #2b3243;
+    border-radius: 16px;
+    box-shadow: 0 18px 54px rgba(0, 0, 0, .32);
+    pointer-events: auto;
+  }
+}
+@media (max-width: 760px) {
+  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+    position: fixed !important;
+    inset: calc(var(--sketchizi-desktop-header-height, 58px) + 8px) 12px auto !important;
+    width: auto !important;
+    height: min(78dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    max-height: none;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+    pointer-events: none;
+  }
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 14px;
+    border: 1px solid #2b3243;
+    pointer-events: auto;
+  }
+}
+
+
+/* Repair narrow-panel card geometry: one column prevents names and categories wrapping character by character. */
+@media (max-width: 760px) {
+  .app .library-panel-redesign .library-icon-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card {
+    grid-template-columns: 64px minmax(0, 1fr) 34px !important;
+    align-items: center;
+    min-height: 82px;
+    gap: 10px !important;
+    padding: 8px 10px !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview {
+    width: 60px;
+    height: 62px;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card-content,
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name,
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    white-space: normal;
+  }
+}
+
+
+/* Final compact-panel card sizing: keep icon previews prominent and prevent card overlap. */
+@media (max-width: 760px) {
+  .app .desktop-resources-region > .library-panel.library-panel-redesign {
+    width: min(390px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    height: min(72dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    max-height: min(72dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    padding: 10px !important;
+    box-sizing: border-box;
+  }
+  .app .library-panel-redesign .library-panel-redesign-body {
+    gap: 10px !important;
+    padding: 4px 6px 8px !important;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .app .library-panel-redesign .library-icon-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-rows: minmax(84px, auto);
+    gap: 8px !important;
+    padding: 2px 5px 8px 2px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card {
+    display: grid !important;
+    grid-template-columns: 76px minmax(0, 1fr) 32px !important;
+    min-height: 88px !important;
+    height: auto !important;
+    gap: 10px !important;
+    padding: 8px !important;
+    align-items: center !important;
+    overflow: hidden;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview {
+    width: 72px !important;
+    height: 72px !important;
+    flex: 0 0 72px;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview img,
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview svg {
+    width: 56px !important;
+    height: 56px !important;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    width: 100%;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name {
+    width: 100% !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    text-overflow: ellipsis !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere;
+  }
+}
+
+
+/* Responsive card layout must follow the floating panel width, not viewport width. */
+.app .desktop-resources-region > .library-panel.library-panel-redesign {
+  container-type: inline-size;
+  container-name: icon-library-panel;
+}
+@container icon-library-panel (max-width: 460px) {
+  .app .library-panel-redesign .library-icon-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-rows: auto !important;
+    gap: 8px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: 2px 6px 10px 2px !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card {
+    display: grid !important;
+    grid-template-columns: 72px minmax(0, 1fr) 34px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 82px !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 8px !important;
+    overflow: hidden !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview {
+    display: flex !important;
+    width: 68px !important;
+    height: 66px !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-preview img {
+    width: 54px !important;
+    height: 54px !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-name {
+    display: block !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .icon-subtitle {
+    display: block !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+  }
+  .app .library-panel-redesign .library-icon-grid .library-icon-card .library-icon-card-actions {
+    min-width: 0 !important;
+    width: 34px !important;
+  }
+}
+
+
+/* High-contrast footer hint and visible Escape-to-close affordance. */
+.app .library-panel-redesign .library-scroll-hint {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  padding: 5px 9px !important;
+  background: #343f53 !important;
+  border-top: 1px solid #596780 !important;
+  color: #f3f6fc !important;
+  font-size: 11px !important;
+  line-height: 1.3;
+  opacity: 1 !important;
+  z-index: 5;
+}
+.app .library-panel-redesign .library-scroll-hint > span:first-child {
+  color: #f3f6fc !important;
+}
+.app .library-panel-redesign .library-escape-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  color: #ffffff !important;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-escape-hint kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid #a8b6cf;
+  border-radius: 4px;
+  background: #1a2230;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+}
+
+
+/* Visible Essentials icon tint selector. */
+.app .library-panel-redesign .library-essential-colors {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--library-border, #273246);
+}
+.app .library-panel-redesign .library-essential-colors-label {
+  color: var(--library-muted, #aab4cd);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.app .library-panel-redesign .library-essential-color-options {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.app .library-panel-redesign .library-essential-color-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border: 1px solid #4a566b;
+  border-radius: 50%;
+  background: #1a2230;
+  cursor: pointer;
+}
+.app .library-panel-redesign .library-essential-color-swatch > span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--essential-color);
+}
+.app .library-panel-redesign .library-essential-color-swatch.active {
+  border: 2px solid #f3f6fc;
+  box-shadow: 0 0 0 2px #7c5cff;
+}
+.app .library-panel-redesign .library-essential-color-swatch:focus-visible {
+  outline: 2px solid #bca6ff;
+  outline-offset: 2px;
+}
+@media (max-width: 420px) {
+  .app .library-panel-redesign .library-essential-colors { gap: 6px; }
+  .app .library-panel-redesign .library-essential-color-options { gap: 4px; }
+  .app .library-panel-redesign .library-essential-color-swatch { width: 20px; height: 20px; }
+  .app .library-panel-redesign .library-essential-colors-label { font-size: 10px; }
+}
+
+
+/* Neutral, theme-aware swatches for the softer Essentials palette. */
+.app .library-panel-redesign .library-essential-color-swatch {
+  border-color: #d5dbe5;
+  background: #ffffff;
+}
+.app .library-panel-redesign .library-essential-color-swatch.active {
+  border-color: #64748b;
+  box-shadow: 0 0 0 2px #cbd5e1;
+}
+
+
+/* The Escape hint is a direct panel child, so it cannot cover or be clipped by the scrolling results. */
+.app .library-panel-redesign {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign .library-panel-redesign-body {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign .library-results {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign .library-icon-grid {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+.app .library-panel-redesign > .library-scroll-hint {
+  position: static !important;
+  inset: auto !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 6px 9px !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Minimal floating library: retain content layout, remove the outer card treatment. */
+.app .desktop-resources-region > .library-panel.library-panel-redesign {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.app .library-panel-redesign > .library-scroll-hint {
+  justify-content: center !important;
+  text-align: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  padding: 6px 0 !important;
+}
+.app .library-panel-redesign > .library-scroll-hint > .library-escape-hint {
+  justify-content: center !important;
+  color: inherit !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+/* Always-visible, centered Escape hint: transparent surface, readable text and keycap. */
+.app .library-panel-redesign > .library-scroll-hint {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 28px !important;
+  padding: 6px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #d1d7e5 !important;
+  text-align: center !important;
+  opacity: 1 !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  color: #d1d7e5 !important;
+  white-space: nowrap !important;
+}
+.app .library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  display: inline-block !important;
+  padding: 1px 5px !important;
+  border: 1px solid #8792a8 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+
+/* Keep the floating Icon Library at the top of the viewport instead of vertically centering it. */
+.app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
+  padding-bottom: 16px !important;
+  box-sizing: border-box !important;
+}
+.app .desktop-workspace-library-open .desktop-resources-region > .library-panel.library-panel-redesign {
+  margin-top: 0 !important;
+  align-self: flex-start !important;
+}
+
+
+/* Keep the Escape hint at the top; give the remaining height to the complete, scrollable icon list. */
+.app .library-panel-redesign {
+  height: min(78vh, 760px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign > .library-scroll-hint {
+  order: 0 !important;
+  flex: 0 0 auto !important;
+  min-height: 28px !important;
+  padding: 6px 0 10px !important;
+}
+.app .library-panel-redesign > .library-panel-redesign-body {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign .library-results {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.app .library-panel-redesign .library-icon-grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+
+/* Compact source/category filters: icon-only controls preserve the panel's
+   horizontal space; title and aria-label retain discoverability. */
+.app .library-panel-redesign .library-source-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 7px;
+}
+.app .library-panel-redesign .library-source-chip {
+  box-sizing: border-box;
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  gap: 0;
+}
+.app .library-panel-redesign .library-source-chip-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.app .library-panel-redesign .library-source-chip svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+}
+@media (max-width: 420px) {
+  .app .library-panel-redesign .library-source-tabs { gap: 5px; }
+  .app .library-panel-redesign .library-source-chip {
+    flex-basis: 32px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+}
+.app .library-panel-redesign .library-source-brand-icon {
+  display: block;
+  width: 23px;
+  height: 23px;
+  max-width: 23px;
+  max-height: 23px;
+  flex: 0 0 23px;
+  object-fit: contain;
+}
+.app .library-panel-redesign .library-source-brand-icon-aws {
+  width: 26px;
+  max-width: 26px;
+  flex-basis: 26px;
+}
+.app .library-panel-redesign .library-source-brand-icon-kubernetes {
+  width: 23px;
+  height: 23px;
+}
+
+
+/* Category selection should use the same restrained meta palette as the
+   surrounding controls, not the legacy purple Essentials highlight. */
+.app .library-panel-redesign .library-source-chip.active,
+.app .library-panel-redesign .library-source-chip-eraser.active,
+.app.theme-light .library-panel-redesign .library-source-chip.active,
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #65718a !important;
+  background: #30394a !important;
+  background-image: none !important;
+  color: #f1f4fa !important;
+  box-shadow: inset 0 0 0 1px rgba(190, 202, 224, .04) !important;
+}
+.app.theme-light .library-panel-redesign .library-source-chip.active,
+.app.theme-light .library-panel-redesign .library-source-chip-eraser.active {
+  border-color: #c6ccd7 !important;
+  background: #e3e7ee !important;
+  background-image: none !important;
+  color: #343b49 !important;
+  box-shadow: inset 0 0 0 1px rgba(58, 69, 88, .04) !important;
+}
+
+
+/* Exact category artwork supplied for the Icon Library filters. The source
+   order in the sprite is Networking, Kubernetes, Mind Map, UML, Essentials,
+   All, AWS; the component maps categories to their matching tile. */
+.app .library-panel-redesign .library-source-art {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  background-image: url("/icons/category-icons.png");
+  background-repeat: no-repeat;
+  background-size: 168px 24px;
+  background-position: calc(var(--category-icon-index) * -24px) 0;
+}
+.app .library-panel-redesign .library-source-chip-networking .library-source-art,
+.app .library-panel-redesign .library-source-chip-kubernetes .library-source-art,
+.app .library-panel-redesign .library-source-chip-uml .library-source-art,
+.app .library-panel-redesign .library-source-chip-mindmaps .library-source-art,
+.app .library-panel-redesign .library-source-chip-eraser .library-source-art,
+.app .library-panel-redesign .library-source-chip-all .library-source-art {
+  filter: invert(1);
+}
+.app.theme-light .library-panel-redesign .library-source-art {
+  filter: none;
+}
+
+
+/* Visible category icons: keep the reference artwork comfortably legible. */
+.app .library-panel-redesign .library-source-chip > svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon {
+  display: block;
+  width: 21px;
+  height: 21px;
+  max-width: 21px;
+  max-height: 21px;
+  flex: 0 0 21px;
+  object-fit: contain;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon-aws {
+  width: 24px;
+  max-width: 24px;
+  flex-basis: 24px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-brand-icon-kubernetes {
+  width: 21px;
+  height: 21px;
+}
+.app .library-panel-redesign .library-source-chip .library-source-art {
+  background-image: none !important;
+}
+
+/* Enhanced Icon Library UI: Search Highlight and Card polish */
+.library-search-highlight {
+  background: color-mix(in srgb, var(--ui-accent, #8b75f8) 32%, transparent);
+  color: inherit;
+  padding: 1px 3px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.app.theme-dark .library-search-highlight {
+  background: color-mix(in srgb, #a794ff 35%, transparent);
+  color: #fff;
+}
+.app .library-panel-redesign .library-icon-card {
+  transition: transform 0.15s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.15s ease, border-color 0.15s ease !important;
+}
+.app .library-panel-redesign .library-icon-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24) !important;
+}

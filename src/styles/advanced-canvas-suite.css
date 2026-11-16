@@ -1,0 +1,443 @@
+/* Advanced Canvas Suite: Export Studio, Templates, Smart Themes, and Header Buttons */
+
+/* Header Action Buttons (Templates, Export, MiniMap) */
+.desktop-app-header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border, #d7d7df);
+  border-radius: 8px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-strong, #333);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.desktop-app-header-action-btn:hover {
+  background: var(--ui-surface-hover, #f3f3f6);
+  border-color: #7c3aed;
+  color: #7c3aed;
+}
+.desktop-app-header-action-btn.active {
+  background: #ede9fe;
+  border-color: #8b5cf6;
+  color: #6d28d9;
+}
+.app.theme-dark .desktop-app-header-action-btn {
+  background: var(--ui-surface-solid, #202127);
+  border-color: var(--ui-border, #3c3e49);
+  color: #f1f5f9;
+}
+.app.theme-dark .desktop-app-header-action-btn:hover {
+  background: var(--ui-surface-hover, #2c2d36);
+  border-color: #a78bfa;
+  color: #c4b5fd;
+}
+.app.theme-dark .desktop-app-header-action-btn.active {
+  background: #2e1065;
+  border-color: #8b5cf6;
+  color: #ddd6fe;
+}
+
+/* Export Studio & Templates Backdrop */
+.sketchizi-export-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 18, 25, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Export Modal */
+.sketchizi-export-modal {
+  position: relative;
+  width: min(100%, 480px);
+  padding: 24px 28px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+.app.theme-dark .sketchizi-export-modal {
+  background: #181b24;
+  color: #f8fafc;
+  border-color: #333846;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.sketchizi-export-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.sketchizi-export-header h2 {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.sketchizi-export-header p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+.app.theme-dark .sketchizi-export-header p {
+  color: #94a3b8;
+}
+
+.sketchizi-modal-close {
+  background: transparent;
+  border: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+}
+.sketchizi-modal-close:hover {
+  color: #334155;
+}
+.app.theme-dark .sketchizi-modal-close:hover {
+  color: #f1f5f9;
+}
+
+.sketchizi-export-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sketchizi-export-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sketchizi-export-label {
+  font-size: 11.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+.app.theme-dark .sketchizi-export-label {
+  color: #94a3b8;
+}
+
+.sketchizi-export-pill-row {
+  display: flex;
+  gap: 8px;
+}
+.sketchizi-export-pill {
+  flex: 1;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sketchizi-export-pill.is-active {
+  border-color: #6366f1;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+.app.theme-dark .sketchizi-export-pill {
+  border-color: #374151;
+  background: #1f2430;
+  color: #cbd5e1;
+}
+.app.theme-dark .sketchizi-export-pill.is-active {
+  border-color: #818cf8;
+  background: #312e81;
+  color: #e0e7ff;
+}
+
+.sketchizi-export-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #475569;
+  cursor: pointer;
+}
+.app.theme-dark .sketchizi-export-checkbox-label {
+  color: #cbd5e1;
+}
+
+.sketchizi-export-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 42px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 650;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  transition: all 0.15s ease;
+}
+.sketchizi-export-copy-btn:hover {
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.45);
+  transform: translateY(-1px);
+}
+
+.sketchizi-export-downloads-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.sketchizi-export-sub-btn {
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: transparent;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sketchizi-export-sub-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.app.theme-dark .sketchizi-export-sub-btn {
+  border-color: #374151;
+  color: #94a3b8;
+}
+.app.theme-dark .sketchizi-export-sub-btn:hover {
+  background: #252b3b;
+  color: #f1f5f9;
+}
+
+.sketchizi-export-status {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #10b981;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+/* Architecture Templates Modal */
+.sketchizi-templates-modal {
+  position: relative;
+  width: min(100%, 780px);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 26px 30px;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+.app.theme-dark .sketchizi-templates-modal {
+  background: #161822;
+  color: #f8fafc;
+  border-color: #333846;
+}
+
+.sketchizi-templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+.sketchizi-template-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  transition: all 0.15s ease;
+}
+.sketchizi-template-card:hover {
+  border-color: #818cf8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.app.theme-dark .sketchizi-template-card {
+  border-color: #2e3344;
+  background: #1f2330;
+}
+.app.theme-dark .sketchizi-template-card:hover {
+  border-color: #6366f1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.sketchizi-template-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.sketchizi-template-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+.app.theme-dark .sketchizi-template-badge {
+  background: #312e81;
+  color: #c7d2fe;
+}
+.sketchizi-template-cat {
+  font-size: 11px;
+  color: #64748b;
+}
+.app.theme-dark .sketchizi-template-cat {
+  color: #94a3b8;
+}
+
+.sketchizi-template-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: inherit;
+}
+.sketchizi-template-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
+  margin: 0 0 16px;
+}
+.app.theme-dark .sketchizi-template-desc {
+  color: #94a3b8;
+}
+
+.sketchizi-template-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+.sketchizi-template-count {
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  color: #64748b;
+}
+.sketchizi-template-insert-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 0;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.sketchizi-template-insert-btn:hover {
+  background: #4338ca;
+}
+
+/* Smart Themes in Contextual Toolbar */
+.format-smart-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--format-option-border, #e1e4ec);
+  background: var(--format-option-surface, #f4f5f8);
+  color: var(--format-popover-ink, #292d36);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: all 0.12s ease;
+}
+.format-smart-theme-btn:hover {
+  border-color: #8b5cf6;
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.app.theme-dark .format-smart-theme-btn {
+  border-color: #3b4050;
+  background: #1b1e27;
+  color: #e2e8f0;
+}
+.app.theme-dark .format-smart-theme-btn:hover {
+  border-color: #8b5cf6;
+  background: #2e1065;
+  color: #ddd6fe;
+}
+.format-smart-theme-swatches {
+  display: inline-flex;
+  gap: 3px;
+}
+.format-smart-theme-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* MiniMap Dark Mode Overhaul */
+.app.theme-dark .minimap {
+  background: rgba(22, 25, 34, 0.94);
+  border-color: #353a49;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.app.theme-dark .minimap-title {
+  color: #f1f5f9;
+}
+.app.theme-dark .minimap-actions {
+  background: #191c24;
+  border-color: #353a49;
+}
+.app.theme-dark .minimap-action,
+.app.theme-dark .minimap-zoom-label {
+  color: #94a3b8;
+}
+.app.theme-dark .minimap-action:hover,
+.app.theme-dark .minimap-zoom-label:hover {
+  background: #2e1065;
+  color: #c4b5fd;
+}
+.app.theme-dark .minimap-viewport {
+  background-color: #12141c;
+  border-color: #353a49;
+  background-image: radial-gradient(#2d3342 0.7px, transparent 0.7px);
+}
+.app.theme-dark .minimap-camera {
+  border-color: #818cf8;
+  background: rgba(99, 102, 241, 0.16);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.app.theme-dark .minimap-fit {
+  background: #1f2430;
+  border-color: #353a49;
+  color: #a5b4fc;
+}

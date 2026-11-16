@@ -1,0 +1,894 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
+import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
+
+const STROKE_COLORS = [
+  ["#2f2f33", "Ink"],
+  ["#d25555", "Red"],
+  ["#3f9b57", "Green"],
+  ["#3d79b9", "Blue"],
+  ["#d98a27", "Orange"],
+  ["#7c3aed", "Violet"],
+];
+const NOTE_TEXT_COLORS = [
+  ["#d3d3d3", "Light gray"],
+  ["#ff8383", "Coral"],
+  ["#39994b", "Green"],
+  ["#56a2e8", "Blue"],
+  ["#b86200", "Orange"],
+];
+const NOTE_BACKGROUND_COLORS = [
+  ["#4b3000", "Ochre"],
+  ["#602e40", "Burgundy"],
+  ["#043b0c", "Forest green"],
+  ["#154162", "Navy"],
+  ["#4c2b01", "Dark brown"],
+];
+const NOTE_FONT_FAMILIES = [
+  [1, "Hand-drawn", "✎"],
+  [2, "Sans", "A"],
+  [3, "Code", "</>"],
+  [9, "Serif", "A"],
+];
+const FILL_COLORS = [
+  ["transparent", "No fill"],
+  ["#e7bfc1", "Rose fill"],
+  ["#b9dfc0", "Mint fill"],
+  ["#a8c7e5", "Blue fill"],
+  ["#e2d8b9", "Sand fill"],
+];
+const SHAPE_TYPES = new Set(["rectangle", "diamond", "ellipse"]);
+const LINE_TYPES = new Set(["line", "arrow", "rectangle", "diamond", "ellipse"]);
+const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]];
+const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— —"], ["dotted", "Dotted", "· · ·"]];
+const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
+const FONT_FAMILIES = [[1, "Hand-drawn", "✎"], [2, "Sans", "A"], [3, "Code", "</>"], [5, "Excalifont", "E"], [6, "Nunito", "N"], [7, "Lilita", "L"], [8, "Comic", "C"], [9, "Liberation", "L"]];
+const FONT_SIZES = [[12, "XS"], [16, "S"], [20, "M"], [28, "L"], [36, "XL"]];
+const OPACITY_PRESETS = [25, 50, 75, 100];
+const TEXT_ALIGNMENTS = [["left", "Left", "≡"], ["center", "Center", "☰"], ["right", "Right", "≡"]];
+const GROUPS = [
+  { id: "stroke", label: "Stroke", icon: "◒" },
+  { id: "fontFamily", label: "Font family", icon: "A" },
+  { id: "fontSize", label: "Font size", icon: "T" },
+  { id: "textAlign", label: "Text align", icon: "≡" },
+  { id: "opacity", label: "Opacity", icon: "◐" },
+  { id: "themes", label: "Smart Themes", icon: "✧" },
+  { id: "align", label: "Align", icon: "⫽" },
+];
+
+function isNoteFormattingElement(element) {
+  const type = String(element?.type || "").toLowerCase();
+  const data = element?.customData || {};
+  if (["note", "sticky-note", "stickynote", "sticky_note"].includes(type)) return true;
+  if (
+    data.isNote === true ||
+    data.isStickyNote === true ||
+    data.kind === "note" ||
+    data.type === "note" ||
+    data.noteId != null ||
+    data.stickyNote === true
+  ) return true;
+  // Some sticky notes are represented as a text-bound shape rather than a
+  // standalone "note" element. Their background and typography must be exposed
+  // together in the floating toolbar.
+  if (Array.isArray(element?.boundElements) && element.boundElements.some((bound) => String(bound?.type || "").toLowerCase() === "text")) return true;
+  return element?.backgroundColor != null &&
+    element.backgroundColor !== "transparent" &&
+    ["fontFamily", "fontSize", "textAlign", "verticalAlign"].some((key) => key in element);
+}
+
+function elementsHaveNoteText(elements, noteTextIds) {
+  return elements.some((element) => element?.type === "text" && noteTextIds.has(element.id));
+}
+
+function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
+  if (!api || !root) return null;
+  const appState = api.getAppState?.();
+  if (!appState) return null;
+
+  // In Zen Mode the formatting dock is a persistent canvas control, not a
+  // contextual control attached to the selected element. Keep both the rail
+  // and its option popovers anchored to the same viewport-relative position
+  // while selection, zoom, pan, and active dock option change.
+  if (appState.zenModeEnabled === true) {
+    return {
+      left: "16px",
+      top: "64px",
+      "--format-popover-side": root.clientWidth > 390 ? "right" : "left",
+    };
+  }
+
+  // Drawing-tool controls have no selected element to anchor to. Keep their
+  // rail in a stable, reachable position inside the canvas viewport instead.
+  if (!elements.length) {
+    return {
+      left: "16px",
+      top: "64px",
+      "--format-popover-side": root.clientWidth > 390 ? "right" : "left",
+    };
+  }
+
+  const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+  const sceneBounds = elements.reduce((bounds, element) => {
+    const x = Number(element.x) || 0;
+    const y = Number(element.y) || 0;
+    const width = Number(element.width) || 0;
+    const height = Number(element.height) || 0;
+    bounds.left = Math.min(bounds.left, x, x + width);
+    bounds.top = Math.min(bounds.top, y, y + height);
+    bounds.right = Math.max(bounds.right, x, x + width);
+    bounds.bottom = Math.max(bounds.bottom, y, y + height);
+    return bounds;
+  }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+  if (!Number.isFinite(sceneBounds.left) || !Number.isFinite(sceneBounds.top)) return null;
+
+  const rootWidth = root.clientWidth || Number(appState.width) || 1;
+  const rootHeight = root.clientHeight || Number(appState.height) || 1;
+  // Use the actual overlay dimensions for placement. Excalidraw app-state
+  // dimensions can differ from the root when side panels or browser zoom alter
+  // the canvas viewport, so scale scene coordinates into the overlay's space.
+  const appWidth = Number(appState.width) || rootWidth;
+  const appHeight = Number(appState.height) || rootHeight;
+  const scaleX = (rootWidth / appWidth) * zoom;
+  const scaleY = (rootHeight / appHeight) * zoom;
+  const scrollX = Number(appState.scrollX) || 0;
+  const scrollY = Number(appState.scrollY) || 0;
+  // Scene coordinates map into the canvas viewport from its top-left origin.
+  // Do not add half the viewport size: that incorrectly shifts the rail toward
+  // the far edge and can push it off-screen for selections near the opposite side.
+  const selectionLeft = (sceneBounds.left + scrollX) * scaleX;
+  const selectionRight = (sceneBounds.right + scrollX) * scaleX;
+  const selectionTop = (sceneBounds.top + scrollY) * scaleY;
+  const selectionBottom = (sceneBounds.bottom + scrollY) * scaleY;
+
+  const railWidth = 44;
+  const railHeight = Math.min(300, elements.length ? 6 * 38 + 12 : 12);
+  const gap = 10;
+  const edge = 8;
+
+  // Keep the rail beside the selected object instead of centering it in the
+  // canvas. Prefer its right edge, then left edge, and only use a clamped
+  // centered fallback when the selection is too close to both viewport edges.
+  const rightCandidate = selectionRight + gap;
+  const leftCandidate = selectionLeft - railWidth - gap;
+  const left = rightCandidate + railWidth <= rootWidth - edge
+    ? rightCandidate
+    : leftCandidate >= edge
+      ? leftCandidate
+      : Math.max(edge, Math.min(rootWidth - railWidth - edge, selectionRight - railWidth / 2));
+
+  const popoverHeight = Math.min(520, Math.max(180, rootHeight - 24));
+  const selectionCenterY = (selectionTop + selectionBottom) / 2;
+  const preferredTop = isPopoverOpen
+    ? selectionCenterY - Math.min(popoverHeight, 300) / 2
+    : selectionCenterY - railHeight / 2;
+  const maxTop = Math.max(edge, rootHeight - (isPopoverOpen ? Math.min(popoverHeight, rootHeight - 16) : railHeight) - edge);
+  const top = Math.max(edge, Math.min(maxTop, preferredTop));
+  const popoverSide = left + railWidth + 320 + 16 <= rootWidth ? "right" : "left";
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    "--format-popover-side": popoverSide,
+  };
+}
+
+function straightArrowPatch(element) {
+  const sourcePoints = Array.isArray(element?.points) && element.points.length >= 2
+    ? element.points
+    : [[0, 0], [Number(element?.width) || 0, Number(element?.height) || 0]];
+  const start = sourcePoints[0];
+  const end = sourcePoints[sourcePoints.length - 1];
+  const minX = Math.min(start[0], end[0]);
+  const minY = Math.min(start[1], end[1]);
+  const maxX = Math.max(start[0], end[0]);
+  const maxY = Math.max(start[1], end[1]);
+  return {
+    x: element.x + minX,
+    y: element.y + minY,
+    width: maxX - minX,
+    height: maxY - minY,
+    points: [[start[0] - minX, start[1] - minY], [end[0] - minX, end[1] - minY]],
+    elbowed: false,
+    roundness: null,
+  };
+}
+
+function curvedArrowPatch(element) {
+  const sourcePoints = Array.isArray(element?.points) && element.points.length >= 2
+    ? element.points
+    : [[0, 0], [Number(element?.width) || 0, Number(element?.height) || 0]];
+  const start = sourcePoints[0];
+  const end = sourcePoints[sourcePoints.length - 1];
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
+  const length = Math.hypot(dx, dy) || 1;
+  // Add a perpendicular midpoint so the arrow has a visible curved/bent path.
+  const bend = Math.max(24, Math.min(72, length * 0.18));
+  const middle = [
+    (start[0] + end[0]) / 2 - (dy / length) * bend,
+    (start[1] + end[1]) / 2 + (dx / length) * bend,
+  ];
+  const points = [start, middle, end];
+  const minX = Math.min(...points.map((point) => point[0]));
+  const minY = Math.min(...points.map((point) => point[1]));
+  const maxX = Math.max(...points.map((point) => point[0]));
+  const maxY = Math.max(...points.map((point) => point[1]));
+  return {
+    x: element.x + minX,
+    y: element.y + minY,
+    width: maxX - minX,
+    height: maxY - minY,
+    points: points.map(([x, y]) => [x - minX, y - minY]),
+    elbowed: false,
+    roundness: { type: 2 },
+  };
+}
+
+function Swatch({ color, label, selected, onClick, fill = false }) {
+  return (
+    <button
+      type="button"
+      key={color}
+      className={`format-option-swatch${selected ? " is-selected" : ""}${fill ? " is-fill-swatch" : ""}${color === "transparent" ? " is-transparent" : ""}`}
+      style={color === "transparent" ? undefined : { "--swatch-color": color }}
+      aria-label={label}
+      aria-pressed={selected}
+      title={label}
+      onClick={onClick}
+    >{color === "transparent" ? "×" : null}</button>
+  );
+}
+
+export default function ContextualFormattingToolbar({
+  apiRef,
+  canvasRootRef,
+  canvasRevision,
+  selectedElements = [],
+  applyToSelected,
+  onOpenProperties,
+  propertiesOpen = false,
+  canEdit = true,
+}) {
+  const [openGroup, setOpenGroup] = useState(null);
+  const [customToolMode, setCustomToolMode] = useState(null);
+  const toolbarRef = useRef(null);
+  const wasToolModeRef = useRef(false);
+  useEffect(() => {
+    const onCustomTool = (event) => {
+      const tool = event.detail?.tool;
+      if (tool === "bucketfill") {
+        setCustomToolMode("fill");
+        setOpenGroup("stroke");
+      } else if (tool === "autoshape") {
+        setCustomToolMode("shape");
+        setOpenGroup("stroke");
+      } else if (["note", "sticky-note", "stickynote", "notes"].includes(String(tool || "").toLowerCase())) {
+        // Notes are created through Sketchizi's custom tool event rather than
+        // Excalidraw's native activeTool state, so explicitly enable the same
+        // contextual formatting rail used by text creation.
+        setCustomToolMode("note");
+        setOpenGroup("stroke");
+      }
+    };
+    const onNativeTool = (event) => {
+      const button = event.target?.closest?.(".App-toolbar button, .App-toolbar [role='button']");
+      if (button && !button.closest(".sketchizi-dock-quick-tools")) setCustomToolMode(null);
+    };
+    window.addEventListener("sketchizi:activate-tool", onCustomTool);
+    window.addEventListener("click", onNativeTool, true);
+    return () => {
+      window.removeEventListener("sketchizi:activate-tool", onCustomTool);
+      window.removeEventListener("click", onNativeTool, true);
+    };
+  }, []);
+  useEffect(() => {
+    if (!openGroup) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpenGroup(null);
+    };
+    const onPointerDown = (event) => {
+      if (!toolbarRef.current?.contains(event.target)) setOpenGroup(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [openGroup]);
+  const liveSelection = selectedElements.filter((element) => element && !element.isDeleted);
+  const first = liveSelection[0];
+  const appState = apiRef?.current?.getAppState?.() || {};
+  const activeToolType = String(appState.activeTool?.type || "").toLowerCase();
+  const drawingTool = activeToolType === "freedraw";
+  const noteTool = customToolMode === "note" || ["note", "sticky-note", "stickynote", "notes"].includes(activeToolType);
+  const textTool = activeToolType === "text" || noteTool;
+  const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
+  const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
+  const activeToolMode = drawingTool ? "draw" : noteTool ? "text" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
+  const elementTypes = liveSelection.map((element) => element.type);
+  const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
+  const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
+  const hasImageSelection = liveSelection.some((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+  const iconOnlySelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon));
+  const sceneElementsForFormatting = apiRef?.current?.getSceneElements?.() || [];
+  const noteBackgroundColor = (element) =>
+    Boolean(element?.backgroundColor && NOTE_BACKGROUND_COLORS.some(([color]) => color === String(element.backgroundColor).toLowerCase()));
+  const sharesGroupWith = (element, candidate) => {
+    const groups = new Set(element?.groupIds || []);
+    return groups.size > 0 && (candidate?.groupIds || []).some((groupId) => groups.has(groupId));
+  };
+  const isBoundTextNote = (element) => {
+    if (!element) return false;
+    if (element.type === "text" && element.containerId) {
+      const container = sceneElementsForFormatting.find((candidate) => candidate.id === element.containerId);
+      if (container?.backgroundColor && container.backgroundColor !== "transparent") return true;
+    }
+    if (element.type === "text") {
+      return sceneElementsForFormatting.some((candidate) =>
+        candidate.type !== "text" &&
+        noteBackgroundColor(candidate) &&
+        sharesGroupWith(element, candidate),
+      );
+    }
+    if (element.backgroundColor && element.backgroundColor !== "transparent") {
+      return sceneElementsForFormatting.some((candidate) =>
+        candidate.type === "text" &&
+        (candidate.containerId === element.id ||
+          (element.boundElements || []).some((bound) => bound.id === candidate.id && String(bound.type || "").toLowerCase() === "text") ||
+          (noteBackgroundColor(element) && sharesGroupWith(element, candidate))),
+      );
+    }
+    return false;
+  };
+  const isNoteSelectionElement = (element) => isNoteFormattingElement(element) || isBoundTextNote(element);
+  const noteSelection = liveSelection.some(isNoteSelectionElement);
+  const noteFormattingMode = noteTool || noteSelection;
+  const onlyTextSelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "text" || isNoteSelectionElement(element));
+  // Selected notes must edit their actual scene elements; tool defaults are
+  // used only while creating new text/draw/fill/shape content.
+  const toolMode = (drawingTool || textTool || bucketFillTool || drawToShapeTool) && !noteSelection && !onlyTextSelection;
+  const noteContainerIds = new Set(liveSelection.filter((element) => isNoteSelectionElement(element) && element.type !== "text").map((element) => element.id));
+  const noteTextIds = new Set(liveSelection.filter((element) => element.type === "text").map((element) => element.id));
+  for (const element of liveSelection) {
+    for (const bound of element.boundElements || []) {
+      if (String(bound?.type || "").toLowerCase() === "text" && bound.id) noteTextIds.add(bound.id);
+    }
+    if (element.type === "text" && element.containerId) noteContainerIds.add(element.containerId);
+    if (noteSelection && isNoteSelectionElement(element)) {
+      for (const candidate of sceneElementsForFormatting) {
+        if (!sharesGroupWith(element, candidate)) continue;
+        if (candidate.type === "text") noteTextIds.add(candidate.id);
+        else if (noteBackgroundColor(candidate)) noteContainerIds.add(candidate.id);
+      }
+    }
+  }
+  for (const element of sceneElementsForFormatting) {
+    if (element.type === "text" && (noteContainerIds.has(element.containerId) || noteTextIds.has(element.id))) {
+      noteTextIds.add(element.id);
+      if (element.containerId) noteContainerIds.add(element.containerId);
+    }
+  }
+  const firstTextFormattingElement =
+    liveSelection.find((element) => element.type === "text") ||
+    sceneElementsForFormatting.find((element) => noteTextIds.has(element.id)) ||
+    liveSelection.find(isNoteSelectionElement) ||
+    first;
+  const firstNoteBackgroundElement =
+    liveSelection.find((element) => isNoteSelectionElement(element) && element.type !== "text" && element.backgroundColor != null) ||
+    sceneElementsForFormatting.find((element) => noteContainerIds.has(element.id) && element.backgroundColor != null) ||
+    firstTextFormattingElement;
+  const noteGroupIds = new Set([...liveSelection.map((element) => element.id), ...noteContainerIds, ...noteTextIds]);
+  const position = useMemo(
+    () => getSelectionPosition(apiRef?.current, toolMode ? [] : liveSelection, canvasRootRef?.current, Boolean(openGroup)),
+    // canvasRevision refreshes placement as Excalidraw pans/zooms without changing selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [apiRef, canvasRootRef, canvasRevision, selectedElements, openGroup],
+  );
+  useEffect(() => {
+    if (toolMode && !wasToolModeRef.current) setOpenGroup("stroke");
+    wasToolModeRef.current = toolMode;
+    if (!toolMode && customToolMode) setCustomToolMode(null);
+  }, [toolMode, customToolMode]);
+  if (!canEdit || (!liveSelection.length && !toolMode) || !position) return null;
+
+  const currentStroke = (toolMode ? appState.currentItemStrokeColor : ((noteSelection ? firstTextFormattingElement?.strokeColor : null) || first?.customData?.iconColor || first?.strokeColor))?.toLowerCase() || "#2f2f33";
+  const currentFill = (toolMode ? appState.currentItemBackgroundColor : (noteSelection ? firstNoteBackgroundElement?.backgroundColor : first?.backgroundColor))?.toLowerCase() || "transparent";
+  const currentStrokeWidth = Number(toolMode ? appState.currentItemStrokeWidth : (first?.strokeWidth ?? appState.currentItemStrokeWidth)) || 1;
+  const currentFontSize = Number(toolMode ? appState.currentItemFontSize : (firstTextFormattingElement?.fontSize ?? appState.currentItemFontSize)) || 20;
+  const currentFontFamily = Number(toolMode ? appState.currentItemFontFamily : (firstTextFormattingElement?.fontFamily ?? appState.currentItemFontFamily)) || DEFAULT_FONT_FAMILY_ID;
+  const currentTextAlign = (toolMode ? appState.currentItemTextAlign : firstTextFormattingElement?.textAlign) || appState.currentItemTextAlign || "left";
+  const currentVerticalAlign = (toolMode ? appState.currentItemVerticalAlign : firstTextFormattingElement?.verticalAlign) || "middle";
+  const currentOpacity = Number(toolMode ? (appState.currentItemOpacity ?? 100) : (first?.opacity ?? appState.currentItemOpacity ?? 100));
+  const strokePalette = noteFormattingMode ? NOTE_TEXT_COLORS : STROKE_COLORS;
+  const backgroundPalette = noteFormattingMode ? NOTE_BACKGROUND_COLORS : FILL_COLORS;
+  const fontFamilies = noteFormattingMode ? NOTE_FONT_FAMILIES : FONT_FAMILIES;
+  const fontSizes = noteFormattingMode ? FONT_SIZES.filter(([value]) => value !== 12) : FONT_SIZES;
+  // Mirror the default Properties panel: text-only controls are shown only
+  // when the active selection consists entirely of text. Shape, connector,
+  // image, and mixed selections keep the shared appearance/layer controls, with
+  // shape- and line-specific options rendered inside the Stroke popover.
+  const visibleGroups = toolMode
+    ? GROUPS.filter((group) => group.id === "stroke" || group.id === "opacity" || (activeToolMode === "text" && ["fontFamily", "fontSize", "textAlign"].includes(group.id)))
+    : GROUPS.filter((group) => {
+      if (iconOnlySelection && ["stroke", "opacity", "themes"].includes(group.id)) return false;
+      if (group.id === "align") {
+        return liveSelection.length >= 2;
+      }
+      if (group.id === "fontFamily" || group.id === "fontSize" || group.id === "textAlign") {
+        return onlyTextSelection;
+      }
+      return true;
+    });
+  const applyFormatting = (patch) => {
+    const api = apiRef?.current;
+    if (!api) return;
+    if (!toolMode) {
+      // Use the same live selection snapshot that rendered this toolbar. The
+      // parent callback re-reads Excalidraw selection state, which can be empty
+      // during text-edit/toolbar focus transitions even while this panel remains
+      // visible. Updating these ids directly keeps all floating controls reliable.
+      const selectedIds = new Set(liveSelection.map((element) => element.id));
+      const patchKeys = Object.keys(patch);
+      const textOnlyPatch = patchKeys.length > 0 && patchKeys.every((key) => ["strokeColor", "fontFamily", "fontSize", "textAlign"].includes(key));
+      const containerOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "verticalAlign";
+      const backgroundOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "backgroundColor";
+      const hasSeparateNoteText = noteSelection && noteContainerIds.size > 0 && noteTextIds.size > 0 && elementsHaveNoteText(sceneElementsForFormatting, noteTextIds);
+      const now = Date.now();
+      const elements = api.getSceneElements?.() || [];
+      const updatedElements = elements.map((element) => {
+        const isSelected = selectedIds.has(element.id);
+        const isRelatedNoteElement = noteSelection && noteGroupIds.has(element.id);
+        if (!isSelected && !isRelatedNoteElement) return element;
+        if (element.type === "image" && (element.customData?.iconId || element.customData?.diagramIcon)) return element;
+        if (hasSeparateNoteText && textOnlyPatch && element.type !== "text") return element;
+        if (hasSeparateNoteText && containerOnlyPatch && element.type === "text") return element;
+        if (hasSeparateNoteText && backgroundOnlyPatch && element.type === "text") return element;
+        return {
+          ...element,
+          ...patch,
+          version: (Number(element.version) || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647),
+          updated: now,
+        };
+      });
+      if (updatedElements.some((element, index) => element !== elements[index])) {
+        api.updateScene({ elements: updatedElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      }
+      return;
+    }
+    const appStatePatch = {};
+    if ("strokeColor" in patch) appStatePatch.currentItemStrokeColor = patch.strokeColor;
+    if ("backgroundColor" in patch) appStatePatch.currentItemBackgroundColor = patch.backgroundColor === "transparent" ? "transparent" : patch.backgroundColor;
+    if ("strokeWidth" in patch) appStatePatch.currentItemStrokeWidth = patch.strokeWidth;
+    if ("fillStyle" in patch) appStatePatch.currentItemFillStyle = patch.fillStyle;
+    if ("strokeStyle" in patch) appStatePatch.currentItemStrokeStyle = patch.strokeStyle;
+    if ("roughness" in patch) appStatePatch.currentItemRoughness = patch.roughness;
+    if ("opacity" in patch) appStatePatch.currentItemOpacity = patch.opacity;
+    if ("fontFamily" in patch) appStatePatch.currentItemFontFamily = patch.fontFamily;
+    if ("fontSize" in patch) appStatePatch.currentItemFontSize = patch.fontSize;
+    if ("textAlign" in patch) appStatePatch.currentItemTextAlign = patch.textAlign;
+    if ("verticalAlign" in patch) appStatePatch.currentItemVerticalAlign = patch.verticalAlign;
+    if ("roundness" in patch) appStatePatch.currentItemRoundness = patch.roundness;
+    if ("startArrowhead" in patch) appStatePatch.currentItemStartArrowhead = patch.startArrowhead;
+    if ("endArrowhead" in patch) appStatePatch.currentItemEndArrowhead = patch.endArrowhead;
+    if ("pressure" in patch) appStatePatch.currentItemPressure = patch.pressure;
+    api.updateScene({ appState: appStatePatch });
+  };
+  const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
+  const applySmartTheme = (themeId) => {
+    const api = apiRef?.current;
+    if (!api || !canEdit || !liveSelection.length) return;
+    const selectedIds = new Set(liveSelection.map((element) => element.id));
+    const scene = api.getSceneElements?.() || [];
+    const next = scene.map((element) => {
+      if (!selectedIds.has(element.id) || element.isDeleted || element.type === "image") return element;
+      const themed = applySmartThemeToElements([element], themeId)[0];
+      if (themed.strokeColor === element.strokeColor && themed.backgroundColor === element.backgroundColor) return element;
+      return { ...themed, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+    });
+    if (next.some((element, index) => element !== scene[index])) {
+      api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    }
+  };
+
+  const alignSelection = (alignment) => {
+    const api = apiRef?.current;
+    if (!api || liveSelection.length < 2) return;
+    const scene = api.getSceneElements?.() || [];
+    const selectedIds = new Set(liveSelection.map((el) => el.id));
+    const selected = scene.filter((el) => el && !el.isDeleted && !el.deleted && selectedIds.has(el.id));
+    if (selected.length < 2) return;
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const el of selected) {
+      const elW = Number(el.width) || 0;
+      const elH = Number(el.height) || 0;
+      minX = Math.min(minX, el.x);
+      maxX = Math.max(maxX, el.x + elW);
+      minY = Math.min(minY, el.y);
+      maxY = Math.max(maxY, el.y + elH);
+    }
+
+    const updatedMap = new Map();
+
+    if (alignment === "left") {
+      selected.forEach((el) => updatedMap.set(el.id, { ...el, x: minX }));
+    } else if (alignment === "centerHorizontal") {
+      const midX = (minX + maxX) / 2;
+      selected.forEach((el) => {
+        const elW = Number(el.width) || 0;
+        updatedMap.set(el.id, { ...el, x: midX - elW / 2 });
+      });
+    } else if (alignment === "right") {
+      selected.forEach((el) => {
+        const elW = Number(el.width) || 0;
+        updatedMap.set(el.id, { ...el, x: maxX - elW });
+      });
+    } else if (alignment === "top") {
+      selected.forEach((el) => updatedMap.set(el.id, { ...el, y: minY }));
+    } else if (alignment === "centerVertical") {
+      const midY = (minY + maxY) / 2;
+      selected.forEach((el) => {
+        const elH = Number(el.height) || 0;
+        updatedMap.set(el.id, { ...el, y: midY - elH / 2 });
+      });
+    } else if (alignment === "bottom") {
+      selected.forEach((el) => {
+        const elH = Number(el.height) || 0;
+        updatedMap.set(el.id, { ...el, y: maxY - elH });
+      });
+    } else if (alignment === "distributeHorizontal") {
+      const sorted = [...selected].sort((a, b) => a.x - b.x);
+      const totalWidth = sorted.reduce((sum, el) => sum + (Number(el.width) || 0), 0);
+      const availableSpace = (maxX - minX) - totalWidth;
+      const gap = sorted.length > 1 ? availableSpace / (sorted.length - 1) : 0;
+      let curX = minX;
+      sorted.forEach((el) => {
+        updatedMap.set(el.id, { ...el, x: curX });
+        curX += (Number(el.width) || 0) + gap;
+      });
+    } else if (alignment === "distributeVertical") {
+      const sorted = [...selected].sort((a, b) => a.y - b.y);
+      const totalHeight = sorted.reduce((sum, el) => sum + (Number(el.height) || 0), 0);
+      const availableSpace = (maxY - minY) - totalHeight;
+      const gap = sorted.length > 1 ? availableSpace / (sorted.length - 1) : 0;
+      let curY = minY;
+      sorted.forEach((el) => {
+        updatedMap.set(el.id, { ...el, y: curY });
+        curY += (Number(el.height) || 0) + gap;
+      });
+    }
+
+    const newElements = scene.map((el) => updatedMap.get(el.id) || el);
+    api.updateScene({ elements: newElements, captureUpdate: CaptureUpdateAction.EVENTUALLY });
+  };
+  const renderGroupContent = (groupId) => {
+    if (groupId === "stroke") return (
+      <>
+        <div className="format-option-section">
+          <div className="format-option-label">{(onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
+          <div className="format-option-row">
+            {strokePalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
+            <label
+              className="format-custom-color"
+              title="Choose custom color"
+              aria-label="Choose custom color"
+              style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed" }}
+            >
+              <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} />
+            </label>
+          </div>
+        </div>
+        {(!onlyTextSelection || toolMode || noteSelection) && !hasImageSelection && (
+          <div className="format-option-section">
+            <div className="format-option-label">Background</div>
+            <div className="format-option-row">
+              {backgroundPalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
+              <label
+                className="format-custom-color format-custom-fill-color"
+                title="Choose custom background color"
+                aria-label="Choose custom background color"
+                style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1" }}
+              >
+                <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                <input
+                  type="color"
+                  aria-label="Choose custom background color"
+                  value={/^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1"}
+                  onChange={(event) => applyFormatting({ backgroundColor: event.target.value })}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+        {!toolMode && !onlyTextSelection && !hasImageSelection && (first?.type === "rectangle" || first?.type === "diamond" || first?.type === "line") && (
+          <div className="format-option-section">
+            <div className="format-option-label">Edges</div>
+            <div className="format-option-row">
+              <button
+                type="button"
+                className={`format-option-button format-edge-button${!first?.roundness ? " is-selected" : ""}`}
+                aria-label="Square edges"
+                aria-pressed={!first?.roundness}
+                title="Square edges"
+                onClick={() => applyFormatting({ roundness: null })}
+              ><span className="format-edge-square" aria-hidden="true" /></button>
+              <button
+                type="button"
+                className={`format-option-button format-edge-button${first?.roundness ? " is-selected" : ""}`}
+                aria-label="Rounded edges"
+                aria-pressed={Boolean(first?.roundness)}
+                title="Rounded edges"
+                onClick={() => applyFormatting({ roundness: { type: 3 } })}
+              ><span className="format-edge-rounded" aria-hidden="true" /></button>
+            </div>
+          </div>
+        )}
+        {activeToolMode !== "text" && (toolMode || (!onlyTextSelection && !hasImageSelection && (hasLine || hasShape))) && (
+          <div className="format-option-section">
+            <div className="format-option-label">Stroke width</div>
+            <div className="format-option-row">
+              {[1, 2, 4].map((width) => <button key={width} type="button" className={`format-option-button${currentStrokeWidth === width ? " is-selected" : ""}`} aria-pressed={currentStrokeWidth === width} onClick={() => applyFormatting({ strokeWidth: width })}>{width}</button>)}
+            </div>
+            {(toolMode ? activeToolMode === "shape" : hasShape) && <>
+              <div className="format-option-label format-sub-label">Fill style</div>
+              <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}</div>
+            </>}
+            {drawToShapeTool && <>
+              <div className="format-option-label format-sub-label">Sloppiness</div>
+              <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(toolMode ? appState.currentItemRoughness ?? 1 : first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(toolMode ? appState.currentItemRoughness ?? 1 : first?.roughness ?? 1) === value} title={label} onClick={() => applyFormatting({ roughness: value })}>{label}</button>)}</div>
+            </>}
+            {!toolMode && <>
+            <div className="format-option-label format-sub-label">Line style</div>
+            <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.strokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.strokeStyle === value} onClick={() => applyFormatting({ strokeStyle: value })}>{glyph}</button>)}</div>
+            <div className="format-option-label format-sub-label">Roughness</div>
+            <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} onClick={() => applyFormatting({ roughness: value })}>{label}</button>)}</div>
+            {first?.type === "arrow" && (
+              <>
+                <div className="format-option-label format-sub-label">Arrow type</div>
+                <div className="format-option-row">
+                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) <= 2 ? " is-selected" : ""}`} aria-label="Straight arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) <= 2} title="Straight arrow" onClick={() => applyFormatting(straightArrowPatch(first))}>↗</button>
+                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) > 2 ? " is-selected" : ""}`} aria-label="Curved arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) > 2} title="Curved arrow" onClick={() => applyFormatting(curvedArrowPatch(first))}>⌒</button>
+                  <button type="button" className={`format-option-button${first?.elbowed ? " is-selected" : ""}`} aria-label="Elbow arrow" aria-pressed={Boolean(first?.elbowed)} title="Elbow arrow" onClick={() => applyFormatting({ elbowed: true })}>⌞</button>
+                </div>
+                <div className="format-option-label format-sub-label">Arrowheads</div>
+                <div className="format-option-row format-arrowhead-row">
+                  <label className="format-arrowhead-control">
+                    <span>Start</span>
+                    <select aria-label="Start arrowhead" value={first?.startArrowhead || "none"} onChange={(event) => applyFormatting({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                      <option value="none">None</option>
+                      <option value="arrow">Arrow</option>
+                      <option value="bar">Bar</option>
+                      <option value="dot">Dot</option>
+                    </select>
+                  </label>
+                  <label className="format-arrowhead-control">
+                    <span>End</span>
+                    <select aria-label="End arrowhead" value={first?.endArrowhead || "none"} onChange={(event) => applyFormatting({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                      <option value="none">None</option>
+                      <option value="arrow">Arrow</option>
+                      <option value="bar">Bar</option>
+                      <option value="dot">Dot</option>
+                    </select>
+                  </label>
+                </div>
+              </>
+            )}
+            </>}
+          </div>
+        )}
+        {drawingTool && <div className="format-option-section">
+          <div className="format-option-label">Pressure</div>
+          <div className="format-option-row">
+            <button type="button" className={`format-option-button${appState.currentItemPressure !== false ? " is-selected" : ""}`} aria-label="Pressure enabled" aria-pressed={appState.currentItemPressure !== false} title="Use pressure-sensitive stroke" onClick={() => applyFormatting({ pressure: true })}>〰</button>
+            <button type="button" className={`format-option-button${appState.currentItemPressure === false ? " is-selected" : ""}`} aria-label="Pressure disabled" aria-pressed={appState.currentItemPressure === false} title="Use consistent stroke width" onClick={() => applyFormatting({ pressure: false })}>〰</button>
+          </div>
+        </div>}
+      </>
+    );
+    if (groupId === "fontFamily") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Font family</div>
+        <div className="format-option-row format-font-families">
+          {fontFamilies.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentFontFamily === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentFontFamily === value} title={label} onClick={() => applyFormatting({ fontFamily: value })}>{glyph}</button>)}
+        </div>
+      </div>
+    );
+    if (groupId === "fontSize") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Font size</div>
+        <div className="format-option-row format-font-size-grid">
+          {fontSizes.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`format-option-button format-size-button${currentFontSize === value ? " is-selected" : ""}`}
+              aria-label={`${label} (${value}px)`}
+              aria-pressed={currentFontSize === value}
+              title={`${label} (${value}px)`}
+              onClick={() => applyFormatting({ fontSize: value })}
+            >
+              <span className="format-size-name">{label}</span>
+              <span className="format-size-sub">{value}px</span>
+            </button>
+          ))}
+        </div>
+        <div className="format-option-row format-custom-size">
+          <button type="button" className="format-option-button" aria-label="Decrease text size" onClick={() => applyFormatting({ fontSize: Math.max(8, currentFontSize - 2) })}>A−</button>
+          <div className="format-size-input-wrapper">
+            <input
+              type="number"
+              aria-label="Direct font size"
+              className="format-size-input-val"
+              min="8"
+              max="128"
+              value={currentFontSize}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                if (val >= 6 && val <= 200) applyFormatting({ fontSize: val });
+              }}
+            />
+            <span className="format-size-input-unit">px</span>
+          </div>
+          <button type="button" className="format-option-button" aria-label="Increase text size" onClick={() => applyFormatting({ fontSize: Math.min(96, currentFontSize + 2) })}>A+</button>
+        </div>
+      </div>
+    );
+    if (groupId === "textAlign") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Horizontal align</div>
+        <div className="format-option-row">
+          {TEXT_ALIGNMENTS.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${currentTextAlign === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={currentTextAlign === value} onClick={() => applyFormatting({ textAlign: value })}>{glyph}</button>)}
+        </div>
+        {(onlyTextSelection || activeToolMode === "text" || noteSelection) && <>
+          <div className="format-option-label format-sub-label">Vertical align</div>
+          <div className="format-option-row">
+            {[
+              ["top", "Top", "⊤"],
+              ["middle", "Middle", "⊟"],
+              ["bottom", "Bottom", "⊥"],
+            ].map(([value, label, glyph]) => <button key={value} type="button" className={currentVerticalAlign === value ? "format-option-button is-selected" : "format-option-button"} aria-label={label} aria-pressed={currentVerticalAlign === value} title={label} onClick={() => applyFormatting({ verticalAlign: value })}>{glyph}</button>)}
+          </div>
+        </>}
+      </div>
+    );
+    if (groupId === "opacity") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Opacity ({currentOpacity}%)</div>
+        <div className="format-option-row format-opacity-presets-row">
+          {OPACITY_PRESETS.map((pct) => (
+            <button
+              key={pct}
+              type="button"
+              className={`format-option-button format-opacity-preset-btn${currentOpacity === pct ? " is-selected" : ""}`}
+              aria-label={`${pct}% opacity`}
+              onClick={() => applyFormatting({ opacity: pct })}
+            >
+              {pct}%
+            </button>
+          ))}
+        </div>
+        <div className="format-opacity-control">
+          <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
+          <span>{currentOpacity}%</span>
+        </div>
+      </div>
+    );
+    if (groupId === "themes") return (
+      <div className="format-option-section">
+        <div className="format-option-label">Smart Themes</div>
+        <div className="format-option-row">
+          {SMART_THEMES.map((theme) => (
+            <button key={theme.id} type="button" className="format-option-button" title={theme.description}
+              aria-label={`Apply ${theme.name} theme to selected objects`} onClick={() => applySmartTheme(theme.id)}>
+              {theme.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+    if (groupId === "align") return (
+      <div className="format-option-section format-alignment-section">
+        <div className="format-option-label">Align horizontal</div>
+        <div className="format-option-row">
+          <button type="button" className="format-option-button" aria-label="Align left" title="Align left" onClick={() => alignSelection("left")}>⇤ Left</button>
+          <button type="button" className="format-option-button" aria-label="Align center horizontally" title="Align center horizontally" onClick={() => alignSelection("centerHorizontal")}>⇥⇤ Center</button>
+          <button type="button" className="format-option-button" aria-label="Align right" title="Align right" onClick={() => alignSelection("right")}>⇥ Right</button>
+        </div>
+        <div className="format-option-label format-sub-label">Align vertical</div>
+        <div className="format-option-row">
+          <button type="button" className="format-option-button" aria-label="Align top" title="Align top" onClick={() => alignSelection("top")}>⤒ Top</button>
+          <button type="button" className="format-option-button" aria-label="Align center vertically" title="Align center vertically" onClick={() => alignSelection("centerVertical")}>⤓⤒ Mid</button>
+          <button type="button" className="format-option-button" aria-label="Align bottom" title="Align bottom" onClick={() => alignSelection("bottom")}>⤓ Bottom</button>
+        </div>
+        <div className="format-option-label format-sub-label">Distribute spacing</div>
+        <div className="format-option-row">
+          <button type="button" className="format-option-button" aria-label="Distribute horizontally" title="Distribute horizontally" onClick={() => alignSelection("distributeHorizontal")}>↔ Horiz</button>
+          <button type="button" className="format-option-button" aria-label="Distribute vertically" title="Distribute vertically" onClick={() => alignSelection("distributeVertical")}>↕ Vert</button>
+        </div>
+      </div>
+    );
+    return null;
+  };
+
+  return (
+    <div
+      ref={toolbarRef}
+      className={`contextual-formatting-toolbar${toolMode ? " is-tool-mode" : ""}`}
+      role="toolbar"
+      aria-label={toolMode ? "Drawing tool formatting" : "Selected object formatting"}
+      style={position}
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="format-icon-rail" role="group" aria-label="Formatting options">
+        {typeof onOpenProperties === "function" && (
+          <button
+            type="button"
+            className="format-icon-button format-properties-trigger"
+            aria-label="Open properties drawer"
+            title="Open properties drawer"
+            onClick={onOpenProperties}
+          >
+            ⋯
+          </button>
+        )}
+        {visibleGroups.map((group) => (
+          <button
+            key={group.id}
+            type="button"
+            className={`format-icon-button${activeGroup === group.id ? " is-active" : ""}`}
+            aria-label={group.label}
+            aria-expanded={activeGroup === group.id}
+            aria-pressed={activeGroup === group.id}
+            title={group.label}
+            onClick={() => setOpenGroup((current) => current === group.id ? null : group.id)}
+          >{group.icon}</button>
+        ))}
+      </div>
+      {activeGroup && (
+        <div className={`format-options-popover side-${position["--format-popover-side"]}`} role="dialog" aria-label={`${visibleGroups.find((group) => group.id === activeGroup)?.label} options`}>
+          <div className="format-popover-header">
+            <strong>{visibleGroups.find((group) => group.id === activeGroup)?.label}</strong>
+            <button type="button" className="format-popover-close" aria-label="Close formatting options" onClick={() => setOpenGroup(null)}>×</button>
+          </div>
+          {activeGroup === "stroke" && bucketFillTool
+            ? <>
+                <div className="format-option-section">
+                  <div className="format-option-label">Background</div>
+                  <div className="format-option-row">
+                    {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
+                    <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color">
+                      <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                      <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
+                    </label>
+                  </div>
+                </div>
+                <div className="format-option-section">
+                  <div className="format-option-label">Fill style</div>
+                  <div className="format-option-row">
+                    {FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value} title={label} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}
+                  </div>
+                </div>
+                <div className="format-option-section">
+                  <div className="format-option-label">Opacity</div>
+                  <div className="format-opacity-control">
+                    <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
+                    <span>{currentOpacity}</span>
+                  </div>
+                </div>
+              </>
+            : renderGroupContent(activeGroup)}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,1192 @@
+@import "./styles/base.css";
+@import "./styles/alignment-guides.css";
+@import "./styles/library.css";
+@import "./styles/properties.css";
+@import "./styles/architecture-validation.css";
+@import "./styles/icon-library.css";
+@import "./styles/minimap.css";
+@import "./styles/theme.css";
+@import "./styles/eraser.css";
+@import "./styles/shell.css";
+@import "./styles/command-palette.css";
+@import "./styles/responsive.css";
+@import "./styles/responsive-mobile.css";
+@import "./styles/responsive-desktop.css";
+@import "./styles/responsive-final.css";
+@import "./styles/auth.css";
+@import "./styles/icon-library-redesign.css";
+@import "./styles/header-redesign.css";
+@import "./styles/collaboration-redesign.css";
+@import "./styles/responsive-menu.css";
+@import "./styles/ui-modernization.css";
+@import "./styles/ui-modernization-responsive.css";
+@import "./styles/ui-modernization-toolbar-dock.css";
+@import "./styles/ui-modernization-navigation.css";
+@import "./styles/document-save-status.css";
+@import "./styles/canvas-first-header.css";
+@import "./styles/create-menu.css";
+@import "./styles/document-location.css";
+@import "./styles/floating-segmented-header.css";
+@import "./styles/right-header-rail.css";
+@import "./styles/advanced-canvas-suite.css";
+
+.kubernetes-library-status { margin: 10px 0 14px; }
+.kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
+.kubernetes-library-status > div:first-child span { color: var(--text-muted); font-size: 12px; }
+.kubernetes-category-list { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow: auto; }
+.kubernetes-category { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.kubernetes-category-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.kubernetes-category-icon { width: 22px; height: 22px; object-fit: contain; flex: 0 0 auto; }
+
+/* Sketchizi 1.10.17 — Icon Library UI/UX refinement */
+.library-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #333);
+}
+
+.library-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--ui-border-soft, #eee);
+}
+
+.library-panel-heading {
+  min-width: 0;
+}
+
+.library-panel-header .label {
+  padding: 0;
+  color: var(--ui-text-strong, #202020);
+  font-size: 14px;
+  font-weight: 760;
+  letter-spacing: -.015em;
+}
+
+.library-panel-subtitle {
+  margin-top: 3px;
+  color: var(--ui-text-muted, #777);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.library-panel-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+
+.library-pin-button,
+.library-panel .mobile-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 8px;
+  background: var(--ui-surface-soft, #fafafa);
+  color: var(--ui-text-muted, #777);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.library-pin-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.library-pin-button:hover,
+.library-pin-button.active {
+  border-color: var(--ui-accent, #6c63d9);
+  background: var(--ui-active, #eeecff);
+  color: var(--ui-accent, #5b55c7);
+}
+
+.library-pin-button.active svg {
+  transform: rotate(-20deg);
+}
+
+.library-pin-button:focus-visible,
+.library-panel .mobile-panel-close:focus-visible {
+  outline: 2px solid var(--ui-accent, #6c63d9);
+  outline-offset: 2px;
+}
+
+.library-panel-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 10px;
+}
+
+.library-panel-body > .search-wrap {
+  flex: 0 0 auto;
+  margin-bottom: 8px;
+}
+
+.library-panel-body > .quick-categories {
+  flex: 0 0 auto;
+  max-height: none;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 0 0 8px;
+  overflow: visible;
+}
+
+.library-panel-body > .eraser-library-status,
+.library-panel-body > .uml-library-status,
+.library-panel-body > .mindmap-library-status,
+.library-panel-body > .kubernetes-library-status,
+.library-panel-body > .aws-library-status {
+  flex: 0 0 auto;
+}
+
+.library-panel-body > .icons {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 10px;
+}
+
+.library-panel-body > .icons > .section-heading {
+  flex: 0 0 auto;
+  margin-bottom: 2px;
+}
+
+.library-panel .icon-grid {
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border, #c7c7c7) transparent;
+  padding: 2px 4px 10px 1px;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar,
+.library-panel .quick-categories::-webkit-scrollbar,
+.library-panel .aws-category-list::-webkit-scrollbar,
+.library-panel .kubernetes-category-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar-track,
+.library-panel .quick-categories::-webkit-scrollbar-track,
+.library-panel .aws-category-list::-webkit-scrollbar-track,
+.library-panel .kubernetes-category-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar-thumb,
+.library-panel .quick-categories::-webkit-scrollbar-thumb,
+.library-panel .aws-category-list::-webkit-scrollbar-thumb,
+.library-panel .kubernetes-category-list::-webkit-scrollbar-thumb {
+  min-height: 34px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--ui-border, #c7c7c7);
+  background-clip: padding-box;
+}
+
+.library-panel .icon-grid::-webkit-scrollbar-thumb:hover,
+.library-panel .quick-categories::-webkit-scrollbar-thumb:hover,
+.library-panel .aws-category-list::-webkit-scrollbar-thumb:hover,
+.library-panel .kubernetes-category-list::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-text-muted, #777);
+  background-clip: padding-box;
+}
+
+.library-panel .quick-category {
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ui-text, #333);
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.library-panel .quick-category:hover {
+  background: var(--ui-hover, #f4f4f4);
+}
+
+.library-panel .quick-category.active {
+  border-color: color-mix(in srgb, var(--ui-accent, #5b55c7) 20%, transparent);
+  background: var(--ui-active, #eeecff);
+  color: var(--ui-text-strong, #202020);
+}
+
+.library-panel .quick-category.active .category-count {
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-accent, #5b55c7);
+}
+
+.library-panel .category-count {
+  min-width: 26px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: var(--ui-surface-soft, #f5f5f5);
+  color: var(--ui-text-muted, #777);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.library-panel .eraser-library-status,
+.library-panel .uml-library-status,
+.library-panel .mindmap-library-status,
+.library-panel .kubernetes-library-status,
+.library-panel .aws-library-status {
+  margin: 8px 0 0;
+  padding: 10px;
+  border: 1px solid var(--ui-border-soft, #eee);
+  border-radius: 10px;
+  background: var(--ui-surface-soft, #fafafa);
+}
+
+.library-panel .section-heading {
+  padding: 0 3px 8px;
+}
+
+.library-panel .section-title {
+  color: var(--ui-text-strong, #202020);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.library-panel .icon-total {
+  color: var(--ui-text-muted, #777);
+  font-size: 9px;
+}
+
+.library-panel .icon-card {
+  min-height: 108px;
+  padding: 9px 6px 8px;
+  border-color: var(--ui-border, #dedede);
+  border-radius: 10px;
+  background: var(--ui-surface-solid, #fff);
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+
+.library-panel .icon-card:hover {
+  border-color: var(--ui-accent, #8b86e8);
+  background: var(--ui-surface-soft, #fafafa);
+  box-shadow: 0 5px 14px rgba(15, 23, 42, .07);
+  transform: translateY(-1px);
+}
+
+.library-panel .icon-card:focus-visible {
+  outline: 2px solid var(--ui-accent, #6c63d9);
+  outline-offset: 1px;
+}
+
+.library-panel .icon-preview {
+  height: 58px;
+}
+
+.library-panel .icon-preview img {
+  width: 50px;
+  height: 50px;
+}
+
+.library-panel .icon-name {
+  margin-top: 5px;
+  color: var(--ui-text-strong, #202020);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.library-panel .icon-subtitle {
+  margin-top: 3px;
+  color: var(--ui-text-muted, #777);
+  font-size: 8px;
+}
+
+.library-panel .library-scroll-hint {
+  flex: 0 0 auto;
+  padding: 5px 4px 0;
+  color: var(--ui-text-faint, #999);
+  font-size: 9px;
+  text-align: center;
+}
+
+.app.theme-dark .library-panel .quick-category.active {
+  border-color: rgba(126, 117, 255, .3);
+  background: rgba(91, 85, 199, .24);
+  color: var(--ui-text-strong);
+}
+
+.app.theme-dark .library-panel .quick-category.active .category-count {
+  background: var(--ui-surface-solid);
+  color: var(--ui-text-strong);
+}
+
+.app.theme-dark .library-panel .icon-card:hover {
+  background: var(--ui-hover);
+  border-color: var(--ui-accent);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .22);
+}
+
+.app.theme-dark .library-panel .library-pin-button.active {
+  background: rgba(91, 85, 199, .28);
+}
+
+@media (min-width: 1025px) {
+  .desktop-resources-region .library-panel-body > .quick-categories {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .desktop-resources-region .library-panel .icon-grid {
+    scrollbar-gutter: stable;
+  }
+
+  .desktop-resources-region .library-panel-header {
+    min-height: 42px;
+    padding-bottom: 10px;
+  }
+
+  .desktop-resources-region .library-panel-subtitle {
+    font-size: 9px;
+  }
+
+  .desktop-resources-region .library-panel .icon-card {
+    min-height: 104px;
+  }
+
+  .desktop-resources-region .library-panel .icon-preview {
+    height: 52px;
+  }
+
+  .desktop-resources-region .library-panel .icon-preview img {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .library-panel-body {
+    padding-top: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .library-panel-header {
+    min-height: 46px;
+  }
+
+  .library-panel-subtitle {
+    font-size: 9px;
+  }
+
+  .library-panel-body > .quick-categories {
+    max-height: 154px;
+    overflow-y: auto;
+    padding-right: 3px;
+  }
+
+  .library-panel .icon-grid {
+    padding-right: 4px;
+  }
+}
+
+
+
+/* Sketchizi 1.10.40 — correct Icon Library surfaces in the effective light theme.
+   Higher specificity is intentional: the legacy .icon-card rules otherwise win the cascade. */
+.app.theme-light.desktop-workspace-library-open::before {
+  background: rgba(30, 34, 52, .20) !important;
+  backdrop-filter: blur(1px);
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign {
+  border-color: #d9ddec !important;
+  background: linear-gradient(145deg, #fbfcff 0%, #f4f5fb 74%, #f7f7fc 100%) !important;
+  color: #25283d !important;
+  box-shadow: 0 24px 70px rgba(31, 35, 66, .24), 0 0 0 1px rgba(109, 40, 217, .05) !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-header {
+  border-bottom-color: #e0e4ef !important;
+  background: transparent !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-header .label,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-results-heading .section-title,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card .icon-name {
+  color: #272a40 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-subtitle,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-results-heading .icon-total,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card .icon-subtitle {
+  color: #707791 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search {
+  border-color: #8b5cf6 !important;
+  background: #fff !important;
+  color: #292c43 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search::placeholder { color: #858ba4 !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-source-chip {
+  border-color: #e0e3ee !important; background: #eceef6 !important; color: #4d5572 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-source-chip.active {
+  border-color: #7c3aed !important; background: linear-gradient(135deg, #7c2dff, #5520d9) !important; color: #fff !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-heading { color: #30344b !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-chip {
+  border-color: #e0e3ef !important; background: #eceef6 !important; color: #505976 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-searches { border-bottom-color: #e0e3ef !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-layout-select,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-view-toggle {
+  border-color: #dfe3ef !important; background: #f0f2f9 !important; color: #505976 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card {
+  border-color: #e0e3ed !important; background: #fff !important; color: #272a40 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card:hover {
+  border-color: #b8a0ee !important; background: #faf8ff !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-card:has(.favorite-button.active) { border-color: #b9a4e8 !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-preview {
+  border-color: #e1e4ef !important; background: #f2f3fa !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-tag {
+  background: #edf0f8 !important; color: #5a627e !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid {
+  scrollbar-color: #8750ed #eceef6 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-track { background: #eceef6 !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-thumb { border-color: #eceef6 !important; }
+
+/* Use neutral meta tones for Icon Library accents instead of violet. */
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search:focus,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-search-wrap .search:focus-visible {
+  border-color: #cbd0da !important;
+  box-shadow: none !important;
+  outline-color: #9ca3af !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-heading button {
+  color: #697386 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-recent-heading button:hover {
+  color: #374151 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid {
+  scrollbar-color: #aeb5c1 #eceef2 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-track {
+  background: #eceef2 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-icon-grid::-webkit-scrollbar-thumb {
+  background: #aeb5c1 !important;
+  border-color: #eceef2 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-collections-menu {
+  border-color: #dfe3ee !important; background: #fff !important; color: #30344b !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-collections-menu button { color: #33364d !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-collections-menu button:hover { background: #f3efff !important; }
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-pin-button,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .mobile-panel-close {
+  border-color: #e0e3ef !important; background: #f0f2f9 !important; color: #535b78 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-pin-button:hover,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-pin-button.active,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .mobile-panel-close:hover {
+  border-color: #bba4ef !important; background: #f0eaff !important; color: #6d28d9 !important;
+}
+
+
+
+/* Day/Night is the single theme for both Sketchizi chrome and the canvas.
+   These are fallback surfaces beneath Excalidraw's scene renderer; the real
+   scene fill is synchronized through the Excalidraw API. */
+.app.theme-light .desktop-canvas-region,
+.app.theme-light .desktop-canvas-region > .canvas {
+  background-color: #ffffff !important;
+}
+.app.theme-dark .desktop-canvas-region,
+.app.theme-dark .desktop-canvas-region > .canvas {
+  background-color: #111722 !important;
+}
+
+/* UI Modernization 07 — keyboard accessibility and interaction polish.
+   Keep this layer intentionally conservative: it changes presentation only. */
+.app :is(button, [role="button"], a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--focus-ring, #7c3aed) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 2px var(--focus-ring-contrast, #ffffff) !important;
+  border-radius: max(var(--control-radius, 8px), 3px);
+}
+
+.app.theme-dark {
+  --focus-ring: #c4b5fd;
+  --focus-ring-contrast: #171923;
+}
+
+.app.theme-light {
+  --focus-ring: #6d28d9;
+  --focus-ring-contrast: #ffffff;
+}
+
+.app :is(button, [role="button"], input, select, textarea):disabled,
+.app :is(button, [role="button"])[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.app ::selection {
+  background: rgb(124 58 237 / 24%);
+}
+
+@media (forced-colors: active) {
+  .app :is(button, [role="button"], a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 3px !important;
+    box-shadow: none !important;
+  }
+
+  .app :is(button, [role="button"]):disabled,
+  .app :is(button, [role="button"])[aria-disabled="true"] {
+    color: GrayText !important;
+    border-color: GrayText !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app *,
+  .app *::before,
+  .app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .app :is(button, [role="button"], .icon-button, .toolbar-button) {
+    min-width: max(40px, var(--touch-target-min, 40px));
+    min-height: max(40px, var(--touch-target-min, 40px));
+  }
+}
+
+/* UI Modernization 17 — selection-aware formatting, surfaced only while editing a selection. */
+.app .desktop-canvas-region > .canvas {
+  position: relative;
+}
+
+
+/* The contextual toolbar is positioned in canvas-local coordinates. */
+.app .canvas {
+  position: relative;
+}
+
+.app .contextual-formatting-toolbar {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  padding: 6px;
+  border: 1px solid var(--ui-border, #34343a);
+  border-radius: 13px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #333);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 18%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  transform: translateZ(0);
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.app .contextual-formatting-toolbar::-webkit-scrollbar { display: none; }
+.app .contextual-formatting-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border-right: 1px solid var(--ui-border-soft, #eeeeee);
+}
+.app .contextual-formatting-group:last-child { border-right: 0; padding-right: 1px; }
+.app .contextual-color-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  min-width: 19px;
+  height: 19px;
+  min-height: 19px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: var(--swatch-color, transparent);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 10%);
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+.app .contextual-color-swatch:hover { transform: scale(1.1); }
+.app .contextual-color-swatch.is-selected { border-color: var(--ui-accent, #6d28d9); box-shadow: 0 0 0 2px var(--ui-accent-soft, #ecebff); }
+.app .contextual-fill-swatch.is-transparent {
+  color: var(--ui-text-muted, #777);
+  background: repeating-conic-gradient(var(--ui-border-soft, #eee) 0% 25%, var(--ui-surface-solid, #fff) 0% 50%) 50% / 7px 7px;
+}
+.app .contextual-fill-swatch.is-transparent span { font-size: 17px; font-weight: 500; line-height: 1; }
+.app .contextual-width-button,
+.app .contextual-text-size button,
+.app .contextual-properties-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 26px;
+  width: 26px;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ui-text-muted, #777);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+.app .contextual-width-button:hover,
+.app .contextual-text-size button:hover,
+.app .contextual-properties-button:hover { background: var(--ui-hover, #f7f7f7); color: var(--ui-text-strong, #202020); }
+.app .contextual-width-button.is-selected { border-color: var(--ui-accent, #6d28d9); background: var(--ui-accent-soft, #ecebff); color: var(--ui-accent, #5b55c7); }
+.app .contextual-width-button span { display: block; width: 14px; border-radius: 10px; background: currentColor; }
+.app .contextual-text-size { gap: 2px; color: var(--ui-text-muted, #777); font-size: 11px; }
+.app .contextual-text-size button { width: 25px; min-width: 25px; font-weight: 600; }
+.app .contextual-text-size span { min-width: 17px; text-align: center; font-variant-numeric: tabular-nums; }
+.app .contextual-properties-button { width: auto; min-width: 44px; padding: 0 7px; color: var(--ui-text, #333); }
+.app .contextual-properties-button span { font-size: 11px; }
+.app.theme-dark .contextual-formatting-toolbar { border-color: #373b49; background: #1d202a; box-shadow: 0 12px 30px rgb(0 0 0 / 35%), inset 0 1px 0 rgb(255 255 255 / 4%); }
+.app.theme-dark .contextual-formatting-group { border-color: #343846; }
+.app.theme-dark .contextual-width-button.is-selected { background: #3a365f; color: #cbc6ff; }
+.app.theme-light .contextual-formatting-toolbar { border-color: #dce1eb; background: #fff; box-shadow: 0 12px 30px rgb(26 31 48 / 14%), inset 0 1px 0 rgb(255 255 255 / 80%); }
+.app.theme-light .contextual-width-button.is-selected { background: #ecebff; color: #5b55c7; }
+@media (max-width: 760px) {
+  .app .contextual-formatting-toolbar { gap: 2px; padding: 5px; max-width: calc(100% - 12px); }
+  .app .contextual-formatting-group { gap: 2px; padding: 0 3px; }
+  .app .contextual-color-swatch { width: 17px; min-width: 17px; height: 17px; min-height: 17px; }
+}
+
+
+/* Docker Compose Studio entry point */
+.docker-compose-studio-toggle{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border:1px solid #4a347a;border-radius:9px;background:linear-gradient(135deg,#2a2043,#1a1f2c);color:#d8c7ff;font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.docker-compose-studio-toggle:hover{background:#38275c;border-color:#8b5cf6;transform:translateY(-1px)}
+.docker-compose-studio-toggle span:first-child{font-size:15px}
+
+/* Kubernetes Studio entry point */
+.kubernetes-studio-toggle{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border:1px solid #31578f;border-radius:9px;background:linear-gradient(135deg,#1b3458,#172131);color:#b9d6ff;font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.kubernetes-studio-toggle:hover{background:#244779;border-color:#5b9bff;transform:translateY(-1px)}
+.kubernetes-studio-toggle span:first-child{font-size:15px}
+@media(max-width:1100px){.kubernetes-studio-toggle{padding:0 8px}.kubernetes-studio-toggle span:last-child{display:none}}
+
+
+/* DevOps Studio menu: one compact toolbar entry for both infrastructure studios. */
+.devops-studio-menu{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}
+.devops-studio-toggle{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border:1px solid #31578f;border-radius:9px;background:linear-gradient(135deg,#1b3458,#172131);color:#c4dcff;font-size:11px;font-weight:750;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.devops-studio-toggle:hover,.devops-studio-toggle.active{background:#244779;border-color:#5b9bff}
+.devops-studio-toggle span:first-child{font-size:14px}
+.devops-studio-chevron{font-size:12px;opacity:.8;transition:transform .15s}
+.devops-studio-toggle.active .devops-studio-chevron{transform:rotate(180deg)}
+.devops-studio-dropdown{position:absolute;z-index:1000;top:calc(100% + 7px);left:0;display:flex;flex-direction:column;gap:4px;min-width:174px;padding:6px;border:1px solid var(--ui-border,#343946);border-radius:11px;background:var(--ui-surface-solid,#1b202b);box-shadow:0 12px 32px rgb(0 0 0 / 30%)}
+.devops-studio-dropdown button{display:flex;align-items:center;gap:9px;width:100%;min-height:36px;padding:7px 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--ui-text,#e6e8ef);font:inherit;font-size:11px;font-weight:700;text-align:left;cursor:pointer}
+.devops-studio-dropdown button:hover,.devops-studio-dropdown button:focus-visible{background:var(--ui-hover,#282f3d);border-color:var(--ui-border,#41495a)}
+.devops-studio-dropdown .kubernetes-studio-menu-item span:first-child{color:#9fc7ff;font-size:15px}
+.devops-studio-dropdown .docker-compose-studio-menu-item span:first-child{color:#d2b7ff;font-size:15px}
+@media(max-width:1100px){.devops-studio-toggle{padding:0 8px}.devops-studio-toggle span:nth-child(2){display:none}.devops-studio-dropdown{min-width:160px}}
+
+
+/* Compact DevOps and search controls; menu choices retain readable labels. */
+.devops-studio-toggle{width:36px;min-width:36px;max-width:36px;height:34px;padding:0;justify-content:center;gap:0}
+.devops-studio-toggle .devops-studio-brand-icon{display:block;width:17px;height:17px;flex:0 0 17px}
+.devops-studio-toggle .devops-studio-chevron{display:none}
+.devops-studio-dropdown .devops-option-icon{display:block;width:18px;height:18px;flex:0 0 18px}
+.devops-studio-dropdown .kubernetes-brand-icon{color:#79aef7}
+.devops-studio-dropdown .docker-brand-icon{color:#9c8cff}
+.desktop-app-header-actions .desktop-app-search-button{box-sizing:border-box!important;display:inline-flex!important;flex:0 0 36px!important;width:36px!important;min-width:36px!important;max-width:36px!important;height:34px!important;min-height:34px!important;padding:0!important;align-items:center!important;justify-content:center!important;gap:0!important}
+.desktop-app-header-actions .desktop-app-search-button svg{display:block!important;width:16px!important;height:16px!important;flex:0 0 16px!important}
+.desktop-app-header-actions .desktop-app-search-button .desktop-app-search-label,
+.desktop-app-header-actions .desktop-app-search-button .desktop-app-search-shortcut{display:none!important}
+@media(max-width:1100px){.devops-studio-toggle{width:34px;min-width:34px;max-width:34px;padding:0}}
+
+
+/* Unified creation menu: keep all workspace entry points under Create Design. */
+.create-design-menu .design-studio-header-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.create-design-menu .design-studio-header-toggle .devops-studio-chevron {
+  display: inline-block;
+  font-size: 11px;
+  opacity: .75;
+  transition: transform .15s ease;
+}
+.create-design-menu .design-studio-header-toggle.active .devops-studio-chevron {
+  transform: rotate(180deg);
+}
+.create-design-dropdown {
+  min-width: 248px;
+}
+.create-design-dropdown button > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.create-design-dropdown button strong {
+  color: var(--ui-text, #e6e8ef);
+  font-size: 12px;
+  font-weight: 700;
+}
+.create-design-dropdown button small {
+  color: var(--ui-muted, #9ba5bb);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+.create-design-dropdown .create-design-menu-icon {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  min-width: 25px;
+  height: 25px;
+  border-radius: 7px;
+  background: var(--ui-hover, #282f3d);
+  color: #bda0ff;
+  font-size: 17px;
+}
+.create-design-menu .devops-studio-dropdown button {
+  min-height: 46px;
+}
+
+
+/* Keep Create visually lightweight: only the plus glyph, not a filled button tile. */
+.create-design-menu .design-studio-header-toggle {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  gap: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ui-muted, #9ba5bb);
+}
+.create-design-menu .design-studio-header-toggle .workspaces-menu-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: currentColor;
+}
+.create-design-menu .design-studio-header-toggle:hover,
+.create-design-menu .design-studio-header-toggle.active {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ui-text, #e6e8ef);
+}
+
+
+/* Keep navigation chevrons small and quiet rather than glyph-like. */
+.create-design-menu .devops-studio-chevron {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  opacity: .62;
+  transition: transform .15s ease, opacity .15s ease;
+}
+.create-design-menu .design-studio-header-toggle:hover .devops-studio-chevron,
+.create-design-menu .design-studio-header-toggle.active .devops-studio-chevron {
+  opacity: .9;
+}
+.desktop-app-nav-chevron {
+  width: 11px !important;
+  height: 11px !important;
+  opacity: .62;
+}
+.desktop-app-nav-button:hover .desktop-app-nav-chevron,
+.desktop-app-nav-button.active .desktop-app-nav-chevron {
+  opacity: .88;
+}
+
+
+/* Toolbar tools use a subtle neutral hover/active state. Scaling is visual
+   only, so the dock layout and neighboring tool positions do not move. */
+.app .App-toolbar .sketchizi-dock-tool-active,
+.app .App-toolbar .sketchizi-dock-quick-tool.sketchizi-dock-tool-active,
+.app .App-toolbar .ToolIcon_type_button--selected,
+.app .App-toolbar .ToolIcon--selected,
+.app .App-toolbar button[aria-pressed="true"] {
+  background: #e5e7eb !important;
+  border-color: #cbd0d8 !important;
+  color: #252a32 !important;
+  box-shadow: none !important;
+  transform: scale(1.08);
+  transform-origin: center;
+  transition: transform .14s ease, background-color .14s ease, border-color .14s ease, color .14s ease;
+  z-index: 1;
+}
+.app .App-toolbar .sketchizi-dock-tool-active svg,
+.app .App-toolbar .ToolIcon_type_button--selected svg,
+.app .App-toolbar .ToolIcon--selected svg {
+  color: inherit;
+}
+.app .App-toolbar .ToolIcon_type_button:hover,
+.app .App-toolbar .ToolIcon_type_button:focus-visible,
+.app .App-toolbar .ToolIcon_type_button--selected:hover,
+.app .App-toolbar .ToolIcon--selected:hover {
+  background: #eef0f3;
+  border-color: #d4d8df;
+  transition: transform .14s ease, background-color .14s ease, border-color .14s ease, color .14s ease;
+}
+.app .App-toolbar .ToolIcon_type_button:hover,
+.app .App-toolbar .ToolIcon_type_button--selected:hover,
+.app .App-toolbar .ToolIcon--selected:hover {
+  transform: scale(1.08);
+  transform-origin: center;
+  z-index: 1;
+}
+.app .App-toolbar .sketchizi-dock-tool-active:focus-visible,
+.app .App-toolbar .ToolIcon_type_button--selected:focus-visible,
+.app .App-toolbar .ToolIcon--selected:focus-visible {
+  outline: 2px solid #9ca3af !important;
+  outline-offset: 2px;
+}
+.app.theme-dark .App-toolbar .sketchizi-dock-tool-active,
+.app.theme-dark .App-toolbar .sketchizi-dock-quick-tool.sketchizi-dock-tool-active,
+.app.theme-dark .App-toolbar .ToolIcon_type_button--selected,
+.app.theme-dark .App-toolbar .ToolIcon--selected,
+.app.theme-dark .App-toolbar button[aria-pressed="true"] {
+  background: #343840 !important;
+  border-color: #555b66 !important;
+  color: #f3f4f6 !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .App-toolbar .ToolIcon_type_button:hover,
+.app.theme-dark .App-toolbar .ToolIcon_type_button:focus-visible,
+.app.theme-dark .App-toolbar .ToolIcon_type_button--selected:hover,
+.app.theme-dark .App-toolbar .ToolIcon--selected:hover {
+  background: #292d34;
+  border-color: #4a505b;
+  color: #f3f4f6;
+}
+.app.theme-dark .App-toolbar .sketchizi-dock-tool-active:focus-visible,
+.app.theme-dark .App-toolbar .ToolIcon_type_button--selected:focus-visible,
+.app.theme-dark .App-toolbar .ToolIcon--selected:focus-visible {
+  outline-color: #9ca3af !important;
+}
+
+
+/* Match the frameless Icon Library treatment in both themes. Keep light-theme
+   controls/cards themed, but never restore a white shell around the whole panel. */
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign {
+  border: 0 !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-redesign-body {
+  background: transparent !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint {
+  justify-content: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #4d5572 !important;
+  text-align: center !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  justify-content: center !important;
+  color: #4d5572 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint kbd {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint,
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint {
+  color: #4d5572 !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint .library-escape-hint kbd {
+  border-color: #9aa3ba !important;
+  color: #4d5572 !important;
+}
+
+/* Match the Icon Library's outer surface to the hamburger menu's neutral meta palette.
+   Keep the library cards and category chips independently styled. */
+.app .desktop-resources-region > .library-panel.library-panel-redesign {
+  border: 1px solid var(--ui-border, #dedede) !important;
+  border-radius: 14px !important;
+  background: var(--ui-surface-solid, #fff) !important;
+  color: var(--ui-text, #333) !important;
+  box-shadow: var(--ui-shadow, 0 16px 42px rgba(0, 0, 0, .15)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.app .desktop-resources-region > .library-panel.library-panel-redesign > .library-scroll-hint,
+.app .desktop-resources-region > .library-panel.library-panel-redesign .library-panel-redesign-body {
+  background: transparent !important;
+}
+.app.theme-dark .desktop-resources-region > .library-panel.library-panel-redesign {
+  border-color: var(--ui-border, #34343a) !important;
+  background: var(--ui-surface-solid, #1b1b1b) !important;
+  color: var(--ui-text, #f2f2f4) !important;
+  box-shadow: var(--ui-shadow, 0 16px 42px rgba(0, 0, 0, .42)) !important;
+}
+.app.theme-light .desktop-resources-region > .library-panel.library-panel-redesign {
+  border-color: var(--ui-border, #dedede) !important;
+  background: var(--ui-surface-solid, #fff) !important;
+  color: var(--ui-text, #333) !important;
+  box-shadow: var(--ui-shadow, 0 16px 42px rgba(0, 0, 0, .15)) !important;
+}
+
+
+/* Explicit Cloud Workspace save action */
+.desktop-app-save-to-cloud-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:30px;padding:0 10px;border:1px solid #5145a8;border-radius:8px;background:#211e3b;color:#e7e2ff;font:600 11px/1 system-ui,sans-serif;white-space:nowrap;cursor:pointer;flex:0 0 auto}
+.desktop-app-save-to-cloud-button:hover:not(:disabled){border-color:#8f80ff;background:#302a54}
+.desktop-app-save-to-cloud-button:disabled{opacity:.55;cursor:wait}
+.theme-light .desktop-app-save-to-cloud-button{border-color:#c9c1ff;background:#f4f1ff;color:#4935a5}
+.theme-light .desktop-app-save-to-cloud-button:hover:not(:disabled){background:#eae5ff}
+@media(max-width:900px){.desktop-app-save-to-cloud-button{gap:5px;padding:0 7px}.desktop-app-save-to-cloud-button span{font-size:10px}}
+@media(max-width:620px){.desktop-app-save-to-cloud-button span{display:none}.desktop-app-save-to-cloud-button{width:32px;padding:0}}
+
+.cloud-save-dialog-backdrop{position:fixed;inset:0;z-index:5000;display:grid;place-items:center;padding:20px;background:rgba(4,7,12,.68);backdrop-filter:blur(5px)}
+.cloud-save-dialog{width:min(460px,100%);padding:22px;border:1px solid var(--app-border,#303849);border-radius:16px;background:var(--app-panel,#141922);color:var(--app-text,#eef1f8);box-shadow:0 24px 80px rgba(0,0,0,.4)}
+.cloud-save-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.cloud-save-dialog-header h2{margin:0;font-size:19px;letter-spacing:-.025em}
+.cloud-save-dialog-header p{margin:6px 0 0;color:var(--app-muted,#929db0);font-size:12px;line-height:1.5}
+.cloud-save-dialog-close{width:30px;height:30px;border:1px solid var(--app-border,#303849);border-radius:8px;background:transparent;color:inherit;font-size:18px;cursor:pointer}
+.cloud-save-dialog-fields{display:grid;gap:14px}
+.cloud-save-dialog-fields label{display:grid;gap:6px;font-size:12px;font-weight:650}
+.cloud-save-dialog-fields input,.cloud-save-dialog-fields select{width:100%;height:39px;padding:0 11px;border:1px solid var(--app-border,#303849);border-radius:8px;background:var(--app-surface,#0f131a);color:inherit;font:inherit;font-size:13px}
+.cloud-save-dialog-fields input:focus,.cloud-save-dialog-fields select:focus{outline:2px solid #8c7bff66;border-color:#8c7bff}
+.cloud-save-dialog-error{margin:13px 0 0;padding:9px 10px;border:1px solid #81434b;border-radius:8px;background:#2b1a20;color:#ffc7ce;font-size:12px}
+.cloud-save-dialog-empty{padding:14px;border:1px dashed var(--app-border,#303849);border-radius:9px;color:var(--app-muted,#929db0);font-size:12px;line-height:1.5}
+.cloud-save-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.cloud-save-dialog-actions button{min-height:36px;padding:0 13px;border:1px solid var(--app-border,#303849);border-radius:8px;background:transparent;color:inherit;font:600 12px system-ui,sans-serif;cursor:pointer}
+.cloud-save-dialog-actions .primary{border-color:#7865f4;background:#7865f4;color:white}
+.cloud-save-dialog-actions button:disabled{opacity:.5;cursor:not-allowed}
+
+
+/* Release gate: phone canvas must retain a non-zero containing block.
+ * Legacy phone rules use display: contents on workspace wrappers, which
+ * collapses the containing block for the absolutely positioned canvas. */
+@media (max-width: 480px) {
+  .app .desktop-workspace {
+    position: relative;
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .app .desktop-canvas-region {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+  .app .desktop-canvas-region > .canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+/* Phone editor must occupy the viewport rather than the residual flex lane
+ * left by mobile header and overlay controls. */
+@media (max-width: 480px) {
+  .app .desktop-workspace {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    flex: none;
+  }
+  .app .desktop-canvas-region,
+  .app .desktop-canvas-region > .canvas {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
+
+/* On phones the full-viewport canvas must stay behind interactive header
+ * controls; desktop floating-header layering only applies above 520px. */
+@media (max-width: 480px) {
+  .app.canvas-first-header .desktop-app-header {
+    position: relative;
+    z-index: 620;
+  }
+  .app.canvas-first-header .desktop-workspace {
+    z-index: 0;
+  }
+}
+
+
+/* Keep sign-in/account access independent from the right-side header rail. */
+.app .desktop-app-auth-corner {
+  position: fixed;
+  top: 12px;
+  right: 14px;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+.app .desktop-app-auth-corner .auth-control-root {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+@media (max-width: 520px) {
+  .app .desktop-app-auth-corner {
+    top: 8px;
+    right: 8px;
+    z-index: 640;
+  }
+}
+
+/* Match the signed-in avatar footprint for the signed-out sign-in control. */
+.app .desktop-app-auth-corner .auth-header-sign-in-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.app .desktop-app-auth-corner .auth-header-sign-in-icon svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+/* Each floating control reveals independently from its own screen edge. */
+.app .desktop-app-auth-corner,
+.app .desktop-app-document-title-float {
+  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+}
+.app .desktop-app-auth-corner.is-auth-hidden,
+.app .desktop-app-document-title-float.is-title-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-app-auth-corner,
+  .app .desktop-app-document-title-float {
+    transition: none;
+  }
+}
+
+/* Floating canvas surface: preserve the editor's full layout dimensions.
+   Elevate the existing Excalidraw surface in place rather than adding padding
+   or an inset that reduces the usable drawing area. */
+@media (min-width: 641px) {
+  .app .desktop-canvas-region {
+    background-color: #e9edf2 !important;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(102 119 139 / 13%) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .app .desktop-canvas-region > .canvas {
+    background: transparent !important;
+  }
+
+  .app .desktop-canvas-region > .canvas > .excalidraw {
+    border: 1px solid rgb(128 143 160 / 34%);
+    border-radius: 14px;
+    box-shadow:
+      0 1px 3px rgb(24 35 50 / 8%),
+      0 8px 24px rgb(24 35 50 / 13%),
+      0 22px 54px rgb(24 35 50 / 8%);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .app.theme-dark .desktop-canvas-region {
+    background-color: #0c121b !important;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(148 163 184 / 11%) 1px, transparent 0);
+  }
+
+  .app.theme-dark .desktop-canvas-region > .canvas > .excalidraw {
+    border-color: rgb(116 132 153 / 34%);
+    box-shadow:
+      0 1px 4px rgb(0 0 0 / 30%),
+      0 10px 28px rgb(0 0 0 / 38%),
+      0 24px 58px rgb(0 0 0 / 24%);
+  }
+}
+
+
+/* Create a Cloud project directly from the save dialog. */
+.cloud-save-create-project-trigger{justify-self:start;padding:0;border:0;background:transparent;color:var(--app-accent,#a89bff);font:600 12px system-ui,sans-serif;cursor:pointer}
+.cloud-save-create-project-trigger:hover{text-decoration:underline}
+.cloud-save-create-project{display:grid;gap:9px;padding:12px;border:1px solid var(--app-border,#303849);border-radius:9px;background:var(--app-surface,#0f131a)}
+.cloud-save-create-project label{display:grid;gap:6px;font-size:12px;font-weight:650}
+.cloud-save-create-project input{width:100%;height:36px;padding:0 10px;border:1px solid var(--app-border,#303849);border-radius:8px;background:var(--app-panel,#141922);color:inherit;font:inherit;font-size:13px}
+.cloud-save-create-project input:focus{outline:2px solid #8c7bff66;border-color:#8c7bff}
+.cloud-save-create-project-actions{display:flex;justify-content:flex-end;gap:8px}
+.cloud-save-create-project-actions button{min-height:32px;padding:0 10px;border:1px solid var(--app-border,#303849);border-radius:7px;background:transparent;color:inherit;font:600 11px system-ui,sans-serif;cursor:pointer}
+.cloud-save-create-project-actions button.primary{border-color:#7865f4;background:#7865f4;color:white}
+.cloud-save-create-project-actions button:disabled,.cloud-save-create-project-trigger:disabled{opacity:.5;cursor:not-allowed}

@@ -1,0 +1,367 @@
+.k8s-studio-overlay{position:fixed;inset:0;z-index:10000;background:#080d15f2;color:#e7edf8;display:grid;place-items:stretch}
+.k8s-studio{display:flex;flex-direction:column;min-width:0;width:100%;height:100dvh;overflow:hidden;background:#0f1724}
+.k8s-studio-header{display:flex;align-items:center;gap:16px;padding:20px 26px;border-bottom:1px solid #26354a}
+.k8s-studio-brand{display:grid;place-items:center;flex:none;width:54px;height:54px;border-radius:15px;background:linear-gradient(145deg,#326ce5,#1744a4);font-weight:900;font-size:17px;color:white}
+.k8s-studio-heading{flex:1;min-width:0}.k8s-studio-heading h1{margin:3px 0;font-size:24px}.k8s-studio-heading p{margin:4px 0 0;color:#9cabc1;font-size:13px}.k8s-studio-eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;color:#8eb6ff}
+.k8s-studio-close{width:42px;height:42px;border:1px solid #34445c;border-radius:11px;background:#182337;color:#dbe6f8;font-size:26px;cursor:pointer}
+.k8s-studio-actions{display:flex;align-items:center;gap:12px;padding:14px 24px;border-bottom:1px solid #26354a}.k8s-studio-actions>span{flex:1;color:#91a0b7;font-size:12px}.k8s-studio button{cursor:pointer;font:inherit}.k8s-studio button:disabled{opacity:.45;cursor:not-allowed}
+.k8s-studio-primary,.k8s-studio-secondary{padding:10px 14px;border-radius:9px;font-size:12px;font-weight:750}.k8s-studio-primary{border:1px solid #4b83f3;background:#285dc9;color:white}.k8s-studio-secondary{border:1px solid #34445c;background:#182337;color:#dbe6f8}
+.k8s-studio-workspace{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);min-height:0;flex:1}
+.k8s-studio-editor,.k8s-studio-preview{display:flex;flex-direction:column;min-height:0;overflow:auto;padding:22px 24px}.k8s-studio-editor{border-right:1px solid #26354a}.k8s-studio-preview{background:#111b2a}
+.k8s-studio-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.k8s-studio-section-title>div{display:flex;align-items:center;gap:10px}.k8s-studio-section-title h2{margin:0;font-size:15px}.k8s-studio-section-title>div>span{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#1c3152;color:#a6c6ff;font-size:10px;font-weight:800}.k8s-studio-section-title small{color:#899ab2;font-size:11px}.k8s-studio-section-title>strong{display:grid;place-items:center;min-width:27px;height:27px;border-radius:8px;background:#1d3150;color:#b9d1ff;font-size:12px}
+.k8s-studio-editor textarea{flex:1;min-height:300px;resize:none;box-sizing:border-box;width:100%;padding:16px;border:1px solid #31435d;border-radius:11px;background:#0a111d;color:#d8e6fa;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;outline:none}.k8s-studio-editor textarea:focus{border-color:#4d83e7;box-shadow:0 0 0 3px #4d83e722}.k8s-studio-help{margin:10px 0 0;color:#8494ab;font-size:11px;line-height:1.6}
+.k8s-studio-resource-list{display:grid;gap:8px}.k8s-studio-resource{display:flex;align-items:center;gap:11px;padding:11px;border:1px solid #293b53;border-radius:10px;background:#151f2e}.k8s-studio-resource-glyph{display:grid;place-items:center;flex:none;width:36px;height:36px;border:1px solid #355482;border-radius:9px;background:#1c3150;color:#a9caff;font-size:10px;font-weight:850}.k8s-studio-resource>div{min-width:0;flex:1}.k8s-studio-resource strong,.k8s-studio-resource small{display:block;overflow-wrap:anywhere}.k8s-studio-resource strong{font-size:12px}.k8s-studio-resource small{margin-top:4px;color:#93a3ba;font-size:10px}.k8s-studio-resource em{padding:4px 6px;border-radius:6px;background:#2c2a20;color:#e5c987;font-size:9px;font-style:normal}
+.k8s-studio-empty{padding:22px 15px;border:1px dashed #34445c;border-radius:10px;color:#8d9bb1;font-size:12px;line-height:1.6;text-align:center}.k8s-studio-error{padding:12px;border:1px solid #713e49;border-radius:10px;background:#2b1c25;color:#ffb5c0;font-size:12px}.k8s-studio-error p{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}.k8s-studio-notes{margin-top:12px;color:#c4d0e3;font-size:11px}.k8s-studio-notes summary{cursor:pointer}.k8s-studio-notes li{margin:6px 0;color:#9eacc1;overflow-wrap:anywhere}
+.k8s-studio-message{padding:10px 24px;background:#142c2a;color:#90e2c5;font-size:12px}.k8s-studio-message.error{background:#321e26;color:#ffb7c1}
+.k8s-studio-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 24px;border-top:1px solid #26354a;color:#93a2b8;font-size:11px}.k8s-studio-footer>div{display:flex;gap:8px}
+@media(max-width:760px){.k8s-studio-header{padding:14px}.k8s-studio-actions{flex-wrap:wrap;padding:12px}.k8s-studio-actions>span{flex-basis:100%;order:3}.k8s-studio-workspace{grid-template-columns:1fr;overflow:auto}.k8s-studio-editor,.k8s-studio-preview{overflow:visible;padding:16px}.k8s-studio-editor{border-right:0;border-bottom:1px solid #26354a}.k8s-studio-editor textarea{min-height:300px}.k8s-studio-footer{align-items:flex-start;flex-direction:column;padding:12px}.k8s-studio-footer>div{width:100%;justify-content:flex-end}}
+ 
+.k8s-yaml-editor-shell{position:relative;display:flex;flex:1;min-height:300px;min-width:0}
+.k8s-studio-editor .k8s-yaml-editor-shell textarea{flex:1;min-height:300px;width:100%;height:100%;resize:none;position:relative;z-index:1;box-sizing:border-box;padding:16px;border:1px solid #31435d;border-radius:11px;background:#0a111d;color:#d8e6fa;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;outline:none;white-space:pre;overflow:auto}
+.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus{border-color:#4d83e7;box-shadow:0 0 0 3px #4d83e722}
+.k8s-yaml-editor-shell textarea::placeholder{color:#65748b}
+.k8s-yaml-completions{position:absolute;z-index:5;top:44px;left:24px;width:min(390px,calc(100% - 48px));max-height:260px;overflow:auto;border:1px solid #385174;border-radius:10px;background:#101b2b;box-shadow:0 16px 36px #0008;padding:5px}
+.k8s-yaml-completion-heading{display:flex;align-items:center;gap:5px;padding:7px 8px;color:#8ea5c5;font-size:10px;border-bottom:1px solid #293b52;margin-bottom:4px}
+.k8s-yaml-completion-heading kbd{padding:2px 4px;border:1px solid #3b4c63;border-radius:4px;background:#1b293c;color:#c4d5ec;font:10px ui-monospace,monospace}
+.k8s-yaml-completion{display:flex;align-items:center;gap:12px;width:100%;padding:8px;border:0;border-radius:6px;background:transparent;color:#dce8f8;text-align:left;cursor:pointer}
+.k8s-yaml-completion.active,.k8s-yaml-completion:hover{background:#23416a}
+.k8s-yaml-completion code{flex:0 0 auto;color:#9dc5ff;font:12px ui-monospace,SFMono-Regular,Consolas,monospace}
+.k8s-yaml-completion span{margin-left:auto;color:#90a1b9;font-size:10px;text-align:right}
+.k8s-yaml-editor-status{display:flex;justify-content:space-between;gap:8px;margin-top:6px;color:#7e90aa;font-size:10px}
+.k8s-yaml-editor-status span:first-child{color:#91bdff;font-weight:750}
+@media(max-width:760px){.k8s-yaml-completions{top:40px;left:12px;width:calc(100% - 24px)}.k8s-yaml-editor-status{flex-wrap:wrap}.k8s-yaml-completion{gap:6px}.k8s-yaml-completion span{font-size:9px}}
+
+.k8s-yaml-editor-shell .k8s-yaml-highlight{position:absolute;z-index:0;inset:1px;box-sizing:border-box;margin:0;padding:16px;border:0;overflow:hidden;white-space:pre;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;color:#d8e6fa;pointer-events:none}
+.k8s-yaml-editor-shell.has-content textarea{background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent;caret-color:#f0f6ff;position:relative;z-index:1}
+.k8s-yaml-editor-shell.has-content textarea::selection{background:#467ac866;-webkit-text-fill-color:transparent}
+.k8s-yaml-highlight .yaml-token-key{color:#83baff}.k8s-yaml-highlight .yaml-token-punctuation{color:#a4b4ca}.k8s-yaml-highlight .yaml-token-value{color:#d6e6fa}.k8s-yaml-highlight .yaml-token-string{color:#b8e5a4}.k8s-yaml-highlight .yaml-token-number{color:#e8bd86}.k8s-yaml-highlight .yaml-token-literal{color:#d4a6ff}.k8s-yaml-highlight .yaml-token-type{color:#f3cc8a}.k8s-yaml-highlight .yaml-token-comment{color:#71839b;font-style:italic}
+.k8s-yaml-highlight .yaml-highlight-line{display:block;min-height:1.65em;background:transparent;border:0;box-shadow:none}
+
+
+.k8s-studio-manifest-title{flex-wrap:wrap}
+.k8s-yaml-editor-controls{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0}
+.k8s-yaml-editor-controls button{display:grid;place-items:center;min-width:27px;height:25px;padding:0 6px;border:1px solid #34445c;border-radius:6px;background:#182337;color:#cbdaf0;font-size:12px;font-weight:750;cursor:pointer}
+.k8s-yaml-editor-controls button:hover:not(:disabled){border-color:#4d83e7;background:#1d3150;color:#fff}
+.k8s-yaml-editor-controls button:disabled{opacity:.35;cursor:not-allowed}
+.k8s-yaml-editor-controls output{min-width:32px;color:#a9bedb;font-size:10px;text-align:center;font-variant-numeric:tabular-nums}
+.k8s-yaml-editor-controls small{margin-left:5px;color:#899ab2;font-size:11px;white-space:nowrap}
+@media(max-width:540px){.k8s-yaml-editor-controls{gap:3px}.k8s-yaml-editor-controls small{display:none}}
+
+.k8s-studio-validation { margin: 10px 0 14px; border: 1px solid var(--k8s-border, #30384b); border-radius: 10px; background: rgba(12, 17, 27, .55); overflow: hidden; }
+.k8s-studio-validation-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--k8s-border, #30384b); font-size: 11px; }
+.k8s-studio-validation-heading span { color: var(--k8s-muted, #9ca8c2); font-size: 10px; }
+.k8s-studio-validation ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; max-height: 190px; overflow: auto; }
+.k8s-studio-validation li { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-bottom: 1px solid rgba(120, 135, 165, .12); }
+.k8s-studio-validation li:last-child { border-bottom: 0; }
+.k8s-studio-validation li > span { flex: 0 0 auto; min-width: 44px; padding: 3px 5px; border-radius: 5px; background: rgba(100, 116, 139, .16); color: #b7c1d8; font-size: 9px; text-align: center; text-transform: uppercase; }
+.k8s-studio-validation-error > span { background: rgba(239, 68, 68, .13) !important; color: #f87171 !important; }
+.k8s-studio-validation-warning > span { background: rgba(245, 158, 11, .13) !important; color: #fbbf24 !important; }
+.k8s-studio-validation li > div { min-width: 0; }
+.k8s-studio-validation li strong { display: block; font-size: 10px; font-weight: 650; }
+.k8s-studio-validation li p { margin: 3px 0 0; color: var(--k8s-muted, #9ca8c2); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .k8s-studio-validation * { scroll-behavior: auto; } }
+
+.k8s-studio-inspector-editor{display:block;box-sizing:border-box;width:100%;min-height:280px;flex:1;resize:vertical;padding:16px;border:0;outline:0;background:#0c111b;color:#d8e6fa;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto}.k8s-studio-inspector-editor:focus{box-shadow:inset 0 0 0 1px #8b5cf6}
+
+.k8s-studio-resource-inspect{flex:0 0 auto;border:1px solid var(--k8s-border,#30384b);border-radius:6px;padding:5px 7px;background:transparent;color:var(--k8s-muted,#aab5cb);font-size:10px;cursor:pointer}.k8s-studio-resource-inspect:hover{border-color:#8b5cf6;color:#fff}.k8s-studio-inspector-backdrop{position:fixed;inset:0;z-index:10001;display:grid;place-items:center;padding:24px;background:rgba(5,9,17,.68);backdrop-filter:blur(5px)}.k8s-studio-inspector{display:flex;flex-direction:column;width:min(700px,calc(100vw - 32px));max-height:min(78vh,760px);border:1px solid #364258;border-radius:14px;background:#111722;color:#edf2ff;box-shadow:0 24px 80px #0008;overflow:hidden}.k8s-studio-inspector header,.k8s-studio-inspector footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px}.k8s-studio-inspector header{border-bottom:1px solid #30384b}.k8s-studio-inspector header strong,.k8s-studio-inspector header small{display:block}.k8s-studio-inspector header small{margin-top:4px;color:#9ca8c2;font-size:11px}.k8s-studio-inspector pre{margin:0;padding:16px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}.k8s-studio-inspector footer{border-top:1px solid #30384b;color:#9ca8c2;font-size:10px}.k8s-studio-inspector footer button,.k8s-studio-inspector header button{cursor:pointer}
+
+
+/* Resizable split between the manifest editor and resource preview. */
+.k8s-studio-workspace{grid-template-columns:minmax(0,var(--k8s-editor-width,50%)) 8px minmax(0,1fr)}
+.k8s-studio-splitter{position:relative;z-index:2;cursor:col-resize;touch-action:none;background:transparent;outline:none}
+.k8s-studio-splitter::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:2px;background:#29384d;transition:background .15s,width .15s,left .15s}
+.k8s-studio-splitter:hover::after,.k8s-studio-splitter:focus-visible::after{left:2px;width:4px;background:#6b7d98}
+body.k8s-studio-resizing{cursor:col-resize!important;user-select:none!important}
+body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!important}
+@media(max-width:760px){.k8s-studio-workspace{grid-template-columns:1fr}.k8s-studio-splitter{display:none}}
+
+
+/* Refined resource YAML inspector dialog. */
+.k8s-studio-inspector-backdrop{padding:24px;background:rgba(4,8,15,.76);backdrop-filter:blur(8px)}
+.k8s-studio-inspector{width:min(900px,calc(100vw - 40px));max-height:min(84vh,820px);border:1px solid #334158;border-radius:18px;background:#101722;box-shadow:0 28px 90px rgba(0,0,0,.48),0 0 0 1px rgba(150,170,200,.035);color:#e7edf7}
+.k8s-studio-inspector-header{padding:18px 22px!important;min-height:84px;background:#131c29;border-bottom:1px solid #29364a!important}
+.k8s-studio-inspector-identity{display:flex;flex-direction:column;gap:5px;min-width:0}
+.k8s-studio-inspector-kind{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8fa6c7}
+.k8s-studio-inspector-identity strong{display:flex;align-items:center;gap:7px;font-size:19px;line-height:1.25;overflow-wrap:anywhere}
+.k8s-studio-inspector-identity strong span,.k8s-studio-inspector-identity small span{color:#72839d}
+.k8s-studio-inspector-identity small{margin-top:0!important;font-size:12px!important;color:#9aa9bf!important}
+.k8s-studio-inspector-close{display:grid;place-items:center;flex:none;width:34px;height:34px;padding:0;border:1px solid #344257;border-radius:9px;background:#1a2432;color:#bdc9db;font-size:22px;line-height:1;cursor:pointer}
+.k8s-studio-inspector-close:hover{background:#253246;color:#f0f4fa;border-color:#536782}
+.k8s-studio-inspector-body{display:flex;flex:1;flex-direction:column;min-height:0;padding:16px 20px 20px;gap:10px}
+.k8s-studio-inspector-editor-label{display:flex;align-items:center;justify-content:space-between;color:#9eacc1;font-size:11px;font-weight:650}
+.k8s-studio-inspector-editor-label span:last-child{color:#71819a;font-weight:500}
+.k8s-studio-inspector-editor{display:block;flex:1;width:100%;min-height:260px;resize:vertical;box-sizing:border-box;padding:18px;border:1px solid #2b394e;border-radius:12px;outline:none;background:#0b111b;color:#dce7f7;font:13px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto;caret-color:#a9bfdc;transition:border-color .15s,box-shadow .15s}
+.k8s-studio-inspector-editor:focus{border-color:#7187a7;box-shadow:0 0 0 3px rgba(113,135,167,.12)}
+.k8s-studio-inspector-footer{padding:14px 20px!important;border-top:1px solid #29364a!important;background:#131c29;gap:16px}
+.k8s-studio-inspector-note{font-size:11px;color:#8291a8;line-height:1.5}
+.k8s-studio-inspector-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.k8s-studio-inspector-actions button{min-height:38px;padding:0 15px;border-radius:10px;font-size:12px;font-weight:650}
+.k8s-studio-inspector-actions .k8s-studio-secondary{border-color:#35445a;background:#1a2535;color:#d3deed}
+.k8s-studio-inspector-actions .k8s-studio-secondary:hover{background:#243247;border-color:#4d607a}
+.k8s-studio-inspector-actions .k8s-studio-primary{border-color:#4c79cb;background:#3265b8;color:#fff}
+.k8s-studio-inspector-actions .k8s-studio-primary:hover{background:#3a72c9}
+@media(max-width:640px){.k8s-studio-inspector-backdrop{padding:10px}.k8s-studio-inspector{width:100%;max-height:92vh;border-radius:14px}.k8s-studio-inspector-header{padding:14px!important}.k8s-studio-inspector-body{padding:12px}.k8s-studio-inspector-editor{min-height:220px;padding:12px;font-size:12px}.k8s-studio-inspector-footer{align-items:stretch!important;flex-direction:column;padding:12px!important}.k8s-studio-inspector-actions{width:100%}.k8s-studio-inspector-actions button{flex:1}}
+
+
+/* Preferred K8s Studio order: resource preview left, YAML editor right. */
+.k8s-studio-workspace{grid-template-columns:minmax(0,calc(100% - var(--k8s-editor-width,50%) - 8px)) 8px minmax(0,var(--k8s-editor-width,50%))}
+.k8s-studio-preview{grid-column:1;grid-row:1;min-width:0}
+.k8s-studio-splitter{grid-column:2;grid-row:1}
+.k8s-studio-editor{grid-column:3;grid-row:1;min-width:0}
+@media(max-width:760px){.k8s-studio-workspace{grid-template-columns:1fr}.k8s-studio-preview,.k8s-studio-editor{grid-column:1;grid-row:auto}.k8s-studio-splitter{display:none}}
+
+
+/* Use the available viewport for the resource YAML editor instead of a compact dialog. */
+.k8s-studio-inspector-backdrop{padding:clamp(12px,2.5vw,36px)}
+.k8s-studio-inspector{width:min(1200px,92vw);height:min(86vh,980px);max-height:86vh}
+.k8s-studio-inspector-header{flex:0 0 auto}
+.k8s-studio-inspector-body{flex:1;min-height:0}
+.k8s-studio-inspector-editor{min-height:0;resize:none;font-size:13px;line-height:1.85}
+.k8s-studio-inspector-footer{flex:0 0 auto}
+@media(min-width:1500px){.k8s-studio-inspector{width:min(1320px,88vw);height:min(88vh,1080px);max-height:88vh}.k8s-studio-inspector-editor{font-size:14px}}
+@media(max-width:640px){.k8s-studio-inspector-backdrop{padding:8px}.k8s-studio-inspector{width:100%;height:92vh;max-height:92vh}}
+
+
+/* Gutter with synchronized line numbers for the resource YAML editor. */
+.k8s-studio-inspector-code{display:grid;grid-template-columns:48px minmax(0,1fr);flex:1;min-height:0;overflow:hidden;border:1px solid #2b394e;border-radius:12px;background:#0b111b}
+.k8s-studio-inspector-code:focus-within{border-color:#7187a7;box-shadow:0 0 0 3px rgba(113,135,167,.12)}
+.k8s-studio-inspector-line-numbers{overflow:hidden;padding:18px 0;background:#0e1520;border-right:1px solid #202d3f;color:#61738d;text-align:right;user-select:none;font:13px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace}
+.k8s-studio-inspector-line-numbers>div{display:flex;flex-direction:column;will-change:transform}
+.k8s-studio-inspector-line-numbers span{display:block;height:1.85em;padding:0 12px 0 4px;white-space:nowrap}
+.k8s-studio-inspector-code .k8s-studio-inspector-editor{min-width:0;min-height:0;border:0;border-radius:0;resize:none;box-shadow:none!important;padding:18px;font-size:13px;line-height:1.85}
+.k8s-studio-inspector-code .k8s-studio-inspector-editor:focus{border:0;outline:0;box-shadow:none!important}
+@media(min-width:1500px){.k8s-studio-inspector-line-numbers{font-size:14px}.k8s-studio-inspector-code .k8s-studio-inspector-editor{font-size:14px}}
+@media(max-width:640px){.k8s-studio-inspector-code{grid-template-columns:38px minmax(0,1fr)}.k8s-studio-inspector-line-numbers{padding:12px 0;font-size:12px}.k8s-studio-inspector-line-numbers span{padding-right:8px}.k8s-studio-inspector-code .k8s-studio-inspector-editor{padding:12px;font-size:12px}}
+
+
+/* Line-number gutter for the primary manifest editor (not only the inspect dialog). */
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers{position:absolute;z-index:2;top:1px;bottom:1px;left:1px;width:48px;overflow:hidden;padding-top:16px;border-right:1px solid #202d3f;border-radius:10px 0 0 10px;background:#0e1520;color:#61738d;text-align:right;user-select:none;pointer-events:none;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers>div{display:flex;flex-direction:column;will-change:transform}
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers span{display:block;height:1.65em;padding-right:12px;white-space:nowrap}
+.k8s-studio-editor .k8s-yaml-editor-shell textarea{padding-left:64px}
+.k8s-yaml-editor-shell .k8s-yaml-highlight{left:49px!important;right:1px!important;padding-left:16px!important}
+@media(max-width:640px){.k8s-yaml-editor-shell .k8s-yaml-line-numbers{width:38px;font-size:11px}.k8s-yaml-editor-shell .k8s-yaml-line-numbers span{padding-right:8px}.k8s-studio-editor .k8s-yaml-editor-shell textarea{padding-left:50px}.k8s-yaml-editor-shell .k8s-yaml-highlight{left:39px!important}}
+
+
+/* Resource-kind iconography in the preview list. */
+.k8s-studio-resource-glyph{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:10px;border:1px solid #354a68;background:#1a2b43;color:#9dc4ff}
+.k8s-studio-resource-glyph .k8s-resource-icon{display:block;width:21px;height:21px}
+.k8s-studio-resource-glyph-deployment,.k8s-studio-resource-glyph-replicaset{color:#9fc2ff;background:#1b2f4d;border-color:#355781}
+.k8s-studio-resource-glyph-pod{color:#7fe0cf;background:#173531;border-color:#285b54}
+.k8s-studio-resource-glyph-service,.k8s-studio-resource-glyph-ingress{color:#c6a9ff;background:#2b2143;border-color:#514076}
+.k8s-studio-resource-glyph-statefulset,.k8s-studio-resource-glyph-daemonset{color:#f2c27c;background:#3a2d1d;border-color:#654b2b}
+.k8s-studio-resource-glyph-configmap,.k8s-studio-resource-glyph-secret{color:#e5b2d4;background:#38243a;border-color:#5a3b60}
+.k8s-studio-resource-glyph-persistentvolume,.k8s-studio-resource-glyph-persistentvolumeclaim,.k8s-studio-resource-glyph-storageclass{color:#8bd1ed;background:#193442;border-color:#2e586c}
+.k8s-studio-resource-glyph-job,.k8s-studio-resource-glyph-cronjob{color:#a8d98b;background:#263720;border-color:#405b34}
+.k8s-studio-resource-glyph-node,.k8s-studio-resource-glyph-namespace{color:#aebeff;background:#252d49;border-color:#414e79}
+.k8s-studio-resource-glyph-serviceaccount,.k8s-studio-resource-glyph-role,.k8s-studio-resource-glyph-clusterrole,.k8s-studio-resource-glyph-rolebinding,.k8s-studio-resource-glyph-clusterrolebinding{color:#e5ca8d;background:#37311f;border-color:#625333}
+
+
+/* Keep the YAML editor focus state restrained; line numbers are informational, not a selection highlight. */
+.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus{border-color:#31435d!important;box-shadow:none!important;outline:none!important}
+.k8s-yaml-editor-shell .k8s-yaml-line-numbers{background:#0a111d;color:#65748b;border-right-color:#1b2737}
+
+
+/* Final override: keep editor focus and active shell free of violet/blue outlines. */
+.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible{border-color:#31435d!important;box-shadow:none!important;outline:none!important}
+.k8s-studio-editor .k8s-yaml-editor-shell:focus-within,.k8s-studio-editor .k8s-yaml-editor-shell:focus-within textarea{box-shadow:none!important;outline:none!important}
+
+
+/* Ensure no ancestor or global focus-visible treatment draws the violet editor frame. */
+.k8s-studio-editor .k8s-yaml-editor-shell,.k8s-studio-editor .k8s-yaml-editor-shell:focus,.k8s-studio-editor .k8s-yaml-editor-shell:focus-within{outline:0!important;box-shadow:none!important;border-color:transparent!important}
+.k8s-studio-editor .k8s-yaml-editor-shell textarea,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible,.k8s-studio-editor .k8s-yaml-editor-shell textarea:active{outline:0!important;box-shadow:none!important;border-color:#31435d!important}
+
+
+/* The focus frame comes from the legacy editor textarea rule above; override it at equal specificity. */
+.k8s-studio-editor .k8s-yaml-editor-shell textarea:focus{border-color:#31435d;box-shadow:none}
+
+
+/* High-specificity override for the focused manifest editor (the purple frame is the textarea focus border). */
+#root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus,
+#root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:focus-visible,
+#root .k8s-studio-workspace .k8s-studio-editor .k8s-yaml-editor-shell textarea:active{border:1px solid #31435d!important;outline:0!important;box-shadow:none!important}
+
+
+.k8s-studio-bundle-panel{display:grid;grid-template-columns:minmax(140px,auto) minmax(220px,1fr);gap:8px 12px;align-items:center;padding:12px 20px;background:#101c2a;border-bottom:1px solid #29384c;color:#c7d4e5;font-size:12px}
+.k8s-studio-bundle-panel label{font-weight:700}
+.k8s-studio-bundle-panel select{min-width:0;width:100%;padding:8px 10px;border:1px solid #344760;border-radius:7px;background:#172538;color:#e4edf8;font:inherit}
+.k8s-studio-bundle-panel p{grid-column:1/-1;margin:0;line-height:1.5;color:#9fb0c7;overflow-wrap:anywhere}
+.k8s-studio-bundle-panel p strong{color:#dbe7f7}
+@media(max-width:760px){.k8s-studio-bundle-panel{grid-template-columns:1fr}.k8s-studio-bundle-panel p{grid-column:1}}
+
+
+.k8s-studio-values-row{grid-column:1/-1;display:grid;grid-template-columns:140px minmax(0,1fr);align-items:center;gap:8px}.k8s-studio-values-row label{font-weight:700}.k8s-studio-values-row select{min-width:0;width:100%;padding:8px 10px;border:1px solid #344760;border-radius:7px;background:#172538;color:#e4edf8;font:inherit}.k8s-studio-render-button{justify-self:start;min-height:34px;padding:0 13px;font-size:11px}.k8s-studio-render-button:disabled{opacity:.5;cursor:not-allowed}@media(max-width:760px){.k8s-studio-values-row{grid-template-columns:1fr}}
+
+
+/* No horizontal row guides: indentation is communicated only by the YAML's leading spaces. */
+
+/* Rainbow indentation guides, similar to IDE YAML editors. */
+.k8s-yaml-highlight .yaml-indent-guide{display:inline-block;min-width:2ch;white-space:pre;background:var(--yaml-indent-bg);border-radius:2px}
+.k8s-yaml-highlight .yaml-indent-level-0{--yaml-indent-bg:rgba(248,113,113,.104)}
+.k8s-yaml-highlight .yaml-indent-level-1{--yaml-indent-bg:rgba(251,191,36,.104)}
+.k8s-yaml-highlight .yaml-indent-level-2{--yaml-indent-bg:rgba(74,222,128,.091)}
+.k8s-yaml-highlight .yaml-indent-level-3{--yaml-indent-bg:rgba(96,165,250,.1105)}
+.k8s-yaml-highlight .yaml-indent-level-4{--yaml-indent-bg:rgba(192,132,252,.1105)}
+.k8s-yaml-highlight .yaml-indent-level-5{--yaml-indent-bg:rgba(244,114,182,.104)}
+
+
+/* Kubernetes Studio 2.0: focused preview navigation and compact resources. */
+.k8s-studio-preview-tabs{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid #304158}
+.k8s-studio-preview-tabs button{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:1;min-width:0;padding:9px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#a8bad2;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.k8s-studio-preview-tabs button:hover{background:#1b2b42;color:#e6efff}
+.k8s-studio-preview-tabs button.active{background:#292342;color:#e5dfff;border-color:#7355a8}
+.k8s-studio-preview-tabs button:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
+.k8s-studio-preview-tabs button span{padding:2px 6px;border-radius:99px;background:#34435a;font-size:10px}
+.k8s-studio-preview .k8s-studio-resource-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;padding:12px;align-content:start}
+.k8s-studio-preview .k8s-studio-resource{min-width:0;border:1px solid #30435c;border-radius:10px;padding:11px;background:#15253b;flex-wrap:wrap}
+.k8s-studio-preview .k8s-studio-resource>div{min-width:0;flex:1}
+.k8s-studio-preview .k8s-studio-resource>div strong,.k8s-studio-preview .k8s-studio-resource>div small{overflow-wrap:anywhere}
+@media(max-width:700px){.k8s-studio-preview .k8s-studio-resource-list{grid-template-columns:1fr}}
+
+
+/* Kubernetes Studio polish: calm, consistent inspector and optional snapshot. */
+.k8s-studio-preview{min-width:0}
+.k8s-studio-preview .k8s-studio-validation{margin:12px;border:1px solid #33445b;border-radius:11px;background:#111e30;overflow:hidden}
+.k8s-studio-preview .k8s-studio-validation-heading{padding:12px 14px;background:#17253a;border-bottom:1px solid #2b3c52}
+.k8s-studio-preview .k8s-studio-validation ul{margin:0;padding:0;list-style:none}
+.k8s-studio-preview .k8s-studio-validation li{padding:12px 14px;border-bottom:1px solid #2a394d;gap:10px}
+.k8s-studio-preview .k8s-studio-validation li:last-child{border-bottom:0}
+.k8s-studio-preview .k8s-studio-validation li>div{min-width:0;overflow-wrap:anywhere}
+.k8s-studio-preview .k8s-studio-validation li button{display:inline-flex;margin:8px 0 3px;padding:6px 10px;border:1px solid #435675;border-radius:6px;background:#20314a;color:#e1eaff;font:inherit;font-size:11px;cursor:pointer}
+.k8s-studio-preview .k8s-studio-validation li button:hover{background:#2b4160}
+.k8s-studio-preview .k8s-studio-validation details{margin-top:8px;border-top:1px solid #2c3d53;padding-top:8px}
+.k8s-studio-preview .k8s-studio-validation summary{cursor:pointer;color:#b7c9e1;font-size:11px}
+.k8s-studio-preview .k8s-studio-validation details p{line-height:1.5}
+.k8s-studio-snapshot-panel{margin:12px 16px;border:1px solid #2b3c53;border-radius:10px;background:#142137;overflow:hidden}
+.k8s-studio-snapshot-panel>summary{display:flex;align-items:center;gap:12px;list-style:none;padding:13px 16px;cursor:pointer;color:#e3ecfa}
+.k8s-studio-snapshot-panel>summary::-webkit-details-marker{display:none}
+.k8s-studio-snapshot-panel>summary:hover{background:#1b2b43}
+.k8s-studio-snapshot-panel>summary:focus-visible{outline:2px solid #a78bfa;outline-offset:-2px}
+.k8s-studio-snapshot-panel>summary>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.k8s-studio-snapshot-panel>summary strong{font-size:12px}
+.k8s-studio-snapshot-panel>summary small{font-size:10px;color:#91a7c1}
+.k8s-studio-snapshot-icon{display:grid;place-items:center;width:31px;height:31px;border-radius:8px;background:#253754;color:#b9a5ff}
+.k8s-studio-snapshot-chevron{margin-left:auto;font-size:17px;transition:transform .15s}
+.k8s-studio-snapshot-panel[open] .k8s-studio-snapshot-chevron{transform:rotate(180deg)}
+.k8s-studio-snapshot-panel>p,.k8s-studio-snapshot-panel>textarea,.k8s-studio-snapshot-panel>.k8s-studio-snapshot-actions,.k8s-studio-snapshot-panel>ul{margin:0 16px 12px}
+.k8s-studio-snapshot-panel>p{color:#a8bad2;font-size:11px;line-height:1.55}
+.k8s-studio-snapshot-panel>textarea{display:block;box-sizing:border-box;width:calc(100% - 32px);resize:vertical;min-height:96px;padding:12px;border:1px solid #354862;border-radius:8px;background:#0d1829;color:#e5edfa;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
+.k8s-studio-snapshot-panel>textarea:focus-visible{outline:2px solid #a78bfa;outline-offset:1px}
+.k8s-studio-snapshot-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.k8s-studio-snapshot-actions small{color:#8fa4bd;font-size:10px}
+.k8s-studio-snapshot-panel>ul{color:#cdd9e9;font-size:11px;line-height:1.8}
+
+
+/* Validation view fills the available preview pane instead of a short scroll box. */
+@media(min-width:761px){
+  .k8s-studio-preview:has(.k8s-studio-preview-tabs button[aria-selected="true"]:nth-child(2)){overflow:hidden}
+  .k8s-studio-preview:has(.k8s-studio-preview-tabs button[aria-selected="true"]:nth-child(2))>.k8s-studio-validation{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
+  .k8s-studio-preview:has(.k8s-studio-preview-tabs button[aria-selected="true"]:nth-child(2))>.k8s-studio-validation>ul{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#50617b transparent}
+}
+
+
+/* Fix: the original 190px list cap was still clipping validation findings. */
+@media(min-width:761px){
+  .k8s-studio-preview:has(.k8s-studio-preview-tabs button[aria-selected="true"]:nth-child(2))>.k8s-studio-validation>ul{
+    max-height:none;
+    height:100%;
+    flex:1 1 auto;
+    overflow-y:auto;
+    align-content:start;
+  }
+}
+
+
+/* Single-row Kubernetes Studio toolbar: prioritize workspace height. */
+.k8s-studio .k8s-studio-header-compact{display:flex;align-items:center;gap:14px;min-height:66px;box-sizing:border-box;padding:10px 20px}
+.k8s-studio-header-compact .k8s-studio-brand{flex:none;width:36px;height:36px;font-size:11px}
+.k8s-studio-header-compact h1{flex:none;margin:0;font-size:17px;line-height:1.2;white-space:nowrap}
+.k8s-studio-header-compact .k8s-studio-actions{display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin:0;padding:0 0 0 18px;border:0;background:transparent}
+.k8s-studio-header-compact .k8s-studio-actions button{min-height:34px;padding:7px 12px;font-size:11px;white-space:nowrap}
+.k8s-studio-header-compact .k8s-studio-import-status{font-size:10px;color:#a3b5ce;white-space:nowrap}
+.k8s-studio-header-end{display:flex;align-items:center;gap:9px;margin-left:auto}
+.k8s-studio-header-end .k8s-studio-close{position:static;flex:none}
+.k8s-studio-header-end .k8s-studio-secondary{min-height:34px;padding:7px 12px;font-size:11px}
+@media(max-width:900px){.k8s-studio .k8s-studio-header-compact{flex-wrap:wrap;gap:8px;padding:10px 14px}.k8s-studio-header-compact .k8s-studio-actions{order:3;flex-basis:100%;padding:0;overflow-x:auto}.k8s-studio-header-end{margin-left:auto}}
+
+
+/* Match the finished Docker Studio header: 52px, right-aligned controls. */
+.k8s-studio .k8s-studio-header-compact{min-height:52px;padding:7px 14px;gap:10px;flex-wrap:nowrap}
+.k8s-studio-header-compact .k8s-studio-brand{width:30px;height:30px;border-radius:8px;font-size:10px}
+.k8s-studio-header-compact h1{font-size:14px}
+.k8s-studio-header-compact .k8s-studio-actions{flex:0 1 auto;margin-left:auto;padding:0;gap:6px;justify-content:flex-end}
+.k8s-studio-header-compact .k8s-studio-actions button,.k8s-studio-header-end .k8s-studio-secondary{min-height:28px;padding:5px 8px;font-size:10px}
+.k8s-studio-header-compact .k8s-studio-actions .k8s-studio-primary{background:#1b2a40;border:1px solid #35445e;color:#dce7f8}
+.k8s-studio-header-compact .k8s-studio-actions .k8s-studio-primary:hover{background:#2b3e5a}
+.k8s-studio-header-end{margin-left:0;gap:6px}
+.k8s-studio-header-end .k8s-studio-close{width:29px;height:29px;border-radius:8px;font-size:18px}
+@media(max-width:900px){.k8s-studio .k8s-studio-header-compact{flex-wrap:wrap;padding:8px 12px}.k8s-studio-header-compact .k8s-studio-actions{order:3;flex:1 0 100%;justify-content:flex-start;overflow-x:auto;margin-left:0}.k8s-studio-header-end{margin-left:auto}}
+
+/* Kube Lab uses the existing preview pane and editor. */
+.k8s-lab-workspace .k8s-studio-section-title { margin-bottom: 10px; }
+.k8s-lab-workspace .k8s-studio-preview-tabs { padding: 4px 0 10px; }
+.k8s-lab-workspace .k8s-studio-preview-tabs button { padding-inline: 4px; }
+.k8s-lab-draft-label { border-left: 1px solid #35445b; padding-left: 9px; }
+.k8s-yaml-highlight .yaml-highlight-line.k8s-lab-highlight { background: #282540; border-radius: 3px; }
+.k8s-lab { display: grid; align-content: start; gap: 12px; padding: 12px 0 4px; }
+.k8s-lab-topic-picker { position: relative; width: min(100%, 320px); }
+.k8s-lab-topic-trigger, .k8s-lab-topic-option {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left;
+}
+.k8s-lab-topic-trigger {
+  width: 100%; min-height: 44px; padding: 6px 12px; border: 1px solid #3a4c66; border-radius: 8px;
+  background: #172538; color: #e4edf9;
+}
+.k8s-lab-topic-trigger:not(:disabled):hover { background: #1b2b42; border-color: #657a97; }
+.k8s-lab-topic-trigger[aria-expanded="true"] { border-color: #9273c5; }
+.k8s-lab-topic-trigger:focus-visible, .k8s-lab summary:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
+.k8s-lab-topic-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.k8s-lab-topic-text strong { font-size: 13px; line-height: 1.25; }
+.k8s-lab-topic-text > span { color: #aabbd0; font-size: 11px; line-height: 1.25; }
+.k8s-lab-topic-chevron {
+  flex: none; width: 7px; height: 7px; border: solid #aabbd0; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg);
+}
+.k8s-lab-topic-trigger[aria-expanded="true"] .k8s-lab-topic-chevron { transform: translateY(2px) rotate(225deg); }
+.k8s-lab-topic-options {
+  position: absolute; z-index: 3; inset: calc(100% + 5px) 0 auto; max-height: min(210px, 45dvh); overflow-y: auto;
+  padding: 4px; border: 1px solid #3a4c66; border-radius: 9px; background: #152236; color: #e4edf9;
+  box-shadow: 0 10px 22px #080d1680;
+}
+.k8s-lab-topic-option {
+  min-height: 43px; padding: 6px 8px; border-radius: 5px; cursor: pointer;
+}
+.k8s-lab-topic-option[aria-selected="true"] { color: #e9dfff; }
+.k8s-lab-topic-option.active { background: #292342; box-shadow: inset 0 0 0 1px #7355a8; }
+.k8s-lab-topic-option:hover { background: #263650; }
+.k8s-lab-topic-option.active:hover { background: #292342; }
+.k8s-lab-topic-check {
+  flex: none; margin-right: 3px; width: 6px; height: 10px; border: solid #c9adff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.k8s-lab-goal h3 { margin: 0 0 4px; font-size: 14px; }
+.k8s-lab-goal p, .k8s-lab-feedback, .k8s-lab-actions p { margin: 0; color: #b2c3da; font-size: 12px; line-height: 1.45; }
+.k8s-lab-graph {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(26px, .34fr) minmax(0, 1fr); align-items: center;
+  border: 1px solid #304158; border-radius: 8px; padding: 13px 10px; background: #0f1928;
+}
+.k8s-lab-node { min-width: 0; padding: 8px; border: 1px solid #384b66; border-radius: 7px; background: #172538; overflow-wrap: anywhere; }
+.k8s-lab-node strong, .k8s-lab-node small { display: block; }
+.k8s-lab-node strong { font-size: 12px; }
+.k8s-lab-node small { margin-top: 2px; color: #b0bfd4; font-size: 11px; }
+.k8s-lab-connector { display: grid; place-items: center; border-top: 1px dashed #657893; height: 1px; }
+.k8s-lab-connector span { transform: translateY(-55%); background: #0f1928; padding: 0 3px; color: #f5ad9b; font-size: 15px; line-height: 1; }
+.k8s-lab-connector.connected { border-top: 1px solid #699d86; }
+.k8s-lab-connector.connected span { color: #9bd4b5; }
+.k8s-lab-feedback { overflow-wrap: anywhere; white-space: pre-wrap; color: #a4d6c0; }
+.k8s-lab-feedback.warning { color: #ebbd86; }
+.k8s-lab-actions { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.k8s-lab-actions details { color: #adbfda; font-size: 12px; }
+.k8s-lab-actions summary { padding: 7px 2px; cursor: pointer; white-space: nowrap; }
+.k8s-lab-actions .k8s-studio-primary { flex: none; padding: 6px 10px; font-size: 12px; }
+.k8s-lab-answer { border: 1px solid #3a4b66; border-radius: 7px; padding: 8px 10px; color: #d8e3f3; background: #152236; font-size: 12px; }
+.k8s-lab-answer.passed { border-color: #355c51; color: #a4d6c0; background: #142624; }
+.k8s-lab-answer ul { margin: 4px 0 0; padding-left: 16px; }
+.k8s-lab-footer { justify-content: flex-end; }
+@media (max-width: 760px) {
+  .k8s-lab-workspace .k8s-studio-preview { grid-row: 1; border-bottom: 1px solid #29384d; }
+  .k8s-lab-workspace .k8s-studio-editor { grid-row: 2; }
+}

@@ -1,0 +1,32 @@
+{
+  "workbench": {
+    "schemaVersion": 1,
+    "modelRevision": 12,
+    "activeViewId": "system",
+    "views": [{ "id": "system", "label": "System" }, { "id": "apis", "label": "APIs" }, { "id": "data", "label": "Data" }],
+    "entities": [
+      { "id": "web", "kind": "frontend.react-app", "name": "Web client", "properties": {} },
+      { "id": "api", "kind": "backend.rest-service", "name": "Checkout API", "properties": { "port": 8080 } },
+      { "id": "endpoint", "kind": "backend.api-endpoint", "name": "Create checkout", "properties": { "method": "POST", "path": "/api/checkout" } },
+      { "id": "db", "kind": "data.postgresql-database", "name": "Checkout DB", "properties": { "databaseName": "checkout", "schema": "public" } },
+      { "id": "production", "kind": "devops.deployment-target", "name": "Production", "properties": { "environment": "production", "region": "ap-south-1" } }
+    ],
+    "relations": [
+      { "id": "web-call-endpoint", "kind": "calls", "sourceId": "web", "targetId": "endpoint", "properties": {} },
+      { "id": "api-exposes-endpoint", "kind": "exposes", "sourceId": "api", "targetId": "endpoint", "properties": {} },
+      { "id": "api-reads-db", "kind": "reads", "sourceId": "api", "targetId": "db", "properties": {} },
+      { "id": "api-writes-db", "kind": "writes", "sourceId": "api", "targetId": "db", "properties": {} },
+      { "id": "api-deploys-production", "kind": "deploys-to", "sourceId": "api", "targetId": "production", "properties": {} }
+    ],
+    "viewScenes": {}
+  },
+  "simulationProfile": {
+    "schemaVersion": 1,
+    "profilesByEntityId": {
+      "web": { "kind": "traffic-source", "parameters": { "trafficRps": 50 }, "assumptions": { "trafficRps": { "status": "user-confirmed", "reason": "Illustrative workload for adapter testing" } } },
+      "api": { "kind": "request-service", "parameters": { "concurrency": 8, "meanServiceMs": 25, "serviceTimeCv": 0.6, "bufferCapacity": 64, "failureProbability": 0, "timeoutMs": 0, "retryAttempts": 0 }, "assumptions": { "meanServiceMs": { "status": "user-confirmed", "reason": "Illustrative service-time value" } } },
+      "db": { "kind": "relational-store", "parameters": { "concurrency": 6, "meanServiceMs": 30, "serviceTimeCv": 0.7, "bufferCapacity": 32, "readFraction": 0.9, "writeContentionMs": 15, "failureProbability": 0 }, "assumptions": { "readFraction": { "status": "user-confirmed", "reason": "Illustrative 90% read mix" } } }
+    },
+    "defaultScenario": { "durationMs": 30000, "seed": 42 }
+  }
+}

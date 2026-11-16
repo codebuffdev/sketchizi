@@ -1,0 +1,10 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { applySystemDesignRecommendation, getSystemDesignRecommendation, previewSystemDesignRecommendation } from "../src/features/architecture/systemDesignRecommendations.js";
+const diagnostic = { code: "SINGLE_REPLICA_CRITICAL_COMPONENT", diagnosticId: "single:a", nodeIds: ["a"] };
+const elements = [{ id: "a", type: "rectangle", text: "API", customData: { systemDesign: { role: "api", replicas: 1, owner: "user" } } }, { id: "b", type: "rectangle", text: "DB" }];
+test("supported findings return explicit, scoped recommendations", () => { assert.equal(getSystemDesignRecommendation(diagnostic).property, "replicas"); assert.equal(getSystemDesignRecommendation({ code: "UNKNOWN" }), null); });
+test("preview describes the proposed change without mutating scene", () => { const preview = previewSystemDesignRecommendation(diagnostic, elements); assert.equal(preview.applicable, true); assert.equal(preview.currentValue, 1); assert.equal(preview.proposedValue, 2); assert.equal(elements[0].customData.systemDesign.replicas, 1); });
+test("approval returns a copied scene with updated metadata only", () => { const result = applySystemDesignRecommendation(diagnostic, elements); assert.equal(result.applied, true); assert.equal(result.elements[0].customData.systemDesign.replicas, 2); assert.equal(result.elements[0].customData.systemDesign.owner, "user"); assert.equal(result.elements[1], elements[1]); assert.equal(elements[0].customData.systemDesign.replicas, 1); });
+test("unsafe connectivity recommendations never invent a connector", () => { const item = { code: "ISOLATED_COMPONENT", diagnosticId: "isolated:a", nodeIds: ["a"] }; const result = applySystemDesignRecommendation(item, elements); assert.equal(result.applied, false); assert.equal(result.elements, elements); });
+test("stale findings cannot modify a removed component", () => { const result = applySystemDesignRecommendation(diagnostic, []); assert.equal(result.applied, false); });

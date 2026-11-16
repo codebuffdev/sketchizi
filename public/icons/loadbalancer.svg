@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#eaf5ff"/>
+  <rect x="23" y="23" width="74" height="74" rx="18" fill="#0078d4"/>
+  <text x="60" y="67" text-anchor="middle" dominant-baseline="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700"
+        fill="#ffffff">LB</text>
+  <circle cx="92" cy="28" r="5" fill="#ffffff" opacity=".85"/>
+</svg>

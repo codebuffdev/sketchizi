@@ -1,0 +1,1933 @@
+/* UI Modernization 12 — intentional canvas toolbar dock.
+   Presentation only: all native Excalidraw buttons, shortcuts and handlers remain untouched. */
+.app .desktop-canvas-region .excalidraw .App-toolbar-container,
+.app .excalidraw .App-toolbar-container {
+  padding: 0 !important;
+}
+
+.app .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app .excalidraw .Island.App-toolbar {
+  --sk-toolbar-ink: #e7e9f2;
+  --sk-toolbar-muted: #a8adbd;
+  --sk-toolbar-surface: #1b1e27;
+  --sk-toolbar-border: #353a49;
+  --sk-toolbar-hover: #2a2e3b;
+  --sk-toolbar-active: #356f82;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 62px;
+  padding: 8px 12px !important;
+  border: 1px solid var(--sk-toolbar-border) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, #232631 0%, var(--sk-toolbar-surface) 100%) !important;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 28%), 0 2px 6px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 5%) !important;
+  color: var(--sk-toolbar-ink);
+  backdrop-filter: blur(22px) saturate(135%);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon,
+.app .excalidraw .App-toolbar .ToolIcon {
+  margin: 0 !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button,
+.app .excalidraw .App-toolbar .ToolIcon__icon,
+.app .excalidraw .App-toolbar .dropdown-menu-button {
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover,
+.app .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .excalidraw .App-toolbar .dropdown-menu-button:hover {
+  border-color: #454b60 !important;
+  background: var(--sk-toolbar-hover, #2a2e3b) !important;
+  color: #fff !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #6c9aaa !important;
+  background: linear-gradient(145deg, #477f91, #356779) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 9px rgb(45 101 119 / 24%), inset 0 1px 0 rgb(255 255 255 / 18%) !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:focus-visible,
+.app .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .excalidraw .App-toolbar .dropdown-menu-button:focus-visible {
+  outline: 2px solid #b9b2ff !important;
+  outline-offset: 2px !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__keybinding,
+.app .excalidraw .App-toolbar .ToolIcon__keybinding {
+  color: #858b9e;
+  opacity: .9;
+}
+
+.app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app.theme-dark .excalidraw .Island.App-toolbar {
+  border-color: #353a49 !important;
+  background: linear-gradient(180deg, #232631 0%, #191c24 100%) !important;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app.theme-light .excalidraw .Island.App-toolbar {
+  --sk-toolbar-ink: #222638;
+  --sk-toolbar-muted: #626b7d;
+  --sk-toolbar-surface: #fff;
+  --sk-toolbar-border: #dce1eb;
+  --sk-toolbar-hover: #f0efff;
+  border-color: #dce1eb !important;
+  background: linear-gradient(180deg, #fff 0%, #f8f9fc 100%) !important;
+  box-shadow: 0 16px 38px rgb(24 32 56 / 13%), 0 2px 6px rgb(24 32 56 / 7%), inset 0 1px 0 #fff !important;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  color: #fff !important;
+}
+
+@media (max-width: 700px) {
+  .app .desktop-canvas-region .excalidraw .Island.App-toolbar,
+  .app .excalidraw .Island.App-toolbar {
+    min-height: 54px;
+    gap: 3px;
+    padding: 6px 8px !important;
+    border-radius: 15px !important;
+  }
+
+  .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button,
+  .app .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .excalidraw .App-toolbar .dropdown-menu-button {
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .excalidraw .App-toolbar .dropdown-menu-button {
+    transition: none !important;
+  }
+}
+
+/* Native-toolbar dock refinements: the inserted grip is the only drag target. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] {
+  gap: 5px;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip {
+  display: inline-flex;
+  flex: 0 0 12px;
+  width: 12px;
+  min-width: 12px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  margin: 0 1px 0 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #777f92;
+  cursor: grab;
+  touch-action: none;
+}
+
+/* The dock is locked by default; the Tools menu explicitly unlocks dragging. */
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="true"] .sketchizi-dock-grip {
+  cursor: default;
+}
+
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="true"] .sketchizi-dock-grip:hover {
+  background: transparent;
+  color: #777f92;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip:hover {
+  background: rgb(127 135 155 / 13%);
+  color: #c9cde0;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip:active {
+  cursor: grabbing;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-grip span {
+  display: block;
+  width: 2px;
+  height: 2px;
+  flex: 0 0 2px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 4px 0 0 currentColor;
+}
+
+.app .excalidraw .App-toolbar .sketchizi-dock-separator {
+  display: inline-block;
+  flex: 0 0 1px;
+  align-self: stretch;
+  width: 1px;
+  min-height: 24px;
+  margin: 0 4px;
+  background: rgb(143 151 173 / 24%);
+}
+
+.app.theme-light .excalidraw .App-toolbar .sketchizi-dock-grip {
+  color: #8b92a3;
+}
+
+.app.theme-light .excalidraw .App-toolbar .sketchizi-dock-grip:hover {
+  color: #555e72;
+  background: #eef0f7;
+}
+
+.app.theme-light .excalidraw .App-toolbar .sketchizi-dock-separator {
+  background: #dfe3ec;
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar .sketchizi-dock-grip {
+    display: none;
+  }
+
+  .app .excalidraw .App-toolbar .sketchizi-dock-separator {
+    margin-inline: 2px;
+  }
+}
+
+
+/* UI Modernization 14 — resilient dock positioning and mobile reachability. */
+.app .excalidraw .App-toolbar .sketchizi-dock-grip:focus-visible {
+  outline: 2px solid #b9b2ff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar-container {
+    width: min(calc(100vw - 16px), max-content) !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+    box-sizing: border-box;
+    max-width: calc(100vw - 16px) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    flex-wrap: nowrap !important;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* UI Modernization 16 — hard reset native button chrome on the compact grip.
+   Excalidraw/global button rules otherwise leave a tall outlined button even
+   when the grip's own background and border are declared transparent. */
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  flex: 0 0 8px !important;
+  width: 8px !important;
+  min-width: 8px !important;
+  max-width: 8px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  padding: 0 !important;
+  margin: 0 1px 0 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #777f92 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: visible !important;
+}
+
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip span {
+  display: block !important;
+  width: 2px !important;
+  min-width: 2px !important;
+  height: 2px !important;
+  min-height: 2px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  box-shadow: 4px 0 0 currentColor !important;
+}
+
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip:hover {
+  background: rgb(127 135 155 / 10%) !important;
+  color: #c9cde0 !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar button.sketchizi-dock-grip {
+  color: #8b92a3 !important;
+}
+
+.app .excalidraw .App-toolbar button.sketchizi-dock-grip:focus-visible {
+  outline: 2px solid #b9b2ff !important;
+  outline-offset: 2px !important;
+}
+
+
+
+/* UI Modernization 14 — edge docking: snap to either side and stack tools vertically. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 62px !important;
+  min-width: 62px !important;
+  min-height: 0 !important;
+  height: max-content !important;
+  max-height: calc(100vh - 16px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  padding: 10px 8px !important;
+  scrollbar-width: none;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"]::-webkit-scrollbar { display: none; }
+.app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] .sketchizi-dock-separator {
+  flex: 0 0 1px;
+  width: 28px;
+  min-height: 1px;
+  height: 1px;
+  margin: 3px 0;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] .sketchizi-dock-grip {
+  flex: 0 0 24px;
+  width: 24px;
+  min-width: 24px;
+  height: 12px;
+  min-height: 12px;
+  margin: 0 0 2px;
+  flex-direction: row;
+}
+.app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon,
+.app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-orientation="vertical"] .dropdown-menu-button {
+  flex-shrink: 0;
+}
+
+/* UI Modernization 15 — let the vertical dock's parent grow with the toolbar.
+   The native container otherwise retains the horizontal dock's compact box and
+   clips every tool beyond the first row when the toolbar is rotated. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"]) {
+  display: block !important;
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: 78px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 16px) !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  box-sizing: border-box !important;
+  display: flex !important;
+  width: 62px !important;
+  min-width: 62px !important;
+  max-width: 62px !important;
+  height: max-content !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 16px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > * {
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex-shrink: 0 !important;
+}
+
+
+/* UI Modernization 16 — vertical edge dock: reflow Excalidraw's internal tool groups,
+   not just the outer Island. Some Excalidraw versions wrap buttons in horizontal rows. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"]) {
+  position: fixed !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 78px !important;
+  min-width: 78px !important;
+  max-width: 78px !important;
+  height: auto !important;
+  max-height: calc(100dvh - 16px) !important;
+  overflow: visible !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  width: 62px !important;
+  min-width: 62px !important;
+  max-width: 62px !important;
+  height: auto !important;
+  max-height: calc(100dvh - 16px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  flex-wrap: nowrap !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > div:not(.sketchizi-dock-grip),
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > fieldset,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > ul {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon__icon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] button:not(.sketchizi-dock-grip) {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* UI Modernization 20 — edge-aware dock tooltips and consistent interactions.
+   Tooltips are mounted at document.body so vertical-dock overflow never clips them. */
+.app .excalidraw .App-toolbar .ToolIcon__icon,
+.app .excalidraw .App-toolbar .dropdown-menu-button {
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+.app .excalidraw .App-toolbar .ToolIcon__icon:disabled,
+.app .excalidraw .App-toolbar .dropdown-menu-button:disabled {
+  opacity: .38 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+.app .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .excalidraw .App-toolbar .dropdown-menu-button:focus-visible {
+  outline: 2px solid #b9b2ff !important;
+  outline-offset: 2px !important;
+  z-index: 2;
+}
+.sketchizi-toolbar-tooltip {
+  position: fixed;
+  z-index: 100000;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 6px 9px;
+  border: 1px solid #3d4252;
+  border-radius: 7px;
+  background: #20232d;
+  color: #f3f4fa;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+  font: 500 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 110ms ease;
+}
+.sketchizi-toolbar-tooltip.theme-light {
+  border-color: #d8deea;
+  background: #252938;
+  color: #fff;
+  box-shadow: 0 8px 24px rgb(20 26 44 / 20%);
+}
+.sketchizi-toolbar-tooltip.theme-dark {
+  border-color: #3d4252;
+  background: #20232d;
+  color: #f3f4fa;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .excalidraw .App-toolbar .ToolIcon__icon,
+  .app .excalidraw .App-toolbar .dropdown-menu-button,
+  .sketchizi-toolbar-tooltip { transition: none !important; }
+}
+
+
+/* Sketchizi quick-access tool: Bucket Fill. */
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool {
+  box-sizing: border-box;
+  width: 34px;
+  min-width: 34px;
+  flex: 0 0 34px;
+  position: relative;
+  height: 34px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0;
+  background: transparent;
+  color: var(--sk-toolbar-muted, #a8adbd);
+  font: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool:hover,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool:hover,
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible {
+  border-color: #454b60;
+  background: var(--sk-toolbar-hover, #2a2e3b);
+  color: #fff;
+  outline: none;
+}
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tool:focus-visible {
+  box-shadow: 0 0 0 2px #8b80ff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tool,
+  .app .excalidraw .App-toolbar .sketchizi-dock-quick-tool {
+    transition: none;
+  }
+}
+
+/* Bucket Fill occupies a compact dock group beside native drawing tools. */
+.app .desktop-canvas-region .excalidraw .App-toolbar .sketchizi-dock-quick-tools,
+.app .excalidraw .App-toolbar .sketchizi-dock-quick-tools {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: max-content;
+  min-width: max-content;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  visibility: visible;
+  opacity: 1;
+}
+
+
+/* Compact dock: reduce the overall shell width and tool dimensions without
+   changing the available tools or their keyboard shortcuts. */
+.app .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  padding: 5px 8px !important;
+  gap: 3px !important;
+  border-radius: 14px !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button {
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  border-radius: 9px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-grip {
+  margin-right: 0 !important;
+}
+
+.app .excalidraw .App-toolbar-container {
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+}
+
+@media (max-width: 700px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+    min-height: 44px !important;
+    padding: 4px 6px !important;
+    gap: 2px !important;
+  }
+
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__icon,
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .dropdown-menu-button {
+    width: 31px !important;
+    min-width: 31px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+  }
+}
+
+
+/* Compact navigation cluster: zoom and history controls should match the
+   reduced drawing dock rather than retaining Excalidraw's larger defaults. */
+.app .excalidraw .zoom-actions,
+.app .excalidraw .undo-redo-buttons {
+  gap: 3px !important;
+}
+
+.app .excalidraw .zoom-actions button,
+.app .excalidraw .undo-redo-buttons button,
+.app .excalidraw .zoom-actions .ToolIcon__icon,
+.app .excalidraw .undo-redo-buttons .ToolIcon__icon {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 5px !important;
+  border-radius: 9px !important;
+}
+
+.app .excalidraw .zoom-actions .reset-zoom,
+.app .excalidraw .zoom-actions button[aria-label*="zoom"],
+.app .excalidraw .zoom-actions button[title*="zoom"] {
+  min-width: 34px !important;
+}
+
+.app .excalidraw .zoom-actions,
+.app .excalidraw .undo-redo-buttons {
+  min-height: 42px !important;
+  padding: 4px !important;
+  border-radius: 12px !important;
+}
+
+@media (max-width: 700px) {
+  .app .excalidraw .zoom-actions button,
+  .app .excalidraw .undo-redo-buttons button,
+  .app .excalidraw .zoom-actions .ToolIcon__icon,
+  .app .excalidraw .undo-redo-buttons .ToolIcon__icon {
+    width: 31px !important;
+    min-width: 31px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+  }
+}
+
+
+/* Final compactness pass: tighter shell and group spacing, with readable 34px
+   targets and unchanged active/focus states. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  min-height: 42px !important;
+  padding: 3px 6px !important;
+  gap: 1px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tools {
+  margin-inline: 0 !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-separator {
+  margin-inline: 2px !important;
+  min-height: 20px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-grip {
+  height: 18px !important;
+  min-height: 18px !important;
+}
+
+.app .excalidraw .zoom-actions,
+.app .excalidraw .undo-redo-buttons {
+  gap: 2px !important;
+  min-height: 38px !important;
+  padding: 3px !important;
+}
+
+@media (max-width: 700px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+    min-height: 38px !important;
+    padding: 3px 5px !important;
+    gap: 1px !important;
+  }
+}
+
+
+/* Match the dock wrapper to the right-side header rail.
+   Keep all tool controls frameless inside one continuous rectangular surface. */
+.app .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app.theme-light .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  border: 1px solid var(--ui-border, #dfe3eb) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
+  box-shadow: 0 4px 16px rgb(15 23 42 / 8%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 4px 8px !important;
+}
+
+.app.theme-dark .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"],
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  border-color: rgb(60 68 78 / 65%) !important;
+  background: rgb(32 38 46 / 55%) !important;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
+}
+
+
+/* Hide inline keyboard shortcut hints (V, R, D, O, etc.) from the dock.
+   Keyboard shortcuts themselves remain available and unchanged. */
+.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding,
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding {
+  display: none !important;
+}
+
+
+/* Selection styling lives in a compact, canvas-adjacent toolbar instead of
+   requiring the large Properties panel for everyday appearance adjustments. */
+.app .contextual-formatting-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  width: max-content !important;
+  max-width: min(760px, calc(100vw - 20px)) !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 5px 7px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  scrollbar-width: thin;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  gap: 3px !important;
+  padding-right: 5px !important;
+  border-right: 1px solid rgb(148 163 184 / 22%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group:last-child {
+  border-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 25px !important;
+  min-width: 25px !important;
+  height: 25px !important;
+  min-height: 25px !important;
+  padding: 3px !important;
+  border: 1px solid transparent !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: var(--sk-toolbar-ink, #e7e9f2) !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected {
+  background: rgb(139 129 255 / 20%) !important;
+  border-color: rgb(139 129 255 / 45%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  color: var(--sk-toolbar-muted, #a8adbd) !important;
+  font-size: 10px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity input[type="range"] {
+  width: 64px !important;
+  max-width: 64px !important;
+  accent-color: #8276f4;
+}
+
+.app .contextual-formatting-toolbar .contextual-properties-button {
+  width: auto !important;
+  min-width: 30px !important;
+  gap: 3px !important;
+}
+
+@media (max-width: 700px) {
+  .app .contextual-formatting-toolbar {
+    max-width: calc(100vw - 16px) !important;
+    gap: 3px !important;
+    padding: 4px !important;
+  }
+
+  .app .contextual-formatting-toolbar .contextual-formatting-group > button {
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+  }
+}
+
+
+/* Keep Excalidraw's "Scroll back to content" action clear of the compact
+   bottom-centered tool dock. The control remains available above the dock. */
+.app .excalidraw .scroll-back-to-content,
+.app .excalidraw .Island.scroll-back-to-content,
+.app .excalidraw [class*="scroll-back-to-content"] {
+  bottom: calc(var(--sketchizi-dock-clearance, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 20 !important;
+}
+
+@media (max-height: 620px) {
+  .app .excalidraw .scroll-back-to-content,
+  .app .excalidraw .Island.scroll-back-to-content,
+  .app .excalidraw [class*="scroll-back-to-content"] {
+    bottom: calc(var(--sketchizi-dock-clearance, 56px) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+
+/* Keep contextual controls readable even when the canvas theme class is
+   applied by Excalidraw rather than the outer application wrapper. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  min-height: 38px !important;
+  padding: 4px 6px !important;
+  gap: 5px !important;
+  border: 1px solid rgb(127 127 127 / 28%) !important;
+  border-radius: 8px !important;
+  background: var(--contextual-toolbar-surface, rgb(248 249 252 / 96%)) !important;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 12%) !important;
+  color: #20242c !important;
+  isolation: isolate !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  border-right-color: rgb(55 65 81 / 24%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  flex: 0 0 auto !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  color: #20242c !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  opacity: 1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover {
+  background: rgb(79 70 229 / 12%) !important;
+  border-color: rgb(79 70 229 / 45%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button[aria-pressed="true"] {
+  background: rgb(99 102 241 / 18%) !important;
+  border-color: #6366f1 !important;
+  box-shadow: inset 0 0 0 1px rgb(99 102 241 / 22%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch {
+  border: 1px solid rgb(31 41 55 / 35%) !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-color-swatch.is-selected,
+.app .contextual-formatting-toolbar .contextual-color-swatch[aria-pressed="true"] {
+  outline: 2px solid #6366f1 !important;
+  outline-offset: 1px !important;
+  border-color: #ffffff !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity label {
+  color: #4b5563 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-opacity input[type="range"] {
+  min-width: 54px !important;
+  accent-color: #6366f1 !important;
+}
+
+/* Explicit dark-canvas selectors; avoid depending on a theme class on .app. */
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar,
+.app.theme-dark .contextual-formatting-toolbar,
+.app[data-theme="dark"] .contextual-formatting-toolbar {
+  --contextual-toolbar-surface: rgb(28 31 40 / 98%);
+  color: #f3f4f8 !important;
+  border-color: rgb(226 232 240 / 28%) !important;
+  background: var(--contextual-toolbar-surface) !important;
+  box-shadow: 0 3px 14px rgb(0 0 0 / 35%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button {
+  color: #f3f4f8 !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group {
+  border-right-color: rgb(226 232 240 / 30%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-opacity label,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-opacity label,
+.app.theme-dark .contextual-formatting-toolbar .contextual-opacity label,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-opacity label {
+  color: #cbd5e1 !important;
+}
+
+.app .contextual-formatting-toolbar button:focus-visible,
+.app .contextual-formatting-toolbar input:focus-visible {
+  outline: 2px solid #8276f4 !important;
+  outline-offset: 2px !important;
+}
+
+
+/* Preserve the canvas-native, frameless treatment: contrast belongs to each
+   control, not to a surrounding card. */
+.app .contextual-formatting-toolbar {
+  min-height: 38px !important;
+  padding: 3px 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button {
+  background: rgb(100 116 139 / 10%) !important;
+  border: 1px solid rgb(71 85 105 / 34%) !important;
+  border-radius: 5px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button:hover {
+  background: rgb(99 102 241 / 18%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button[aria-pressed="true"] {
+  background: rgb(99 102 241 / 22%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar,
+.app.theme-dark .contextual-formatting-toolbar,
+.app[data-theme="dark"] .contextual-formatting-toolbar {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button {
+  background: rgb(226 232 240 / 9%) !important;
+  border-color: rgb(226 232 240 / 35%) !important;
+  color: #f8fafc !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button:hover,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.is-selected {
+  background: rgb(167 139 250 / 24%) !important;
+  border-color: #a78bfa !important;
+}
+
+
+/* Color controls must retain their actual swatch colors. Generic button
+   surface rules above intentionally style regular controls, but must never
+   overwrite the background of stroke/fill color choices. */
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  background-image: none !important;
+  border: 1px solid rgb(31 41 55 / 40%) !important;
+  opacity: 1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch:hover {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  outline: 2px solid rgb(99 102 241 / 70%) !important;
+  outline-offset: 1px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-selected,
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch[aria-pressed="true"] {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  border: 2px solid #6366f1 !important;
+  outline: 1px solid #ffffff !important;
+  outline-offset: 1px !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(135deg, transparent 44%, #dc2626 46%, #dc2626 53%, transparent 55%) !important;
+  color: #20242c !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch {
+  background: var(--swatch-color, transparent) !important;
+  background-color: var(--swatch-color, transparent) !important;
+  border-color: rgb(226 232 240 / 45%) !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app.theme-dark .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-formatting-group > button.contextual-color-swatch.is-transparent {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(135deg, transparent 44%, #f87171 46%, #f87171 53%, transparent 55%) !important;
+  color: #f8fafc !important;
+}
+
+
+/* Native custom-color picker integrated with the compact swatch row. */
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border: 1px solid rgb(71 85 105 / 42%) !important;
+  border-radius: 5px !important;
+  background: rgb(100 116 139 / 10%) !important;
+  color: var(--contextual-ink, #20242c) !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  overflow: hidden !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-custom-color:hover {
+  background: rgb(99 102 241 / 14%) !important;
+  border-color: #6366f1 !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-custom-color input[type="color"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0.01 !important;
+  cursor: pointer !important;
+}
+
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .contextual-custom-color,
+.app:has(.excalidraw [class*="theme--dark"]) .contextual-formatting-toolbar .contextual-custom-color,
+.app.theme-dark .contextual-formatting-toolbar .contextual-custom-color,
+.app[data-theme="dark"] .contextual-formatting-toolbar .contextual-custom-color {
+  color: #f8fafc !important;
+  border-color: rgb(226 232 240 / 35%) !important;
+  background: rgb(226 232 240 / 9%) !important;
+}
+
+
+/* Keep the contextual toolbar inside the visible canvas on narrow windows
+   and browser zoom levels. If all controls cannot fit, scroll the control row. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  width: max-content !important;
+  max-width: calc(100vw - 16px) !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgb(148 163 184 / 55%) transparent !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  flex-wrap: nowrap !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group > button,
+.app .contextual-formatting-toolbar .contextual-custom-color {
+  flex-shrink: 0 !important;
+}
+
+.app .contextual-formatting-toolbar::-webkit-scrollbar {
+  height: 4px !important;
+}
+
+.app .contextual-formatting-toolbar::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 55%) !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 480px) {
+  .app .contextual-formatting-toolbar {
+    max-width: calc(100vw - 12px) !important;
+  }
+}
+
+
+/* A fixed available-width box prevents the control row's intrinsic width from
+   escaping its containing canvas at high zoom or in narrow browser windows. */
+.app .contextual-formatting-toolbar {
+  box-sizing: border-box !important;
+  width: min(520px, calc(100vw - 16px)) !important;
+  max-width: min(520px, calc(100vw - 16px)) !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.app .contextual-formatting-toolbar .contextual-formatting-group {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  min-width: max-content !important;
+}
+
+
+/* Keep Excalidraw's native Scroll back to content action outside the dock. */
+.app .excalidraw .sketchizi-scroll-back-control {
+  position: fixed !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: 148px !important;
+  max-width: none !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow: visible !important;
+  border: 1px solid var(--sk-toolbar-border, rgb(128 128 128 / 25%)) !important;
+  border-radius: 12px !important;
+  background: var(--sk-toolbar-surface, var(--ui-surface, #fff)) !important;
+  color: var(--sk-toolbar-ink, currentColor) !important;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 12%) !important;
+  z-index: 10020 !important;
+}
+.app .excalidraw .sketchizi-scroll-back-control:hover {
+  background: var(--sk-toolbar-hover, rgb(128 128 128 / 12%)) !important;
+}
+.app .excalidraw .sketchizi-scroll-back-control:focus-visible {
+  outline: 2px solid var(--ui-accent, #7968ee) !important;
+  outline-offset: 2px !important;
+}
+
+
+/* Icon-triggered formatting popovers: the rail stays compact; only one
+   settings group is shown at a time beside it. */
+.app .contextual-formatting-toolbar {
+  position: absolute !important;
+  display: block !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  isolation: isolate !important;
+}
+.app .contextual-formatting-toolbar .format-icon-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 44px;
+  padding: 6px;
+  border: 1px solid var(--format-rail-border, #dfe3eb);
+  border-radius: 14px;
+  background: var(--format-rail-surface, rgb(255 255 255 / 96%));
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+  backdrop-filter: blur(12px);
+}
+.app .contextual-formatting-toolbar .format-icon-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--format-rail-ink, #343946) !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-icon-button:hover {
+  background: var(--format-rail-hover, #f0f1f6) !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button.is-active,
+.app .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  background: #e5e2ff !important;
+  border-color: #c7c0ff !important;
+  color: #5146b8 !important;
+}
+.app .contextual-formatting-toolbar .format-options-popover {
+  position: absolute;
+  top: 0;
+  z-index: 10040;
+  box-sizing: border-box;
+  width: min(320px, calc(100vw - 72px));
+  max-height: min(520px, calc(100vh - 32px));
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid var(--format-popover-border, #e0e4ec);
+  border-radius: 14px;
+  background: var(--format-popover-surface, #fff);
+  color: var(--format-popover-ink, #292d36);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 18%);
+}
+.app .contextual-formatting-toolbar .format-options-popover.side-right {
+  left: calc(100% + 10px);
+  right: auto;
+}
+.app .contextual-formatting-toolbar .format-options-popover.side-left {
+  right: calc(100% + 10px);
+  left: auto;
+}
+.app .contextual-formatting-toolbar .format-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--format-popover-divider, #eceef3);
+  font-size: 13px;
+}
+.app .contextual-formatting-toolbar .format-popover-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--format-option-surface, #f2f3f7);
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-section + .format-option-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--format-popover-divider, #eceef3);
+}
+.app .contextual-formatting-toolbar .format-option-label {
+  margin: 0 0 8px;
+  color: var(--format-popover-muted, #656b78);
+  font-size: 11px;
+  font-weight: 650;
+}
+.app .contextual-formatting-toolbar .format-sub-label {
+  margin-top: 12px;
+}
+.app .contextual-formatting-toolbar .format-option-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.app .contextual-formatting-toolbar .format-option-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border: 1px solid rgb(31 41 55 / 24%);
+  border-radius: 7px;
+  background: var(--swatch-color, #fff);
+  color: #4b5563;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-swatch.is-selected {
+  outline: 2px solid #7165e8;
+  outline-offset: 2px;
+}
+.app .contextual-formatting-toolbar .format-option-swatch.is-transparent {
+  background: repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%) 50% / 10px 10px;
+}
+.app .contextual-formatting-toolbar .format-custom-color {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  box-sizing: border-box;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid #d9dde6;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--custom-color-value, #7c3aed);
+  color: #fff;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-custom-color-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+.app .contextual-formatting-toolbar .format-custom-color input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  border: 0;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--format-option-border, #e1e4ec);
+  border-radius: 8px;
+  background: var(--format-option-surface, #f4f5f8);
+  color: var(--format-popover-ink, #292d36);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.app .contextual-formatting-toolbar .format-option-button:hover,
+.app .contextual-formatting-toolbar .format-option-button.is-selected {
+  border-color: #8e83f2;
+  background: #e8e5ff;
+  color: #4e43b6;
+}
+.app .contextual-formatting-toolbar .format-font-families .format-option-button {
+  min-width: 34px;
+  padding: 0 8px;
+}
+.app .contextual-formatting-toolbar .format-custom-size {
+  margin-top: 10px;
+  color: var(--format-popover-muted, #656b78);
+  font-size: 12px;
+}
+.app .contextual-formatting-toolbar .format-opacity-control {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+}
+.app .contextual-formatting-toolbar .format-opacity-control input {
+  width: 100%;
+  accent-color: #7165e8;
+}
+.app .contextual-formatting-toolbar .format-more-properties {
+  margin-top: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--format-option-border, #e1e4ec);
+  border-radius: 8px;
+  background: var(--format-option-surface, #f4f5f8);
+  color: inherit;
+  cursor: pointer;
+}
+.app.theme-dark .contextual-formatting-toolbar,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar {
+  --format-rail-surface: #20232c;
+  --format-rail-border: #3b4050;
+  --format-rail-ink: #edf0f7;
+  --format-rail-hover: #303544;
+  --format-popover-surface: #20232c;
+  --format-popover-border: #3b4050;
+  --format-popover-ink: #edf0f7;
+  --format-popover-muted: #b0b6c4;
+  --format-popover-divider: #3b4050;
+  --format-option-surface: #2b303d;
+  --format-option-border: #454b5b;
+}
+.app .contextual-formatting-toolbar button:focus-visible,
+.app .contextual-formatting-toolbar input:focus-visible {
+  outline: 2px solid #8e83f2;
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .app .contextual-formatting-toolbar .format-options-popover {
+    width: min(300px, calc(100vw - 64px));
+    max-height: calc(100vh - 24px);
+    padding: 12px;
+  }
+}
+
+
+/* Custom background color and rectangle edge controls in the floating Stroke popover */
+.app .contextual-formatting-toolbar .format-custom-fill-color {
+  margin-left: 2px;
+}
+.app .contextual-formatting-toolbar .format-edge-button {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+}
+.app .contextual-formatting-toolbar .format-edge-square,
+.app .contextual-formatting-toolbar .format-edge-rounded {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid currentColor;
+  box-sizing: border-box;
+}
+.app .contextual-formatting-toolbar .format-edge-rounded {
+  border-radius: 5px;
+}
+
+
+/* Arrow-specific controls in the floating Stroke popover */
+.app .contextual-formatting-toolbar .format-arrowhead-row {
+  align-items: flex-end;
+  gap: 8px;
+}
+.app .contextual-formatting-toolbar .format-arrowhead-control {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-secondary, #aeb4c2);
+  font-size: 11px;
+}
+.app .contextual-formatting-toolbar .format-arrowhead-control select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid var(--border-color, #424653);
+  border-radius: 8px;
+  padding: 5px 7px;
+  background: var(--panel-bg, #292c36);
+  color: var(--text-primary, #f2f3f7);
+  font: inherit;
+}
+
+/* Only expose the dock drag grip while the dock is unlocked. */
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="true"] .App-toolbar .sketchizi-dock-grip {
+  display: none !important;
+}
+
+.app .excalidraw .App-toolbar-container[data-sketchizi-dock-locked="false"] .App-toolbar .sketchizi-dock-grip {
+  display: inline-flex !important;
+}
+
+
+/* UI Enhancements for Contextual Formatting Dock & Popovers */
+.app .contextual-formatting-toolbar .format-icon-button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button:hover {
+  transform: scale(1.05);
+}
+.app .contextual-formatting-toolbar .format-icon-button:active {
+  transform: scale(0.95);
+}
+.app .contextual-formatting-toolbar .format-icon-button.is-active,
+.app .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  background: linear-gradient(135deg, #ede9fe 0%, #e0d9ff 100%) !important;
+  border-color: #8b75f8 !important;
+  color: #4c34ba !important;
+  box-shadow: 0 0 0 1px rgba(139, 117, 248, 0.4), 0 2px 8px rgba(139, 117, 248, 0.22) !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button.is-active,
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  background: linear-gradient(135deg, #372a68 0%, #291d54 100%) !important;
+  border-color: #9d87ff !important;
+  color: #f1eeff !important;
+  box-shadow: 0 0 0 1px rgba(157, 135, 255, 0.4), 0 2px 10px rgba(157, 135, 255, 0.3) !important;
+}
+.app .contextual-formatting-toolbar .format-options-popover {
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  animation: formatting-popover-enter 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+@keyframes formatting-popover-enter {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.app .contextual-formatting-toolbar .format-option-swatch {
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+.app .contextual-formatting-toolbar .format-option-swatch:hover {
+  transform: scale(1.15) !important;
+}
+.app .contextual-formatting-toolbar .format-option-swatch.is-selected {
+  box-shadow: 0 0 0 2px var(--format-popover-surface, #fff), 0 0 0 4px #7c6bf0 !important;
+  transform: scale(1.08) !important;
+}
+.app .contextual-formatting-toolbar .format-option-button {
+  transition: all 0.14s ease !important;
+}
+.app .contextual-formatting-toolbar .format-option-button:hover {
+  transform: translateY(-1px);
+}
+.app .contextual-formatting-toolbar .format-option-button.is-selected {
+  background: #ede9fe !important;
+  border-color: #8b75f8 !important;
+  color: #4c34ba !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-option-button.is-selected {
+  background: #372a68 !important;
+  border-color: #9d87ff !important;
+  color: #f1eeff !important;
+}
+
+/* UI/UX Enhancement Suite: Dock Hotkey KBD Badges */
+.sketchizi-dock-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  vertical-align: middle;
+}
+.sketchizi-toolbar-tooltip.theme-light .sketchizi-dock-kbd {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-bottom-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* UI/UX Enhancement Suite: Font Size dual badges and direct number stepper */
+.app .contextual-formatting-toolbar .format-font-size-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.app .contextual-formatting-toolbar .format-size-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 42px;
+  padding: 2px 6px;
+  line-height: 1.15;
+}
+.app .contextual-formatting-toolbar .format-size-name {
+  font-weight: 650;
+  font-size: 13px;
+}
+.app .contextual-formatting-toolbar .format-size-sub {
+  font-size: 9.5px;
+  opacity: 0.75;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.app .contextual-formatting-toolbar .format-custom-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.app .contextual-formatting-toolbar .format-size-input-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  border: 1px solid var(--format-option-border, #e1e4ec);
+  border-radius: 6px;
+  background: var(--format-option-surface, #f4f5f8);
+  padding: 0 6px;
+  height: 32px;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-size-input-wrapper {
+  border-color: #3b4050;
+  background: #1b1e27;
+}
+.app .contextual-formatting-toolbar .format-size-input-val {
+  width: 44px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  padding: 0 2px 0 0;
+  outline: none;
+}
+.app .contextual-formatting-toolbar .format-size-input-unit {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-left: 2px;
+  user-select: none;
+}
+
+/* UI/UX Enhancement Suite: Opacity Presets */
+.app .contextual-formatting-toolbar .format-opacity-presets-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.app .contextual-formatting-toolbar .format-opacity-preset-btn {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+/* UI/UX Enhancement Suite: Multi-Selection Alignment */
+.app .contextual-formatting-toolbar .format-alignment-section .format-option-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.app .contextual-formatting-toolbar .format-alignment-section .format-option-row:last-child {
+  grid-template-columns: repeat(2, 1fr);
+}
+.app .contextual-formatting-toolbar .format-alignment-section .format-option-button {
+  width: 100%;
+  min-width: 0;
+  font-size: 11px;
+  gap: 4px;
+}
+
+
+/* Keep every native and custom dock control on one shared center line.
+   The compact native controls are 34px; custom quick tools now use the same
+   footprint so their wrapper cannot lift or visually offset the dock row. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-grip,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-separator,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] > .sketchizi-dock-quick-tools {
+  align-self: center !important;
+  box-sizing: border-box !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tools {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 34px !important;
+}
+
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] .sketchizi-dock-quick-tool {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 34px !important;
+  align-self: center !important;
+}
+
+
+/* Match the canvas dock's outer surface to the right-side header rail.
+   Keep all native tool groups frameless inside one continuous container. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  border: 1px solid var(--ui-border, #dfe3eb) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
+  box-shadow: 0 4px 16px rgb(15 23 42 / 8%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 4px 8px !important;
+}
+
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"] {
+  border-color: rgb(60 68 78 / 65%) !important;
+  background: rgb(32 38 46 / 55%) !important;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
+}
+
+
+/* Keep only the zoom percentage in the bottom-left navigation area.
+   Zoom actions and history remain available through their existing shortcuts. */
+.app .excalidraw .zoom-actions .zoom-out,
+.app .excalidraw .zoom-actions .zoom-in,
+.app .excalidraw .zoom-actions .sketchizi-fit-content-button,
+.app .excalidraw .undo-redo-buttons {
+  display: none !important;
+}
+
+.app .excalidraw .zoom-actions {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app .excalidraw .zoom-actions .reset-zoom {
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 2px 5px !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+/* Grouped dock refinement: separators clarify tool families without
+   introducing nested pills or changing Excalidraw's native control order. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-group-divider: rgb(137 151 165 / 34%);
+  column-gap: 5px;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator {
+  flex: 0 0 1px;
+  width: 1px;
+  min-height: 22px;
+  align-self: center;
+  margin: 0 6px;
+  border-radius: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--sk-dock-group-divider) 18%,
+    var(--sk-dock-group-divider) 82%,
+    transparent 100%
+  );
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-group-divider: rgb(104 119 135 / 30%);
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-group-divider: rgb(174 185 201 / 25%);
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #6c9aaa !important;
+  background: linear-gradient(145deg, #477f91, #356779) !important;
+  box-shadow: 0 3px 9px rgb(45 101 119 / 24%), inset 0 1px 0 rgb(255 255 255 / 18%) !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+  color: #fff !important;
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator {
+    margin-inline: 3px;
+    min-height: 18px;
+  }
+}
+
+
+/* Make the tool families read as separate compact clusters, not one flat row.
+   Each native control remains in place; only its visual surface and group spacing change. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-cluster-surface: rgb(104 119 135 / 8%);
+  --sk-dock-cluster-border: rgb(104 119 135 / 13%);
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 2px !important;
+  border: 1px solid var(--sk-dock-cluster-border) !important;
+  border-radius: 9px !important;
+  background: var(--sk-dock-cluster-surface) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%) !important;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:hover {
+  background: rgb(104 119 135 / 15%) !important;
+  border-color: rgb(104 119 135 / 28%) !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(79 125 139 / 13%);
+  --sk-dock-cluster-border: rgb(79 125 139 / 25%);
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-group-start="true"] {
+  margin-left: 7px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator {
+  display: none !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] > .sketchizi-dock-separator + [data-sketchizi-tool-group] {
+  margin-left: 7px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] .ToolIcon__icon {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) {
+  border-color: #477f91 !important;
+  background: #477f91 !important;
+  box-shadow: 0 2px 7px rgb(45 101 119 / 22%), inset 0 1px 0 rgb(255 255 255 / 20%) !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active .ToolIcon__icon,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) .ToolIcon__icon {
+  color: #fff !important;
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] {
+  --sk-dock-cluster-surface: rgb(255 255 255 / 5%);
+  --sk-dock-cluster-border: rgb(255 255 255 / 9%);
+}
+
+.app.theme-dark .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(90 151 169 / 15%);
+  --sk-dock-cluster-border: rgb(90 151 169 / 25%);
+}
+
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group] {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    margin-inline: 1px !important;
+  }
+  .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-group-start="true"] {
+    margin-left: 4px !important;
+  }
+}

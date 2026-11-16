@@ -1,0 +1,503 @@
+const SUPPORTED_RESTART_POLICIES = new Set(["no", "always", "on-failure", "unless-stopped"]);
+const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function cloneRecord(value) {
+  return isRecord(value) ? structuredClone(value) : {};
+}
+
+function diagnostic(code, severity, message, path, remediation) {
+  return { code, severity, message, path, remediation };
+}
+
+function quoteYaml(value) {
+  return JSON.stringify(String(value));
+}
+
+function yamlScalar(value) {
+  if (value === null) return "null";
+  if (typeof value === "boolean" || typeof value === "number") return String(value);
+  return quoteYaml(value);
+}
+
+function emitYaml(value, depth = 0) {
+  const indent = "  ".repeat(depth);
+  if (Array.isArray(value)) {
+    if (!value.length) return "[]";
+    return value.map((item) => {
+      if (isRecord(item) || Array.isArray(item)) {
+        const nested = emitYaml(item, depth + 1);
+        return `${indent}-\n${nested}`;
+      }
+      return `${indent}- ${yamlScalar(item)}`;
+    }).join("\n");
+  }
+  if (!isRecord(value)) return yamlScalar(value);
+  const entries = Object.entries(value);
+  if (!entries.length) return "{}";
+  return entries.map(([key, item]) => {
+    const safeKey = /^[a-zA-Z0-9_.-]+$/.test(key) ? key : quoteYaml(key);
+    if (isRecord(item) || Array.isArray(item)) {
+      if (!Object.keys(item).length && isRecord(item)) return `${indent}${safeKey}: {}`;
+      if (Array.isArray(item) && item.length === 0) return `${indent}${safeKey}: []`;
+      return `${indent}${safeKey}:\n${emitYaml(item, depth + 1)}`;
+    }
+    return `${indent}${safeKey}: ${yamlScalar(item)}`;
+  }).join("\n");
+}
+
+export function createComposeDocument(input = {}) {
+  const source = isRecord(input) ? input : {};
+  // Retain unrecognized Compose keys (including x-* extensions) during edits.
+  // A document must never silently lose configuration when normalized.
+  return {
+    ...structuredClone(source),
+    name: typeof source.name === "string" ? source.name : "",
+    services: cloneRecord(source.services),
+    volumes: cloneRecord(source.volumes),
+    networks: cloneRecord(source.networks),
+  };
+}
+
+export function validateComposeDocument(input) {
+  const document = createComposeDocument(input);
+  const findings = [];
+  const services = document.services;
+  const serviceNames = Object.keys(services);
+
+  if (serviceNames.length === 0) {
+    findings.push(diagnostic("COMPOSE_NO_SERVICES", "error", "Compose must define at least one service.", "services", "Add a service with an image or build context."));
+  }
+
+  for (const [name, service] of Object.entries(services)) {
+    const path = `services.${name}`;
+    if (!NAME_PATTERN.test(name)) {
+      findings.push(diagnostic("COMPOSE_INVALID_SERVICE_NAME", "error", `Service name "${name}" contains unsupported characters.`, path, "Use letters, numbers, underscores, periods, or hyphens."));
+    }
+    if (!isRecord(service)) {
+      findings.push(diagnostic("COMPOSE_INVALID_SERVICE", "error", "Service definition must be an object.", path, "Replace this service definition with a mapping."));
+      continue;
+    }
+    if (!(typeof service.image === "string" && service.image.trim()) && !(typeof service.build === "string" && service.build.trim()) && !isRecord(service.build)) {
+      findings.push(diagnostic("COMPOSE_MISSING_IMAGE_OR_BUILD", "error", "Service must define image or build.", path, "Set image to a container image, or configure build."));
+    }
+    if (service.restart != null && !SUPPORTED_RESTART_POLICIES.has(service.restart) && !/^on-failure(?::\d+)?$/.test(service.restart)) {
+      findings.push(diagnostic("COMPOSE_INVALID_RESTART_POLICY", "error", `Restart policy "${service.restart}" is not supported.`, `${path}.restart`, "Use no, always, on-failure, or unless-stopped."));
+    }
+    for (const dependency of Array.isArray(service.depends_on) ? service.depends_on : Object.keys(isRecord(service.depends_on) ? service.depends_on : {})) {
+      if (!Object.hasOwn(services, dependency)) {
+        findings.push(diagnostic("COMPOSE_UNKNOWN_DEPENDENCY", "error", `Service "${name}" depends on missing service "${dependency}".`, `${path}.depends_on`, "Add the referenced service or remove the dependency."));
+      }
+    }
+    for (const network of Array.isArray(service.networks) ? service.networks : Object.keys(isRecord(service.networks) ? service.networks : {})) {
+      if (!Object.hasOwn(document.networks, network) && network !== "default") {
+        findings.push(diagnostic("COMPOSE_UNKNOWN_NETWORK", "error", `Service "${name}" references undefined network "${network}".`, `${path}.networks`, "Declare the network at the top level or remove the reference."));
+      }
+    }
+
+    const declaredSecrets = Array.isArray(service.secrets)
+      ? service.secrets.map((entry) => typeof entry === "string" ? entry : entry?.source).filter(Boolean)
+      : Object.keys(isRecord(service.secrets) ? service.secrets : {});
+    for (const secret of declaredSecrets) {
+      if (!Object.hasOwn(document.secrets || {}, secret)) {
+        findings.push(diagnostic("COMPOSE_UNKNOWN_SECRET", "error", `Service "${name}" references undefined secret "${secret}".`, `${path}.secrets`, "Declare the secret at the top level or remove the reference."));
+      }
+    }
+    const declaredConfigs = Array.isArray(service.configs)
+      ? service.configs.map((entry) => typeof entry === "string" ? entry : entry?.source).filter(Boolean)
+      : Object.keys(isRecord(service.configs) ? service.configs : {});
+    for (const config of declaredConfigs) {
+      if (!Object.hasOwn(document.configs || {}, config)) {
+        findings.push(diagnostic("COMPOSE_UNKNOWN_CONFIG", "error", `Service "${name}" references undefined config "${config}".`, `${path}.configs`, "Declare the config at the top level or remove the reference."));
+      }
+    }
+    const ports = Array.isArray(service.ports) ? service.ports : [];
+    for (const [index, port] of ports.entries()) {
+      const hostPort = typeof port === "string"
+        ? (port.includes(":") ? port.split(":").at(-2) : "")
+        : port?.published == null ? "" : String(port.published);
+      if (hostPort && !/^\d+$/.test(hostPort) && !/^\$\{[^}]+\}$/.test(hostPort)) {
+        findings.push(diagnostic("COMPOSE_INVALID_HOST_PORT", "error", `Port mapping "${String(hostPort)}" is not a numeric host port or environment substitution.`, `${path}.ports[${index}]`, "Use a numeric host port or a Compose environment substitution such as ${HOST_PORT}."));
+      } else if (/^\d+$/.test(hostPort) && (Number(hostPort) < 1 || Number(hostPort) > 65535)) {
+        findings.push(diagnostic("COMPOSE_HOST_PORT_OUT_OF_RANGE", "error", `Host port ${hostPort} is outside the valid range 1–65535.`, `${path}.ports[${index}]`, "Choose a host port between 1 and 65535."));
+      }
+    }
+    if (service.healthcheck != null && !isRecord(service.healthcheck)) {
+      findings.push(diagnostic("COMPOSE_INVALID_HEALTHCHECK", "error", "Healthcheck must be a mapping.", `${path}.healthcheck`, "Define healthcheck options such as test, interval, timeout, retries, or start_period."));
+    } else if (isRecord(service.healthcheck) && service.healthcheck.test != null &&
+      !(Array.isArray(service.healthcheck.test) || typeof service.healthcheck.test === "string")) {
+      findings.push(diagnostic("COMPOSE_INVALID_HEALTHCHECK_TEST", "error", "Healthcheck test must be a string or list.", `${path}.healthcheck.test`, "Use a command string or a list such as [CMD, curl, -f, http://localhost]."));
+    }
+    if (service.depends_on != null && !Array.isArray(service.depends_on) && !isRecord(service.depends_on)) {
+      findings.push(diagnostic("COMPOSE_INVALID_DEPENDS_ON", "error", "depends_on must be a list of service names or a mapping of service conditions.", `${path}.depends_on`, "Use a list of service names or a mapping with condition options."));
+    }
+    if (service.networks != null && !Array.isArray(service.networks) && !isRecord(service.networks)) {
+      findings.push(diagnostic("COMPOSE_INVALID_NETWORKS", "error", "networks must be a list or mapping.", `${path}.networks`, "Use a list of declared network names or a mapping of network names to options."));
+    }
+    if (service.volumes != null && !Array.isArray(service.volumes)) {
+      findings.push(diagnostic("COMPOSE_INVALID_VOLUMES", "error", "volumes must be a list of mount definitions.", `${path}.volumes`, "Use short-form mount strings or long-form mount mappings."));
+    }
+    for (const [index, volume] of (Array.isArray(service.volumes) ? service.volumes : []).entries()) {
+      if (typeof volume === "string") {
+        const sourceName = volume.split(":")[0];
+        if (sourceName && !sourceName.startsWith(".") && !sourceName.startsWith("/") && !sourceName.startsWith("${") && !Object.hasOwn(document.volumes, sourceName)) {
+          findings.push(diagnostic("COMPOSE_UNKNOWN_VOLUME", "warning", `Service "${name}" references undeclared named volume "${sourceName}".`, `${path}.volumes[${index}]`, "Declare the named volume at the top level if it is intended to be persistent."));
+        }
+      } else if (isRecord(volume)) {
+        if (volume.type === "volume" && volume.source && !Object.hasOwn(document.volumes, volume.source)) {
+          findings.push(diagnostic("COMPOSE_UNKNOWN_VOLUME", "warning", `Service "${name}" references undeclared named volume "${volume.source}".`, `${path}.volumes[${index}].source`, "Declare the named volume at the top level if it is intended to be persistent."));
+        }
+        if (typeof volume.target !== "string" || !volume.target.trim()) {
+          findings.push(diagnostic("COMPOSE_INVALID_VOLUME_TARGET", "error", "Long-form volume mounts must define a target path.", `${path}.volumes[${index}].target`, "Set target to the path inside the container."));
+        }
+      } else {
+        findings.push(diagnostic("COMPOSE_INVALID_VOLUME_ENTRY", "error", "Volume mount entries must be strings or mappings.", `${path}.volumes[${index}]`, "Use a short-form mount string or a long-form mapping with type and target."));
+      }
+    }
+  }
+
+  const hostPortOwners = new Map();
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service)) continue;
+    for (const [index, port] of (Array.isArray(service.ports) ? service.ports : []).entries()) {
+      const hostPort = typeof port === "string"
+        ? (port.includes(":") ? port.split(":").at(-2) : "")
+        : port?.published == null ? "" : String(port.published);
+      if (!/^\d+$/.test(hostPort)) continue;
+      const owner = { serviceName, index };
+      if (hostPortOwners.has(hostPort)) {
+        const previous = hostPortOwners.get(hostPort);
+        findings.push(diagnostic(
+          "COMPOSE_DUPLICATE_HOST_PORT", "error",
+          `Host port ${hostPort} is published by both "${previous.serviceName}" and "${serviceName}".`,
+          `services.${serviceName}.ports[${index}]`,
+          "Assign a different host port to each service or remove the duplicate published mapping."
+        ));
+      } else {
+        hostPortOwners.set(hostPort, owner);
+      }
+    }
+    const environment = service.environment;
+    if (Array.isArray(environment)) {
+      for (const [index, entry] of environment.entries()) {
+        if (typeof entry !== "string" || !entry.trim() || entry.startsWith("=") || /\\n|\\r/.test(entry)) {
+          findings.push(diagnostic(
+            "COMPOSE_INVALID_ENVIRONMENT_ENTRY", "error",
+            `Service "${serviceName}" has an invalid environment entry at index ${index}.`,
+            `services.${serviceName}.environment[${index}]`,
+            "Use KEY=value or a non-empty KEY entry on each line."
+          ));
+        }
+      }
+    } else if (environment != null && !isRecord(environment)) {
+      findings.push(diagnostic(
+        "COMPOSE_INVALID_ENVIRONMENT", "error",
+        `Service "${serviceName}" environment must be a mapping or list of KEY=value entries.`,
+        `services.${serviceName}.environment`,
+        "Use a mapping of variable names to values or a list of KEY=value strings."
+      ));
+    }
+  }
+
+  for (const [section, values] of [["volumes", document.volumes], ["networks", document.networks], ["secrets", cloneRecord(input.secrets)], ["configs", cloneRecord(input.configs)]]) {
+    for (const [name, definition] of Object.entries(values)) {
+      if (!NAME_PATTERN.test(name)) findings.push(diagnostic("COMPOSE_INVALID_RESOURCE_NAME", "error", `Invalid ${section.slice(0, -1)} name "${name}".`, `${section}.${name}`, "Use letters, numbers, underscores, periods, or hyphens."));
+      if (!isRecord(definition)) findings.push(diagnostic("COMPOSE_INVALID_RESOURCE", "error", `Top-level ${section} definitions must be objects.`, `${section}.${name}`, "Use an empty object or a mapping of supported options."));
+    }
+  }
+  return { document, findings, valid: !findings.some((item) => item.severity === "error") };
+}
+
+export function exportComposeYaml(input) {
+  const document = createComposeDocument(input);
+  // Preserve arbitrary top-level Compose keys instead of rebuilding a lossy subset.
+  const output = { ...document };
+  if (!document.name) delete output.name;
+  if (!Object.keys(document.volumes).length) delete output.volumes;
+  if (!Object.keys(document.networks).length) delete output.networks;
+  return `# Generated by Sketchizi Docker Compose Studio\n${emitYaml(output)}\n`;
+}
+
+/** Build a shareable Markdown report from the current Compose readiness assessment. */
+export function exportComposeReadinessReport(input = {}) {
+  const document = createComposeDocument(input);
+  const analysis = analyzeComposeReadiness(document);
+  const lines = [
+    "# Docker Compose Preflight Report — " + (document.name || "Untitled project"),
+    "",
+    "- Generated: " + new Date().toISOString(),
+    "- Readiness score: " + analysis.readinessScore + "/100 (" + analysis.readinessGrade + ")",
+    "- Preflight status: " + (analysis.ready ? "No blocking readiness errors detected" : "Blocking readiness issues detected"),
+    "- Services: " + Object.keys(document.services).length,
+    "- Findings: " + analysis.severityCounts.error + " errors, " + analysis.severityCounts.warning + " warnings, " + analysis.severityCounts.info + " recommendations",
+    "",
+    "## Suggested startup order",
+    "",
+    ...(analysis.startupOrder.length ? analysis.startupOrder.map((name, index) => (index + 1) + ". " + name) : ["No safe startup order could be derived from the current dependency graph."]),
+    "",
+    "## Findings",
+    ""
+  ];
+  if (analysis.prioritizedFindings.length) {
+    for (const finding of analysis.prioritizedFindings) {
+      lines.push("### [" + finding.priority + "] " + finding.code, "", "- Severity: " + finding.severity, "- Location: " + finding.path, "- Finding: " + finding.message, "- Recommended action: " + finding.remediation, "");
+    }
+  } else {
+    lines.push("No readiness findings were detected.", "");
+  }
+  lines.push("## Scope and limitations", "", "This report is a static review of the Compose document. It does not run Docker Compose, resolve the host environment, verify remote image availability, inspect host firewall rules, or confirm that services can start successfully.", "");
+  return lines.join("\n");
+}
+
+/** Analyze startup order and flag dependency cycles and host substitutions to review. */
+export function analyzeComposeReadiness(input) {
+  const document = createComposeDocument(input);
+  const services = document.services;
+  const state = new Map();
+  const stack = [];
+  const startupOrder = [];
+  const cycles = [];
+  const seenCycles = new Set();
+  const dependenciesOf = (service) => {
+    if (!isRecord(service)) return [];
+    const dependencies = service.depends_on;
+    return Array.isArray(dependencies)
+      ? dependencies.filter((name) => typeof name === "string")
+      : isRecord(dependencies) ? Object.keys(dependencies) : [];
+  };
+  const visit = (name) => {
+    const currentState = state.get(name) || 0;
+    if (currentState === 2) return;
+    if (currentState === 1) {
+      const cycle = [...stack.slice(stack.indexOf(name)), name];
+      const signature = cycle.slice(0, -1).sort().join("|");
+      if (!seenCycles.has(signature)) {
+        seenCycles.add(signature);
+        cycles.push(cycle);
+      }
+      return;
+    }
+    state.set(name, 1);
+    stack.push(name);
+    for (const dependency of dependenciesOf(services[name])) {
+      if (Object.hasOwn(services, dependency)) visit(dependency);
+    }
+    stack.pop();
+    state.set(name, 2);
+    startupOrder.push(name);
+  };
+  for (const name of Object.keys(services)) visit(name);
+  const findings = cycles.map((cycle) => diagnostic(
+    "COMPOSE_DEPENDENCY_CYCLE", "error",
+    `Dependency cycle detected: ${cycle.join(" → ")}.`,
+    `services.${cycle[0]}.depends_on`,
+    "Break the cycle so services can start in dependency order."
+  ));
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service) || !isRecord(service.depends_on)) continue;
+    for (const [dependencyName, dependencyOptions] of Object.entries(service.depends_on)) {
+      if (!isRecord(dependencyOptions) || !dependencyOptions.condition) continue;
+      const condition = dependencyOptions.condition;
+      if (!["service_started", "service_healthy", "service_completed_successfully"].includes(condition)) {
+        findings.push(diagnostic(
+          "COMPOSE_INVALID_DEPENDENCY_CONDITION", "error",
+          `Service "${serviceName}" uses unsupported dependency condition "${condition}".`,
+          `services.${serviceName}.depends_on.${dependencyName}.condition`,
+          "Use service_started, service_healthy, or service_completed_successfully."
+        ));
+      } else if (condition === "service_healthy" && Object.hasOwn(services, dependencyName)) {
+        const dependency = services[dependencyName];
+        if (!isRecord(dependency?.healthcheck) || !dependency.healthcheck.test) {
+          findings.push(diagnostic(
+            "COMPOSE_DEPENDENCY_HEALTHCHECK_MISSING", "warning",
+            `Service "${serviceName}" waits for "${dependencyName}" to become healthy, but that service has no healthcheck test.`,
+            `services.${dependencyName}.healthcheck`,
+            "Add a healthcheck test to the dependency or change the condition to service_started."
+          ));
+        }
+      }
+    }
+  }
+  const mutableImageTags = [];
+  const privilegedServices = [];
+  const hostNetworkServices = [];
+  const publishedPorts = [];
+  const missingResourceLimits = [];
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service)) continue;
+    if (typeof service.image === "string" && service.image.trim()) {
+      const image = service.image.trim();
+      const lastSlash = image.lastIndexOf("/");
+      const lastColon = image.lastIndexOf(":");
+      const hasTag = lastColon > lastSlash;
+      if (!hasTag || image.slice(lastColon + 1) === "latest") {
+        mutableImageTags.push({ serviceName, image });
+      }
+    }
+    if (service.privileged === true) privilegedServices.push(serviceName);
+    const networkMode = service.network_mode;
+    if (networkMode === "host") hostNetworkServices.push(serviceName);
+    if (Array.isArray(service.ports)) {
+      for (const [index, port] of service.ports.entries()) {
+        const published = typeof port === "string"
+          ? (port.includes(":") ? port.split(":").at(-2) : "")
+          : port?.published == null ? "" : String(port.published);
+        if (published) publishedPorts.push({ serviceName, index, published });
+      }
+    }
+    const deployResources = service.deploy?.resources;
+    const limits = isRecord(deployResources) ? deployResources.limits : null;
+    if (!isRecord(limits) || (limits.cpus == null && limits.memory == null)) {
+      missingResourceLimits.push(serviceName);
+    }
+  }
+  for (const { serviceName, image } of mutableImageTags) {
+    findings.push(diagnostic(
+      "COMPOSE_MUTABLE_IMAGE_TAG", "warning",
+      `Service "${serviceName}" uses image "${image}" without a pinned version tag.`,
+      `services.${serviceName}.image`,
+      "Pin a specific image version or digest for repeatable deployments."
+    ));
+  }
+  for (const serviceName of privilegedServices) {
+    findings.push(diagnostic(
+      "COMPOSE_PRIVILEGED_CONTAINER", "warning",
+      `Service "${serviceName}" runs as a privileged container.`,
+      `services.${serviceName}.privileged`,
+      "Remove privileged mode unless the workload explicitly requires host-level capabilities."
+    ));
+  }
+  for (const serviceName of hostNetworkServices) {
+    findings.push(diagnostic(
+      "COMPOSE_HOST_NETWORK", "warning",
+      `Service "${serviceName}" shares the host network namespace.`,
+      `services.${serviceName}.network_mode`,
+      "Use an isolated Compose network unless host networking is a deliberate requirement."
+    ));
+  }
+  for (const { serviceName, index, published } of publishedPorts) {
+    findings.push(diagnostic(
+      "COMPOSE_PUBLISHED_PORT", "warning",
+      `Service "${serviceName}" publishes host port "${published}", which may expose the service beyond the Compose network.`,
+      `services.${serviceName}.ports[${index}]`,
+      "Confirm the host binding and firewall rules; bind to 127.0.0.1 when access should remain local."
+    ));
+  }
+  for (const serviceName of missingResourceLimits) {
+    findings.push(diagnostic(
+      "COMPOSE_RESOURCE_LIMITS_MISSING", "info",
+      `Service "${serviceName}" does not define CPU or memory limits under deploy.resources.limits.`,
+      `services.${serviceName}.deploy.resources.limits`,
+      "Consider explicit CPU and memory limits for predictable resource usage in supported deployment environments."
+    ));
+  }
+  const requiredEnvironmentVariables = new Set();
+  const inlineSecretAssignments = [];
+  const secretNamePattern = /(PASSWORD|PASSWD|TOKEN|SECRET|API_KEY|PRIVATE_KEY|ACCESS_KEY)/i;
+  for (const [serviceName, service] of Object.entries(services)) {
+    if (!isRecord(service)) continue;
+    const environment = service.environment;
+    const entries = Array.isArray(environment)
+      ? environment.map((entry) => typeof entry === "string" ? entry.split(/=(.*)/s, 2) : [])
+      : isRecord(environment) ? Object.entries(environment) : [];
+    for (const [key, value] of entries) {
+      if (typeof key !== "string" || !key.trim()) continue;
+      const variableName = key.trim();
+      if (value === undefined || value === null || value === "") {
+        requiredEnvironmentVariables.add(variableName);
+      } else if (secretNamePattern.test(variableName) && typeof value === "string" &&
+        value.trim() && !/^\$\{?[A-Za-z_][A-Za-z0-9_]*(?::[-?].*)?\}?$/.test(value.trim())) {
+        inlineSecretAssignments.push({ serviceName, variableName });
+      }
+    }
+    if (service.env_file != null && !(Array.isArray(service.env_file) || typeof service.env_file === "string")) {
+      findings.push(diagnostic(
+        "COMPOSE_INVALID_ENV_FILE", "error",
+        `Service "${serviceName}" has an invalid env_file definition.`,
+        `services.${serviceName}.env_file`,
+        "Use a path string or a list of env-file paths."
+      ));
+    }
+  }
+  for (const variable of [...requiredEnvironmentVariables].sort()) {
+    findings.push(diagnostic(
+      "COMPOSE_REQUIRED_ENVIRONMENT_VARIABLE", "warning",
+      `Environment variable ${variable} is referenced without an assigned value and must be supplied at runtime.`,
+      "services",
+      "Provide the value in the shell environment, a project .env file, or an env_file."
+    ));
+  }
+  for (const { serviceName, variableName } of inlineSecretAssignments) {
+    findings.push(diagnostic(
+      "COMPOSE_INLINE_SECRET", "warning",
+      `Service "${serviceName}" sets secret-like variable "${variableName}" directly in the Compose document.`,
+      `services.${serviceName}.environment.${variableName}`,
+      "Prefer a Compose secret or an environment variable supplied outside the committed Compose file."
+    ));
+  }
+  const hostVariables = new Set();
+  const scan = (value) => {
+    if (typeof value === "string") {
+      for (const match of value.matchAll(/\$\{([A-Za-z_][A-Za-z0-9_]*)(?:(?::-|-|\?)[^}]*)?\}/g)) {
+        const expression = match[0];
+        if (!expression.includes(":-") && !expression.includes("-") && !expression.includes("?")) hostVariables.add(match[1]);
+      }
+    } else if (Array.isArray(value)) value.forEach(scan);
+    else if (isRecord(value)) Object.values(value).forEach(scan);
+  };
+  scan({ services, name: document.name });
+  for (const variable of [...hostVariables].sort()) {
+    findings.push(diagnostic(
+      "COMPOSE_HOST_VARIABLE_REVIEW", "warning",
+      `Host variable ${variable} must be available when Compose starts.`,
+      "services",
+      "Define it in the shell environment or project .env file, or provide a default in the ${VAR:-default} form."
+    ));
+  }
+  const severityCounts = findings.reduce((counts, finding) => {
+    counts[finding.severity] = (counts[finding.severity] || 0) + 1;
+    return counts;
+  }, { error: 0, warning: 0, info: 0 });
+  const readinessScore = Math.max(0, 100 -
+    severityCounts.error * 20 -
+    severityCounts.warning * 8 -
+    severityCounts.info * 2);
+  const readinessGrade = readinessScore >= 90 ? "Excellent"
+    : readinessScore >= 75 ? "Good"
+      : readinessScore >= 50 ? "Needs attention"
+        : "High risk";
+  const findingsByCategory = {
+    security: findings.filter((finding) => /SECRET|PRIVILEGED|HOST_NETWORK|PUBLISHED_PORT/.test(finding.code)),
+    reliability: findings.filter((finding) => /CYCLE|DEPENDENCY|HEALTHCHECK|MUTABLE_IMAGE_TAG/.test(finding.code)),
+    configuration: findings.filter((finding) => /ENVIRONMENT|ENV_FILE|VARIABLE|CONDITION/.test(finding.code)),
+    resources: findings.filter((finding) => /RESOURCE_LIMITS/.test(finding.code)),
+    other: findings.filter((finding) => !/SECRET|PRIVILEGED|HOST_NETWORK|PUBLISHED_PORT|CYCLE|DEPENDENCY|HEALTHCHECK|MUTABLE_IMAGE_TAG|ENVIRONMENT|ENV_FILE|VARIABLE|CONDITION|RESOURCE_LIMITS/.test(finding.code)),
+  };
+  const severityRank = { error: 0, warning: 1, info: 2 };
+  const prioritizedFindings = findings
+    .map((finding) => ({
+      ...finding,
+      priority: finding.severity === "error" ? "P1" : finding.severity === "warning" ? "P2" : "P3",
+      priorityLabel: finding.severity === "error" ? "Fix before proceeding"
+        : finding.severity === "warning" ? "Review before deployment" : "Recommended improvement",
+    }))
+    .sort((left, right) =>
+      (severityRank[left.severity] ?? 3) - (severityRank[right.severity] ?? 3) ||
+      left.path.localeCompare(right.path) ||
+      left.code.localeCompare(right.code)
+    );
+  return {
+    startupOrder: cycles.length ? [] : startupOrder,
+    cycles,
+    findings,
+    prioritizedFindings,
+    ready: cycles.length === 0 && severityCounts.error === 0,
+    readinessScore,
+    readinessGrade,
+    severityCounts,
+    findingsByCategory,
+  };
+}

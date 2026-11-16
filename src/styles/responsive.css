@@ -1,0 +1,28 @@
+@import "./responsive-shell.css";
+@import "./responsive-panels.css";
+@import "./responsive-laptop.css";
+@import "./responsive-menu.css";
+@import "./responsive-touch.css";
+@import "./responsive-features.css";
+@import "./responsive-theme.css";
+@import "./responsive-collaboration.css";
+@import "./responsive-collaboration-narrow.css";
+
+/* Viewer role: the custom Sketchizi More Tools trigger is an editing affordance,
+ * so it is conditionally unmounted in App.jsx rather than visually hidden. */
+
+
+/* Keep the native Excalidraw drawing toolbar in a bottom-center lane on
+ * desktop widths. The application header is an overlay and must not reserve
+ * or change the toolbar's vertical position. */
+@media (min-width: 761px) {
+  .excalidraw .App-toolbar-container {
+    position: fixed !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: calc(14px + var(--safe-bottom, 0px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 120 !important;
+  }
+}

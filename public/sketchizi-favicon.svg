@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Sketchizi logo</title>
+  <desc id="desc">A geometric connected S mark representing collaborative drawing and diagrams.</desc>
+  <defs>
+    <linearGradient id="stroke" x1="118" y1="104" x2="404" y2="408" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6D5EF4"/>
+      <stop offset="0.52" stop-color="#4F8CFF"/>
+      <stop offset="1" stop-color="#18B8A7"/>
+    </linearGradient>
+    <linearGradient id="node" x1="126" y1="116" x2="394" y2="394" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B7CFF"/>
+      <stop offset="1" stop-color="#20C8B5"/>
+    </linearGradient>
+  </defs>
+  <path d="M378 128H214C173 128 146 151 146 184C146 217 173 240 214 240H298C339 240 366 263 366 296C366 329 339 352 298 352H134"
+        fill="none" stroke="url(#stroke)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="378" cy="128" r="24" fill="url(#node)"/>
+  <circle cx="214" cy="240" r="20" fill="#ffffff" stroke="#4F8CFF" stroke-width="10"/>
+  <circle cx="134" cy="352" r="24" fill="url(#node)"/>
+  <path d="M397 107l20 20" stroke="#6D5EF4" stroke-width="12" stroke-linecap="round"/>
+  <path d="M417 107l-20 20" stroke="#6D5EF4" stroke-width="12" stroke-linecap="round"/>
+</svg>

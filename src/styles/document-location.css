@@ -1,0 +1,16 @@
+/* Keep file location visible without confusing browser autosave with cloud sync. */
+.desktop-app-document-location {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid var(--ui-border, #343946);
+  border-radius: 99px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.2;
+  color: var(--ui-muted, #9ba5bb);
+}
+@media (max-width: 760px) {
+  .desktop-app-document-location { display: none; }
+}

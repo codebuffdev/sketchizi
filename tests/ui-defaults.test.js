@@ -1,0 +1,125 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../src/features/navigation/themePreference.js";
+
+function storageWith(value) {
+  return { getItem: (key) => key === THEME_PREFERENCE_KEY ? value : null };
+}
+
+test("missing, invalid, or unavailable theme preference defaults to dark", () => {
+  assert.equal(getInitialThemeMode(storageWith(null)), "dark");
+  assert.equal(getInitialThemeMode(storageWith("sepia")), "dark");
+  assert.equal(getInitialThemeMode({ getItem() { throw new Error("blocked"); } }), "dark");
+});
+
+test("saved light, dark, and system preferences are accepted", () => {
+  assert.equal(getInitialThemeMode(storageWith("light")), "light");
+  assert.equal(getInitialThemeMode(storageWith("dark")), "dark");
+  assert.equal(getInitialThemeMode(storageWith("system")), "system");
+});
+
+test("the hamburger menu constrains and owns its vertical scroll region", async () => {
+  const css = await readFile(new URL("../src/styles/responsive-touch.css", import.meta.url), "utf8");
+  const menuRule = css.match(/\.dropdown-menu > \.dropdown-menu-container,\s*\.dropdown-menu-container\s*\{([^}]*)\}/);
+  assert.ok(menuRule, "native menu and independently mounted dropdown containers have scroll rules");
+  assert.match(menuRule[1], /max-height:\s*calc\(100dvh/);
+  assert.match(menuRule[1], /overflow-y:\s*auto\s*!important/);
+  assert.match(menuRule[1], /min-height:\s*0/);
+  assert.match(menuRule[1], /overscroll-behavior-y:\s*contain/);
+  const menuHook = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(menuHook, /getBoundingClientRect\(\)\.top/);
+  assert.match(menuHook, /window\.innerHeight - top - bottomGap/);
+  assert.match(menuHook, /setProperty\("max-height", `\$\{availableHeight\}px`, "important"\)/);
+  assert.match(menuHook, /visualViewport\?\.addEventListener\("resize", scheduleCleanup\)/);
+  assert.doesNotMatch(css, /\.excalidraw \.dropdown-menu-container/,
+    "scroll handling must not depend on the menu being nested under .excalidraw");
+});
+
+
+test("appearance follows the selected theme and supports live system changes", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
+  assert.match(source, /const isDarkTheme = themeMode === "dark"/);
+  assert.match(source, /media.addEventListener\("change", update\)/);
+  assert.match(source, /applyCanvasThemeBackground\(apiRef\.current, isDarkTheme\)/);
+  assert.match(source, /window\.requestAnimationFrame\(\(\) =>/);
+  assert.match(source, /themeMode === "system"/);
+  assert.doesNotMatch(source, /canvasBackgroundMode/);
+});
+
+test("independent canvas palette is removed in the two-theme design", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /Remove Excalidraw's[\s\S]*independent canvas-background palette/);
+  assert.match(source, /canvasBackgroundLabel\.closest/);
+});
+
+test("restored scene keeps its saved canvas background", async () => {
+  const source = await readFile(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
+  assert.match(source, /viewBackgroundColor: savedSketch\?\.appState\?\.viewBackgroundColor \|\| getCanvasBackground\(isDarkTheme\)/);
+  const helper = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
+  assert.match(helper, /api\.getAppState\(\)/);
+  assert.match(helper, /api\.updateScene\(/);
+  assert.match(helper, /CaptureUpdateAction\.NEVER/);
+});
+
+test("hamburger menu keeps file management at the top without duplicate header controls", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /customBlock\.append\(recentSection\)/);
+  assert.match(source, /menuParent\.insertBefore\(customBlock, menuParent\.firstChild\)/);
+  assert.doesNotMatch(source, /data-sketchizi-collaborate/);
+  assert.doesNotMatch(source, /data-sketchizi-architecture-validation/);
+  assert.doesNotMatch(source, /data-diagramly-theme-menu/);
+});
+
+
+test("hamburger removes duplicate Help and labels the file action Open file", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /toLowerCase\(\) === "help"/);
+  assert.match(source, /The custom Workspace section already provides Open file/);
+  assert.match(source, /if \(item && item !== menu\) item\.remove\(\)/);
+  assert.match(source, /openDrawingFromDisk/);
+});
+
+test("canvas follows Day/Night and hamburger menu has no pin control", async () => {
+  const source = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
+  assert.match(source, /const LIGHT_CANVAS_BACKGROUND = "#ffffff"/);
+  assert.match(source, /const DARK_CANVAS_BACKGROUND = "#f3faff"/);
+  assert.match(source, /invert\(93%\) hue-rotate\(180deg\)/);
+  assert.match(source, /isDarkTheme/);
+  const menuSource = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.doesNotMatch(menuSource, /data-sketchizi-menu-pin/);
+  assert.doesNotMatch(menuSource, /sketchizi-menu-pinned/);
+  assert.doesNotMatch(menuSource, /sketchizi-native-open-file-icon/);
+  assert.doesNotMatch(menuSource, /data-sketchizi-theme-background-default/);
+  assert.doesNotMatch(menuSource, /observer\.__reopenScheduled/);
+  const header = await readFile(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
+  assert.match(header, /toggleNativeMenu\?\.\(/);
+  assert.match(header, /menuWasOpenOnPointerDownRef/);
+  assert.doesNotMatch(header, /nativeMenuButton\?\.click\(\)/);
+  const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+  assert.match(app, /openMenu: shouldOpen \? "canvas" : null/);
+  const css = await readFile(new URL("../src/styles/responsive-menu.css", import.meta.url), "utf8");
+  assert.match(css, /html\[data-sketchizi-theme="dark"\].*button:hover/);
+  assert.match(css, /color: #ffffff !important/);
+  assert.doesNotMatch(css, /\.sketchizi-menu-pin/);
+  const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
+  assert.match(worker, /event\.request\.mode === "navigate"/);
+  assert.match(worker, /Always fetch document navigations from Cloudflare first/);
+});
+
+
+test("canvas swatches are disabled so only the global Day/Night theme controls the canvas", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /Canvas color swatches are intentionally disabled/);
+  assert.match(source, /const applyCanvasSwatch = \(\) => \{\}/);
+});
+
+
+test("hamburger panel removes trailing empty separators after Reset the canvas", async () => {
+  const source = await readFile(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  assert.match(source, /trimTrailingMenuArtifacts/);
+  assert.match(source, /Reset the canvas/);
+  assert.match(source, /hasMeaningfulMenuContent/);
+  assert.match(source, /actionGroup\.style\.setProperty\("border-bottom", "0", "important"\)/);
+  assert.match(source, /actionGroup\.style\.setProperty\("padding-bottom", "0", "important"\)/);
+});
