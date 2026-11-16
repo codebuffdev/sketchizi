@@ -1702,3 +1702,90 @@
   font-size: 11px;
   gap: 4px;
 }
+
+/* Desktop canvas controls: one translucent row, matching the right header rail. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    min-height: 46px !important;
+    padding: 4px 8px !important;
+    gap: 2px !important;
+    border: 1px solid var(--ui-border, #dfe3eb) !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
+    box-shadow: 0 4px 16px rgb(15 23 42 / 8%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-canvas-region .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) {
+    border-color: rgb(60 68 78 / 65%) !important;
+    background: rgb(32 38 46 / 55%) !important;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
+  }
+
+  .app.canvas-first-header .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) :is(.Stack_horizontal, .sketchizi-dock-quick-tools) {
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    min-height: 36px !important;
+    margin-block: 0 !important;
+    padding-block: 0 !important;
+  }
+
+  .app.canvas-first-header .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) .ToolIcon {
+    align-self: center !important;
+    margin: 0 !important;
+  }
+
+  .app.canvas-first-header .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) :is(.ToolIcon__icon, .dropdown-menu-button, .sketchizi-dock-quick-tool) {
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    vertical-align: middle;
+  }
+
+  /* Keep the native percentage/reset action and its live zoom value. */
+  .app.canvas-first-header .desktop-canvas-region .excalidraw .zoom-actions :is(.zoom-in, .zoom-out, .sketchizi-fit-content-button) {
+    display: none !important;
+  }
+
+  .app.canvas-first-header .excalidraw .zoom-actions {
+    min-height: 36px !important;
+    padding: 0 !important;
+    border: 1px solid var(--ui-border, #dfe3eb) !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--ui-surface-solid, #fff) 55%, transparent) !important;
+    box-shadow: 0 4px 16px rgb(15 23 42 / 8%) !important;
+  }
+
+  .app.canvas-first-header .excalidraw .zoom-actions .reset-zoom {
+    width: auto !important;
+    min-width: 56px !important;
+    height: 36px !important;
+    padding: 0 10px !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app.canvas-first-header .excalidraw .zoom-actions .Stack_horizontal {
+    gap: 0 !important;
+    align-items: center !important;
+  }
+
+  .app.theme-dark.canvas-first-header .excalidraw .zoom-actions {
+    border-color: rgb(60 68 78 / 65%) !important;
+    background: rgb(32 38 46 / 55%) !important;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 16%) !important;
+  }
+}
