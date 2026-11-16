@@ -192,8 +192,6 @@ try {
       focusTop: parseFloat(node.style.getPropertyValue("--sk-grid-focus-top")),
       focusWidth: parseFloat(node.style.getPropertyValue("--sk-grid-focus-width")),
       focusHeight: parseFloat(node.style.getPropertyValue("--sk-grid-focus-height")),
-      canvasClientWidth: root?.clientWidth,
-      canvasClientHeight: root?.clientHeight,
       canvasWidth: canvas?.width,
       canvasHeight: canvas?.height,
       canvasBackground: getComputedStyle(document.querySelector(".desktop-canvas-region")).backgroundImage,
@@ -226,10 +224,11 @@ try {
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-local-style"),
   );
   const empty = await readGrid();
+  const gridWidthMatchesCanvas = Math.abs(parseFloat(empty.baseWidth) - empty.canvasWidth) <= 2;
+  const gridHeightMatchesCanvas = Math.abs(parseFloat(empty.baseHeight) - empty.canvasHeight) <= 2;
   if (!empty.enabled || empty.display === "none" || empty.active || empty.detailOpacity > 0.01 ||
       empty.pointerEvents !== "none" || empty.canvasBackground !== "none" ||
-      !twoLines(empty.baseImage) || empty.baseWidth !== `${empty.canvasClientWidth}px` ||
-      empty.baseHeight !== `${empty.canvasClientHeight}px` ||
+      !twoLines(empty.baseImage) || !gridWidthMatchesCanvas || !gridHeightMatchesCanvas ||
       !empty.coarseSize || empty.coarseSize <= 0) {
     throw new Error(`Coarse grid must fill an idle canvas without fine detail: ${JSON.stringify(empty)}`);
   }
