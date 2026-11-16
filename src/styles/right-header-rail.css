@@ -517,3 +517,19 @@
     margin-left: 0;
   }
 }
+
+/* The rail owns a stacking context. Its flyouts cannot rise above the AI
+   drawer by changing their own z-index, so lift the rail context while AI is
+   open. Pages mode gives the drawer a higher canvas layer and needs a matching
+   rail layer above it. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header.ai-ask-open .desktop-app-header.desktop-app-header-right-rail {
+    z-index: 1201 !important;
+  }
+
+  .app.canvas-first-header.ai-ask-open:has(.canvas-pages-mask)
+    .desktop-app-header.desktop-app-header-right-rail,
+  .app.canvas-first-header.ai-ask-open:has(.canvas-pages-mask) .desktop-app-auth-corner {
+    z-index: 10071 !important;
+  }
+}
