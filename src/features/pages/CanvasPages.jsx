@@ -13,7 +13,6 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [error, setError] = useState('');
   const [pageMask, setPageMask] = useState(null);
   const [resizeMode, setResizeMode] = useState(false);
-  const [nameDialog, setNameDialog] = useState(null);
   const [inlineName, setInlineName] = useState(null);
   const cancelInlineNameRef = useRef(false);
   const activeIdRef = useRef(null);
@@ -203,7 +202,7 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   const blockOutsidePage = event => { event.preventDefault(); event.stopPropagation(); };
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-  const createPage = pageName => {
+  const createPage = () => {
     if (!api || !canEdit) return;
     const elements = api.getSceneElementsIncludingDeleted();
     const responsiveSize = getResponsivePageSize(api.getAppState());
@@ -211,17 +210,15 @@ export default function CanvasPages({ api, canEdit = true }) {
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
     const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID()), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
-    if (frame) frame.name = pageName.trim().slice(0, 80) || `Page ${nextOrder}`;
+    if (frame) frame.name = `Page ${nextOrder}`;
     update([...elements, ...created]);
     const currentView = api.getAppState?.();
     previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
     setError(''); setMode('pages'); setOpen(false); fit(frame);
   };
   const add = () => {
-    if (!api || !canEdit) return;
-    const nextOrder = getPages(api.getSceneElementsIncludingDeleted()).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
-    setNameDialog({ mode: 'create', pageId: null, value: `Page ${nextOrder}` });
     setOpen(false);
+    createPage();
   };
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
@@ -250,14 +247,6 @@ export default function CanvasPages({ api, canEdit = true }) {
       update(api.getSceneElementsIncludingDeleted().map(e => e.id === inlineName.pageId ? { ...e, name: value, version: e.version + 1, versionNonce: Math.floor(Math.random()*2147483647), updated: Date.now() } : e));
     }
     setInlineName(null);
-  };
-  const savePageName = event => {
-    event.preventDefault();
-    if (!nameDialog || !canEdit) return;
-    const value = nameDialog.value.trim().slice(0, 80);
-    if (!value) return;
-    if (nameDialog.mode === 'create') createPage(value);
-    setNameDialog(null);
   };
   const duplicate = page => {
     if (!canEdit) return;
@@ -288,21 +277,6 @@ export default function CanvasPages({ api, canEdit = true }) {
         {error && <p role="alert">{error}</p>}
       </div>}
     </div>, headerHost)}
-    {host && createPortal(<>
-      {nameDialog?.mode === 'create' && <div className="canvas-pages-dialog-backdrop" onPointerDown={event => { if (event.target === event.currentTarget) setNameDialog(null); }}>
-        <form className="canvas-pages-name-dialog" role="dialog" aria-modal="true" aria-labelledby="canvas-pages-name-title" onSubmit={savePageName}>
-          <div className="canvas-pages-dialog-icon" aria-hidden="true">{nameDialog.mode === 'create' ? '＋' : '✎'}</div>
-          <h2 id="canvas-pages-name-title">{nameDialog.mode === 'create' ? 'Create a page' : 'Rename page'}</h2>
-          <p>{nameDialog.mode === 'create' ? 'Give this page a name so it’s easy to find later.' : 'Choose a clear name for this page.'}</p>
-          <label htmlFor="canvas-pages-name-input">Page name</label>
-          <input id="canvas-pages-name-input" autoFocus maxLength={80} value={nameDialog.value} onChange={event => setNameDialog(current => ({ ...current, value: event.target.value }))} placeholder="e.g. Project overview" />
-          <div className="canvas-pages-dialog-actions">
-            <button type="button" className="canvas-pages-dialog-cancel" onClick={() => setNameDialog(null)}>Cancel</button>
-            <button type="submit" className="canvas-pages-dialog-save" disabled={!nameDialog.value.trim()}>{nameDialog.mode === 'create' ? 'Create page' : 'Save changes'}</button>
-          </div>
-        </form>
-      </div>}
-    </>, host)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
