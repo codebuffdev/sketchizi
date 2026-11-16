@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CaptureUpdateAction, convertToExcalidrawElements, exportToSvg } from '@excalidraw/excalidraw';
+import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/excalidraw';
 import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask } from './pageModel.js';
 import './pages.css';
 
@@ -8,12 +8,10 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [open, setOpen] = useState(false);
   const [headerHost, setHeaderHost] = useState(null);
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
-  const [collapsed, setCollapsed] = useState(false);
   const [pages, setPages] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [size, setSize] = useState(DEFAULT_PAGE_SIZE);
   const [error, setError] = useState('');
-  const [previews, setPreviews] = useState({});
   const [pageMask, setPageMask] = useState(null);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
@@ -38,8 +36,8 @@ export default function CanvasPages({ api, canEdit = true }) {
       if (canEdit) for (const e of elements) {
         if (e.isDeleted || !e.customData?.sketchiziPagePaper) continue;
         const frame = next.find(p => p.id === e.customData.sketchiziPagePaper);
-        if (frame && ['x','y','width','height'].some(k => frame[k] !== e[k])) {
-          repairs.set(e.id, {...e, x:frame.x,y:frame.y,width:frame.width,height:frame.height,version:e.version+1,versionNonce:Math.floor(Math.random()*2147483647),updated:Date.now()});
+        if (frame && (['x','y','width','height'].some(k => frame[k] !== e[k]) || e.backgroundColor !== 'transparent' || e.strokeColor !== 'transparent')) {
+          repairs.set(e.id, {...e, x:frame.x,y:frame.y,width:frame.width,height:frame.height,backgroundColor:'transparent',strokeColor:'transparent',version:e.version+1,versionNonce:Math.floor(Math.random()*2147483647),updated:Date.now()});
         }
       }
       if (repairs.size) {
@@ -54,18 +52,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       setPageMask(mode === 'pages' ? getPageViewportMask(selected, appState || api.getAppState()) : null);
       const key = JSON.stringify(next.map(p => [p.id,p.version,p.name,p.width,p.height,p.customData.pageOrder]));
       if (signature.current !== key) { signature.current = key; setPages(next); }
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        const result = {};
-        for (const page of next) {
-          const members = elements.filter(e => !e.isDeleted && (e.id === page.id || e.frameId === page.id));
-          try {
-            const svg = await exportToSvg({ elements: members, files: api.getFiles(), appState: { ...api.getAppState(), exportWithDarkMode: false, exportBackground: true }, exportingFrame: page });
-            result[page.id] = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
-          } catch { /* An unavailable image must not disable page navigation. */ }
-        }
-        if (!disposed) setPreviews(result);
-      }, 600);
+
     };
     sync(api.getSceneElements());
     const unsubscribe = api.onChange(sync);
@@ -114,6 +101,43 @@ export default function CanvasPages({ api, canEdit = true }) {
     return () => window.removeEventListener('resize', refresh);
   }, [api, mode, active?.id, active?.x, active?.y, active?.width, active?.height]);
 
+  const startResize = (event, corner) => {
+    if (!canEdit || !active || !api) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const start = { x: event.clientX, y: event.clientY };
+    const original = { x: active.x, y: active.y, width: active.width, height: active.height };
+    const zoom = Math.max(0.01, Number(api.getAppState()?.zoom?.value || 1));
+    const pointerId = event.pointerId;
+    const move = e => {
+      if (e.pointerId !== pointerId) return;
+      const dx = (e.clientX - start.x) / zoom;
+      const dy = (e.clientY - start.y) / zoom;
+      const width = Math.max(320, Math.min(10000, original.width + (corner.includes('e') ? dx : -dx)));
+      const height = Math.max(320, Math.min(10000, original.height + (corner.includes('s') ? dy : -dy)));
+      const x = corner.includes('w') ? original.x + original.width - width : original.x;
+      const y = corner.includes('n') ? original.y + original.height - height : original.y;
+      const elements = api.getSceneElementsIncludingDeleted().map(e =>
+        e.id === active.id || e.customData?.sketchiziPagePaper === active.id
+          ? { ...e, x, y, width, height, version: e.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+          : e
+      );
+      api.updateScene({ elements, captureUpdate: CaptureUpdateAction.EVENTUALLY });
+      const nextPage = { ...active, x, y, width, height };
+      setPageMask(getPageViewportMask(nextPage, api.getAppState()));
+      setPages(current => current.map(page => page.id === active.id ? nextPage : page));
+    };
+    const finish = e => {
+      if (e.pointerId !== pointerId) return;
+      window.removeEventListener('pointermove', move, true);
+      window.removeEventListener('pointerup', finish, true);
+      window.removeEventListener('pointercancel', finish, true);
+    };
+    window.addEventListener('pointermove', move, true);
+    window.addEventListener('pointerup', finish, true);
+    window.addEventListener('pointercancel', finish, true);
+  };
+
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   const add = () => {
     if (!api || !canEdit) return;
@@ -132,7 +156,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
     setMode(value); setOpen(false);
-    if (value === 'infinite') { setPageMask(null); api?.setViewport(null); }
+    if (value === 'infinite') { setPageMask(null); activeIdRef.current = null; api?.updateScene({ appState: { selectedElementIds: {}, selectedGroupIds: {} }, captureUpdate: CaptureUpdateAction.NEVER }); api?.setViewport(null); }
     if (value === 'pages') fit(active);
   };
   const rename = page => {
@@ -185,11 +209,15 @@ export default function CanvasPages({ api, canEdit = true }) {
       </div>}
     </div>, headerHost)}
     {mode === 'pages' && pageMask && host && createPortal(
-      <div className="canvas-pages-mask" aria-hidden="true">
+      <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} />)}
-        <div className="canvas-pages-page-outline" style={pageMask.pageRect}>
-          <i /><i /><i /><i />
-        </div>
+        <div className="canvas-pages-page-grid" style={pageMask.pageRect} aria-hidden="true" />
+        <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
+        <div className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }}>{active?.name || `Page ${index + 1}`}</div>
+        {['nw','ne','sw','se'].map(corner => <button key={corner} type="button" className={`canvas-pages-resize-handle is-${corner}`} style={{
+          left: corner.includes('w') ? pageMask.pageRect.left : pageMask.pageRect.left + pageMask.pageRect.width,
+          top: corner.includes('n') ? pageMask.pageRect.top : pageMask.pageRect.top + pageMask.pageRect.height,
+        }} aria-label={`Resize page from ${corner.toUpperCase()} corner`} title="Drag to resize page" onPointerDown={event => startResize(event, corner)} />)}
       </div>, host)}
     {mode === 'pages' && host && createPortal(<>
       <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
