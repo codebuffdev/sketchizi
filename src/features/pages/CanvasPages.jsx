@@ -87,6 +87,12 @@ export default function CanvasPages({ api, canEdit = true }) {
     activeIdRef.current = page.id;
     initialFitRef.current = true;
     setActiveId(page.id);
+    // Selecting the frame makes the page itself feel like an editable
+    // artboard and exposes Excalidraw's native resize handles and measurements.
+    api.updateScene({
+      appState: { selectedElementIds: { [page.id]: true }, selectedGroupIds: {} },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
     api.setViewport({
       target: {x:page.x,y:page.y,width:page.width,height:page.height},
       fit: 'contain', animation: false,
@@ -180,7 +186,10 @@ export default function CanvasPages({ api, canEdit = true }) {
     </div>, headerHost)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask" aria-hidden="true">
-        {pageMask.panels.map((panel, i) => <div key={i} style={{ ...panel, backgroundColor: pageMask.backgroundColor }} />)}
+        {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} />)}
+        <div className="canvas-pages-page-outline" style={pageMask.pageRect}>
+          <i /><i /><i /><i />
+        </div>
       </div>, host)}
     {mode === 'pages' && host && createPortal(<>
       <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
