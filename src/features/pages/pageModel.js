@@ -25,7 +25,10 @@ export function getPageViewportMask(page, appState) {
   if (right <= left || bottom <= top) return null;
 
   return {
-    backgroundColor: appState.viewBackgroundColor || (appState.theme === 'dark' ? '#1e1e1e' : '#f8f9fa'),
+    // Pages mode is an artboard workspace: retain the infinite-canvas grid
+    // around the active sheet regardless of the app's light/dark chrome.
+    backgroundColor: '#10171b',
+    pageRect: { left, top, width: right - left, height: bottom - top },
     panels: [
       { left: viewport.left, top: viewport.top, width: viewport.right - viewport.left, height: top - viewport.top },
       { left: viewport.left, top: bottom, width: viewport.right - viewport.left, height: viewport.bottom - bottom },
