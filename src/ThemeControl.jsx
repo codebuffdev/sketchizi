@@ -35,9 +35,25 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, api
       if (rect) {
         const rail = trigger.current.closest(".desktop-app-header-right-rail");
         const rightRail = rail && window.matchMedia("(min-width: 1025px)").matches;
-        setPosition(rightRail
-          ? { top: 18, right: window.innerWidth - rail.getBoundingClientRect().left + 12 }
-          : { top: rect.bottom + 8, right: Math.max(12, window.innerWidth - rect.right) });
+        if (rightRail) {
+          // Keep the desktop popover visually attached to the theme control,
+          // rather than pinning it to the top of the viewport.
+          const panelHeight = panel.current?.offsetHeight || 320;
+          const triggerCenter = rect.top + rect.height / 2;
+          const top = Math.min(
+            Math.max(12, triggerCenter - panelHeight / 2),
+            Math.max(12, window.innerHeight - panelHeight - 12)
+          );
+          setPosition({
+            top,
+            right: window.innerWidth - rail.getBoundingClientRect().left + 12,
+          });
+        } else {
+          setPosition({
+            top: rect.bottom + 8,
+            right: Math.max(12, window.innerWidth - rect.right),
+          });
+        }
       }
     };
     update();
