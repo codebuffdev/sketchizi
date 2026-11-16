@@ -48,6 +48,8 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
   const panelViewportRef = useRef(null);
+  const panelFittedViewportRef = useRef(null);
+  const panelPageBoundsRef = useRef(null);
   const panelWasOpenRef = useRef(false);
   const root = useRef(null);
   const signature = useRef('');
@@ -197,6 +199,15 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }
       }
     });
   };
+  const fitViewportToPage = page => {
+    if (!page || !api) return;
+    api.scrollToContent?.([page], { fitToContent: true, animate: false });
+    window.requestAnimationFrame(() => {
+      const fittedState = api.getAppState();
+      const pageViewport = getPageFitViewport(page, fittedState, 1);
+      if (pageViewport) api.updateScene({ appState: pageViewport, captureUpdate: CaptureUpdateAction.NEVER });
+    });
+  };
 
   useEffect(() => {
     const wasOpen = panelWasOpenRef.current;
@@ -206,31 +217,63 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }
     if (aiPanelOpen) {
       if (mode !== 'pages' || !activePageRef.current) return undefined;
       const state = api.getAppState?.();
+      const page = activePageRef.current;
       panelViewportRef.current = state ? {
         scrollX: state.scrollX,
         scrollY: state.scrollY,
         zoom: state.zoom,
       } : null;
+      panelFittedViewportRef.current = null;
+      panelPageBoundsRef.current = { x: page.x, y: page.y, width: page.width, height: page.height };
       let firstFrame = 0;
       let secondFrame = 0;
+      let thirdFrame = 0;
       firstFrame = window.requestAnimationFrame(() => {
-        secondFrame = window.requestAnimationFrame(() => fit(activePageRef.current));
+        secondFrame = window.requestAnimationFrame(() => {
+          fitViewportToPage(activePageRef.current);
+          thirdFrame = window.requestAnimationFrame(() => {
+            const fittedState = api.getAppState?.();
+            if (fittedState) panelFittedViewportRef.current = {
+              scrollX: fittedState.scrollX,
+              scrollY: fittedState.scrollY,
+              zoom: fittedState.zoom,
+            };
+          });
+        });
       });
       return () => {
         window.cancelAnimationFrame(firstFrame);
         window.cancelAnimationFrame(secondFrame);
+        window.cancelAnimationFrame(thirdFrame);
       };
     }
 
     const previousViewport = panelViewportRef.current;
+    const fittedViewport = panelFittedViewportRef.current;
+    const previousPageBounds = panelPageBoundsRef.current;
     panelViewportRef.current = null;
+    panelFittedViewportRef.current = null;
+    panelPageBoundsRef.current = null;
     if (mode !== 'pages' || !previousViewport) return undefined;
     let firstFrame = 0;
     let secondFrame = 0;
     firstFrame = window.requestAnimationFrame(() => {
       secondFrame = window.requestAnimationFrame(() => {
-        api.updateScene({ appState: previousViewport, captureUpdate: CaptureUpdateAction.NEVER });
-        setPageMask(getPageViewportMask(activePageRef.current, { ...(api.getAppState?.() || {}), ...previousViewport }));
+        const currentState = api.getAppState?.() || {};
+        const currentPage = activePageRef.current;
+        const currentZoom = Number(currentState.zoom?.value ?? currentState.zoom ?? 1);
+        const fittedZoom = Number(fittedViewport?.zoom?.value ?? fittedViewport?.zoom ?? 1);
+        const pageUnchanged = currentPage && previousPageBounds &&
+          ['x', 'y', 'width', 'height'].every(key => currentPage[key] === previousPageBounds[key]);
+        const viewportUnchanged = fittedViewport &&
+          Math.abs(Number(currentState.scrollX) - Number(fittedViewport.scrollX)) < 0.5 &&
+          Math.abs(Number(currentState.scrollY) - Number(fittedViewport.scrollY)) < 0.5 &&
+          Math.abs(currentZoom - fittedZoom) < 0.001;
+        const restoredState = mode === 'pages' && pageUnchanged && viewportUnchanged
+          ? { ...currentState, ...previousViewport }
+          : currentState;
+        if (restoredState !== currentState) api.updateScene({ appState: previousViewport, captureUpdate: CaptureUpdateAction.NEVER });
+        setPageMask(getPageViewportMask(currentPage, restoredState));
       });
     });
     return () => {
@@ -240,7 +283,11 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }
   }, [aiPanelOpen, api, mode]);
 
   useEffect(() => {
-    if (mode !== 'pages') panelViewportRef.current = null;
+    if (mode !== 'pages') {
+      panelViewportRef.current = null;
+      panelFittedViewportRef.current = null;
+      panelPageBoundsRef.current = null;
+    }
   }, [mode]);
 
   useEffect(() => {
@@ -465,50 +512,3 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false }
       inlineName?.pageId === active?.id ? <input
         ref={inlineNameInputRef}
         className="canvas-pages-page-name-input"
-        style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 31) }}
-        aria-label="Edit page name"
-        autoFocus
-        maxLength={80}
-        value={inlineName.value}
-        onChange={event => setInlineName(current => ({ ...current, value: event.target.value }))}
-        onBlur={saveInlineName}
-        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } if (event.key === 'Escape') { event.preventDefault(); cancelInlineNameRef.current = true; setInlineName(null); } }}
-      /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>,
-      host,
-    )}
-    {mode === 'pages' && canEdit && active && pageMask && host && createPortal(<>
-      {['nw','n','ne','e','se','s','sw','w'].map(edge => {
-        const rect = pageMask.pageRect;
-        const reach = 28;
-        const inset = reach / 2;
-        const positions = {
-          nw: { left: rect.left - reach, top: rect.top - reach, width: reach, height: reach },
-          n: { left: rect.left + inset, top: rect.top - reach, width: Math.max(0, rect.width - reach), height: reach },
-          ne: { left: rect.left + rect.width, top: rect.top - reach, width: reach, height: reach },
-          e: { left: rect.left + rect.width, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
-          se: { left: rect.left + rect.width, top: rect.top + rect.height, width: reach, height: reach },
-          s: { left: rect.left + inset, top: rect.top + rect.height, width: Math.max(0, rect.width - reach), height: reach },
-          sw: { left: rect.left - reach, top: rect.top + rect.height, width: reach, height: reach },
-          w: { left: rect.left - reach, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
-        };
-        const isCorner = edge.length === 2;
-        const label = isCorner
-          ? `Drag page from ${edge.toUpperCase()} corner to adjust width and height`
-          : `Drag page ${edge === 'n' || edge === 's' ? 'edge to adjust height' : 'edge to adjust width'}`;
-        return <button
-          key={edge}
-          type="button"
-          className={`canvas-pages-resize-hit is-${edge}${revealedResizeEdge === edge ? ' is-revealed' : ''}`}
-          style={positions[edge]}
-          aria-label={label}
-          title={label}
-          onPointerDown={event => handleResizePointerDown(event, edge)}
-          onContextMenu={event => event.preventDefault()}
-        />;
-      })}
-    </>,host)}
-    {mode === 'pages' && host && createPortal(<>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
-    </>,host)}
-  </>;
-}
