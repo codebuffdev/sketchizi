@@ -23,7 +23,6 @@ export default function SketchiziCanvas({
   gridEnabled = false, gridStyle = "focus", onGridVisibilityChange,
 }) {
   const canvasRootRef = useRef(null);
-  const fitContentButtonRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
   const spotlightNodeRef = useRef(null);
@@ -201,8 +200,6 @@ export default function SketchiziCanvas({
   }, [canEdit, viewModeEnabled, paintWorkspaceGrid]);
 
   const handleSceneChange = useCallback((elements, appState, files) => {
-    const hasVisibleElements = (elements || []).some((element) => element && !element.isDeleted && !element.deleted);
-    if (fitContentButtonRef.current) fitContentButtonRef.current.disabled = !canEdit || viewModeEnabled || !hasVisibleElements;
     setCanvasRevision((revision) => revision + 1);
     onGridVisibilityChange?.(Boolean(appState?.gridModeEnabled));
     handleChange?.(elements, appState, files);
@@ -639,23 +636,12 @@ export default function SketchiziCanvas({
     };
   }, []);
 
-  // Add one small Fit-to-content control to Excalidraw's native zoom cluster.
-  // Native zoom, undo, and redo controls remain owned by Excalidraw; this
-  // button simply delegates to the same viewport API used by Sketchizi's F key.
+  // Keep the native navigation area minimal; only reposition the scroll-back control.
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root) return undefined;
     let disposed = false;
     let observer;
-    let fitButton = null;
-    const fitToContent = () => {
-      const api = apiRef?.current;
-      if (!api) return;
-      const elements = (api.getSceneElements?.() || []).filter((element) => element && !element.isDeleted && !element.deleted);
-      if (!elements.length) return;
-      if (typeof api.setViewport === "function") api.setViewport({ target: elements, fit: "contain" });
-      else api.scrollToContent?.(elements, { fitToViewport: true, animate: true });
-    };
     const bindToolbarTooltip = (button) => bindToolbarTooltipRef.current?.(button);
     const placeScrollBackControl = () => {
       const toolbar = root.querySelector(".App-toolbar");
@@ -704,23 +690,7 @@ export default function SketchiziCanvas({
         placeScrollBackControl();
         return;
       }
-      const zoomRow = zoomActions.querySelector(":scope > .Stack_horizontal") || zoomActions;
-      fitButton = zoomRow.querySelector(":scope > .sketchizi-fit-content-button");
-      if (!fitButton) {
-        fitButton = document.createElement("button");
-        fitButton.type = "button";
-        fitButton.className = "sketchizi-fit-content-button";
-        fitButton.setAttribute("aria-label", "Fit diagram to viewport");
-        fitButton.title = "Fit to content (F)";
-        fitButton.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H3v4M3 3l5 5M13 3h4v4M17 3l-5 5M7 17H3v-4M3 17l5-5M13 17h4v-4M17 17l-5-5"/></svg>';
-        fitButton.addEventListener("click", fitToContent);
-        zoomRow.appendChild(fitButton);
-      }
       placeScrollBackControl();
-
-      const visibleElements = (apiRef?.current?.getSceneElements?.() || []).filter((element) => element && !element.isDeleted && !element.deleted);
-      fitButton.disabled = !canEdit || viewModeEnabled || visibleElements.length === 0;
-      fitContentButtonRef.current = fitButton;
 
       const nativeTitles = [
         [".zoom-out", "Zoom out"],
@@ -754,11 +724,6 @@ export default function SketchiziCanvas({
         button.classList.remove("sketchizi-scroll-back-control");
         ["position", "left", "top", "right", "bottom", "z-index"].forEach((property) => button.style.removeProperty(property));
       });
-      if (fitButton) {
-        fitButton.removeEventListener("click", fitToContent);
-        fitButton.remove();
-      }
-      if (fitContentButtonRef.current === fitButton) fitContentButtonRef.current = null;
     };
   }, [apiRef, canEdit, viewModeEnabled]);
 
