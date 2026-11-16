@@ -14,6 +14,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [pageMask, setPageMask] = useState(null);
   const [resizeMode, setResizeMode] = useState(false);
   const [nameDialog, setNameDialog] = useState(null);
+  const [inlineName, setInlineName] = useState(null);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
   const previousViewportRef = useRef(null);
@@ -238,7 +239,15 @@ export default function CanvasPages({ api, canEdit = true }) {
   };
   const rename = page => {
     if (!page || !canEdit) return;
-    setNameDialog({ mode: 'rename', pageId: page.id, value: page.name || 'Page' });
+    setInlineName({ pageId: page.id, value: page.name || 'Page' });
+  };
+  const saveInlineName = () => {
+    if (!inlineName || !canEdit) return setInlineName(null);
+    const value = inlineName.value.trim().slice(0, 80);
+    if (value && value !== (pages.find(page => page.id === inlineName.pageId)?.name || 'Page')) {
+      update(api.getSceneElementsIncludingDeleted().map(e => e.id === inlineName.pageId ? { ...e, name: value, version: e.version + 1, versionNonce: Math.floor(Math.random()*2147483647), updated: Date.now() } : e));
+    }
+    setInlineName(null);
   };
   const savePageName = event => {
     event.preventDefault();
@@ -246,7 +255,6 @@ export default function CanvasPages({ api, canEdit = true }) {
     const value = nameDialog.value.trim().slice(0, 80);
     if (!value) return;
     if (nameDialog.mode === 'create') createPage(value);
-    else update(api.getSceneElementsIncludingDeleted().map(e => e.id === nameDialog.pageId ? { ...e, name: value, version: e.version + 1, versionNonce: Math.floor(Math.random()*2147483647), updated: Date.now() } : e));
     setNameDialog(null);
   };
   const duplicate = page => {
@@ -279,7 +287,7 @@ export default function CanvasPages({ api, canEdit = true }) {
       </div>}
     </div>, headerHost)}
     {host && createPortal(<>
-      {nameDialog && <div className="canvas-pages-dialog-backdrop" onPointerDown={event => { if (event.target === event.currentTarget) setNameDialog(null); }}>
+      {nameDialog?.mode === 'create' && <div className="canvas-pages-dialog-backdrop" onPointerDown={event => { if (event.target === event.currentTarget) setNameDialog(null); }}>
         <form className="canvas-pages-name-dialog" role="dialog" aria-modal="true" aria-labelledby="canvas-pages-name-title" onSubmit={savePageName}>
           <div className="canvas-pages-dialog-icon" aria-hidden="true">{nameDialog.mode === 'create' ? '＋' : '✎'}</div>
           <h2 id="canvas-pages-name-title">{nameDialog.mode === 'create' ? 'Create a page' : 'Rename page'}</h2>
@@ -298,7 +306,17 @@ export default function CanvasPages({ api, canEdit = true }) {
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
         <div className="canvas-pages-page-surface" style={pageMask.pageRect} aria-hidden="true" />
         <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
-        <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>
+        {inlineName?.pageId === active?.id ? <input
+          className="canvas-pages-page-name-input"
+          style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 31) }}
+          aria-label="Edit page name"
+          autoFocus
+          maxLength={80}
+          value={inlineName.value}
+          onChange={event => setInlineName(current => ({ ...current, value: event.target.value }))}
+          onBlur={saveInlineName}
+          onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); saveInlineName(); } if (event.key === 'Escape') { event.preventDefault(); setInlineName(null); } }}
+        /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>}
       </div>, host)}
     {mode === 'pages' && resizeMode && pageMask && host && createPortal(<>
       {['nw','n','ne','e','se','s','sw','w'].map(edge => {
