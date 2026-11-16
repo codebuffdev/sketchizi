@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const css = readFileSync(new URL('../src/styles/editor-visual-system.css', import.meta.url), 'utf8');
-const entry = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+const entry = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8');
 const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
 const dock = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
 
@@ -31,7 +31,8 @@ test('visual refinement is presentation-only and does not alter canvas or dock g
   assert.doesNotMatch(css, /\.App-toolbar|contextual-formatting-toolbar/);
   assert.doesNotMatch(css, /(?:^|[;\n])\s*(?:position|inset|top|right|bottom|left|width|height|min-height|max-height|padding|margin|transform|display)\s*:/);
   assert.match(dock, /\.Island\.App-toolbar\[data-sketchizi-dock="true"\]/);
-  assert.ok(entry.indexOf('@import "./styles/editor-visual-system.css";') < entry.indexOf('.kubernetes-library-status'));
+  assert.ok(entry.indexOf('import "./styles.css";') < entry.indexOf('import "./styles/editor-visual-system.css";'));
+  assert.ok(entry.indexOf('import "./styles/grid-spotlight.css";') < entry.indexOf('import "./styles/editor-visual-system.css";'));
 });
 
 test('contextual formatting toolbar remains exclusively gated by Zen Mode', () => {
