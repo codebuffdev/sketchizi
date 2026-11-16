@@ -615,11 +615,15 @@ export default function DesktopAppHeader({
       </div>
       <button
         type="button"
-        className="desktop-app-save-to-cloud-button is-icon-only"
+        className={`desktop-app-save-to-cloud-button is-icon-only${isCloudDocument ? ` is-cloud-${cloudSaveState}` : ""}`}
         onClick={() => { setOpenMenu(null); onSaveToCloud?.(); }}
         disabled={cloudSaveState === "loading" || cloudSaveState === "saving" || cloudSaveState === "pending"}
-        title={isCloudDocument ? "Save the current diagram to Cloud Workspace now" : "Save this drawing to Cloud Workspace"}
-        aria-label={isCloudDocument ? "Save current diagram to Cloud Workspace now" : "Save drawing to Cloud Workspace"}
+        title={isCloudDocument
+          ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved cloud changes" : cloudSaveState === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save the current diagram to Cloud Workspace now"
+          : "Save this drawing to Cloud Workspace"}
+        aria-label={isCloudDocument
+          ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved changes — save to Cloud Workspace" : cloudSaveState === "saving" ? "Saving to Cloud Workspace" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save current diagram to Cloud Workspace now"
+          : "Save drawing to Cloud Workspace"}
       >
         <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" fillRule="evenodd" aria-hidden="true">
           <path d="M257 247 153 347 175 369 242 302 243 447 272 447 272 303 336 369 358 347Z M39 193 39 232 54 265 86 292 126 302 127 274 133 252 148 227 173 206 208 194 244 195 270 205 301 233 317 264 336 257 365 261 389 280 400 302 426 300 448 289 465 270 474 242 469 213 448 185 427 174 399 171 391 121 366 80 330 52 285 38 240 40 203 55 171 83 149 123 140 120 107 122 71 140 52 161Z" />

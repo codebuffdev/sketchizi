@@ -22,3 +22,24 @@
 .canvas-replacement-cancel { border: 1px solid var(--ui-border, #d1d5db); background: transparent; color: var(--ui-text, #374151); }
 .canvas-replacement-continue { border: 1px solid #b45309; background: #b45309; color: #fff; }
 .canvas-replacement-actions button:focus-visible { outline: 2px solid var(--ui-accent, #64748b); outline-offset: 2px; }
+
+
+/* Make the cloud-save control reflect the actual cloud document state. */
+.desktop-app-save-to-cloud-button.is-cloud-pending,
+.desktop-app-save-to-cloud-button.is-cloud-saving {
+  color: #d97706 !important;
+}
+.desktop-app-save-to-cloud-button.is-cloud-saved {
+  color: #16a36a !important;
+}
+.desktop-app-save-to-cloud-button.is-cloud-error,
+.desktop-app-save-to-cloud-button.is-cloud-conflict {
+  color: #dc4b55 !important;
+}
+.desktop-app-save-to-cloud-button.is-cloud-pending svg,
+.desktop-app-save-to-cloud-button.is-cloud-saving svg,
+.desktop-app-save-to-cloud-button.is-cloud-saved svg,
+.desktop-app-save-to-cloud-button.is-cloud-error svg,
+.desktop-app-save-to-cloud-button.is-cloud-conflict svg {
+  color: inherit;
+}
