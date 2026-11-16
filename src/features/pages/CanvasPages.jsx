@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements, exportToSvg } from '@excalidraw/excalidraw';
-import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage } from './pageModel.js';
+import { DEFAULT_PAGE_SIZE, PAGE_PRESETS, getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask } from './pageModel.js';
 import './pages.css';
 
 export default function CanvasPages({ api, canEdit = true }) {
@@ -13,6 +13,8 @@ export default function CanvasPages({ api, canEdit = true }) {
   const [size, setSize] = useState(DEFAULT_PAGE_SIZE);
   const [error, setError] = useState('');
   const [previews, setPreviews] = useState({});
+  const [pageMask, setPageMask] = useState(null);
+  const activeIdRef = useRef(null);
   const root = useRef(null);
   const signature = useRef('');
   const active = pages.find(p => p.id === activeId) || pages[0];
@@ -23,7 +25,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     if (!api) return;
     let timer;
     let disposed = false;
-    const sync = (elements) => {
+    const sync = (elements, appState) => {
       const next = getPages(elements);
       // Native frame dragging/resizing must carry its paper surface too.
       const repairs = new Map();
@@ -38,6 +40,12 @@ export default function CanvasPages({ api, canEdit = true }) {
         api.updateScene({elements:api.getSceneElementsIncludingDeleted().map(e => repairs.get(e.id) || e),captureUpdate:CaptureUpdateAction.NEVER});
         return;
       }
+      const selected = next.find(p => p.id === activeIdRef.current) || next[0];
+      if (selected && !activeIdRef.current) {
+        activeIdRef.current = selected.id;
+        setActiveId(selected.id);
+      }
+      setPageMask(mode === 'pages' ? getPageViewportMask(selected, appState || api.getAppState()) : null);
       const key = JSON.stringify(next.map(p => [p.id,p.version,p.name,p.width,p.height,p.customData.pageOrder]));
       if (signature.current !== key) { signature.current = key; setPages(next); }
       clearTimeout(timer);
@@ -56,7 +64,7 @@ export default function CanvasPages({ api, canEdit = true }) {
     sync(api.getSceneElements());
     const unsubscribe = api.onChange(sync);
     return () => { disposed = true; clearTimeout(timer); unsubscribe(); signature.current = ''; };
-  }, [api, canEdit]);
+  }, [api, canEdit, mode]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,6 +78,7 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   const fit = page => {
     if (!page || !api) return;
+    activeIdRef.current = page.id;
     setActiveId(page.id);
     api.setViewport({
       target: {x:page.x,y:page.y,width:page.width,height:page.height},
@@ -78,6 +87,14 @@ export default function CanvasPages({ api, canEdit = true }) {
       lock: {scroll:true,zoom:true,overscroll:false},
     });
   };
+  useEffect(() => {
+    if (mode !== 'pages' || !active || !api) { setPageMask(null); return; }
+    const refresh = () => setPageMask(getPageViewportMask(active, api.getAppState()));
+    refresh();
+    window.addEventListener('resize', refresh);
+    return () => window.removeEventListener('resize', refresh);
+  }, [api, mode, active?.id, active?.x, active?.y, active?.width, active?.height]);
+
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   const add = () => {
     if (!api || !canEdit) return;
@@ -90,7 +107,7 @@ export default function CanvasPages({ api, canEdit = true }) {
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
     setMode(value); setOpen(false);
-    if (value === 'infinite') api?.setViewport(null);
+    if (value === 'infinite') { setPageMask(null); api?.setViewport(null); }
     if (value === 'pages') fit(active);
   };
   const rename = page => {
@@ -142,6 +159,10 @@ export default function CanvasPages({ api, canEdit = true }) {
         {error && <p role="alert">{error}</p>}
       </div>}
     </div>
+    {mode === 'pages' && pageMask && host && createPortal(
+      <div className="canvas-pages-mask" aria-hidden="true">
+        {pageMask.panels.map((panel, i) => <div key={i} style={{ ...panel, backgroundColor: pageMask.backgroundColor }} />)}
+      </div>, host)}
     {mode === 'pages' && host && createPortal(<>
       <aside className={`canvas-pages-panel${collapsed ? ' is-collapsed' : ''}`} aria-label="Pages">
         <button className="canvas-pages-heading" type="button" aria-expanded={!collapsed} onClick={() => setCollapsed(!collapsed)}>Pages <span>{collapsed ? '›' : '‹'}</span></button>
