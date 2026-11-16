@@ -111,6 +111,15 @@ export default function CanvasPages({ api, canEdit = true }) {
 
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);
 
+  // Keep the canvas mode available to CSS so navigation controls can adopt
+  // the visual treatment chosen for Pages or the infinite canvas.
+  useEffect(() => {
+    if (host) host.dataset.canvasView = mode;
+  }, [host, mode]);
+  useEffect(() => () => {
+    if (host?.dataset.canvasView) delete host.dataset.canvasView;
+  }, [host]);
+
   const fit = page => {
     if (!page || !api) return;
     activeIdRef.current = page.id;

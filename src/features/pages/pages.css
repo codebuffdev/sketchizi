@@ -35,6 +35,112 @@
 .app .canvas-pages-menu { top:calc(100% + 24px); left:auto; right:1.5cm; width:min(280px, calc(100vw - 24px)); }
 @media (max-width:767px) { .app .canvas-pages-menu { top:calc(100% + 24px); left:auto; right:0; width:min(280px, calc(100vw - 24px)); } }
 
+/* The zoom row follows the active canvas model: a quiet glass capsule for
+   bounded pages, and frameless controls for the open infinite workspace. */
+.app[data-canvas-view="pages"] .excalidraw .zoom-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  width: max-content !important;
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 2px 4px !important;
+  border: 1px solid color-mix(in srgb, var(--ui-border, #dfe3eb) 62%, transparent) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--ui-surface-solid, #fff) 58%, transparent) !important;
+  box-shadow: 0 4px 14px rgb(15 23 42 / 8%) !important;
+  backdrop-filter: blur(12px) saturate(125%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(125%) !important;
+}
+
+.app.theme-dark[data-canvas-view="pages"] .excalidraw .zoom-actions {
+  border-color: rgb(148 163 184 / 17%) !important;
+  background: rgb(20 26 33 / 66%) !important;
+  box-shadow: 0 5px 16px rgb(0 0 0 / 18%) !important;
+}
+
+.app[data-canvas-view="infinite"] .excalidraw .zoom-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+  width: max-content !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.app[data-canvas-view] .excalidraw .zoom-actions .zoom-out,
+.app[data-canvas-view] .excalidraw .zoom-actions .zoom-in {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ui-text-muted, #667085) !important;
+  transition: background-color 120ms ease, color 120ms ease !important;
+}
+
+.app[data-canvas-view] .excalidraw .zoom-actions .reset-zoom {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 38px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 3px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ui-text-muted, #667085) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.app[data-canvas-view="infinite"] .excalidraw .zoom-actions button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-text-strong, #1f2937) 8%, transparent) !important;
+  color: var(--ui-text-strong, #1f2937) !important;
+}
+
+.app[data-canvas-view="pages"] .excalidraw .zoom-actions button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-text-strong, #1f2937) 7%, transparent) !important;
+  color: var(--ui-text-strong, #1f2937) !important;
+}
+
+.app.theme-dark[data-canvas-view] .excalidraw .zoom-actions button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 9%) !important;
+  color: var(--ui-text-strong, #f3f4f6) !important;
+}
+
+.app[data-canvas-view] .excalidraw .zoom-actions button:focus-visible {
+  outline: 2px solid var(--ui-accent, #7968ee) !important;
+  outline-offset: 2px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app[data-canvas-view] .excalidraw .zoom-actions button { transition: none !important; }
+}
+
 /* In page mode, opaque gutters hide every non-active sheet and prevent drawing outside the selected page. */
 .canvas-pages-mask { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
 .canvas-pages-mask > div { position: fixed; pointer-events: none; }
