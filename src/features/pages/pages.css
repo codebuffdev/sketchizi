@@ -223,6 +223,15 @@
 .app:has(.canvas-pages-mask) .desktop-canvas-region .excalidraw .layer-ui__wrapper { z-index: 10020 !important; }
 .app:has(.canvas-pages-mask) .excalidraw .App-toolbar-container { z-index: 10021 !important; }
 .app:has(.canvas-pages-mask) .excalidraw .App-toolbar { z-index: 10022 !important; }
+/* Keep open header flyouts above the page edge hit areas. The header normally
+   sits below the page resize grips so its controls don't blanket the canvas. */
+.app:has(.canvas-pages-mask) .desktop-app-header:has([aria-expanded="true"], [role="dialog"], [role="menu"]) {
+  z-index: 10050 !important;
+}
+/* The page navigator and other page controls are also UI, so they should win
+   when they happen to overlap an edge or corner resize target. */
+.app:has(.canvas-pages-mask) .canvas-pages-panel,
+.app:has(.canvas-pages-mask) .canvas-pages-navigation { z-index: 10040; }
 .canvas-pages-page-grid {
   position: fixed;
   z-index: 1;

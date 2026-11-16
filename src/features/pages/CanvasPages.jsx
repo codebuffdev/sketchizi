@@ -2,7 +2,34 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/excalidraw';
 import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport, getResponsivePageSize, isElementWithinPage, PAGE_MARKER } from './pageModel.js';
+import { canvasColorForDisplay, canvasColorForScene } from '../navigation/canvasColors.js';
+import { getCanvasBackground } from '../navigation/canvasTheme.js';
 import './pages.css';
+
+const PAGE_WORKSPACE_TINT = 0.25;
+
+function mixHexColors(baseColor, tintColor, tintAmount) {
+  const base = baseColor.match(/^#([\da-f]{6})$/i)?.[1];
+  const tint = tintColor.match(/^#([\da-f]{6})$/i)?.[1];
+  if (!base || !tint) return baseColor;
+  const channels = [0, 2, 4].map(offset => {
+    const baseChannel = Number.parseInt(base.slice(offset, offset + 2), 16);
+    const tintChannel = Number.parseInt(tint.slice(offset, offset + 2), 16);
+    return Math.round(baseChannel * (1 - tintAmount) + tintChannel * tintAmount)
+      .toString(16)
+      .padStart(2, '0');
+  });
+  return `#${channels.join('')}`;
+}
+
+function getPagePaperBackground(appState) {
+  const isDarkTheme = appState?.theme === 'dark';
+  const savedCanvasColor = String(appState?.viewBackgroundColor || getCanvasBackground(isDarkTheme)).toLowerCase();
+  const visibleCanvasColor = canvasColorForDisplay(savedCanvasColor, isDarkTheme);
+  const workspaceColor = isDarkTheme ? '#111820' : '#f7f9fc';
+  const tintedColor = mixHexColors(visibleCanvasColor, workspaceColor, PAGE_WORKSPACE_TINT);
+  return canvasColorForScene(tintedColor, isDarkTheme);
+}
 
 export default function CanvasPages({ api, canEdit = true }) {
   const [open, setOpen] = useState(false);
@@ -38,13 +65,15 @@ export default function CanvasPages({ api, canEdit = true }) {
     sceneSnapshot.current = api.getSceneElementsIncludingDeleted();
     const sync = (elements, appState) => {
       const next = getPages(elements);
+      const pagePaperBackground = getPagePaperBackground(appState || api.getAppState?.());
       // Native frame dragging/resizing must carry its paper surface too.
       const repairs = new Map();
       if (canEdit) for (const e of elements) {
         if (e.isDeleted || !e.customData?.sketchiziPagePaper) continue;
         const frame = next.find(p => p.id === e.customData.sketchiziPagePaper);
-        if (frame && (['x','y','width','height'].some(k => frame[k] !== e[k]) || e.backgroundColor !== 'transparent' || e.strokeColor !== 'transparent')) {
-          repairs.set(e.id, {...e, x:frame.x,y:frame.y,width:frame.width,height:frame.height,backgroundColor:'transparent',strokeColor:'transparent',version:e.version+1,versionNonce:Math.floor(Math.random()*2147483647),updated:Date.now()});
+        const paperColorChanged = String(e.backgroundColor || '').toLowerCase() !== pagePaperBackground;
+        if (frame && (['x','y','width','height'].some(k => frame[k] !== e[k]) || paperColorChanged || e.strokeColor !== 'transparent')) {
+          repairs.set(e.id, {...e, x:frame.x,y:frame.y,width:frame.width,height:frame.height,backgroundColor:pagePaperBackground,strokeColor:'transparent',version:e.version+1,versionNonce:Math.floor(Math.random()*2147483647),updated:Date.now()});
         }
       }
       if (repairs.size) {
@@ -246,10 +275,12 @@ export default function CanvasPages({ api, canEdit = true }) {
   const createPage = () => {
     if (!api || !canEdit) return;
     const elements = api.getSceneElementsIncludingDeleted();
-    const responsiveSize = getResponsivePageSize(api.getAppState());
+    const appState = api.getAppState();
+    const responsiveSize = getResponsivePageSize(appState);
     if (!validSize(responsiveSize.width, responsiveSize.height)) { setError('The available canvas area is too small to create a page.'); return; }
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
-    const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID()), { regenerateIds: false });
+    const paperBackground = getPagePaperBackground(appState);
+    const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID(), paperBackground), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
     if (frame) frame.name = `Page ${nextOrder}`;
     update([...elements, ...created]);
