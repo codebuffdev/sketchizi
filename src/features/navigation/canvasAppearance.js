@@ -9,6 +9,15 @@ const APPEARANCE_COLORS = Object.freeze({
   chalkboard: "#1b382f",
 });
 
+const ROUGHNESS_CAPABLE_TYPES = new Set([
+  "rectangle",
+  "diamond",
+  "ellipse",
+  "arrow",
+  "line",
+  "freedraw",
+]);
+
 export function getCanvasAppearanceTheme(appearance, isDarkTheme) {
   return appearance === "chalkboard" || Boolean(isDarkTheme) ? "dark" : "light";
 }
@@ -31,6 +40,30 @@ export function getCanvasAppearanceFromBackground(background, currentItemRoughne
   return Number(currentItemRoughness) >= 2 ? "sketch" : "clean";
 }
 
+function applyRoughnessToExistingElements(api, roughness) {
+  const getElements = api.getSceneElementsIncludingDeleted || api.getSceneElements;
+  if (typeof getElements !== "function") return null;
+
+  const elements = getElements.call(api);
+  if (!Array.isArray(elements)) return null;
+
+  let changed = false;
+  const nextElements = elements.map((element) => {
+    if (!element || element.isDeleted || !ROUGHNESS_CAPABLE_TYPES.has(element.type) ||
+      element.roughness === roughness) return element;
+
+    changed = true;
+    return {
+      ...element,
+      roughness,
+      version: (Number(element.version) || 0) + 1,
+      versionNonce: (Number(element.versionNonce) || 0) + 1,
+    };
+  });
+
+  return changed ? nextElements : null;
+}
+
 export function applyCanvasAppearance(
   api,
   appearance,
@@ -48,17 +81,24 @@ export function applyCanvasAppearance(
   ].some((color) => String(color).trim().toLowerCase() === currentBackground);
   const nextAppState = { currentItemRoughness: roughness };
 
-  // Sketch is a drawing style, not a surface/theme. Only replace the warm-paper
-  // background left behind by the earlier implementation; preserve all other
-  // user-selected canvas backgrounds.
+  // Sketch changes drawing style across the whole canvas, not its surface.
+  // Only replace the warm-paper background left by the earlier implementation.
   if (appearance === "chalkboard" || appearance === "clean" || isLegacySketchBackground) {
     nextAppState.viewBackgroundColor = appearance === "sketch"
       ? getCanvasBackground(isDarkTheme)
       : background;
   }
+
+  const nextElements = applyRoughnessToExistingElements(api, roughness);
   const backgroundUnchanged = nextAppState.viewBackgroundColor === undefined ||
     String(nextAppState.viewBackgroundColor).trim().toLowerCase() === currentBackground;
-  if (backgroundUnchanged && appState.currentItemRoughness === roughness) return false;
-  api.updateScene({ appState: nextAppState, captureUpdate });
+  const appStateUnchanged = backgroundUnchanged && appState.currentItemRoughness === roughness;
+  if (appStateUnchanged && !nextElements) return false;
+
+  api.updateScene({
+    ...(nextElements ? { elements: nextElements } : {}),
+    appState: nextAppState,
+    captureUpdate,
+  });
   return true;
 }
