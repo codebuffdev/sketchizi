@@ -189,7 +189,6 @@ export default function DesktopAppHeader({
       const viewportWidth = document.documentElement.clientWidth;
       const rightRail = window.matchMedia("(min-width: 1025px)").matches;
       const nearTop = event.clientY <= 24;
-      const nearTitle = nearTop && event.clientX >= 48 && event.clientX <= Math.min(640, viewportWidth - 180);
       const nearAccount = nearTop && event.clientX >= viewportWidth - 100;
       const nearRightRail = rightRail && event.clientX >= viewportWidth - 20 && event.clientY > 64;
 
