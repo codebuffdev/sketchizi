@@ -10,9 +10,9 @@
   --ui-text-muted: #a4a4ad;
   --ui-text-faint: #777780;
   --ui-hover: #27272d;
-  --ui-active: #302e4b;
-  --ui-accent: #8b83ff;
-  --ui-accent-soft: #3a365f;
+  --ui-active: #303236;
+  --ui-accent: #c3c6ca;
+  --ui-accent-soft: #36393d;
   --ui-shadow: 0 16px 42px rgba(0,0,0,.42);
 }
 
@@ -28,9 +28,9 @@
   --ui-text-muted: #777777;
   --ui-text-faint: #999999;
   --ui-hover: #f7f7f7;
-  --ui-active: #f0eff9;
-  --ui-accent: #5b55c7;
-  --ui-accent-soft: #ecebff;
+  --ui-active: #f0f1f2;
+  --ui-accent: #555a62;
+  --ui-accent-soft: #eff0f2;
   --ui-shadow: 0 16px 42px rgba(0,0,0,.15);
 }
 
@@ -60,7 +60,7 @@
 .app.theme-dark .minimap-toggle:hover,
 .app.theme-dark .minimap-toggle.active {
   background: var(--ui-hover);
-  border-color: #4b4868;
+  border-color: #55595e;
   color: var(--ui-text-strong);
 }
 
@@ -113,8 +113,8 @@
 .app.theme-dark .connector-segmented button.selected,
 .app.theme-dark .selection-badge {
   background: var(--ui-active);
-  border-color: #4f4a82;
-  color: #b6b1ff;
+  border-color: #555a60;
+  color: #d0d2d5;
 }
 
 .app.theme-dark .category-count,
@@ -126,8 +126,8 @@
 }
 
 .app.theme-dark .category.active .category-count {
-  background: #30304a;
-  color: #c0bcff;
+  background: #34373b;
+  color: #d7d9dc;
 }
 
 .app.theme-dark .label,
@@ -194,14 +194,14 @@
 }
 
 .app.theme-dark .minimap-image {
-  border-color: #7771bf;
-  background: #48446e;
+  border-color: #777d84;
+  background: #42464b;
 }
 
 .app.theme-dark .minimap-camera {
   border-color: var(--ui-accent);
-  background: rgba(139,131,255,.12);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.65), inset 0 0 0 1px rgba(139,131,255,.12);
+  background: rgba(190,195,201,.12);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.65), inset 0 0 0 1px rgba(190,195,201,.12);
 }
 
 .app.theme-dark 
@@ -234,7 +234,7 @@
 .theme-toggle:hover,
 .theme-toggle.active {
   background: var(--ui-hover);
-  border-color: #4b4868;
+  border-color: #55595e;
 }
 
 .theme-toggle-icon { font-size: 16px; line-height: 1; }
