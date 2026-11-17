@@ -2520,3 +2520,24 @@
   padding: 0 !important;
   gap: 0 !important;
 }
+
+
+/* Eraser and Bucket Fill are direct controls; the native three-dot
+   overflow menu is redundant in this compact dock. */
+.app .excalidraw .App-toolbar [data-sketchizi-hide-overflow-tools="true"] {
+  display: none !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > :has(+ .sketchizi-dock-quick-tools) {
+  flex: 0 0 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools {
+  flex: 0 0 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  line-height: 0 !important;
+  border: 0 !important;
+}
