@@ -140,6 +140,20 @@ export default function DesktopAppHeader({
   const [headerVisible, setHeaderVisible] = useState(true);
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
+  const headerCollapseTimerRef = useRef(null);
+  const clearHeaderCollapseTimer = () => {
+    if (headerCollapseTimerRef.current !== null) {
+      window.clearTimeout(headerCollapseTimerRef.current);
+      headerCollapseTimerRef.current = null;
+    }
+  };
+  const scheduleHeaderCollapse = () => {
+    clearHeaderCollapseTimer();
+    headerCollapseTimerRef.current = window.setTimeout(() => {
+      headerCollapseTimerRef.current = null;
+      if (!headerPinned) setHeaderVisible(false);
+    }, 5000);
+  };
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
   const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
@@ -187,9 +201,10 @@ export default function DesktopAppHeader({
       const viewportWidth = document.documentElement.clientWidth;
       const rightRail = window.matchMedia("(min-width: 1025px)").matches;
       const nearTop = event.clientY <= 24;
-      const nearRightRail = rightRail && event.clientX >= viewportWidth - 20 && event.clientY > 64;
 
-      if (nearRightRail || (!rightRail && nearTop)) setHeaderVisible(true);
+      // Desktop rail is revealed by its dedicated top-right dropdown handle.
+      // Keep the existing top-edge reveal behaviour on tablet layouts.
+      if (!rightRail && nearTop) setHeaderVisible(true);
     };
 
     const toggleHeaderShortcut = (event) => {
@@ -396,6 +411,8 @@ export default function DesktopAppHeader({
         className={`desktop-app-header desktop-app-header-right-rail${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
         aria-hidden={!headerVisible}
         data-pinned={headerPinned}
+        onPointerEnter={clearHeaderCollapseTimer}
+        onPointerLeave={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
       >
       <AuthenticationControl />
       <div className="desktop-app-header-island desktop-app-header-island-left">
@@ -803,16 +820,18 @@ export default function DesktopAppHeader({
       <button
         type="button"
         className={`desktop-app-header-reveal-handle${headerVisible ? "" : " is-visible"}`}
-        onClick={() => setHeaderVisible(true)}
-        onPointerEnter={() => setHeaderVisible(true)}
-        onFocus={() => setHeaderVisible(true)}
+        onClick={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
+        onPointerEnter={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
+        onPointerLeave={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
+        onFocus={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
+        onBlur={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
         aria-controls="desktop-app-header"
         aria-label="Show application header"
         title="Show header (Ctrl+Shift+H)"
         tabIndex={headerVisible ? -1 : 0}
       >
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="m6 10 6 6 6-6" />
+          <path d={headerVisible ? "m6 14 6-6 6 6" : "m6 10 6 6 6-6"} />
         </svg>
         <span className="sr-only">Show header</span>
       </button>
