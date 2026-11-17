@@ -815,3 +815,29 @@
     box-shadow: none;
   }
 }
+
+
+/* The sign-in account menu belongs directly below its circular trigger.
+   Keep it anchored to the trigger instead of sending it left with rail flyouts. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-sign-in-control {
+    position: relative;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-sign-in-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    bottom: auto;
+    z-index: 1400;
+    width: 258px;
+    max-width: min(290px, calc(100vw - 32px));
+    max-height: calc(100dvh - 76px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    overflow-y: auto;
+    transform: none;
+  }
+}
