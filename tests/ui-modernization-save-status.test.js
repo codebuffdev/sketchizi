@@ -52,3 +52,10 @@ test("save status stylesheet is imported with the other stylesheets before CSS r
   const firstRule = stylesheetEntry.indexOf(".kubernetes-library-status");
   assert.ok(firstRule > stylesheetEntry.indexOf('@import "./styles/document-save-status.css";'));
 });
+
+
+test("local save control receives a green treatment only for the saved state", () => {
+  assert.match(styles, /\.desktop-app-save-status-trigger\.is-saved\s*\{/);
+  assert.match(styles, /\.app\.theme-dark \.desktop-app-save-status-trigger\.is-saved/);
+  assert.match(header, /className=\{\`desktop-app-save-status-trigger is-\$\{saveState\}\`\}/);
+});
