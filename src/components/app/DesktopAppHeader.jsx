@@ -138,7 +138,6 @@ export default function DesktopAppHeader({
   }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [authControlVisible, setAuthControlVisible] = useState(true);
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
@@ -177,7 +176,6 @@ export default function DesktopAppHeader({
       if (headerPinned || !(event.target instanceof Element)) return;
       if (event.target.closest(".desktop-canvas-region")) {
         setHeaderVisible(false);
-        setAuthControlVisible(false);
       }
     };
 
@@ -189,10 +187,8 @@ export default function DesktopAppHeader({
       const viewportWidth = document.documentElement.clientWidth;
       const rightRail = window.matchMedia("(min-width: 1025px)").matches;
       const nearTop = event.clientY <= 24;
-      const nearAccount = nearTop && event.clientX >= viewportWidth - 100;
       const nearRightRail = rightRail && event.clientX >= viewportWidth - 20 && event.clientY > 64;
 
-      if (nearAccount) setAuthControlVisible(true);
       if (nearRightRail || (!rightRail && nearTop)) setHeaderVisible(true);
     };
 
@@ -637,6 +633,7 @@ export default function DesktopAppHeader({
       <div className="desktop-app-header-actions">
         <div className="desktop-app-header-account-zone">
           <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
+          <AuthenticationControl />
         </div>
         <div className="desktop-app-header-panel-actions">{children}</div>
         {moreToolsToggle}
@@ -675,10 +672,6 @@ export default function DesktopAppHeader({
       </button>
     </div>
     </header>
-      <div className={`desktop-app-auth-corner${authControlVisible ? "" : " is-auth-hidden"}`} aria-hidden={!authControlVisible}>
-        <AuthenticationControl />
-      </div>
-
       <div
         className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
