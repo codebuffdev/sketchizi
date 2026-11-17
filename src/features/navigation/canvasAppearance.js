@@ -21,19 +21,14 @@ export function getCanvasAppearanceRoughness(appearance) {
 export function getCanvasAppearanceBackground(appearance, isDarkTheme) {
   if (appearance === "clean") return getCanvasBackground(isDarkTheme);
   if (appearance === "chalkboard") return canvasColorForScene(APPEARANCE_COLORS.chalkboard, true);
-  if (appearance === "sketch") return canvasColorForScene(APPEARANCE_COLORS.sketch, isDarkTheme);
+  if (appearance === "sketch") return getCanvasBackground(isDarkTheme);
   return getCanvasBackground(isDarkTheme);
 }
 
-export function getCanvasAppearanceFromBackground(background) {
+export function getCanvasAppearanceFromBackground(background, currentItemRoughness = 0) {
   const normalized = String(background || "").trim().toLowerCase();
-  if (!normalized) return "clean";
   if (normalized === getCanvasAppearanceBackground("chalkboard", false)) return "chalkboard";
-  if (
-    normalized === getCanvasAppearanceBackground("sketch", false) ||
-    normalized === getCanvasAppearanceBackground("sketch", true)
-  ) return "sketch";
-  return "clean";
+  return Number(currentItemRoughness) >= 2 ? "sketch" : "clean";
 }
 
 export function applyCanvasAppearance(
@@ -47,13 +42,23 @@ export function applyCanvasAppearance(
   const roughness = getCanvasAppearanceRoughness(appearance);
   const appState = api.getAppState() || {};
   const currentBackground = String(appState.viewBackgroundColor || "").trim().toLowerCase();
-  if (currentBackground === background && appState.currentItemRoughness === roughness) return false;
-  api.updateScene({
-    appState: {
-      viewBackgroundColor: background,
-      currentItemRoughness: roughness,
-    },
-    captureUpdate,
-  });
+  const isLegacySketchBackground = [
+    canvasColorForScene(APPEARANCE_COLORS.sketch, false),
+    canvasColorForScene(APPEARANCE_COLORS.sketch, true),
+  ].some((color) => String(color).trim().toLowerCase() === currentBackground);
+  const nextAppState = { currentItemRoughness: roughness };
+
+  // Sketch is a drawing style, not a surface/theme. Only replace the warm-paper
+  // background left behind by the earlier implementation; preserve all other
+  // user-selected canvas backgrounds.
+  if (appearance === "chalkboard" || appearance === "clean" || isLegacySketchBackground) {
+    nextAppState.viewBackgroundColor = appearance === "sketch"
+      ? getCanvasBackground(isDarkTheme)
+      : background;
+  }
+  const backgroundUnchanged = nextAppState.viewBackgroundColor === undefined ||
+    String(nextAppState.viewBackgroundColor).trim().toLowerCase() === currentBackground;
+  if (backgroundUnchanged && appState.currentItemRoughness === roughness) return false;
+  api.updateScene({ appState: nextAppState, captureUpdate });
   return true;
 }

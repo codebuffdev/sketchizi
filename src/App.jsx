@@ -687,7 +687,7 @@ function App() {
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
   useEffect(() => {
     if (!savedSketch) return;
-    setCanvasAppearance(getCanvasAppearanceFromBackground(savedSketch.appState?.viewBackgroundColor));
+    setCanvasAppearance(getCanvasAppearanceFromBackground(savedSketch.appState?.viewBackgroundColor, savedSketch.appState?.currentItemRoughness));
   }, [savedSketch]);
   const handleCanvasAppearanceChange = useCallback((appearance) => {
     if (!collaborationCanEdit) return;

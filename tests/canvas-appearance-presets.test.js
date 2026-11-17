@@ -18,12 +18,13 @@ test("Clean follows the existing Day/Night canvas defaults", () => {
   assert.equal(getCanvasAppearanceRoughness("clean"), 0);
 });
 
-test("Sketch uses a paper surface and restores in either app theme", () => {
+test("Sketch preserves the current canvas surface and follows the app theme", () => {
   const day = getCanvasAppearanceBackground("sketch", false);
   const night = getCanvasAppearanceBackground("sketch", true);
-  assert.notEqual(day, night);
-  assert.equal(getCanvasAppearanceFromBackground(day), "sketch");
-  assert.equal(getCanvasAppearanceFromBackground(night), "sketch");
+  assert.equal(day, getCanvasBackground(false));
+  assert.equal(night, getCanvasBackground(true));
+  assert.equal(getCanvasAppearanceFromBackground(day, 2), "sketch");
+  assert.equal(getCanvasAppearanceFromBackground(night, 2), "sketch");
   assert.equal(getCanvasAppearanceTheme("sketch", false), "light");
   assert.equal(getCanvasAppearanceTheme("sketch", true), "dark");
   assert.equal(getCanvasAppearanceRoughness("sketch"), 2);
@@ -43,7 +44,7 @@ test("unknown custom backgrounds restore as Clean", () => {
   assert.equal(getCanvasAppearanceFromBackground(undefined), "clean");
 });
 
-test("applying a preset updates only saved background and new-element roughness", () => {
+test("Chalkboard updates its surface and new-element roughness", () => {
   let update;
   const api = {
     getAppState: () => ({ viewBackgroundColor: "#ffffff", currentItemRoughness: 1 }),
@@ -56,11 +57,13 @@ test("applying a preset updates only saved background and new-element roughness"
   assert.deepEqual(Object.keys(update.appState).sort(), ["currentItemRoughness", "viewBackgroundColor"]);
 });
 
-test("applying an already-active preset is a no-op", () => {
-  const background = getCanvasAppearanceBackground("sketch", false);
+test("applying Sketch changes roughness without changing the canvas background", () => {
+  let update;
   const api = {
-    getAppState: () => ({ viewBackgroundColor: background, currentItemRoughness: 2 }),
-    updateScene: () => assert.fail("should not update an unchanged preset"),
+    getAppState: () => ({ viewBackgroundColor: "#dce8ef", currentItemRoughness: 1 }),
+    updateScene: (next) => { update = next; },
   };
-  assert.equal(applyCanvasAppearance(api, "sketch", false), false);
+  assert.equal(applyCanvasAppearance(api, "sketch", false), true);
+  assert.deepEqual(update.appState, { currentItemRoughness: 2 });
+  assert.equal(update.appState.viewBackgroundColor, undefined);
 });
