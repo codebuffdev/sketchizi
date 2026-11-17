@@ -78,3 +78,11 @@ test('tool families render as distinct compact clusters rather than a flat toolb
   assert.match(css, /width:\s*36px !important/);
   assert.match(css, /background:\s*#477f91 !important/);
 });
+
+
+test('horizontal bottom dock removes shell padding while preserving full-size 42px controls', () => {
+  assert.match(css, /\.App-toolbar\[data-sketchizi-dock="true"\]:not\(\[data-sketchizi-orientation="vertical"\]\)[\s\S]*?padding:\s*0 !important/);
+  assert.match(css, /\.App-toolbar\[data-sketchizi-dock="true"\]:not\(\[data-sketchizi-orientation="vertical"\]\) :is\([\s\S]*?width:\s*42px !important/);
+  assert.match(css, /height:\s*42px !important/);
+  assert.match(css, /\.sketchizi-dock-quick-tools[\s\S]*?min-height:\s*42px !important/);
+});
