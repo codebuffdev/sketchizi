@@ -143,6 +143,7 @@ export default function DesktopAppHeader({
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
   const headerCollapseTimerRef = useRef(null);
+  const revealPointerEnteredFromCollapsedRef = useRef(false);
   const clearHeaderCollapseTimer = () => {
     if (headerCollapseTimerRef.current !== null) {
       window.clearTimeout(headerCollapseTimerRef.current);
@@ -837,9 +838,26 @@ export default function DesktopAppHeader({
       <button
         type="button"
         className={`desktop-app-header-reveal-handle${headerVisible ? " is-expanded" : " is-visible"}`}
-        onClick={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
-        onPointerEnter={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
-        onPointerLeave={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
+        onClick={() => {
+          clearHeaderCollapseTimer();
+          if (revealPointerEnteredFromCollapsedRef.current) {
+            // Pointer hover already revealed a collapsed rail; let this first
+            // click keep it open. Subsequent clicks toggle it normally.
+            revealPointerEnteredFromCollapsedRef.current = false;
+            setHeaderVisible(true);
+            return;
+          }
+          setHeaderVisible((visible) => !visible);
+        }}
+        onPointerEnter={() => {
+          revealPointerEnteredFromCollapsedRef.current = !headerVisible;
+          clearHeaderCollapseTimer();
+          setHeaderVisible(true);
+        }}
+        onPointerLeave={() => {
+          revealPointerEnteredFromCollapsedRef.current = false;
+          if (!headerPinned) scheduleHeaderCollapse();
+        }}
         onFocus={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
         onBlur={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
         aria-controls="desktop-app-header"
