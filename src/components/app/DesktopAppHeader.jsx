@@ -703,7 +703,6 @@ export default function DesktopAppHeader({
           <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" />
           <path d="M12 15v6" />
         </svg>
-        <span className="desktop-app-header-pin-label">{headerPinned ? "Pinned" : "Pin header"}</span>
       </button>
     </div>
     </header>
