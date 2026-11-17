@@ -122,6 +122,52 @@ function App() {
   // its native trigger. The native outside-click handler may close the menu
   // before this header button's click fires; the header passes the state
   // captured at pointer-down so that a single click still closes it.
+  useEffect(() => {
+    if (!nativeMenuOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      closeNativeMenu();
+    };
+    // Capture Escape before Excalidraw's own keyboard handlers so its native
+    // menu closes without triggering a second canvas-level Escape action.
+    window.addEventListener("keydown", closeOnEscape, true);
+    return () => window.removeEventListener("keydown", closeOnEscape, true);
+  }, [nativeMenuOpen, closeNativeMenu]);
+
+  useEffect(() => {
+    if (!nativeMenuOpen) return;
+    // Keep the native hamburger menu mutually exclusive with modal and
+    // floating tool surfaces that are opened outside usePanelState.
+    if (
+      aiAskOpen ||
+      minimapOpen ||
+      exportStudioOpen ||
+      templatesModalOpen ||
+      designStudioOpen ||
+      dockerStudioOpen ||
+      kubernetesStudioOpen ||
+      cloudSaveDialogOpen ||
+      commandPaletteOpen
+    ) {
+      closeNativeMenu();
+    }
+  }, [
+    nativeMenuOpen,
+    aiAskOpen,
+    minimapOpen,
+    exportStudioOpen,
+    templatesModalOpen,
+    designStudioOpen,
+    dockerStudioOpen,
+    kubernetesStudioOpen,
+    cloudSaveDialogOpen,
+    commandPaletteOpen,
+    closeNativeMenu,
+  ]);
+
   const toggleNativeMenu = useCallback((wasOpen = nativeMenuOpenRef.current) => {
     const api = apiRef.current;
     if (!api?.updateScene) return;
@@ -1598,6 +1644,7 @@ function App() {
         onToggleGrid={toggleGrid}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
+        onBeforeOpenPanel={closeNativeMenu}
         startCollaboration={startCollaboration}
         collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}
         collaborationCreationState={collaboration.collaborationCreationState}
