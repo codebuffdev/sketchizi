@@ -2351,3 +2351,34 @@
 .app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) .ToolIcon__icon {
   color: #252b32 !important;
 }
+
+/* The contextual dock identifies its active tool visually, not with a text label. */
+.app .sketchizi-tool-options-dock .sk-tool-dock-context {
+  box-sizing: border-box;
+  width: 30px;
+  min-width: 30px;
+  height: 28px;
+  min-height: 28px;
+  justify-content: center;
+  margin: 0 2px 0 0;
+  padding: 0;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 8px;
+  background: var(--sk-options-hover, #363d46);
+  color: var(--sk-options-ink, #e6e9ed);
+  text-transform: none;
+}
+
+.app .sketchizi-tool-options-dock .sk-tool-dock-shape-icon {
+  display: block;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-dock-context {
+  border-color: #d7dce2;
+  background: #e9edf1;
+  color: #303943;
+}
+
