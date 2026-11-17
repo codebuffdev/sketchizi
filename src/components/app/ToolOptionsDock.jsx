@@ -100,9 +100,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const isFill = type === "bucket-fill";
   const isAutoShape = type === "draw-to-shape";
   const supported = isShape || isLine || isDraw || isText || isFill || isAutoShape;
-  const isSelection = selected.length > 0;
+  const isSelection = selected.length > 0 || Boolean(isText && editingTextElement?.id);
   const isVisible = canEdit && (isSelection ? supported || selected.length > 1 : supported);
-  const first = selected[0];
+  const first = selected[0] || editingTextElement;
 
   const current = (elementKey, appKey, fallback) => isSelection
     ? (first?.[elementKey] ?? fallback)
