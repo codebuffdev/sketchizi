@@ -1670,7 +1670,7 @@ function App() {
         cloudSaveState={cloudSaveState.state}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
         onOpenExport={() => setExportStudioOpen(true)}
-        onOpenTemplates={() => setTemplatesModalOpen(true)}
+        onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
         workspaceToggle={workspaceToggle}
