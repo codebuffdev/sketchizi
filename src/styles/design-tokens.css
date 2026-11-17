@@ -3,10 +3,10 @@
 :root {
   color-scheme: light dark;
   /* Brand */
-  --sk-color-accent: #6658d3;
-  --sk-color-accent-hover: #5949c5;
-  --sk-color-accent-soft: #f0edff;
-  --sk-color-focus: #6d28d9;
+  --sk-color-accent: #555a62;
+  --sk-color-accent-hover: #3f444b;
+  --sk-color-accent-soft: #eff0f2;
+  --sk-color-focus: #555a62;
   /* Light surfaces and text primitives */
   --sk-color-page: #f5f6fa;
   --sk-color-surface: #ffffff;
@@ -36,7 +36,7 @@
   /* Elevation and motion */
   --sk-shadow-hairline: 0 1px 2px rgb(32 36 56 / 3%);
   --sk-shadow-panel: 0 8px 28px rgb(32 36 56 / 5%);
-  --sk-shadow-card-hover: 0 5px 14px rgb(49 42 104 / 7%);
+  --sk-shadow-card-hover: 0 5px 14px rgb(32 36 44 / 7%);
   --sk-shadow-popover: 0 14px 38px rgb(20 25 48 / 13%), 0 2px 5px rgb(20 25 48 / 4%);
   --sk-motion-fast: 140ms;
   --sk-motion-standard: 160ms;
@@ -54,8 +54,8 @@
   --sk-color-text: #202438;
   --sk-color-text-secondary: #737b91;
   --sk-color-text-muted: #9ba2b4;
-  --sk-color-accent-soft: #f0edff;
-  --sk-color-focus: #6d28d9;
+  --sk-color-accent-soft: #eff0f2;
+  --sk-color-focus: #555a62;
   --sk-ui-page: var(--sk-color-page);
   --sk-ui-panel: var(--sk-color-surface);
   --sk-ui-panel-soft: var(--sk-color-surface-soft);
@@ -85,16 +85,16 @@
 }
 
 .app.theme-dark {
-  --sk-color-page: #111722;
-  --sk-color-surface: #171b28;
-  --sk-color-surface-soft: #1d2232;
-  --sk-color-border: #2c3040;
-  --sk-color-border-strong: #383e52;
-  --sk-color-text: #edf0fa;
-  --sk-color-text-secondary: #b1b8cc;
-  --sk-color-text-muted: #8c94aa;
-  --sk-color-accent-soft: #302b4e;
-  --sk-color-focus: #c4b5fd;
+  --sk-color-page: #151617;
+  --sk-color-surface: #1d1f21;
+  --sk-color-surface-soft: #252729;
+  --sk-color-border: #34373a;
+  --sk-color-border-strong: #45494d;
+  --sk-color-text: #f0f1f2;
+  --sk-color-text-secondary: #b5b8bc;
+  --sk-color-text-muted: #85898e;
+  --sk-color-accent-soft: #34373b;
+  --sk-color-focus: #c3c6ca;
   --sk-ui-page: var(--sk-color-page);
   --sk-ui-panel: var(--sk-color-surface);
   --sk-ui-panel-soft: var(--sk-color-surface-soft);
@@ -113,9 +113,9 @@
   --ui-text-strong: var(--sk-color-text);
   --ui-text-muted: var(--sk-color-text-secondary);
   --ui-text-faint: var(--sk-color-text-muted);
-  --ui-hover: #252b3c;
+  --ui-hover: #2a2d30;
   --ui-active: var(--sk-color-accent-soft);
-  --ui-accent: #a99bf7;
+  --ui-accent: #c3c6ca;
   --ui-accent-soft: var(--sk-color-accent-soft);
   --ui-shadow: 0 8px 28px rgb(0 0 0 / 20%);
 }

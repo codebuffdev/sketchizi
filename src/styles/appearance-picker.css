@@ -4,8 +4,8 @@
   --appearance-muted: #6d6e7c;
   --appearance-border: #e8e8ef;
   --appearance-inset: #f5f5f9;
-  --appearance-accent: #7460d8;
-  --appearance-selected: #eeebff;
+  --appearance-accent: #555a62;
+  --appearance-selected: #eff0f2;
   position: fixed; z-index: 10000;
   width: min(304px, calc(100vw - 24px));
   max-height: calc(100dvh - 80px); overflow-y: auto;
@@ -21,8 +21,8 @@
   --appearance-muted: #a0a1af;
   --appearance-border: #383940;
   --appearance-inset: #2a2b33;
-  --appearance-accent: #c0b4ff;
-  --appearance-selected: #38324f;
+  --appearance-accent: #c3c6ca;
+  --appearance-selected: #393c40;
   box-shadow: 0 20px 56px #0006, 0 2px 8px #0003;
 }
 .sketchizi-appearance:focus { outline: none; }

@@ -330,10 +330,10 @@
   .app .desktop-app-header-panel-actions .ai-ask-toggle.active,
   .app .desktop-app-header-panel-actions .community-reviews-toggle:hover,
   .app .desktop-app-header-panel-actions .community-reviews-toggle.active {
-    border-color: #ded8fb;
-    background: var(--sk-ui-accent-soft, #f0edff);
-    color: var(--sk-ui-accent, #6658d3);
-    box-shadow: 0 1px 3px rgb(102 88 211 / 7%);
+    border-color: var(--sk-ui-line-strong, #d9ddea);
+    background: var(--sk-ui-accent-soft, #eff0f2);
+    color: var(--sk-ui-accent, #555a62);
+    box-shadow: 0 1px 3px rgb(32 36 44 / 7%);
   }
 
   .app .desktop-app-search-button {
@@ -350,8 +350,8 @@
   }
 
   .app .desktop-app-search-button:hover {
-    border-color: #d9d2fa;
-    background: #fcfbff;
+    border-color: var(--sk-ui-line-strong, #d9ddea);
+    background: var(--sk-ui-panel-soft, #fafbfe);
     color: var(--sk-ui-ink, #202438);
   }
 
@@ -367,10 +367,10 @@
     min-height: 35px;
     margin-left: 9px;
     padding: 8px 12px;
-    border: 1px solid var(--sk-ui-accent, #6658d3);
+    border: 1px solid var(--sk-ui-accent, #555a62);
     border-radius: var(--sk-radius-control);
-    background: var(--sk-ui-accent, #6658d3);
-    box-shadow: 0 2px 5px rgb(102 88 211 / 13%);
+    background: var(--sk-ui-accent, #555a62);
+    box-shadow: 0 2px 5px rgb(32 36 44 / 13%);
     font-size: 11px;
     font-weight: 650;
     transition: background-color var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
@@ -385,9 +385,9 @@
   }
 
   .app .desktop-app-start-collaboration-button:hover {
-    border-color: #594ac4;
-    background: #594ac4;
-    box-shadow: 0 3px 8px rgb(102 88 211 / 20%);
+    border-color: var(--sk-ui-accent, #454a51);
+    background: var(--sk-ui-accent, #454a51);
+    box-shadow: 0 3px 8px rgb(32 36 44 / 20%);
     transform: none;
   }
 
@@ -408,14 +408,14 @@
 
   .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
   .app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover {
-    background: var(--sk-ui-accent-soft, #f0edff);
-    color: var(--sk-ui-accent, #6658d3);
+    background: var(--sk-ui-accent-soft, #eff0f2);
+    color: var(--sk-ui-accent, #555a62);
   }
 
   .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
   .app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
-    background: var(--sk-ui-accent-soft, #f0edff);
-    color: var(--sk-ui-accent, #6658d3);
+    background: var(--sk-ui-accent-soft, #eff0f2);
+    color: var(--sk-ui-accent, #555a62);
     box-shadow: inset 0 0 0 1px rgb(102 88 211 / 13%);
   }
 
