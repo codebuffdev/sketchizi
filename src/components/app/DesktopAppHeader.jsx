@@ -521,63 +521,7 @@ export default function DesktopAppHeader({
       )}
 
 
-      <div className="desktop-app-save-status-wrap">
-        <button
-          type="button"
-          className={`desktop-app-save-status-trigger is-${saveState}`}
-          aria-label="Download and save options"
-          aria-haspopup="dialog"
-          aria-expanded={saveDetailsOpen}
-          title="Download and save options"
-          onClick={() => {
-            setOpenMenu(null);
-            if (!saveDetailsOpen) onBeforeOpenPanel?.();
-            setSaveDetailsOpen(!saveDetailsOpen);
-          }}
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 3v12" />
-            <path d="m7 10 5 5 5-5" />
-            <path d="M4 17v4h16v-4" />
-          </svg>
-        </button>
-        {saveDetailsOpen && (
-          <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
-            <div className="desktop-app-save-status-heading">
-              <strong>Local save &amp; recovery</strong>
-              <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
-            </div>
-            <p>Sketchizi autosaves this canvas in this browser on this device.</p>
-            <div className="desktop-app-save-status-last-saved">
-              <span>Last successful local save</span>
-              <strong>{lastSavedLabel}</strong>
-            </div>
-            {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
-            {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
-            <div className="desktop-app-save-status-actions">
-              <button
-                type="button"
-                className="desktop-app-save-locally-button"
-                onClick={() => { onSaveNow?.(); }}
-                aria-label="Save locally"
-                title="Save locally"
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 3v12" />
-                  <path d="m7 10 5 5 5-5" />
-                  <path d="M5 18v3h14v-3" />
-                </svg>
-                <span className="sr-only">Save locally</span>
-              </button>
-              <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
-              {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
-              <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
-              <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
-            </div>
-            <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
-          </section>
-        )}
-      </div>
+
 
       {!collaborationActive && (
         <button
@@ -743,6 +687,63 @@ export default function DesktopAppHeader({
         title={`${currentDocumentName} — ${documentStatusLabel}`}
         aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
       >
+        <div className="desktop-app-save-status-wrap">
+          <button
+            type="button"
+            className={`desktop-app-save-status-trigger is-${saveState}`}
+            aria-label="Download and save options"
+            aria-haspopup="dialog"
+            aria-expanded={saveDetailsOpen}
+            title="Download and save options"
+            onClick={() => {
+              setOpenMenu(null);
+              if (!saveDetailsOpen) onBeforeOpenPanel?.();
+              setSaveDetailsOpen(!saveDetailsOpen);
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M4 17v4h16v-4" />
+            </svg>
+          </button>
+          {saveDetailsOpen && (
+            <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
+              <div className="desktop-app-save-status-heading">
+                <strong>Local save &amp; recovery</strong>
+                <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
+              </div>
+              <p>Sketchizi autosaves this canvas in this browser on this device.</p>
+              <div className="desktop-app-save-status-last-saved">
+                <span>Last successful local save</span>
+                <strong>{lastSavedLabel}</strong>
+              </div>
+              {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
+              {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
+              <div className="desktop-app-save-status-actions">
+                <button
+                  type="button"
+                  className="desktop-app-save-locally-button"
+                  onClick={() => { onSaveNow?.(); }}
+                  aria-label="Save locally"
+                  title="Save locally"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v12" />
+                    <path d="m7 10 5 5 5-5" />
+                    <path d="M5 18v3h14v-3" />
+                  </svg>
+                  <span className="sr-only">Save locally</span>
+                </button>
+                <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
+                {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
+                <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
+                <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
+              </div>
+              <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
+            </section>
+          )}
+        </div>
         <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
           <path d="m7 16.5 3.2-3.7 2.8 1.7 4-6" />

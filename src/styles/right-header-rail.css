@@ -610,3 +610,41 @@
   background: var(--ui-surface-solid, #202733);
   color: var(--ui-text, #f2f2f4);
 }
+
+
+/* Integrate local download/save controls into the canvas title container. */
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-document-title-float {
+    max-width: min(460px, calc(100vw - 180px));
+    gap: 8px;
+  }
+
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-status-wrap {
+    display: flex;
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-status-trigger {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    padding: 0;
+  }
+
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-status-popover {
+    top: calc(100% + 8px);
+    right: auto;
+    left: 0;
+  }
+}
