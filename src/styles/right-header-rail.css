@@ -714,3 +714,36 @@
     justify-content: flex-start !important;
   }
 }
+
+/* Desktop rail reveal is a compact top-right dropdown control. The rail
+   opens downward from this anchor and collapses five seconds after hover ends. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    position: fixed;
+    top: var(--header-top, calc(18px + var(--safe-top, 0px)));
+    right: var(--header-rail-right, calc(18px + var(--safe-right, 0px)));
+    left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--ui-border, #d8dce5);
+    border-radius: 10px;
+    background: var(--ui-surface-solid, #fff);
+    box-shadow: 0 3px 12px rgb(15 23 42 / 10%);
+    transform: translateY(-8px);
+    z-index: 1302;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle.is-visible {
+    transform: translateY(0);
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle svg {
+    transform: none;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle {
+    border-color: var(--ui-border, #384252);
+    background: var(--ui-surface-solid, #202733);
+    box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
+  }
+}
