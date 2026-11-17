@@ -1931,3 +1931,104 @@
     margin-left: 4px !important;
   }
 }
+
+
+/* Two-level canvas tool system: primary tools on the left, contextual controls
+   in a horizontal dock along the bottom. Existing React handlers are retained. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"][data-sketchizi-dock-side="left"]) {
+  position: fixed !important;
+  left: 12px !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  z-index: 10030 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"][data-sketchizi-dock-side="left"] {
+  flex-direction: column !important;
+  align-items: center !important;
+  width: max-content !important;
+  max-width: 56px !important;
+  max-height: calc(100vh - 24px) !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  padding: 6px 4px !important;
+  border-radius: 14px !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"][data-sketchizi-dock-side="left"] > ul,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"][data-sketchizi-dock-side="left"] > div:not(.sketchizi-dock-grip):not(.sketchizi-dock-quick-tools) {
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"][data-sketchizi-dock-side="left"] .sketchizi-dock-separator {
+  width: 22px !important;
+  min-height: 1px !important;
+  height: 1px !important;
+  margin: 3px 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"][data-sketchizi-dock-side="left"] .sketchizi-dock-quick-tools {
+  flex-direction: column !important;
+  min-width: 34px !important;
+  width: 34px !important;
+}
+.app .contextual-formatting-toolbar {
+  position: absolute !important;
+  left: 50% !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: 16px !important;
+  transform: translateX(-50%) !important;
+  display: block !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: min(760px, calc(100vw - 96px)) !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  z-index: 10035 !important;
+}
+.app .contextual-formatting-toolbar .format-icon-rail {
+  flex-direction: row !important;
+  justify-content: center !important;
+  width: max-content !important;
+  max-width: min(760px, calc(100vw - 96px)) !important;
+  padding: 5px 7px !important;
+  gap: 5px !important;
+  border-radius: 13px !important;
+  background: var(--format-rail-surface, #fff) !important;
+  border: 1px solid var(--format-rail-border, #dfe3eb) !important;
+}
+.app .contextual-formatting-toolbar .format-options-popover.side-top {
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: calc(100% + 10px) !important;
+  transform: translateX(-50%) !important;
+  max-width: min(360px, calc(100vw - 96px)) !important;
+  max-height: min(520px, calc(100vh - 120px)) !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button.is-active,
+.app .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  border-color: #737b83 !important;
+  background: #454c54 !important;
+  color: #fff !important;
+}
+.app.theme-light .contextual-formatting-toolbar .format-icon-button.is-active,
+.app.theme-light .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  border-color: #aeb5bc !important;
+  background: #e5e8eb !important;
+  color: #30363d !important;
+}
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"][data-sketchizi-dock-side="left"]) {
+    left: 6px !important;
+  }
+  .app .contextual-formatting-toolbar {
+    max-width: calc(100vw - 64px) !important;
+    bottom: 10px !important;
+  }
+  .app .contextual-formatting-toolbar .format-options-popover.side-top {
+    max-width: calc(100vw - 80px) !important;
+  }
+}
