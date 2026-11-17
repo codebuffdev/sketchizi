@@ -44,6 +44,8 @@ test("header supports pinning, responsive edge reveal, and a keyboard visibility
   assert.match(header, /window\.matchMedia\("\(min-width: 1025px\)"\)\.matches/);
   assert.match(header, /event\.key\.toLowerCase\(\) !== "h"/);
   assert.match(header, /desktop-app-header-reveal-handle/);
+  assert.match(header, /M4 6h16M4 12h16M4 18h16/);
+  assert.match(header, /setHeaderVisible\(true\)/);
   assert.match(css, /desktop-app-header-reveal-handle\.is-visible/);
 });
 
