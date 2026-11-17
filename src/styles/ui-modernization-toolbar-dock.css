@@ -2353,6 +2353,8 @@
 }
 
 /* The contextual dock identifies its active tool visually, not with a text label. */
+.app .sketchizi-tool-options-dock .sk-tool-dock-context { display: inline-flex; }
+
 .app .sketchizi-tool-options-dock .sk-tool-dock-context {
   box-sizing: border-box;
   width: 30px;
