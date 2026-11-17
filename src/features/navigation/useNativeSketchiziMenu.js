@@ -145,7 +145,7 @@ export function useNativeSketchiziMenu({
         // hamburger entry; keyboard Save As remains available.
         const saveToButton = menu.querySelector('[data-testid="json-export-button"]');
         const saveToLabel = exactLeaves.find(
-          (node) => /^save to\\.\\.\\./i.test(node.textContent?.replace(/\\s+/g, " ").trim() || "")
+          (node) => /^save to\.\.\./i.test(node.textContent?.replace(/\s+/g, " ").trim() || "")
         );
         const saveToItem = saveToButton || saveToLabel?.closest(
           "li, [role='menuitem'], .dropdown-menu-item, .context-menu-item, .menu-item, button, a"
@@ -153,7 +153,7 @@ export function useNativeSketchiziMenu({
         if (saveToItem && saveToItem !== menu) saveToItem.remove();
 
         const openLabel = exactLeaves.find(
-          (node) => node.textContent?.replace(/\\s+/g, " ").trim() === "Open"
+          (node) => node.textContent?.replace(/\s+/g, " ").trim() === "Open"
         );
         if (openLabel) {
           const item = openLabel.closest(
