@@ -47,9 +47,27 @@ export default function SketchiziCanvas({
     // decorative layers. Respect live Excalidraw state, not just saved props.
     const showGrid = state.gridModeEnabled ?? savedSketch?.appState?.gridModeEnabled ?? gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
-    node.classList.toggle("is-focus-style", gridStyle === "focus");
-    node.classList.toggle("is-local-style", gridStyle === "local");
-    ["dots", "ruled", "columns", "coordinates"].forEach((style) => node.classList.toggle(`is-${style}-style`, gridStyle === style));
+    ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].forEach((style) => {
+      node.classList.toggle(`is-${style}-style`, gridStyle === style);
+    });
+
+    // In Pages mode, clip column guides to the active page outline.
+    const pageOutline = pageContext?.mode === "pages"
+      ? document.querySelector(".canvas-pages-page-outline")
+      : null;
+    if (gridStyle === "columns" && pageOutline) {
+      const layerRect = node.getBoundingClientRect();
+      const pageRect = pageOutline.getBoundingClientRect();
+      const left = Math.max(0, pageRect.left - layerRect.left);
+      const top = Math.max(0, pageRect.top - layerRect.top);
+      node.style.setProperty("--sk-grid-page-left", `${left}px`);
+      node.style.setProperty("--sk-grid-page-top", `${top}px`);
+      node.style.setProperty("--sk-grid-page-width", `${Math.max(0, Math.min(layerRect.width - left, pageRect.width))}px`);
+      node.style.setProperty("--sk-grid-page-height", `${Math.max(0, Math.min(layerRect.height - top, pageRect.height))}px`);
+      node.classList.add("is-page-bounded-columns");
+    } else {
+      node.classList.remove("is-page-bounded-columns");
+    }
     if (!showGrid) {
       node.classList.remove("has-focus");
       return;
