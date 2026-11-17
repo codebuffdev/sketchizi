@@ -679,10 +679,27 @@
 /* Keep the complete canvas-title group beside the hamburger control. */
 @media (min-width: 1025px) {
   .app.canvas-first-header .desktop-app-document-title-float {
-    left: calc(14px + var(--safe-left, 0px) + 38px + 10px);
+    left: calc(14px + var(--safe-left, 0px) + 40px + 10px);
     right: auto;
     transform: none;
     justify-content: flex-start;
-    max-width: min(500px, calc(100vw - 86px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+    max-width: min(500px, calc(100vw - 88px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+
+  /* Hamburger, canvas title and sign-in share one 40px top-row grid. */
+  .app.canvas-first-header .desktop-app-menu-trigger-floating {
+    top: var(--header-top) !important;
+    width: var(--header-top-control-height) !important;
+    min-width: var(--header-top-control-height) !important;
+    max-width: var(--header-top-control-height) !important;
+    height: var(--header-top-control-height) !important;
+    min-height: var(--header-top-control-height) !important;
+    max-height: var(--header-top-control-height) !important;
+  }
+
+  .app.canvas-first-header .desktop-app-menu-trigger-floating:hover,
+  .app.canvas-first-header .desktop-app-menu-trigger-floating.active,
+  .app.canvas-first-header .desktop-app-menu-trigger-floating:focus-visible {
+    transform: none !important;
   }
 }
