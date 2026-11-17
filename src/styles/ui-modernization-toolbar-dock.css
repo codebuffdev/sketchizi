@@ -719,11 +719,26 @@
 }
 
 
-/* Hide inline keyboard shortcut hints (V, R, D, O, etc.) from the dock.
-   Keyboard shortcuts themselves remain available and unchanged. */
-.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding,
+/* Primary Dock: remove descriptive hover hints and keep compact shortcuts
+   visible on the tool buttons at all times. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon {
+  position: relative !important;
+}
 .app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding {
-  display: none !important;
+  display: block !important;
+  position: absolute !important;
+  right: 2px !important;
+  bottom: 1px !important;
+  z-index: 2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 8px !important;
+  font-weight: 600 !important;
+  line-height: 9px !important;
+  letter-spacing: -0.02em !important;
+  opacity: 0.9 !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
 }
 
 
@@ -1929,5 +1944,673 @@
   }
   .app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-group-start="true"] {
     margin-left: 4px !important;
+  }
+}
+
+
+/* Jojo-style contextual tool dock: tool defaults and selected-object controls
+   stay in one compact horizontal strip at the bottom of the canvas. */
+.app .sketchizi-tool-options-dock {
+  position: absolute;
+  z-index: 10045;
+  left: 50%;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: calc(100% - 112px);
+  min-height: 48px;
+  padding: 6px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid #3a414b;
+  border-radius: 13px;
+  background: rgb(28 32 38 / 96%);
+  box-shadow: 0 8px 26px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  color: #e7e9ed;
+  transform: translateX(-50%);
+  scrollbar-width: none;
+  backdrop-filter: blur(16px);
+}
+.app .sketchizi-tool-options-dock::-webkit-scrollbar { display: none; }
+.app .sk-tool-dock-context {
+  flex: 0 0 auto;
+  padding: 0 7px 0 2px;
+  color: #aeb5bf;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .035em;
+  white-space: nowrap;
+}
+.app .sk-tool-dock-group {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding-left: 8px;
+  border-left: 1px solid #414852;
+}
+.app .sk-tool-option-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 27px;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #c6ccd4;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.app .sk-tool-option-button:hover { background: #343b44; color: #fff; }
+.app .sk-tool-option-button.is-active {
+  border-color: #68727d;
+  background: #414a54;
+  color: #fff;
+}
+.app .sk-tool-color-dot {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  padding: 0;
+  border: 2px solid #6a737d;
+  border-radius: 50%;
+  background: var(--tool-color);
+  cursor: pointer;
+}
+.app .sk-tool-color-dot.is-active { outline: 2px solid #e5e9ee; outline-offset: 2px; }
+.app .sk-tool-color-control {
+  position: relative;
+  display: inline-flex;
+  width: 25px;
+  height: 25px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #5a636e;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.app .sk-tool-color-swatch { width: 15px; height: 15px; border: 1px solid #aeb5bf; border-radius: 4px; color: #e7e9ed; font-size: 12px; text-align: center; line-height: 14px; }
+.app .sk-tool-color-control input { position: absolute; inset: -5px; width: 35px; height: 35px; opacity: 0; cursor: pointer; }
+.app .sketchizi-tool-options-dock select {
+  height: 28px;
+  max-width: 118px;
+  padding: 0 6px;
+  border: 1px solid #4a535e;
+  border-radius: 7px;
+  background: #252b32;
+  color: #dce1e7;
+  font-size: 11px;
+}
+.app .sketchizi-tool-options-dock input[type="range"] { width: 76px; accent-color: #aeb7c1; }
+.app .sk-tool-dock-opacity-value { min-width: 31px; color: #b8c0c9; font-size: 10px; text-align: right; }
+.app .excalidraw .App-menu__left { display: none !important; }
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock { bottom: 10px; max-width: calc(100% - 82px); gap: 5px; padding: 5px 7px; }
+  .app .sk-tool-dock-context { display: none; }
+  .app .sk-tool-dock-group { padding-left: 5px; gap: 3px; }
+}
+
+/* Contextual dock polish — neutral, theme-aware, and deliberately compact. */
+.app .sketchizi-tool-options-dock {
+  --sk-options-surface: rgb(27 30 35 / 97%);
+  --sk-options-border: #414750;
+  --sk-options-ink: #e6e9ed;
+  --sk-options-muted: #a7afb9;
+  --sk-options-hover: #363d46;
+  --sk-options-selected: #4a535e;
+  min-height: 46px;
+  gap: 6px;
+  padding: 5px 9px;
+  border-color: var(--sk-options-border);
+  border-radius: 12px;
+  background: var(--sk-options-surface);
+  color: var(--sk-options-ink);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 28%), 0 2px 5px rgb(0 0 0 / 18%), inset 0 1px 0 rgb(255 255 255 / 6%);
+  backdrop-filter: blur(20px) saturate(115%);
+  -webkit-backdrop-filter: blur(20px) saturate(115%);
+}
+
+.app .sk-tool-dock-context {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  margin-right: 1px;
+  padding: 0 9px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 5%);
+  color: #d7dce2;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.app .sk-tool-dock-group {
+  min-height: 28px;
+  gap: 4px;
+  padding-left: 8px;
+  border-left-color: rgb(255 255 255 / 12%);
+}
+
+.app .sk-tool-option-button {
+  min-width: 28px;
+  height: 28px;
+  padding-inline: 7px;
+  border-color: transparent;
+  border-radius: 8px;
+  color: var(--sk-options-muted);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.app .sk-tool-option-button:hover {
+  border-color: rgb(255 255 255 / 10%);
+  background: var(--sk-options-hover);
+  color: #fff;
+}
+
+.app .sk-tool-option-button.is-active {
+  border-color: #737d88;
+  background: var(--sk-options-selected);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%);
+}
+
+.app .sk-tool-option-button:focus-visible,
+.app .sk-tool-color-dot:focus-visible,
+.app .sk-tool-color-control:focus-within,
+.app .sketchizi-tool-options-dock select:focus-visible,
+.app .sketchizi-tool-options-dock input:focus-visible {
+  outline: 2px solid #aeb7c1;
+  outline-offset: 2px;
+}
+
+.app .sk-tool-color-dot {
+  width: 18px;
+  height: 18px;
+  flex-basis: 18px;
+  border: 1px solid rgb(255 255 255 / 34%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 22%);
+}
+
+.app .sk-tool-color-dot.is-active {
+  outline: 2px solid #e5e9ee;
+  outline-offset: 2px;
+}
+
+.app .sk-tool-color-control {
+  width: 27px;
+  height: 27px;
+  border-color: #606a75;
+  border-radius: 8px;
+  background: #30363e;
+}
+
+.app .sketchizi-tool-options-dock select {
+  min-width: 74px;
+  height: 28px;
+  padding: 0 22px 0 8px;
+  border-color: #505963;
+  border-radius: 8px;
+  background-color: #292f36;
+  color: #e1e5e9;
+  font-size: 11px;
+}
+
+.app .sketchizi-tool-options-dock input[type="range"] {
+  width: 82px;
+  accent-color: #b7c0c9;
+  cursor: ew-resize;
+}
+
+.app .sk-tool-dock-opacity-value {
+  color: #c3cad2;
+  font-variant-numeric: tabular-nums;
+}
+
+.app.theme-light .sketchizi-tool-options-dock {
+  --sk-options-surface: rgb(250 251 252 / 97%);
+  --sk-options-border: #d7dce2;
+  --sk-options-ink: #252b32;
+  --sk-options-muted: #59636e;
+  --sk-options-hover: #e9edf1;
+  --sk-options-selected: #dce2e8;
+  box-shadow: 0 10px 28px rgb(25 32 40 / 13%), 0 2px 5px rgb(25 32 40 / 7%), inset 0 1px 0 #fff;
+}
+
+.app.theme-light .sk-tool-dock-context {
+  border-color: #e0e4e8;
+  background: #f0f2f4;
+  color: #414a54;
+}
+
+.app.theme-light .sk-tool-dock-group {
+  border-left-color: #dce1e6;
+}
+
+.app.theme-light .sk-tool-option-button {
+  color: #59636e;
+}
+
+.app.theme-light .sk-tool-option-button:hover {
+  border-color: #d7dde3;
+  background: #e9edf1;
+  color: #20262d;
+}
+
+.app.theme-light .sk-tool-option-button.is-active {
+  border-color: #aeb7c1;
+  background: #dce2e8;
+  color: #20262d;
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.app.theme-light .sk-tool-color-dot {
+  border-color: rgb(32 38 45 / 28%);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 80%);
+}
+
+.app.theme-light .sk-tool-color-dot.is-active {
+  outline-color: #3b444e;
+}
+
+.app.theme-light .sk-tool-color-control {
+  border-color: #c5ccd3;
+  background: #f2f4f6;
+}
+
+.app.theme-light .sk-tool-color-swatch {
+  border-color: #68727d;
+  color: #303943;
+}
+
+.app.theme-light .sketchizi-tool-options-dock select {
+  border-color: #cbd2d9;
+  background-color: #f5f6f8;
+  color: #303943;
+}
+
+.app.theme-light .sk-tool-dock-opacity-value {
+  color: #59636e;
+}
+
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock {
+    left: 50%;
+    bottom: 9px;
+    max-width: calc(100% - 76px);
+    min-height: 42px;
+    gap: 4px;
+    padding: 4px 6px;
+  }
+  .app .sk-tool-dock-context {
+    display: none;
+  }
+  .app .sk-tool-dock-group {
+    min-height: 26px;
+    gap: 3px;
+    padding-left: 5px;
+  }
+  .app .sk-tool-option-button {
+    min-width: 26px;
+    height: 26px;
+    padding-inline: 5px;
+  }
+  .app .sketchizi-tool-options-dock select {
+    max-width: 100px;
+    min-width: 64px;
+    height: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .sk-tool-option-button {
+    transition: none;
+  }
+}
+
+/* Keep the primary tool dock visually aligned with the neutral contextual dock. */
+.app .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app .excalidraw .Island.App-toolbar {
+  --sk-toolbar-muted: #aeb5be;
+  --sk-toolbar-hover: #343a42;
+  --sk-toolbar-active: #59616b;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover,
+.app .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .excalidraw .App-toolbar .dropdown-menu-button:hover {
+  border-color: #59616b !important;
+  background: #343a42 !important;
+  color: #fff !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #747e89 !important;
+  background: linear-gradient(145deg, #626b76, #4a535e) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 9px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 13%) !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:focus-visible,
+.app .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .excalidraw .App-toolbar .dropdown-menu-button:focus-visible {
+  outline: 2px solid #c0c7cf !important;
+  outline-offset: 2px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(255 255 255 / 5%);
+  --sk-dock-cluster-border: rgb(255 255 255 / 10%);
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app.theme-light .excalidraw .Island.App-toolbar {
+  --sk-toolbar-muted: #626b75;
+  --sk-toolbar-hover: #e9edf1;
+  --sk-toolbar-active: #59616b;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app.theme-light .excalidraw .App-toolbar .dropdown-menu-button:hover {
+  border-color: #cbd2d9 !important;
+  background: #e9edf1 !important;
+  color: #252b32 !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(32 38 45 / 5%);
+  --sk-dock-cluster-border: rgb(32 38 45 / 10%);
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active,
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) {
+  border-color: #747e89 !important;
+  background: #59616b !important;
+  box-shadow: 0 2px 7px rgb(0 0 0 / 20%), inset 0 1px 0 rgb(255 255 255 / 12%) !important;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #747e89 !important;
+  background: linear-gradient(145deg, #626b76, #4a535e) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 9px rgb(0 0 0 / 18%), inset 0 1px 0 rgb(255 255 255 / 14%) !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active,
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) {
+  border-color: #aeb7c1 !important;
+  background: #dce2e8 !important;
+  box-shadow: inset 0 1px 0 #fff !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group].active .ToolIcon__icon,
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group]:has(input:checked) .ToolIcon__icon {
+  color: #252b32 !important;
+}
+
+/* The contextual dock identifies its active tool visually, not with a text label. */
+.app .sketchizi-tool-options-dock .sk-tool-dock-context { display: inline-flex; }
+
+.app .sketchizi-tool-options-dock .sk-tool-dock-context {
+  box-sizing: border-box;
+  width: 30px;
+  min-width: 30px;
+  height: 28px;
+  min-height: 28px;
+  justify-content: center;
+  margin: 0 2px 0 0;
+  padding: 0;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 8px;
+  background: var(--sk-options-hover, #363d46);
+  color: var(--sk-options-ink, #e6e9ed);
+  text-transform: none;
+}
+
+.app .sketchizi-tool-options-dock .sk-tool-dock-shape-icon {
+  display: block;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-dock-context {
+  border-color: #d7dce2;
+  background: #e9edf1;
+  color: #303943;
+}
+
+
+
+/* Stroke widths are communicated by line weight, not numeric labels. */
+.app .sk-tool-stroke-width-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+}
+
+/* Primary Dock density pass: remove shell and group whitespace without
+   shrinking the 34px tool targets or changing the bottom contextual dock. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"]) {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  box-sizing: border-box !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  gap: 2px !important;
+  padding: 3px !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] [data-sketchizi-tool-group] {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon__icon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .sketchizi-dock-quick-tool {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .sketchizi-dock-separator {
+  width: 22px !important;
+  min-height: 1px !important;
+  height: 1px !important;
+  margin: 1px 0 !important;
+}
+
+/* Remove the extra vertical gap directly between the dock lock grip and Hand tool. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  row-gap: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-grip {
+  margin-bottom: 0 !important;
+}
+
+/* Compact every vertical Primary Dock layer: the spacing was coming from
+   Excalidraw's nested tool wrappers and grouped-button margins, not just Island padding. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  gap: 0 !important;
+  row-gap: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > div:not(.sketchizi-dock-grip),
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > fieldset,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > ul {
+  gap: 0 !important;
+  row-gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] [data-sketchizi-tool-group] {
+  margin: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] [data-sketchizi-group-start="true"] {
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-separator {
+  margin: 1px 0 !important;
+}
+
+
+/* Keep Bucket Fill directly adjacent to Eraser in the vertical Primary Dock.
+   The quick-tools wrapper is inserted after Eraser; remove any inherited
+   block margins/spacing on that exact boundary as well as inside the wrapper. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: auto !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools .sketchizi-dock-quick-tool {
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools + * {
+  scroll-margin: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > :has(+ .sketchizi-dock-quick-tools) {
+  margin-block: 0 !important;
+  padding-block: 0 !important;
+}
+
+
+/* The remaining Lock/Hand gap came from the grip's 24px flex-basis.
+   Collapse the grip's vertical footprint; keep its horizontal drag hit area. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-grip {
+  box-sizing: border-box !important;
+  flex: 0 0 10px !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 10px !important;
+  min-height: 10px !important;
+  max-height: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+
+/* Eraser and Bucket Fill are direct controls; the native three-dot
+   overflow menu is redundant in this compact dock. */
+.app .excalidraw .App-toolbar > .dropdown-menu-button,
+.app .excalidraw .App-toolbar [data-sketchizi-hide-overflow-tools="true"] {
+  display: none !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > :has(+ .sketchizi-dock-quick-tools) {
+  flex: 0 0 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools {
+  flex: 0 0 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  line-height: 0 !important;
+  border: 0 !important;
+}
+
+
+/* Primary Dock hover expansion: Selection remains visible as the single
+   collapsed trigger. Hovering or keyboard-focusing the dock reveals all tools. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-hover-expand="true"]) {
+  overflow: visible !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] {
+  box-sizing: border-box !important;
+  position: relative !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  overflow: hidden !important;
+  gap: 0 !important;
+  transition: max-height 180ms ease, box-shadow 180ms ease !important;
+  z-index: 30 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] > :not([data-sketchizi-selection-trigger="true"]) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:hover,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:focus-within {
+  height: auto !important;
+  min-height: 38px !important;
+  max-height: calc(100vh - 32px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 24%) !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:hover > *,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:focus-within > * {
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] > [data-sketchizi-selection-trigger="true"] {
+  order: -1 !important;
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:hover > [data-sketchizi-selection-trigger="true"],
+.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:focus-within > [data-sketchizi-selection-trigger="true"] {
+  flex-shrink: 0 !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] {
+    transition: none !important;
   }
 }

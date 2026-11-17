@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
-import ContextualFormattingToolbar from "./ContextualFormattingToolbar";
+import ToolOptionsDock from "./ToolOptionsDock";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import ShapeMeasurements from "./ShapeMeasurements";
@@ -20,7 +20,7 @@ export default function SketchiziCanvas({
   pageContext,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
-  selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
+  selectedElements = [], canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
 }) {
@@ -247,22 +247,6 @@ export default function SketchiziCanvas({
     return () => observer.disconnect();
   }, []);
 
-
-
-  // Selecting any tool from the dock dismisses the legacy Properties panel.
-  // The floating formatting toolbar remains the primary control surface.
-  useEffect(() => {
-    const root = canvasRootRef.current;
-    if (!root || !onToolActivated) return undefined;
-    const handleDockPointerDown = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (!target?.closest(".App-toolbar button, .App-toolbar [role='button']")) return;
-      onToolActivated();
-    };
-    root.addEventListener("pointerdown", handleDockPointerDown, true);
-    return () => root.removeEventListener("pointerdown", handleDockPointerDown, true);
-  }, [onToolActivated]);
-
   // Enhance Excalidraw's own toolbar in place. Buttons and their React handlers
   // stay native; this adds only a grip, separators, and session-only dragging.
   useEffect(() => {
@@ -383,6 +367,39 @@ export default function SketchiziCanvas({
       const container = root.querySelector(".App-toolbar-container");
       if (!toolbar || !container) return;
       toolbar.dataset.sketchiziDock = "true";
+      // Excalidraw renders its More Tools overflow trigger as a dropdown-menu
+      // control in the toolbar. Hide that native trigger directly; matching
+      // its localized accessible label is unreliable across Excalidraw builds.
+      toolbar.querySelectorAll(":scope > .dropdown-menu-button").forEach((control) => {
+        control.dataset.sketchiziHideOverflowTools = "true";
+      });
+      // The Primary Dock starts vertically on the left on desktop. Align its
+      // Selection trigger with the canvas hamburger/menu control, while leaving
+      // mobile layout and any user-positioned dock untouched.
+      if (!toolbar.dataset.sketchiziOrientation && !window.matchMedia("(max-width: 760px)").matches) {
+        toolbar.dataset.sketchiziOrientation = "vertical";
+        toolbar.dataset.sketchiziDockSide = "left";
+      }
+      if (!container.dataset.sketchiziDockPositioned && !window.matchMedia("(max-width: 760px)").matches) {
+        const menuControl = root.querySelector(
+          ".App-menu__left button, .App-menu__left [role='button'], button[aria-label*='menu' i], [role='button'][aria-label*='menu' i], button[data-testid*='menu' i]"
+        );
+        const menuRect = menuControl?.getBoundingClientRect();
+        const dockWidth = container.getBoundingClientRect().width || 48;
+        const menuCenterX = menuRect
+          ? menuRect.left + menuRect.width / 2
+          : 32 + dockWidth / 2;
+        const alignedLeft = Math.max(8, menuCenterX - dockWidth / 2);
+        const belowMenuTop = menuRect
+          ? menuRect.bottom + 8
+          : 8;
+        container.style.setProperty("left", `${alignedLeft}px`, "important");
+        container.style.setProperty("top", `${Math.max(8, belowMenuTop)}px`, "important");
+        container.style.setProperty("right", "auto", "important");
+        container.style.setProperty("bottom", "auto", "important");
+        container.style.setProperty("transform", "none", "important");
+        container.dataset.sketchiziDockPositioned = "true";
+      }
       if (!container.dataset.sketchiziDockLocked) {
         container.dataset.sketchiziDockLocked = "true";
         dockLocked = true;
@@ -500,17 +517,13 @@ export default function SketchiziCanvas({
         const accessibleName = (button.getAttribute("aria-label") || button.getAttribute("title") || "")
           .replace(/\s+/g, " ").trim();
         if (!accessibleName) return;
-        const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\s+/g, " ").trim();
-        const tooltip = keybinding && !accessibleName.includes(keybinding)
-          ? `${accessibleName} (${keybinding})`
-          : accessibleName;
-        button.dataset.sketchiziTooltip = tooltip;
-        // A native title tooltip cannot be reliably placed on the canvas-facing
-        // side of a vertical dock. Preserve the accessible name and render a
-        // body-level tooltip so overflow clipping in the dock cannot hide it.
+        // Keep tool names available to assistive technology, but do not show
+        // descriptive hover tooltips on Primary Dock buttons. Shortcut hints
+        // remain visible in the button itself through the native keybinding node.
         if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", accessibleName);
         button.removeAttribute("title");
-        bindToolbarTooltip(button);
+        const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\s+/g, " ").trim();
+        if (keybinding) button.dataset.sketchiziPersistentShortcut = keybinding;
       });
 
       // Insert separators before known native tool groups only when the DOM
@@ -557,6 +570,26 @@ export default function SketchiziCanvas({
         }
         previousGroup = group.name;
       });
+
+      // Keep the native Selection tool as the visible collapsed-dock trigger.
+      // Move its existing native wrapper to the first position; its original
+      // React handler and keyboard shortcut remain untouched.
+      const selectionButton = [...toolbar.querySelectorAll("button, [role='button']")].find((button) => {
+        const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""} ${button.dataset.testid || ""}`.trim();
+        return /(^|\\s)(select|selection)(?=\\s|$)/i.test(label);
+      });
+      if (selectionButton) {
+        let selectionAnchor = selectionButton;
+        while (selectionAnchor.parentElement && selectionAnchor.parentElement !== toolbar) {
+          selectionAnchor = selectionAnchor.parentElement;
+        }
+        if (selectionAnchor.parentElement === toolbar) {
+          selectionAnchor.dataset.sketchiziSelectionTrigger = "true";
+          selectionButton.dataset.sketchiziSelectionTrigger = "true";
+          toolbar.insertBefore(selectionAnchor, toolbar.firstChild);
+        }
+      }
+      toolbar.dataset.sketchiziHoverExpand = "true";
 
       // Keep Bucket Fill as the only custom quick tool in the native dock.
       // Reconcile the group on toolbar mutations because Excalidraw may rebuild
@@ -846,18 +879,7 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
-        <ContextualFormattingToolbar
-          apiRef={apiRef}
-          canvasRootRef={canvasRootRef}
-          canvasRevision={canvasRevision}
-          selectedElements={selectedElements}
-          applyToSelected={applyToSelected}
-          onOpenProperties={onOpenProperties}
-          propertiesOpen={propertiesOpen}
-          canEdit={canEdit && !viewModeEnabled}
-        />
-      )}
+      <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <RectangleTitles
