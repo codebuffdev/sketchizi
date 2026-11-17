@@ -106,7 +106,7 @@ export default function SketchiziCanvas({
     node.style.setProperty("--sk-grid-focus-top", `${focus.top}px`);
     node.style.setProperty("--sk-grid-focus-width", `${focus.width}px`);
     node.style.setProperty("--sk-grid-focus-height", `${focus.height}px`);
-  }, [apiRef, savedSketch, gridEnabled, gridStyle]);
+  }, [apiRef, savedSketch, gridEnabled, gridStyle, pageContext]);
 
   useEffect(() => {
     const root = canvasRootRef.current;

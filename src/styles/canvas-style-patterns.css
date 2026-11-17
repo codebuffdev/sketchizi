@@ -1,115 +1,99 @@
-/* Canvas Style patterns: each mode owns its complete visual treatment.
-   Hide the inherited fine-grid layer for decorative patterns to avoid overlap. */
-
+/* Distinct canvas surfaces. The grid spotlight's pseudo-elements are the
+   visible layers; styling the parent background would sit underneath them. */
 .app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::before {
   inset: 0;
-  background-image: radial-gradient(circle, rgb(105 122 145 / 52%) 1.15px, transparent 1.4px);
+  background-image: radial-gradient(circle, var(--sk-grid-dot-color, rgb(105 122 145 / 38%)) 1.15px, transparent 1.35px);
   background-size: 20px 20px;
-  background-position: var(--sk-grid-offset-x) var(--sk-grid-offset-y);
+  background-position: 0 0;
 }
-.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::after,
-.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::after,
-.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style::after,
-.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style::after {
-  display: none !important;
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::after {
+  display: none;
 }
 
-/* Ruled Paper: horizontal writing lines and a notebook margin. */
 .app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::before {
   inset: 0;
-  background-image:
-    linear-gradient(to right, transparent 0, transparent 63px, rgb(205 105 105 / 34%) 64px, transparent 65px),
-    repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgb(90 132 180 / 38%) 32px, transparent 33px);
-  background-size: 100% 100%, 100% 33px;
-  background-position: 0 0, 0 var(--sk-grid-offset-y);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    rgb(90 132 180 / 28%) 32px,
+    transparent 33px
+  );
+  background-size: 100% 33px;
+}
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::after {
+  display: block;
+  inset: 0 auto 0 64px;
+  width: 1px;
+  height: auto;
+  opacity: 1;
+  background: rgb(205 105 105 / 30%);
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
-/* Column Guides: twelve columns, clipped to the active page in Pages mode. */
 .app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style::before {
   inset: 0;
-  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(8.333333% - 1px), rgb(83 135 173 / 42%) calc(8.333333% - 1px), rgb(83 135 173 / 42%) 8.333333%);
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(8.333333% - 1px),
+    rgb(83 135 173 / 34%) calc(8.333333% - 1px),
+    rgb(83 135 173 / 34%) 8.333333%
+  );
   background-size: 100% 100%;
 }
-.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style.is-page-bounded-columns::before {
-  inset: var(--sk-grid-page-top) auto auto var(--sk-grid-page-left);
-  width: var(--sk-grid-page-width);
-  height: var(--sk-grid-page-height);
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style::after {
+  display: block;
+  left: 8.333333%;
+  top: 0;
+  width: 83.333334%;
+  height: 100%;
+  opacity: 1;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(20% - 1px),
+    rgb(83 135 173 / 16%) calc(20% - 1px),
+    rgb(83 135 173 / 16%) 20%
+  );
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
-/* Coordinate Grid: square reference lattice with emphasized center axes. */
 .app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style::before {
   inset: 0;
   background-image:
-    linear-gradient(to right, transparent calc(50% - 1px), rgb(55 115 170 / 76%) 50%, transparent calc(50% + 1px)),
-    linear-gradient(to bottom, transparent calc(50% - 1px), rgb(55 115 170 / 76%) 50%, transparent calc(50% + 1px)),
-    linear-gradient(rgb(100 125 155 / 23%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(100 125 155 / 23%) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-  background-position: center, center, center, center;
+    linear-gradient(rgb(100 125 155 / 17%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(100 125 155 / 17%) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: center center;
+}
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style::after {
+  display: block;
+  inset: 0;
+  width: auto;
+  height: auto;
+  opacity: 1;
+  background-image:
+    linear-gradient(to right, transparent calc(50% - 1px), rgb(55 115 170 / 72%) 50%, transparent calc(50% + 1px)),
+    linear-gradient(to bottom, transparent calc(50% - 1px), rgb(55 115 170 / 72%) 50%, transparent calc(50% + 1px));
+  background-size: 100% 100%;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
-/* Dark theme keeps the same pattern geometry with adjusted contrast. */
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::before {
-  background-image: radial-gradient(circle, rgb(180 198 220 / 56%) 1.15px, transparent 1.4px);
+  background-image: radial-gradient(circle, rgb(170 190 215 / 42%) 1.15px, transparent 1.35px);
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::before {
-  background-image:
-    linear-gradient(to right, transparent 0, transparent 63px, rgb(220 125 125 / 40%) 64px, transparent 65px),
-    repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgb(120 165 210 / 42%) 32px, transparent 33px);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgb(120 165 210 / 34%) 32px, transparent 33px);
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-columns-style::before {
-  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(8.333333% - 1px), rgb(145 185 220 / 48%) calc(8.333333% - 1px), rgb(145 185 220 / 48%) 8.333333%);
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(8.333333% - 1px), rgb(120 165 210 / 38%) calc(8.333333% - 1px), rgb(120 165 210 / 38%) 8.333333%);
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-coordinates-style::before {
   background-image:
-    linear-gradient(to right, transparent calc(50% - 1px), rgb(115 175 225 / 82%) 50%, transparent calc(50% + 1px)),
-    linear-gradient(to bottom, transparent calc(50% - 1px), rgb(115 175 225 / 82%) 50%, transparent calc(50% + 1px)),
-    linear-gradient(rgb(155 180 210 / 27%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(155 180 210 / 27%) 1px, transparent 1px);
-}
-
-/* Distinct picker previews; no two non-grid patterns share the same sample. */
-.sketchizi-grid-preview.is-normal {
-  background-size: 12px 12px;
-}
-.sketchizi-grid-preview.is-focus::after {
-  inset: 5%;
-}
-.sketchizi-grid-preview.is-local::after {
-  inset: 25% 18%;
-}
-.sketchizi-grid-preview.is-dots {
-  background-image: radial-gradient(circle, rgb(170 180 200 / 78%) 1px, transparent 1.2px);
-  background-size: 8px 8px;
-}
-.sketchizi-grid-preview.is-dots::after,
-.sketchizi-grid-preview.is-coordinates::after { display: none; }
-.sketchizi-grid-preview.is-ruled {
-  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 10px, rgb(110 155 195 / 75%) 11px, transparent 12px);
-  background-size: 100% 12px;
-}
-.sketchizi-grid-preview.is-ruled::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 10px;
-  width: 1px;
-  background: rgb(205 105 105 / 75%);
-}
-.sketchizi-grid-preview.is-columns {
-  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(25% - 1px), rgb(110 155 195 / 75%) calc(25% - 1px), rgb(110 155 195 / 75%) 25%);
-}
-.sketchizi-grid-preview.is-columns::after {
-  content: "";
-  position: absolute;
-  inset: 0 5%;
-  border-left: 1px solid rgb(110 155 195 / 45%);
-  border-right: 1px solid rgb(110 155 195 / 45%);
-}
-.sketchizi-grid-preview.is-coordinates {
-  background-image:
-    linear-gradient(to right, transparent calc(50% - 1px), rgb(90 145 205 / 95%) 50%, transparent calc(50% + 1px)),
-    linear-gradient(to bottom, transparent calc(50% - 1px), rgb(90 145 205 / 95%) 50%, transparent calc(50% + 1px)),
-    linear-gradient(rgb(170 180 200 / 28%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(170 180 200 / 28%) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 10px 10px, 10px 10px;
+    linear-gradient(rgb(155 180 210 / 24%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(155 180 210 / 24%) 1px, transparent 1px);
 }
