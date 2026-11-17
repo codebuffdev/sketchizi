@@ -1192,3 +1192,53 @@
 .cloud-save-create-project-actions button.primary{border-color:#7865f4;background:#7865f4;color:white}
 .cloud-save-create-project-actions button:disabled,.cloud-save-create-project-trigger:disabled{opacity:.5;cursor:not-allowed}
 
+
+/* Neutral graphite interaction palette: keep status colors meaningful, remove
+   decorative blue/violet accents from primary workspace controls. */
+.app .desktop-app-header .desktop-app-start-collaboration-button,
+.app .desktop-app-start-collaboration-button {
+  border-color: #555a62 !important;
+  background: linear-gradient(135deg, #555a62 0%, #3c4147 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 16%) !important;
+}
+.app .desktop-app-header .desktop-app-start-collaboration-button:hover,
+.app .desktop-app-start-collaboration-button:hover {
+  border-color: #70767e !important;
+  background: linear-gradient(135deg, #646a72 0%, #484e55 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%) !important;
+}
+.app .desktop-app-start-collaboration-button:focus-visible,
+.app .desktop-app-search-button:focus-visible,
+.app .cloud-save-dialog-fields input:focus,
+.app .cloud-save-dialog-fields select:focus,
+.app .cloud-save-create-project input:focus {
+  outline-color: #92979e !important;
+  border-color: #92979e !important;
+}
+.app .desktop-app-save-to-cloud-button {
+  border-color: #555a62 !important;
+  background: #292d31 !important;
+  color: #e7e9eb !important;
+}
+.app .desktop-app-save-to-cloud-button:hover:not(:disabled) {
+  border-color: #858b92 !important;
+  background: #383d42 !important;
+}
+.app.theme-light .desktop-app-save-to-cloud-button {
+  border-color: #c7cbd0 !important;
+  background: #f0f1f2 !important;
+  color: #3e4349 !important;
+}
+.app.theme-light .desktop-app-save-to-cloud-button:hover:not(:disabled) {
+  background: #e5e7e9 !important;
+}
+.app .collaboration-ended-actions button.primary {
+  border-color: #555a62 !important;
+  background: #555a62 !important;
+}
+.app .collaboration-ended-actions button.primary:hover {
+  border-color: #41464d !important;
+  background: #41464d !important;
+}
