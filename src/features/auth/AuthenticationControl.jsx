@@ -7,6 +7,7 @@ export default function AuthenticationControl() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [signInMenuOpen, setSignInMenuOpen] = useState(false);
+  const [signInMenuPinned, setSignInMenuPinned] = useState(false);
   const signInMenuCloseTimerRef = useRef(null);
   const [loginError, setLoginError] = useState("");
   // Keep both sign-in choices visible while provider discovery is unavailable.
@@ -144,9 +145,13 @@ export default function AuthenticationControl() {
       if (!(event.target instanceof Element)) return;
       if (event.target.closest(".auth-sign-in-control")) return;
       setSignInMenuOpen(false);
+      setSignInMenuPinned(false);
     };
     const onKeyDown = (event) => {
-      if (event.key === "Escape") setSignInMenuOpen(false);
+      if (event.key === "Escape") {
+        setSignInMenuOpen(false);
+        setSignInMenuPinned(false);
+      }
     };
     document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("keydown", onKeyDown, true);
@@ -322,6 +327,7 @@ export default function AuthenticationControl() {
             setSignInMenuOpen(true);
           }}
           onPointerLeave={() => {
+            if (signInMenuPinned) return;
             if (signInMenuCloseTimerRef.current !== null) window.clearTimeout(signInMenuCloseTimerRef.current);
             signInMenuCloseTimerRef.current = window.setTimeout(() => {
               signInMenuCloseTimerRef.current = null;
@@ -336,7 +342,11 @@ export default function AuthenticationControl() {
             title="Sign in"
             aria-haspopup="menu"
             aria-expanded={signInMenuOpen}
-            onClick={() => setSignInMenuOpen((open) => !open)}
+            onClick={() => {
+              const nextPinned = !signInMenuPinned;
+              setSignInMenuPinned(nextPinned);
+              setSignInMenuOpen(nextPinned);
+            }}
           >
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="8" r="3.5" />
@@ -355,6 +365,7 @@ export default function AuthenticationControl() {
                 role="menuitem"
                 onClick={() => {
                   setSignInMenuOpen(false);
+                  setSignInMenuPinned(false);
                   setSignInContext({
                     message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.",
                     returnTo: "",
@@ -369,7 +380,7 @@ export default function AuthenticationControl() {
                 <span>Sign in to Sketchizi</span>
                 <span className="auth-sign-in-menu-arrow" aria-hidden="true">↗</span>
               </button>
-              <a className="auth-account-menu-item auth-sign-in-menu-link" href="/workspace" role="menuitem" onClick={() => setSignInMenuOpen(false)}>
+              <a className="auth-account-menu-item auth-sign-in-menu-link" href="/workspace" role="menuitem" onClick={() => { setSignInMenuOpen(false); setSignInMenuPinned(false); }}>
                 <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l1.5 1.7h5.5A1.5 1.5 0 0 1 17 8.2v6.3a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5Z" />
                 </svg>
