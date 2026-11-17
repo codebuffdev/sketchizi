@@ -7,10 +7,10 @@ export default function PropertiesPanel({
   architectureRelationship = null, architectureRelationshipTypes = [], updateArchitectureRelationshipType = () => {},
   awsRelationship = null, relationshipTypes = [], updateAwsRelationshipType = () => {},
   kubernetesRelationship = null, kubernetesRelationshipTypes = [], updateKubernetesRelationshipType = () => {}, kubernetesRelationshipGuidance = null,
-  readOnly = false, authorship = {}, participants = [], hideDuplicateFormattingControls = false,
+  readOnly = false, authorship = {}, participants = [], hideDuplicateFormattingControls = false, dockMode = false,
 }) {
   return (
-  <section className={`properties-panel${readOnly ? " read-only" : ""}`} aria-label="Properties and style">
+  <section className={`properties-panel${readOnly ? " read-only" : ""}${dockMode ? " properties-panel-dock" : ""}`} aria-label="Properties and style">
     <div className="properties-header">
       <div>
         <div className="properties-title">Properties</div>
@@ -20,12 +20,14 @@ export default function PropertiesPanel({
             : `${selectedCount} objects selected`}
         </div>
       </div>
-      <button
-        type="button"
-        className="properties-close"
-        onClick={() => setPropertiesOpen(false)}
-        aria-label="Close properties"
-      >×</button>
+      {!dockMode && (
+        <button
+          type="button"
+          className="properties-close"
+          onClick={() => setPropertiesOpen(false)}
+          aria-label="Close properties"
+        >×</button>
+      )}
     </div>
 
     {architectureRelationship && (
