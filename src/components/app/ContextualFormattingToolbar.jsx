@@ -87,9 +87,8 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   const appState = api.getAppState?.();
   if (!appState) return null;
 
-  // The secondary dock is anchored to the bottom center of the canvas. Its
-  // controls follow the active tool or current selection, not the object
-  // position, so the dock never jumps around while editing.
+  // The secondary dock stays fixed at the bottom-right of the canvas. Its
+  // contents follow the active tool or current selection, not object bounds.
   return {
     left: "auto",
     top: "auto",
