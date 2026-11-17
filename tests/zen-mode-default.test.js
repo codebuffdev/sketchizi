@@ -17,7 +17,7 @@ test("Sketchizi starts in the standard workspace instead of Zen Mode", () => {
   assert.match(initialData, /\.\.\.\(savedSketch\?\.appState \|\| \{\}\)[\s\S]*zenModeEnabled:\s*false/, "startup default must override old saved Zen Mode state");
 });
 
-test("contextual formatting toolbar remains available when Zen Mode is explicitly enabled", () => {
-  assert.match(source, /\(apiRef\.current\?\.getAppState\?\.\(\)\.zenModeEnabled \?\? true\) && \(/);
+test("contextual formatting docks are available in the standard editor and Zen Mode", () => {
   assert.match(source, /<ContextualFormattingToolbar/);
+  assert.doesNotMatch(source, /zenModeEnabled\?\.\(\) \?\? true\) && \(/);
 });
