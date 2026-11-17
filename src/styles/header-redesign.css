@@ -46,9 +46,9 @@
   .desktop-app-menu-trigger:hover,
   .desktop-app-menu-trigger.active,
   .desktop-app-menu-trigger:focus-visible {
-    border-color: #c8bbff;
-    background: #f1edff;
-    color: #5535bd;
+    border-color: #d0d2d5;
+    background: #f0f1f2;
+    color: #454a51;
   }
 
   .desktop-app-library-toggle {
@@ -67,9 +67,9 @@
 
   .desktop-app-library-toggle:hover,
   .desktop-app-library-toggle.active {
-    border-color: #c8bbff;
-    background: #f1edff;
-    color: #5535bd;
+    border-color: #d0d2d5;
+    background: #f0f1f2;
+    color: #454a51;
   }
 
   .desktop-app-nav {
@@ -135,7 +135,7 @@
 
   .desktop-app-dropdown button:hover {
     background: var(--ui-hover, #f1effa);
-    color: var(--ui-accent-strong, #5236bd);
+    color: var(--ui-accent-strong, #454a51);
   }
 
   .desktop-app-header-panel-actions {
@@ -188,16 +188,16 @@
 
   .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
   .desktop-app-header-panel-actions .architecture-validation-toggle.active {
-    border-color: #cdc2ff;
-    background: #f3efff;
-    color: #5536c0;
+    border-color: #d0d2d5;
+    background: #f0f1f2;
+    color: #454a51;
   }
 
   .desktop-app-header-panel-actions .properties-toggle:hover,
   .desktop-app-header-panel-actions .properties-toggle.active {
-    border-color: #cdc2ff;
-    background: #f3efff;
-    color: #5536c0;
+    border-color: #d0d2d5;
+    background: #f0f1f2;
+    color: #454a51;
   }
 
   .desktop-app-header-panel-actions .sketchizi-more-tools-header {
@@ -238,9 +238,9 @@
 
   .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger:hover,
   .desktop-app-header-panel-actions .sketchizi-more-tools-header.open .sketchizi-more-tools-trigger {
-    border-color: #cdc2ff;
-    background: #f3efff;
-    color: #5536c0;
+    border-color: #d0d2d5;
+    background: #f0f1f2;
+    color: #454a51;
   }
 
   .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-menu {
@@ -284,8 +284,8 @@
 
   .desktop-app-theme-toggle.light .sun,
   .desktop-app-theme-toggle.dark .moon {
-    background: #e8e2ff;
-    color: #5033b5;
+    background: #e5e7e9;
+    color: #454a51;
     box-shadow: none;
   }
 
@@ -400,7 +400,7 @@
 
   .desktop-app-header .auth-account-menu-item:hover {
     background: var(--ui-hover, #f2f0fa);
-    color: var(--ui-accent-strong, #5235bd);
+    color: var(--ui-accent-strong, #454a51);
   }
 
   .desktop-app-start-collaboration-button {
@@ -413,11 +413,11 @@
     min-height: 34px;
     margin-left: 10px;
     padding: 7px 14px;
-    border: 1px solid #5a38e6;
+    border: 1px solid #555a62;
     border-radius: 9px;
-    background: linear-gradient(135deg, #6237ea 0%, #5425db 100%);
+    background: linear-gradient(135deg, #555a62 0%, #3c4147 100%);
     color: #fff;
-    box-shadow: 0 4px 11px rgba(91, 55, 226, .18);
+    box-shadow: 0 4px 11px rgba(0, 0, 0, .16);
     font-size: 11px;
     font-weight: 680;
     letter-spacing: .005em;
@@ -426,16 +426,16 @@
   }
 
   .desktop-app-start-collaboration-button:hover {
-    border-color: #4822c6;
-    background: linear-gradient(135deg, #7047f0 0%, #5c31e5 100%);
+    border-color: #41464d;
+    background: linear-gradient(135deg, #646a72 0%, #484e55 100%);
     color: #fff;
-    box-shadow: 0 5px 14px rgba(91, 55, 226, .28);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .20);
     transform: translateY(-1px);
   }
 
   .desktop-app-start-collaboration-button:focus-visible,
   .desktop-app-search-button:focus-visible {
-    outline: 2px solid #8b75f8;
+    outline: 2px solid #92979e;
     outline-offset: 2px;
   }
 
@@ -494,9 +494,9 @@
 
   .desktop-app-header-actions .sketchizi-more-tools-trigger:hover,
   .desktop-app-header-actions .sketchizi-more-tools-header.open .sketchizi-more-tools-trigger {
-    border-color: #cdc2ff;
-    background: #f3efff;
-    color: #5536c0;
+    border-color: #d0d2d5;
+    background: #f0f1f2;
+    color: #454a51;
   }
 
   .desktop-app-header-actions .sketchizi-more-tools-menu {
@@ -530,7 +530,7 @@
   }
 
   .desktop-app-search-button:hover {
-    border-color: #c6b9ff;
+    border-color: #d0d2d5;
     background: var(--ui-hover, #f2efff);
     color: var(--ui-text, #34374a);
   }
