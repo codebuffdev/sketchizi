@@ -85,3 +85,10 @@ test("the Primary Dock has no added gap between its lock grip and Hand tool", ()
   assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\][\s\S]*?row-gap: 0 !important/);
   assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > \.sketchizi-dock-grip[\s\S]*?margin-bottom: 0 !important/);
 });
+
+test("all nested Primary Dock wrappers use zero gaps and zero button margins", () => {
+  assert.match(css, /Compact every vertical Primary Dock layer/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > div:not\(\.sketchizi-dock-grip\)[\s\S]*?gap: 0 !important;[\s\S]*?margin: 0 !important;[\s\S]*?padding: 0 !important/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] \[data-sketchizi-tool-group\][\s\S]*?margin: 0 !important/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] \[data-sketchizi-group-start="true"\][\s\S]*?margin-top: 0 !important/);
+});
