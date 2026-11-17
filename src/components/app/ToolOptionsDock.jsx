@@ -20,7 +20,7 @@ function ContextShapeIcon({ type, title, multiple = false }) {
       case "arrow": shape = <path d="M4 19 20 5m-7 0h7v7" />; break;
       case "freedraw":
       case "draw": shape = <path d="M4 17c3-9 5 5 8-3s5-7 8-7" />; break;
-      case "text": shape = <><path d="M4 6h16M12 6v13M8 19h8" /><path d="M8 3h8" /></>; break;
+      case "text": shape = <><path d="M5 5.5h14M12 5.5v13" /><path d="M9 18.5h6" /></>; break;
       case "bucket-fill": shape = <><path d="m7 4 9 9-5 5-9-9Z" /><path d="m13 10 5-5 3 3-5 5M15 19h6" /></>; break;
       case "draw-to-shape": shape = <><path d="M4 5h15v14H4z" strokeDasharray="2 2" /><path d="M7 16 11 8l5 7" /></>; break;
       default: shape = <><path d="M4 12h16" /><circle cx="12" cy="12" r="8" /></>;
@@ -116,8 +116,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
   const fontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
   const pressure = current("pressure", "currentItemPressure", true) !== false;
-  const textAlign = current("textAlign", "currentItemTextAlign", "left");
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
+  const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
+  useEffect(() => setFontSizeDraft(String(fontSize)), [fontSize]);
 
   const update = (patch) => {
     const api = apiRef?.current;
@@ -133,7 +134,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         opacity: "currentItemOpacity",
         fontSize: "currentItemFontSize",
         fontFamily: "currentItemFontFamily",
-        textAlign: "currentItemTextAlign",
         pressure: "currentItemPressure",
         startArrowhead: "currentItemStartArrowhead",
         endArrowhead: "currentItemEndArrowhead",
@@ -198,17 +198,41 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         <select aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
-        <select aria-label="Font size" value={fontSize} onChange={(event) => update({ fontSize: Number(event.target.value) })}>
-          {[12, 16, 20, 24, 28, 36, 48].map((size) => <option key={size} value={size}>{size}px</option>)}
-        </select>
+        <div className="sk-tool-text-size" role="group" aria-label="Font size">
+          <button type="button" className="sk-tool-text-size-step" aria-label="Decrease font size" title="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
+          <label className="sk-tool-text-size-input">
+            <input
+              type="number"
+              aria-label="Font size in pixels"
+              min="1"
+              max="999"
+              step="1"
+              value={fontSizeDraft}
+              onChange={(event) => setFontSizeDraft(event.target.value)}
+              onKeyDown={(event) => {
+                // Prevent Excalidraw from interpreting typed digits as canvas shortcuts.
+                event.stopPropagation();
+                if (event.key === "Enter") event.currentTarget.blur();
+              }}
+              onKeyUp={(event) => event.stopPropagation()}
+              onKeyPress={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+              onBlur={() => {
+                const parsed = Number(fontSizeDraft);
+                const nextSize = Number.isFinite(parsed) && fontSizeDraft.trim() !== ""
+                  ? Math.max(1, Math.min(999, parsed))
+                  : fontSize;
+                setFontSizeDraft(String(nextSize));
+                if (nextSize !== fontSize) update({ fontSize: nextSize });
+              }}
+            />
+            <span>px</span>
+          </label>
+          <button type="button" className="sk-tool-text-size-step" aria-label="Increase font size" title="Increase font size" disabled={fontSize >= 999} onClick={() => update({ fontSize: Math.min(999, fontSize + 1) })}>+</button>
+        </div>
       </DockGroup>}
       {isAutoShape && <DockGroup label="Roughness">
         {[0, 1, 2].map((value) => <ToolButton key={value} active={roughness === value} title={["Architect", "Artist", "Cartoonist"][value]} onClick={() => update({ roughness: value })}>{["A", "B", "C"][value]}</ToolButton>)}
-      </DockGroup>}
-      {isText && <DockGroup label="Text alignment">
-        <select aria-label="Text alignment" value={textAlign} onChange={(event) => update({ textAlign: event.target.value })}>
-          <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
-        </select>
       </DockGroup>}
       {isDraw && <DockGroup label="Pen pressure">
         <ToolButton active={pressure} title="Pressure sensitivity on" onClick={() => update({ pressure: true })}>P</ToolButton>
