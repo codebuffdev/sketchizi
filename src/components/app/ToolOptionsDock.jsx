@@ -209,6 +209,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
               step="1"
               value={fontSizeDraft}
               onChange={(event) => setFontSizeDraft(event.target.value)}
+              onKeyDown={(event) => {
+                // Prevent Excalidraw from interpreting typed digits as canvas shortcuts.
+                event.stopPropagation();
+                if (event.key === "Enter") event.currentTarget.blur();
+              }}
+              onKeyUp={(event) => event.stopPropagation()}
+              onKeyPress={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
               onBlur={() => {
                 const parsed = Number(fontSizeDraft);
                 const nextSize = Number.isFinite(parsed) && fontSizeDraft.trim() !== ""
@@ -216,9 +224,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
                   : fontSize;
                 setFontSizeDraft(String(nextSize));
                 if (nextSize !== fontSize) update({ fontSize: nextSize });
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") event.currentTarget.blur();
               }}
             />
             <span>px</span>
