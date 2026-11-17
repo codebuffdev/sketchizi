@@ -1931,3 +1931,44 @@
     margin-left: 4px !important;
   }
 }
+
+
+/* Zen Mode's opt-in Scratch Mode control is intentionally isolated from the
+   standard editor and uses the neutral graphite UI surface. */
+.app .canvas .sketchizi-scratch-mode-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border, #d7dce2);
+  border-radius: 9px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #303943);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 9%);
+}
+.app .canvas .sketchizi-scratch-mode-toggle:hover {
+  background: var(--ui-surface-hover, #f1f3f5);
+}
+.app.theme-dark .canvas .sketchizi-scratch-mode-toggle {
+  border-color: #454d57;
+  background: #252b33;
+  color: #e6e9ed;
+}
+.app.theme-dark .canvas .sketchizi-scratch-mode-toggle:hover,
+.app.theme-dark .canvas .sketchizi-scratch-mode-toggle.is-active {
+  border-color: #68727e;
+  background: #343c46;
+}
+.app.theme-light .canvas .sketchizi-scratch-mode-toggle.is-active {
+  border-color: #8b969f;
+  background: #e9edf0;
+}
