@@ -182,14 +182,14 @@ export default function DesktopAppHeader({
     };
 
     // Each floating control has its own reveal zone on desktop:
-    // title = top center, account = top right, control rail = right edge.
-    // Tablet retains the previous top-edge reveal for its compact header.
+    // title group = immediately to the right of the top-left menu, account = top right,
+    // control rail = right edge. Tablet retains the previous top-edge reveal.
     // Canvas wheel gestures remain dedicated to zooming and navigation.
     const revealFromEdge = (event) => {
       const viewportWidth = document.documentElement.clientWidth;
       const rightRail = window.matchMedia("(min-width: 1025px)").matches;
       const nearTop = event.clientY <= 24;
-      const nearTitle = nearTop && Math.abs(event.clientX - viewportWidth / 2) <= 190;
+      const nearTitle = nearTop && event.clientX >= 48 && event.clientX <= Math.min(640, viewportWidth - 180);
       const nearAccount = nearTop && event.clientX >= viewportWidth - 100;
       const nearRightRail = rightRail && event.clientX >= viewportWidth - 20 && event.clientY > 64;
 
