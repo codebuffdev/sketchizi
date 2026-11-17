@@ -385,8 +385,16 @@ export default function SketchiziCanvas({
           ".App-menu__left button, .App-menu__left [role='button'], button[aria-label*='menu' i], [role='button'][aria-label*='menu' i], button[data-testid*='menu' i]"
         );
         const menuRect = menuControl?.getBoundingClientRect();
-        container.style.setProperty("left", `${Math.max(8, menuRect?.left ?? 8)}px`, "important");
-        container.style.setProperty("top", `${Math.max(8, menuRect?.top ?? 8)}px`, "important");
+        const dockWidth = container.getBoundingClientRect().width || 48;
+        const menuCenterX = menuRect
+          ? menuRect.left + menuRect.width / 2
+          : 32 + dockWidth / 2;
+        const alignedLeft = Math.max(8, menuCenterX - dockWidth / 2);
+        const belowMenuTop = menuRect
+          ? menuRect.bottom + 8
+          : 8;
+        container.style.setProperty("left", `${alignedLeft}px`, "important");
+        container.style.setProperty("top", `${Math.max(8, belowMenuTop)}px`, "important");
         container.style.setProperty("right", "auto", "important");
         container.style.setProperty("bottom", "auto", "important");
         container.style.setProperty("transform", "none", "important");
