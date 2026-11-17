@@ -17,7 +17,7 @@
     pointer-events: none;
   }
 
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     position: fixed !important;
     inset: 0;
     z-index: 400;
