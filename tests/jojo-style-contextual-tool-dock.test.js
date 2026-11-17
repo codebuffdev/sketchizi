@@ -41,3 +41,11 @@ test("both docks use a neutral theme-aware visual system with visible keyboard f
   assert.match(css, /#626b76/);
   assert.match(css, /#c0c7cf/);
 });
+
+
+test("stroke width choices use visual line-weight icons instead of numeric labels", () => {
+  assert.match(dock, /sk-tool-stroke-width-icon/);
+  assert.match(dock, /strokeWidth=\{width === 1 \? 1\.5 : width === 2 \? 2\.5 : width === 4 \? 4 : 5\.5\}/);
+  assert.doesNotMatch(dock, /onClick=\{\(\) => update\(\{ strokeWidth: width \}\)\}>\{width\}<\/ToolButton>/);
+  assert.match(dock, /title=\{\`Stroke width \$\{width\}\`\}/);
+});
