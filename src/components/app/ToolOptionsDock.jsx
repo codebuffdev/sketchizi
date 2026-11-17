@@ -5,7 +5,7 @@ const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8"
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
-const FONT_FAMILIES = [[1, "Hand"], [2, "Sans"], [3, "Code"], [9, "Serif"]];
+const FONT_FAMILIES = [[1, "Virgil"], [2, "Helvetica"], [3, "Cascadia"], [5, "Excalifont"], [6, "Nunito"], [7, "Lilita One"], [8, "Comic Shanns"], [9, "Liberation Sans"]];
 
 function ContextShapeIcon({ type, title, multiple = false }) {
   let shape;
@@ -86,7 +86,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const appState = apiRef?.current?.getAppState?.() || {};
   const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
-  const selectionType = selected.length ? selected[0].type : null;
+  const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
+  const selectionType = selected.length ? selected[0].type : editingTextElement?.type || null;
   const tool = customTool === "bucketfill" ? "bucket-fill"
     : customTool === "autoshape" ? "draw-to-shape"
       : ["note", "sticky-note", "stickynote", "notes"].includes(customTool) ? "text"
@@ -113,7 +114,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fillStyle = current("fillStyle", "currentItemFillStyle", "solid");
   const opacity = Number(current("opacity", "currentItemOpacity", 100));
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
-  const fontFamily = Number(current("fontFamily", "currentItemFontFamily", 1));
+  const fontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const textAlign = current("textAlign", "currentItemTextAlign", "left");
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
@@ -145,6 +146,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       return;
     }
     const ids = new Set(selected.map((element) => element.id));
+    if (isText && editingTextElement?.id) ids.add(editingTextElement.id);
     const now = Date.now();
     const elements = api.getSceneElements?.() || [];
     const next = elements.map((element) => ids.has(element.id)
