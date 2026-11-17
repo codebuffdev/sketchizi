@@ -7,6 +7,28 @@ const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotte
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
 const FONT_FAMILIES = [[1, "Hand"], [2, "Sans"], [3, "Code"], [9, "Serif"]];
 
+function ContextShapeIcon({ type, title, multiple = false }) {
+  let shape;
+  if (multiple) {
+    shape = <><rect x="4" y="5" width="12" height="12" rx="1" /><rect x="8" y="8" width="12" height="12" rx="1" /></>;
+  } else {
+    switch (type) {
+      case "rectangle": shape = <rect x="4" y="5" width="16" height="14" rx="1" />; break;
+      case "diamond": shape = <path d="M12 3 21 12 12 21 3 12Z" />; break;
+      case "ellipse": shape = <ellipse cx="12" cy="12" rx="9" ry="7" />; break;
+      case "line": shape = <path d="M4 19 20 5" />; break;
+      case "arrow": shape = <path d="M4 19 20 5m-7 0h7v7" />; break;
+      case "freedraw":
+      case "draw": shape = <path d="M4 17c3-9 5 5 8-3s5-7 8-7" />; break;
+      case "text": shape = <><path d="M4 6h16M12 6v13M8 19h8" /><path d="M8 3h8" /></>; break;
+      case "bucket-fill": shape = <><path d="m7 4 9 9-5 5-9-9Z" /><path d="m13 10 5-5 3 3-5 5M15 19h6" /></>; break;
+      case "draw-to-shape": shape = <><path d="M4 5h15v14H4z" strokeDasharray="2 2" /><path d="M7 16 11 8l5 7" /></>; break;
+      default: shape = <><path d="M4 12h16" /><circle cx="12" cy="12" r="8" /></>;
+    }
+  }
+  return <svg className="sk-tool-dock-shape-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label={title} title={title}>{shape}</svg>;
+}
+
 function ToolButton({ active, title, onClick, children }) {
   return <button type="button" className={`sk-tool-option-button${active ? " is-active" : ""}`} title={title} aria-label={title} aria-pressed={Boolean(active)} onClick={onClick}>{children}</button>;
 }
@@ -122,7 +144,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
 
   return (
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
-      <span className="sk-tool-dock-context">{title}</span>
+      <span className="sk-tool-dock-context" aria-label={title} title={title}><ContextShapeIcon type={type} title={title} multiple={selected.length > 1} /></span>
       <DockGroup label="Stroke color">
         {!isFill && <>{COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} /></>}
