@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
  * available, but are no longer the first thing someone sees.
  */
 export default function CreateMenu({
+  onBlankDrawing,
   onTemplates,
+  onCloudWorkspace,
   onKubernetesStudio,
   onDockerStudio,
   onBeforeOpen,
@@ -87,10 +89,14 @@ export default function CreateMenu({
         <svg className="workspaces-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
         </svg>
-        <span>Create</span>
       </button>
       {open && (
         <div ref={menuRef} className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Create a drawing">
+          <div className="sketchizi-create-menu-heading">Draw</div>
+          <button type="button" role="menuitem" className="sketchizi-blank-drawing-menu-item" onClick={() => choose(onBlankDrawing)}>
+            <span className="create-design-menu-icon" aria-hidden="true">＋</span>
+            <span><strong>Blank drawing</strong><small>Start with an empty canvas</small></span>
+          </button>
           <button type="button" role="menuitem" className="design-studio-menu-item" onClick={() => choose(onTemplates)}>
             <span className="create-design-menu-icon" aria-hidden="true">◇</span>
             <span><strong>Templates</strong><small>Flowcharts, mind maps, and diagrams</small></span>
@@ -103,6 +109,11 @@ export default function CreateMenu({
           <button type="button" role="menuitem" className="docker-compose-studio-menu-item" onClick={() => choose(onDockerStudio)}>
             <span className="create-design-menu-icon" aria-hidden="true"><img src="/icons/docker.svg" alt="" width="22" height="22" /></span>
             <span><strong>Docker Compose Studio</strong><small>Visualize services and connections</small></span>
+          </button>
+          <div className="sketchizi-create-menu-heading">Your files</div>
+          <button type="button" role="menuitem" className="cloud-workspace-menu-item" onClick={() => choose(onCloudWorkspace)}>
+            <span className="create-design-menu-icon" aria-hidden="true">☁</span>
+            <span><strong>Cloud Workspace</strong><small>Open saved projects and drawings</small></span>
           </button>
         </div>
       )}

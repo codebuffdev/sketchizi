@@ -1574,7 +1574,9 @@ function App() {
 
   const workspaceToggle = (
     <CreateMenu
+      onBlankDrawing={() => fileActionsRef.current.createNewFile?.()}
       onTemplates={() => setDesignStudioOpen(true)}
+      onCloudWorkspace={() => window.location.assign("/workspace")}
       onKubernetesStudio={() => setKubernetesStudioOpen(true)}
       onDockerStudio={() => setDockerStudioOpen(true)}
       onBeforeOpen={() => {
@@ -1710,14 +1712,13 @@ function App() {
       >
         <button
           type="button"
-          className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
+          className={aiAskOpen ? "ai-ask-toggle is-icon-only active" : "ai-ask-toggle is-icon-only"}
           onClick={() => setAiAskOpen((value) => !value)}
           title="AI Ask"
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
         >
           <AiAskIcon className="ai-ask-toggle-icon" />
-          <span>AI Ask</span>
         </button>
 
 

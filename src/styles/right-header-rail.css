@@ -372,26 +372,6 @@
     align-self: center;
   }
 
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-create-menu,
-  .app.canvas-first-header .desktop-app-header-right-rail .design-studio-header-toggle,
-  .app.canvas-first-header .desktop-app-header-right-rail .ai-ask-toggle {
-    box-sizing: border-box;
-    display: inline-flex !important;
-    flex: 0 0 64px !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 64px !important;
-    min-width: 64px !important;
-    max-width: 64px !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
-    padding: 0 5px !important;
-    gap: 5px !important;
-    white-space: nowrap;
-    font-size: 11px;
-  }
-
   .app.canvas-first-header .desktop-app-header-right-rail :is(
     .desktop-app-menu-trigger,
     .desktop-app-library-toggle,
@@ -421,6 +401,27 @@
     max-height: 36px !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+
+
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-create-menu,
+  .app.canvas-first-header .desktop-app-header-right-rail .design-studio-header-toggle,
+  .app.canvas-first-header .desktop-app-header-right-rail .ai-ask-toggle {
+    box-sizing: border-box;
+    display: inline-flex !important;
+    flex: 0 0 64px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding: 0 5px !important;
+    gap: 5px !important;
+    white-space: nowrap;
+    font-size: 11px;
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-wrap,
