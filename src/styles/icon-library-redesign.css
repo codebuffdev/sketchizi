@@ -1318,7 +1318,7 @@
 @media (min-width: 761px) {
   .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
     position: fixed !important;
-    inset: calc(var(--sketchizi-desktop-header-height, 58px) + 16px) auto auto 16px !important;
+    inset: calc(var(--sketchizi-desktop-header-height, 58px) + 16px) 16px auto auto !important;
     z-index: 400;
     display: flex !important;
     align-items: stretch;
