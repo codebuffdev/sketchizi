@@ -12,6 +12,8 @@ import { logger } from "../../logging/logger";
 import { serializeDrawing } from "../../fileSystem.js";
 import { resolveLiveSketchSnapshot } from "./resolveLiveSketchSnapshot.js";
 
+export const LOCAL_AUTOSAVE_INTERVAL_MS = 10_000;
+
 export function useSketchPersistence({ apiRef, documentMetadataRef }) {
   const [savedSketch, setSavedSketch] = useState(null);
   const [sketchReady, setSketchReady] = useState(false);
@@ -104,21 +106,24 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
 
   const queueSketchSave = useCallback((elements, appState) => {
     if (!sketchReady || !apiRef.current) return;
-    const revision = ++saveRevisionRef.current;
+    ++saveRevisionRef.current;
     setSaveStatus((current) => ({ ...current, state: "pending", error: null }));
-    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    // Start one 10-second window on the first edit. Further edits update the
+    // live editor snapshot but do not keep postponing the autosave indefinitely.
+    if (saveTimerRef.current) return;
     saveTimerRef.current = window.setTimeout(() => {
       saveTimerRef.current = null;
       const api = apiRef.current;
       const live = resolveLiveSketchSnapshot(api, elements, appState);
       const files = api?.getFiles?.() || {};
+      const latestRevision = saveRevisionRef.current;
       persistSketchNow({
         elements: live.elements, appState: live.appState, files,
         metadata: documentMetadataRef?.current?.metadata || {},
         extensions: documentMetadataRef?.current?.extensions || {},
         format: documentMetadataRef?.current?.format || "excalidraw",
-      }, revision);
-    }, 350);
+      }, latestRevision);
+    }, LOCAL_AUTOSAVE_INTERVAL_MS);
   }, [apiRef, documentMetadataRef, persistSketchNow, sketchReady]);
 
   const resetLocalSketch = useCallback(() => {

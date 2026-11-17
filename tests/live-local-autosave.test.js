@@ -39,3 +39,18 @@ test("debounced callback resolves the live scene immediately before persistence"
   assert.match(source, /elements: live\.elements, appState: live\.appState, files/);
   assert.match(source, /const files = api\?\.getFiles\?\.\(\) \|\| \{\}/);
 });
+
+
+test("local autosave waits ten seconds from the first pending edit without debounce starvation", () => {
+  assert.match(source, /LOCAL_AUTOSAVE_INTERVAL_MS = 10_000/);
+  assert.match(source, /if \(saveTimerRef\.current\) return;/);
+  assert.match(source, /window\.setTimeout\(\(\) => \{/);
+  assert.match(source, /\}, LOCAL_AUTOSAVE_INTERVAL_MS\)/);
+  assert.doesNotMatch(source, /window\.setTimeout\(\(\) => \{[\s\S]{0,1200}?\}, 350\)/);
+});
+
+
+test("ten-second autosave persists the newest edit revision", () => {
+  assert.match(source, /const latestRevision = saveRevisionRef\.current/);
+  assert.match(source, /\}, latestRevision\)/);
+});

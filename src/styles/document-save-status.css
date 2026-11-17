@@ -457,3 +457,28 @@
   outline: 2px solid var(--color-primary, #64748b);
   outline-offset: 2px;
 }
+
+
+/* A green save control means the latest local revision is safely persisted. */
+.desktop-app-save-status-trigger.is-saved {
+  border-color: rgba(34, 160, 107, .28);
+  background: rgba(34, 160, 107, .12);
+  color: #168454;
+}
+.desktop-app-save-status-trigger.is-saved:hover,
+.desktop-app-save-status-trigger.is-saved[aria-expanded="true"] {
+  border-color: rgba(34, 160, 107, .48);
+  background: rgba(34, 160, 107, .18);
+  color: #087443;
+}
+.app.theme-dark .desktop-app-save-status-trigger.is-saved {
+  border-color: rgba(69, 196, 139, .34);
+  background: rgba(34, 160, 107, .16);
+  color: #6cdda7;
+}
+.app.theme-dark .desktop-app-save-status-trigger.is-saved:hover,
+.app.theme-dark .desktop-app-save-status-trigger.is-saved[aria-expanded="true"] {
+  border-color: rgba(69, 196, 139, .52);
+  background: rgba(34, 160, 107, .24);
+  color: #91edbd;
+}
