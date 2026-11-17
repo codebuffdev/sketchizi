@@ -168,3 +168,78 @@
 .auth-github-repository-section { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-top: 1px solid var(--ui-border, #dedee5); border-bottom: 1px solid var(--ui-border, #dedee5); color: var(--ui-text-strong, #222); font-size: 12px; }
 .auth-github-repository-section > strong { font-size: 12px; font-weight: 700; }
 .auth-github-repository-status { color: var(--ui-text-muted, #777); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+
+
+/* Account dropdown for the existing circular sign-in control. */
+.auth-sign-in-control {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+.auth-sign-in-menu {
+  display: block;
+  width: min(258px, calc(100vw - 32px));
+  padding: 7px;
+  border-radius: 14px;
+  box-shadow: 0 16px 42px rgb(15 23 42 / 16%), 0 2px 8px rgb(15 23 42 / 6%);
+  animation: auth-sign-in-menu-enter .16s ease-out both;
+  transform-origin: top right;
+}
+.auth-sign-in-menu .auth-account-menu-heading {
+  padding: 11px 11px 12px;
+}
+.auth-sign-in-menu .auth-account-menu-heading strong {
+  font-size: 12px;
+  letter-spacing: .01em;
+}
+.auth-sign-in-menu .auth-account-menu-heading span {
+  font-size: 10.5px;
+  line-height: 1.45;
+  white-space: normal;
+}
+.auth-sign-in-menu .auth-account-menu-item {
+  min-height: 39px;
+  margin-top: 5px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  color: var(--ui-text, #303345);
+  text-decoration: none;
+}
+.auth-sign-in-menu .auth-account-menu-item:hover {
+  background: var(--ui-hover, #f2f3f5);
+  color: var(--ui-text-strong, #202334);
+}
+.auth-sign-in-menu .auth-sign-in-menu-primary {
+  min-height: 41px;
+  background: var(--ui-surface-hover, #f3f4f6);
+  color: var(--ui-text-strong, #202334);
+  font-weight: 650;
+}
+.auth-sign-in-menu .auth-sign-in-menu-primary:hover {
+  background: var(--ui-hover, #e9ebef);
+}
+.auth-sign-in-menu .auth-sign-in-menu-arrow {
+  margin-left: auto;
+  color: var(--ui-text-muted, #777d91);
+  font-size: 13px;
+}
+.app.theme-dark .auth-sign-in-menu {
+  border-color: var(--ui-border, #41424b);
+  background: var(--ui-surface-solid, #202127);
+  box-shadow: 0 18px 46px rgb(0 0 0 / 34%);
+}
+.app.theme-dark .auth-sign-in-menu .auth-sign-in-menu-primary {
+  background: var(--ui-surface-hover, #2c2d34);
+  color: var(--ui-text-strong, #f4f4f5);
+}
+.app.theme-dark .auth-sign-in-menu .auth-sign-in-menu-primary:hover,
+.app.theme-dark .auth-sign-in-menu .auth-account-menu-item:hover {
+  background: var(--ui-hover, #343640);
+  color: var(--ui-text-strong, #f4f4f5);
+}
+@keyframes auth-sign-in-menu-enter {
+  from { opacity: 0; transform: translateY(-5px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
