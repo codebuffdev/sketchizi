@@ -175,6 +175,7 @@ export default function ContextualFormattingToolbar({
   applyToSelected,
   onOpenProperties,
   propertiesOpen = false,
+  selectionProperties = null,
   canEdit = true,
 }) {
   const [openGroup, setOpenGroup] = useState(null);
@@ -229,11 +230,13 @@ export default function ContextualFormattingToolbar({
   const appState = apiRef?.current?.getAppState?.() || {};
   const activeToolType = String(appState.activeTool?.type || "").toLowerCase();
   const drawingTool = activeToolType === "freedraw";
+  const shapeTool = ["rectangle", "diamond", "ellipse"].includes(activeToolType);
+  const lineTool = ["line", "arrow"].includes(activeToolType);
   const noteTool = customToolMode === "note" || ["note", "sticky-note", "stickynote", "notes"].includes(activeToolType);
   const textTool = activeToolType === "text" || noteTool;
   const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
   const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
-  const activeToolMode = drawingTool ? "draw" : noteTool ? "text" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
+  const activeToolMode = drawingTool ? "draw" : shapeTool ? "shape" : lineTool ? "line" : noteTool ? "text" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
@@ -275,7 +278,9 @@ export default function ContextualFormattingToolbar({
   const onlyTextSelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "text" || isNoteSelectionElement(element));
   // Selected notes must edit their actual scene elements; tool defaults are
   // used only while creating new text/draw/fill/shape content.
-  const toolMode = (drawingTool || textTool || bucketFillTool || drawToShapeTool) && !noteSelection && !onlyTextSelection;
+  // Tool defaults are shown only when nothing is selected. Once an object is
+  // selected, its live scene properties take precedence over the active tool.
+  const toolMode = liveSelection.length === 0 && (drawingTool || shapeTool || lineTool || textTool || bucketFillTool || drawToShapeTool);
   const noteContainerIds = new Set(liveSelection.filter((element) => isNoteSelectionElement(element) && element.type !== "text").map((element) => element.id));
   const noteTextIds = new Set(liveSelection.filter((element) => element.type === "text").map((element) => element.id));
   for (const element of liveSelection) {
@@ -611,6 +616,28 @@ export default function ContextualFormattingToolbar({
             </>}
           </div>
         )}
+        {toolMode && activeToolMode === "shape" && (
+          <div className="format-option-section">
+            <div className="format-option-label">Edges</div>
+            <div className="format-option-row">
+              <button type="button" className={`format-option-button format-edge-button${!appState.currentItemRoundness ? " is-selected" : ""}`} aria-label="Square edges" aria-pressed={!appState.currentItemRoundness} onClick={() => applyFormatting({ roundness: null })}><span className="format-edge-square" aria-hidden="true" /></button>
+              <button type="button" className={`format-option-button format-edge-button${appState.currentItemRoundness ? " is-selected" : ""}`} aria-label="Rounded edges" aria-pressed={Boolean(appState.currentItemRoundness)} onClick={() => applyFormatting({ roundness: { type: 3 } })}><span className="format-edge-rounded" aria-hidden="true" /></button>
+            </div>
+          </div>
+        )}
+        {toolMode && activeToolMode === "line" && (
+          <>
+            <div className="format-option-label format-sub-label">Line style</div>
+            <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${appState.currentItemStrokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={appState.currentItemStrokeStyle === value} onClick={() => applyFormatting({ strokeStyle: value })}>{glyph}</button>)}</div>
+            <div className="format-option-label format-sub-label">Roughness</div>
+            <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(appState.currentItemRoughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(appState.currentItemRoughness ?? 1) === value} onClick={() => applyFormatting({ roughness: value })}>{label}</button>)}</div>
+            <div className="format-option-label format-sub-label">Arrowheads</div>
+            <div className="format-option-row format-arrowhead-row">
+              <label className="format-arrowhead-control"><span>Start</span><select aria-label="Start arrowhead" value={appState.currentItemStartArrowhead || "none"} onChange={(event) => applyFormatting({ startArrowhead: event.target.value === "none" ? null : event.target.value })}><option value="none">None</option><option value="arrow">Arrow</option><option value="bar">Bar</option><option value="dot">Dot</option></select></label>
+              <label className="format-arrowhead-control"><span>End</span><select aria-label="End arrowhead" value={appState.currentItemEndArrowhead || "none"} onChange={(event) => applyFormatting({ endArrowhead: event.target.value === "none" ? null : event.target.value })}><option value="none">None</option><option value="arrow">Arrow</option><option value="bar">Bar</option><option value="dot">Dot</option></select></label>
+            </div>
+          </>
+        )}
         {drawingTool && <div className="format-option-section">
           <div className="format-option-label">Pressure</div>
           <div className="format-option-row">
@@ -745,75 +772,75 @@ export default function ContextualFormattingToolbar({
     return null;
   };
 
+  const showSelectionProperties = liveSelection.length > 0 && Boolean(selectionProperties);
+
   return (
     <div
       ref={toolbarRef}
-      className={`contextual-formatting-toolbar${toolMode ? " is-tool-mode" : ""}`}
-      role="toolbar"
-      aria-label={toolMode ? "Drawing tool formatting" : "Selected object formatting"}
+      className={`contextual-formatting-toolbar${toolMode ? " is-tool-mode" : ""}${showSelectionProperties ? " has-selection-properties" : ""}`}
+      data-dock-mode={showSelectionProperties ? "selection-properties" : "tool-options"}
+      role={showSelectionProperties ? "region" : "toolbar"}
+      aria-label={showSelectionProperties ? "Selected element properties dock" : toolMode ? "Drawing tool formatting" : "Selected object formatting"}
       style={position}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="format-icon-rail" role="group" aria-label="Formatting options">
-        {typeof onOpenProperties === "function" && (
-          <button
-            type="button"
-            className="format-icon-button format-properties-trigger"
-            aria-label="Open properties drawer"
-            title="Open properties drawer"
-            onClick={onOpenProperties}
-          >
-            ⋯
-          </button>
-        )}
-        {visibleGroups.map((group) => (
-          <button
-            key={group.id}
-            type="button"
-            className={`format-icon-button${activeGroup === group.id ? " is-active" : ""}`}
-            aria-label={group.label}
-            aria-expanded={activeGroup === group.id}
-            aria-pressed={activeGroup === group.id}
-            title={group.label}
-            onClick={() => setOpenGroup((current) => current === group.id ? null : group.id)}
-          >{group.icon}</button>
-        ))}
-      </div>
-      {activeGroup && (
-        <div className={`format-options-popover side-${position["--format-popover-side"]}`} role="dialog" aria-label={`${visibleGroups.find((group) => group.id === activeGroup)?.label} options`}>
-          <div className="format-popover-header">
-            <strong>{visibleGroups.find((group) => group.id === activeGroup)?.label}</strong>
-            <button type="button" className="format-popover-close" aria-label="Close formatting options" onClick={() => setOpenGroup(null)}>×</button>
-          </div>
-          {activeGroup === "stroke" && bucketFillTool
-            ? <>
-                <div className="format-option-section">
-                  <div className="format-option-label">Background</div>
-                  <div className="format-option-row">
-                    {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
-                    <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color">
-                      <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-                      <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
-                    </label>
-                  </div>
-                </div>
-                <div className="format-option-section">
-                  <div className="format-option-label">Fill style</div>
-                  <div className="format-option-row">
-                    {FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value} title={label} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}
-                  </div>
-                </div>
-                <div className="format-option-section">
-                  <div className="format-option-label">Opacity</div>
-                  <div className="format-opacity-control">
-                    <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
-                    <span>{currentOpacity}</span>
-                  </div>
-                </div>
-              </>
-            : renderGroupContent(activeGroup)}
+      {showSelectionProperties ? (
+        <div className="sketchizi-selection-properties-dock">
+          {selectionProperties}
         </div>
+      ) : (
+        <>
+          <div className="format-icon-rail" role="group" aria-label="Formatting options">
+            {visibleGroups.map((group) => (
+              <button
+                key={group.id}
+                type="button"
+                className={`format-icon-button${activeGroup === group.id ? " is-active" : ""}`}
+                aria-label={group.label}
+                aria-expanded={activeGroup === group.id}
+                aria-pressed={activeGroup === group.id}
+                title={group.label}
+                onClick={() => setOpenGroup((current) => current === group.id ? null : group.id)}
+              >{group.icon}</button>
+            ))}
+          </div>
+          {activeGroup && (
+            <div className={`format-options-popover side-${position["--format-popover-side"]}`} role="dialog" aria-label={`${visibleGroups.find((group) => group.id === activeGroup)?.label} options`}>
+              <div className="format-popover-header">
+                <strong>{visibleGroups.find((group) => group.id === activeGroup)?.label}</strong>
+                <button type="button" className="format-popover-close" aria-label="Close formatting options" onClick={() => setOpenGroup(null)}>×</button>
+              </div>
+              {activeGroup === "stroke" && bucketFillTool
+                ? <>
+                    <div className="format-option-section">
+                      <div className="format-option-label">Background</div>
+                      <div className="format-option-row">
+                        {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
+                        <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color">
+                          <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                          <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="format-option-section">
+                      <div className="format-option-label">Fill style</div>
+                      <div className="format-option-row">
+                        {FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value} title={label} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}
+                      </div>
+                    </div>
+                    <div className="format-option-section">
+                      <div className="format-option-label">Opacity</div>
+                      <div className="format-opacity-control">
+                        <input type="range" aria-label="Opacity" min="0" max="100" step="1" value={currentOpacity} onChange={(event) => applyFormatting({ opacity: Number(event.target.value) })} />
+                        <span>{currentOpacity}</span>
+                      </div>
+                    </div>
+                  </>
+                : renderGroupContent(activeGroup)}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
