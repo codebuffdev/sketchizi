@@ -729,12 +729,20 @@
     border-radius: 10px;
     background: var(--ui-surface-solid, #fff);
     box-shadow: 0 3px 12px rgb(15 23 42 / 10%);
-    transform: translateY(-8px);
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(0);
     z-index: 1302;
   }
 
-  .app.canvas-first-header .desktop-app-header-reveal-handle.is-visible {
-    transform: translateY(0);
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail:not(.is-hidden) {
+    top: calc(var(--header-top, 18px) + 48px) !important;
+    transition: top .18s ease, opacity .16s ease, visibility .18s linear;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle.is-expanded {
+    background: var(--ui-hover, #f3f4f6);
   }
 
   .app.canvas-first-header .desktop-app-header-reveal-handle svg {
