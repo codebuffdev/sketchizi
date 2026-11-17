@@ -2504,3 +2504,19 @@
   margin-block: 0 !important;
   padding-block: 0 !important;
 }
+
+
+/* The remaining Lock/Hand gap came from the grip's 24px flex-basis.
+   Collapse the grip's vertical footprint; keep its horizontal drag hit area. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-grip {
+  box-sizing: border-box !important;
+  flex: 0 0 10px !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 10px !important;
+  min-height: 10px !important;
+  max-height: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
