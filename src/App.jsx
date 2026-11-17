@@ -9,6 +9,7 @@ import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
+import { applyCanvasAppearance, getCanvasAppearanceFromBackground } from "./features/navigation/canvasAppearance.js";
 import { useSketchiziEscape } from "./features/navigation/useSketchiziEscape";
 import { useSketchPersistence } from "./features/persistence/useSketchPersistence";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
@@ -56,6 +57,7 @@ const ArchitectureTemplatesModal = lazy(() => import("./components/app/Architect
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
+import "./styles/canvas-style-patterns.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 
@@ -79,6 +81,7 @@ function App() {
   useEffect(() => {
     try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Private browsing. */ }
   }, [gridStyle]);
+  const [canvasAppearance, setCanvasAppearance] = useState("clean");
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -680,8 +683,19 @@ function App() {
   const preferences = useSketchiziPreferences({
     apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid,
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
+    canvasAppearance, setCanvasAppearance,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
+  useEffect(() => {
+    if (!savedSketch) return;
+    setCanvasAppearance(getCanvasAppearanceFromBackground(savedSketch.appState?.viewBackgroundColor));
+  }, [savedSketch]);
+  const handleCanvasAppearanceChange = useCallback((appearance) => {
+    if (!collaborationCanEdit) return;
+    setCanvasAppearance(appearance);
+    if (appearance === "clean") preferences.useThemeDefaultBackground();
+    else applyCanvasAppearance(apiRef.current, appearance, isDarkTheme);
+  }, [collaborationCanEdit, isDarkTheme, preferences.useThemeDefaultBackground]);
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -1638,6 +1652,8 @@ function App() {
         commands={commands}
         gridEnabled={gridEnabled}
         gridStyle={gridStyle}
+        canvasAppearance={canvasAppearance}
+        onCanvasAppearanceChange={handleCanvasAppearanceChange}
         onToggleGrid={toggleGrid}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
@@ -1784,6 +1800,7 @@ function App() {
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
             gridStyle={gridStyle}
+            canvasAppearance={canvasAppearance}
              onGridVisibilityChange={setGridEnabled}
              gridEnabled={gridEnabled}
           />

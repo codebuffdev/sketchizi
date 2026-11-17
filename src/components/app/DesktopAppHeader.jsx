@@ -72,6 +72,8 @@ export default function DesktopAppHeader({
   commands,
   gridEnabled = false,
   gridStyle = "focus",
+  canvasAppearance = "clean",
+  onCanvasAppearanceChange,
   onToggleGrid,
   onGridStyleChange,
   openCommandPalette,
@@ -568,6 +570,24 @@ export default function DesktopAppHeader({
                 <span className="sketchizi-header-grid-switch" aria-hidden="true" />
               </label>
             </div>
+            <div className="sketchizi-header-appearance-section" aria-label="Canvas appearance">
+              <strong>Appearance preset</strong>
+              <div className="sketchizi-header-appearance-options" role="group" aria-label="Canvas appearance preset">
+                {[
+                  ["sketch", "Sketch", "Warm paper, informal drawing surface."],
+                  ["clean", "Clean", "Neutral surface for professional diagrams."],
+                  ["chalkboard", "Chalkboard", "Dark board with contrasting drawing colors."],
+                ].map(([value, label, description]) => (
+                  <button key={value} type="button" disabled={!canEditCanvas} aria-pressed={canvasAppearance === value}
+                    onClick={() => onCanvasAppearanceChange?.(value)}>
+                    <span className={`sketchizi-appearance-preview is-${value}`} aria-hidden="true"><i /><i /><i /></span>
+                    <strong>{label}</strong>
+                    <small>{description}</small>
+                    {canvasAppearance === value && <span className="sketchizi-grid-selected-check" aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
               <strong>Canvas patterns</strong>
               <div className="sketchizi-header-grid-options" role="group" aria-label="Grid mode">
@@ -624,7 +644,7 @@ export default function DesktopAppHeader({
 
       <div className="desktop-app-header-actions">
         <div className="desktop-app-header-account-zone">
-          <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} api={canvasApi} canEdit={canEditCanvas} />
+          <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
         </div>
         <div className="desktop-app-header-panel-actions">{children}</div>
         {moreToolsToggle}
