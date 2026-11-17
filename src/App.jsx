@@ -1878,16 +1878,14 @@ function App() {
         >
           {architectureValidationOpen && (
             <div className="desktop-validation-host is-open">
-              {architectureValidationOpen && (
-                <ArchitectureValidationPanel
+              <ArchitectureValidationPanel
                   validation={architectureValidation}
                   sceneElements={apiRef.current?.getSceneElements?.() || []}
                   onClose={() => closePanel("architecture-validation")}
                   onSelectDiagnostic={selectArchitectureDiagnostic}
                   onApplyKubernetesSuggestion={applyKubernetesSuggestion}
                   canApplyCorrections={collaborationCanEdit}
-                />
-              )}
+              />
             </div>
           )}
         </aside>
