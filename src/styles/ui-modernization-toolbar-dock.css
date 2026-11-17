@@ -1931,3 +1931,114 @@
     margin-left: 4px !important;
   }
 }
+
+
+/* Jojo-style contextual tool dock: tool defaults and selected-object controls
+   stay in one compact horizontal strip at the bottom of the canvas. */
+.app .sketchizi-tool-options-dock {
+  position: absolute;
+  z-index: 10045;
+  left: 50%;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: calc(100% - 112px);
+  min-height: 48px;
+  padding: 6px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid #3a414b;
+  border-radius: 13px;
+  background: rgb(28 32 38 / 96%);
+  box-shadow: 0 8px 26px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  color: #e7e9ed;
+  transform: translateX(-50%);
+  scrollbar-width: none;
+  backdrop-filter: blur(16px);
+}
+.app .sketchizi-tool-options-dock::-webkit-scrollbar { display: none; }
+.app .sk-tool-dock-context {
+  flex: 0 0 auto;
+  padding: 0 7px 0 2px;
+  color: #aeb5bf;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .035em;
+  white-space: nowrap;
+}
+.app .sk-tool-dock-group {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding-left: 8px;
+  border-left: 1px solid #414852;
+}
+.app .sk-tool-option-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 27px;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #c6ccd4;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.app .sk-tool-option-button:hover { background: #343b44; color: #fff; }
+.app .sk-tool-option-button.is-active {
+  border-color: #68727d;
+  background: #414a54;
+  color: #fff;
+}
+.app .sk-tool-color-dot {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  padding: 0;
+  border: 2px solid #6a737d;
+  border-radius: 50%;
+  background: var(--tool-color);
+  cursor: pointer;
+}
+.app .sk-tool-color-dot.is-active { outline: 2px solid #e5e9ee; outline-offset: 2px; }
+.app .sk-tool-color-control {
+  position: relative;
+  display: inline-flex;
+  width: 25px;
+  height: 25px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #5a636e;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.app .sk-tool-color-swatch { width: 15px; height: 15px; border: 1px solid #aeb5bf; border-radius: 4px; color: #e7e9ed; font-size: 12px; text-align: center; line-height: 14px; }
+.app .sk-tool-color-control input { position: absolute; inset: -5px; width: 35px; height: 35px; opacity: 0; cursor: pointer; }
+.app .sketchizi-tool-options-dock select {
+  height: 28px;
+  max-width: 118px;
+  padding: 0 6px;
+  border: 1px solid #4a535e;
+  border-radius: 7px;
+  background: #252b32;
+  color: #dce1e7;
+  font-size: 11px;
+}
+.app .sketchizi-tool-options-dock input[type="range"] { width: 76px; accent-color: #aeb7c1; }
+.app .sk-tool-dock-opacity-value { min-width: 31px; color: #b8c0c9; font-size: 10px; text-align: right; }
+.app .excalidraw .App-menu__left { display: none !important; }
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock { bottom: 10px; max-width: calc(100% - 82px); gap: 5px; padding: 5px 7px; }
+  .app .sk-tool-dock-context { display: none; }
+  .app .sk-tool-dock-group { padding-left: 5px; gap: 3px; }
+}
