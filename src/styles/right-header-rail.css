@@ -967,3 +967,12 @@
     height: 16px;
   }
 }
+
+
+/* Center the 32px Sliders trigger on the same 40px top row as the
+   hamburger and canvas title. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    top: calc(var(--header-top, 18px) + (var(--header-top-control-height, 40px) - 32px) / 2);
+  }
+}
