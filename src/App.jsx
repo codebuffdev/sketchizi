@@ -1574,9 +1574,7 @@ function App() {
 
   const workspaceToggle = (
     <CreateMenu
-      onBlankDrawing={() => fileActionsRef.current.createNewFile?.()}
       onTemplates={() => setDesignStudioOpen(true)}
-      onCloudWorkspace={() => window.location.assign("/workspace")}
       onKubernetesStudio={() => setKubernetesStudioOpen(true)}
       onDockerStudio={() => setDockerStudioOpen(true)}
       onBeforeOpen={() => {
