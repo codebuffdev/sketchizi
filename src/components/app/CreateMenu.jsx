@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
  * available, but are no longer the first thing someone sees.
  */
 export default function CreateMenu({
-  onTemplates,
   onKubernetesStudio,
   onDockerStudio,
   onBeforeOpen,
@@ -79,24 +78,19 @@ export default function CreateMenu({
         type="button"
         className={open ? "design-studio-header-toggle active" : "design-studio-header-toggle"}
         onClick={toggle}
-        title="Create"
-        aria-label="Create"
+        title="DevOps"
+        aria-label="DevOps"
         aria-haspopup="menu"
         aria-expanded={open}
       >
         <svg className="workspaces-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
         </svg>
-        <span>Create</span>
+        <span>DevOps</span>
       </button>
       {open && (
-        <div ref={menuRef} className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="Create a drawing">
-          <div className="sketchizi-create-menu-heading">Draw</div>
-          <button type="button" role="menuitem" className="design-studio-menu-item" onClick={() => choose(onTemplates)}>
-            <span className="create-design-menu-icon" aria-hidden="true">◇</span>
-            <span><strong>Templates</strong><small>Flowcharts, mind maps, and diagrams</small></span>
-          </button>
-          <div className="sketchizi-create-menu-heading">Engineering tools</div>
+        <div ref={menuRef} className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="DevOps tools">
+          <div className="sketchizi-create-menu-heading">DevOps tools</div>
           <button type="button" role="menuitem" className="kubernetes-studio-menu-item" onClick={() => choose(onKubernetesStudio)}>
             <span className="create-design-menu-icon" aria-hidden="true"><img src="/icons/kubernetes.svg" alt="" width="22" height="22" /></span>
             <span><strong>Kubernetes Studio</strong><small>Import and visualize manifests</small></span>

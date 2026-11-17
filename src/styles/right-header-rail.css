@@ -584,3 +584,31 @@
     transform: translateY(-1px);
   }
 }
+
+
+/* Templates belong to the Canvas controls, alongside canvas appearance. */
+.app.canvas-first-header .sketchizi-header-grid-template-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border, #dfe3eb);
+  border-radius: 9px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #252631);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app.canvas-first-header .sketchizi-header-grid-template-action:hover {
+  background: var(--ui-hover, #f3f4f6);
+}
+.app.theme-dark.canvas-first-header .sketchizi-header-grid-template-action {
+  border-color: var(--ui-border, #384252);
+  background: var(--ui-surface-solid, #202733);
+  color: var(--ui-text, #f2f2f4);
+}

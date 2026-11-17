@@ -1574,7 +1574,6 @@ function App() {
 
   const workspaceToggle = (
     <CreateMenu
-      onTemplates={() => setDesignStudioOpen(true)}
       onKubernetesStudio={() => setKubernetesStudioOpen(true)}
       onDockerStudio={() => setDockerStudioOpen(true)}
       onBeforeOpen={() => {
@@ -1717,7 +1716,7 @@ function App() {
           aria-expanded={aiAskOpen}
         >
           <AiAskIcon className="ai-ask-toggle-icon" />
-          <span>AI Ask</span>
+          <span>AI</span>
         </button>
 
 

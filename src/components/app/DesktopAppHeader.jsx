@@ -658,6 +658,19 @@ export default function DesktopAppHeader({
                 gridStyle === "focus" ? "Focus Grid emphasizes the central canvas area." :
                 "Grid displays a uniform pattern across the canvas."}
             </p>
+            <button
+              type="button"
+              className="sketchizi-header-grid-template-action"
+              onClick={() => {
+                setGridPopoverOpen(false);
+                setOpenMenu(null);
+                onOpenTemplates?.();
+              }}
+            >
+              <span aria-hidden="true">◇</span>
+              <span>Browse templates</span>
+              <span aria-hidden="true">→</span>
+            </button>
           </section>
         )}
       </div>
