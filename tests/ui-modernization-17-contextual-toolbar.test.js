@@ -35,11 +35,11 @@ test('the full PropertiesPanel is mounted in the contextual dock without hiding 
   assert.ok(app.includes('dockMode'));
 });
 
-test('More restores the current selection before opening Properties', () => {
-  assert.match(app, /selectedIds = selectedElements\.filter\(\(element\) => element && !element\.isDeleted\)\.map\(\(element\) => element\.id\)/);
-  assert.match(app, /selectedElementIds: Object\.fromEntries\(selectedIds\.map\(\(id\) => \[id, true\]\)\)/);
-  assert.match(app, /onOpenProperties=\{\(\) => \{/);
-  assert.match(app, /openPanel\("properties"\)/);
+test('selected objects automatically expose their full PropertiesPanel in the canvas dock', () => {
+  assert.match(app, /selectedElements=\{selectedElements\}/);
+  assert.match(app, /selectionProperties=\{[\s\S]*?<PropertiesPanel/);
+  assert.match(toolbar, /showSelectionProperties = liveSelection\.length > 0 && Boolean\(selectionProperties\)/);
+  assert.doesNotMatch(app, /<aside[\s\S]*?<PropertiesPanel/);
 });
 
 test('contextual docks use existing selection update callbacks and the full PropertiesPanel', () => {
