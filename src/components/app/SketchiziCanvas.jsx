@@ -247,22 +247,6 @@ export default function SketchiziCanvas({
     return () => observer.disconnect();
   }, []);
 
-
-
-  // Selecting any tool from the dock dismisses the legacy Properties panel.
-  // The floating formatting toolbar remains the primary control surface.
-  useEffect(() => {
-    const root = canvasRootRef.current;
-    if (!root || !onToolActivated) return undefined;
-    const handleDockPointerDown = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (!target?.closest(".App-toolbar button, .App-toolbar [role='button']")) return;
-      onToolActivated();
-    };
-    root.addEventListener("pointerdown", handleDockPointerDown, true);
-    return () => root.removeEventListener("pointerdown", handleDockPointerDown, true);
-  }, [onToolActivated]);
-
   // Enhance Excalidraw's own toolbar in place. Buttons and their React handlers
   // stay native; this adds only a grip, separators, and session-only dragging.
   useEffect(() => {
