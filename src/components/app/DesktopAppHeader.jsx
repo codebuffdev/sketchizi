@@ -138,7 +138,6 @@ export default function DesktopAppHeader({
   }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [documentTitleVisible, setDocumentTitleVisible] = useState(true);
   const [authControlVisible, setAuthControlVisible] = useState(true);
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
@@ -178,7 +177,6 @@ export default function DesktopAppHeader({
       if (headerPinned || !(event.target instanceof Element)) return;
       if (event.target.closest(".desktop-canvas-region")) {
         setHeaderVisible(false);
-        setDocumentTitleVisible(false);
         setAuthControlVisible(false);
       }
     };
@@ -191,11 +189,9 @@ export default function DesktopAppHeader({
       const viewportWidth = document.documentElement.clientWidth;
       const rightRail = window.matchMedia("(min-width: 1025px)").matches;
       const nearTop = event.clientY <= 24;
-      const nearTitle = nearTop && event.clientX >= 48 && event.clientX <= Math.min(640, viewportWidth - 180);
       const nearAccount = nearTop && event.clientX >= viewportWidth - 100;
       const nearRightRail = rightRail && event.clientX >= viewportWidth - 20 && event.clientY > 64;
 
-      if (nearTitle) setDocumentTitleVisible(true);
       if (nearAccount) setAuthControlVisible(true);
       if (nearRightRail || (!rightRail && nearTop)) setHeaderVisible(true);
     };
@@ -595,9 +591,7 @@ export default function DesktopAppHeader({
                   ["focus", "Focus Grid", "Dense central grid with soft edges."],
                   ["local", "Local Focus Grid", "Dense grid around drawing content."],
                   ["dots", "Dot Grid", "Subtle dotted drafting surface."],
-                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."],
-                  ["columns", "Column Guides", "Vertical layout columns."],
-                  ["coordinates", "Coordinate Grid", "Grid with X and Y axes."]].map(([value, label, description]) => (
+                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."]].map(([value, label, description]) => (
                   <button key={value} type="button" aria-pressed={gridStyle === value}
                     onClick={() => {
                       onGridStyleChange?.(value);
@@ -616,8 +610,6 @@ export default function DesktopAppHeader({
               {!gridEnabled ? "Choose a canvas style, then turn on Show pattern whenever you want it visible." :
                 gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
                 gridStyle === "ruled" ? "Ruled Paper adds evenly spaced horizontal guides." :
-                gridStyle === "columns" ? "Column Guides add vertical layout guides." :
-                gridStyle === "coordinates" ? "Coordinate Grid adds reference axes and grid lines." :
                 gridStyle === "local" ? "Local Focus Grid concentrates detail around drawing content." :
                 gridStyle === "focus" ? "Focus Grid emphasizes the central canvas area." :
                 "Grid displays a uniform pattern across the canvas."}
@@ -688,7 +680,7 @@ export default function DesktopAppHeader({
       </div>
 
       <div
-        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}${documentTitleVisible ? "" : " is-title-hidden"}`}
+        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
         aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
       >

@@ -9,6 +9,7 @@ import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
+import { getInitialThemeMode } from "./features/navigation/themePreference.js";
 import { applyCanvasAppearance, getCanvasAppearanceFromBackground } from "./features/navigation/canvasAppearance.js";
 import { useSketchiziEscape } from "./features/navigation/useSketchiziEscape";
 import { useSketchPersistence } from "./features/persistence/useSketchPersistence";
@@ -70,17 +71,25 @@ function App() {
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
-  const [gridEnabled, setGridEnabled] = useState(false);
+  const [gridEnabled, setGridEnabled] = useState(() => {
+    try {
+      const stored = window.localStorage.getItem("sketchizi-grid-enabled");
+      return stored === null ? getInitialThemeMode() === "dark" : stored === "true";
+    } catch { return getInitialThemeMode() === "dark"; }
+  });
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-style");
-      return ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].includes(stored) ? stored : "focus";
-    } catch { return "focus"; }
+      return ["normal", "focus", "local", "dots", "ruled"].includes(stored) ? stored : (getInitialThemeMode() === "dark" ? "dots" : "focus");
+    } catch { return getInitialThemeMode() === "dark" ? "dots" : "focus"; }
   });
   useEffect(() => {
     try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Private browsing. */ }
   }, [gridStyle]);
-  const [canvasAppearance, setCanvasAppearance] = useState("clean");
+  useEffect(() => {
+    try { window.localStorage.setItem("sketchizi-grid-enabled", String(gridEnabled)); } catch { /* Private browsing. */ }
+  }, [gridEnabled]);
+  const [canvasAppearance, setCanvasAppearance] = useState(() => getInitialThemeMode() === "dark" ? "sketch" : "clean");
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -687,8 +696,17 @@ function App() {
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
   useEffect(() => {
     if (!savedSketch) return;
-    setCanvasAppearance(getCanvasAppearanceFromBackground(savedSketch.appState?.viewBackgroundColor, savedSketch.appState?.currentItemRoughness));
-  }, [savedSketch]);
+    const hasElements = (savedSketch.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
+    const roughness = savedSketch.appState?.currentItemRoughness;
+    const background = String(savedSketch.appState?.viewBackgroundColor || "").trim();
+    const hasExplicitAppearance = background.toLowerCase() === "#1b382f" ||
+      (typeof roughness === "number" && (roughness === 0 || roughness >= 2));
+    if (hasElements || hasExplicitAppearance) {
+      setCanvasAppearance(getCanvasAppearanceFromBackground(background, roughness));
+    } else {
+      setCanvasAppearance(isDarkTheme ? "sketch" : "clean");
+    }
+  }, [isDarkTheme, savedSketch]);
   const handleCanvasAppearanceChange = useCallback((appearance) => {
     if (!collaborationCanEdit) return;
     setCanvasAppearance(appearance);
