@@ -1716,7 +1716,6 @@ function App() {
           aria-expanded={aiAskOpen}
         >
           <AiAskIcon className="ai-ask-toggle-icon" />
-          <span>AI</span>
         </button>
 
 

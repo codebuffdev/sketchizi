@@ -83,10 +83,9 @@ export default function CreateMenu({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <svg className="workspaces-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 5v14M5 12h14" />
+        <svg className="workspaces-menu-icon devops-header-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M7 8.5c-2.2 0-4 1.6-4 3.5s1.8 3.5 4 3.5c4 0 6-7 10-7 2.2 0 4 1.6 4 3.5s-1.8 3.5-4 3.5c-4 0-6-7-10-7Z" />
         </svg>
-        <span>DevOps</span>
       </button>
       {open && (
         <div ref={menuRef} className="devops-studio-dropdown create-design-dropdown" role="menu" aria-label="DevOps tools">
