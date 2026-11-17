@@ -138,7 +138,6 @@ export default function DesktopAppHeader({
   }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [documentTitleVisible, setDocumentTitleVisible] = useState(true);
   const [authControlVisible, setAuthControlVisible] = useState(true);
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
@@ -178,7 +177,6 @@ export default function DesktopAppHeader({
       if (headerPinned || !(event.target instanceof Element)) return;
       if (event.target.closest(".desktop-canvas-region")) {
         setHeaderVisible(false);
-        setDocumentTitleVisible(false);
         setAuthControlVisible(false);
       }
     };
@@ -195,7 +193,6 @@ export default function DesktopAppHeader({
       const nearAccount = nearTop && event.clientX >= viewportWidth - 100;
       const nearRightRail = rightRail && event.clientX >= viewportWidth - 20 && event.clientY > 64;
 
-      if (nearTitle) setDocumentTitleVisible(true);
       if (nearAccount) setAuthControlVisible(true);
       if (nearRightRail || (!rightRail && nearTop)) setHeaderVisible(true);
     };
@@ -684,7 +681,7 @@ export default function DesktopAppHeader({
       </div>
 
       <div
-        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}${documentTitleVisible ? "" : " is-title-hidden"}`}
+        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${currentDocumentName} — ${documentStatusLabel}`}
         aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
       >
