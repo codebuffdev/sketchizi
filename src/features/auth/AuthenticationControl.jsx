@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fetchAuthProviders, fetchCurrentUser, fetchGitHubRepositoryConnection, invalidateCurrentUserCache, disconnectGitHubRepositoryConnection, signOut, startGitHubRepositoryConnection, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
 
@@ -6,6 +6,8 @@ export default function AuthenticationControl() {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [signInMenuOpen, setSignInMenuOpen] = useState(false);
+  const signInMenuCloseTimerRef = useRef(null);
   const [loginError, setLoginError] = useState("");
   // Keep both sign-in choices visible while provider discovery is unavailable.
   // A successful provider response below still hides any provider not configured.
@@ -135,6 +137,30 @@ export default function AuthenticationControl() {
     window.addEventListener("keydown", close, true);
     return () => window.removeEventListener("keydown", close, true);
   }, [dialogOpen]);
+
+  useEffect(() => {
+    if (!signInMenuOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest(".auth-sign-in-control")) return;
+      setSignInMenuOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setSignInMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [signInMenuOpen]);
+
+  useEffect(() => () => {
+    if (signInMenuCloseTimerRef.current !== null) {
+      window.clearTimeout(signInMenuCloseTimerRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     if (!profileMenuOpen) return undefined;
@@ -286,12 +312,72 @@ export default function AuthenticationControl() {
           )}
         </div>
       ) : (
-        <button className="auth-header-button auth-header-sign-in-icon" type="button" aria-label="Sign in" title="Sign in" onClick={() => { setSignInContext({ message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.", returnTo: "" }); setDialogOpen(true); }}>
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="8" r="3.5" />
-            <path d="M5 20c.7-3.2 3.2-5 7-5s6.3 1.8 7 5" />
-          </svg>
-        </button>
+        <div
+          className="auth-sign-in-control"
+          onPointerEnter={() => {
+            if (signInMenuCloseTimerRef.current !== null) {
+              window.clearTimeout(signInMenuCloseTimerRef.current);
+              signInMenuCloseTimerRef.current = null;
+            }
+            setSignInMenuOpen(true);
+          }}
+          onPointerLeave={() => {
+            if (signInMenuCloseTimerRef.current !== null) window.clearTimeout(signInMenuCloseTimerRef.current);
+            signInMenuCloseTimerRef.current = window.setTimeout(() => {
+              signInMenuCloseTimerRef.current = null;
+              setSignInMenuOpen(false);
+            }, 180);
+          }}
+        >
+          <button
+            className="auth-header-button auth-header-sign-in-icon"
+            type="button"
+            aria-label="Sign in"
+            title="Sign in"
+            aria-haspopup="menu"
+            aria-expanded={signInMenuOpen}
+            onClick={() => setSignInMenuOpen((open) => !open)}
+          >
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.5" />
+              <path d="M5 20c.7-3.2 3.2-5 7-5s6.3 1.8 7 5" />
+            </svg>
+          </button>
+          {signInMenuOpen && (
+            <div className="auth-account-menu auth-sign-in-menu" role="menu" aria-label="Account menu">
+              <div className="auth-account-menu-heading">
+                <strong>Account</strong>
+                <span>Sign in to access your Sketchizi workspace</span>
+              </div>
+              <button
+                className="auth-account-menu-item auth-sign-in-menu-primary"
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setSignInMenuOpen(false);
+                  setSignInContext({
+                    message: "Sign in to use account-based features. Your canvas and collaboration remain available without signing in.",
+                    returnTo: "",
+                  });
+                  setDialogOpen(true);
+                }}
+              >
+                <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M11 3h4.2A1.8 1.8 0 0 1 17 4.8v10.4a1.8 1.8 0 0 1-1.8 1.8H11" />
+                  <path d="m8 6-4 4 4 4M4 10h9" />
+                </svg>
+                <span>Sign in to Sketchizi</span>
+                <span className="auth-sign-in-menu-arrow" aria-hidden="true">↗</span>
+              </button>
+              <a className="auth-account-menu-item auth-sign-in-menu-link" href="/workspace" role="menuitem" onClick={() => setSignInMenuOpen(false)}>
+                <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l1.5 1.7h5.5A1.5 1.5 0 0 1 17 8.2v6.3a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5Z" />
+                </svg>
+                <span>Cloud Workspace</span>
+              </a>
+            </div>
+          )}
+        </div>
       )}
 
       {loginError && auth.status !== "authenticated" && <span className="auth-inline-error" role="status">{loginError}</span>}
