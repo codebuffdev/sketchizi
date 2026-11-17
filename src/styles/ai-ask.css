@@ -376,25 +376,25 @@
 }
 
 
-/* AI Ask uses a calm teal identity without changing the rest of the app theme. */
+/* AI Ask follows Sketchizi's shared neutral graphite palette. */
 .ai-ask-panel {
-  --ui-accent: #087f79;
-  --ui-active: #e4f4f2;
-  --ai-ask-accent: #159b92;
-  --ai-ask-accent-strong: #087f79;
-  --ai-ask-accent-soft: color-mix(in srgb, var(--ai-ask-accent) 13%, var(--ui-surface-solid, #fff));
-  --ai-ask-accent-border: color-mix(in srgb, var(--ai-ask-accent) 34%, var(--ui-border, #dedede));
-  --ai-ask-accent-ink: #062d2a;
+  --ui-accent: #555a62;
+  --ui-active: #eff0f2;
+  --ai-ask-accent: #555a62;
+  --ai-ask-accent-strong: #3f444b;
+  --ai-ask-accent-soft: #eff0f2;
+  --ai-ask-accent-border: #d5d8dc;
+  --ai-ask-accent-ink: #ffffff;
 }
 
 .app.theme-dark .ai-ask-panel {
-  --ui-accent: #57d1c6;
-  --ui-active: #173537;
-  --ai-ask-accent: #37bdb2;
-  --ai-ask-accent-strong: #70ddd3;
-  --ai-ask-accent-soft: #173537;
-  --ai-ask-accent-border: #28635f;
-  --ai-ask-accent-ink: #062523;
+  --ui-accent: #c3c6ca;
+  --ui-active: #34373b;
+  --ai-ask-accent: #aeb3b8;
+  --ai-ask-accent-strong: #d4d7da;
+  --ai-ask-accent-soft: #303337;
+  --ai-ask-accent-border: #55595e;
+  --ai-ask-accent-ink: #17191b;
 }
 
 .ai-ask-mark,
