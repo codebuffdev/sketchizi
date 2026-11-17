@@ -49,3 +49,12 @@ test("stroke width choices use visual line-weight icons instead of numeric label
   assert.doesNotMatch(dock, /onClick=\{\(\) => update\(\{ strokeWidth: width \}\)\}>\{width\}<\/ToolButton>/);
   assert.match(dock, /title=\{\`Stroke width \$\{width\}\`\}/);
 });
+
+
+test("the primary dock defaults to a vertical left-edge position on desktop", () => {
+  assert.match(canvas, /toolbar\.dataset\.sketchiziOrientation = "vertical"/);
+  assert.match(canvas, /toolbar\.dataset\.sketchiziDockSide = "left"/);
+  assert.match(canvas, /container\.style\.setProperty\("left", "8px", "important"\)/);
+  assert.match(canvas, /container\.style\.setProperty\("top", "50%", "important"\)/);
+  assert.match(canvas, /container\.dataset\.sketchiziDockPositioned = "true"/);
+});
