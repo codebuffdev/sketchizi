@@ -43,12 +43,32 @@ export default function SketchiziCanvas({
     if (!rect.width || !rect.height) return;
     const api = apiRef?.current;
     const state = api?.getAppState?.() || {};
-    // The native Show Grid toggle is the single source of truth for BOTH
-    // decorative layers. Respect live Excalidraw state, not just saved props.
-    const showGrid = state.gridModeEnabled ?? savedSketch?.appState?.gridModeEnabled ?? gridEnabled;
+    // Canvas patterns are a Sketchizi presentation layer, independent of
+    // Excalidraw's native grid. This prevents the native grid from stacking
+    // underneath the selected custom pattern.
+    const showGrid = !!gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
-    node.classList.toggle("is-focus-style", gridStyle === "focus");
-    node.classList.toggle("is-local-style", gridStyle === "local");
+    ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].forEach((style) => {
+      node.classList.toggle(`is-${style}-style`, gridStyle === style);
+    });
+
+    // In Pages mode, clip column guides to the active page outline.
+    const pageOutline = pageContext?.mode === "pages"
+      ? document.querySelector(".canvas-pages-page-outline")
+      : null;
+    if (gridStyle === "columns" && pageOutline) {
+      const layerRect = node.getBoundingClientRect();
+      const pageRect = pageOutline.getBoundingClientRect();
+      const left = Math.max(0, pageRect.left - layerRect.left);
+      const top = Math.max(0, pageRect.top - layerRect.top);
+      node.style.setProperty("--sk-grid-page-left", `${left}px`);
+      node.style.setProperty("--sk-grid-page-top", `${top}px`);
+      node.style.setProperty("--sk-grid-page-width", `${Math.max(0, Math.min(layerRect.width - left, pageRect.width))}px`);
+      node.style.setProperty("--sk-grid-page-height", `${Math.max(0, Math.min(layerRect.height - top, pageRect.height))}px`);
+      node.classList.add("is-page-bounded-columns");
+    } else {
+      node.classList.remove("is-page-bounded-columns");
+    }
     if (!showGrid) {
       node.classList.remove("has-focus");
       return;
@@ -87,7 +107,7 @@ export default function SketchiziCanvas({
     node.style.setProperty("--sk-grid-focus-top", `${focus.top}px`);
     node.style.setProperty("--sk-grid-focus-width", `${focus.width}px`);
     node.style.setProperty("--sk-grid-focus-height", `${focus.height}px`);
-  }, [apiRef, savedSketch, gridEnabled, gridStyle]);
+  }, [apiRef, savedSketch, gridEnabled, gridStyle, pageContext]);
 
   useEffect(() => {
     const root = canvasRootRef.current;
@@ -203,7 +223,6 @@ export default function SketchiziCanvas({
 
   const handleSceneChange = useCallback((elements, appState, files) => {
     setCanvasRevision((revision) => revision + 1);
-    onGridVisibilityChange?.(Boolean(appState?.gridModeEnabled));
     handleChange?.(elements, appState, files);
   }, [canEdit, handleChange, viewModeEnabled, onGridVisibilityChange]);
   const handleViewportChange = useCallback((...args) => {
@@ -813,7 +832,7 @@ export default function SketchiziCanvas({
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasBackground(isDarkTheme),
-            gridModeEnabled: savedSketch?.appState?.gridModeEnabled ?? gridEnabled,
+            gridModeEnabled: false,
           },
           files: savedSketch?.files || {},
         }}

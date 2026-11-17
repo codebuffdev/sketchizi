@@ -16,7 +16,9 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     if (!api) return;
     const safeSize = Math.max(5, Math.min(100, Number(size) || 20));
     setGridSize(safeSize); setGridEnabled(enabled);
-    api.updateScene({ appState: { gridModeEnabled: enabled, gridSize: safeSize, gridStep: safeSize }, captureUpdate: CaptureUpdateAction.NEVER });
+    // Keep Excalidraw's native grid disabled. gridEnabled controls only
+    // Sketchizi's custom Canvas Style overlay.
+    api.updateScene({ appState: { gridModeEnabled: false, gridSize: safeSize, gridStep: safeSize }, captureUpdate: CaptureUpdateAction.NEVER });
   }, [apiRef, canEdit, gridSize, setGridEnabled, setGridSize]);
   const toggleGrid = useCallback(() => setGrid(!gridEnabled, gridSize), [gridEnabled, gridSize, setGrid]);
   const activateArrowTool = useCallback(() => { if (!apiRef.current || !canEdit) return; apiRef.current.setActiveTool({ type: "arrow" }); setConnectionMode(true); }, [apiRef, setConnectionMode]);
