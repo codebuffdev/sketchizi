@@ -53,7 +53,7 @@ import DesktopAppHeader from "./components/app/DesktopAppHeader";
 import CreateMenu from "./components/app/CreateMenu";
 const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
-import AiAskPanel, { AiAskIcon } from "./features/ai/AiAskPanel.jsx";
+import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 import "./features/design/design.css";
@@ -1715,7 +1715,7 @@ function App() {
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
         >
-          <AiAskIcon className="ai-ask-toggle-icon" />
+          <span className="ai-ask-toggle-label">AI</span>
         </button>
 
 

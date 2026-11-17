@@ -551,7 +551,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           {mode === 'pages'
             ? <><path d="M7.5 7.5h9v9h-9z"/><path d="M8 5H5v3M16 5h3v3M19 16v3h-3M8 19H5v-3"/></>
-            : <path d="M6.5 16.5c4.5 0 7-9 11-9a4.5 4.5 0 0 1 0 9c-4 0-6.5-9-11-9a4.5 4.5 0 0 0 0 9Z"/>}
+            : <><path d="M12 12V4m-3 3 3-3 3 3M12 12v8m-3-3 3 3 3-3M12 12H4m3-3-3 3 3 3M12 12h8m-3-3 3 3-3 3"/></>}
         </svg>
       </button>
       {open && <div className="canvas-pages-menu" role="dialog" aria-label="Canvas options">
