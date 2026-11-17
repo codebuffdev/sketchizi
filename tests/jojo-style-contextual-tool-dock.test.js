@@ -58,3 +58,16 @@ test("the primary dock defaults to a vertical left-edge position on desktop", ()
   assert.match(canvas, /container\.style\.setProperty\("top", "50%", "important"\)/);
   assert.match(canvas, /container\.dataset\.sketchiziDockPositioned = "true"/);
 });
+
+
+test("font family changes target the text element currently being edited", () => {
+  assert.match(dock, /const editingTextElement = appState\.editingTextElement\?\.type === "text"/);
+  assert.match(dock, /const isSelection = selected\.length > 0 \|\| Boolean\(isText && editingTextElement\?\.id\)/);
+  assert.match(dock, /if \(isText && editingTextElement\?\.id\) ids\.add\(editingTextElement\.id\)/);
+  assert.match(dock, /const first = selected\[0\] \|\| editingTextElement/);
+});
+
+test("font family picker exposes the supported Excalidraw font families", () => {
+  assert.match(dock, /\[\[1, "Virgil"\], \[2, "Helvetica"\], \[3, "Cascadia"\], \[5, "Excalifont"\], \[6, "Nunito"\], \[7, "Lilita One"\], \[8, "Comic Shanns"\], \[9, "Liberation Sans"\]\]/);
+  assert.match(dock, /currentItemFontFamily", 5/);
+});
