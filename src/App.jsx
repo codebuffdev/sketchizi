@@ -57,7 +57,6 @@ const ArchitectureTemplatesModal = lazy(() => import("./components/app/Architect
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
-import "./styles/canvas-style-patterns.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 
