@@ -46,6 +46,8 @@ test("header supports pinning, responsive edge reveal, and a keyboard visibility
   assert.match(header, /desktop-app-header-reveal-handle/);
   assert.match(header, /M4 6h16M4 12h16M4 18h16/);
   assert.match(header, /setHeaderVisible\(true\)/);
+  assert.match(header, /setHeaderVisible\(\(visible\) => !visible\)/);
+  assert.match(header, /revealPointerEnteredFromCollapsedRef/);
   assert.match(css, /desktop-app-header-reveal-handle\.is-visible/);
 });
 
