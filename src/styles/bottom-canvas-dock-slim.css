@@ -1,0 +1,22 @@
+/* Slim only the horizontal bottom canvas dock. Preserve each tool's existing
+   34px control footprint; remove surrounding shell padding and inter-tool gaps. */
+@media (min-width: 701px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) {
+    min-height: 36px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) > .sketchizi-dock-grip {
+    margin: 0 !important;
+  }
+
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) > .sketchizi-dock-separator {
+    margin-inline: 2px !important;
+  }
+
+  .app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"])) {
+    padding: 0 !important;
+  }
+}
