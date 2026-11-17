@@ -2043,3 +2043,71 @@
 .app .excalidraw .App-tray-menu .App-menu__left {
   display: none !important;
 }
+
+
+/* Selected-object editing is rendered as the actual Sketchizi PropertiesPanel
+   inside the canvas dock, not as a separate Excalidraw popup or right sidebar. */
+.app .contextual-formatting-toolbar.has-selection-properties {
+  width: min(360px, calc(100vw - 88px)) !important;
+  max-width: min(360px, calc(100vw - 88px)) !important;
+}
+.app .contextual-formatting-toolbar .sketchizi-selection-properties-dock {
+  width: 100% !important;
+  max-height: min(68vh, 680px) !important;
+  overflow: hidden !important;
+}
+.app .contextual-formatting-toolbar .properties-panel.properties-panel-dock {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  max-height: min(68vh, 680px) !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  border-radius: 14px !important;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24) !important;
+}
+.app .contextual-formatting-toolbar .properties-panel-dock .properties-header {
+  position: sticky;
+  top: -15px;
+  z-index: 2;
+  background: inherit;
+}
+.app.theme-dark .contextual-formatting-toolbar .properties-panel.properties-panel-dock {
+  border-color: #3a4046 !important;
+  background: #202428 !important;
+  color: #e5e7eb !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .properties-title,
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .property-row > label,
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .property-grid-2 > label {
+  color: #e0e4e8 !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .properties-subtitle,
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .properties-section-title {
+  color: #a8b0b8 !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .properties-header,
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .properties-section {
+  border-color: #343a40 !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .property-row select,
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .property-number,
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .color-text,
+.app.theme-dark .contextual-formatting-toolbar .properties-panel-dock .property-segmented button {
+  border-color: #454d55 !important;
+  background: #292f35 !important;
+  color: #e5e7eb !important;
+}
+@media (max-width: 760px) {
+  .app .contextual-formatting-toolbar.has-selection-properties {
+    width: min(340px, calc(100vw - 72px)) !important;
+    max-width: calc(100vw - 72px) !important;
+    right: 8px !important;
+    bottom: 8px !important;
+  }
+  .app .contextual-formatting-toolbar .properties-panel.properties-panel-dock {
+    max-height: min(62vh, 560px) !important;
+  }
+}
