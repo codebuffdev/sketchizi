@@ -37,19 +37,19 @@
 }
 
 .app .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel {
-  --skp-bg: #141821;
-  --skp-surface: #1a202c;
-  --skp-surface-hover: #212838;
-  --skp-surface-active: #273044;
+  --skp-bg: #17191b;
+  --skp-surface: #202326;
+  --skp-surface-hover: #292d31;
+  --skp-surface-active: #303438;
   --skp-border: rgba(255, 255, 255, 0.08);
   --skp-border-strong: rgba(255, 255, 255, 0.16);
   --skp-text: #eef1f8;
-  --skp-text-muted: #9aa5bd;
-  --skp-text-faint: #6f7a93;
-  --skp-accent: #7c6cff;
-  --skp-accent-soft: rgba(124, 108, 255, 0.16);
-  --skp-stage-bg: #e7ecf4;
-  --skp-kbd-bg: #1e2433;
+  --skp-text-muted: #a5a9ae;
+  --skp-text-faint: #7d8288;
+  --skp-accent: #b7bbc0;
+  --skp-accent-soft: rgba(183, 187, 192, 0.13);
+  --skp-stage-bg: #e8e9eb;
+  --skp-kbd-bg: #24272a;
   --skp-kbd-border: rgba(255, 255, 255, 0.12);
   --skp-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
 
@@ -88,8 +88,8 @@
   --skp-text: #181e2c;
   --skp-text-muted: #5a657d;
   --skp-text-faint: #848ea3;
-  --skp-accent: #5b50d6;
-  --skp-accent-soft: rgba(91, 80, 214, 0.1);
+  --skp-accent: #555a62;
+  --skp-accent-soft: rgba(85, 90, 98, 0.1);
   --skp-stage-bg: #eef2f8;
   --skp-kbd-bg: #eef1f7;
   --skp-kbd-border: #d5dce9;
