@@ -88,3 +88,96 @@
     linear-gradient(90deg, rgb(170 180 200 / 28%) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 10px 10px, 10px 10px;
 }
+
+
+/* Canvas appearance presets: independent of the application Day/Night theme. */
+.sketchizi-header-appearance-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 14px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--ui-border-soft, #e5e7eb);
+}
+.sketchizi-header-appearance-section > strong,
+.sketchizi-header-appearance-options button > strong {
+  color: var(--ui-text-strong, #252a32);
+  font-size: 11px;
+  font-weight: 650;
+}
+.sketchizi-header-appearance-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.sketchizi-header-appearance-options button {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 6px;
+  border: 1px solid var(--ui-border, #d9dde5);
+  border-radius: 9px;
+  background: var(--ui-surface-soft, #f7f8fa);
+  color: var(--ui-text, #3b414b);
+  text-align: left;
+  cursor: pointer;
+}
+.sketchizi-header-appearance-options button:hover:not(:disabled) { border-color: var(--ui-accent, #64748b); }
+.sketchizi-header-appearance-options button[aria-pressed="true"] {
+  border-color: var(--ui-accent, #64748b);
+  background: var(--ui-active, #eef1f5);
+  box-shadow: inset 0 0 0 1px var(--ui-accent, #64748b);
+}
+.sketchizi-header-appearance-options button:disabled { cursor: not-allowed; opacity: .55; }
+.sketchizi-header-appearance-options button > strong { font-size: 10px; }
+.sketchizi-header-appearance-options button > small {
+  min-height: 27px;
+  color: var(--ui-text-muted, #747b87);
+  font-size: 9px;
+  line-height: 1.35;
+}
+.sketchizi-appearance-preview {
+  display: flex;
+  height: 39px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  overflow: hidden;
+  padding: 7px 9px;
+  border: 1px solid rgb(80 90 105 / 18%);
+  border-radius: 5px;
+}
+.sketchizi-appearance-preview i {
+  display: block;
+  width: 62%;
+  height: 2px;
+  border-radius: 2px;
+  background: #414956;
+}
+.sketchizi-appearance-preview i:nth-child(2) { width: 82%; margin-left: 15%; }
+.sketchizi-appearance-preview i:nth-child(3) { width: 42%; margin-left: 7%; }
+.sketchizi-appearance-preview.is-sketch {
+  background-color: #f7f2e8;
+  background-image: repeating-linear-gradient(0deg, transparent 0 8px, rgb(150 130 100 / 8%) 9px);
+}
+.sketchizi-appearance-preview.is-sketch i { background: #756a59; transform: rotate(-1deg); }
+.sketchizi-appearance-preview.is-clean { background: #fff; }
+.sketchizi-appearance-preview.is-clean i { background: #586779; }
+.sketchizi-appearance-preview.is-chalkboard { border-color: #315447; background: #1b382f; }
+.sketchizi-appearance-preview.is-chalkboard i { background: #f0f0df; }
+.app.theme-dark .sketchizi-header-appearance-section { border-color: var(--ui-border-soft, #343943); }
+.app.theme-dark .sketchizi-header-appearance-section > strong,
+.app.theme-dark .sketchizi-header-appearance-options button > strong { color: var(--ui-text-strong, #f1f3f6); }
+.app.theme-dark .sketchizi-header-appearance-options button {
+  border-color: var(--ui-border, #3a414d);
+  background: var(--ui-surface-soft, #242a33);
+  color: var(--ui-text, #dce1e8);
+}
+.app.theme-dark .sketchizi-header-appearance-options button[aria-pressed="true"] {
+  border-color: var(--ui-accent, #aab4c3);
+  background: var(--ui-active, #303946);
+}
+.app.theme-dark .sketchizi-header-appearance-options button > small { color: var(--ui-text-muted, #a6afbd); }

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { applyCanvasThemeBackground } from "./canvasTheme.js";
+import { applyCanvasAppearance } from "./canvasAppearance.js";
 
-export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true }) {
+export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true, canvasAppearance = "clean", setCanvasAppearance = () => {} }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
   const themeMode = themeModeState;
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -22,8 +24,9 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
   }, []);
   const markCanvasBackgroundCustom = useCallback(() => {}, []);
   const useThemeDefaultBackground = useCallback(() => {
-    applyCanvasThemeBackground(apiRef.current, isDarkTheme, true);
-  }, [apiRef, isDarkTheme]);
+    setCanvasAppearance("clean");
+    applyCanvasAppearance(apiRef.current, "clean", isDarkTheme, CaptureUpdateAction.NEVER);
+  }, [apiRef, isDarkTheme, setCanvasAppearance]);
 
   useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);
   useEffect(() => {
@@ -40,14 +43,15 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     let secondFrame = 0;
     firstFrame = window.requestAnimationFrame(() => {
       secondFrame = window.requestAnimationFrame(() => {
-        applyCanvasThemeBackground(apiRef.current, isDarkTheme);
+        if (canvasAppearance === "clean") applyCanvasThemeBackground(apiRef.current, isDarkTheme);
+        else applyCanvasAppearance(apiRef.current, canvasAppearance, isDarkTheme, CaptureUpdateAction.NEVER);
       });
     });
     return () => {
       if (firstFrame) window.cancelAnimationFrame(firstFrame);
       if (secondFrame) window.cancelAnimationFrame(secondFrame);
     };
-  }, [apiRef, apiReady, isDarkTheme, savedSketch, sketchReady]);
+  }, [apiRef, apiReady, isDarkTheme, savedSketch, sketchReady, canvasAppearance]);
 
   const fitDiagram = useCallback(() => {
     const api = apiRef.current; if (!api) return;

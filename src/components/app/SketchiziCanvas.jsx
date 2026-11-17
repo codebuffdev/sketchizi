@@ -8,7 +8,7 @@ import TextSizeIndicator from "./TextSizeIndicator";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
-import { getCanvasBackground } from "../../features/navigation/canvasTheme.js";
+import { getCanvasAppearanceBackground, getCanvasAppearanceRoughness, getCanvasAppearanceTheme } from "../../features/navigation/canvasAppearance.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
 import { applyMarkdownListEdit, getMarkdownListEdit } from "../../features/canvas/markdownListShortcuts.js";
@@ -22,7 +22,7 @@ export default function SketchiziCanvas({
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
-  gridEnabled = false, gridStyle = "focus", onGridVisibilityChange,
+  gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
 }) {
   const canvasRootRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
@@ -815,9 +815,10 @@ export default function SketchiziCanvas({
   };
   const visibleSceneElements = apiRef?.current?.getSceneElements?.() || savedSketch?.elements || [];
   const isCanvasEmpty = visibleSceneElements.every((element) => element?.isDeleted || element?.deleted);
+  const activeAppearance = ["sketch", "clean", "chalkboard"].includes(canvasAppearance) ? canvasAppearance : "clean";
 
   return (
-    <main ref={canvasRootRef} className={viewModeEnabled ? "canvas viewer-mode" : "canvas"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
+    <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
         initialData={{
@@ -831,14 +832,15 @@ export default function SketchiziCanvas({
             zenModeEnabled: false,
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
-            viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasBackground(isDarkTheme),
+            viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasAppearanceBackground(activeAppearance, isDarkTheme),
+            currentItemRoughness: savedSketch?.appState?.currentItemRoughness ?? (savedSketch ? 1 : getCanvasAppearanceRoughness(activeAppearance)),
             gridModeEnabled: false,
           },
           files: savedSketch?.files || {},
         }}
         excalidrawAPI={registerExcalidrawAPI}
         onExcalidrawAPI={registerExcalidrawAPI}
-        theme={isDarkTheme ? "dark" : "light"}
+        theme={getCanvasAppearanceTheme(activeAppearance, isDarkTheme)}
         viewModeEnabled={viewModeEnabled}
         aiEnabled={true}
         onChange={handleSceneChange}
