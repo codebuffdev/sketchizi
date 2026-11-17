@@ -746,8 +746,11 @@ function App() {
     onArchitectureSceneChange: updateArchitectureValidation,
     onDocumentSceneChange: markCurrentDocumentChanged,
   });
-  const syncStartupChooser = useCallback((elements, useRestoredFallback = false) => {
+  const syncStartupChooser = useCallback((elements, useRestoredFallback = false, appState = null) => {
     if (cloudDiagramId || !collaborationCanEdit) return;
+    // Changing text-tool defaults or editing an existing text element can emit
+    // transient empty-scene updates. Those are not a request to choose a canvas.
+    if (appState?.activeTool?.type === "text" || appState?.editingElement) return;
     const hasLiveElements = (Array.isArray(elements) ? elements : []).some((element) => element && !element.isDeleted && !element.deleted);
     const hasRestoredElements = useRestoredFallback && (savedSketch?.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (hasLiveElements || hasRestoredElements) {
@@ -772,7 +775,7 @@ function App() {
 
   // Save the live background with the scene instead of forcing a theme color.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
-    syncStartupChooser(elements);
+    syncStartupChooser(elements, false, appState);
     handleExcalidrawChange(elements, appState);
     if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
   }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave, syncStartupChooser]);
