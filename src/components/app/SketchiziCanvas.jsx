@@ -20,7 +20,7 @@ export default function SketchiziCanvas({
   pageContext,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
-  selectedElements = [], applyToSelected, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
+  selectedElements = [], applyToSelected, selectionProperties = null, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
 }) {
@@ -857,18 +857,17 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
-        <ContextualFormattingToolbar
-          apiRef={apiRef}
-          canvasRootRef={canvasRootRef}
-          canvasRevision={canvasRevision}
-          selectedElements={selectedElements}
-          applyToSelected={applyToSelected}
-          onOpenProperties={onOpenProperties}
-          propertiesOpen={propertiesOpen}
-          canEdit={canEdit && !viewModeEnabled}
-        />
-      )}
+      <ContextualFormattingToolbar
+        apiRef={apiRef}
+        canvasRootRef={canvasRootRef}
+        canvasRevision={canvasRevision}
+        selectedElements={selectedElements}
+        applyToSelected={applyToSelected}
+        selectionProperties={selectionProperties}
+        onOpenProperties={onOpenProperties}
+        propertiesOpen={propertiesOpen}
+        canEdit={canEdit && !viewModeEnabled}
+      />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <RectangleTitles
