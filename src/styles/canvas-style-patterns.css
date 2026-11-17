@@ -2,7 +2,7 @@
    Hide the inherited fine-grid layer for decorative patterns to avoid overlap. */
 .app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::before {
   inset: 0;
-  background-image: radial-gradient(circle, rgb(105 122 145 / 52%) 1.15px, transparent 1.4px);
+  background-image: radial-gradient(circle, rgb(105 122 145 / 20%) 0.8px, transparent 1.2px);
   background-size: 20px 20px;
   background-position: var(--sk-grid-offset-x) var(--sk-grid-offset-y);
 }
@@ -41,7 +41,7 @@
   background-position: center, center, center, center;
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-dots-style::before {
-  background-image: radial-gradient(circle, rgb(180 198 220 / 56%) 1.15px, transparent 1.4px);
+  background-image: radial-gradient(circle, rgb(180 198 220 / 24%) 0.8px, transparent 1.2px);
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-ruled-style::before {
   background-image:
@@ -62,7 +62,7 @@
 .sketchizi-grid-preview.is-focus::after { inset: 5%; }
 .sketchizi-grid-preview.is-local::after { inset: 25% 18%; }
 .sketchizi-grid-preview.is-dots {
-  background-image: radial-gradient(circle, rgb(170 180 200 / 78%) 1px, transparent 1.2px);
+  background-image: radial-gradient(circle, rgb(170 180 200 / 38%) 0.8px, transparent 1.2px);
   background-size: 8px 8px;
 }
 .sketchizi-grid-preview.is-dots::after,
