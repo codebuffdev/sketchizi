@@ -815,3 +815,155 @@
     box-shadow: none;
   }
 }
+
+
+/* Slim the desktop right-side header rail: lighter frame, tighter spacing,
+   and smaller control targets without changing control order or behavior. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header {
+    --header-rail-width: 64px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    gap: 4px !important;
+    padding: 8px 0 !important;
+    border-width: 1px !important;
+    border-color: rgb(120 128 138 / 28%) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 6%) !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    border-color: rgb(148 156 166 / 22%) !important;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 12%) !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail :is(
+    .desktop-app-menu-trigger,
+    .desktop-app-library-toggle,
+    .desktop-app-nav-button,
+    .desktop-app-save-status-wrap,
+    .sketchizi-create-menu,
+    .desktop-app-start-collaboration-button,
+    .sketchizi-header-grid,
+    .desktop-app-save-to-cloud-button,
+    .desktop-app-theme-toggle,
+    .properties-toggle,
+    .architecture-validation-toggle,
+    .ai-ask-toggle,
+    .sketchizi-more-tools-header,
+    .desktop-app-search-button,
+    .desktop-app-header-pin-button,
+    .auth-control-root,
+    .desktop-app-save-status-trigger,
+    .design-studio-header-toggle,
+    .sketchizi-header-grid-trigger,
+    .sketchizi-more-tools-trigger
+  ) {
+    flex-basis: 32px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-action-divider {
+    width: 18px;
+    margin-block: 1px !important;
+    opacity: .45;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+
+/* Further tighten the outer rail container itself around its 32px controls. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header {
+    --header-rail-width: 48px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    gap: 2px !important;
+    padding: 5px 0 !important;
+    border-radius: 8px !important;
+    border-color: rgb(120 128 138 / 18%) !important;
+    box-shadow: 0 1px 5px rgb(15 23 42 / 5%) !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    border-color: rgb(148 156 166 / 14%) !important;
+    box-shadow: 0 1px 5px rgb(0 0 0 / 9%) !important;
+  }
+}
+
+
+/* Keep the header icons at their original 36px control size. Remove container
+   padding and excess gaps instead of shrinking the controls themselves. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header {
+    --header-rail-width: 40px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    gap: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island {
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail :is(
+    .desktop-app-menu-trigger,
+    .desktop-app-library-toggle,
+    .desktop-app-nav-button,
+    .desktop-app-save-status-wrap,
+    .sketchizi-create-menu,
+    .desktop-app-start-collaboration-button,
+    .sketchizi-header-grid,
+    .desktop-app-save-to-cloud-button,
+    .desktop-app-theme-toggle,
+    .properties-toggle,
+    .architecture-validation-toggle,
+    .ai-ask-toggle,
+    .sketchizi-more-tools-header,
+    .desktop-app-search-button,
+    .desktop-app-header-pin-button,
+    .auth-control-root,
+    .desktop-app-save-status-trigger,
+    .design-studio-header-toggle,
+    .sketchizi-header-grid-trigger,
+    .sketchizi-more-tools-trigger
+  ) {
+    flex-basis: 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    width: 32px;
+    height: 32px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle svg {
+    width: 16px;
+    height: 16px;
+  }
+}
