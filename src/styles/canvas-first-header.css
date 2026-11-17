@@ -147,6 +147,20 @@
     color: var(--ui-text-strong, #202334);
   }
 
+  /* Keep the pin glyph visible even if generic header-button SVG rules override
+     inherited icon styling. The component supplies an explicit contrast color
+     for the pinned state. */
+  .app.canvas-first-header .desktop-app-header-pin-button .desktop-app-header-pin-glyph {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible;
+  }
+
   /* A pinned header is a persistent mode, so make its state unmistakable. */
   .app.canvas-first-header .desktop-app-header-pin-button.is-active {
     border-color: #3f444b;
