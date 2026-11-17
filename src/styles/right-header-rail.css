@@ -756,3 +756,62 @@
     box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
   }
 }
+
+
+/* Refine the collapsed rail trigger so it feels native to the compact
+   Sketchizi header controls rather than like a separate floating widget. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ui-text-muted, #737b8c);
+    transition: background-color .16s ease, color .16s ease, transform .2s ease;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle:hover,
+  .app.canvas-first-header .desktop-app-header-reveal-handle.is-expanded {
+    border: 0;
+    background: var(--ui-hover, #f3f4f6);
+    color: var(--ui-text, #252631);
+    box-shadow: none;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle:focus-visible {
+    outline: 2px solid var(--ui-accent, #64748b);
+    outline-offset: 2px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail:not(.is-hidden) {
+    top: calc(var(--header-top, 18px) + 40px) !important;
+    transform: translateY(0) scaleY(1) !important;
+    transform-origin: top center;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail.is-hidden {
+    transform: translateY(-4px) scaleY(.97) !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ui-text-muted, #9aa4b2);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle:hover,
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle.is-expanded {
+    border: 0;
+    background: var(--ui-hover, #2a3341);
+    color: var(--ui-text, #f2f2f4);
+    box-shadow: none;
+  }
+}
