@@ -117,6 +117,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
+  const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
+  useEffect(() => setFontSizeDraft(String(fontSize)), [fontSize]);
 
   const update = (patch) => {
     const api = apiRef?.current;
@@ -205,12 +207,18 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
               min="1"
               max="999"
               step="1"
-              value={fontSize}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value === "") return;
-                const nextSize = Math.max(1, Math.min(999, Number(value)));
-                if (Number.isFinite(nextSize)) update({ fontSize: nextSize });
+              value={fontSizeDraft}
+              onChange={(event) => setFontSizeDraft(event.target.value)}
+              onBlur={() => {
+                const parsed = Number(fontSizeDraft);
+                const nextSize = Number.isFinite(parsed) && fontSizeDraft.trim() !== ""
+                  ? Math.max(1, Math.min(999, parsed))
+                  : fontSize;
+                setFontSizeDraft(String(nextSize));
+                if (nextSize !== fontSize) update({ fontSize: nextSize });
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur();
               }}
             />
             <span>px</span>
