@@ -2435,3 +2435,11 @@
   height: 1px !important;
   margin: 1px 0 !important;
 }
+
+/* Remove the extra vertical gap directly between the dock lock grip and Hand tool. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  row-gap: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-grip {
+  margin-bottom: 0 !important;
+}
