@@ -172,8 +172,6 @@ export default function ContextualFormattingToolbar({
   canvasRevision,
   selectedElements = [],
   applyToSelected,
-  onOpenProperties,
-  propertiesOpen = false,
   selectionProperties = null,
   canEdit = true,
 }) {
