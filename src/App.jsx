@@ -1755,7 +1755,7 @@ function App() {
 
       </DesktopAppHeader>
 
-      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
+      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
         {libraryOverlayHost && createPortal(
           <aside className={`desktop-resources-region sk-icon-library-portal-host ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
           {collaborationCanEdit && (
@@ -1803,6 +1803,42 @@ function App() {
             propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
+            selectionProperties={
+              <PropertiesPanel
+                selectedCount={selectedCount}
+                propertiesOpen={true}
+                setPropertiesOpen={() => {}}
+                firstSelected={firstSelected}
+                hasShapeSelection={hasShapeSelection}
+                hasArrowSelection={hasArrowSelection}
+                hasTextSelection={hasTextSelection}
+                applyToSelected={applyToSelected}
+                applyToSelectedArrow={applyToSelectedArrow}
+                updateSingleSelected={updateSingleSelected}
+                awsResource={selectedAwsResource}
+                awsResourceDefinition={selectedAwsResourceDefinition}
+                updateAwsResource={updateSelectedAwsResource}
+                kubernetesResource={selectedKubernetesResource}
+                kubernetesResourceDefinition={selectedKubernetesResourceDefinition}
+                updateKubernetesResource={updateSelectedKubernetesResource}
+                networkingResource={selectedNetworkingResource}
+                networkingResourceDefinition={selectedNetworkingResourceDefinition}
+                updateNetworkingResource={updateSelectedNetworkingResource}
+                architectureRelationship={selectedArchitectureRelationship}
+                architectureRelationshipTypes={["traffic-flow", "contains", "routes-to", "depends-on", "connects-to"]}
+                updateArchitectureRelationshipType={updateSelectedArchitectureRelationshipType}
+                awsRelationship={selectedAwsRelationship}
+                relationshipTypes={AWS_RELATIONSHIP_TYPES}
+                updateAwsRelationshipType={updateSelectedAwsRelationshipType}
+                kubernetesRelationship={selectedKubernetesRelationship}
+                kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES}
+                updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
+                kubernetesRelationshipGuidance={selectedKubernetesRelationshipGuidance}
+                readOnly={!collaborationCanEdit}
+                hideDuplicateFormattingControls={false}
+                dockMode
+              />
+            }
             onOpenProperties={() => {
               const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
               if (selectedIds.length && apiRef.current?.updateScene) {
@@ -1837,46 +1873,11 @@ function App() {
 
 
         <aside
-          className={`desktop-context-region ${propertiesOpen || architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
-          aria-label="Properties and architecture validation"
+          className={`desktop-context-region ${architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
+          aria-label="Architecture validation"
         >
-          {(propertiesOpen || architectureValidationOpen) && (
-            <div className={`desktop-validation-host ${propertiesOpen || architectureValidationOpen ? "is-open" : "is-closed"}`}>
-              {propertiesOpen && (
-                <PropertiesPanel
-                  selectedCount={selectedCount}
-                  propertiesOpen={propertiesOpen}
-                  setPropertiesOpen={(open) => { if (!open) closePanel("properties"); }}
-                  firstSelected={firstSelected}
-                  hasShapeSelection={hasShapeSelection}
-                  hasArrowSelection={hasArrowSelection}
-                  hasTextSelection={hasTextSelection}
-                  applyToSelected={applyToSelected}
-                  applyToSelectedArrow={applyToSelectedArrow}
-                  updateSingleSelected={updateSingleSelected}
-                  awsResource={selectedAwsResource}
-                  awsResourceDefinition={selectedAwsResourceDefinition}
-                  updateAwsResource={updateSelectedAwsResource}
-                  kubernetesResource={selectedKubernetesResource}
-                  kubernetesResourceDefinition={selectedKubernetesResourceDefinition}
-                  updateKubernetesResource={updateSelectedKubernetesResource}
-                  networkingResource={selectedNetworkingResource}
-                  networkingResourceDefinition={selectedNetworkingResourceDefinition}
-                  updateNetworkingResource={updateSelectedNetworkingResource}
-                  architectureRelationship={selectedArchitectureRelationship}
-                  architectureRelationshipTypes={["traffic-flow", "contains", "routes-to", "depends-on", "connects-to"]}
-                  updateArchitectureRelationshipType={updateSelectedArchitectureRelationshipType}
-                  awsRelationship={selectedAwsRelationship}
-                  relationshipTypes={AWS_RELATIONSHIP_TYPES}
-                  updateAwsRelationshipType={updateSelectedAwsRelationshipType}
-                  kubernetesRelationship={selectedKubernetesRelationship}
-                  kubernetesRelationshipTypes={KUBERNETES_RELATIONSHIP_TYPES}
-                  updateKubernetesRelationshipType={updateSelectedKubernetesRelationshipType}
-                  kubernetesRelationshipGuidance={selectedKubernetesRelationshipGuidance}
-                  readOnly={!collaborationCanEdit}
-                  hideDuplicateFormattingControls={true}
-                />
-              )}
+          {architectureValidationOpen && (
+            <div className="desktop-validation-host is-open">
               {architectureValidationOpen && (
                 <ArchitectureValidationPanel
                   validation={architectureValidation}
