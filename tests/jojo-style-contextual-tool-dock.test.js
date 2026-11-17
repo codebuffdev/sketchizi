@@ -79,3 +79,9 @@ test("the left Primary Dock removes excess shell and group spacing without shrin
   assert.match(css, /\.App-toolbar\[data-sketchizi-orientation="vertical"\] \.ToolIcon__icon[\s\S]*?width: 34px !important;[\s\S]*?height: 34px !important/);
   assert.match(css, /bottom contextual dock/);
 });
+
+test("the Primary Dock has no added gap between its lock grip and Hand tool", () => {
+  assert.match(css, /Remove the extra vertical gap directly between the dock lock grip and Hand tool/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\][\s\S]*?row-gap: 0 !important/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > \.sketchizi-dock-grip[\s\S]*?margin-bottom: 0 !important/);
+});
