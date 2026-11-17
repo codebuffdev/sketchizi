@@ -367,6 +367,20 @@ export default function SketchiziCanvas({
       const container = root.querySelector(".App-toolbar-container");
       if (!toolbar || !container) return;
       toolbar.dataset.sketchiziDock = "true";
+      // The Primary Dock starts vertically on the left on desktop. Keep the
+      // mobile toolbar layout unchanged and preserve any user-positioned dock.
+      if (!toolbar.dataset.sketchiziOrientation && !window.matchMedia("(max-width: 760px)").matches) {
+        toolbar.dataset.sketchiziOrientation = "vertical";
+        toolbar.dataset.sketchiziDockSide = "left";
+      }
+      if (!container.dataset.sketchiziDockPositioned && !window.matchMedia("(max-width: 760px)").matches) {
+        container.style.setProperty("left", "8px", "important");
+        container.style.setProperty("top", "50%", "important");
+        container.style.setProperty("right", "auto", "important");
+        container.style.setProperty("bottom", "auto", "important");
+        container.style.setProperty("transform", "translateY(-50%)", "important");
+        container.dataset.sketchiziDockPositioned = "true";
+      }
       if (!container.dataset.sketchiziDockLocked) {
         container.dataset.sketchiziDockLocked = "true";
         dockLocked = true;
