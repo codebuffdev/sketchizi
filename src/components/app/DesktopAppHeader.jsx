@@ -379,17 +379,9 @@ export default function DesktopAppHeader({
   return (
     <>
       <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} />
-      <header
-        id="desktop-app-header"
-        ref={headerRef}
-        className={`desktop-app-header desktop-app-header-right-rail${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
-        aria-hidden={!headerVisible}
-        data-pinned={headerPinned}
-      >
-      <div className="desktop-app-header-island desktop-app-header-island-left">
       <button
         type="button"
-        className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
+        className={nativeMenuOpen ? "desktop-app-menu-trigger desktop-app-menu-trigger-floating active" : "desktop-app-menu-trigger desktop-app-menu-trigger-floating"}
         onClick={() => {
           const wasOpen = menuWasOpenOnPointerDownRef.current;
           menuWasOpenOnPointerDownRef.current = null;
@@ -403,6 +395,14 @@ export default function DesktopAppHeader({
           <path d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
+      <header
+        id="desktop-app-header"
+        ref={headerRef}
+        className={`desktop-app-header desktop-app-header-right-rail${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
+        aria-hidden={!headerVisible}
+        data-pinned={headerPinned}
+      >
+      <div className="desktop-app-header-island desktop-app-header-island-left">
       {libraryToggle}
 
       <nav className="desktop-app-nav" aria-label="Sketchizi application menu">
