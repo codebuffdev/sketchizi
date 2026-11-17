@@ -137,7 +137,9 @@ export default function DesktopAppHeader({
     };
   }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
-  const [headerVisible, setHeaderVisible] = useState(true);
+  const [headerVisible, setHeaderVisible] = useState(() =>
+    typeof window === "undefined" || !window.matchMedia("(min-width: 1025px)").matches
+  );
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
   const headerCollapseTimerRef = useRef(null);
