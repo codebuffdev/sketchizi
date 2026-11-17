@@ -465,3 +465,76 @@
   }
   .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-action-divider { margin-inline: 2px; }
 }
+
+
+/* The pin control must remain easy to locate and reverse while pinned.
+   Use a labeled, high-contrast pill rather than relying on the glyph alone. */
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-pin-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 76px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    border: 1px solid #858b93 !important;
+    border-radius: 9px !important;
+    background: #f2f3f4 !important;
+    color: #25292e !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 18%) !important;
+    cursor: pointer;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-pin-button .desktop-app-header-pin-glyph {
+    display: block !important;
+    flex: 0 0 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    color: inherit !important;
+    stroke: currentColor !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-pin-button .desktop-app-header-pin-label {
+    display: inline-block !important;
+    color: inherit !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-pin-button.is-active {
+    border: 2px solid #20252b !important;
+    background: #30363d !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 2px #fff, 0 2px 5px rgb(0 0 0 / 28%) !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header .desktop-app-header-pin-button {
+    border-color: #8b929a !important;
+    background: #343a40 !important;
+    color: #f7f8f9 !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header .desktop-app-header-pin-button.is-active {
+    border: 2px solid #f4f5f6 !important;
+    background: #e2e5e8 !important;
+    color: #202428 !important;
+    box-shadow: 0 0 0 2px #171a1d, 0 2px 5px rgb(0 0 0 / 55%) !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header.is-constrained .desktop-app-header-pin-button {
+    min-width: 68px !important;
+    padding-inline: 7px !important;
+  }
+}
