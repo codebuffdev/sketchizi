@@ -78,3 +78,32 @@
 @media (prefers-reduced-motion: reduce) {
   .startup-canvas-option { transition: none; }
 }
+
+/* Give each startup canvas option enough context to make the choice clear. */
+.startup-canvas-option {
+  min-height: 112px;
+  gap: 7px;
+  padding: 12px 9px;
+  text-align: center;
+}
+.startup-canvas-option span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.1;
+}
+.startup-canvas-option:first-child span::after {
+  content: "A freeform canvas with no page boundaries.";
+}
+.startup-canvas-option:last-child span::after {
+  content: "Organize your work across separate pages.";
+}
+.startup-canvas-option span::after {
+  max-width: 124px;
+  color: var(--ui-muted, #a1a6ae);
+  font: 400 10px/1.4 system-ui, sans-serif;
+}
+.app.theme-light .startup-canvas-option span::after {
+  color: #707780;
+}
