@@ -154,6 +154,7 @@ export default function DesktopAppHeader({
       if (!headerPinned) setHeaderVisible(false);
     }, 5000);
   };
+  useEffect(() => () => clearHeaderCollapseTimer(), []);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
   const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
