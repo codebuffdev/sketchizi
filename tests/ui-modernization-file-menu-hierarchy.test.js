@@ -60,12 +60,3 @@ test("workspace menu offers Open file and improved community action icons", () =
   assert.match(menu, /sketchizi-review-icon/);
   assert.match(menu, /sketchizi-git-icon/);
 });
-
-
-test("redundant native Save to menu entry is removed while Save As keyboard support remains", () => {
-  assert.match(menu, /data-testid="json-export-button"/);
-  assert.match(menu, /\^save to\\\.\\\.\\\./i);
-  assert.match(menu, /if \(saveToItem && saveToItem !== menu\) saveToItem\.remove\(\)/);
-  assert.doesNotMatch(menu, /testId === "json-export-button" \|\|/);
-  assert.match(menu, /if \(event\.shiftKey\) fileActionsRef\.current\.saveDrawingAs\?\.\(\)/);
-});

@@ -153,7 +153,7 @@ export function useNativeSketchiziMenu({
         if (saveToItem && saveToItem !== menu) saveToItem.remove();
 
         const openLabel = exactLeaves.find(
-          (node) => node.textContent?.replace(/\s+/g, " ").trim() === "Open"
+          (node) => node.textContent?.replace(/\\s+/g, " ").trim() === "Open"
         );
         if (openLabel) {
           const item = openLabel.closest(
