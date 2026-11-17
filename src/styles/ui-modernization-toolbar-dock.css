@@ -2261,3 +2261,64 @@
     transition: none;
   }
 }
+
+/* Keep the primary tool dock visually aligned with the neutral contextual dock. */
+.app .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app .excalidraw .Island.App-toolbar {
+  --sk-toolbar-muted: #aeb5be;
+  --sk-toolbar-hover: #343a42;
+  --sk-toolbar-active: #59616b;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover,
+.app .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app .excalidraw .App-toolbar .dropdown-menu-button:hover {
+  border-color: #59616b !important;
+  background: #343a42 !important;
+  color: #fff !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .App-toolbar .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #747e89 !important;
+  background: linear-gradient(145deg, #626b76, #4a535e) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 9px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 13%) !important;
+}
+
+.app .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:focus-visible,
+.app .excalidraw .App-toolbar .ToolIcon__icon:focus-visible,
+.app .excalidraw .App-toolbar .dropdown-menu-button:focus-visible {
+  outline: 2px solid #c0c7cf !important;
+  outline-offset: 2px !important;
+}
+
+.app .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(255 255 255 / 5%);
+  --sk-dock-cluster-border: rgb(255 255 255 / 10%);
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .Island.App-toolbar,
+.app.theme-light .excalidraw .Island.App-toolbar {
+  --sk-toolbar-muted: #626b75;
+  --sk-toolbar-hover: #e9edf1;
+  --sk-toolbar-active: #59616b;
+}
+
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app.theme-light .desktop-canvas-region .excalidraw .App-toolbar .dropdown-menu-button:hover,
+.app.theme-light .excalidraw .App-toolbar .ToolIcon__icon:hover,
+.app.theme-light .excalidraw .App-toolbar .dropdown-menu-button:hover {
+  border-color: #cbd2d9 !important;
+  background: #e9edf1 !important;
+  color: #252b32 !important;
+}
+
+.app.theme-light .excalidraw .App-toolbar[data-sketchizi-dock-layout="grouped"] [data-sketchizi-tool-group="navigation"] {
+  --sk-dock-cluster-surface: rgb(32 38 45 / 5%);
+  --sk-dock-cluster-border: rgb(32 38 45 / 10%);
+}
