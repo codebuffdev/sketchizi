@@ -113,3 +113,11 @@ test("the Primary Dock hides the redundant three-dot overflow control and keeps 
   assert.match(css, /\.App-toolbar > \.dropdown-menu-button[\s\S]*?display: none !important/);\n  assert.match(css, /data-sketchizi-hide-overflow-tools="true"[\s\S]*?display: none !important/);
   assert.match(css, /quick-tools[\s\S]*?flex: 0 0 34px !important;[\s\S]*?height: 34px !important/);
 });
+
+
+test("Primary Dock hides descriptive hover tooltips and always shows compact shortcut hints", () => {
+  assert.match(canvas, /do not show[\s\S]*?descriptive hover tooltips on Primary Dock buttons/);
+  assert.match(canvas, /data-sketchiziPersistentShortcut = keybinding/);
+  assert.doesNotMatch(canvas, /button\.dataset\.sketchiziTooltip = tooltip/);
+  assert.match(css, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding[\s\S]*?display: block !important;[\s\S]*?font-size: 8px !important;[\s\S]*?position: absolute !important/);
+});
