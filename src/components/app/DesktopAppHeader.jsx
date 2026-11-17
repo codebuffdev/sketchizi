@@ -75,6 +75,7 @@ export default function DesktopAppHeader({
   onToggleGrid,
   onGridStyleChange,
   openCommandPalette,
+  onBeforeOpenPanel,
   startCollaboration,
   collaborationActive,
   collaborationCreationState = "idle",
@@ -379,17 +380,9 @@ export default function DesktopAppHeader({
   return (
     <>
       <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} />
-      <header
-        id="desktop-app-header"
-        ref={headerRef}
-        className={`desktop-app-header desktop-app-header-right-rail${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
-        aria-hidden={!headerVisible}
-        data-pinned={headerPinned}
-      >
-      <div className="desktop-app-header-island desktop-app-header-island-left">
       <button
         type="button"
-        className={nativeMenuOpen ? "desktop-app-menu-trigger active" : "desktop-app-menu-trigger"}
+        className={nativeMenuOpen ? "desktop-app-menu-trigger desktop-app-menu-trigger-floating active" : "desktop-app-menu-trigger desktop-app-menu-trigger-floating"}
         onClick={() => {
           const wasOpen = menuWasOpenOnPointerDownRef.current;
           menuWasOpenOnPointerDownRef.current = null;
@@ -403,6 +396,14 @@ export default function DesktopAppHeader({
           <path d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
+      <header
+        id="desktop-app-header"
+        ref={headerRef}
+        className={`desktop-app-header desktop-app-header-right-rail${availableWidth > 0 && availableWidth < 1120 ? " is-compact" : ""}${availableWidth > 0 && availableWidth < 900 ? " is-constrained" : ""}${headerVisible ? "" : " is-hidden"}${headerPinned ? " is-pinned" : ""}`}
+        aria-hidden={!headerVisible}
+        data-pinned={headerPinned}
+      >
+      <div className="desktop-app-header-island desktop-app-header-island-left">
       {libraryToggle}
 
       <nav className="desktop-app-nav" aria-label="Sketchizi application menu">
@@ -420,7 +421,14 @@ export default function DesktopAppHeader({
                 title={`${menu.label} options`}
                 aria-haspopup="menu"
                 aria-expanded={openMenu === menu.label}
-                onClick={() => setOpenMenu((current) => current === menu.label ? null : menu.label)}
+                onClick={() => {
+                  if (openMenu === menu.label) {
+                    setOpenMenu(null);
+                    return;
+                  }
+                  onBeforeOpenPanel?.();
+                  setOpenMenu(menu.label);
+                }}
               >
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   {openMenu === menu.label ? (
@@ -521,7 +529,11 @@ export default function DesktopAppHeader({
           aria-haspopup="dialog"
           aria-expanded={saveDetailsOpen}
           title="Download and save options"
-          onClick={() => { setOpenMenu(null); setSaveDetailsOpen((open) => !open); }}
+          onClick={() => {
+            setOpenMenu(null);
+            if (!saveDetailsOpen) onBeforeOpenPanel?.();
+            setSaveDetailsOpen(!saveDetailsOpen);
+          }}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 3v12" />
@@ -590,7 +602,11 @@ export default function DesktopAppHeader({
       <div className="sketchizi-header-grid" ref={gridPopoverRef}>
         <button type="button" className={gridEnabled ? "sketchizi-header-grid-trigger is-active" : "sketchizi-header-grid-trigger"}
           aria-label="Canvas style" title="Canvas style" aria-haspopup="dialog" aria-expanded={gridPopoverOpen}
-          onClick={() => { setOpenMenu(null); setGridPopoverOpen((open) => !open); }}>
+          onClick={() => {
+            setOpenMenu(null);
+            if (!gridPopoverOpen) onBeforeOpenPanel?.();
+            setGridPopoverOpen(!gridPopoverOpen);
+          }}>
           <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
           </svg>

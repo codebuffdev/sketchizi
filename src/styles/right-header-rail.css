@@ -533,3 +533,33 @@
     z-index: 10071 !important;
   }
 }
+
+
+/* Keep the application menu accessible at the top-left, independent of the
+   right-side floating header rail and its hide/reveal behaviour. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-menu-trigger-floating {
+    position: fixed !important;
+    top: calc(14px + var(--safe-top, 0px)) !important;
+    left: calc(14px + var(--safe-left, 0px)) !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 1300 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    margin: 0 !important;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgb(15 23 42 / 10%);
+  }
+  .app.canvas-first-header .desktop-app-menu-trigger-floating:hover,
+  .app.canvas-first-header .desktop-app-menu-trigger-floating.active,
+  .app.canvas-first-header .desktop-app-menu-trigger-floating:focus-visible {
+    transform: translateY(-1px);
+  }
+}

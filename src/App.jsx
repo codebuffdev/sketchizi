@@ -138,6 +138,21 @@ function App() {
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
+  useEffect(() => {
+    if (!nativeMenuOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      closeNativeMenu();
+    };
+    // Capture Escape before Excalidraw's own keyboard handlers so its native
+    // menu closes without triggering a second canvas-level Escape action.
+    window.addEventListener("keydown", closeOnEscape, true);
+    return () => window.removeEventListener("keydown", closeOnEscape, true);
+  }, [nativeMenuOpen, closeNativeMenu]);
+
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   // The native hamburger menu and React-powered floating catalogs are mutually
@@ -177,6 +192,37 @@ function App() {
   const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!nativeMenuOpen) return;
+    // Keep the native hamburger menu mutually exclusive with modal and
+    // floating tool surfaces that are opened outside usePanelState.
+    if (
+      aiAskOpen ||
+      minimapOpen ||
+      exportStudioOpen ||
+      templatesModalOpen ||
+      designStudioOpen ||
+      dockerStudioOpen ||
+      kubernetesStudioOpen ||
+      cloudSaveDialogOpen ||
+      commandPaletteOpen
+    ) {
+      closeNativeMenu();
+    }
+  }, [
+    nativeMenuOpen,
+    aiAskOpen,
+    minimapOpen,
+    exportStudioOpen,
+    templatesModalOpen,
+    designStudioOpen,
+    dockerStudioOpen,
+    kubernetesStudioOpen,
+    cloudSaveDialogOpen,
+    commandPaletteOpen,
+    closeNativeMenu,
+  ]);
 
   useEffect(() => {
     const detachCloudDocument = () => {
@@ -1598,6 +1644,7 @@ function App() {
         onToggleGrid={toggleGrid}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
+        onBeforeOpenPanel={closeNativeMenu}
         startCollaboration={startCollaboration}
         collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}
         collaborationCreationState={collaboration.collaborationCreationState}
