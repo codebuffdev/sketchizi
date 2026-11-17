@@ -30,6 +30,7 @@ test("header hides on canvas pointer interaction without listening to canvas whe
 test("header supports pinning, responsive edge reveal, and a keyboard visibility shortcut", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const css = await read("../src/styles/canvas-first-header.css");
+  const railCss = await read("../src/styles/right-header-rail.css");
 
   assert.match(header, /setHeaderPinned\(\(pinned\) => !pinned\)/);
   assert.match(header, /aria-pressed=\{headerPinned\}/);
@@ -44,6 +45,14 @@ test("header supports pinning, responsive edge reveal, and a keyboard visibility
   assert.match(header, /window\.matchMedia\("\(min-width: 1025px\)"\)\.matches/);
   assert.match(header, /event\.key\.toLowerCase\(\) !== "h"/);
   assert.match(header, /desktop-app-header-reveal-handle/);
+  assert.match(header, /M4 6h16M4 12h16M4 18h16/);
+  assert.match(header, /setHeaderVisible\(true\)/);
+  assert.match(header, /setHeaderVisible\(\(visible\) => !visible\)/);
+  assert.match(header, /revealPointerEnteredFromCollapsedRef/);
+  assert.ok(railCss.includes("top: var(--header-top, calc(18px + var(--safe-top, 0px)));"));
+  assert.ok(railCss.includes("width: var(--header-top-control-height, 40px);"));
+  assert.ok(railCss.includes("height: var(--header-top-control-height, 40px);"));
+  assert.ok(railCss.includes("transform: none !important;"));
   assert.match(css, /desktop-app-header-reveal-handle\.is-visible/);
 });
 
