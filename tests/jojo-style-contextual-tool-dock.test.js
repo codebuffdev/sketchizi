@@ -71,3 +71,11 @@ test("font family picker exposes the supported Excalidraw font families", () => 
   assert.match(dock, /\[\[1, "Virgil"\], \[2, "Helvetica"\], \[3, "Cascadia"\], \[5, "Excalifont"\], \[6, "Nunito"\], \[7, "Lilita One"\], \[8, "Comic Shanns"\], \[9, "Liberation Sans"\]\]/);
   assert.match(dock, /currentItemFontFamily", 5/);
 });
+
+test("the left Primary Dock removes excess shell and group spacing without shrinking tool targets", () => {
+  assert.match(css, /Primary Dock density pass/);
+  assert.match(css, /width: 44px !important;[\s\S]*?padding: 3px !important/);
+  assert.match(css, /\[data-sketchizi-tool-group\][\s\S]*?width: 34px !important;[\s\S]*?margin: 0 !important;[\s\S]*?padding: 0 !important/);
+  assert.match(css, /\.App-toolbar\[data-sketchizi-orientation="vertical"\] \.ToolIcon__icon[\s\S]*?width: 34px !important;[\s\S]*?height: 34px !important/);
+  assert.match(css, /bottom contextual dock/);
+});
