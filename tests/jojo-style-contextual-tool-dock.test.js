@@ -105,3 +105,11 @@ test("vertical Primary Dock grip has no reserved 24px space above Hand", () => {
   assert.match(css, /remaining Lock\/Hand gap came from the grip's 24px flex-basis/);
   assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > \.sketchizi-dock-grip[\s\S]*?flex: 0 0 10px !important;[\s\S]*?height: 10px !important;[\s\S]*?margin: 0 !important/);
 });
+
+
+test("the Primary Dock hides the redundant three-dot overflow control and keeps Eraser beside Bucket Fill", () => {
+  assert.match(canvas, /sketchiziHideOverflowTools/);
+  assert.match(canvas, /\/^more tools\$\/i/);
+  assert.match(css, /data-sketchizi-hide-overflow-tools="true"[\s\S]*?display: none !important/);
+  assert.match(css, /quick-tools[\s\S]*?flex: 0 0 34px !important;[\s\S]*?height: 34px !important/);
+});
