@@ -677,14 +677,29 @@ export default function DesktopAppHeader({
         type="button"
         className={`desktop-app-header-visibility-button desktop-app-header-pin-button${headerPinned ? " is-active" : ""}`}
         onClick={() => {
+          clearHeaderCollapseTimer();
           setHeaderPinned((pinned) => !pinned);
           setHeaderVisible(true);
         }}
         aria-label={headerPinned ? "Unpin application header" : "Pin application header"}
         aria-pressed={headerPinned}
-        title={headerPinned ? "Unpin header" : "Pin header while working"}
+        data-pin-state={headerPinned ? "pinned" : "auto-hide"}
+        title={headerPinned
+          ? "Pinned — header stays expanded"
+          : "Unpinned — header auto-hides after 5 seconds"}
       >
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg
+          className="desktop-app-header-pin-glyph"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
           <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" />
           <path d="M12 15v6" />
         </svg>
