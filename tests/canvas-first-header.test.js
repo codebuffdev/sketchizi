@@ -30,6 +30,7 @@ test("header hides on canvas pointer interaction without listening to canvas whe
 test("header supports pinning, responsive edge reveal, and a keyboard visibility shortcut", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const css = await read("../src/styles/canvas-first-header.css");
+  const railCss = await read("../src/styles/right-header-rail.css");
 
   assert.match(header, /setHeaderPinned\(\(pinned\) => !pinned\)/);
   assert.match(header, /aria-pressed=\{headerPinned\}/);
