@@ -31,7 +31,6 @@ export function useNativeSketchiziMenu({
       else if (target.matches?.("[data-sketchizi-close-folder]")) action = "closeCurrentFolder";
       else if (target.matches?.("[data-sketchizi-new-file]")) action = "createNewFile";
       else if (testId === "load-button" || (inMenu && /^open(\s|$)/.test(text) && text.length < 32)) action = "openDrawingFromDisk";
-      else if (testId === "json-export-button" || (inMenu && /^save to\.\.\./.test(text))) action = "saveDrawingAs";
       if (!action) return;
       event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
       fileActionsRef.current[action]?.();
@@ -141,6 +140,18 @@ export function useNativeSketchiziMenu({
           if (item && item !== menu) item.remove();
         }
 
+        // Save to… is redundant: the canvas title already exposes the
+        // explicit local save/download actions. Remove only this native
+        // hamburger entry; keyboard Save As remains available.
+        const saveToButton = menu.querySelector('[data-testid="json-export-button"]');
+        const saveToLabel = exactLeaves.find(
+          (node) => /^save to\\.\\.\\./i.test(node.textContent?.replace(/\\s+/g, " ").trim() || "")
+        );
+        const saveToItem = saveToButton || saveToLabel?.closest(
+          "li, [role='menuitem'], .dropdown-menu-item, .context-menu-item, .menu-item, button, a"
+        ) || saveToLabel?.parentElement;
+        if (saveToItem && saveToItem !== menu) saveToItem.remove();
+
         const openLabel = exactLeaves.find(
           (node) => node.textContent?.replace(/\\s+/g, " ").trim() === "Open"
         );
@@ -168,7 +179,7 @@ export function useNativeSketchiziMenu({
             (child) => child.children.length === 0 && child.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
           ));
         const menuParent = menuAnchor || [...document.querySelectorAll(".dropdown-menu-container")]
-          .find((node) => node.querySelector('[data-testid="load-button"], [data-testid="json-export-button"]'));
+           .find((node) => node.querySelector('[data-testid="load-button"]'));
         if (menuParent) {
           const customBlock = document.createElement("div");
           customBlock.dataset.sketchiziCustomMenuBlock = "true";
