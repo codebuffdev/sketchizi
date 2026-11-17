@@ -719,11 +719,26 @@
 }
 
 
-/* Hide inline keyboard shortcut hints (V, R, D, O, etc.) from the dock.
-   Keyboard shortcuts themselves remain available and unchanged. */
-.app .desktop-canvas-region .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding,
+/* Primary Dock: remove descriptive hover hints and keep compact shortcuts
+   visible on the tool buttons at all times. */
+.app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon {
+  position: relative !important;
+}
 .app .excalidraw .App-toolbar[data-sketchizi-dock="true"] .ToolIcon__keybinding {
-  display: none !important;
+  display: block !important;
+  position: absolute !important;
+  right: 2px !important;
+  bottom: 1px !important;
+  z-index: 2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 8px !important;
+  font-weight: 600 !important;
+  line-height: 9px !important;
+  letter-spacing: -0.02em !important;
+  opacity: 0.9 !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
 }
 
 
