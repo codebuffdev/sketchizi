@@ -91,10 +91,11 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   // controls follow the active tool or current selection, not the object
   // position, so the dock never jumps around while editing.
   return {
-    left: "50%",
+    left: "auto",
     top: "auto",
+    right: "16px",
     bottom: "16px",
-    transform: "translateX(-50%)",
+    transform: "none",
     "--format-popover-side": "top",
   };
 }
