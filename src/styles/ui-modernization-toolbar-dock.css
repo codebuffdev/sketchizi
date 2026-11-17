@@ -1931,3 +1931,43 @@
     margin-left: 4px !important;
   }
 }
+
+
+/* Slim horizontal bottom dock without shrinking its actual tool controls.
+   Remove shell padding and inter-control gaps; preserve the original 42px
+   native icon targets and matching custom quick-tool targets. */
+@media (min-width: 761px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) {
+    box-sizing: border-box !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"])) {
+    padding: 0 !important;
+  }
+
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) :is(.ToolIcon__icon, .dropdown-menu-button, .sketchizi-dock-quick-tool) {
+    box-sizing: border-box !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    flex-basis: 42px !important;
+    padding: 0 !important;
+  }
+
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) .sketchizi-dock-quick-tools {
+    min-height: 42px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .app .excalidraw .App-toolbar[data-sketchizi-dock="true"]:not([data-sketchizi-orientation="vertical"]) .sketchizi-dock-separator {
+    margin-inline: 1px !important;
+  }
+}
