@@ -526,3 +526,53 @@
     box-shadow: 0 0 0 2px #171a1d, 0 2px 5px rgb(0 0 0 / 55%) !important;
   }
 }
+
+
+/* Header controls should look neutral while idle; only real interaction or
+   the pinned state should add emphasis. */
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-header .desktop-app-start-collaboration-button {
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--ui-text, inherit) !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-start-collaboration-button:hover:not(:disabled) {
+    border-color: transparent !important;
+    background: rgb(148 163 184 / 10%) !important;
+    color: var(--ui-text-strong, inherit) !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-pin-button,
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-pin-button:not(.is-active) {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: var(--ui-text-muted, currentColor) !important;
+    box-shadow: none !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header .desktop-app-header-pin-button:not(.is-active):hover {
+    border-color: transparent !important;
+    background: rgb(148 163 184 / 10%) !important;
+    color: var(--ui-text-strong, currentColor) !important;
+    box-shadow: none !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header .desktop-app-header-pin-button:not(.is-active) {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: var(--ui-text-muted, #aeb3b8) !important;
+    box-shadow: none !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header .desktop-app-header-pin-button:not(.is-active):hover {
+    border-color: transparent !important;
+    background: rgb(255 255 255 / 8%) !important;
+    color: var(--ui-text-strong, #f2f4f6) !important;
+    box-shadow: none !important;
+  }
+}
