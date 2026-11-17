@@ -885,3 +885,24 @@
     height: 14px;
   }
 }
+
+
+/* Further tighten the outer rail container itself around its 32px controls. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header {
+    --header-rail-width: 48px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    gap: 2px !important;
+    padding: 5px 0 !important;
+    border-radius: 8px !important;
+    border-color: rgb(120 128 138 / 18%) !important;
+    box-shadow: 0 1px 5px rgb(15 23 42 / 5%) !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    border-color: rgb(148 156 166 / 14%) !important;
+    box-shadow: 0 1px 5px rgb(0 0 0 / 9%) !important;
+  }
+}
