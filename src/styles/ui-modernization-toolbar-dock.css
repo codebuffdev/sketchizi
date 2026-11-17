@@ -1974,11 +1974,11 @@
 }
 .app .contextual-formatting-toolbar {
   position: absolute !important;
-  left: 50% !important;
+  left: auto !important;
   top: auto !important;
-  right: auto !important;
+  right: 16px !important;
   bottom: 16px !important;
-  transform: translateX(-50%) !important;
+  transform: none !important;
   display: block !important;
   width: max-content !important;
   min-width: 0 !important;
@@ -2000,11 +2000,11 @@
   border: 1px solid var(--format-rail-border, #dfe3eb) !important;
 }
 .app .contextual-formatting-toolbar .format-options-popover.side-top {
-  left: 50% !important;
-  right: auto !important;
+  left: auto !important;
+  right: 0 !important;
   top: auto !important;
   bottom: calc(100% + 10px) !important;
-  transform: translateX(-50%) !important;
+  transform: none !important;
   max-width: min(360px, calc(100vw - 96px)) !important;
   max-height: min(520px, calc(100vh - 120px)) !important;
 }
