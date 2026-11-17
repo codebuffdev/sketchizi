@@ -21,3 +21,12 @@ test("contextual formatting toolbar remains available when Zen Mode is explicitl
   assert.match(source, /\(apiRef\.current\?\.getAppState\?\.\(\)\.zenModeEnabled \?\? true\) && \(/);
   assert.match(source, /<ContextualFormattingToolbar/);
 });
+
+
+test("Scratch Mode acceptance toggle is available only inside editable Zen Mode", () => {
+  assert.match(source, /\{zenModeEnabled && canEdit && !viewModeEnabled && \(/);
+  assert.match(source, /sketchizi-scratch-mode-toggle/);
+  assert.match(source, /aria-pressed=\{scratchModeEnabled\}/);
+  assert.match(source, /setScratchModeEnabled\(\(enabled\) => !enabled\)/);
+  assert.match(source, /data-scratch-mode=\{scratchModeEnabled \? "true" : "false"\}/);
+});
