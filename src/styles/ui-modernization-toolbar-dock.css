@@ -2443,3 +2443,28 @@
 .app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-grip {
   margin-bottom: 0 !important;
 }
+
+/* Compact every vertical Primary Dock layer: the spacing was coming from
+   Excalidraw's nested tool wrappers and grouped-button margins, not just Island padding. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  gap: 0 !important;
+  row-gap: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > div:not(.sketchizi-dock-grip),
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > fieldset,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > ul {
+  gap: 0 !important;
+  row-gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] [data-sketchizi-tool-group] {
+  margin: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] [data-sketchizi-group-start="true"] {
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-separator {
+  margin: 1px 0 !important;
+}
