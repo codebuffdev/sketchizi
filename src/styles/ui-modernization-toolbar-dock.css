@@ -2468,3 +2468,39 @@
 .app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-separator {
   margin: 1px 0 !important;
 }
+
+
+/* Keep Bucket Fill directly adjacent to Eraser in the vertical Primary Dock.
+   The quick-tools wrapper is inserted after Eraser; remove any inherited
+   block margins/spacing on that exact boundary as well as inside the wrapper. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: auto !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools .sketchizi-dock-quick-tool {
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-quick-tools + * {
+  scroll-margin: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > :has(+ .sketchizi-dock-quick-tools) {
+  margin-block: 0 !important;
+  padding-block: 0 !important;
+}
