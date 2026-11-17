@@ -496,7 +496,7 @@ export default function SketchiziCanvas({
         .filter((node) => !node.classList.contains("sketchizi-dock-grip"));
       candidates.forEach((button) => {
         const accessibleName = (button.getAttribute("aria-label") || button.getAttribute("title") || "")
-          .replace(/\\s+/g, " ").trim();
+          .replace(/\s+/g, " ").trim();
         if (/^more tools$/i.test(accessibleName) || /more-tools/i.test(button.dataset.testid || "")) {
           const overflowControl = button.closest(".ToolIcon, .dropdown-menu-button") || button;
           overflowControl.dataset.sketchiziHideOverflowTools = "true";
