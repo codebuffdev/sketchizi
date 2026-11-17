@@ -99,3 +99,9 @@ test("Bucket Fill sits directly beside Eraser in the vertical Primary Dock", () 
   assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > \.sketchizi-dock-quick-tools[\s\S]*?gap: 0 !important;[\s\S]*?margin: 0 !important;[\s\S]*?padding: 0 !important/);
   assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > :has\(\+ \.sketchizi-dock-quick-tools\)[\s\S]*?margin-block: 0 !important;[\s\S]*?padding-block: 0 !important/);
 });
+
+
+test("vertical Primary Dock grip has no reserved 24px space above Hand", () => {
+  assert.match(css, /remaining Lock\/Hand gap came from the grip's 24px flex-basis/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > \.sketchizi-dock-grip[\s\S]*?flex: 0 0 10px !important;[\s\S]*?height: 10px !important;[\s\S]*?margin: 0 !important/);
+});
