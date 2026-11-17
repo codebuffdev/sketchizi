@@ -2393,3 +2393,45 @@
   height: 20px;
   overflow: visible;
 }
+
+/* Primary Dock density pass: remove shell and group whitespace without
+   shrinking the 34px tool targets or changing the bottom contextual dock. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="vertical"]) {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] {
+  box-sizing: border-box !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  gap: 2px !important;
+  padding: 3px !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] [data-sketchizi-tool-group] {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .ToolIcon__icon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .sketchizi-dock-quick-tool {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] .sketchizi-dock-separator {
+  width: 22px !important;
+  min-height: 1px !important;
+  height: 1px !important;
+  margin: 1px 0 !important;
+}
