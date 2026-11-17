@@ -2032,3 +2032,14 @@
     max-width: calc(100vw - 80px) !important;
   }
 }
+
+
+/* Sketchizi owns selection formatting in its bottom contextual dock.
+   Suppress Excalidraw's duplicate selected-element properties surfaces while
+   leaving the native primary drawing toolbar and all scene interactions intact. */
+.app .excalidraw .App-menu__left,
+.app .excalidraw .compact-shape-actions-island,
+.app .excalidraw .App-mobile-menu .App-menu__left,
+.app .excalidraw .App-tray-menu .App-menu__left {
+  display: none !important;
+}
