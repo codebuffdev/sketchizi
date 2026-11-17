@@ -2557,3 +2557,69 @@
   line-height: 0 !important;
   border: 0 !important;
 }
+
+
+/* Primary Dock collapse: retain a compact left-edge toggle rail. The
+   contextual bottom dock is intentionally not affected by this state. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-collapsed="true"]) {
+  box-sizing: border-box !important;
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  min-height: 48px !important;
+  overflow: visible !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-collapsed="true"] {
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 3px !important;
+  overflow: visible !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-collapsed="true"] > :not(.sketchizi-dock-collapse-toggle) {
+  display: none !important;
+}
+.app .excalidraw .Island.App-toolbar .sketchizi-dock-collapse-toggle {
+  box-sizing: border-box !important;
+  z-index: 20 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid var(--sk-toolbar-border, rgb(255 255 255 / 14%)) !important;
+  border-radius: 8px !important;
+  background: var(--sk-toolbar-surface, #272d34) !important;
+  color: var(--sk-toolbar-ink, #e6e9ed) !important;
+  cursor: pointer !important;
+}
+.app .excalidraw .Island.App-toolbar:not([data-sketchizi-collapsed="true"]) .sketchizi-dock-collapse-toggle {
+  position: absolute !important;
+  top: -34px !important;
+  left: 5px !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-collapsed="true"] .sketchizi-dock-collapse-toggle {
+  position: static !important;
+}
+.app.theme-light .excalidraw .Island.App-toolbar .sketchizi-dock-collapse-toggle {
+  border-color: #d3d9df !important;
+  background: #f5f7f9 !important;
+  color: #303943 !important;
+}
+.app .excalidraw .Island.App-toolbar .sketchizi-dock-collapse-toggle:focus-visible {
+  outline: 2px solid #c0c7cf !important;
+  outline-offset: 2px !important;
+}
