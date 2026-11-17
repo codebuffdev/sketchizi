@@ -1,0 +1,123 @@
+/* Sketchizi Workspace UX Modernization — Phase 1
+   Borrow the scratch-board principle: keep formatting controls compact,
+   contextual, and visually quiet. No editor actions or tool handlers change. */
+
+.app .contextual-formatting-toolbar .format-icon-rail {
+  width: 40px !important;
+  gap: 4px !important;
+  padding: 4px !important;
+  border: 1px solid var(--ui-border, #dfe3eb) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--ui-surface-solid, #fff) 92%, transparent) !important;
+  box-shadow: 0 5px 16px rgb(15 23 42 / 10%) !important;
+  backdrop-filter: blur(14px) saturate(125%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(125%) !important;
+}
+
+.app .contextual-formatting-toolbar .format-icon-button {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  border-radius: 8px !important;
+  transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease !important;
+}
+
+.app .contextual-formatting-toolbar .format-icon-button:hover {
+  border-color: var(--ui-border, #dfe3eb) !important;
+  background: var(--ui-hover, #f2f4f6) !important;
+  color: var(--ui-text-strong, #202833) !important;
+}
+
+.app .contextual-formatting-toolbar .format-icon-button.is-active,
+.app .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  border-color: #477f91 !important;
+  background: #477f91 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgb(45 101 119 / 18%) !important;
+}
+
+.app .contextual-formatting-toolbar .format-options-popover {
+  width: min(300px, calc(100vw - 64px)) !important;
+  padding: 12px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 28px rgb(15 23 42 / 16%) !important;
+}
+
+.app .contextual-formatting-toolbar .format-option-button:hover,
+.app .contextual-formatting-toolbar .format-option-button.is-selected {
+  border-color: #477f91 !important;
+  background: #e6eff2 !important;
+  color: #285969 !important;
+}
+
+.app .contextual-formatting-toolbar .format-option-swatch.is-selected {
+  box-shadow: 0 0 0 2px var(--format-popover-surface, #fff), 0 0 0 4px #477f91 !important;
+}
+
+.app .contextual-formatting-toolbar .format-opacity-control input,
+.app .contextual-formatting-toolbar input[type="range"] {
+  accent-color: #477f91 !important;
+}
+
+.app .contextual-formatting-toolbar :is(button, input, select):focus-visible {
+  outline: 2px solid #477f91 !important;
+  outline-offset: 2px !important;
+}
+
+.app.theme-dark .contextual-formatting-toolbar .format-icon-rail,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .format-icon-rail {
+  border-color: #3b4652 !important;
+  background: color-mix(in srgb, #202833 94%, transparent) !important;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 24%) !important;
+}
+
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button:hover,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .format-icon-button:hover {
+  border-color: #465564 !important;
+  background: #2b3742 !important;
+  color: #f1f5f8 !important;
+}
+
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button.is-active,
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"],
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .format-icon-button.is-active,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .format-icon-button[aria-expanded="true"] {
+  border-color: #6c9aaa !important;
+  background: #356f82 !important;
+  color: #fff !important;
+}
+
+.app.theme-dark .contextual-formatting-toolbar .format-option-button:hover,
+.app.theme-dark .contextual-formatting-toolbar .format-option-button.is-selected,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .format-option-button:hover,
+.app:has(.excalidraw.theme--dark) .contextual-formatting-toolbar .format-option-button.is-selected {
+  border-color: #6c9aaa !important;
+  background: #263f49 !important;
+  color: #e8f3f6 !important;
+}
+
+@media (max-width: 900px) {
+  .app .contextual-formatting-toolbar .format-icon-rail {
+    width: 36px !important;
+    gap: 3px !important;
+    padding: 3px !important;
+  }
+
+  .app .contextual-formatting-toolbar .format-icon-button {
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+  }
+
+  .app .contextual-formatting-toolbar .format-options-popover {
+    max-width: calc(100vw - 56px) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .contextual-formatting-toolbar .format-icon-button {
+    transition: none !important;
+  }
+}
