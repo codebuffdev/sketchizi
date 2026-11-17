@@ -25,6 +25,14 @@ test("the bottom dock exposes compact tool-specific controls, not a properties i
 test("Excalidraw's native selection properties panel is suppressed", () => {
   assert.match(css, /\.app \.excalidraw \.App-menu__left[\s\S]*?display: none !important/);
 });
+test("Escape returns from contextual options to the primary selection dock", () => {
+  assert.match(dock, /handleEscapeToPrimaryDock/);
+  assert.match(dock, /event\.key !== "Escape"/);
+  assert.match(dock, /activeTool: \{ type: "selection" \}/);
+  assert.match(dock, /selectedElementIds: \{\}/);
+  assert.match(dock, /setCustomTool\(null\)/);
+});
+
 test("both docks use a neutral theme-aware visual system with visible keyboard focus", () => {
   assert.match(css, /Contextual dock polish/);
   assert.match(css, /\.app\.theme-light \.sketchizi-tool-options-dock/);
