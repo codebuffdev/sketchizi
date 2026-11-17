@@ -124,11 +124,12 @@ test("Primary Dock hides descriptive hover tooltips and always shows compact sho
 });
 
 
-test("Primary Dock collapses to a compact left rail and restores without affecting the contextual dock", () => {
-  assert.match(canvas, /sketchizi-dock-collapse-toggle/);
-  assert.match(canvas, /sketchizi-primary-dock-collapsed/);
-  assert.match(canvas, /aria-label", collapsed \? "Expand Primary Dock" : "Collapse Primary Dock"/);
-  assert.match(css, /App-toolbar\[data-sketchizi-collapsed="true"\][\s\S]*?width: 42px !important;[\s\S]*?height: 42px !important/);
-  assert.match(css, /:not\(\.sketchizi-dock-collapse-toggle\)[\s\S]*?display: none !important/);
-  assert.match(css, /bottom dock is intentionally not affected by this state/);
+test("Primary Dock keeps Selection visible and reveals the full dock on hover or keyboard focus", () => {
+  assert.match(canvas, /sketchiziSelectionTrigger/);
+  assert.match(canvas, /toolbar\.insertBefore\(selectionAnchor, toolbar\.firstChild\)/);
+  assert.match(canvas, /toolbar\.dataset\.sketchiziHoverExpand = "true"/);
+  assert.doesNotMatch(canvas, /sketchizi-dock-collapse-toggle|sketchizi-primary-dock-collapsed/);
+  assert.match(css, /App-toolbar\[data-sketchizi-hover-expand="true"\][\s\S]*?max-height: 38px !important;[\s\S]*?overflow: hidden !important/);
+  assert.match(css, /:hover,[\s\S]*?:focus-within[\s\S]*?max-height: calc\(100vh - 32px\) !important/);
+  assert.match(css, /:not\(\[data-sketchizi-selection-trigger="true"\]\)[\s\S]*?visibility: hidden !important/);
 });
