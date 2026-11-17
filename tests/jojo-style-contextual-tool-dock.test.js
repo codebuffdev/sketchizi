@@ -122,3 +122,13 @@ test("Primary Dock hides descriptive hover tooltips and always shows compact sho
   assert.doesNotMatch(canvas, /button\.dataset\.sketchiziTooltip = tooltip/);
   assert.match(css, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding[\s\S]*?display: block !important;[\s\S]*?font-size: 8px !important;[\s\S]*?position: absolute !important/);
 });
+
+
+test("Primary Dock collapses to a compact left rail and restores without affecting the contextual dock", () => {
+  assert.match(canvas, /sketchizi-dock-collapse-toggle/);
+  assert.match(canvas, /sketchizi-primary-dock-collapsed/);
+  assert.match(canvas, /aria-label", collapsed \? "Expand Primary Dock" : "Collapse Primary Dock"/);
+  assert.match(css, /App-toolbar\[data-sketchizi-collapsed="true"\][\s\S]*?width: 42px !important;[\s\S]*?height: 42px !important/);
+  assert.match(css, /:not\(\.sketchizi-dock-collapse-toggle\)[\s\S]*?display: none !important/);
+  assert.match(css, /bottom dock is intentionally not affected by this state/);
+});
