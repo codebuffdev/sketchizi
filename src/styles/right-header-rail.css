@@ -703,3 +703,14 @@
     transform: none !important;
   }
 }
+
+
+/* Keep the right rail top-anchored while centering each control horizontally. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    top: var(--header-top, calc(18px + var(--safe-top, 0px))) !important;
+    bottom: auto !important;
+    transform: none !important;
+    justify-content: flex-start !important;
+  }
+}
