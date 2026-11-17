@@ -2384,3 +2384,12 @@
   color: #303943;
 }
 
+
+
+/* Stroke widths are communicated by line weight, not numeric labels. */
+.app .sk-tool-stroke-width-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+}
