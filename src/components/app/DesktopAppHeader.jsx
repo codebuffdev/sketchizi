@@ -688,10 +688,10 @@ export default function DesktopAppHeader({
           ? "Pinned — header stays expanded"
           : "Unpinned — header auto-hides after 5 seconds"}
       >
-        <svg viewBox="0 0 24 24" width="16" height="16" fill={headerPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" fill={headerPinned ? "currentColor" : "none"} fillOpacity={headerPinned ? ".22" : "0"} />
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" />
           <path d="M12 15v6" />
-          {!headerPinned && <path d="m4 4 16 16" />}
+          {headerPinned && <circle cx="18.5" cy="5.5" r="2" fill="currentColor" stroke="none" />}
         </svg>
       </button>
     </div>
