@@ -173,7 +173,8 @@
 
 
 /* Keep the canvas identity independent from the right-side control rail.
-   It remains visible when the rail is hidden and stays centered over the canvas. */
+   It remains visible when the rail is hidden. Desktop placement is aligned
+   immediately after the fixed hamburger control below. */
 @media (min-width: 521px) {
   .app.canvas-first-header .desktop-app-document-title-float {
     position: absolute;
@@ -672,4 +673,16 @@
   .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button.is-cloud-conflict { color: #c23b3b; }
   .app.theme-dark .desktop-app-document-title-float .desktop-app-save-to-cloud-button { border-color: var(--ui-border, #3e4354); background: transparent; color: var(--ui-text-muted, #a3a8b8); }
   .app.theme-dark .desktop-app-document-title-float .desktop-app-save-to-cloud-button:hover:not(:disabled) { background: var(--ui-hover, #272b39); color: var(--ui-text-strong, #f0f1f8); }
+}
+
+
+/* Keep the complete canvas-title group beside the hamburger control. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-document-title-float {
+    left: calc(14px + var(--safe-left, 0px) + 38px + 10px);
+    right: auto;
+    transform: none;
+    justify-content: flex-start;
+    max-width: min(500px, calc(100vw - 86px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
 }
