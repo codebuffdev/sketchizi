@@ -20,3 +20,17 @@ test('vertical dock preserves native tool visibility and scrolling', () => {
   assert.match(dockCss, /visibility:\s*visible\s*!important/);
   assert.match(dockCss, /opacity:\s*1\s*!important/);
 });
+
+
+test('primary drawing dock defaults to the left edge in a vertical layout', () => {
+  const canvas = fs.readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+  assert.match(canvas, /toolbar\.dataset\.sketchiziOrientation = "vertical"/);
+  assert.match(canvas, /toolbar\.dataset\.sketchiziDockSide = "left"/);
+  assert.match(dockCss, /App-toolbar-container:has\(\.App-toolbar\[data-sketchizi-orientation="vertical"\]\[data-sketchizi-dock-side="left"\]\)/);
+  assert.match(dockCss, /flex-direction: column !important/);
+});
+
+test('contextual formatting dock uses a horizontal bottom rail with popovers above it', () => {
+  assert.match(dockCss, /\.contextual-formatting-toolbar \.format-icon-rail[\s\S]*?flex-direction: row !important/);
+  assert.match(dockCss, /\.format-options-popover\.side-top[\s\S]*?bottom: calc\(100% \+ 10px\)/);
+});
