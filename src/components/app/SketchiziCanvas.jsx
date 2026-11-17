@@ -492,42 +492,6 @@ export default function SketchiziCanvas({
         });
         toolbar.insertBefore(grip, toolbar.firstChild);
       }
-      // A dedicated collapse control keeps the Primary Dock available as a
-      // compact left-edge rail without affecting the independent bottom dock.
-      let collapseToggle = toolbar.querySelector(":scope > .sketchizi-dock-collapse-toggle");
-      if (!collapseToggle) {
-        collapseToggle = document.createElement("button");
-        collapseToggle.type = "button";
-        collapseToggle.className = "sketchizi-dock-collapse-toggle";
-        collapseToggle.dataset.sketchiziCollapseToggle = "true";
-        collapseToggle.setAttribute("aria-label", "Collapse Primary Dock");
-        collapseToggle.addEventListener("click", () => {
-          const collapsed = toolbar.dataset.sketchiziCollapsed !== "true";
-          toolbar.dataset.sketchiziCollapsed = String(collapsed);
-          container.dataset.sketchiziCollapsed = String(collapsed);
-          collapseToggle.setAttribute("aria-expanded", String(!collapsed));
-          collapseToggle.setAttribute("aria-label", collapsed ? "Expand Primary Dock" : "Collapse Primary Dock");
-          collapseToggle.title = collapsed ? "Expand Primary Dock" : "Collapse Primary Dock";
-          collapseToggle.innerHTML = collapsed
-            ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>'
-            : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
-          try { window.localStorage.setItem("sketchizi-primary-dock-collapsed", String(collapsed)); } catch {}
-        });
-        toolbar.insertBefore(collapseToggle, toolbar.firstChild);
-      }
-      if (toolbar.dataset.sketchiziCollapsed === undefined) {
-        let initiallyCollapsed = false;
-        try { initiallyCollapsed = window.localStorage.getItem("sketchizi-primary-dock-collapsed") === "true"; } catch {}
-        toolbar.dataset.sketchiziCollapsed = String(initiallyCollapsed);
-        container.dataset.sketchiziCollapsed = String(initiallyCollapsed);
-      }
-      const initiallyCollapsed = toolbar.dataset.sketchiziCollapsed === "true";
-      collapseToggle.setAttribute("aria-expanded", String(!initiallyCollapsed));
-      collapseToggle.setAttribute("aria-label", initiallyCollapsed ? "Expand Primary Dock" : "Collapse Primary Dock");
-      collapseToggle.title = initiallyCollapsed ? "Expand Primary Dock" : "Collapse Primary Dock";
-      collapseToggle.innerHTML = initiallyCollapsed
-        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>'
-        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
       // Excalidraw owns the active-tool state and marks its selected toolbar button.
       // Style that native state instead of inferring tools from labels, which can
       // incorrectly highlight unrelated controls or remain stale while editing text.
@@ -593,6 +557,26 @@ export default function SketchiziCanvas({
         }
         previousGroup = group.name;
       });
+
+      // Keep the native Selection tool as the visible collapsed-dock trigger.
+      // Move its existing native wrapper to the first position; its original
+      // React handler and keyboard shortcut remain untouched.
+      const selectionButton = [...toolbar.querySelectorAll("button, [role='button']")].find((button) => {
+        const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""} ${button.dataset.testid || ""}`.trim();
+        return /(^|\\s)(select|selection)(?=\\s|$)/i.test(label);
+      });
+      if (selectionButton) {
+        let selectionAnchor = selectionButton;
+        while (selectionAnchor.parentElement && selectionAnchor.parentElement !== toolbar) {
+          selectionAnchor = selectionAnchor.parentElement;
+        }
+        if (selectionAnchor.parentElement === toolbar) {
+          selectionAnchor.dataset.sketchiziSelectionTrigger = "true";
+          selectionButton.dataset.sketchiziSelectionTrigger = "true";
+          toolbar.insertBefore(selectionAnchor, toolbar.firstChild);
+        }
+      }
+      toolbar.dataset.sketchiziHoverExpand = "true";
 
       // Keep Bucket Fill as the only custom quick tool in the native dock.
       // Reconcile the group on toolbar mutations because Excalidraw may rebuild
