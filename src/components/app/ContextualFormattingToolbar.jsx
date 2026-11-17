@@ -87,90 +87,15 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   const appState = api.getAppState?.();
   if (!appState) return null;
 
-  // In Zen Mode the formatting dock is a persistent canvas control, not a
-  // contextual control attached to the selected element. Keep both the rail
-  // and its option popovers anchored to the same viewport-relative position
-  // while selection, zoom, pan, and active dock option change.
-  if (appState.zenModeEnabled === true) {
-    return {
-      left: "16px",
-      top: "64px",
-      "--format-popover-side": root.clientWidth > 390 ? "right" : "left",
-    };
-  }
-
-  // Drawing-tool controls have no selected element to anchor to. Keep their
-  // rail in a stable, reachable position inside the canvas viewport instead.
-  if (!elements.length) {
-    return {
-      left: "16px",
-      top: "64px",
-      "--format-popover-side": root.clientWidth > 390 ? "right" : "left",
-    };
-  }
-
-  const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
-  const sceneBounds = elements.reduce((bounds, element) => {
-    const x = Number(element.x) || 0;
-    const y = Number(element.y) || 0;
-    const width = Number(element.width) || 0;
-    const height = Number(element.height) || 0;
-    bounds.left = Math.min(bounds.left, x, x + width);
-    bounds.top = Math.min(bounds.top, y, y + height);
-    bounds.right = Math.max(bounds.right, x, x + width);
-    bounds.bottom = Math.max(bounds.bottom, y, y + height);
-    return bounds;
-  }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
-  if (!Number.isFinite(sceneBounds.left) || !Number.isFinite(sceneBounds.top)) return null;
-
-  const rootWidth = root.clientWidth || Number(appState.width) || 1;
-  const rootHeight = root.clientHeight || Number(appState.height) || 1;
-  // Use the actual overlay dimensions for placement. Excalidraw app-state
-  // dimensions can differ from the root when side panels or browser zoom alter
-  // the canvas viewport, so scale scene coordinates into the overlay's space.
-  const appWidth = Number(appState.width) || rootWidth;
-  const appHeight = Number(appState.height) || rootHeight;
-  const scaleX = (rootWidth / appWidth) * zoom;
-  const scaleY = (rootHeight / appHeight) * zoom;
-  const scrollX = Number(appState.scrollX) || 0;
-  const scrollY = Number(appState.scrollY) || 0;
-  // Scene coordinates map into the canvas viewport from its top-left origin.
-  // Do not add half the viewport size: that incorrectly shifts the rail toward
-  // the far edge and can push it off-screen for selections near the opposite side.
-  const selectionLeft = (sceneBounds.left + scrollX) * scaleX;
-  const selectionRight = (sceneBounds.right + scrollX) * scaleX;
-  const selectionTop = (sceneBounds.top + scrollY) * scaleY;
-  const selectionBottom = (sceneBounds.bottom + scrollY) * scaleY;
-
-  const railWidth = 44;
-  const railHeight = Math.min(300, elements.length ? 6 * 38 + 12 : 12);
-  const gap = 10;
-  const edge = 8;
-
-  // Keep the rail beside the selected object instead of centering it in the
-  // canvas. Prefer its right edge, then left edge, and only use a clamped
-  // centered fallback when the selection is too close to both viewport edges.
-  const rightCandidate = selectionRight + gap;
-  const leftCandidate = selectionLeft - railWidth - gap;
-  const left = rightCandidate + railWidth <= rootWidth - edge
-    ? rightCandidate
-    : leftCandidate >= edge
-      ? leftCandidate
-      : Math.max(edge, Math.min(rootWidth - railWidth - edge, selectionRight - railWidth / 2));
-
-  const popoverHeight = Math.min(520, Math.max(180, rootHeight - 24));
-  const selectionCenterY = (selectionTop + selectionBottom) / 2;
-  const preferredTop = isPopoverOpen
-    ? selectionCenterY - Math.min(popoverHeight, 300) / 2
-    : selectionCenterY - railHeight / 2;
-  const maxTop = Math.max(edge, rootHeight - (isPopoverOpen ? Math.min(popoverHeight, rootHeight - 16) : railHeight) - edge);
-  const top = Math.max(edge, Math.min(maxTop, preferredTop));
-  const popoverSide = left + railWidth + 320 + 16 <= rootWidth ? "right" : "left";
-
+  // The secondary dock is anchored to the bottom center of the canvas. Its
+  // controls follow the active tool or current selection, not the object
+  // position, so the dock never jumps around while editing.
   return {
-    left: `${left}px`,
-    top: `${top}px`,
-    "--format-popover-side": popoverSide,
+    left: "50%",
+    top: "auto",
+    bottom: "16px",
+    transform: "translateX(-50%)",
+    "--format-popover-side": "top",
   };
 }
 
