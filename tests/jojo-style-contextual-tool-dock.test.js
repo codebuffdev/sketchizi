@@ -13,6 +13,9 @@ test("Sketchizi mounts its own contextual tool options dock in the canvas", () =
 
 test("the bottom dock exposes compact tool-specific controls, not a properties inspector", () => {
   assert.match(dock, /sketchizi-tool-options-dock/);
+  assert.match(dock, /function ContextShapeIcon/);
+  assert.match(dock, /<ContextShapeIcon type=\{type\}/);
+  assert.doesNotMatch(dock, /<span className="sk-tool-dock-context">\{title\}<\/span>/);
   assert.match(dock, /Stroke color/);
   assert.match(dock, /Fill style/);
   assert.match(dock, /Arrowheads/);
