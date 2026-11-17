@@ -2524,6 +2524,7 @@
 
 /* Eraser and Bucket Fill are direct controls; the native three-dot
    overflow menu is redundant in this compact dock. */
+.app .excalidraw .App-toolbar > .dropdown-menu-button,
 .app .excalidraw .App-toolbar [data-sketchizi-hide-overflow-tools="true"] {
   display: none !important;
 }
