@@ -60,6 +60,7 @@ import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/ba
 import "./styles/ai-ask.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
+import "./styles/startup-canvas-chooser.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
@@ -67,6 +68,9 @@ function App() {
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
   const [canvasPageContext, setCanvasPageContext] = useState({ mode: "infinite", page: null, pageCount: 0 });
+  const [startupChooserOpen, setStartupChooserOpen] = useState(false);
+  const startupChoiceMadeRef = useRef(false);
+  const sceneHadContentRef = useRef(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
@@ -742,11 +746,42 @@ function App() {
     onArchitectureSceneChange: updateArchitectureValidation,
     onDocumentSceneChange: markCurrentDocumentChanged,
   });
+  const syncStartupChooser = useCallback((elements, useRestoredFallback = false) => {
+    if (cloudDiagramId || !collaborationCanEdit) return;
+    const hasLiveElements = (Array.isArray(elements) ? elements : []).some((element) => element && !element.isDeleted && !element.deleted);
+    const hasRestoredElements = useRestoredFallback && (savedSketch?.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
+    if (hasLiveElements || hasRestoredElements) {
+      sceneHadContentRef.current = true;
+      startupChoiceMadeRef.current = false;
+      setStartupChooserOpen(false);
+      return;
+    }
+    if (sceneHadContentRef.current) {
+      sceneHadContentRef.current = false;
+      startupChoiceMadeRef.current = false;
+      setStartupChooserOpen(true);
+    } else if (!startupChoiceMadeRef.current) {
+      setStartupChooserOpen(true);
+    }
+  }, [cloudDiagramId, collaborationCanEdit, savedSketch]);
+
+  useEffect(() => {
+    if (!sketchReady || !apiReady || cloudDiagramId || !collaborationCanEdit) return;
+    syncStartupChooser(apiRef.current?.getSceneElements?.() || [], true);
+  }, [apiReady, cloudDiagramId, collaborationCanEdit, savedSketch, sketchReady, syncStartupChooser]);
+
   // Save the live background with the scene instead of forcing a theme color.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
+    syncStartupChooser(elements);
     handleExcalidrawChange(elements, appState);
     if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
-  }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave]);
+  }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave, syncStartupChooser]);
+
+  const chooseStartupCanvas = useCallback((mode) => {
+    startupChoiceMadeRef.current = true;
+    setStartupChooserOpen(false);
+    window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
+  }, []);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
@@ -1891,6 +1926,24 @@ function App() {
           )}
         </aside>
       </div>
+
+      {startupChooserOpen && sketchReady && apiReady && !cloudDiagramId && collaborationCanEdit && (
+        <div className="startup-canvas-backdrop" role="presentation">
+          <section className="startup-canvas-chooser" role="dialog" aria-modal="true" aria-labelledby="startup-canvas-title">
+            <h2 id="startup-canvas-title">Start with</h2>
+            <div className="startup-canvas-options">
+              <button type="button" className="startup-canvas-option" onClick={() => chooseStartupCanvas("infinite")}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.2-5.8 5.2-5.8 9 0s6.8 5.8 9 0c-2.2-5.8-5.2-5.8-9 0S5.2 17.8 3 12Z"/></svg>
+                <span>Infinity</span>
+              </button>
+              <button type="button" className="startup-canvas-option" onClick={() => chooseStartupCanvas("pages")}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg>
+                <span>Pages</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <CommandPalette
         open={commandPaletteOpen}
