@@ -147,10 +147,42 @@
     color: var(--ui-text-strong, #202334);
   }
 
+  /* A pinned header is a persistent mode, so make its state unmistakable. */
   .app.canvas-first-header .desktop-app-header-pin-button.is-active {
-    border-color: var(--ui-accent, #64748b);
-    background: var(--ui-hover, rgb(148 163 184 / 14%));
-    color: var(--ui-text-strong, #202334);
+    border-color: #3f444b;
+    background: #3f444b;
+    color: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 18%), inset 0 0 0 1px rgb(255 255 255 / 8%);
+  }
+
+  .app.canvas-first-header .desktop-app-header-pin-button.is-active:hover,
+  .app.canvas-first-header .desktop-app-header-pin-button.is-active:focus-visible {
+    border-color: #30343a;
+    background: #30343a;
+    color: #fff;
+  }
+
+  .app.canvas-first-header .desktop-app-header-pin-button:not(.is-active) svg {
+    opacity: .72;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-pin-button.is-active {
+    border-color: #c3c6ca;
+    background: #c3c6ca;
+    color: #202326;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 35%), inset 0 0 0 1px rgb(255 255 255 / 18%);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-pin-button.is-active:hover,
+  .app.theme-dark.canvas-first-header .desktop-app-header-pin-button.is-active:focus-visible {
+    border-color: #d5d8dc;
+    background: #d5d8dc;
+    color: #17191b;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-pin-button:not(.is-active) {
+    border-color: #55595e;
+    color: #aeb3b8;
   }
 
   .app.canvas-first-header .desktop-app-header-reveal-handle {
