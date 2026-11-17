@@ -153,37 +153,6 @@ function App() {
     return () => window.removeEventListener("keydown", closeOnEscape, true);
   }, [nativeMenuOpen, closeNativeMenu]);
 
-  useEffect(() => {
-    if (!nativeMenuOpen) return;
-    // Keep the native hamburger menu mutually exclusive with modal and
-    // floating tool surfaces that are opened outside usePanelState.
-    if (
-      aiAskOpen ||
-      minimapOpen ||
-      exportStudioOpen ||
-      templatesModalOpen ||
-      designStudioOpen ||
-      dockerStudioOpen ||
-      kubernetesStudioOpen ||
-      cloudSaveDialogOpen ||
-      commandPaletteOpen
-    ) {
-      closeNativeMenu();
-    }
-  }, [
-    nativeMenuOpen,
-    aiAskOpen,
-    minimapOpen,
-    exportStudioOpen,
-    templatesModalOpen,
-    designStudioOpen,
-    dockerStudioOpen,
-    kubernetesStudioOpen,
-    cloudSaveDialogOpen,
-    commandPaletteOpen,
-    closeNativeMenu,
-  ]);
-
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   // The native hamburger menu and React-powered floating catalogs are mutually
@@ -223,6 +192,37 @@ function App() {
   const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!nativeMenuOpen) return;
+    // Keep the native hamburger menu mutually exclusive with modal and
+    // floating tool surfaces that are opened outside usePanelState.
+    if (
+      aiAskOpen ||
+      minimapOpen ||
+      exportStudioOpen ||
+      templatesModalOpen ||
+      designStudioOpen ||
+      dockerStudioOpen ||
+      kubernetesStudioOpen ||
+      cloudSaveDialogOpen ||
+      commandPaletteOpen
+    ) {
+      closeNativeMenu();
+    }
+  }, [
+    nativeMenuOpen,
+    aiAskOpen,
+    minimapOpen,
+    exportStudioOpen,
+    templatesModalOpen,
+    designStudioOpen,
+    dockerStudioOpen,
+    kubernetesStudioOpen,
+    cloudSaveDialogOpen,
+    commandPaletteOpen,
+    closeNativeMenu,
+  ]);
 
   useEffect(() => {
     const detachCloudDocument = () => {
