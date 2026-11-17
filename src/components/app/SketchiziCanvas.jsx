@@ -223,7 +223,6 @@ export default function SketchiziCanvas({
 
   const handleSceneChange = useCallback((elements, appState, files) => {
     setCanvasRevision((revision) => revision + 1);
-    onGridVisibilityChange?.(Boolean(appState?.gridModeEnabled));
     handleChange?.(elements, appState, files);
   }, [canEdit, handleChange, viewModeEnabled, onGridVisibilityChange]);
   const handleViewportChange = useCallback((...args) => {
