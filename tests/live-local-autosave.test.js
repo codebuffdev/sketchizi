@@ -48,3 +48,9 @@ test("local autosave waits ten seconds from the first pending edit without debou
   assert.match(source, /\}, LOCAL_AUTOSAVE_INTERVAL_MS\)/);
   assert.doesNotMatch(source, /window\.setTimeout\(\(\) => \{[\s\S]{0,1200}?\}, 350\)/);
 });
+
+
+test("ten-second autosave persists the newest edit revision", () => {
+  assert.match(source, /const latestRevision = saveRevisionRef\.current/);
+  assert.match(source, /\}, latestRevision\)/);
+});
