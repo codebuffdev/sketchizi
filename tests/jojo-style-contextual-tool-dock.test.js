@@ -110,7 +110,8 @@ test("vertical Primary Dock grip has no reserved 24px space above Hand", () => {
 test("the Primary Dock hides the redundant three-dot overflow control and keeps Eraser beside Bucket Fill", () => {
   assert.match(canvas, /sketchiziHideOverflowTools/);
   assert.match(canvas, /querySelectorAll\(":scope > \.dropdown-menu-button"\)/);
-  assert.match(css, /\.App-toolbar > \.dropdown-menu-button[\s\S]*?display: none !important/);\n  assert.match(css, /data-sketchizi-hide-overflow-tools="true"[\s\S]*?display: none !important/);
+  assert.match(css, /\.App-toolbar > \.dropdown-menu-button[\s\S]*?display: none !important/);
+  assert.match(css, /data-sketchizi-hide-overflow-tools="true"[\s\S]*?display: none !important/);
   assert.match(css, /quick-tools[\s\S]*?flex: 0 0 34px !important;[\s\S]*?height: 34px !important/);
 });
 
