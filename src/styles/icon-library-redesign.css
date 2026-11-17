@@ -1997,7 +1997,7 @@
     inset: auto !important;
     flex: 0 1 auto !important;
     width: min(390px, calc(100vw - 32px)) !important;
-    height: min(650px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 32px)) !important;
+    height: min(455px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 32px)) !important;
     min-width: 0 !important;
     min-height: 0 !important;
     max-width: calc(100vw - 32px) !important;
