@@ -43,9 +43,10 @@ export default function SketchiziCanvas({
     if (!rect.width || !rect.height) return;
     const api = apiRef?.current;
     const state = api?.getAppState?.() || {};
-    // The native Show Grid toggle is the single source of truth for BOTH
-    // decorative layers. Respect live Excalidraw state, not just saved props.
-    const showGrid = state.gridModeEnabled ?? savedSketch?.appState?.gridModeEnabled ?? gridEnabled;
+    // Canvas patterns are a Sketchizi presentation layer, independent of
+    // Excalidraw's native grid. This prevents the native grid from stacking
+    // underneath the selected custom pattern.
+    const showGrid = !!gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
     ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].forEach((style) => {
       node.classList.toggle(`is-${style}-style`, gridStyle === style);
@@ -832,7 +833,7 @@ export default function SketchiziCanvas({
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
             currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasBackground(isDarkTheme),
-            gridModeEnabled: savedSketch?.appState?.gridModeEnabled ?? gridEnabled,
+            gridModeEnabled: false,
           },
           files: savedSketch?.files || {},
         }}

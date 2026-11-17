@@ -618,8 +618,11 @@ export default function DesktopAppHeader({
                   ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."],
                   ["columns", "Column Guides", "Vertical layout columns."],
                   ["coordinates", "Coordinate Grid", "Grid with X and Y axes."]].map(([value, label, description]) => (
-                  <button key={value} type="button" disabled={!gridEnabled} aria-pressed={gridStyle === value}
-                    onClick={() => onGridStyleChange?.(value)}>
+                  <button key={value} type="button" aria-pressed={gridStyle === value}
+                    onClick={() => {
+                      onGridStyleChange?.(value);
+                      if (!gridEnabled) onToggleGrid?.();
+                    }}>
                     <span className={`sketchizi-grid-preview is-${value}`} aria-hidden="true"><span /></span>
                     <strong>{label}</strong>
                     <small>{description}</small>
@@ -630,7 +633,7 @@ export default function DesktopAppHeader({
             </div>
             <p className="sketchizi-header-grid-description">
               <span aria-hidden="true">ⓘ</span>
-              {!gridEnabled ? "Turn on Show pattern to choose a canvas style." :
+              {!gridEnabled ? "Choose a canvas style, then turn on Show pattern whenever you want it visible." :
                 gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
                 gridStyle === "ruled" ? "Ruled Paper adds evenly spaced horizontal guides." :
                 gridStyle === "columns" ? "Column Guides add vertical layout guides." :
