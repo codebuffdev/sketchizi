@@ -27,6 +27,8 @@ export default function SketchiziCanvas({
   const canvasRootRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [zenModeEnabled, setZenModeEnabled] = useState(false);
+  const [scratchModeEnabled, setScratchModeEnabled] = useState(false);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
@@ -223,6 +225,7 @@ export default function SketchiziCanvas({
 
   const handleSceneChange = useCallback((elements, appState, files) => {
     setCanvasRevision((revision) => revision + 1);
+    setZenModeEnabled(!!appState?.zenModeEnabled);
     handleChange?.(elements, appState, files);
   }, [canEdit, handleChange, viewModeEnabled, onGridVisibilityChange]);
   const handleViewportChange = useCallback((...args) => {
@@ -231,6 +234,7 @@ export default function SketchiziCanvas({
   }, [onViewportChange]);
   const registerExcalidrawAPI = useCallback((api) => {
     handleExcalidrawAPI?.(api);
+    setZenModeEnabled(!!api?.getAppState?.()?.zenModeEnabled);
     setCanvasRevision((revision) => revision + 1);
   }, [handleExcalidrawAPI]);
 
@@ -818,7 +822,7 @@ export default function SketchiziCanvas({
   const activeAppearance = ["sketch", "clean", "chalkboard"].includes(canvasAppearance) ? canvasAppearance : "clean";
 
   return (
-    <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
+    <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} data-scratch-mode={scratchModeEnabled ? "true" : "false"} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
         initialData={{
@@ -846,7 +850,17 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {(apiRef.current?.getAppState?.().zenModeEnabled ?? true) && (
+      {zenModeEnabled && canEdit && !viewModeEnabled && (
+        <button
+          type="button"
+          className={`sketchizi-scratch-mode-toggle${scratchModeEnabled ? " is-active" : ""}`}
+          aria-pressed={scratchModeEnabled}
+          onClick={() => setScratchModeEnabled((enabled) => !enabled)}
+        >
+          {scratchModeEnabled ? "Scratch Mode: On" : "Scratch Mode"}
+        </button>
+      )}
+      {(zenModeEnabled) && (
         <ContextualFormattingToolbar
           apiRef={apiRef}
           canvasRootRef={canvasRootRef}
