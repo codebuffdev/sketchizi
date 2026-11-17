@@ -152,6 +152,12 @@ export function useNativeSketchiziMenu({
           // Excalidraw's duplicate native Open entry, including its Ctrl+O hint.
           if (item && item !== menu) item.remove();
         }
+
+        // Remove only Excalidraw's native "Save to..." action. Its stable
+        // test id identifies that single row; leave the surrounding menu and
+        // adjacent Export image / Find on canvas / Reset actions untouched.
+        const saveToButton = menu.querySelector('[data-testid="json-export-button"]');
+        if (saveToButton) saveToButton.remove();
       });
       document.querySelectorAll("body *").forEach((node) => {
         const text = node.textContent?.replace(/\s+/g, " ").trim();
