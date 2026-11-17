@@ -34,3 +34,10 @@ test('contextual formatting dock uses a horizontal bottom rail with popovers abo
   assert.match(dockCss, /\.contextual-formatting-toolbar \.format-icon-rail[\s\S]*?flex-direction: row !important/);
   assert.match(dockCss, /\.format-options-popover\.side-top[\s\S]*?bottom: calc\(100% \+ 10px\)/);
 });
+
+
+test('Excalidraw native selection properties panels are suppressed in favor of Sketchizi bottom dock', () => {
+  assert.match(dockCss, /\.App-menu__left[\s\S]*?\.compact-shape-actions-island[\s\S]*?display: none !important/);
+  assert.match(dockCss, /\.contextual-formatting-toolbar/);
+  assert.match(dockCss, /\.Island\.App-toolbar\[data-sketchizi-orientation="vertical"\]\[data-sketchizi-dock-side="left"\]/);
+});
