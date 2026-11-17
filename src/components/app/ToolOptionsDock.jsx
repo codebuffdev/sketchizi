@@ -65,6 +65,24 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     };
   }, []);
 
+  useEffect(() => {
+    const handleEscapeToPrimaryDock = (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const target = event.target;
+      if (target?.closest?.("input, textarea, select, [contenteditable='true'], [role='dialog']")) return;
+      setCustomTool(null);
+      apiRef?.current?.updateScene?.({
+        appState: {
+          activeTool: { type: "selection" },
+          selectedElementIds: {},
+          selectedGroupIds: {},
+        },
+      });
+    };
+    window.addEventListener("keydown", handleEscapeToPrimaryDock);
+    return () => window.removeEventListener("keydown", handleEscapeToPrimaryDock);
+  }, [apiRef]);
+
   const appState = apiRef?.current?.getAppState?.() || {};
   const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
