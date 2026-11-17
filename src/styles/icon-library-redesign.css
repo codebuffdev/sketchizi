@@ -787,7 +787,7 @@
 /* Docked library UX overrides: preserve the full component styling above. */
 @media (min-width: 761px) {
   .app .desktop-workspace-library-open::before { content: none !important; }
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     position: fixed !important;
     inset: var(--sketchizi-desktop-header-height, 58px) auto 0 0;
     z-index: 400;
@@ -816,7 +816,7 @@
   .app .library-panel-redesign .library-icon-card .icon-preview img { pointer-events: none; -webkit-user-drag: none; }
 }
 @media (max-width: 760px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     inset: var(--sketchizi-desktop-header-height, 58px) 0 0; width: 100vw;
     height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px));
   }
@@ -1228,7 +1228,7 @@
 
 /* Compact mobile library: keep it to roughly two-thirds of the viewport and put search at the top. */
 @media (max-width: 760px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     align-items: flex-start;
     justify-content: center;
     padding: 12px;
@@ -1260,7 +1260,7 @@
 
 /* Narrow mobile view: let the icon catalog expand upward into the available blank area. */
 @media (max-width: 760px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     align-items: stretch;
     justify-content: center;
     padding: 0 12px;
@@ -1295,7 +1295,7 @@
 
 /* Keep the Icon Library compact on narrow viewports instead of stretching edge to edge. */
 @media (max-width: 760px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     align-items: center;
     justify-content: center;
     padding: 12px;
@@ -1316,7 +1316,7 @@
 
 /* Floating compact catalog: preserve the canvas as the primary workspace. */
 @media (min-width: 761px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     position: fixed !important;
     inset: calc(var(--sketchizi-desktop-header-height, 58px) + 16px) 16px auto auto !important;
     z-index: 400;
@@ -1353,7 +1353,7 @@
   }
 }
 @media (max-width: 760px) {
-  .app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
     position: fixed !important;
     inset: calc(var(--sketchizi-desktop-header-height, 58px) + 8px) 12px auto !important;
     width: auto !important;
@@ -1758,7 +1758,7 @@
 
 
 /* Keep the floating Icon Library at the top of the viewport instead of vertically centering it. */
-.app .desktop-workspace-library-open > .desktop-resources-region.mobile-resource-open {
+.app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
   align-items: flex-start !important;
   justify-content: center !important;
   padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
