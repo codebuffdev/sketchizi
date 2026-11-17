@@ -164,7 +164,7 @@ function App() {
     return () => window.removeEventListener("keydown", closeOnEscape, true);
   }, [nativeMenuOpen, closeNativeMenu]);
 
-  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
+  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
   // The native hamburger menu and React-powered floating catalogs are mutually
   // exclusive. Opening the native menu dismisses any active catalog/panel.
@@ -1800,7 +1800,6 @@ function App() {
             collaborationSelfId={collaborationClientId}
             updateCollaborationCursor={updateCollaborationCursor}
             onViewportChange={markLocalViewportNavigation}
-            propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
             applyToSelected={applyToSelected}
             selectionProperties={
@@ -1839,17 +1838,6 @@ function App() {
                 dockMode
               />
             }
-            onOpenProperties={() => {
-              const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
-              if (selectedIds.length && apiRef.current?.updateScene) {
-                apiRef.current.updateScene({
-                  appState: { selectedElementIds: Object.fromEntries(selectedIds.map((id) => [id, true])) },
-                  captureUpdate: CaptureUpdateAction.NEVER,
-                });
-              }
-              openPanel("properties");
-            }}
-            onToolActivated={() => closePanel("properties")}
             canEdit={collaborationCanEdit}
             viewModeEnabled={collaborationPermission === "viewer"}
             gridStyle={gridStyle}
