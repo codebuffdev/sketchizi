@@ -78,3 +78,13 @@ test('tool families render as distinct compact clusters rather than a flat toolb
   assert.match(css, /width:\s*36px !important/);
   assert.match(css, /background:\s*#477f91 !important/);
 });
+
+
+test('horizontal bottom dock removes shell padding and gaps without shrinking tool controls', () => {
+  const navigation = readFileSync(new URL('../src/styles/ui-modernization-navigation.css', import.meta.url), 'utf8');
+  assert.match(navigation, /data-sketchizi-dock="true"\]\:not\(\[data-sketchizi-orientation="vertical"\]\)[\s\S]*?padding:\s*0 !important/);
+  assert.match(navigation, /data-sketchizi-dock="true"\]\:not\(\[data-sketchizi-orientation="vertical"\]\)[\s\S]*?gap:\s*0 !important/);
+  assert.match(navigation, /border-radius:\s*8px !important/);
+  assert.match(css, /width:\s*34px !important/);
+  assert.match(css, /height:\s*34px !important/);
+});
