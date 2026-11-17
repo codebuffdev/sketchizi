@@ -187,7 +187,7 @@ export default function DesktopAppHeader({
     }
 
     const collapseOnCanvasInteraction = (event) => {
-      if (headerPinned || !(event.target instanceof Element)) return;
+      if (headerPinned || window.matchMedia("(min-width: 1025px)").matches || !(event.target instanceof Element)) return;
       if (event.target.closest(".desktop-canvas-region")) {
         setHeaderVisible(false);
       }
@@ -198,7 +198,6 @@ export default function DesktopAppHeader({
     // control rail = right edge. Tablet retains the previous top-edge reveal.
     // Canvas wheel gestures remain dedicated to zooming and navigation.
     const revealFromEdge = (event) => {
-      const viewportWidth = document.documentElement.clientWidth;
       const rightRail = window.matchMedia("(min-width: 1025px)").matches;
       const nearTop = event.clientY <= 24;
 
