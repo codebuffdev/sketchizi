@@ -2588,6 +2588,9 @@
 .app .excalidraw .Island.App-toolbar[data-sketchizi-collapsed="true"] > :not(.sketchizi-dock-collapse-toggle) {
   display: none !important;
 }
+.app .excalidraw .Island.App-toolbar {
+  position: relative !important;
+}
 .app .excalidraw .Island.App-toolbar .sketchizi-dock-collapse-toggle {
   box-sizing: border-box !important;
   z-index: 20 !important;
