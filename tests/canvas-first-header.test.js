@@ -49,9 +49,9 @@ test("header supports pinning, responsive edge reveal, and a keyboard visibility
   assert.match(header, /setHeaderVisible\(true\)/);
   assert.match(header, /setHeaderVisible\(\(visible\) => !visible\)/);
   assert.match(header, /revealPointerEnteredFromCollapsedRef/);
-  assert.match(railCss, /desktop-app-header-reveal-handle[\\s\\S]*?top: var\\(--header-top/);
-  assert.match(railCss, /width: var\\(--header-top-control-height, 40px\\)/);
-  assert.match(railCss, /height: var\\(--header-top-control-height, 40px\\)/);
+  assert.ok(railCss.includes("top: var(--header-top, calc(18px + var(--safe-top, 0px)));"));
+  assert.ok(railCss.includes("width: var(--header-top-control-height, 40px);"));
+  assert.ok(railCss.includes("height: var(--header-top-control-height, 40px);"));
   assert.match(css, /desktop-app-header-reveal-handle\.is-visible/);
 });
 
