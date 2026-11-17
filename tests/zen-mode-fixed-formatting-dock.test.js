@@ -18,3 +18,12 @@ test("formatting controls continue to derive their values and actions from the a
   assert.match(source, /const applyFormatting = \(patch\) =>/);
   assert.match(source, /onClick=\{\(\) => setOpenGroup\(\(current\) => current === group\.id \? null : group\.id\)\}/);
 });
+
+
+test("Zen Mode formatting dock retains Smart Themes for applicable selected objects", () => {
+  assert.match(source, /id: "themes", label: "Smart Themes"/);
+  assert.match(source, /const applySmartTheme = \(themeId\) =>/);
+  assert.match(source, /applySmartThemeToElements\(\[element\], themeId\)/);
+  assert.match(source, /iconOnlySelection && \["stroke", "opacity", "themes"\]/);
+  assert.doesNotMatch(source, /group\.id === "themes" \|\| \(activeToolMode/);
+});
