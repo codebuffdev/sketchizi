@@ -1176,3 +1176,28 @@
     transition: none !important;
   }
 }
+
+
+/* Dark theme: keep the Icon Library on a neutral charcoal surface.
+   This selector intentionally outranks the legacy theme surface rule in styles.css. */
+.app.theme-dark .desktop-resources-region > .library-panel.library-panel-redesign.sk-icon-panel {
+  --skp-bg: #17191d;
+  --skp-surface: #202328;
+  --skp-surface-hover: #292d33;
+  --skp-surface-active: #30353c;
+  --skp-border: rgba(255, 255, 255, 0.09);
+  --skp-border-strong: rgba(255, 255, 255, 0.17);
+  --skp-text: #f1f2f4;
+  --skp-text-muted: #a2a7af;
+  --skp-text-faint: #777e88;
+  --skp-accent: #b0b5bd;
+  --skp-accent-soft: rgba(176, 181, 189, 0.12);
+  --skp-stage-bg: #252a30;
+  --skp-kbd-bg: #24282e;
+  --skp-kbd-border: rgba(255, 255, 255, 0.13);
+  --skp-shadow: 0 18px 48px rgba(0, 0, 0, 0.48);
+  border-color: #30343a !important;
+  background: var(--skp-bg) !important;
+  color: var(--skp-text) !important;
+  box-shadow: var(--skp-shadow) !important;
+}
