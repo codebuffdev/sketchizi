@@ -397,6 +397,7 @@ export default function DesktopAppHeader({
         aria-hidden={!headerVisible}
         data-pinned={headerPinned}
       >
+      <AuthenticationControl />
       <div className="desktop-app-header-island desktop-app-header-island-left">
       {libraryToggle}
 
@@ -633,7 +634,6 @@ export default function DesktopAppHeader({
       <div className="desktop-app-header-actions">
         <div className="desktop-app-header-account-zone">
           <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
-          <AuthenticationControl />
         </div>
         <div className="desktop-app-header-panel-actions">{children}</div>
         {moreToolsToggle}
