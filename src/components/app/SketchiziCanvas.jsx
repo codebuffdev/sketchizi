@@ -504,17 +504,13 @@ export default function SketchiziCanvas({
         const accessibleName = (button.getAttribute("aria-label") || button.getAttribute("title") || "")
           .replace(/\s+/g, " ").trim();
         if (!accessibleName) return;
-        const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\s+/g, " ").trim();
-        const tooltip = keybinding && !accessibleName.includes(keybinding)
-          ? `${accessibleName} (${keybinding})`
-          : accessibleName;
-        button.dataset.sketchiziTooltip = tooltip;
-        // A native title tooltip cannot be reliably placed on the canvas-facing
-        // side of a vertical dock. Preserve the accessible name and render a
-        // body-level tooltip so overflow clipping in the dock cannot hide it.
+        // Keep tool names available to assistive technology, but do not show
+        // descriptive hover tooltips on Primary Dock buttons. Shortcut hints
+        // remain visible in the button itself through the native keybinding node.
         if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", accessibleName);
         button.removeAttribute("title");
-        bindToolbarTooltip(button);
+        const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\s+/g, " ").trim();
+        if (keybinding) button.dataset.sketchiziPersistentShortcut = keybinding;
       });
 
       // Insert separators before known native tool groups only when the DOM
