@@ -373,18 +373,23 @@ export default function SketchiziCanvas({
       toolbar.querySelectorAll(":scope > .dropdown-menu-button").forEach((control) => {
         control.dataset.sketchiziHideOverflowTools = "true";
       });
-      // The Primary Dock starts vertically on the left on desktop. Keep the
-      // mobile toolbar layout unchanged and preserve any user-positioned dock.
+      // The Primary Dock starts vertically on the left on desktop. Align its
+      // Selection trigger with the canvas hamburger/menu control, while leaving
+      // mobile layout and any user-positioned dock untouched.
       if (!toolbar.dataset.sketchiziOrientation && !window.matchMedia("(max-width: 760px)").matches) {
         toolbar.dataset.sketchiziOrientation = "vertical";
         toolbar.dataset.sketchiziDockSide = "left";
       }
       if (!container.dataset.sketchiziDockPositioned && !window.matchMedia("(max-width: 760px)").matches) {
-        container.style.setProperty("left", "8px", "important");
-        container.style.setProperty("top", "50%", "important");
+        const menuControl = root.querySelector(
+          ".App-menu__left button, .App-menu__left [role='button'], button[aria-label*='menu' i], [role='button'][aria-label*='menu' i], button[data-testid*='menu' i]"
+        );
+        const menuRect = menuControl?.getBoundingClientRect();
+        container.style.setProperty("left", `${Math.max(8, menuRect?.left ?? 8)}px`, "important");
+        container.style.setProperty("top", `${Math.max(8, menuRect?.top ?? 8)}px`, "important");
         container.style.setProperty("right", "auto", "important");
         container.style.setProperty("bottom", "auto", "important");
-        container.style.setProperty("transform", "translateY(-50%)", "important");
+        container.style.setProperty("transform", "none", "important");
         container.dataset.sketchiziDockPositioned = "true";
       }
       if (!container.dataset.sketchiziDockLocked) {
