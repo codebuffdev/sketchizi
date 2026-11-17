@@ -694,7 +694,7 @@ export default function DesktopAppHeader({
           width="18"
           height="18"
           fill="none"
-          stroke={headerPinned ? (isDarkTheme ? "#202326" : "#ffffff") : "currentColor"}
+          stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -702,8 +702,8 @@ export default function DesktopAppHeader({
         >
           <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" />
           <path d="M12 15v6" />
-          {headerPinned && <circle cx="19" cy="5" r="2" fill={isDarkTheme ? "#202326" : "#ffffff"} stroke="none" />}
         </svg>
+        <span className="desktop-app-header-pin-label">{headerPinned ? "Pinned" : "Pin header"}</span>
       </button>
     </div>
     </header>
