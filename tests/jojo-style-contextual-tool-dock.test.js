@@ -92,3 +92,10 @@ test("all nested Primary Dock wrappers use zero gaps and zero button margins", (
   assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] \[data-sketchizi-tool-group\][\s\S]*?margin: 0 !important/);
   assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] \[data-sketchizi-group-start="true"\][\s\S]*?margin-top: 0 !important/);
 });
+
+
+test("Bucket Fill sits directly beside Eraser in the vertical Primary Dock", () => {
+  assert.match(css, /Keep Bucket Fill directly adjacent to Eraser/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > \.sketchizi-dock-quick-tools[\s\S]*?gap: 0 !important;[\s\S]*?margin: 0 !important;[\s\S]*?padding: 0 !important/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="vertical"\] > :has\(\+ \.sketchizi-dock-quick-tools\)[\s\S]*?margin-block: 0 !important;[\s\S]*?padding-block: 0 !important/);
+});
