@@ -837,21 +837,25 @@ export default function DesktopAppHeader({
       <button
         type="button"
         className={`desktop-app-header-reveal-handle${headerVisible ? " is-expanded" : " is-visible"}`}
-        onClick={() => { clearHeaderCollapseTimer(); setHeaderVisible((visible) => !visible); }}
+        onClick={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
         onPointerEnter={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
         onPointerLeave={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
         onFocus={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
         onBlur={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
         aria-controls="desktop-app-header"
-        aria-label={headerVisible ? "Collapse application header" : "Expand application header"}
-        title={headerVisible ? "Collapse header" : "Expand header (Ctrl+Shift+H)"}
+        aria-label="Show application header"
+        title="Show header (Ctrl+Shift+H)"
         aria-expanded={headerVisible}
         tabIndex={0}
       >
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d={headerVisible ? "m6 14 6-6 6 6" : "m6 10 6 6 6-6"} />
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+          <path d="M8 4v4M15 10v4M11 16v4" />
+          <circle cx="8" cy="6" r="1.5" fill="currentColor" stroke="none" />
+          <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none" />
+          <circle cx="11" cy="18" r="1.5" fill="currentColor" stroke="none" />
         </svg>
-        <span className="sr-only">Show header</span>
+        <span className="sr-only">Show application header</span>
       </button>
     </>
   );
