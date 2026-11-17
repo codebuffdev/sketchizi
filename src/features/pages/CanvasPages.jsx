@@ -462,6 +462,15 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     }
     if (value === 'pages') fit(active);
   };
+  useEffect(() => {
+    const chooseMode = event => {
+      const nextMode = event.detail?.mode;
+      if (nextMode === 'infinite' || nextMode === 'pages') changeMode(nextMode);
+    };
+    window.addEventListener('sketchizi:choose-canvas-mode', chooseMode);
+    return () => window.removeEventListener('sketchizi:choose-canvas-mode', chooseMode);
+  }, [api, mode, pages, active?.id]);
+
   const rename = page => {
     if (!page || !canEdit) return;
     setInlineName({ pageId: page.id, value: page.name || 'Page' });
