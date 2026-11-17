@@ -610,3 +610,66 @@
   background: var(--ui-surface-solid, #202733);
   color: var(--ui-text, #f2f2f4);
 }
+
+
+/* Integrate local download/save controls into the canvas title container. */
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-document-title-float {
+    max-width: min(460px, calc(100vw - 180px));
+    gap: 8px;
+  }
+
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-status-wrap {
+    display: flex;
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-status-trigger {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    padding: 0;
+  }
+
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-status-popover {
+    top: calc(100% + 8px);
+    right: auto;
+    left: 0;
+  }
+}
+
+
+/* Keep Cloud Workspace save integrated at the right edge of the canvas title. */
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-document-title-float {
+    max-width: min(500px, calc(100vw - 180px));
+    gap: 8px;
+  }
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button {
+    box-sizing: border-box; display: inline-flex; flex: 0 0 30px; align-items: center; justify-content: center;
+    width: 30px; min-width: 30px; max-width: 30px; height: 30px; min-height: 30px; max-height: 30px;
+    margin-left: 2px; padding: 0; border: 1px solid var(--ui-border, #dfe3eb); border-radius: 8px;
+    background: transparent; color: var(--ui-text-muted, #737b8c);
+  }
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button:hover:not(:disabled) {
+    border-color: var(--ui-border-strong, #b8bfcc); background: var(--ui-hover, #f5f5fa); color: var(--ui-text-strong, #252631);
+  }
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button.is-cloud-saved { color: #16845a; }
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button.is-cloud-pending,
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button.is-cloud-saving { color: #b7791f; }
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button.is-cloud-error,
+  .app.canvas-first-header .desktop-app-document-title-float .desktop-app-save-to-cloud-button.is-cloud-conflict { color: #c23b3b; }
+  .app.theme-dark .desktop-app-document-title-float .desktop-app-save-to-cloud-button { border-color: var(--ui-border, #3e4354); background: transparent; color: var(--ui-text-muted, #a3a8b8); }
+  .app.theme-dark .desktop-app-document-title-float .desktop-app-save-to-cloud-button:hover:not(:disabled) { background: var(--ui-hover, #272b39); color: var(--ui-text-strong, #f0f1f8); }
+}

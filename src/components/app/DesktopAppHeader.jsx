@@ -521,63 +521,7 @@ export default function DesktopAppHeader({
       )}
 
 
-      <div className="desktop-app-save-status-wrap">
-        <button
-          type="button"
-          className={`desktop-app-save-status-trigger is-${saveState}`}
-          aria-label="Download and save options"
-          aria-haspopup="dialog"
-          aria-expanded={saveDetailsOpen}
-          title="Download and save options"
-          onClick={() => {
-            setOpenMenu(null);
-            if (!saveDetailsOpen) onBeforeOpenPanel?.();
-            setSaveDetailsOpen(!saveDetailsOpen);
-          }}
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 3v12" />
-            <path d="m7 10 5 5 5-5" />
-            <path d="M4 17v4h16v-4" />
-          </svg>
-        </button>
-        {saveDetailsOpen && (
-          <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
-            <div className="desktop-app-save-status-heading">
-              <strong>Local save &amp; recovery</strong>
-              <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
-            </div>
-            <p>Sketchizi autosaves this canvas in this browser on this device.</p>
-            <div className="desktop-app-save-status-last-saved">
-              <span>Last successful local save</span>
-              <strong>{lastSavedLabel}</strong>
-            </div>
-            {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
-            {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
-            <div className="desktop-app-save-status-actions">
-              <button
-                type="button"
-                className="desktop-app-save-locally-button"
-                onClick={() => { onSaveNow?.(); }}
-                aria-label="Save locally"
-                title="Save locally"
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 3v12" />
-                  <path d="m7 10 5 5 5-5" />
-                  <path d="M5 18v3h14v-3" />
-                </svg>
-                <span className="sr-only">Save locally</span>
-              </button>
-              <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
-              {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
-              <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
-              <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
-            </div>
-            <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
-          </section>
-        )}
-      </div>
+
 
       {!collaborationActive && (
         <button
@@ -674,22 +618,7 @@ export default function DesktopAppHeader({
           </section>
         )}
       </div>
-      <button
-        type="button"
-        className={`desktop-app-save-to-cloud-button is-icon-only${isCloudDocument ? ` is-cloud-${cloudSaveState}` : ""}`}
-        onClick={() => { setOpenMenu(null); onSaveToCloud?.(); }}
-        disabled={cloudSaveState === "loading" || cloudSaveState === "saving"}
-        title={isCloudDocument
-          ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved cloud changes" : cloudSaveState === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save the current diagram to Cloud Workspace now"
-          : "Save this drawing to Cloud Workspace"}
-        aria-label={isCloudDocument
-          ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved changes — save to Cloud Workspace" : cloudSaveState === "saving" ? "Saving to Cloud Workspace" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save current diagram to Cloud Workspace now"
-          : "Save drawing to Cloud Workspace"}
-      >
-        <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" fillRule="evenodd" aria-hidden="true">
-          <path d="M257 247 153 347 175 369 242 302 243 447 272 447 272 303 336 369 358 347Z M39 193 39 232 54 265 86 292 126 302 127 274 133 252 148 227 173 206 208 194 244 195 270 205 301 233 317 264 336 257 365 261 389 280 400 302 426 300 448 289 465 270 474 242 469 213 448 185 427 174 399 171 391 121 366 80 330 52 285 38 240 40 203 55 171 83 149 123 140 120 107 122 71 140 52 161Z" />
-        </svg>
-      </button>
+
 
       <div className="desktop-app-header-spacer" />
 
@@ -743,6 +672,63 @@ export default function DesktopAppHeader({
         title={`${currentDocumentName} — ${documentStatusLabel}`}
         aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
       >
+        <div className="desktop-app-save-status-wrap">
+          <button
+            type="button"
+            className={`desktop-app-save-status-trigger is-${saveState}`}
+            aria-label="Download and save options"
+            aria-haspopup="dialog"
+            aria-expanded={saveDetailsOpen}
+            title="Download and save options"
+            onClick={() => {
+              setOpenMenu(null);
+              if (!saveDetailsOpen) onBeforeOpenPanel?.();
+              setSaveDetailsOpen(!saveDetailsOpen);
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M4 17v4h16v-4" />
+            </svg>
+          </button>
+          {saveDetailsOpen && (
+            <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
+              <div className="desktop-app-save-status-heading">
+                <strong>Local save &amp; recovery</strong>
+                <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
+              </div>
+              <p>Sketchizi autosaves this canvas in this browser on this device.</p>
+              <div className="desktop-app-save-status-last-saved">
+                <span>Last successful local save</span>
+                <strong>{lastSavedLabel}</strong>
+              </div>
+              {saveStatus?.error && <p className="desktop-app-save-status-error" role="alert">{saveStatus.error}</p>}
+              {saveStatus?.emergencySaved && <p className="desktop-app-save-status-recovery-note">An emergency browser backup is available. Download a portable recovery file as an extra safeguard.</p>}
+              <div className="desktop-app-save-status-actions">
+                <button
+                  type="button"
+                  className="desktop-app-save-locally-button"
+                  onClick={() => { onSaveNow?.(); }}
+                  aria-label="Save locally"
+                  title="Save locally"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v12" />
+                    <path d="m7 10 5 5 5-5" />
+                    <path d="M5 18v3h14v-3" />
+                  </svg>
+                  <span className="sr-only">Save locally</span>
+                </button>
+                <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
+                {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
+                <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
+                <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
+              </div>
+              <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
+            </section>
+          )}
+        </div>
         <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
           <path d="m7 16.5 3.2-3.7 2.8 1.7 4-6" />
@@ -790,6 +776,22 @@ export default function DesktopAppHeader({
             </svg>
           </button>
         )}
+        <button
+          type="button"
+          className={`desktop-app-save-to-cloud-button is-icon-only${isCloudDocument ? ` is-cloud-${cloudSaveState}` : ""}`}
+          onClick={() => { setOpenMenu(null); onSaveToCloud?.(); }}
+          disabled={cloudSaveState === "loading" || cloudSaveState === "saving"}
+          title={isCloudDocument
+            ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved cloud changes" : cloudSaveState === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save the current diagram to Cloud Workspace now"
+            : "Save this drawing to Cloud Workspace"}
+          aria-label={isCloudDocument
+            ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved changes — save to Cloud Workspace" : cloudSaveState === "saving" ? "Saving to Cloud Workspace" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save current diagram to Cloud Workspace now"
+            : "Save drawing to Cloud Workspace"}
+        >
+          <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" fillRule="evenodd" aria-hidden="true">
+            <path d="M257 247 153 347 175 369 242 302 243 447 272 447 272 303 336 369 358 347Z M39 193 39 232 54 265 86 292 126 302 127 274 133 252 148 227 173 206 208 194 244 195 270 205 301 233 317 264 336 257 365 261 389 280 400 302 426 300 448 289 465 270 474 242 469 213 448 185 427 174 399 171 391 121 366 80 330 52 285 38 240 40 203 55 171 83 149 123 140 120 107 122 71 140 52 161Z" />
+          </svg>
+        </button>
       </div>
 
 
