@@ -595,9 +595,7 @@ export default function DesktopAppHeader({
                   ["focus", "Focus Grid", "Dense central grid with soft edges."],
                   ["local", "Local Focus Grid", "Dense grid around drawing content."],
                   ["dots", "Dot Grid", "Subtle dotted drafting surface."],
-                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."],
-                  ["columns", "Column Guides", "Vertical layout columns."],
-                  ["coordinates", "Coordinate Grid", "Grid with X and Y axes."]].map(([value, label, description]) => (
+                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."]].map(([value, label, description]) => (
                   <button key={value} type="button" aria-pressed={gridStyle === value}
                     onClick={() => {
                       onGridStyleChange?.(value);
@@ -616,8 +614,6 @@ export default function DesktopAppHeader({
               {!gridEnabled ? "Choose a canvas style, then turn on Show pattern whenever you want it visible." :
                 gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
                 gridStyle === "ruled" ? "Ruled Paper adds evenly spaced horizontal guides." :
-                gridStyle === "columns" ? "Column Guides add vertical layout guides." :
-                gridStyle === "coordinates" ? "Coordinate Grid adds reference axes and grid lines." :
                 gridStyle === "local" ? "Local Focus Grid concentrates detail around drawing content." :
                 gridStyle === "focus" ? "Focus Grid emphasizes the central canvas area." :
                 "Grid displays a uniform pattern across the canvas."}

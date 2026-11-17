@@ -80,7 +80,7 @@ function App() {
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-style");
-      return ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].includes(stored) ? stored : (getInitialThemeMode() === "dark" ? "dots" : "focus");
+      return ["normal", "focus", "local", "dots", "ruled"].includes(stored) ? stored : (getInitialThemeMode() === "dark" ? "dots" : "focus");
     } catch { return getInitialThemeMode() === "dark" ? "dots" : "focus"; }
   });
   useEffect(() => {
