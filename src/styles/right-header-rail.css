@@ -703,3 +703,115 @@
     transform: none !important;
   }
 }
+
+
+/* Keep the right rail top-anchored while centering each control horizontally. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    top: var(--header-top, calc(18px + var(--safe-top, 0px))) !important;
+    bottom: auto !important;
+    transform: none !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* Desktop rail reveal is a compact top-right dropdown control. The rail
+   opens downward from this anchor and collapses five seconds after hover ends. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    display: inline-flex !important;
+    position: fixed;
+    top: var(--header-top, calc(18px + var(--safe-top, 0px)));
+    right: var(--header-rail-right, calc(18px + var(--safe-right, 0px)));
+    left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--ui-border, #d8dce5);
+    border-radius: 10px;
+    background: var(--ui-surface-solid, #fff);
+    box-shadow: 0 3px 12px rgb(15 23 42 / 10%);
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(0);
+    z-index: 1302;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail:not(.is-hidden) {
+    top: calc(var(--header-top, 18px) + 48px) !important;
+    transition: top .18s ease, opacity .16s ease, visibility .18s linear;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle.is-expanded {
+    background: var(--ui-hover, #f3f4f6);
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle svg {
+    transform: none;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle {
+    border-color: var(--ui-border, #384252);
+    background: var(--ui-surface-solid, #202733);
+    box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
+  }
+}
+
+
+/* Refine the collapsed rail trigger so it feels native to the compact
+   Sketchizi header controls rather than like a separate floating widget. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ui-text-muted, #737b8c);
+    transition: background-color .16s ease, color .16s ease, transform .2s ease;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle:hover,
+  .app.canvas-first-header .desktop-app-header-reveal-handle.is-expanded {
+    border: 0;
+    background: var(--ui-hover, #f3f4f6);
+    color: var(--ui-text, #252631);
+    box-shadow: none;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle:focus-visible {
+    outline: 2px solid var(--ui-accent, #64748b);
+    outline-offset: 2px;
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail:not(.is-hidden) {
+    top: calc(var(--header-top, 18px) + 40px) !important;
+    transform: translateY(0) scaleY(1) !important;
+    transform-origin: top center;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail.is-hidden {
+    transform: translateY(-4px) scaleY(.97) !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ui-text-muted, #9aa4b2);
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle:hover,
+  .app.theme-dark.canvas-first-header .desktop-app-header-reveal-handle.is-expanded {
+    border: 0;
+    background: var(--ui-hover, #2a3341);
+    color: var(--ui-text, #f2f2f4);
+    box-shadow: none;
+  }
+}
