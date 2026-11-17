@@ -75,6 +75,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
   const fontFamily = Number(current("fontFamily", "currentItemFontFamily", 1));
   const pressure = current("pressure", "currentItemPressure", true) !== false;
+  const textAlign = current("textAlign", "currentItemTextAlign", "left");
+  const roughness = Number(current("roughness", "currentItemRoughness", 1));
 
   const update = (patch) => {
     const api = apiRef?.current;
@@ -122,20 +124,20 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
       <span className="sk-tool-dock-context">{title}</span>
       <DockGroup label="Stroke color">
-        {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
-        <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />
+        {!isFill && <>{COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+        <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} /></>}
       </DockGroup>
-      {(isShape || isFill) && <DockGroup label="Fill">
+      {(isShape || isFill || isAutoShape) && <DockGroup label="Fill">
         <ToolButton active={fillColor === "transparent"} title="No fill" onClick={() => update({ backgroundColor: "transparent" })}>∅</ToolButton>
         <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />
       </DockGroup>}
-      {!isText && <DockGroup label="Stroke width">
+      {!isText && !isFill && <DockGroup label="Stroke width">
         {WIDTHS.map((width) => <ToolButton key={width} active={strokeWidth === width} title={`Stroke width ${width}`} onClick={() => update({ strokeWidth: width })}>{width}</ToolButton>)}
       </DockGroup>}
       {(isShape || isLine || isDraw || isAutoShape) && <DockGroup label="Stroke style">
         {LINE_STYLES.map(([value, label]) => <ToolButton key={value} active={strokeStyle === value} title={label} onClick={() => update({ strokeStyle: value })}>{value === "solid" ? "—" : value === "dashed" ? "┄" : "···"}</ToolButton>)}
       </DockGroup>}
-      {isShape && <DockGroup label="Fill style">
+      {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
         {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>{value === "solid" ? "■" : value === "hachure" ? "▨" : "▦"}</ToolButton>)}
       </DockGroup>}
       {isShape && <DockGroup label="Corners">
@@ -156,6 +158,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </select>
         <select aria-label="Font size" value={fontSize} onChange={(event) => update({ fontSize: Number(event.target.value) })}>
           {[12, 16, 20, 24, 28, 36, 48].map((size) => <option key={size} value={size}>{size}px</option>)}
+        </select>
+      </DockGroup>}
+      {isAutoShape && <DockGroup label="Roughness">
+        {[0, 1, 2].map((value) => <ToolButton key={value} active={roughness === value} title={["Architect", "Artist", "Cartoonist"][value]} onClick={() => update({ roughness: value })}>{["A", "B", "C"][value]}</ToolButton>)}
+      </DockGroup>}
+      {isText && <DockGroup label="Text alignment">
+        <select aria-label="Text alignment" value={textAlign} onChange={(event) => update({ textAlign: event.target.value })}>
+          <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
         </select>
       </DockGroup>}
       {isDraw && <DockGroup label="Pen pressure">
