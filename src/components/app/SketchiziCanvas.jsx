@@ -367,6 +367,12 @@ export default function SketchiziCanvas({
       const container = root.querySelector(".App-toolbar-container");
       if (!toolbar || !container) return;
       toolbar.dataset.sketchiziDock = "true";
+      // Excalidraw renders its More Tools overflow trigger as a dropdown-menu
+      // control in the toolbar. Hide that native trigger directly; matching
+      // its localized accessible label is unreliable across Excalidraw builds.
+      toolbar.querySelectorAll(":scope > .dropdown-menu-button").forEach((control) => {
+        control.dataset.sketchiziHideOverflowTools = "true";
+      });
       // The Primary Dock starts vertically on the left on desktop. Keep the
       // mobile toolbar layout unchanged and preserve any user-positioned dock.
       if (!toolbar.dataset.sketchiziOrientation && !window.matchMedia("(max-width: 760px)").matches) {
@@ -497,12 +503,6 @@ export default function SketchiziCanvas({
       candidates.forEach((button) => {
         const accessibleName = (button.getAttribute("aria-label") || button.getAttribute("title") || "")
           .replace(/\s+/g, " ").trim();
-        if (/^more tools$/i.test(accessibleName) || /more-tools/i.test(button.dataset.testid || "")) {
-          const overflowControl = button.closest(".ToolIcon, .dropdown-menu-button") || button;
-          overflowControl.dataset.sketchiziHideOverflowTools = "true";
-          overflowControl.setAttribute("aria-hidden", "true");
-          overflowControl.setAttribute("tabindex", "-1");
-        }
         if (!accessibleName) return;
         const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\s+/g, " ").trim();
         const tooltip = keybinding && !accessibleName.includes(keybinding)
