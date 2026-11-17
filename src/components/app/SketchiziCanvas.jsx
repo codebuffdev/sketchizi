@@ -503,8 +503,6 @@ export default function SketchiziCanvas({
           overflowControl.setAttribute("aria-hidden", "true");
           overflowControl.setAttribute("tabindex", "-1");
         }
-        const originalAccessibleName = (button.getAttribute("aria-label") || button.getAttribute("title") || "")
-          .replace(/\s+/g, " ").trim();
         if (!accessibleName) return;
         const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\s+/g, " ").trim();
         const tooltip = keybinding && !accessibleName.includes(keybinding)
