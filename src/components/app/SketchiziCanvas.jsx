@@ -383,6 +383,17 @@ export default function SketchiziCanvas({
       const container = root.querySelector(".App-toolbar-container");
       if (!toolbar || !container) return;
       toolbar.dataset.sketchiziDock = "true";
+      // The primary drawing tools live on the left edge by default. Users can
+      // still unlock the grip and reposition the native dock when needed.
+      if (!toolbar.dataset.sketchiziOrientation) {
+        toolbar.dataset.sketchiziOrientation = "vertical";
+        toolbar.dataset.sketchiziDockSide = "left";
+        container.style.setProperty("left", "12px", "important");
+        container.style.setProperty("top", "50%", "important");
+        container.style.setProperty("right", "auto", "important");
+        container.style.setProperty("bottom", "auto", "important");
+        container.style.setProperty("transform", "translateY(-50%)", "important");
+      }
       if (!container.dataset.sketchiziDockLocked) {
         container.dataset.sketchiziDockLocked = "true";
         dockLocked = true;
