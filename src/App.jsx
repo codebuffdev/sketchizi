@@ -696,13 +696,15 @@ function App() {
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
   useEffect(() => {
     if (!savedSketch) return;
-    const hasSavedAppearance = typeof savedSketch.appState?.currentItemRoughness === "number" ||
-      String(savedSketch.appState?.viewBackgroundColor || "").trim().length > 0;
-    if (hasSavedAppearance) {
-      setCanvasAppearance(getCanvasAppearanceFromBackground(savedSketch.appState?.viewBackgroundColor, savedSketch.appState?.currentItemRoughness));
+    const hasElements = (savedSketch.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
+    const roughness = savedSketch.appState?.currentItemRoughness;
+    const background = String(savedSketch.appState?.viewBackgroundColor || "").trim();
+    const hasExplicitAppearance = background.toLowerCase() === "#1b382f" ||
+      (typeof roughness === "number" && (roughness === 0 || roughness >= 2));
+    if (hasElements || hasExplicitAppearance) {
+      setCanvasAppearance(getCanvasAppearanceFromBackground(background, roughness));
     } else {
-      const hasElements = (savedSketch.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
-      setCanvasAppearance(hasElements ? "clean" : (isDarkTheme ? "sketch" : "clean"));
+      setCanvasAppearance(isDarkTheme ? "sketch" : "clean");
     }
   }, [isDarkTheme, savedSketch]);
   const handleCanvasAppearanceChange = useCallback((appearance) => {
