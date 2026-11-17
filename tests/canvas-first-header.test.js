@@ -52,6 +52,7 @@ test("header supports pinning, responsive edge reveal, and a keyboard visibility
   assert.ok(railCss.includes("top: var(--header-top, calc(18px + var(--safe-top, 0px)));"));
   assert.ok(railCss.includes("width: var(--header-top-control-height, 40px);"));
   assert.ok(railCss.includes("height: var(--header-top-control-height, 40px);"));
+  assert.ok(railCss.includes("transform: none !important;"));
   assert.match(css, /desktop-app-header-reveal-handle\.is-visible/);
 });
 
