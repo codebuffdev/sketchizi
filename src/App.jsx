@@ -122,6 +122,22 @@ function App() {
   // its native trigger. The native outside-click handler may close the menu
   // before this header button's click fires; the header passes the state
   // captured at pointer-down so that a single click still closes it.
+  const toggleNativeMenu = useCallback((wasOpen = nativeMenuOpenRef.current) => {
+    const api = apiRef.current;
+    if (!api?.updateScene) return;
+    const shouldOpen = !Boolean(wasOpen);
+    nativeMenuOpenRef.current = shouldOpen;
+    setNativeMenuOpen(shouldOpen);
+    api.updateScene({
+      appState: { openMenu: shouldOpen ? "canvas" : null },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+  }, []);
+
+  const panelState = usePanelState({ apiRef, closeNativeMenu });
+  const commandPalette = useCommandPalette({ closeNativeMenu });
+  const { commandPaletteOpen, closeCommandPalette } = commandPalette;
+
   useEffect(() => {
     if (!nativeMenuOpen) return undefined;
     const closeOnEscape = (event) => {
@@ -167,22 +183,6 @@ function App() {
     commandPaletteOpen,
     closeNativeMenu,
   ]);
-
-  const toggleNativeMenu = useCallback((wasOpen = nativeMenuOpenRef.current) => {
-    const api = apiRef.current;
-    if (!api?.updateScene) return;
-    const shouldOpen = !Boolean(wasOpen);
-    nativeMenuOpenRef.current = shouldOpen;
-    setNativeMenuOpen(shouldOpen);
-    api.updateScene({
-      appState: { openMenu: shouldOpen ? "canvas" : null },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-  }, []);
-
-  const panelState = usePanelState({ apiRef, closeNativeMenu });
-  const commandPalette = useCommandPalette({ closeNativeMenu });
-  const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
   const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
 
