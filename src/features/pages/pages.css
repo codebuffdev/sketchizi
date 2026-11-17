@@ -75,8 +75,21 @@
   -webkit-backdrop-filter: none !important;
 }
 
-.app[data-canvas-view] .excalidraw .zoom-actions .zoom-out,
-.app[data-canvas-view] .excalidraw .zoom-actions .zoom-in {
+/* Pages mode uses the native percentage/reset control as its single
+   visible zoom affordance. Infinite canvas keeps the standard +/- controls. */
+.app[data-canvas-view="pages"] .excalidraw .zoom-actions .zoom-out,
+.app[data-canvas-view="pages"] .excalidraw .zoom-actions .zoom-in {
+  display: none !important;
+}
+
+.app[data-canvas-view="pages"] .excalidraw .zoom-actions .reset-zoom {
+  min-width: 58px !important;
+  padding: 0 8px !important;
+  text-align: center !important;
+}
+
+.app[data-canvas-view="infinite"] .excalidraw .zoom-actions .zoom-out,
+.app[data-canvas-view="infinite"] .excalidraw .zoom-actions .zoom-in {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
