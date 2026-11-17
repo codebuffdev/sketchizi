@@ -1710,13 +1710,14 @@ function App() {
       >
         <button
           type="button"
-          className={aiAskOpen ? "ai-ask-toggle is-icon-only active" : "ai-ask-toggle is-icon-only"}
+          className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
           onClick={() => setAiAskOpen((value) => !value)}
           title="AI Ask"
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
         >
           <AiAskIcon className="ai-ask-toggle-icon" />
+          <span>AI Ask</span>
         </button>
 
 

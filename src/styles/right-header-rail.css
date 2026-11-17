@@ -85,7 +85,7 @@
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-document-identity-name-input {
     position: fixed;
     top: 120px;
-    right: calc(86px + var(--safe-right, 0px));
+    right: calc(var(--header-rail-right) + var(--header-rail-width) + 12px);
     width: 240px;
     max-width: calc(100vw - 112px);
     z-index: 1001;
@@ -372,6 +372,26 @@
     align-self: center;
   }
 
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-create-menu,
+  .app.canvas-first-header .desktop-app-header-right-rail .design-studio-header-toggle,
+  .app.canvas-first-header .desktop-app-header-right-rail .ai-ask-toggle {
+    box-sizing: border-box;
+    display: inline-flex !important;
+    flex: 0 0 64px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding: 0 5px !important;
+    gap: 5px !important;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+
   .app.canvas-first-header .desktop-app-header-right-rail :is(
     .desktop-app-menu-trigger,
     .desktop-app-library-toggle,
@@ -479,7 +499,7 @@
 /* Share geometry so title, login and rail stay aligned across auth states. */
 @media (min-width: 1025px) {
   .app.canvas-first-header {
-    --header-rail-width: 56px;
+    --header-rail-width: 68px;
     --header-rail-right: calc(18px + var(--safe-right, 0px));
     --header-top: calc(18px + var(--safe-top, 0px));
     --header-top-control-height: 40px;
