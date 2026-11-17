@@ -20,7 +20,7 @@ export default function SketchiziCanvas({
   pageContext,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
-  selectedElements = [], applyToSelected, selectionProperties = null, onOpenProperties, onToolActivated, propertiesOpen = false, canEdit = true,
+  selectedElements = [], applyToSelected, selectionProperties = null, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
 }) {
@@ -248,20 +248,6 @@ export default function SketchiziCanvas({
   }, []);
 
 
-
-  // Selecting any tool from the dock dismisses the legacy Properties panel.
-  // The floating formatting toolbar remains the primary control surface.
-  useEffect(() => {
-    const root = canvasRootRef.current;
-    if (!root || !onToolActivated) return undefined;
-    const handleDockPointerDown = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (!target?.closest(".App-toolbar button, .App-toolbar [role='button']")) return;
-      onToolActivated();
-    };
-    root.addEventListener("pointerdown", handleDockPointerDown, true);
-    return () => root.removeEventListener("pointerdown", handleDockPointerDown, true);
-  }, [onToolActivated]);
 
   // Enhance Excalidraw's own toolbar in place. Buttons and their React handlers
   // stay native; this adds only a grip, separators, and session-only dragging.
@@ -864,8 +850,6 @@ export default function SketchiziCanvas({
         selectedElements={selectedElements}
         applyToSelected={applyToSelected}
         selectionProperties={selectionProperties}
-        onOpenProperties={onOpenProperties}
-        propertiesOpen={propertiesOpen}
         canEdit={canEdit && !viewModeEnabled}
       />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
