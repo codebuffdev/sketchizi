@@ -181,13 +181,19 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     if (editingTextElement?.id) selectedIds.add(editingTextElement.id);
     if (!selectedIds.size) return;
 
-    const selectedLayerElements = elements.filter((element) => selectedIds.has(element.id));
-    const otherLayerElements = elements.filter((element) => !selectedIds.has(element.id));
-    let reordered = elements;
+    // Excalidraw determines stacking order from each element's fractional
+    // `index`, not from its position in the elements array. Reorder the
+    // elements, then redistribute the existing ordered index values.
+    const orderedElements = [...elements].sort((a, b) =>
+      String(a.index ?? "").localeCompare(String(b.index ?? "")),
+    );
+    const selectedLayerElements = orderedElements.filter((element) => selectedIds.has(element.id));
+    const otherLayerElements = orderedElements.filter((element) => !selectedIds.has(element.id));
+    let reordered = orderedElements;
     if (direction === "front") reordered = [...otherLayerElements, ...selectedLayerElements];
     if (direction === "back") reordered = [...selectedLayerElements, ...otherLayerElements];
     if (direction === "forward") {
-      reordered = [...elements];
+      reordered = [...orderedElements];
       for (let index = reordered.length - 2; index >= 0; index -= 1) {
         if (selectedIds.has(reordered[index].id) && !selectedIds.has(reordered[index + 1].id)) {
           [reordered[index], reordered[index + 1]] = [reordered[index + 1], reordered[index]];
@@ -195,15 +201,26 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       }
     }
     if (direction === "backward") {
-      reordered = [...elements];
+      reordered = [...orderedElements];
       for (let index = 1; index < reordered.length; index += 1) {
         if (selectedIds.has(reordered[index].id) && !selectedIds.has(reordered[index - 1].id)) {
           [reordered[index], reordered[index - 1]] = [reordered[index - 1], reordered[index]];
         }
       }
     }
-    if (reordered.some((element, index) => element.id !== elements[index]?.id)) {
-      api.updateScene({ elements: reordered, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+
+    const indexSlots = orderedElements.map((element) => element.index);
+    const changed = reordered.some((element, index) => element.id !== orderedElements[index]?.id);
+    if (changed) {
+      const now = Date.now();
+      const nextElements = reordered.map((element, index) => ({
+        ...element,
+        index: indexSlots[index],
+        version: (Number(element.version) || 0) + 1,
+        versionNonce: Math.floor(Math.random() * 2147483647),
+        updated: now,
+      }));
+      api.updateScene({ elements: nextElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     }
     setLayerMenuOpen(false);
   };
@@ -255,8 +272,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
             aria-label="Layer order"
             aria-haspopup="menu"
             aria-expanded={layerMenuOpen}
-            disabled={!isSelection}
-            title={isSelection ? "Layer order" : "Select text to change layer order"}
+            disabled={!selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean)}
+            title={selected.length || editingTextElement?.id || Object.values(appState.selectedElementIds || {}).some(Boolean) ? "Layer order" : "Select an element to change layer order"}
             ref={layerTriggerRef}
             onClick={() => {
               if (layerMenuOpen) {
@@ -289,7 +306,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
           )}
         </div>
         <div className="sk-tool-font-family" title="Font family">
-          <span className="sk-tool-font-family-preview" aria-hidden="true">Aa</span>
           <span className="sk-tool-font-family-current" aria-hidden="true">{FONT_FAMILIES.find(([value]) => value === fontFamily)?.[1] || "Helvetica"}</span>
           <select className="sk-tool-font-family-select" aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
             {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
