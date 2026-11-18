@@ -62,70 +62,105 @@ function DockOptionGlyph({ label, value }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /></svg>;
 }
 
-function DockSelect({ label, value, onChange, icon, children }) {
+function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standard" }) {
   const [open, setOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState(null);
-  const rootRef = useRef(null);
+  const [position, setPosition] = useState(null);
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
-  const options = Children.toArray(children)
-    .filter((child) => isValidElement(child) && child.props?.value !== undefined)
-    .map((child) => ({
-      value: child.props.value,
-      label: String(child.props.children ?? child.props.value),
-    }));
-  const selected = options.find((option) => String(option.value) === String(value))
-    || options[0]
-    || { value: "", label };
+  const safeOptions = Array.isArray(options) ? options.filter((option) => option && option.value !== undefined) : [];
+  const selected = safeOptions.find((option) => String(option.value) === String(value)) || safeOptions[0] || { value: "", label };
+
   useEffect(() => {
     if (!open) return undefined;
     const close = (event) => {
-      if (event.type === "keydown" && event.key === "Escape") setOpen(false);
-      if (
-        event.type === "pointerdown"
-        && !rootRef.current?.contains(event.target)
-        && !menuRef.current?.contains(event.target)
-      ) setOpen(false);
+      if (event.type === "keydown" && event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        triggerRef.current?.focus();
+      } else if (event.type === "pointerdown"
+        && !triggerRef.current?.contains(event.target)
+        && !menuRef.current?.contains(event.target)) {
+        setOpen(false);
+      } else if (event.type === "resize" || event.type === "scroll") {
+        setOpen(false);
+      }
     };
     document.addEventListener("pointerdown", close, true);
     document.addEventListener("keydown", close, true);
+    window.addEventListener("resize", close, true);
+    window.addEventListener("scroll", close, true);
     return () => {
       document.removeEventListener("pointerdown", close, true);
       document.removeEventListener("keydown", close, true);
+      window.removeEventListener("resize", close, true);
+      window.removeEventListener("scroll", close, true);
     };
   }, [open]);
-  const toggleMenu = () => {
+
+  const toggle = () => {
     if (open) {
       setOpen(false);
       return;
     }
     const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) {
-      const estimatedMenuHeight = Math.max(48, Math.ceil(options.length / 4) * 48 + 10);
-      const top = rect.bottom + estimatedMenuHeight + 8 > window.innerHeight
-        ? Math.max(8, rect.top - estimatedMenuHeight - 7)
-        : rect.bottom + 7;
-      setMenuPosition({ left: rect.left + rect.width / 2, top });
-    }
+    if (!rect) return;
+    const columns = Math.min(4, Math.max(2, safeOptions.length));
+    const estimatedHeight = Math.ceil(safeOptions.length / columns) * 66 + 16;
+    const top = rect.bottom + estimatedHeight + 10 > window.innerHeight
+      ? Math.max(8, rect.top - estimatedHeight - 8)
+      : rect.bottom + 8;
+    const left = Math.max(8, Math.min(rect.left + rect.width / 2 - 150, window.innerWidth - 308));
+    setPosition({ left, top });
     setOpen(true);
   };
+
+  const renderGlyph = (option) => {
+    if (kind === "line-style" || kind === "roughness") return <OptionGlyph kind={kind} value={option.value} />;
+    return <DockOptionGlyph label={label} value={option.value} />;
+  };
+
   return (
-    <div className="sk-tool-icon-select-wrap" ref={rootRef}>
-      <button ref={triggerRef} type="button" className="sk-tool-icon-select" title={`${label}: ${selected?.label || ""}`} aria-label={`${label}: ${selected?.label || ""}`} aria-haspopup="listbox" aria-expanded={open} onClick={toggleMenu}>
-        <span className="sk-tool-icon-select-preview" aria-hidden="true">{icon}</span>
-        <svg className={`sk-tool-icon-select-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+    <div className="sk-tool-choice">
+      <button ref={triggerRef} type="button" className="sk-tool-choice-trigger"
+        title={`${label}: ${selected.label || ""}`}
+        aria-label={`${label}: ${selected.label || ""}`}
+        aria-haspopup="menu" aria-expanded={open} onClick={toggle}>
+        <span className="sk-tool-choice-trigger-glyph" aria-hidden="true">{icon || renderGlyph(selected)}</span>
+        <svg className={`sk-tool-choice-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
-      {open && menuPosition && createPortal(
-        <div ref={menuRef} className="sk-tool-icon-select-menu" role="listbox" aria-label={label} style={{ position: "fixed", left: menuPosition.left, top: menuPosition.top, transform: "translateX(-50%)" }}>
-          {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={String(option.value) === String(value)} aria-label={option.label} title={option.label} className={`sk-tool-icon-select-option${String(option.value) === String(value) ? " is-selected" : ""}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }}>
-            <DockOptionGlyph label={label} value={option.value} />
-          </button>)}
+      {open && position && createPortal(
+        <div ref={menuRef} className="sk-tool-choice-menu" role="menu" aria-label={label}
+          style={{ position: "fixed", left: position.left, top: position.top }}>
+          {safeOptions.map((option) => {
+            const active = String(option.value) === String(value);
+            return <button key={String(option.value)} type="button" role="menuitemradio"
+              aria-checked={active} aria-label={option.label} title={option.label}
+              className={`sk-tool-choice-option${active ? " is-selected" : ""}`}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onChange(option.value);
+                setOpen(false);
+                triggerRef.current?.focus();
+              }}>
+              <span className="sk-tool-choice-option-glyph" aria-hidden="true">{renderGlyph(option)}</span>
+              <span className="sk-tool-choice-option-label">{option.label}</span>
+            </button>;
+          })}
         </div>,
-        document.querySelector(".app") || document.body,
+        document.body,
       )}
     </div>
   );
 }
+
+function DockSelect({ label, value, onChange, icon, children }) {
+  const options = Children.toArray(children)
+    .filter((child) => isValidElement(child) && child.props?.value !== undefined)
+    .map((child) => ({ value: child.props.value, label: String(child.props.children ?? child.props.value) }));
+  return <DockChoiceMenu label={label} value={value} onChange={onChange} icon={icon} options={options} />;
+}
+
 function OptionGlyph({ kind, value }) {
   if (kind === "line-style") {
     return <svg viewBox="0 0 36 20" aria-hidden="true"><path d="M3 10h30" strokeDasharray={value === "dashed" ? "6 4" : value === "dotted" ? "1 4" : undefined} strokeLinecap="round" /></svg>;
@@ -134,61 +169,7 @@ function OptionGlyph({ kind, value }) {
 }
 
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
-  const [open, setOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState(null);
-  const rootRef = useRef(null);
-  const triggerRef = useRef(null);
-  const menuRef = useRef(null);
-  const safeOptions = Array.isArray(options) ? options.filter((option) => option && option.value !== undefined) : [];
-  const selected = safeOptions.find((option) => option.value === value) || safeOptions[0] || { value: 0, label };
-  useEffect(() => {
-    if (!open) return undefined;
-    const close = (event) => {
-      if (event.type === "keydown" && event.key === "Escape") setOpen(false);
-      if (
-        event.type === "pointerdown"
-        && !rootRef.current?.contains(event.target)
-        && !menuRef.current?.contains(event.target)
-      ) setOpen(false);
-    };
-    document.addEventListener("pointerdown", close, true);
-    document.addEventListener("keydown", close, true);
-    return () => {
-      document.removeEventListener("pointerdown", close, true);
-      document.removeEventListener("keydown", close, true);
-    };
-  }, [open]);
-  const toggleMenu = () => {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) {
-      const estimatedMenuHeight = 52;
-      const top = rect.bottom + estimatedMenuHeight + 8 > window.innerHeight
-        ? Math.max(8, rect.top - estimatedMenuHeight - 7)
-        : rect.bottom + 7;
-      setMenuPosition({ left: rect.left + rect.width / 2, top });
-    }
-    setOpen(true);
-  };
-  return (
-    <div className="sk-tool-visual-select" ref={rootRef}>
-      <button ref={triggerRef} type="button" className="sk-tool-icon-select" title={`${label}: ${selected.label}`} aria-label={`${label}: ${selected.label}`} aria-haspopup="listbox" aria-expanded={open} onClick={toggleMenu}>
-        <span className="sk-tool-icon-select-preview" aria-hidden="true"><OptionGlyph kind={kind} value={selected.value} /></span>
-        <svg className={`sk-tool-icon-select-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
-      </button>
-      {open && menuPosition && createPortal(
-        <div ref={menuRef} className="sk-tool-visual-select-menu" role="listbox" aria-label={label} style={{ position: "fixed", left: menuPosition.left, top: menuPosition.top, transform: "translateX(-50%)" }}>
-          {safeOptions.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }}>
-            <OptionGlyph kind={kind} value={option.value} />
-          </button>)}
-        </div>,
-        document.querySelector(".app") || document.body,
-      )}
-    </div>
-  );
+  return <DockChoiceMenu label={label} value={value} onChange={onChange} options={options} kind={kind} />;
 }
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   const [customTool, setCustomTool] = useState(null);
