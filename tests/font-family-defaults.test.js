@@ -4,6 +4,7 @@ import {
   DEFAULT_FONT_FAMILY_ID,
   detectFontFamilyPreferenceChange,
   getTextFontFamilyMap,
+  getTextFormattingTargetIds,
   normalizeFontFamilyId,
 } from "../src/features/canvas/fontFamilyDefaults.js";
 
@@ -65,4 +66,38 @@ test("remote edits do not replace the local default font preference", () => {
     appState: { openPopup: null, currentItemFontFamily: 5, selectedElementIds: { a: true } },
     previousTextFontFamilies: previous, elements: [text("a", 8)], ignoreElementChanges: true,
   }), null);
+});
+
+
+test("text formatting keeps the last text target when editor focus is lost", () => {
+  const elements = [text("text-1", 5), { id: "shape-1", type: "rectangle", isDeleted: false }];
+  const retained = new Set(["text-1"]);
+  const targets = getTextFormattingTargetIds({
+    selectedElements: [],
+    appState: { selectedElementIds: {}, activeTool: { type: "selection" } },
+    elements,
+    retainedIds: retained,
+  });
+  assert.deepEqual([...targets], ["text-1"]);
+});
+
+test("a newly selected non-text object prevents formatting the previous text", () => {
+  const elements = [text("text-1", 5), { id: "shape-1", type: "rectangle", isDeleted: false }];
+  const targets = getTextFormattingTargetIds({
+    selectedElements: [elements[1]],
+    appState: { selectedElementIds: { "shape-1": true } },
+    elements,
+    retainedIds: new Set(["text-1"]),
+  });
+  assert.equal(targets.size, 0);
+});
+
+test("live text selection and active text editing are resolved by scene element id", () => {
+  const elements = [text("text-1", 5), text("text-2", 8)];
+  const targets = getTextFormattingTargetIds({
+    selectedElements: [],
+    appState: { selectedElementIds: { "text-1": true }, editingTextElement: { id: "text-2", type: "text" } },
+    elements,
+  });
+  assert.deepEqual([...targets].sort(), ["text-1", "text-2"]);
 });
