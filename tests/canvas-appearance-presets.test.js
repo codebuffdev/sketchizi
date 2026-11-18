@@ -20,9 +20,13 @@ test("Clean follows the existing Day/Night canvas defaults", () => {
   assert.equal(getCanvasAppearanceTheme("clean", true), "dark");
 });
 
-test("Sketch preserves the current canvas surface and follows the app theme", () => {
-  assert.equal(getCanvasAppearanceBackground("sketch", false), getCanvasBackground(false));
-  assert.equal(getCanvasAppearanceBackground("sketch", true), getCanvasBackground(true));
+test("Sketch uses a distinct warm-paper surface independent of drawing environment", () => {
+  const day = getCanvasAppearanceBackground("sketch", false);
+  const night = getCanvasAppearanceBackground("sketch", true);
+  assert.notEqual(day, getCanvasBackground(false));
+  assert.notEqual(night, getCanvasBackground(true));
+  assert.equal(getCanvasAppearanceFromBackground(day), "sketch");
+  assert.equal(getCanvasAppearanceFromBackground(night), "sketch");
   assert.equal(getCanvasAppearanceTheme("sketch", false), "light");
   assert.equal(getCanvasAppearanceTheme("sketch", true), "dark");
 });
@@ -35,10 +39,10 @@ test("Chalkboard always uses dark canvas rendering independently of app theme", 
   assert.equal(getCanvasAppearanceTheme("chalkboard", true), "dark");
 });
 
-test("Non-chalkboard surfaces restore independently from drawing roughness", () => {
-  assert.equal(getCanvasAppearanceFromBackground("#dce8ef"), "clean");
-  assert.equal(getCanvasAppearanceFromBackground(undefined), "clean");
-  assert.equal(getCanvasAppearanceFromBackground("#ffffff"), "clean");
+test("Canvas surface restoration does not depend on drawing roughness", () => {
+  assert.equal(getCanvasAppearanceFromBackground("#dce8ef", 2), "clean");
+  assert.equal(getCanvasAppearanceFromBackground(undefined, 2), "clean");
+  assert.equal(getCanvasAppearanceFromBackground("#ffffff", 0), "clean");
 });
 
 test("Canvas appearance changes the surface without changing drawing style or existing elements", () => {
