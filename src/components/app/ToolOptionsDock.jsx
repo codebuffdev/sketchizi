@@ -71,6 +71,12 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
   const selected = safeOptions.find((option) => String(option.value) === String(value)) || safeOptions[0] || { value: "", label };
 
   useEffect(() => {
+    if (open) {
+      menuRef.current?.querySelector('[role="menuitemradio"]')?.focus();
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return undefined;
     const close = (event) => {
       if (event.type === "keydown" && event.key === "Escape") {
