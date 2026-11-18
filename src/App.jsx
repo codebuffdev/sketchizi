@@ -10,7 +10,7 @@ import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchizi
 import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
 import { getInitialThemeMode } from "./features/navigation/themePreference.js";
-import { applyCanvasAppearance, applyCanvasDrawingStyle, getCanvasAppearanceFromBackground, getCanvasDrawingStyleFromRoughness } from "./features/navigation/canvasAppearance.js";
+import { applyCanvasAppearance, applyCanvasDrawingStyle, getCanvasAppearanceBackground, getCanvasAppearanceFromBackground, getCanvasDrawingStyleFromRoughness } from "./features/navigation/canvasAppearance.js";
 import { useSketchiziEscape } from "./features/navigation/useSketchiziEscape";
 import { useSketchPersistence } from "./features/persistence/useSketchPersistence";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
@@ -704,7 +704,14 @@ function App() {
     const roughness = savedSketch.appState?.currentItemRoughness;
     if (typeof roughness === "number") setCanvasDrawingStyle(getCanvasDrawingStyleFromRoughness(roughness));
     const background = String(savedSketch.appState?.viewBackgroundColor || "").trim();
-    const hasExplicitAppearance = background.toLowerCase() === "#1b382f" ||
+    const normalizedBackground = background.toLowerCase();
+    const hasExplicitAppearance = [
+      getCanvasAppearanceBackground("sketch", false),
+      getCanvasAppearanceBackground("sketch", true),
+      getCanvasAppearanceBackground("clean", false),
+      getCanvasAppearanceBackground("clean", true),
+      getCanvasAppearanceBackground("chalkboard", false),
+    ].some((color) => String(color).toLowerCase() === normalizedBackground) ||
       (typeof roughness === "number" && (roughness === 0 || roughness >= 2));
     if (hasElements || hasExplicitAppearance) {
       setCanvasAppearance(getCanvasAppearanceFromBackground(background));
