@@ -34,15 +34,15 @@ export function getCanvasAppearanceTheme(appearance, isDarkTheme) {
 }
 
 export function getCanvasAppearanceBackground(appearance, isDarkTheme) {
-  if (appearance === "clean") return getCanvasBackground(isDarkTheme);
+  if (appearance === "sketch") return canvasColorForScene(APPEARANCE_COLORS.sketch, isDarkTheme);
   if (appearance === "chalkboard") return canvasColorForScene(APPEARANCE_COLORS.chalkboard, true);
-  if (appearance === "sketch") return getCanvasBackground(isDarkTheme);
   return getCanvasBackground(isDarkTheme);
 }
 
 export function getCanvasAppearanceFromBackground(background) {
   const normalized = String(background || "").trim().toLowerCase();
   if (normalized === getCanvasAppearanceBackground("chalkboard", false)) return "chalkboard";
+  if ([false, true].some((isDark) => normalized === getCanvasAppearanceBackground("sketch", isDark))) return "sketch";
   // Drawing roughness belongs to the separate Architect / Artist /
   // Cartoonist environment setting, not to the canvas surface appearance.
   return "clean";
@@ -58,24 +58,11 @@ export function applyCanvasAppearance(
   const background = getCanvasAppearanceBackground(appearance, isDarkTheme);
   const appState = api.getAppState() || {};
   const currentBackground = String(appState.viewBackgroundColor || "").trim().toLowerCase();
-  const isLegacySketchBackground = [
-    canvasColorForScene(APPEARANCE_COLORS.sketch, false),
-    canvasColorForScene(APPEARANCE_COLORS.sketch, true),
-  ].some((color) => String(color).trim().toLowerCase() === currentBackground);
-  const nextAppState = {};
+  const nextBackground = String(background || "").trim().toLowerCase();
+  if (currentBackground === nextBackground) return false;
 
   // Canvas appearance controls only the surface. Drawing roughness is managed
   // independently by the selected drawing environment.
-  if (appearance === "chalkboard" || appearance === "clean" || isLegacySketchBackground) {
-    nextAppState.viewBackgroundColor = appearance === "sketch"
-      ? getCanvasBackground(isDarkTheme)
-      : background;
-  }
-
-  const backgroundUnchanged = nextAppState.viewBackgroundColor === undefined ||
-    String(nextAppState.viewBackgroundColor).trim().toLowerCase() === currentBackground;
-  if (backgroundUnchanged) return false;
-
-  api.updateScene({ appState: nextAppState, captureUpdate });
+  api.updateScene({ appState: { viewBackgroundColor: background }, captureUpdate });
   return true;
 }
