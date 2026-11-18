@@ -3,28 +3,34 @@ import { canvasColorForScene } from "./canvasColors.js";
 import { getCanvasBackground } from "./canvasTheme.js";
 
 export const CANVAS_APPEARANCES = Object.freeze(["sketch", "clean", "chalkboard"]);
+export const CANVAS_DRAWING_STYLES = Object.freeze(["architect", "artist", "cartoonist"]);
+
+const DRAWING_STYLE_ROUGHNESS = Object.freeze({ architect: 0, artist: 1, cartoonist: 2 });
+
+export function getCanvasDrawingStyleRoughness(style) {
+  return DRAWING_STYLE_ROUGHNESS[style] ?? DRAWING_STYLE_ROUGHNESS.artist;
+}
+
+export function getCanvasDrawingStyleFromRoughness(roughness) {
+  const value = Number(roughness);
+  return CANVAS_DRAWING_STYLES.find((style) => DRAWING_STYLE_ROUGHNESS[style] === value) || "artist";
+}
+
+export function applyCanvasDrawingStyle(api, style, captureUpdate = CaptureUpdateAction.IMMEDIATELY) {
+  if (!api?.getAppState || !api?.updateScene || !CANVAS_DRAWING_STYLES.includes(style)) return false;
+  const roughness = getCanvasDrawingStyleRoughness(style);
+  if (api.getAppState()?.currentItemRoughness === roughness) return false;
+  api.updateScene({ appState: { currentItemRoughness: roughness }, captureUpdate });
+  return true;
+}
 
 const APPEARANCE_COLORS = Object.freeze({
   sketch: "#f7f2e8",
   chalkboard: "#1b382f",
 });
 
-const ROUGHNESS_CAPABLE_TYPES = new Set([
-  "rectangle",
-  "diamond",
-  "ellipse",
-  "arrow",
-  "line",
-  "freedraw",
-]);
-
 export function getCanvasAppearanceTheme(appearance, isDarkTheme) {
   return appearance === "chalkboard" || Boolean(isDarkTheme) ? "dark" : "light";
-}
-
-export function getCanvasAppearanceRoughness(appearance) {
-  if (appearance === "sketch" || appearance === "chalkboard") return 2;
-  return 0;
 }
 
 export function getCanvasAppearanceBackground(appearance, isDarkTheme) {
@@ -40,30 +46,6 @@ export function getCanvasAppearanceFromBackground(background, currentItemRoughne
   return Number(currentItemRoughness) >= 2 ? "sketch" : "clean";
 }
 
-function applyRoughnessToExistingElements(api, roughness) {
-  const getElements = api.getSceneElementsIncludingDeleted || api.getSceneElements;
-  if (typeof getElements !== "function") return null;
-
-  const elements = getElements.call(api);
-  if (!Array.isArray(elements)) return null;
-
-  let changed = false;
-  const nextElements = elements.map((element) => {
-    if (!element || element.isDeleted || !ROUGHNESS_CAPABLE_TYPES.has(element.type) ||
-      element.roughness === roughness) return element;
-
-    changed = true;
-    return {
-      ...element,
-      roughness,
-      version: (Number(element.version) || 0) + 1,
-      versionNonce: (Number(element.versionNonce) || 0) + 1,
-    };
-  });
-
-  return changed ? nextElements : null;
-}
-
 export function applyCanvasAppearance(
   api,
   appearance,
@@ -72,14 +54,13 @@ export function applyCanvasAppearance(
 ) {
   if (!api?.getAppState || !api?.updateScene || !CANVAS_APPEARANCES.includes(appearance)) return false;
   const background = getCanvasAppearanceBackground(appearance, isDarkTheme);
-  const roughness = getCanvasAppearanceRoughness(appearance);
   const appState = api.getAppState() || {};
   const currentBackground = String(appState.viewBackgroundColor || "").trim().toLowerCase();
   const isLegacySketchBackground = [
     canvasColorForScene(APPEARANCE_COLORS.sketch, false),
     canvasColorForScene(APPEARANCE_COLORS.sketch, true),
   ].some((color) => String(color).trim().toLowerCase() === currentBackground);
-  const nextAppState = { currentItemRoughness: roughness };
+  const nextAppState = {};
 
   // Sketch changes drawing style across the whole canvas, not its surface.
   // Only replace the warm-paper background left by the earlier implementation.
@@ -89,16 +70,10 @@ export function applyCanvasAppearance(
       : background;
   }
 
-  const nextElements = applyRoughnessToExistingElements(api, roughness);
   const backgroundUnchanged = nextAppState.viewBackgroundColor === undefined ||
     String(nextAppState.viewBackgroundColor).trim().toLowerCase() === currentBackground;
-  const appStateUnchanged = backgroundUnchanged && appState.currentItemRoughness === roughness;
-  if (appStateUnchanged && !nextElements) return false;
+  if (backgroundUnchanged) return false;
 
-  api.updateScene({
-    ...(nextElements ? { elements: nextElements } : {}),
-    appState: nextAppState,
-    captureUpdate,
-  });
+  api.updateScene({ appState: nextAppState, captureUpdate });
   return true;
 }
