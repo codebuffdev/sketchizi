@@ -3619,3 +3619,20 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   transform: translateY(0);
   pointer-events: none;
 }
+
+
+/* Give the font-family control a slightly narrower footprint without
+   changing the size or alignment of the other contextual toolbar buttons. */
+.app .contextual-formatting-toolbar .format-icon-button-fontFamily {
+  box-sizing: border-box !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  padding: 0 !important;
+}
+.app .contextual-formatting-toolbar .format-icon-button-fontFamily .format-icon-glyph-font-family {
+  width: 10px !important;
+  min-width: 10px !important;
+  max-width: 10px !important;
+  flex-basis: 10px !important;
+}
