@@ -55,7 +55,7 @@ function DockOptionGlyph({ label, value }) {
     return <span className="sk-tool-option-font-glyph" style={{fontFamily:family}}>Aa</span>;
   }
   if (name.includes("width")) return <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M3 12h26" strokeWidth={Math.max(1,Math.min(7,Number(value)||2))} /></svg>;
-  if (name.includes("fill style")) return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill={value==="solid"?"currentColor":"none"} /><path d={value==="hachure"?"m5 17 12-12M9 20 20 9M4 12l8-8":value==="cross-hatch"?"m4 4 16 16M20 4 4 20M12 4v16M4 12h16":"M4 4h16v16H4z"} /></svg>;
+  if (name.includes("fill style")) return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" style={{ fill: value==="solid" ? "currentColor" : "none" }} /><path d={value==="hachure"?"m5 17 12-12M9 20 20 9M4 12l8-8":value==="cross-hatch"?"m4 4 16 16M20 4 4 20M12 4v16M4 12h16":"M4 4h16v16H4z"} /></svg>;
   if (name.includes("corner")) return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx={value==="rounded"?6:0.5} /></svg>;
   if (name.includes("arrowhead")) return <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M4 12h24" />{value==="arrow"&&<path d={name.includes("start")?"m11 5-7 7 7 7":"m21 5 7 7-7 7"} />}{value==="bar"&&<path d={name.includes("start")?"M4 5v14":"M28 5v14"} />}{value==="dot"&&<circle cx={name.includes("start")?4:28} cy="12" r="3" fill="currentColor" />}</svg>;
   if (name.includes("pressure")) return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={value==="on"?"M3 17c4 0 4-10 9-10s5 10 9 10":"M3 12h18"} strokeWidth={value==="on"?2.8:1.4} /></svg>;
