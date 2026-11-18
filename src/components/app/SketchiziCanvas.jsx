@@ -247,6 +247,52 @@ export default function SketchiziCanvas({
     return () => observer.disconnect();
   }, []);
 
+  // Keep the contextual dock in the Primary Dock's bottom-center slot.
+  // The Primary Dock is removed from layout while contextual controls are mounted.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root) return undefined;
+    let frame = 0;
+    const placeContextualDock = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const dock = root.querySelector(".sketchizi-tool-options-dock");
+        if (!dock) return;
+        const canvasRect = root.getBoundingClientRect();
+        const dockRect = dock.getBoundingClientRect();
+        const maxWidth = Math.max(0, canvasRect.width - 16);
+        const left = canvasRect.left + (canvasRect.width - Math.min(dockRect.width, maxWidth)) / 2;
+        const top = Math.max(canvasRect.top + 8, canvasRect.bottom - dockRect.height - 16);
+        dock.style.setProperty("position", "fixed", "important");
+        dock.style.setProperty("left", `${left}px`, "important");
+        dock.style.setProperty("top", `${top}px`, "important");
+        dock.style.setProperty("right", "auto", "important");
+        dock.style.setProperty("bottom", "auto", "important");
+        dock.style.setProperty("transform", "none", "important");
+        dock.style.setProperty("z-index", "10030", "important");
+        dock.style.setProperty("max-width", `calc(${maxWidth}px)`, "important");
+      });
+    };
+    const observer = new MutationObserver(placeContextualDock);
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(placeContextualDock)
+      : null;
+    resizeObserver?.observe(root);
+    window.addEventListener("resize", placeContextualDock);
+    window.addEventListener("scroll", placeContextualDock, true);
+    placeContextualDock();
+    return () => {
+      observer.disconnect();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", placeContextualDock);
+      window.removeEventListener("scroll", placeContextualDock, true);
+      cancelAnimationFrame(frame);
+      const dock = root.querySelector(".sketchizi-tool-options-dock");
+      if (dock) ["position", "left", "top", "right", "bottom", "transform", "z-index", "max-width"].forEach((property) => dock.style.removeProperty(property));
+    };
+  }, []);
+
   // Enhance Excalidraw's own toolbar in place. Buttons and their React handlers
   // stay native; this adds only a grip, separators, and session-only dragging.
   useEffect(() => {
@@ -833,6 +879,33 @@ export default function SketchiziCanvas({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [apiRef, canEdit, viewModeEnabled]);
+
+  // Swap the Primary Dock out of the layout whenever contextual controls appear.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root) return undefined;
+    const syncDockVisibility = () => {
+      const contextualDock = document.querySelector(".sketchizi-tool-options-dock");
+      const primaryDock = root.querySelector(".App-toolbar-container");
+      if (!primaryDock) return;
+      const replacing = !!contextualDock;
+      primaryDock.style.setProperty("display", replacing ? "none" : "", "important");
+      primaryDock.setAttribute("aria-hidden", String(replacing));
+      primaryDock.inert = replacing;
+    };
+    const observer = new MutationObserver(syncDockVisibility);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    syncDockVisibility();
+    return () => {
+      observer.disconnect();
+      const primaryDock = root.querySelector(".App-toolbar-container");
+      if (primaryDock) {
+        primaryDock.style.removeProperty("display");
+        primaryDock.removeAttribute("aria-hidden");
+        primaryDock.inert = false;
+      }
+    };
+  }, []);
 
   const updateCursorFromPointer = (event) => {
     const target = event.target;
