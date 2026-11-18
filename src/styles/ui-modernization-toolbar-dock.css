@@ -3602,14 +3602,20 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 /* Draw the font-family mark as a fixed-size icon so font metrics cannot enlarge it. */
 .app .contextual-formatting-toolbar .format-icon-glyph-font-family {
   display: block;
-  flex: 0 0 14px;
-  width: 14px;
-  height: 16px;
-  overflow: visible;
+  flex: 0 0 12px;
+  width: 12px !important;
+  min-width: 12px !important;
+  max-width: 12px !important;
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  overflow: hidden;
+  box-sizing: border-box;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.65;
+  stroke-width: 1.45;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transform: translateY(-0.25px);
+  transform: translateY(0);
+  pointer-events: none;
 }
