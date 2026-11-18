@@ -2713,3 +2713,650 @@
     flex-basis: 23px;
   }
 }
+
+
+/* Text Contextual Dock: make the font picker read as a dedicated typography control. */
+.app .sketchizi-tool-options-dock .sk-tool-font-family {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  height: 34px;
+  min-width: 148px;
+  padding: 0 10px;
+  position: relative;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--sk-options-hover, #343a42), #252b32);
+  color: var(--sk-options-ink, #e6e9ed);
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family:hover {
+  border-color: #737e89;
+  background: var(--sk-options-selected, #414a54);
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family:focus-within {
+  border-color: #9ba6b2;
+  box-shadow: 0 0 0 2px rgb(155 166 178 / 16%);
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-select {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--sk-options-ink, #e6e9ed);
+  font: 550 12px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-select option {
+  background: #252b32;
+  color: #e6e9ed;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family {
+  border-color: #cbd2d9;
+  background: linear-gradient(180deg, #fff, #f0f2f4);
+  color: #252b32;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family:hover {
+  border-color: #aeb7c1;
+  background: #e9edf1;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family:focus-within {
+  border-color: #7d8995;
+  box-shadow: 0 0 0 2px rgb(90 103 116 / 12%);
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-select {
+  color: #252b32;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-select option {
+  background: #fff;
+  color: #252b32;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock .sk-tool-font-family {
+    min-width: 128px;
+    height: 30px;
+    gap: 0;
+    padding: 0 8px;
+  }
+  .app .sketchizi-tool-options-dock .sk-tool-font-family-select {
+    height: 28px;
+    font-size: 11px;
+  }
+}
+
+
+/* Text font picker: the transparent native select covers the entire visual control,
+   so every point on the button opens the font menu (not just the text label). */
+.app .sketchizi-tool-options-dock .sk-tool-font-family {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-current {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sk-options-ink, #e6e9ed);
+  font: 550 12px/1 system-ui, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-select {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-current {
+  color: #252b32;
+}
+
+/* Text layer-order menu. */
+.app .sketchizi-tool-options-dock .sk-tool-layer-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 9px;
+  background: var(--sk-options-hover, #292f36);
+  color: var(--sk-options-ink, #e6e9ed);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger:hover,
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger.is-active {
+  border-color: #737e89;
+  background: var(--sk-options-selected, #414a54);
+  color: #fff;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger:focus-visible {
+  outline: 2px solid #9ba6b2;
+  outline-offset: 2px;
+}
+/* Refined layer arrangement menu */
+.app .sketchizi-tool-options-dock .sk-tool-layer-menu {
+  z-index: 1000;
+  display: flex;
+  width: 276px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid #424b56;
+  border-radius: 13px;
+  background: #20252c;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 42%), 0 2px 8px rgb(0 0 0 / 24%);
+  color: #edf0f3;
+  animation: sk-layer-menu-enter 120ms ease-out;
+}
+.app .sk-tool-layer-menu-heading {
+  padding: 4px 9px 8px;
+  color: #929daa;
+  font: 650 10px/1.2 system-ui, sans-serif;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.app .sk-tool-layer-menu button {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  min-height: 38px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #e5e9ee;
+  font: 500 12px/1 system-ui, sans-serif;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.app .sk-tool-layer-menu button > svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: #9ca8b5;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sk-tool-layer-menu button:hover,
+.app .sk-tool-layer-menu button:focus-visible {
+  outline: 0;
+  border-color: #46515d;
+  background: #303943;
+  color: #fff;
+}
+.app .sk-tool-layer-menu button:hover > svg,
+.app .sk-tool-layer-menu button:focus-visible > svg {
+  stroke: #dbe3eb;
+}
+.app .sk-tool-layer-menu kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  border: 1px solid #424c58;
+  border-radius: 5px;
+  background: #292f37;
+  color: #aeb8c3;
+  font: 10px/1 system-ui, sans-serif;
+  white-space: nowrap;
+}
+.app .sk-tool-layer-menu kbd i {
+  color: #778391;
+  font-style: normal;
+}
+.app .sk-tool-layer-menu-divider {
+  height: 1px;
+  margin: 3px 5px;
+  background: #39424c;
+}
+.app.theme-light .sk-tool-layer-menu {
+  border-color: #d3dae1;
+  background: #fff;
+  box-shadow: 0 16px 42px rgb(28 39 51 / 18%), 0 2px 8px rgb(28 39 51 / 8%);
+  color: #202832;
+}
+.app.theme-light .sk-tool-layer-menu-heading { color: #7b8793; }
+.app.theme-light .sk-tool-layer-menu button { color: #303943; }
+.app.theme-light .sk-tool-layer-menu button > svg { stroke: #788592; }
+.app.theme-light .sk-tool-layer-menu button:hover,
+.app.theme-light .sk-tool-layer-menu button:focus-visible {
+  border-color: #dce2e8;
+  background: #f0f3f6;
+  color: #141b22;
+}
+.app.theme-light .sk-tool-layer-menu button:hover > svg,
+.app.theme-light .sk-tool-layer-menu button:focus-visible > svg { stroke: #394653; }
+.app.theme-light .sk-tool-layer-menu kbd {
+  border-color: #d9dfe5;
+  background: #f4f6f8;
+  color: #5d6874;
+}
+.app.theme-light .sk-tool-layer-menu kbd i { color: #9aa4ae; }
+.app.theme-light .sk-tool-layer-menu-divider { background: #e3e7eb; }
+@keyframes sk-layer-menu-enter {
+  from { opacity: 0; transform: translateY(4px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+
+/* Final Text Contextual Dock controls. The layer menu is portalled into .app
+   so theme scoping and the dock's design tokens apply consistently. */
+.app .sketchizi-tool-options-dock .sk-tool-font-family {
+  min-width: 154px;
+  padding: 0 34px 0 12px;
+  border: 1px solid #48515c;
+  border-radius: 9px;
+  background: #292f37;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family:hover {
+  border-color: #778391;
+  background: #343c46;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-current {
+  display: block;
+  flex: 1 1 auto;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .005em;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #aeb8c3;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family:hover .sk-tool-font-family-chevron {
+  stroke: #f0f3f6;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family {
+  border-color: #cbd2d9;
+  background: #f5f7f9;
+  box-shadow: inset 0 1px 0 #fff;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family:hover {
+  border-color: #aeb7c1;
+  background: #e9edf1;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-chevron {
+  stroke: #596571;
+}
+
+/* Layer arrangement menu — deliberate command-menu hierarchy, icon tiles,
+   balanced shortcut keycaps, and clear separation of stacking directions. */
+.app .sk-tool-layer-menu {
+  z-index: 10050;
+  box-sizing: border-box;
+  display: flex;
+  width: 292px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid #424b56;
+  border-radius: 15px;
+  background: #20252c;
+  box-shadow: 0 22px 58px rgb(0 0 0 / 48%), 0 4px 14px rgb(0 0 0 / 25%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  color: #edf1f5;
+  transform-origin: bottom left;
+  animation: sk-layer-menu-enter 150ms cubic-bezier(.2,.8,.2,1);
+}
+.app .sk-tool-layer-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 5px 6px 12px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid #343c46;
+}
+.app .sk-tool-layer-menu-header-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #4a5662;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #343e49, #29313a);
+  color: #dce4ec;
+}
+.app .sk-tool-layer-menu-header-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sk-tool-layer-menu-title-wrap {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+.app .sk-tool-layer-menu-title-wrap strong {
+  color: #f1f4f7;
+  font: 650 13px/1.1 system-ui, sans-serif;
+  letter-spacing: -.01em;
+}
+.app .sk-tool-layer-menu-title-wrap small {
+  color: #8f9ba8;
+  font: 450 10px/1.2 system-ui, sans-serif;
+}
+.app .sk-tool-layer-menu-section-label {
+  padding: 7px 7px 3px;
+  color: #8793a0;
+  font: 700 9px/1.2 system-ui, sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.app .sk-tool-layer-menu button {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 43px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #dfe5eb;
+  font: 550 12px/1 system-ui, sans-serif;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, color 130ms ease, transform 130ms ease;
+}
+.app .sk-tool-layer-menu button:hover,
+.app .sk-tool-layer-menu button:focus-visible {
+  outline: 0;
+  border-color: #46515d;
+  background: linear-gradient(100deg, #343e49, #2d353e);
+  color: #fff;
+}
+.app .sk-tool-layer-menu button:active { transform: scale(.99); }
+.app .sk-tool-layer-action-icon {
+  display: inline-flex;
+  width: 29px;
+  height: 29px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #414c58;
+  border-radius: 8px;
+  background: #2b333c;
+  color: #aebbc8;
+  transition: background 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+.app .sk-tool-layer-action-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sk-tool-layer-menu button:hover .sk-tool-layer-action-icon,
+.app .sk-tool-layer-menu button:focus-visible .sk-tool-layer-action-icon {
+  border-color: #647383;
+  background: #414d5a;
+  color: #eef3f8;
+}
+.app .sk-tool-layer-action-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app .sk-tool-layer-menu kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9ba7b3;
+  font: 10px/1 system-ui, sans-serif;
+}
+.app .sk-tool-layer-menu kbd span {
+  display: inline-flex;
+  min-width: 17px;
+  height: 19px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 1px solid #46515d;
+  border-bottom-color: #566371;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #343c46, #2b323b);
+  color: #c2ccd6;
+  font: 550 9px/1 system-ui, sans-serif;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 28%);
+}
+.app .sk-tool-layer-menu kbd i {
+  color: #697582;
+  font: normal 9px/1 system-ui, sans-serif;
+}
+.app .sk-tool-layer-menu-divider {
+  height: 1px;
+  margin: 5px 5px 2px;
+  background: #343d47;
+}
+.app.theme-light .sk-tool-layer-menu {
+  border-color: #d4dce4;
+  background: #fbfcfd;
+  box-shadow: 0 22px 58px rgb(26 37 49 / 20%), 0 4px 14px rgb(26 37 49 / 10%), inset 0 1px 0 #fff;
+  color: #202832;
+}
+.app.theme-light .sk-tool-layer-menu-header { border-bottom-color: #e4e8ed; }
+.app.theme-light .sk-tool-layer-menu-header-icon {
+  border-color: #d7dfe6;
+  background: linear-gradient(145deg, #f1f4f7, #e7ecf1);
+  color: #465360;
+}
+.app.theme-light .sk-tool-layer-menu-title-wrap strong { color: #202832; }
+.app.theme-light .sk-tool-layer-menu-title-wrap small { color: #788491; }
+.app.theme-light .sk-tool-layer-menu-section-label { color: #84909c; }
+.app.theme-light .sk-tool-layer-menu button { color: #34404c; }
+.app.theme-light .sk-tool-layer-menu button:hover,
+.app.theme-light .sk-tool-layer-menu button:focus-visible {
+  border-color: #dbe2e8;
+  background: linear-gradient(100deg, #f0f3f6, #e9eef2);
+  color: #18212a;
+}
+.app.theme-light .sk-tool-layer-action-icon {
+  border-color: #dce3e9;
+  background: #f1f4f7;
+  color: #667482;
+}
+.app.theme-light .sk-tool-layer-menu button:hover .sk-tool-layer-action-icon,
+.app.theme-light .sk-tool-layer-menu button:focus-visible .sk-tool-layer-action-icon {
+  border-color: #cbd5de;
+  background: #e1e8ee;
+  color: #344250;
+}
+.app.theme-light .sk-tool-layer-menu kbd span {
+  border-color: #d7dfe6;
+  border-bottom-color: #c7d1da;
+  background: linear-gradient(180deg, #fff, #f0f3f6);
+  color: #566371;
+  box-shadow: 0 1px 0 rgb(35 48 61 / 8%);
+}
+.app.theme-light .sk-tool-layer-menu kbd i { color: #a0aab4; }
+.app.theme-light .sk-tool-layer-menu-divider { background: #e3e8ed; }
+@media (prefers-reduced-motion: reduce) {
+  .app .sk-tool-layer-menu { animation: none; }
+}
+
+
+/* Compact pass: no headings, categories, or separator rules in the layer menu. */
+.app .sk-tool-layer-menu {
+  width: 258px;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 11px;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 38%), 0 2px 7px rgb(0 0 0 / 18%);
+}
+.app .sk-tool-layer-menu button {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  min-height: 35px;
+  gap: 9px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 11.5px;
+}
+.app .sk-tool-layer-action-icon {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #aeb9c5;
+}
+.app .sk-tool-layer-action-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.app .sk-tool-layer-menu button:hover .sk-tool-layer-action-icon,
+.app .sk-tool-layer-menu button:focus-visible .sk-tool-layer-action-icon {
+  border: 0;
+  background: transparent;
+  color: #f2f5f8;
+}
+.app .sk-tool-layer-menu kbd {
+  gap: 2px;
+}
+.app .sk-tool-layer-menu kbd span {
+  min-width: 15px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 8px;
+}
+.app .sk-tool-layer-menu kbd i { font-size: 8px; }
+.app.theme-light .sk-tool-layer-menu {
+  box-shadow: 0 14px 34px rgb(26 37 49 / 17%), 0 2px 7px rgb(26 37 49 / 8%);
+}
+.app.theme-light .sk-tool-layer-action-icon {
+  border: 0;
+  background: transparent;
+  color: #6a7784;
+}
+.app.theme-light .sk-tool-layer-menu button:hover .sk-tool-layer-action-icon,
+.app.theme-light .sk-tool-layer-menu button:focus-visible .sk-tool-layer-action-icon {
+  border: 0;
+  background: transparent;
+  color: #344250;
+}
+
+/* Font family picker: understated typography control, not a large boxed button. */
+.app .sketchizi-tool-options-dock label.sk-tool-font-family {
+  box-sizing: border-box;
+  display: inline-flex;
+  position: relative;
+  width: 136px;
+  min-width: 136px;
+  height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 9px 0 10px;
+  overflow: hidden;
+  border: 1px solid #414a54;
+  border-radius: 7px;
+  background: #252b32;
+  color: #e5e9ed;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.app .sketchizi-tool-options-dock label.sk-tool-font-family:hover {
+  border-color: #687582;
+  background: #303740;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-current {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font: 500 11.5px/1 system-ui, sans-serif;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-chevron {
+  position: static;
+  display: block;
+  flex: 0 0 13px;
+  width: 13px;
+  height: 13px;
+  transform: none;
+  stroke: #9ca8b4;
+}
+.app .sketchizi-tool-options-dock label.sk-tool-font-family:hover .sk-tool-font-family-chevron {
+  stroke: #e2e8ee;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-select {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.app.theme-light .sketchizi-tool-options-dock label.sk-tool-font-family {
+  border-color: #d0d7de;
+  background: #f7f8fa;
+  color: #29323b;
+}
+.app.theme-light .sketchizi-tool-options-dock label.sk-tool-font-family:hover {
+  border-color: #aeb9c4;
+  background: #edf1f4;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-chevron {
+  stroke: #697784;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock label.sk-tool-font-family {
+    width: 124px;
+    min-width: 124px;
+    height: 30px;
+  }
+}

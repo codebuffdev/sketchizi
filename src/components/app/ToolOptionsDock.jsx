@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 
 const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8", "#ffffff"];
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
-const FONT_FAMILIES = [[1, "Virgil"], [2, "Helvetica"], [3, "Cascadia"], [5, "Excalifont"], [6, "Nunito"], [7, "Lilita One"], [8, "Comic Shanns"], [9, "Liberation Sans"]];
+const FONT_FAMILIES = [[2, "Helvetica"], [3, "Cascadia"], [5, "Excalifont"], [6, "Nunito"], [7, "Lilita One"], [8, "Comic Shanns"]];
 
 function ContextShapeIcon({ type, title, multiple = false }) {
   let shape;
@@ -49,6 +50,9 @@ function DockGroup({ label, children }) {
 
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   const [customTool, setCustomTool] = useState(null);
+  const [layerMenuOpen, setLayerMenuOpen] = useState(false);
+  const [layerMenuPosition, setLayerMenuPosition] = useState(null);
+  const layerTriggerRef = useRef(null);
   useEffect(() => {
     const handleCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
@@ -84,6 +88,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   }, [apiRef]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
+  useEffect(() => {
+    if (!layerMenuOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (!event.target?.closest?.(".sk-tool-layer-control, .sk-tool-layer-menu")) setLayerMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", closeOnOutsideClick, true);
+    return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
+  }, [layerMenuOpen]);
   const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
@@ -114,7 +126,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fillStyle = current("fillStyle", "currentItemFillStyle", "solid");
   const opacity = Number(current("opacity", "currentItemOpacity", 100));
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
-  const fontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
+  const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
+  const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : 2;
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
@@ -153,6 +166,63 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
     api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+  };
+
+  const moveLayers = (direction) => {
+    const api = apiRef?.current;
+    if (!api) return;
+    const elements = api.getSceneElements?.() || [];
+    const selectedIds = new Set(
+      Object.entries(api.getAppState?.()?.selectedElementIds || {})
+        .filter(([, isSelected]) => isSelected)
+        .map(([id]) => id),
+    );
+    selected.forEach((element) => selectedIds.add(element.id));
+    if (editingTextElement?.id) selectedIds.add(editingTextElement.id);
+    if (!selectedIds.size) return;
+
+    // Excalidraw determines stacking order from each element's fractional
+    // `index`, not from its position in the elements array. Reorder the
+    // elements, then redistribute the existing ordered index values.
+    const orderedElements = [...elements].sort((a, b) =>
+      (a.index ?? "") < (b.index ?? "") ? -1 : (a.index ?? "") > (b.index ?? "") ? 1 : 0,
+    );
+    const selectedLayerElements = orderedElements.filter((element) => selectedIds.has(element.id));
+    const otherLayerElements = orderedElements.filter((element) => !selectedIds.has(element.id));
+    let reordered = orderedElements;
+    if (direction === "front") reordered = [...otherLayerElements, ...selectedLayerElements];
+    if (direction === "back") reordered = [...selectedLayerElements, ...otherLayerElements];
+    if (direction === "forward") {
+      reordered = [...orderedElements];
+      for (let index = reordered.length - 2; index >= 0; index -= 1) {
+        if (selectedIds.has(reordered[index].id) && !selectedIds.has(reordered[index + 1].id)) {
+          [reordered[index], reordered[index + 1]] = [reordered[index + 1], reordered[index]];
+        }
+      }
+    }
+    if (direction === "backward") {
+      reordered = [...orderedElements];
+      for (let index = 1; index < reordered.length; index += 1) {
+        if (selectedIds.has(reordered[index].id) && !selectedIds.has(reordered[index - 1].id)) {
+          [reordered[index], reordered[index - 1]] = [reordered[index - 1], reordered[index]];
+        }
+      }
+    }
+
+    const indexSlots = orderedElements.map((element) => element.index);
+    const changed = reordered.some((element, index) => element.id !== orderedElements[index]?.id);
+    if (changed) {
+      const now = Date.now();
+      const nextElements = reordered.map((element, index) => ({
+        ...element,
+        index: indexSlots[index],
+        version: (Number(element.version) || 0) + 1,
+        versionNonce: Math.floor(Math.random() * 2147483647),
+        updated: now,
+      }));
+      api.updateScene({ elements: nextElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    }
+    setLayerMenuOpen(false);
   };
 
   const title = useMemo(() => {
@@ -195,9 +265,69 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </select>
       </DockGroup>}
       {isText && <DockGroup label="Text options">
-        <select aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
-          {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
+        <div className="sk-tool-layer-control">
+          <button
+            type="button"
+            className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`}
+            aria-label="Layer order"
+            aria-haspopup="menu"
+            aria-expanded={layerMenuOpen}
+            disabled={!selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean)}
+            title={selected.length || editingTextElement?.id || Object.values(appState.selectedElementIds || {}).some(Boolean) ? "Layer order" : "Select an element to change layer order"}
+            ref={layerTriggerRef}
+            onClick={() => {
+              if (layerMenuOpen) {
+                setLayerMenuOpen(false);
+                return;
+              }
+              const rect = layerTriggerRef.current?.getBoundingClientRect();
+              if (rect) {
+                setLayerMenuPosition({
+                  left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)),
+                  bottom: Math.max(8, window.innerHeight - rect.top + 9),
+                });
+              }
+              setLayerMenuOpen(true);
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m12 3 8 4-8 4-8-4 8-4Z" />
+              <path d="m4 12 8 4 8-4M4 17l8 4 8-4" />
+            </svg>
+          </button>
+          {layerMenuOpen && layerMenuPosition && createPortal(
+            <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
+              <button type="button" role="menuitem" onClick={() => moveLayers("front")}>
+                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M7 6l5-4 5 4M4 15h16M4 20h16" /></svg></span>
+                <span className="sk-tool-layer-action-label">Bring to front</span>
+                <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>]</span></kbd>
+              </button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}>
+                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6M4 5h16M4 19h16" /></svg></span>
+                <span className="sk-tool-layer-action-label">Bring forward</span>
+                <kbd><span>Ctrl</span><i>+</i><span>]</span></kbd>
+              </button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}>
+                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M10 6l-6 6 6 6M4 5h16M4 19h16" /></svg></span>
+                <span className="sk-tool-layer-action-label">Send backward</span>
+                <kbd><span>Ctrl</span><i>+</i><span>[</span></kbd>
+              </button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("back")}>
+                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h16M7 18l5 4 5-4M4 4h16M4 9h16" /></svg></span>
+                <span className="sk-tool-layer-action-label">Send to back</span>
+                <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>[</span></kbd>
+              </button>
+            </div>,
+            document.querySelector(".app") || document.body,
+          )}
+        </div>
+        <label className="sk-tool-font-family" title="Change font family">
+          <span className="sk-tool-font-family-current" aria-hidden="true">{FONT_FAMILIES.find(([value]) => value === fontFamily)?.[1] || "Helvetica"}</span>
+          <svg className="sk-tool-font-family-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+          <select className="sk-tool-font-family-select" aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
+            {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
           <button type="button" className="sk-tool-text-size-step" aria-label="Decrease font size" title="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
           <label className="sk-tool-text-size-input">
