@@ -589,7 +589,7 @@ export default function DesktopAppHeader({
               <strong>Canvas surface</strong>
               <div className="sketchizi-header-appearance-options" role="group" aria-label="Canvas surface preset">
                 {[
-                  ["sketch", "Sketch", "Hand-drawn, expressive strokes across the canvas."],
+                  ["sketch", "Sketch", "Warm paper surface for sketching and illustration."],
                   ["clean", "Clean", "Neutral surface for professional diagrams."],
                   ["chalkboard", "Chalkboard", "Dark board with contrasting drawing colors."],
                 ].map(([value, label, description]) => (
