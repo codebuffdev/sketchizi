@@ -439,31 +439,21 @@ export default function SketchiziCanvas({
       toolbar.querySelectorAll(":scope > .dropdown-menu-button").forEach((control) => {
         control.dataset.sketchiziHideOverflowTools = "true";
       });
-      // The Primary Dock starts vertically on the left on desktop. Align its
-      // Selection trigger with the canvas hamburger/menu control, while leaving
-      // mobile layout and any user-positioned dock untouched.
-      if (!toolbar.dataset.sketchiziOrientation && !window.matchMedia("(max-width: 760px)").matches) {
-        toolbar.dataset.sketchiziOrientation = "vertical";
-        toolbar.dataset.sketchiziDockSide = "left";
+      // The Primary Dock belongs at the bottom-center of the canvas by default.
+      // Keep the toolbar's native controls/handlers; only change its dock placement.
+      if (!toolbar.dataset.sketchiziOrientation) {
+        toolbar.dataset.sketchiziOrientation = "horizontal";
+        delete toolbar.dataset.sketchiziDockSide;
       }
-      if (!container.dataset.sketchiziDockPositioned && !window.matchMedia("(max-width: 760px)").matches) {
-        const menuControl = root.querySelector(
-          ".App-menu__left button, .App-menu__left [role='button'], button[aria-label*='menu' i], [role='button'][aria-label*='menu' i], button[data-testid*='menu' i]"
-        );
-        const menuRect = menuControl?.getBoundingClientRect();
-        const dockWidth = container.getBoundingClientRect().width || 48;
-        const menuCenterX = menuRect
-          ? menuRect.left + menuRect.width / 2
-          : 32 + dockWidth / 2;
-        const alignedLeft = Math.max(8, menuCenterX - dockWidth / 2);
-        const belowMenuTop = menuRect
-          ? menuRect.bottom + 8
-          : 8;
-        container.style.setProperty("left", `${alignedLeft}px`, "important");
-        container.style.setProperty("top", `${Math.max(8, belowMenuTop)}px`, "important");
+      if (!container.dataset.sketchiziDockPositioned) {
+        container.style.setProperty("position", "absolute", "important");
+        container.style.setProperty("left", "50%", "important");
         container.style.setProperty("right", "auto", "important");
-        container.style.setProperty("bottom", "auto", "important");
-        container.style.setProperty("transform", "none", "important");
+        container.style.setProperty("top", "auto", "important");
+        container.style.setProperty("bottom", "16px", "important");
+        container.style.setProperty("transform", "translateX(-50%)", "important");
+        container.style.setProperty("width", "max-content", "important");
+        container.style.setProperty("max-width", "calc(100% - 24px)", "important");
         container.dataset.sketchiziDockPositioned = "true";
       }
       if (!container.dataset.sketchiziDockLocked) {
