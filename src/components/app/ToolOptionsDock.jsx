@@ -64,7 +64,10 @@ function DockOptionGlyph({ label, value }) {
 
 function DockSelect({ label, value, onChange, icon, children }) {
   const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState(null);
   const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
   const options = Children.toArray(children)
     .filter((child) => isValidElement(child) && child.props?.value !== undefined)
     .map((child) => ({
@@ -78,7 +81,11 @@ function DockSelect({ label, value, onChange, icon, children }) {
     if (!open) return undefined;
     const close = (event) => {
       if (event.type === "keydown" && event.key === "Escape") setOpen(false);
-      if (event.type === "pointerdown" && !rootRef.current?.contains(event.target)) setOpen(false);
+      if (
+        event.type === "pointerdown"
+        && !rootRef.current?.contains(event.target)
+        && !menuRef.current?.contains(event.target)
+      ) setOpen(false);
     };
     document.addEventListener("pointerdown", close, true);
     document.addEventListener("keydown", close, true);
@@ -87,21 +94,38 @@ function DockSelect({ label, value, onChange, icon, children }) {
       document.removeEventListener("keydown", close, true);
     };
   }, [open]);
+  const toggleMenu = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const estimatedMenuHeight = Math.max(48, Math.ceil(options.length / 4) * 48 + 10);
+      const top = rect.bottom + estimatedMenuHeight + 8 > window.innerHeight
+        ? Math.max(8, rect.top - estimatedMenuHeight - 7)
+        : rect.bottom + 7;
+      setMenuPosition({ left: rect.left + rect.width / 2, top });
+    }
+    setOpen(true);
+  };
   return (
     <div className="sk-tool-icon-select-wrap" ref={rootRef}>
-      <button type="button" className="sk-tool-icon-select" title={`${label}: ${selected?.label || ""}`} aria-label={`${label}: ${selected?.label || ""}`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+      <button ref={triggerRef} type="button" className="sk-tool-icon-select" title={`${label}: ${selected?.label || ""}`} aria-label={`${label}: ${selected?.label || ""}`} aria-haspopup="listbox" aria-expanded={open} onClick={toggleMenu}>
         <span className="sk-tool-icon-select-preview" aria-hidden="true">{icon}</span>
         <svg className={`sk-tool-icon-select-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
-      {open && <div className="sk-tool-icon-select-menu" role="listbox" aria-label={label}>
-        {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={String(option.value) === String(value)} aria-label={option.label} title={option.label} className={`sk-tool-icon-select-option${String(option.value) === String(value) ? " is-selected" : ""}`} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); } }}>
-          <DockOptionGlyph label={label} value={option.value} />
-        </button>)}
-      </div>}
+      {open && menuPosition && createPortal(
+        <div ref={menuRef} className="sk-tool-icon-select-menu" role="listbox" aria-label={label} style={{ position: "fixed", left: menuPosition.left, top: menuPosition.top, transform: "translateX(-50%)" }}>
+          {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={String(option.value) === String(value)} aria-label={option.label} title={option.label} className={`sk-tool-icon-select-option${String(option.value) === String(value) ? " is-selected" : ""}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }}>
+            <DockOptionGlyph label={label} value={option.value} />
+          </button>)}
+        </div>,
+        document.querySelector(".app") || document.body,
+      )}
     </div>
   );
 }
-
 function OptionGlyph({ kind, value }) {
   if (kind === "line-style") {
     return <svg viewBox="0 0 36 20" aria-hidden="true"><path d="M3 10h30" strokeDasharray={value === "dashed" ? "6 4" : value === "dotted" ? "1 4" : undefined} strokeLinecap="round" /></svg>;
@@ -111,14 +135,21 @@ function OptionGlyph({ kind, value }) {
 
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
   const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState(null);
   const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
   const safeOptions = Array.isArray(options) ? options.filter((option) => option && option.value !== undefined) : [];
   const selected = safeOptions.find((option) => option.value === value) || safeOptions[0] || { value: 0, label };
   useEffect(() => {
     if (!open) return undefined;
     const close = (event) => {
       if (event.type === "keydown" && event.key === "Escape") setOpen(false);
-      if (event.type === "pointerdown" && !rootRef.current?.contains(event.target)) setOpen(false);
+      if (
+        event.type === "pointerdown"
+        && !rootRef.current?.contains(event.target)
+        && !menuRef.current?.contains(event.target)
+      ) setOpen(false);
     };
     document.addEventListener("pointerdown", close, true);
     document.addEventListener("keydown", close, true);
@@ -127,21 +158,38 @@ function VisualOptionSelect({ label, value, onChange, kind, options }) {
       document.removeEventListener("keydown", close, true);
     };
   }, [open]);
+  const toggleMenu = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const estimatedMenuHeight = 52;
+      const top = rect.bottom + estimatedMenuHeight + 8 > window.innerHeight
+        ? Math.max(8, rect.top - estimatedMenuHeight - 7)
+        : rect.bottom + 7;
+      setMenuPosition({ left: rect.left + rect.width / 2, top });
+    }
+    setOpen(true);
+  };
   return (
     <div className="sk-tool-visual-select" ref={rootRef}>
-      <button type="button" className="sk-tool-icon-select" title={`${label}: ${selected.label}`} aria-label={`${label}: ${selected.label}`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+      <button ref={triggerRef} type="button" className="sk-tool-icon-select" title={`${label}: ${selected.label}`} aria-label={`${label}: ${selected.label}`} aria-haspopup="listbox" aria-expanded={open} onClick={toggleMenu}>
         <span className="sk-tool-icon-select-preview" aria-hidden="true"><OptionGlyph kind={kind} value={selected.value} /></span>
-        <svg className="sk-tool-icon-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+        <svg className={`sk-tool-icon-select-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
-      {open && <div className="sk-tool-visual-select-menu" role="listbox" aria-label={label}>
-        {safeOptions.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); } }}>
-          <OptionGlyph kind={kind} value={option.value} />
-        </button>)}
-      </div>}
+      {open && menuPosition && createPortal(
+        <div ref={menuRef} className="sk-tool-visual-select-menu" role="listbox" aria-label={label} style={{ position: "fixed", left: menuPosition.left, top: menuPosition.top, transform: "translateX(-50%)" }}>
+          {safeOptions.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }}>
+            <OptionGlyph kind={kind} value={option.value} />
+          </button>)}
+        </div>,
+        document.querySelector(".app") || document.body,
+      )}
     </div>
   );
 }
-
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   const [customTool, setCustomTool] = useState(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
