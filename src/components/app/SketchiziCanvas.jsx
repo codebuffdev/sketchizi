@@ -260,7 +260,6 @@ export default function SketchiziCanvas({
       if (!session || !previewContext || !wrapper) return;
       clearPreview();
       session.previewPoints = [];
-      session.previewEnd = null;
       const rect = wrapper.getBoundingClientRect();
       for (const sample of session.samples) {
         drawFreeDrawPreviewSample(previewContext, session, sample, session.appState, rect);
@@ -358,7 +357,6 @@ export default function SketchiziCanvas({
         appState,
         samples: [],
         previewPoints: [],
-        previewEnd: null,
       };
 
       try {
