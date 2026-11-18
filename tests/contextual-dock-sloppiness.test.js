@@ -56,3 +56,12 @@ test("icon dropdowns expose selection state and dismiss on outside click or Esca
   assert.match(dock, /event\.key === "Escape"/);
   assert.match(dock, /event\.type === "pointerdown"/);
 });
+
+
+test("custom dropdowns safely normalize option children and empty option lists", () => {
+  assert.match(c.result.content, /Children\.toArray\(children\)/);
+  assert.match(c.result.content, /isValidElement\(child\) && child\.props\?\.value !== undefined/);
+  assert.match(c.result.content, /\|\| \{ value: \"\", label \}/);
+  assert.match(c.result.content, /safeOptions = Array\.isArray\(options\)/);
+  assert.match(c.result.content, /\|\| safeOptions\[0\] \|\| \{ value: 0, label \}/);
+});
