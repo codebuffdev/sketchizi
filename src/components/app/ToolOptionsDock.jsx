@@ -208,8 +208,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         "input, textarea, select, [contenteditable='true'], [role='dialog'], .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
       )) return;
 
-      // Capture Escape before Excalidraw consumes it so the contextual dock
-      // reliably yields its slot back to the Primary Dock.
+      // Capture Escape before Excalidraw consumes it so the Primary Dock returns.
       event.preventDefault();
       event.stopPropagation();
       setCustomTool(null);
