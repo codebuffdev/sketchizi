@@ -707,7 +707,7 @@ function App() {
     const hasExplicitAppearance = background.toLowerCase() === "#1b382f" ||
       (typeof roughness === "number" && (roughness === 0 || roughness >= 2));
     if (hasElements || hasExplicitAppearance) {
-      setCanvasAppearance(getCanvasAppearanceFromBackground(background, roughness));
+      setCanvasAppearance(getCanvasAppearanceFromBackground(background));
     } else {
       setCanvasAppearance(isDarkTheme ? "sketch" : "clean");
     }
