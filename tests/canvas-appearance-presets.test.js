@@ -71,10 +71,11 @@ test("Drawing environment maps Architect, Artist and Cartoonist to Excalidraw ro
 test("Selecting a drawing environment updates only the defaults for new elements", () => {
   let update;
   const existing = [{ id: "rect", type: "rectangle", roughness: 0 }];
+  let appState = { currentItemRoughness: 0 };
   const api = {
-    getAppState: () => ({ currentItemRoughness: 0 }),
+    getAppState: () => appState,
     getSceneElements: () => existing,
-    updateScene: (next) => { update = next; },
+    updateScene: (next) => { update = next; appState = { ...appState, ...next.appState }; },
   };
   assert.equal(applyCanvasDrawingStyle(api, "cartoonist"), true);
   assert.deepEqual(update.appState, { currentItemRoughness: 2 });
