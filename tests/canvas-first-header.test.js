@@ -85,3 +85,15 @@ test("Properties and Validation controls remain clear of the floating header", a
   assert.match(app, /\{propertiesOpen && \(/);
   assert.match(app, /\{architectureValidationOpen && \(/);
 });
+
+
+test("Canvas patterns menu contains only grid patterns, not appearance presets", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  const patternsStart = header.indexOf('aria-label="Grid mode"');
+  assert.notEqual(patternsStart, -1);
+  const menuContent = header.slice(Math.max(0, patternsStart - 500), patternsStart + 2200);
+  assert.match(menuContent, /Canvas patterns/);
+  assert.match(menuContent, /Focus Grid/);
+  assert.match(menuContent, /Dot Grid/);
+  assert.doesNotMatch(menuContent, /Appearance preset|Chalkboard|Hand-drawn, expressive strokes/);
+});
