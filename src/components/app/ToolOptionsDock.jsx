@@ -445,6 +445,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d={expanded ? "m7 14 5-5 5 5" : "m7 10 5 5 5-5"} /></svg>
       </button>
       <span className="sk-tool-dock-context" aria-label={title} title={title}><ContextShapeIcon type={type} title={title} multiple={selected.length > 1} /></span>
+      <div className="sk-tool-dock-panel" aria-label={`${title} detailed options`}>
       <DockGroup label="Stroke color">
         {!isFill && <>{COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} /></>}
@@ -534,6 +535,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         <span className="sk-tool-dock-opacity-value">{opacity}%</span>
         <input aria-label="Opacity" type="range" min="0" max="100" step="5" value={opacity} onChange={(event) => update({ opacity: Number(event.target.value) })} />
       </DockGroup>
+      </div>
     </div>
   );
 }
