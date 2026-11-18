@@ -6,7 +6,8 @@ const dock = readFileSync(new URL("../src/components/app/ToolOptionsDock.jsx", i
 
 test("shape, arrow, and line contextual docks reuse the existing text layer-order control", () => {
   assert.match(dock, /const isShape = \["rectangle", "diamond", "ellipse"\]\.includes\(type\)/);
-  assert.match(dock, /\{\(isShape \|\| isLine\) && <DockGroup label="Layers">\{layerControl\}<\/DockGroup>\}/);\n  assert.match(dock, /const isLine = \["line", "arrow"\]\.includes\(type\)/);
+  assert.match(dock, /\{\(isShape \|\| isLine\) && <DockGroup label="Layers">\{layerControl\}<\/DockGroup>\}/);
+  assert.match(dock, /const isLine = \["line", "arrow"\]\.includes\(type\)/);
   assert.match(dock, /\{layerControl\}\s*<label className="sk-tool-font-family"/);
   assert.equal((dock.match(/\{layerControl\}/g) || []).length, 2);
 });
