@@ -255,7 +255,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
             aria-label="Layer order"
             aria-haspopup="menu"
             aria-expanded={layerMenuOpen}
-            title="Layer order"
+            disabled={!isSelection}
+            title={isSelection ? "Layer order" : "Select text to change layer order"}
             ref={layerTriggerRef}
             onClick={() => {
               if (layerMenuOpen) {
