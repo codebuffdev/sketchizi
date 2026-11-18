@@ -851,7 +851,7 @@ export default function ContextualFormattingToolbar({
             aria-pressed={activeGroup === group.id}
             title={group.label}
             onClick={() => setOpenGroup((current) => current === group.id ? null : group.id)}
-          >{group.id === "fontFamily" ? <svg className="format-icon-glyph-font-family" viewBox="0 0 12 14" aria-hidden="true" focusable="false"><path d="M2 12 6 2l4 10M3.5 8.5h5" /></svg> : group.icon}</button>
+          >{group.id === "fontFamily" ? <span className="format-icon-glyph-font-family" aria-hidden="true">A</span> : group.icon}</button>
         ))}
       </div>
       {activeGroup && (
