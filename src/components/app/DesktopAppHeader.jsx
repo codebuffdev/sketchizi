@@ -715,7 +715,7 @@ export default function DesktopAppHeader({
         <div className="desktop-app-save-status-wrap">
           <button
             type="button"
-            className={`desktop-app-save-status-trigger is-${saveState}`}
+            className="desktop-app-save-status-trigger"
             aria-label="Download and save options"
             aria-haspopup="dialog"
             aria-expanded={saveDetailsOpen}
@@ -802,7 +802,14 @@ export default function DesktopAppHeader({
           )}
         </span>
         <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
+          <span
+            className={`desktop-app-document-identity-dirty-dot is-${saveState}`}
+            role="status"
+            aria-label={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+            title={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+          />
+        )}
         {!documentNameEditing && (
           <button
             type="button"
