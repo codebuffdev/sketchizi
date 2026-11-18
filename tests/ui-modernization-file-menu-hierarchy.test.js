@@ -23,6 +23,19 @@ test("duplicate native Open file menu item is removed", () => {
   assert.doesNotMatch(menu, /sketchizi-native-open-file-icon/);
 });
 
+test("only the standalone native Save to... row is removed", () => {
+  assert.match(menu, /const saveToLabel = exactLeaves\.find/);
+  assert.match(menu, /saveToActionText === "save to\.\.\."/);
+  assert.match(menu, /saveToAction\.closest\("\.dropdown-menu-container"\) === menu/);
+  assert.match(menuTemplate, />Blank Canvas<\/button>/);
+  assert.match(menuTemplate, />Open file<\/button>/);
+  assert.match(menuTemplate, />Your Files<\/button>/);
+  assert.match(menuTemplate, />Recent files<\/span>/);
+  assert.match(menu, />Drop a Review<\/span>/);
+  assert.match(menu, />Connect with Coder<\/span>/);
+  assert.match(menu, />Workspace<\/div>/);
+});
+
 test("file menu preserves new-file and recent-file workflows after removing folder browsing", () => {
   for (const selector of [
     "data-sketchizi-new-file", "data-recent-id", "data-clear-recent-files",
