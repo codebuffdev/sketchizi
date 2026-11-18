@@ -3515,7 +3515,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   --sk-options-hover: #303943;
   --sk-options-selected: #46515d;
   width: max-content;
-  max-width: min(760px, calc(100% - 96px));
+  max-width: min(640px, calc(100% - 96px));
   min-height: 42px;
   gap: 4px;
   padding: 4px 7px;
