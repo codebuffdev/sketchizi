@@ -440,7 +440,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         title={expanded ? "Collapse options" : "More options"}
         onMouseEnter={() => setExpanded(true)}
         onFocus={() => setExpanded(true)}
-        onClick={() => setExpanded((value) => !value)}
+        onClick={() => setExpanded(true)}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d={expanded ? "m7 14 5-5 5 5" : "m7 10 5 5 5-5"} /></svg>
       </button>
