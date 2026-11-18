@@ -247,6 +247,52 @@ export default function SketchiziCanvas({
     return () => observer.disconnect();
   }, []);
 
+  // Keep the contextual dock in the Primary Dock's bottom-center slot.
+  // When it is mounted, CSS hides the Primary Dock so the two never overlap.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root) return undefined;
+    let frame = 0;
+    const placeContextualDock = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const dock = root.querySelector(".sketchizi-tool-options-dock");
+        if (!dock) return;
+        const canvasRect = root.getBoundingClientRect();
+        const dockRect = dock.getBoundingClientRect();
+        const maxWidth = Math.max(0, canvasRect.width - 16);
+        const left = canvasRect.left + (canvasRect.width - Math.min(dockRect.width, maxWidth)) / 2;
+        const top = Math.max(canvasRect.top + 8, canvasRect.bottom - dockRect.height - 16);
+        dock.style.setProperty("position", "fixed", "important");
+        dock.style.setProperty("left", `${left}px`, "important");
+        dock.style.setProperty("top", `${top}px`, "important");
+        dock.style.setProperty("right", "auto", "important");
+        dock.style.setProperty("bottom", "auto", "important");
+        dock.style.setProperty("transform", "none", "important");
+        dock.style.setProperty("z-index", "10030", "important");
+        dock.style.setProperty("max-width", `calc(${maxWidth}px)`, "important");
+      });
+    };
+    const observer = new MutationObserver(placeContextualDock);
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(placeContextualDock)
+      : null;
+    resizeObserver?.observe(root);
+    window.addEventListener("resize", placeContextualDock);
+    window.addEventListener("scroll", placeContextualDock, true);
+    placeContextualDock();
+    return () => {
+      observer.disconnect();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", placeContextualDock);
+      window.removeEventListener("scroll", placeContextualDock, true);
+      cancelAnimationFrame(frame);
+      const dock = root.querySelector(".sketchizi-tool-options-dock");
+      if (dock) ["position", "left", "top", "right", "bottom", "transform", "z-index", "max-width"].forEach((property) => dock.style.removeProperty(property));
+    };
+  }, []);
+
   // Enhance Excalidraw's own toolbar in place. Buttons and their React handlers
   // stay native; this adds only a grip, separators, and session-only dragging.
   useEffect(() => {
