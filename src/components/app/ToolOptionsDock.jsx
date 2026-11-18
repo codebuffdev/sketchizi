@@ -5,7 +5,7 @@ const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8"
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
-const FONT_FAMILIES = [[1, "Virgil"], [2, "Helvetica"], [3, "Cascadia"], [5, "Excalifont"], [6, "Nunito"], [7, "Lilita One"], [8, "Comic Shanns"], [9, "Liberation Sans"]];
+const FONT_FAMILIES = [[2, "Helvetica"], [3, "Cascadia"], [5, "Excalifont"], [6, "Nunito"], [7, "Lilita One"], [8, "Comic Shanns"]];
 
 function ContextShapeIcon({ type, title, multiple = false }) {
   let shape;
@@ -114,7 +114,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fillStyle = current("fillStyle", "currentItemFillStyle", "solid");
   const opacity = Number(current("opacity", "currentItemOpacity", 100));
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
-  const fontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
+  const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
+  const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : 2;
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
@@ -195,9 +196,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </select>
       </DockGroup>}
       {isText && <DockGroup label="Text options">
-        <select aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
+        <label className="sk-tool-font-family" title="Font family">
+          <span className="sk-tool-font-family-preview" aria-hidden="true">Aa</span>
+          <select className="sk-tool-font-family-select" aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
+          </select>
+        </label>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
           <button type="button" className="sk-tool-text-size-step" aria-label="Decrease font size" title="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
           <label className="sk-tool-text-size-input">
