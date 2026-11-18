@@ -802,7 +802,14 @@ export default function DesktopAppHeader({
           )}
         </span>
         <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-        {currentDocumentDirty && <span className="desktop-app-document-identity-dirty-dot" aria-hidden="true" />}
+        {!isCloudDocument && !currentDocumentFileBacked && (currentDocumentDirty || saveState === "saved") && (
+          <span
+            className={`desktop-app-document-identity-dirty-dot${!currentDocumentDirty && saveState === "saved" ? " is-saved" : ""}`}
+            role="status"
+            aria-label={currentDocumentDirty ? "Local changes not saved yet" : "Saved locally on this device"}
+            title={currentDocumentDirty ? "Local changes not saved yet" : "Saved locally on this device"}
+          />
+        )}
         {!documentNameEditing && (
           <button
             type="button"
