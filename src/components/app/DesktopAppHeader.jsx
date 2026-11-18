@@ -715,7 +715,7 @@ export default function DesktopAppHeader({
         <div className="desktop-app-save-status-wrap">
           <button
             type="button"
-            className={`desktop-app-save-status-trigger is-${saveState}`}
+            className="desktop-app-save-status-trigger"
             aria-label="Download and save options"
             aria-haspopup="dialog"
             aria-expanded={saveDetailsOpen}
