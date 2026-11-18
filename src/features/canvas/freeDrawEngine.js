@@ -68,8 +68,8 @@ const previewStrokeWidth = (appState, pressure) => {
   return Math.max(0.5, strokeWidth * sizeFactor * zoom * pressureFactor);
 };
 
-function drawPreviewSegment(context, start, control, end, appState) {
-  const pressure = (control.pressure + end.pressure) / 2;
+function drawPreviewSegment(context, start, control1, control2, end, appState) {
+  const pressure = (control1.pressure + control2.pressure + end.pressure) / 3;
   context.save();
   context.globalAlpha = clamp((appState?.currentItemOpacity ?? 100) / 100, 0, 1);
   context.strokeStyle = appState?.currentItemStrokeColor || "#1e1e1e";
@@ -78,7 +78,14 @@ function drawPreviewSegment(context, start, control, end, appState) {
   context.lineJoin = "round";
   context.beginPath();
   context.moveTo(start.x, start.y);
-  context.quadraticCurveTo(control.x, control.y, end.x, end.y);
+  context.bezierCurveTo(
+    control1.x,
+    control1.y,
+    control2.x,
+    control2.y,
+    end.x,
+    end.y,
+  );
   context.stroke();
   context.restore();
 }
@@ -113,20 +120,30 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
     return;
   }
 
-  const control = previous;
-  const end = midpoint(previous, point);
-  const start = session.previewEnd || previous;
-  drawPreviewSegment(context, start, control, end, appState);
-  session.previewEnd = end;
+  const before = session.previewPoints[session.previewPoints.length - 3] || previous;
+  const control1 = session.previewPoints.length > 2
+    ? {
+        x: previous.x + (previous.x - before.x) / 6,
+        y: previous.y + (previous.y - before.y) / 6,
+        pressure: previous.pressure,
+      }
+    : previous;
+  const control2 = {
+    x: point.x - (point.x - previous.x) / 6,
+    y: point.y - (point.y - previous.y) / 6,
+    pressure: point.pressure,
+  };
+  // Each incremental cubic ends at the newest hardware sample, so curve
+  // interpolation never leaves the visible tip behind the pointer.
+  drawPreviewSegment(context, previous, control1, control2, point, appState);
+  session.previewEnd = point;
 }
 
 export function finishFreeDrawPreview(context, session, appState) {
   const last = session.previewPoints[session.previewPoints.length - 1];
   if (!last || !session.previewEnd) return;
-  const dx = last.x - session.previewEnd.x;
-  const dy = last.y - session.previewEnd.y;
-  if (dx * dx + dy * dy < 0.01) return;
-  drawPreviewSegment(context, session.previewEnd, last, last, appState);
+  // Preview segments already terminate at the newest pointer sample. There
+  // is no delayed midpoint tail to catch up on pointer-up.
 }
 
 export function createFreeDrawElementFromSamples(samples, appState) {
