@@ -181,3 +181,83 @@
   background: var(--ui-active, #303946);
 }
 .app.theme-dark .sketchizi-header-appearance-options button > small { color: var(--ui-text-muted, #a6afbd); }
+
+
+/* Keep the Canvas patterns panel synchronized with the active application theme.
+   The canvas theme class is applied to .app, so this updates immediately when
+   the user switches between light and dark mode without changing grid state. */
+.app.theme-light .sketchizi-header-grid-popover {
+  border-color: var(--ui-border, #dedede);
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text, #333);
+  box-shadow: var(--ui-shadow, 0 16px 42px rgba(0, 0, 0, .15));
+  color-scheme: light;
+}
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-heading strong,
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-modes > strong,
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-toggle > span:first-child,
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-options button > strong {
+  color: var(--ui-text-strong, #202020);
+}
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-heading small,
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-options button > small,
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-description {
+  color: var(--ui-text-muted, #777);
+}
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-options button {
+  border-color: var(--ui-border, #dedede);
+  background: var(--ui-surface-soft, #fafafa);
+  color: var(--ui-text, #333);
+}
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-options button:hover:not(:disabled) {
+  border-color: var(--ui-accent, #555a62);
+  background: var(--ui-hover, #f7f7f7);
+}
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-options button[aria-pressed="true"] {
+  border-color: var(--ui-accent, #555a62);
+  background: var(--ui-active, #f0f1f2);
+}
+.app.theme-light .sketchizi-header-grid-popover .sketchizi-header-grid-description {
+  border-color: var(--ui-border-soft, #eee);
+}
+.app.theme-light .sketchizi-header-grid-popover input {
+  color-scheme: light;
+}
+
+.app.theme-dark .sketchizi-header-grid-popover {
+  border-color: var(--ui-border, #34343a);
+  background: var(--ui-surface-solid, #1b1b1b);
+  color: var(--ui-text, #f2f2f4);
+  box-shadow: var(--ui-shadow, 0 16px 42px rgba(0, 0, 0, .42));
+  color-scheme: dark;
+}
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-heading strong,
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-modes > strong,
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-toggle > span:first-child,
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-options button > strong {
+  color: var(--ui-text-strong, #fff);
+}
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-heading small,
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-options button > small,
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-description {
+  color: var(--ui-text-muted, #a4a4ad);
+}
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-options button {
+  border-color: var(--ui-border, #34343a);
+  background: var(--ui-surface-soft, #222226);
+  color: var(--ui-text, #f2f2f4);
+}
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-options button:hover:not(:disabled) {
+  border-color: var(--ui-accent, #c3c6ca);
+  background: var(--ui-hover, #27272d);
+}
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-options button[aria-pressed="true"] {
+  border-color: var(--ui-accent, #c3c6ca);
+  background: var(--ui-active, #303236);
+}
+.app.theme-dark .sketchizi-header-grid-popover .sketchizi-header-grid-description {
+  border-color: var(--ui-border-soft, #2b2b30);
+}
+.app.theme-dark .sketchizi-header-grid-popover input {
+  color-scheme: dark;
+}
