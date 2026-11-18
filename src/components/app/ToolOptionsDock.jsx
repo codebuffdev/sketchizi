@@ -185,7 +185,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     // `index`, not from its position in the elements array. Reorder the
     // elements, then redistribute the existing ordered index values.
     const orderedElements = [...elements].sort((a, b) =>
-      String(a.index ?? "").localeCompare(String(b.index ?? "")),
+      (a.index ?? "") < (b.index ?? "") ? -1 : (a.index ?? "") > (b.index ?? "") ? 1 : 0,
     );
     const selectedLayerElements = orderedElements.filter((element) => selectedIds.has(element.id));
     const otherLayerElements = orderedElements.filter((element) => !selectedIds.has(element.id));
