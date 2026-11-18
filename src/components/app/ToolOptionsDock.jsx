@@ -230,6 +230,65 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     return ({ rectangle: "Rectangle", diamond: "Diamond", ellipse: "Ellipse", line: "Line", arrow: "Arrow", freedraw: "Pen", text: "Text", "bucket-fill": "Bucket fill", "draw-to-shape": "Draw to shape" })[tool] || "";
   }, [isSelection, selected.length, first?.type, tool]);
 
+  const layerControl = (
+          <div className="sk-tool-layer-control">
+            <button
+              type="button"
+              className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`}
+              aria-label="Layer order"
+              aria-haspopup="menu"
+              aria-expanded={layerMenuOpen}
+              disabled={!selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean)}
+              title={selected.length || editingTextElement?.id || Object.values(appState.selectedElementIds || {}).some(Boolean) ? "Layer order" : "Select an element to change layer order"}
+              ref={layerTriggerRef}
+              onClick={() => {
+                if (layerMenuOpen) {
+                  setLayerMenuOpen(false);
+                  return;
+                }
+                const rect = layerTriggerRef.current?.getBoundingClientRect();
+                if (rect) {
+                  setLayerMenuPosition({
+                    left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)),
+                    bottom: Math.max(8, window.innerHeight - rect.top + 9),
+                  });
+                }
+                setLayerMenuOpen(true);
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m12 3 8 4-8 4-8-4 8-4Z" />
+                <path d="m4 12 8 4 8-4M4 17l8 4 8-4" />
+              </svg>
+            </button>
+            {layerMenuOpen && layerMenuPosition && createPortal(
+              <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
+                <button type="button" role="menuitem" onClick={() => moveLayers("front")}>
+                  <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M7 6l5-4 5 4M4 15h16M4 20h16" /></svg></span>
+                  <span className="sk-tool-layer-action-label">Bring to front</span>
+                  <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>]</span></kbd>
+                </button>
+                <button type="button" role="menuitem" onClick={() => moveLayers("forward")}>
+                  <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6M4 5h16M4 19h16" /></svg></span>
+                  <span className="sk-tool-layer-action-label">Bring forward</span>
+                  <kbd><span>Ctrl</span><i>+</i><span>]</span></kbd>
+                </button>
+                <button type="button" role="menuitem" onClick={() => moveLayers("backward")}>
+                  <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M10 6l-6 6 6 6M4 5h16M4 19h16" /></svg></span>
+                  <span className="sk-tool-layer-action-label">Send backward</span>
+                  <kbd><span>Ctrl</span><i>+</i><span>[</span></kbd>
+                </button>
+                <button type="button" role="menuitem" onClick={() => moveLayers("back")}>
+                  <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h16M7 18l5 4 5-4M4 4h16M4 9h16" /></svg></span>
+                  <span className="sk-tool-layer-action-label">Send to back</span>
+                  <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>[</span></kbd>
+                </button>
+              </div>,
+              document.querySelector(".app") || document.body,
+            )}
+          </div>
+  );
+
   if (!isVisible) return null;
 
   return (
@@ -252,6 +311,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
         {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>{value === "solid" ? "■" : value === "hachure" ? "▨" : "▦"}</ToolButton>)}
       </DockGroup>}
+      {(isShape || isLine) && <DockGroup label="Layers">{layerControl}</DockGroup>}
       {isShape && <DockGroup label="Corners">
         <ToolButton active={!current("roundness", "currentItemRoundness", null)} title="Square corners" onClick={() => update({ roundness: null })}>□</ToolButton>
         <ToolButton active={Boolean(current("roundness", "currentItemRoundness", null))} title="Rounded corners" onClick={() => update({ roundness: { type: 3 } })}>▢</ToolButton>
@@ -265,62 +325,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </select>
       </DockGroup>}
       {isText && <DockGroup label="Text options">
-        <div className="sk-tool-layer-control">
-          <button
-            type="button"
-            className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`}
-            aria-label="Layer order"
-            aria-haspopup="menu"
-            aria-expanded={layerMenuOpen}
-            disabled={!selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean)}
-            title={selected.length || editingTextElement?.id || Object.values(appState.selectedElementIds || {}).some(Boolean) ? "Layer order" : "Select an element to change layer order"}
-            ref={layerTriggerRef}
-            onClick={() => {
-              if (layerMenuOpen) {
-                setLayerMenuOpen(false);
-                return;
-              }
-              const rect = layerTriggerRef.current?.getBoundingClientRect();
-              if (rect) {
-                setLayerMenuPosition({
-                  left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)),
-                  bottom: Math.max(8, window.innerHeight - rect.top + 9),
-                });
-              }
-              setLayerMenuOpen(true);
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m12 3 8 4-8 4-8-4 8-4Z" />
-              <path d="m4 12 8 4 8-4M4 17l8 4 8-4" />
-            </svg>
-          </button>
-          {layerMenuOpen && layerMenuPosition && createPortal(
-            <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
-              <button type="button" role="menuitem" onClick={() => moveLayers("front")}>
-                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M7 6l5-4 5 4M4 15h16M4 20h16" /></svg></span>
-                <span className="sk-tool-layer-action-label">Bring to front</span>
-                <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>]</span></kbd>
-              </button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}>
-                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6M4 5h16M4 19h16" /></svg></span>
-                <span className="sk-tool-layer-action-label">Bring forward</span>
-                <kbd><span>Ctrl</span><i>+</i><span>]</span></kbd>
-              </button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}>
-                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M10 6l-6 6 6 6M4 5h16M4 19h16" /></svg></span>
-                <span className="sk-tool-layer-action-label">Send backward</span>
-                <kbd><span>Ctrl</span><i>+</i><span>[</span></kbd>
-              </button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("back")}>
-                <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h16M7 18l5 4 5-4M4 4h16M4 9h16" /></svg></span>
-                <span className="sk-tool-layer-action-label">Send to back</span>
-                <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>[</span></kbd>
-              </button>
-            </div>,
-            document.querySelector(".app") || document.body,
-          )}
-        </div>
+        {layerControl}
         <label className="sk-tool-font-family" title="Change font family">
           <span className="sk-tool-font-family-current" aria-hidden="true">{FONT_FAMILIES.find(([value]) => value === fontFamily)?.[1] || "Helvetica"}</span>
           <svg className="sk-tool-font-family-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
