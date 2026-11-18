@@ -49,6 +49,7 @@ function DockGroup({ label, children }) {
 
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   const [customTool, setCustomTool] = useState(null);
+  const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   useEffect(() => {
     const handleCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
@@ -84,6 +85,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   }, [apiRef]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
+  useEffect(() => {
+    if (!layerMenuOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (!event.target?.closest?.(".sk-tool-layer-control")) setLayerMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", closeOnOutsideClick, true);
+    return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
+  }, [layerMenuOpen]);
   const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
@@ -156,6 +165,46 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   };
 
+  const moveLayers = (direction) => {
+    const api = apiRef?.current;
+    if (!api) return;
+    const elements = api.getSceneElements?.() || [];
+    const selectedIds = new Set(
+      Object.entries(api.getAppState?.()?.selectedElementIds || {})
+        .filter(([, isSelected]) => isSelected)
+        .map(([id]) => id),
+    );
+    selected.forEach((element) => selectedIds.add(element.id));
+    if (editingTextElement?.id) selectedIds.add(editingTextElement.id);
+    if (!selectedIds.size) return;
+
+    const selectedLayerElements = elements.filter((element) => selectedIds.has(element.id));
+    const otherLayerElements = elements.filter((element) => !selectedIds.has(element.id));
+    let reordered = elements;
+    if (direction === "front") reordered = [...otherLayerElements, ...selectedLayerElements];
+    if (direction === "back") reordered = [...selectedLayerElements, ...otherLayerElements];
+    if (direction === "forward") {
+      reordered = [...elements];
+      for (let index = reordered.length - 2; index >= 0; index -= 1) {
+        if (selectedIds.has(reordered[index].id) && !selectedIds.has(reordered[index + 1].id)) {
+          [reordered[index], reordered[index + 1]] = [reordered[index + 1], reordered[index]];
+        }
+      }
+    }
+    if (direction === "backward") {
+      reordered = [...elements];
+      for (let index = 1; index < reordered.length; index += 1) {
+        if (selectedIds.has(reordered[index].id) && !selectedIds.has(reordered[index - 1].id)) {
+          [reordered[index], reordered[index - 1]] = [reordered[index - 1], reordered[index]];
+        }
+      }
+    }
+    if (reordered.some((element, index) => element.id !== elements[index]?.id)) {
+      api.updateScene({ elements: reordered, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    }
+    setLayerMenuOpen(false);
+  };
+
   const title = useMemo(() => {
     if (isSelection) return selected.length > 1 ? `${selected.length} selected` : (first?.type || "Object");
     return ({ rectangle: "Rectangle", diamond: "Diamond", ellipse: "Ellipse", line: "Line", arrow: "Arrow", freedraw: "Pen", text: "Text", "bucket-fill": "Bucket fill", "draw-to-shape": "Draw to shape" })[tool] || "";
@@ -196,12 +245,35 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </select>
       </DockGroup>}
       {isText && <DockGroup label="Text options">
-        <label className="sk-tool-font-family" title="Font family">
+        <div className="sk-tool-layer-control">
+          <button
+            type="button"
+            className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`}
+            aria-label="Layer order"
+            aria-haspopup="menu"
+            aria-expanded={layerMenuOpen}
+            title="Layer order"
+            onClick={() => setLayerMenuOpen((open) => !open)}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m12 3 8 4-8 4-8-4 8-4Z" />
+              <path d="m4 12 8 4 8-4M4 17l8 4 8-4" />
+            </svg>
+          </button>
+          {layerMenuOpen && <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order">
+            <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span>Bring to front</span><kbd>Ctrl+Shift+]</kbd></button>
+            <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span>Bring forward</span><kbd>Ctrl+]</kbd></button>
+            <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span>Send backward</span><kbd>Ctrl+[</kbd></button>
+            <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span>Send to back</span><kbd>Ctrl+Shift+[</kbd></button>
+          </div>}
+        </div>
+        <div className="sk-tool-font-family" title="Font family">
           <span className="sk-tool-font-family-preview" aria-hidden="true">Aa</span>
+          <span className="sk-tool-font-family-current" aria-hidden="true">{FONT_FAMILIES.find(([value]) => value === fontFamily)?.[1] || "Helvetica"}</span>
           <select className="sk-tool-font-family-select" aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
-          {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
-        </label>
+        </div>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
           <button type="button" className="sk-tool-text-size-step" aria-label="Decrease font size" title="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
           <label className="sk-tool-text-size-input">
