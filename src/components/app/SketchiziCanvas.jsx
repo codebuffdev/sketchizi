@@ -880,6 +880,35 @@ export default function SketchiziCanvas({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [apiRef, canEdit, viewModeEnabled]);
 
+  // Toggle the native Primary Dock itself when contextual controls mount.
+  // Use DOM presence rather than CSS :has() ancestry so this also works if the
+  // contextual dock is rendered through a portal elsewhere in the app shell.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root) return undefined;
+    const syncDockVisibility = () => {
+      const contextualDock = document.querySelector(".sketchizi-tool-options-dock");
+      const primaryDock = root.querySelector(".App-toolbar-container");
+      if (!primaryDock) return;
+      const replacing = !!contextualDock;
+      primaryDock.style.setProperty("display", replacing ? "none" : "", "important");
+      primaryDock.setAttribute("aria-hidden", String(replacing));
+      primaryDock.inert = replacing;
+    };
+    const observer = new MutationObserver(syncDockVisibility);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    syncDockVisibility();
+    return () => {
+      observer.disconnect();
+      const primaryDock = root.querySelector(".App-toolbar-container");
+      if (primaryDock) {
+        primaryDock.style.removeProperty("display");
+        primaryDock.removeAttribute("aria-hidden");
+        primaryDock.inert = false;
+      }
+    };
+  }, []);
+
   const updateCursorFromPointer = (event) => {
     const target = event.target;
     if (!(target instanceof Element) || !target.closest("canvas")) {
