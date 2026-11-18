@@ -52,8 +52,17 @@
 }
 .app .sketchizi-tool-options-dock.is-expanded {
   max-width: min(calc(100vw - 24px), 900px);
+  max-height: min(58vh, 440px);
+  overflow-x: hidden;
+  overflow-y: auto;
   flex-wrap: wrap;
+  align-content: flex-end;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   z-index: 1200;
+  /* The compact dock's anchor is already at the canvas bottom. Grow upward
+     from that anchor so expanded rows cannot disappear below the canvas. */
+  transform: translateY(calc(-100% + 44px));
 }
 .app .sketchizi-tool-options-dock.is-expanded .sk-tool-dock-expand {
   background: rgb(127 135 155 / 12%);
@@ -67,9 +76,10 @@
   }
   .app .sketchizi-tool-options-dock.is-expanded {
     max-width: calc(100vw - 16px);
-    max-height: min(48vh, 320px);
+    max-height: min(58vh, 360px);
     overflow-y: auto;
     flex-wrap: wrap;
+    transform: translateY(calc(-100% + 42px));
   }
 }
 @media (prefers-reduced-motion: reduce) {
