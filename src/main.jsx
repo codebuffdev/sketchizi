@@ -18,6 +18,7 @@ if (typeof window !== "undefined") {
   });
 }
 
+import "./features/canvas/registerKalamFonts.js";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import "@excalidraw/excalidraw/index.css";

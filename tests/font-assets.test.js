@@ -63,6 +63,8 @@ test("supported non-default fontFamily values and other text properties survive 
     { name: "Nunito", id: 6 },
     { name: "Lilita One", id: 7 },
     { name: "Comic Shanns", id: 8 },
+    { name: "Kalam", id: 4 },
+    { name: "Kalam Bold", id: 11 },
   ];
   const elements = fontFamilies.map(({ name, id }, index) => ({
     id: `font-${index}`,
