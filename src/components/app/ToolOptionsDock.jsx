@@ -48,6 +48,18 @@ function DockGroup({ label, children }) {
   return <div className="sk-tool-dock-group" role="group" aria-label={label}>{children}</div>;
 }
 
+function DockSelect({ label, value, onChange, icon, children }) {
+  return (
+    <label className="sk-tool-icon-select" title={label}>
+      <span className="sk-tool-icon-select-preview" aria-hidden="true">{icon}</span>
+      <svg className="sk-tool-icon-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+      <select aria-label={label} value={value} onChange={onChange}>
+        {children}
+      </select>
+    </label>
+  );
+}
+
 function OptionGlyph({ kind, value }) {
   if (kind === "line-style") {
     return <svg viewBox="0 0 36 20" aria-hidden="true"><path d="M3 10h30" strokeDasharray={value === "dashed" ? "6 4" : value === "dotted" ? "1 4" : undefined} strokeLinecap="round" /></svg>;
