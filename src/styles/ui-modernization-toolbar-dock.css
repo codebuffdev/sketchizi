@@ -2951,3 +2951,8 @@
   background: #f2f4f6;
   color: #59636e;
 }
+
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
