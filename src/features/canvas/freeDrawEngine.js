@@ -169,6 +169,13 @@ export function createFreeDrawElementFromSamples(samples, appState) {
       y: scenePoints[0].y + 0.0001,
       pressure: scenePoints[0].pressure,
     });
+  } else if (scenePoints.every((point) =>
+    point.x === scenePoints[0].x && point.y === scenePoints[0].y
+  )) {
+    // Match Excalidraw's tiny non-zero endpoint for a stationary tap.
+    const last = scenePoints[scenePoints.length - 1];
+    last.x += 0.0001;
+    last.y += 0.0001;
   }
 
   let minX = Infinity;
