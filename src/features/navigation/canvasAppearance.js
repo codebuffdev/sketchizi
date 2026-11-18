@@ -40,10 +40,12 @@ export function getCanvasAppearanceBackground(appearance, isDarkTheme) {
   return getCanvasBackground(isDarkTheme);
 }
 
-export function getCanvasAppearanceFromBackground(background, currentItemRoughness = 0) {
+export function getCanvasAppearanceFromBackground(background) {
   const normalized = String(background || "").trim().toLowerCase();
   if (normalized === getCanvasAppearanceBackground("chalkboard", false)) return "chalkboard";
-  return Number(currentItemRoughness) >= 2 ? "sketch" : "clean";
+  // Drawing roughness belongs to the separate Architect / Artist /
+  // Cartoonist environment setting, not to the canvas surface appearance.
+  return "clean";
 }
 
 export function applyCanvasAppearance(
@@ -62,8 +64,8 @@ export function applyCanvasAppearance(
   ].some((color) => String(color).trim().toLowerCase() === currentBackground);
   const nextAppState = {};
 
-  // Sketch changes drawing style across the whole canvas, not its surface.
-  // Only replace the warm-paper background left by the earlier implementation.
+  // Canvas appearance controls only the surface. Drawing roughness is managed
+  // independently by the selected drawing environment.
   if (appearance === "chalkboard" || appearance === "clean" || isLegacySketchBackground) {
     nextAppState.viewBackgroundColor = appearance === "sketch"
       ? getCanvasBackground(isDarkTheme)
