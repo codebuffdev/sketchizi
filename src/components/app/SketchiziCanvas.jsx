@@ -143,6 +143,14 @@ export default function SketchiziCanvas({
       if (!canEdit || viewModeEnabled || !isDrawingCanvas(event.target) ||
         (event.pointerType === "mouse" && event.button !== 0)) return;
       drawingPointerRef.current = event.pointerId;
+      // A local drawing gesture has no need to publish this user's remote
+      // cursor. Cancel any queued presence update so it cannot compete with
+      // the active pointer stream.
+      pendingCollaborationCursorRef.current = null;
+      if (collaborationCursorFrameRef.current) {
+        cancelAnimationFrame(collaborationCursorFrameRef.current);
+        collaborationCursorFrameRef.current = 0;
+      }
       const rect = root.getBoundingClientRect();
       workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
       schedulePaint();
@@ -925,6 +933,8 @@ export default function SketchiziCanvas({
   // presence. This keeps remote-cursor work to at most one update per frame
   // and avoids competing with Excalidraw's time-critical pen event handling.
   const updateCursorFromPointer = (event) => {
+    // Prioritize the local stroke over collaboration presence while drawing.
+    if (drawingPointerRef.current !== null) return;
     const target = event.target;
     pendingCollaborationCursorRef.current = target instanceof Element && target.closest("canvas")
       ? { clientX: event.clientX, clientY: event.clientY, onCanvas: true }
