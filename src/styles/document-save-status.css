@@ -494,3 +494,17 @@
   background: #45c48b;
   box-shadow: 0 0 0 3px rgba(69, 196, 139, .18);
 }
+
+.desktop-app-document-identity-dirty-dot.is-pending,
+.desktop-app-document-identity-dirty-dot.is-saving {
+  background: #d97706;
+}
+.desktop-app-document-identity-dirty-dot.is-error {
+  background: #d34b4b;
+  box-shadow: 0 0 0 3px rgba(211, 75, 75, .14);
+  animation: none;
+}
+.app.theme-dark .desktop-app-document-identity-dirty-dot.is-error {
+  background: #f07878;
+  box-shadow: 0 0 0 3px rgba(240, 120, 120, .18);
+}
