@@ -248,7 +248,7 @@ export default function SketchiziCanvas({
   }, []);
 
   // Keep the contextual dock in the Primary Dock's bottom-center slot.
-  // When it is mounted, CSS hides the Primary Dock so the two never overlap.
+  // The Primary Dock is removed from layout while contextual controls are mounted.
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root) return undefined;
@@ -880,9 +880,7 @@ export default function SketchiziCanvas({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [apiRef, canEdit, viewModeEnabled]);
 
-  // Toggle the native Primary Dock itself when contextual controls mount.
-  // Use DOM presence rather than CSS :has() ancestry so this also works if the
-  // contextual dock is rendered through a portal elsewhere in the app shell.
+  // Swap the Primary Dock out of the layout whenever contextual controls appear.
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root) return undefined;
