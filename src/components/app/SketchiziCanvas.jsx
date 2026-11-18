@@ -34,6 +34,72 @@ export default function SketchiziCanvas({
   const workAnchorRef = useRef(null);
   const spotlightSelectedRef = useRef(selectedElements);
   spotlightSelectedRef.current = selectedElements;
+  const [dockMode, setDockMode] = useState("primary");
+  const drawingGestureRef = useRef(false);
+  const completedDrawingRef = useRef(false);
+  const suppressSelectionDockRef = useRef(false);
+
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root) return undefined;
+    const isCanvasTarget = (target) => target instanceof Element && !!target.closest("canvas.excalidraw__canvas.interactive");
+    const activeTool = () => String(apiRef?.current?.getAppState?.()?.activeTool?.type || "selection").toLowerCase();
+    const onPointerDown = (event) => {
+      if (!canEdit || viewModeEnabled || !isCanvasTarget(event.target)) return;
+      if (activeTool() !== "selection" && activeTool() !== "hand") {
+        drawingGestureRef.current = true;
+        return;
+      }
+      suppressSelectionDockRef.current = false;
+      if (selectedElements.some((element) => element && !element.isDeleted && !element.deleted)) {
+        setDockMode("contextual");
+      }
+    };
+    const onPointerUp = () => {
+      if (!drawingGestureRef.current) return;
+      drawingGestureRef.current = false;
+      completedDrawingRef.current = true;
+      suppressSelectionDockRef.current = true;
+      setDockMode("primary");
+    };
+    const onToolbarClick = (event) => {
+      if (!event.target?.closest?.(".App-toolbar")) return;
+      completedDrawingRef.current = false;
+      suppressSelectionDockRef.current = false;
+    };
+    const onCustomTool = () => {
+      completedDrawingRef.current = false;
+      suppressSelectionDockRef.current = false;
+      setDockMode("contextual");
+    };
+    root.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointerup", onPointerUp, true);
+    window.addEventListener("pointercancel", onPointerUp, true);
+    root.addEventListener("click", onToolbarClick, true);
+    window.addEventListener("sketchizi:activate-tool", onCustomTool);
+    return () => {
+      root.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
+      root.removeEventListener("click", onToolbarClick, true);
+      window.removeEventListener("sketchizi:activate-tool", onCustomTool);
+    };
+  }, [apiRef, canEdit, selectedElements, viewModeEnabled]);
+
+  useEffect(() => {
+    if (!canEdit || viewModeEnabled) {
+      setDockMode("primary");
+      return;
+    }
+    const activeTool = String(apiRef?.current?.getAppState?.()?.activeTool?.type || "selection").toLowerCase();
+    if (!completedDrawingRef.current && !["selection", "hand"].includes(activeTool)) {
+      setDockMode("contextual");
+      return;
+    }
+    const hasSelection = selectedElements.some((element) => element && !element.isDeleted && !element.deleted);
+    if (hasSelection && !suppressSelectionDockRef.current) setDockMode("contextual");
+    else if (!hasSelection && activeTool === "selection") setDockMode("primary");
+  }, [apiRef, canvasRevision, canEdit, selectedElements, viewModeEnabled]);
 
   const paintWorkspaceGrid = useCallback(() => {
     const root = canvasRootRef.current;
@@ -851,7 +917,7 @@ export default function SketchiziCanvas({
   const activeAppearance = ["sketch", "clean", "chalkboard"].includes(canvasAppearance) ? canvasAppearance : "clean";
 
   return (
-    <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
+    <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} data-sketchizi-dock-mode={dockMode} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
         initialData={{
@@ -879,7 +945,7 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} />
+      <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} dockMode={dockMode} />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <RectangleTitles
