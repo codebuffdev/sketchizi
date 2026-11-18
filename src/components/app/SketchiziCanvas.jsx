@@ -14,6 +14,7 @@ import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.
 import { applyMarkdownListEdit, getMarkdownListEdit } from "../../features/canvas/markdownListShortcuts.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
+import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -25,8 +26,11 @@ export default function SketchiziCanvas({
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
 }) {
   const canvasRootRef = useRef(null);
+  const collaborationCursorFrameRef = useRef(0);
+  const pendingCollaborationCursorRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const canvasRevisionFrameRef = useRef(0);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
@@ -140,23 +144,30 @@ export default function SketchiziCanvas({
       if (!canEdit || viewModeEnabled || !isDrawingCanvas(event.target) ||
         (event.pointerType === "mouse" && event.button !== 0)) return;
       drawingPointerRef.current = event.pointerId;
+      // A local drawing gesture has no need to publish this user's remote
+      // cursor. Cancel any queued presence update so it cannot compete with
+      // the active pointer stream.
+      pendingCollaborationCursorRef.current = null;
+      if (collaborationCursorFrameRef.current) {
+        cancelAnimationFrame(collaborationCursorFrameRef.current);
+        collaborationCursorFrameRef.current = 0;
+      }
       const rect = root.getBoundingClientRect();
       workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
       schedulePaint();
     };
-    const onPointerMove = (event) => {
-      // Never move or show detail for plain hover. Only an active gesture
-      // can update the work anchor.
-      if (drawingPointerRef.current === null || drawingPointerRef.current !== event.pointerId) return;
-      const rect = root.getBoundingClientRect();
-      workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-      schedulePaint();
-    };
+    // Do not recalculate the workspace focus grid on every pen sample.
+    // The focus anchor is captured at pointer-down and refreshed after the
+    // gesture ends; Excalidraw owns the time-critical drawing pointer stream.
+
     const onPointerEnd = (event) => {
       if (drawingPointerRef.current !== event.pointerId) return;
       drawingPointerRef.current = null;
       workAnchorRef.current = null;
       schedulePaint();
+      // Publish one settled revision after the gesture, not one React render
+      // for every intermediate freehand sample.
+      setCanvasRevision((revision) => revision + 1);
     };
     const isTextEditor = (event) =>
       event.target instanceof Element &&
@@ -192,7 +203,7 @@ export default function SketchiziCanvas({
     observer.observe(root, { childList: true, subtree: true });
     attach();
     root.addEventListener("pointerdown", onPointerDown, true);
-    root.addEventListener("pointermove", onPointerMove, { passive: true });
+
     window.addEventListener("pointerup", onPointerEnd, true);
     window.addEventListener("pointercancel", onPointerEnd, true);
     root.addEventListener("focusin", onTextFocus, true);
@@ -203,7 +214,7 @@ export default function SketchiziCanvas({
     return () => {
       observer.disconnect();
       root.removeEventListener("pointerdown", onPointerDown, true);
-      root.removeEventListener("pointermove", onPointerMove);
+
       window.removeEventListener("pointerup", onPointerEnd, true);
       window.removeEventListener("pointercancel", onPointerEnd, true);
       root.removeEventListener("focusin", onTextFocus, true);
@@ -213,6 +224,8 @@ export default function SketchiziCanvas({
       window.removeEventListener("resize", schedulePaint);
       if (dropTimer !== null) window.clearTimeout(dropTimer);
       if (frame) cancelAnimationFrame(frame);
+      if (canvasRevisionFrameRef.current) cancelAnimationFrame(canvasRevisionFrameRef.current);
+      canvasRevisionFrameRef.current = 0;
       layer?.remove();
       if (spotlightNodeRef.current === layer) spotlightNodeRef.current = null;
       drawingPointerRef.current = null;
@@ -221,12 +234,236 @@ export default function SketchiziCanvas({
     };
   }, [canEdit, viewModeEnabled, paintWorkspaceGrid]);
 
+  // Free-draw uses a dedicated input/render path rather than Excalidraw's
+  // per-pointermove React state + full-stroke outline regeneration. Capture
+  // high-frequency samples, paint an incremental Bézier preview, then
+  // commit one native Excalidraw free-draw element on pointer-up.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root || !canEdit || viewModeEnabled) return undefined;
+
+    let previewCanvas = null;
+    let previewContext = null;
+    let clearFrame = 0;
+    let session = null;
+
+    const clearPreview = () => {
+      if (!previewContext || !previewCanvas) return;
+      previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    };
+
+    const redrawPreview = () => {
+      if (!session || !previewContext) return;
+      clearPreview();
+      session.previewPoints = [];
+      // The preview canvas is viewport-fixed, so client coordinates map
+      // directly to its CSS pixel coordinate space.
+      const rect = { left: 0, top: 0 };
+      for (const sample of session.samples) {
+        drawFreeDrawPreviewSample(previewContext, session, sample, session.appState, rect);
+      }
+    };
+
+    const resizePreview = () => {
+      if (!previewCanvas) return;
+      const width = document.documentElement.clientWidth || window.innerWidth;
+      const height = document.documentElement.clientHeight || window.innerHeight;
+      const ratio = Math.max(1, window.devicePixelRatio || 1);
+      previewCanvas.width = Math.max(1, Math.round(width * ratio));
+      previewCanvas.height = Math.max(1, Math.round(height * ratio));
+      previewCanvas.style.width = `${width}px`;
+      previewCanvas.style.height = `${height}px`;
+      previewContext = previewCanvas.getContext("2d", { alpha: true });
+      previewContext?.setTransform(ratio, 0, 0, ratio, 0, 0);
+      redrawPreview();
+    };
+
+    const attachPreview = () => {
+      if (previewCanvas?.parentElement === document.body) return;
+      previewCanvas?.remove();
+      previewCanvas = document.createElement("canvas");
+      previewCanvas.className = "sketchizi-free-draw-preview";
+      previewCanvas.setAttribute("aria-hidden", "true");
+      Object.assign(previewCanvas.style, {
+        position: "fixed",
+        inset: "0 auto auto 0",
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        display: "block",
+        visibility: "visible",
+        opacity: "1",
+        zIndex: "2147483647",
+        transform: "translateZ(0)",
+      });
+      document.body.appendChild(previewCanvas);
+      resizePreview();
+    };
+
+    const appendSamples = (activeSession, event) => {
+      if (!previewContext) return;
+      const rect = { left: 0, top: 0 };
+      for (const sample of getPointerEventSamples(event)) {
+        const previous = activeSession.samples[activeSession.samples.length - 1];
+        if (
+          previous &&
+          previous.clientX === sample.clientX &&
+          previous.clientY === sample.clientY &&
+          previous.pressure === sample.pressure
+        ) {
+          continue;
+        }
+        activeSession.samples.push(sample);
+        drawFreeDrawPreviewSample(previewContext, activeSession, sample, activeSession.appState, rect);
+      }
+    };
+
+    const stopNativeEvent = (event) => {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      event.stopImmediatePropagation?.();
+    };
+
+    const onPointerDown = (event) => {
+      if (session || event.button !== 0 || event.isPrimary === false) return;
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest("canvas.excalidraw__canvas.interactive")) return;
+
+      const api = apiRef?.current;
+      const appState = api?.getAppState?.();
+      if (!api?.updateScene || appState?.activeTool?.type !== "freedraw") return;
+
+      attachPreview();
+      if (!previewContext) return;
+
+      if (clearFrame) {
+        cancelAnimationFrame(clearFrame);
+        clearFrame = 0;
+      }
+      clearPreview();
+      session = {
+        pointerId: event.pointerId,
+        useRaw: event.pointerType === "pen" && "onpointerrawupdate" in window,
+        receivedRaw: false,
+        appState,
+        pointerType: event.pointerType || "mouse",
+        simulatePressure: event.pressure === 0.5,
+        samples: [],
+        previewPoints: [],
+      };
+
+      try {
+        target.setPointerCapture?.(event.pointerId);
+      } catch {
+        // Window-level listeners still track the active pointer when capture
+        // is unavailable (for example, on older browser implementations).
+      }
+      appendSamples(session, event);
+      stopNativeEvent(event);
+    };
+
+    const onPointerMove = (event) => {
+      if (!session || event.pointerId !== session.pointerId) return;
+      stopNativeEvent(event);
+      if (session.useRaw && session.receivedRaw) return;
+      // Some browsers expose the raw-update property but do not emit the
+      // event for a particular pointer. Fall back to coalesced pointermove.
+      if (session.useRaw) session.useRaw = false;
+      appendSamples(session, event);
+    };
+
+    const onPointerRawUpdate = (event) => {
+      if (!session || event.pointerId !== session.pointerId) return;
+      stopNativeEvent(event);
+      if (!session.useRaw) return;
+      session.receivedRaw = true;
+      appendSamples(session, event);
+    };
+
+    const finishStroke = (event) => {
+      if (!session || event.pointerId !== session.pointerId) return;
+      const completed = session;
+      stopNativeEvent(event);
+      appendSamples(completed, event);
+
+      try {
+        const element = createFreeDrawElementFromSamples(completed.samples, completed.appState);
+        const api = apiRef?.current;
+        if (element && api?.updateScene) {
+          const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+          api.updateScene({
+            elements: [...existing, element],
+            captureUpdate: "IMMEDIATELY",
+          });
+        }
+      } catch (error) {
+        console.error("[Sketchizi] Free-draw commit failed:", error);
+      }
+
+      session = null;
+      if (clearFrame) cancelAnimationFrame(clearFrame);
+      // Let Excalidraw paint the committed scene before removing the preview.
+      clearFrame = requestAnimationFrame(() => {
+        clearFrame = requestAnimationFrame(() => {
+          clearFrame = 0;
+          if (!session) clearPreview();
+        });
+      });
+    };
+
+    const onWindowBlur = () => {
+      if (session) finishStroke({ pointerId: session.pointerId });
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && session) {
+        finishStroke({ pointerId: session.pointerId });
+      }
+    };
+
+    attachPreview();
+    root.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointermove", onPointerMove, true);
+    window.addEventListener("pointerrawupdate", onPointerRawUpdate, true);
+    window.addEventListener("pointerup", finishStroke, true);
+    window.addEventListener("pointercancel", finishStroke, true);
+    window.addEventListener("blur", onWindowBlur);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("resize", resizePreview, { passive: true });
+
+    return () => {
+      root.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerrawupdate", onPointerRawUpdate, true);
+      window.removeEventListener("pointerup", finishStroke, true);
+      window.removeEventListener("pointercancel", finishStroke, true);
+      window.removeEventListener("blur", onWindowBlur);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("resize", resizePreview);
+      if (clearFrame) cancelAnimationFrame(clearFrame);
+      previewCanvas?.remove();
+      session = null;
+    };
+  }, [apiRef, canEdit, viewModeEnabled]);
+
   const handleSceneChange = useCallback((elements, appState, files) => {
-    setCanvasRevision((revision) => revision + 1);
+    // Excalidraw can emit many scene changes during a single freehand gesture.
+    // Avoid driving a React render (and grid/overlay recalculation) for every
+    // point. While drawing, pointer-up publishes the settled revision.
+    if (drawingPointerRef.current === null && !canvasRevisionFrameRef.current) {
+      canvasRevisionFrameRef.current = requestAnimationFrame(() => {
+        canvasRevisionFrameRef.current = 0;
+        setCanvasRevision((revision) => revision + 1);
+      });
+    }
     handleChange?.(elements, appState, files);
-  }, [canEdit, handleChange, viewModeEnabled, onGridVisibilityChange]);
+  }, [handleChange]);
   const handleViewportChange = useCallback((...args) => {
-    setCanvasRevision((revision) => revision + 1);
+    if (!canvasRevisionFrameRef.current) {
+      canvasRevisionFrameRef.current = requestAnimationFrame(() => {
+        canvasRevisionFrameRef.current = 0;
+        setCanvasRevision((revision) => revision + 1);
+      });
+    }
     onViewportChange?.(...args);
   }, [onViewportChange]);
   const registerExcalidrawAPI = useCallback((api) => {
@@ -828,17 +1065,14 @@ export default function SketchiziCanvas({
     syncNavigationControls();
     observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
-    const repositionOnPointerMove = () => placeScrollBackControl();
-    window.addEventListener("resize", repositionOnPointerMove);
-    window.addEventListener("pointermove", repositionOnPointerMove, { passive: true });
+    window.addEventListener("resize", placeScrollBackControl);
     const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
     tooltipObserver.observe(document.body, { childList: true, subtree: true });
     suppressNativeScrollBackTooltip();
     return () => {
       disposed = true;
       observer?.disconnect();
-      window.removeEventListener("resize", repositionOnPointerMove);
-      window.removeEventListener("pointermove", repositionOnPointerMove);
+      window.removeEventListener("resize", placeScrollBackControl);
       tooltipObserver.disconnect();
       root.querySelectorAll(".sketchizi-scroll-back-control").forEach((button) => {
         button.classList.remove("sketchizi-scroll-back-control");
@@ -907,18 +1141,45 @@ export default function SketchiziCanvas({
     };
   }, []);
 
+  // Coalesce high-frequency pointer events before updating collaboration
+  // presence. This keeps remote-cursor work to at most one update per frame
+  // and avoids competing with Excalidraw's time-critical pen event handling.
   const updateCursorFromPointer = (event) => {
+    // Prioritize the local stroke over collaboration presence while drawing.
+    if (drawingPointerRef.current !== null) return;
     const target = event.target;
-    if (!(target instanceof Element) || !target.closest("canvas")) {
-      updateCollaborationCursor?.(null);
-      return;
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    updateCollaborationCursor?.({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+    pendingCollaborationCursorRef.current = target instanceof Element && target.closest("canvas")
+      ? { clientX: event.clientX, clientY: event.clientY, onCanvas: true }
+      : { onCanvas: false };
+    if (collaborationCursorFrameRef.current) return;
+    collaborationCursorFrameRef.current = requestAnimationFrame(() => {
+      collaborationCursorFrameRef.current = 0;
+      const pending = pendingCollaborationCursorRef.current;
+      pendingCollaborationCursorRef.current = null;
+      if (!pending?.onCanvas) {
+        updateCollaborationCursor?.(null);
+        return;
+      }
+      const root = canvasRootRef.current;
+      if (!root) return;
+      const rect = root.getBoundingClientRect();
+      updateCollaborationCursor?.({ x: pending.clientX - rect.left, y: pending.clientY - rect.top });
+    });
   };
   const clearRemoteCursor = () => {
+    pendingCollaborationCursorRef.current = null;
+    if (collaborationCursorFrameRef.current) {
+      cancelAnimationFrame(collaborationCursorFrameRef.current);
+      collaborationCursorFrameRef.current = 0;
+    }
     updateCollaborationCursor?.(null);
   };
+
+  useEffect(() => () => {
+    if (collaborationCursorFrameRef.current) cancelAnimationFrame(collaborationCursorFrameRef.current);
+    collaborationCursorFrameRef.current = 0;
+    pendingCollaborationCursorRef.current = null;
+  }, []);
   const visibleSceneElements = apiRef?.current?.getSceneElements?.() || savedSketch?.elements || [];
   const isCanvasEmpty = visibleSceneElements.every((element) => element?.isDeleted || element?.deleted);
   const activeAppearance = ["sketch", "clean", "chalkboard"].includes(canvasAppearance) ? canvasAppearance : "clean";

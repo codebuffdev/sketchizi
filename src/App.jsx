@@ -770,10 +770,15 @@ function App() {
 
   // Save the live background with the scene instead of forcing a theme color.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
+    // Excalidraw emits intermediate onChange snapshots for every freehand
+    // pointer sample. Defer scene analysis, collaboration broadcasts, minimap
+    // updates and persistence until the completed stroke callback arrives.
+    // Keeping that work out of the pointer stream reduces pen latency.
+    if (appState?.newElement?.type === "freedraw") return;
     syncStartupChooser(elements, false, appState);
     handleExcalidrawChange(elements, appState);
     if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
-  }, [apiRef, cloudDiagramId, handleExcalidrawChange, queueSketchSave, syncStartupChooser]);
+  }, [cloudDiagramId, handleExcalidrawChange, queueSketchSave, syncStartupChooser]);
 
   const chooseStartupCanvas = useCallback((mode) => {
     startupChoiceMadeRef.current = true;
