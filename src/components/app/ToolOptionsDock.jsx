@@ -177,7 +177,7 @@ function OptionGlyph({ kind, value }) {
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
   return <DockChoiceMenu label={label} value={value} onChange={onChange} options={options} kind={kind} />;
 }
-export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
+export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true, dockMode = "primary" }) {
   const [customTool, setCustomTool] = useState(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
@@ -242,7 +242,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const isAutoShape = type === "draw-to-shape";
   const supported = isShape || isLine || isDraw || isText || isFill || isAutoShape;
   const isSelection = selected.length > 0 || Boolean(isText && editingTextElement?.id);
-  const isVisible = canEdit && (isSelection ? supported || selected.length > 1 : supported);
+  const isVisible = canEdit && dockMode === "contextual" && (isSelection ? supported || selected.length > 1 : supported);
   const first = selected[0] || editingTextElement;
 
   const current = (elementKey, appKey, fallback) => isSelection
