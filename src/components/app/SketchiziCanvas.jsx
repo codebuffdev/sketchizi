@@ -25,6 +25,8 @@ export default function SketchiziCanvas({
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
 }) {
   const canvasRootRef = useRef(null);
+  const collaborationCursorFrameRef = useRef(0);
+  const pendingCollaborationCursorRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
   const canvasRevisionFrameRef = useRef(0);
@@ -919,18 +921,43 @@ export default function SketchiziCanvas({
     };
   }, []);
 
+  // Coalesce high-frequency pointer events before updating collaboration
+  // presence. This keeps remote-cursor work to at most one update per frame
+  // and avoids competing with Excalidraw's time-critical pen event handling.
   const updateCursorFromPointer = (event) => {
     const target = event.target;
-    if (!(target instanceof Element) || !target.closest("canvas")) {
-      updateCollaborationCursor?.(null);
-      return;
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    updateCollaborationCursor?.({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+    pendingCollaborationCursorRef.current = target instanceof Element && target.closest("canvas")
+      ? { clientX: event.clientX, clientY: event.clientY, onCanvas: true }
+      : { onCanvas: false };
+    if (collaborationCursorFrameRef.current) return;
+    collaborationCursorFrameRef.current = requestAnimationFrame(() => {
+      collaborationCursorFrameRef.current = 0;
+      const pending = pendingCollaborationCursorRef.current;
+      pendingCollaborationCursorRef.current = null;
+      if (!pending?.onCanvas) {
+        updateCollaborationCursor?.(null);
+        return;
+      }
+      const root = canvasRootRef.current;
+      if (!root) return;
+      const rect = root.getBoundingClientRect();
+      updateCollaborationCursor?.({ x: pending.clientX - rect.left, y: pending.clientY - rect.top });
+    });
   };
   const clearRemoteCursor = () => {
+    pendingCollaborationCursorRef.current = null;
+    if (collaborationCursorFrameRef.current) {
+      cancelAnimationFrame(collaborationCursorFrameRef.current);
+      collaborationCursorFrameRef.current = 0;
+    }
     updateCollaborationCursor?.(null);
   };
+
+  useEffect(() => () => {
+    if (collaborationCursorFrameRef.current) cancelAnimationFrame(collaborationCursorFrameRef.current);
+    collaborationCursorFrameRef.current = 0;
+    pendingCollaborationCursorRef.current = null;
+  }, []);
   const visibleSceneElements = apiRef?.current?.getSceneElements?.() || savedSketch?.elements || [];
   const isCanvasEmpty = visibleSceneElements.every((element) => element?.isDeleted || element?.deleted);
   const activeAppearance = ["sketch", "clean", "chalkboard"].includes(canvasAppearance) ? canvasAppearance : "clean";
