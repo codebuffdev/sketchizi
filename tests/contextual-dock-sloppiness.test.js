@@ -45,7 +45,7 @@ test("all contextual setting dropdowns are icon-only custom menus", () => {
   assert.match(dock, /function DockSelect\(\{ label, value, onChange, icon, children \}\)/);
   assert.match(dock, /role="listbox" aria-label=\{label\}/);
   assert.match(dock, /role="option"/);
-  assert.doesNotMatch(dock.slice(dock.indexOf("function DockSelect("), dock.indexOf("\\nfunction OptionGlyph")), /<select/);
+  assert.doesNotMatch(dock.slice(dock.indexOf("function DockSelect("), dock.indexOf("\nfunction OptionGlyph")), /<select/);
   for (const label of ["Stroke width", "Fill style", "Corners", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
     assert.ok(dock.includes(`label="${label}"`), `missing icon dropdown for ${label}`);
   }
