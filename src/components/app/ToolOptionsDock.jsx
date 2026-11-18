@@ -305,6 +305,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       </DockGroup>}
       {!isText && !isFill && <DockGroup label="Stroke width">
         <select aria-label="Stroke width" title="Stroke width" value={strokeWidth} onChange={(event) => update({ strokeWidth: Number(event.target.value) })}>
+          {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth} px</option>}
           {WIDTHS.map((width) => <option key={width} value={width}>{width} px</option>)}
         </select>
       </DockGroup>}
