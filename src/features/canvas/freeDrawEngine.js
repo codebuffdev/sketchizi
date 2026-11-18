@@ -7,6 +7,11 @@ import { getFreedrawOutlinePoints, newFreeDrawElement } from "@excalidraw/elemen
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+const getAdjustedFreeDrawStrokeWidth = (strokeWidthKey) => {
+  const width = getStrokeWidthByKey("freedraw", strokeWidthKey || "medium");
+  return strokeWidthKey === "medium" || !strokeWidthKey ? width * 0.8 : width;
+};
+
 export function getPointerEventSamples(event) {
   let coalesced = [];
   try {
@@ -73,10 +78,7 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
   const streamline = session.pointerType !== "mouse"
     ? DEFAULT_STROKE_STREAMLINE_PRECISE
     : DEFAULT_STROKE_STREAMLINE;
-  const strokeWidth = getStrokeWidthByKey(
-    "freedraw",
-    appState?.currentItemStrokeWidthKey || "medium",
-  );
+  const strokeWidth = getAdjustedFreeDrawStrokeWidth(appState?.currentItemStrokeWidthKey);
   const previewElement = {
     type: "freedraw",
     strokeWidth: strokeWidth * Math.max(0.0001, appState?.zoom?.value || 1),
@@ -161,10 +163,7 @@ export function createFreeDrawElementFromSamples(samples, appState) {
     strokeColor: appState.currentItemStrokeColor,
     backgroundColor: appState.currentItemBackgroundColor,
     fillStyle: appState.currentItemFillStyle,
-    strokeWidth: getStrokeWidthByKey(
-      "freedraw",
-      appState.currentItemStrokeWidthKey || "medium",
-    ),
+    strokeWidth: getAdjustedFreeDrawStrokeWidth(appState.currentItemStrokeWidthKey),
     strokeStyle: appState.currentItemStrokeStyle,
     roughness: appState.currentItemRoughness,
     opacity: appState.currentItemOpacity,
