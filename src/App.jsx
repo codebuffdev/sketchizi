@@ -10,7 +10,7 @@ import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchizi
 import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
 import { getInitialThemeMode } from "./features/navigation/themePreference.js";
-import { applyCanvasAppearance, getCanvasAppearanceFromBackground } from "./features/navigation/canvasAppearance.js";
+import { applyCanvasAppearance, applyCanvasDrawingStyle, getCanvasAppearanceFromBackground, getCanvasDrawingStyleFromRoughness } from "./features/navigation/canvasAppearance.js";
 import { useSketchiziEscape } from "./features/navigation/useSketchiziEscape";
 import { useSketchPersistence } from "./features/persistence/useSketchPersistence";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
@@ -93,6 +93,7 @@ function App() {
     try { window.localStorage.setItem("sketchizi-grid-enabled", String(gridEnabled)); } catch { /* Private browsing. */ }
   }, [gridEnabled]);
   const [canvasAppearance, setCanvasAppearance] = useState(() => getInitialThemeMode() === "dark" ? "sketch" : "clean");
+  const [canvasDrawingStyle, setCanvasDrawingStyle] = useState("artist");
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -701,6 +702,7 @@ function App() {
     if (!savedSketch) return;
     const hasElements = (savedSketch.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     const roughness = savedSketch.appState?.currentItemRoughness;
+    if (typeof roughness === "number") setCanvasDrawingStyle(getCanvasDrawingStyleFromRoughness(roughness));
     const background = String(savedSketch.appState?.viewBackgroundColor || "").trim();
     const hasExplicitAppearance = background.toLowerCase() === "#1b382f" ||
       (typeof roughness === "number" && (roughness === 0 || roughness >= 2));
@@ -716,6 +718,11 @@ function App() {
     if (appearance === "clean") preferences.useThemeDefaultBackground();
     else applyCanvasAppearance(apiRef.current, appearance, isDarkTheme);
   }, [collaborationCanEdit, isDarkTheme, preferences.useThemeDefaultBackground]);
+  const handleCanvasDrawingStyleChange = useCallback((style) => {
+    if (!collaborationCanEdit) return;
+    setCanvasDrawingStyle(style);
+    applyCanvasDrawingStyle(apiRef.current, style);
+  }, [collaborationCanEdit]);
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -1704,6 +1711,8 @@ function App() {
         gridStyle={gridStyle}
         canvasAppearance={canvasAppearance}
         onCanvasAppearanceChange={handleCanvasAppearanceChange}
+        canvasDrawingStyle={canvasDrawingStyle}
+        onCanvasDrawingStyleChange={handleCanvasDrawingStyleChange}
         onToggleGrid={toggleGrid}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
