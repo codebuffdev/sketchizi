@@ -70,7 +70,6 @@ function App() {
   const [canvasPageContext, setCanvasPageContext] = useState({ mode: "infinite", page: null, pageCount: 0 });
   const [startupChooserOpen, setStartupChooserOpen] = useState(false);
   const startupChoiceMadeRef = useRef(false);
-  const sceneHadContentRef = useRef(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
@@ -754,18 +753,14 @@ function App() {
     const hasLiveElements = (Array.isArray(elements) ? elements : []).some((element) => element && !element.isDeleted && !element.deleted);
     const hasRestoredElements = useRestoredFallback && (savedSketch?.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
     if (hasLiveElements || hasRestoredElements) {
-      sceneHadContentRef.current = true;
-      startupChoiceMadeRef.current = false;
+      // Existing content means startup is already past the canvas-choice step.
+      // Keep this latched: transient empty-scene updates during canvas interaction
+      // must not reopen the chooser.
+      startupChoiceMadeRef.current = true;
       setStartupChooserOpen(false);
       return;
     }
-    if (sceneHadContentRef.current) {
-      sceneHadContentRef.current = false;
-      startupChoiceMadeRef.current = false;
-      setStartupChooserOpen(true);
-    } else if (!startupChoiceMadeRef.current) {
-      setStartupChooserOpen(true);
-    }
+    if (!startupChoiceMadeRef.current) setStartupChooserOpen(true);
   }, [cloudDiagramId, collaborationCanEdit, savedSketch]);
 
   useEffect(() => {
