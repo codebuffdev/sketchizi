@@ -112,7 +112,8 @@ function OptionGlyph({ kind, value }) {
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
-  const safeOptions = Array.isArray(options) ? options.filter((option) => option && option.value !== undefined) : [];\n  const selected = safeOptions.find((option) => option.value === value) || safeOptions[0] || { value: 0, label };
+  const safeOptions = Array.isArray(options) ? options.filter((option) => option && option.value !== undefined) : [];
+  const selected = safeOptions.find((option) => option.value === value) || safeOptions[0] || { value: 0, label };
   useEffect(() => {
     if (!open) return undefined;
     const close = (event) => {
