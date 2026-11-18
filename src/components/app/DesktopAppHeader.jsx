@@ -802,12 +802,12 @@ export default function DesktopAppHeader({
           )}
         </span>
         <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-        {!isCloudDocument && !currentDocumentFileBacked && (currentDocumentDirty || saveState === "saved") && (
+        {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
           <span
-            className={`desktop-app-document-identity-dirty-dot${!currentDocumentDirty && saveState === "saved" ? " is-saved" : ""}`}
+            className={`desktop-app-document-identity-dirty-dot is-${saveState}`}
             role="status"
-            aria-label={currentDocumentDirty ? "Local changes not saved yet" : "Saved locally on this device"}
-            title={currentDocumentDirty ? "Local changes not saved yet" : "Saved locally on this device"}
+            aria-label={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+            title={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
           />
         )}
         {!documentNameEditing && (
