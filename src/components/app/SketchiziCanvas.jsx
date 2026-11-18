@@ -470,7 +470,7 @@ export default function SketchiziCanvas({
         button.getAttribute("title"),
         button.dataset.testid,
         button.textContent,
-      ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim().toLowerCase();
+      ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim().toLowerCase();
       const directChildFor = (node) => {
         let current = node;
         while (current && current.parentElement !== toolbar) current = current.parentElement;
@@ -481,18 +481,18 @@ export default function SketchiziCanvas({
         .map((button) => ({ button, label: labelOf(button), wrapper: directChildFor(button) }))
         .filter((entry) => entry.wrapper && !entry.wrapper.matches(".dropdown-menu-button, .sketchizi-dock-grip"));
       const toolOrder = [
-        ["selection", /\\b(select|selection)\\b/],
-        ["hand", /\\b(hand|pan)\\b/],
-        ["rectangle", /\\b(rectangle|rect)\\b/],
-        ["diamond", /\\bdiamond\\b/],
-        ["ellipse", /\\b(ellipse|oval)\\b/],
-        ["arrow", /\\barrow\\b/],
-        ["line", /\\bline\\b/],
-        ["draw", /\\b(draw|freedraw|freehand|pen)\\b/],
-        ["text", /\\btext\\b/],
-        ["sticky-note", /\\b(sticky note|note)\\b/],
-        ["image", /\\bimage\\b/],
-        ["eraser", /\\beraser\\b/],
+        ["selection", /\b(select|selection)\\b/],
+        ["hand", /\b(hand|pan)\\b/],
+        ["rectangle", /\b(rectangle|rect)\\b/],
+        ["diamond", /\bdiamond\\b/],
+        ["ellipse", /\b(ellipse|oval)\\b/],
+        ["arrow", /\barrow\\b/],
+        ["line", /\bline\\b/],
+        ["draw", /\b(draw|freedraw|freehand|pen)\\b/],
+        ["text", /\btext\\b/],
+        ["sticky-note", /\b(sticky note|note)\\b/],
+        ["image", /\bimage\\b/],
+        ["eraser", /\beraser\\b/],
       ];
       const ordered = [];
       const used = new Set();
@@ -524,7 +524,7 @@ export default function SketchiziCanvas({
         }
         const entry = nativeEntries.find((candidate) => candidate.button === button);
         if (!entry || !entry.label) return;
-        const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\\s+/g, " ").trim();
+        const keybinding = button.querySelector(".ToolIcon__keybinding")?.textContent?.replace(/\s+/g, " ").trim();
         button.dataset.sketchiziTooltip = keybinding ? `${entry.label} (${keybinding})` : entry.label;
         bindToolbarTooltip(button);
       });
@@ -572,7 +572,7 @@ export default function SketchiziCanvas({
           candidate.getAttribute("aria-label"),
           candidate.getAttribute("title"),
           candidate.textContent,
-        ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
+        ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
         return /scroll back to content/i.test(label);
       });
       if (!button || !toolbar) return;
