@@ -3,7 +3,7 @@ import {
   DEFAULT_STROKE_STREAMLINE_PRECISE,
   getStrokeWidthByKey,
 } from "@excalidraw/common";
-import { newFreeDrawElement } from "@excalidraw/element";
+import { getFreedrawOutlinePoints, newFreeDrawElement } from "@excalidraw/element";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -55,37 +55,12 @@ const previewStrokeWidth = (appState, pressure) => {
   );
   const zoom = Math.max(0.0001, appState?.zoom?.value || 1);
   const variability = appState?.currentItemStrokeVariability || "variable";
-  // Excalidraw's committed perfect-freehand outline is visibly wider than
-  // a raw canvas stroke at the same nominal size. Match its rendered footprint
-  // in the live preview (4.25 * ~1.4 at neutral mouse pressure).
-  const sizeFactor = variability === "constant" ? 1.4 : 5.95;
+  const sizeFactor = variability === "constant" ? 1.4 : 4.25;
   const pressureFactor = variability === "constant"
     ? 1
     : clamp(0.4 + 1.2 * pressure, 0.1, 1.6);
   return Math.max(0.5, strokeWidth * sizeFactor * zoom * pressureFactor);
 };
-
-function drawPreviewSegment(context, start, control1, control2, end, appState) {
-  const pressure = (control1.pressure + control2.pressure + end.pressure) / 3;
-  context.save();
-  context.globalAlpha = clamp((appState?.currentItemOpacity ?? 100) / 100, 0, 1);
-  context.strokeStyle = appState?.currentItemStrokeColor || "#1e1e1e";
-  context.lineWidth = previewStrokeWidth(appState, pressure);
-  context.lineCap = "round";
-  context.lineJoin = "round";
-  context.beginPath();
-  context.moveTo(start.x, start.y);
-  context.bezierCurveTo(
-    control1.x,
-    control1.y,
-    control2.x,
-    control2.y,
-    end.x,
-    end.y,
-  );
-  context.stroke();
-  context.restore();
-}
 
 export function drawFreeDrawPreviewSample(context, session, sample, appState, wrapperRect) {
   const point = {
@@ -104,47 +79,43 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
   }
 
   session.previewPoints.push(point);
-  if (session.previewPoints.length === 1) {
-    const radius = previewStrokeWidth(appState, point.pressure) / 2;
-    context.save();
-    context.globalAlpha = clamp((appState?.currentItemOpacity ?? 100) / 100, 0, 1);
-    context.fillStyle = appState?.currentItemStrokeColor || "#1e1e1e";
-    context.beginPath();
-    context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
-    return;
-  }
 
-  const before = session.previewPoints[session.previewPoints.length - 3];
-  let tension = 0;
-  if (before) {
-    const incomingX = previous.x - before.x;
-    const incomingY = previous.y - before.y;
-    const outgoingX = point.x - previous.x;
-    const outgoingY = point.y - previous.y;
-    const incomingLength = Math.hypot(incomingX, incomingY);
-    const outgoingLength = Math.hypot(outgoingX, outgoingY);
-    const direction = incomingLength && outgoingLength
-      ? (incomingX * outgoingX + incomingY * outgoingY) / (incomingLength * outgoingLength)
-      : 1;
-    // Reduce curve tension around corners and reversals so interpolation
-    // smooths jitter without rounding away intentional direction changes.
-    tension = clamp((direction - 0.1) / 0.9, 0, 1) / 6;
+  // Use Excalidraw's own freedraw outline generator for the live preview.
+  // A canvas lineWidth approximation cannot match perfect-freehand's
+  // pressure, streamline, easing, and end-cap geometry.
+  const variability = appState?.currentItemStrokeVariability || "variable";
+  const streamline = session.pointerType !== "mouse"
+    ? DEFAULT_STROKE_STREAMLINE_PRECISE
+    : DEFAULT_STROKE_STREAMLINE;
+  const strokeWidth = getStrokeWidthByKey(
+    "freedraw",
+    appState?.currentItemStrokeWidthKey || "medium",
+  );
+  const previewElement = {
+    type: "freedraw",
+    strokeWidth: strokeWidth * Math.max(0.0001, appState?.zoom?.value || 1),
+    simulatePressure: session.simulatePressure,
+    points: session.previewPoints.map(({ x, y }) => [x, y]),
+    pressures: session.simulatePressure
+      ? []
+      : session.previewPoints.map(({ pressure }) => pressure),
+    strokeOptions: { variability, streamline },
+  };
+  const outline = getFreedrawOutlinePoints(previewElement);
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  if (!outline?.length) return;
+
+  context.save();
+  context.globalAlpha = clamp((appState?.currentItemOpacity ?? 100) / 100, 0, 1);
+  context.fillStyle = appState?.currentItemStrokeColor || "#1e1e1e";
+  context.beginPath();
+  context.moveTo(outline[0][0], outline[0][1]);
+  for (let i = 1; i < outline.length; i += 1) {
+    context.lineTo(outline[i][0], outline[i][1]);
   }
-  const control1 = {
-    x: previous.x + (before ? (previous.x - before.x) * tension : 0),
-    y: previous.y + (before ? (previous.y - before.y) * tension : 0),
-    pressure: previous.pressure,
-  };
-  const control2 = {
-    x: point.x - (point.x - previous.x) * tension,
-    y: point.y - (point.y - previous.y) * tension,
-    pressure: point.pressure,
-  };
-  // Each incremental cubic ends at the newest hardware sample, so curve
-  // interpolation never leaves the visible tip behind the pointer.
-  drawPreviewSegment(context, previous, control1, control2, point, appState);
+  context.closePath();
+  context.fill();
+  context.restore();
 }
 
 export function createFreeDrawElementFromSamples(samples, appState) {
