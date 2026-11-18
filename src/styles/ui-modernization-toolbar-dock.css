@@ -2649,13 +2649,13 @@
 
 
 /* Primary Dock is permanently expanded: every native tool stays visible. */
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] {
+.app .excalidraw .Island.App-toolbar {
   height: auto !important;
   min-height: 38px !important;
   max-height: none !important;
   overflow: visible !important;
 }
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] > * {
+.app .excalidraw .Island.App-toolbar > * {
   visibility: visible !important;
   pointer-events: auto !important;
 }
