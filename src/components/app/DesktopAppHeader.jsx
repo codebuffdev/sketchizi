@@ -74,6 +74,8 @@ export default function DesktopAppHeader({
   gridStyle = "focus",
   canvasAppearance = "clean",
   onCanvasAppearanceChange,
+  canvasDrawingStyle = "artist",
+  onCanvasDrawingStyleChange,
   onToggleGrid,
   onGridStyleChange,
   openCommandPalette,
@@ -597,6 +599,24 @@ export default function DesktopAppHeader({
                     <strong>{label}</strong>
                     <small>{description}</small>
                     {canvasAppearance === value && <span className="sketchizi-grid-selected-check" aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="sketchizi-header-appearance-section" aria-label="Drawing environment">
+              <strong>Drawing environment</strong>
+              <div className="sketchizi-header-appearance-options" role="group" aria-label="Drawing environment">
+                {[
+                  ["architect", "Architect", "Precise, clean geometry for plans and technical diagrams."],
+                  ["artist", "Artist", "Balanced, expressive strokes for freeform illustration."],
+                  ["cartoonist", "Cartoonist", "Loose, playful strokes for characters and comic-style drawings."],
+                ].map(([value, label, description]) => (
+                  <button key={value} type="button" disabled={!canEditCanvas} aria-pressed={canvasDrawingStyle === value}
+                    onClick={() => onCanvasDrawingStyleChange?.(value)}>
+                    <span className={`sketchizi-appearance-preview is-${value}`} aria-hidden="true"><i /><i /><i /></span>
+                    <strong>{label}</strong>
+                    <small>{description}</small>
+                    {canvasDrawingStyle === value && <span className="sketchizi-grid-selected-check" aria-hidden="true">✓</span>}
                   </button>
                 ))}
               </div>
