@@ -357,3 +357,17 @@ test('note formatting uses the matching primary-panel palettes and typography ch
   assert.match(toolbarSource, /const fontFamilies = noteFormattingMode \? NOTE_FONT_FAMILIES : FONT_FAMILIES/);
   assert.match(toolbarSource, /const fontSizes = noteFormattingMode \? FONT_SIZES\.filter\(\(\[value\]\) => value !== 12\) : FONT_SIZES/);
 });
+
+
+test('contextual dock rail matches the primary dock translucent surface in light and dark themes', () => {
+  const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
+  const railStart = dockCss.indexOf('.app .contextual-formatting-toolbar .format-icon-rail {');
+  const railEnd = dockCss.indexOf('\n}', railStart);
+  const rail = dockCss.slice(railStart, railEnd);
+  assert.match(rail, /background: color-mix\(in srgb, var\(--ui-surface-solid, #fff\) 55%, transparent\)/);
+  assert.match(rail, /border-radius: 12px/);
+  assert.match(rail, /box-shadow: 0 4px 16px rgb\(15 23 42 \/ 8%\)/);
+  assert.match(rail, /backdrop-filter: none/);
+  assert.match(dockCss, /\.app\.theme-dark \.contextual-formatting-toolbar \.format-icon-rail[\s\S]*?background: rgb\(32 38 46 \/ 55%\)/);
+  assert.match(dockCss, /\.app \.excalidraw \.Island\.App-toolbar\[data-sketchizi-dock="true"\][\s\S]*?background: color-mix\(in srgb, var\(--ui-surface-solid, #fff\) 55%, transparent\)/);
+});
