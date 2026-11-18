@@ -3504,3 +3504,87 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option:focus-vis
 body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-selected { border-color: #cbd4dd; background: #edf1f4; color: #1f2932; }
 @keyframes sk-tool-choice-enter { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .app .sk-tool-choice-trigger, .sk-tool-choice-option { transition: none; } .sk-tool-choice-menu { animation: none; } }
+
+
+/* Compact contextual dock: remove decorative dividers and reclaim unused space. */
+.app .sketchizi-tool-options-dock {
+  gap: 4px !important;
+  min-height: 38px !important;
+  padding: 3px 6px !important;
+  border-radius: 10px !important;
+}
+
+.app .sk-tool-dock-context {
+  padding: 0 4px 0 1px !important;
+  font-size: 10px !important;
+}
+
+.app .sk-tool-dock-group {
+  gap: 2px !important;
+  min-height: 26px !important;
+  padding-left: 3px !important;
+  border-left: 0 !important;
+}
+
+.app .sk-tool-option-button {
+  min-width: 25px !important;
+  height: 26px !important;
+  padding: 0 4px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+}
+
+.app .sk-tool-color-dot {
+  width: 15px !important;
+  height: 15px !important;
+  flex-basis: 15px !important;
+}
+
+.app .sk-tool-color-control {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 6px !important;
+}
+
+.app .sk-tool-color-swatch {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.app .sketchizi-tool-options-dock select {
+  height: 26px !important;
+  padding: 0 4px !important;
+  font-size: 10px !important;
+}
+
+.app .sketchizi-tool-options-dock .sk-tool-icon-select {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 26px !important;
+}
+
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger {
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 32px !important;
+  padding: 0 3px !important;
+}
+
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock {
+    gap: 3px !important;
+    min-height: 36px !important;
+    padding: 3px 5px !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  .app .sk-tool-dock-group {
+    gap: 1px !important;
+    padding-left: 2px !important;
+  }
+}
