@@ -3483,3 +3483,149 @@
 .app.theme-light .sk-tool-visual-select-option.is-selected {
   border-color: #cbd4dd; background: #edf1f4; color: #1f2932;
 }
+
+
+/* Icon-only contextual dropdowns: replace native text option lists with compact,
+   animated visual choices. Keep labels available through title/ARIA metadata. */
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select {
+  display: inline-flex;
+  width: 38px;
+  min-width: 38px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 3px;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 8px;
+  background: var(--sk-options-hover, #292f36);
+  color: var(--sk-options-ink, #e6e9ed);
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select:hover,
+.app .sketchizi-tool-options-dock .sk-tool-icon-select[aria-expanded="true"] {
+  border-color: #788593;
+  background: var(--sk-options-selected, #414a54);
+  box-shadow: 0 2px 7px rgb(0 0 0 / 16%);
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select:focus-visible {
+  outline: 2px solid #9ba6b2;
+  outline-offset: 2px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-preview {
+  display: inline-flex;
+  width: 23px;
+  height: 23px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-preview > svg,
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-preview > svg path,
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-preview > svg rect,
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-preview > svg circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-chevron {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 160ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select-chevron.is-open { transform: rotate(180deg); }
+.app .sk-tool-icon-select-menu {
+  position: absolute;
+  z-index: 10070;
+  top: calc(100% + 7px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid #46515d;
+  border-radius: 10px;
+  background: #242a31;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 38%);
+  transform: translateX(-50%);
+  transform-origin: top center;
+  animation: sk-tool-option-menu-in 160ms cubic-bezier(.2,.8,.2,1) both;
+}
+.app .sk-tool-icon-select-option {
+  display: inline-flex;
+  width: 40px;
+  height: 38px;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #cbd3dc;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+.app .sk-tool-icon-select-option:hover,
+.app .sk-tool-icon-select-option:focus-visible,
+.app .sk-tool-icon-select-option.is-selected {
+  outline: 0;
+  border-color: #596674;
+  background: #353e48;
+  color: #fff;
+}
+.app .sk-tool-icon-select-option:active { transform: scale(.94); }
+.app .sk-tool-icon-select-option svg {
+  width: 27px;
+  height: 24px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sk-tool-option-font-glyph {
+  color: currentColor;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -.08em;
+  line-height: 1;
+}
+.app.theme-light .sk-tool-icon-select-menu {
+  border-color: #cbd3db;
+  background: #fff;
+  box-shadow: 0 12px 30px rgb(28 39 51 / 18%);
+}
+.app.theme-light .sk-tool-icon-select-option { color: #46525e; }
+.app.theme-light .sk-tool-icon-select-option:hover,
+.app.theme-light .sk-tool-icon-select-option:focus-visible,
+.app.theme-light .sk-tool-icon-select-option.is-selected {
+  border-color: #cbd4dd;
+  background: #edf1f4;
+  color: #1f2932;
+}
+@keyframes sk-tool-option-menu-in {
+  from { opacity: 0; transform: translate(-50%, -5px) scale(.96); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sk-tool-icon-select,
+  .app .sk-tool-icon-select-chevron,
+  .app .sk-tool-icon-select-option { transition: none; }
+  .app .sk-tool-icon-select-menu { animation: none; }
+}
