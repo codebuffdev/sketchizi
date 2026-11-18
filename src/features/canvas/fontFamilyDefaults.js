@@ -68,3 +68,44 @@ export function detectFontFamilyPreferenceChange({
 
   return changedFamilies.size === 1 ? [...changedFamilies][0] : null;
 }
+
+
+/**
+ * Resolve text targets for contextual formatting. A text editor can lose focus
+ * before a dock control receives its click, so the most recently selected text
+ * remains a valid target until another non-text object/tool is selected.
+ */
+export function getTextFormattingTargetIds({
+  selectedElements = [],
+  appState = {},
+  elements = [],
+  retainedIds = [],
+} = {}) {
+  const elementsById = new Map(
+    elements.filter((element) => element && !element.isDeleted && !element.deleted)
+      .map((element) => [element.id, element]),
+  );
+  const liveSelectedIds = Object.entries(appState.selectedElementIds || {})
+    .filter(([, selected]) => Boolean(selected))
+    .map(([id]) => id);
+  const currentSelection = liveSelectedIds.length
+    ? liveSelectedIds.map((id) => elementsById.get(id)).filter(Boolean)
+    : selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const targets = new Set(
+    currentSelection.filter((element) => element.type === "text").map((element) => element.id),
+  );
+  const editingId = appState.editingTextElement?.type === "text"
+    ? appState.editingTextElement.id
+    : null;
+  if (editingId && elementsById.has(editingId)) targets.add(editingId);
+
+  // Never carry a previous text target across a new selection of a different
+  // object. Empty selection is treated as the editor-blur transition.
+  const hasNonTextSelection = currentSelection.some((element) => element.type !== "text");
+  if (!hasNonTextSelection && targets.size === 0) {
+    for (const id of retainedIds) {
+      if (elementsById.get(id)?.type === "text") targets.add(id);
+    }
+  }
+  return targets;
+}
