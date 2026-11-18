@@ -110,7 +110,6 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
     context.arc(point.x, point.y, radius, 0, Math.PI * 2);
     context.fill();
     context.restore();
-    session.previewEnd = point;
     return;
   }
 
@@ -130,7 +129,6 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
   // Each incremental cubic ends at the newest hardware sample, so curve
   // interpolation never leaves the visible tip behind the pointer.
   drawPreviewSegment(context, previous, control1, control2, point, appState);
-  session.previewEnd = point;
 }
 
 export function createFreeDrawElementFromSamples(samples, appState) {
