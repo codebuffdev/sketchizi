@@ -303,7 +303,19 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     const next = elements.map((element) => ids.has(element.id)
       ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
-    api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+
+    // Pen width is both an element property and the default for the next
+    // freedraw stroke. Keep the default in sync while editing a Pen stroke;
+    // otherwise the selected stroke changes but the next stroke keeps the
+    // previous width (or vice versa).
+    const appStatePatch = isDraw && Number.isFinite(Number(patch.strokeWidth))
+      ? { currentItemStrokeWidth: Number(patch.strokeWidth) }
+      : undefined;
+    api.updateScene({
+      elements: next,
+      ...(appStatePatch ? { appState: appStatePatch } : {}),
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
   };
 
   const moveLayers = (direction) => {
