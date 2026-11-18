@@ -2812,3 +2812,142 @@
     font-size: 11px;
   }
 }
+
+
+/* Text font picker: the transparent native select covers the entire visual control,
+   so every point on the button opens the font menu (not just the text label). */
+.app .sketchizi-tool-options-dock .sk-tool-font-family {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-current {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sk-options-ink, #e6e9ed);
+  font: 550 12px/1 system-ui, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-select {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-current {
+  color: #252b32;
+}
+
+/* Text layer-order menu. */
+.app .sketchizi-tool-options-dock .sk-tool-layer-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 9px;
+  background: var(--sk-options-hover, #292f36);
+  color: var(--sk-options-ink, #e6e9ed);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger:hover,
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger.is-active {
+  border-color: #737e89;
+  background: var(--sk-options-selected, #414a54);
+  color: #fff;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger:focus-visible {
+  outline: 2px solid #9ba6b2;
+  outline-offset: 2px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-menu {
+  position: absolute;
+  z-index: 100;
+  left: 0;
+  bottom: calc(100% + 9px);
+  display: flex;
+  width: max-content;
+  min-width: 242px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid #424a54;
+  border-radius: 11px;
+  background: #20252b;
+  box-shadow: 0 12px 34px rgb(0 0 0 / 32%);
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-menu button {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #e7ebef;
+  font: 500 12px/1 system-ui, sans-serif;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-menu button:hover,
+.app .sketchizi-tool-options-dock .sk-tool-layer-menu button:focus-visible {
+  outline: 0;
+  background: #343c45;
+  color: #fff;
+}
+.app .sketchizi-tool-options-dock .sk-tool-layer-menu kbd {
+  padding: 3px 5px;
+  border: 1px solid #454e59;
+  border-radius: 5px;
+  background: #2b3139;
+  color: #aeb7c1;
+  font: 10px/1.2 system-ui, sans-serif;
+  white-space: nowrap;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-trigger {
+  border-color: #cbd2d9;
+  background: #f0f2f4;
+  color: #424b55;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-trigger:hover,
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-trigger.is-active {
+  border-color: #aeb7c1;
+  background: #dce2e8;
+  color: #20262d;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu {
+  border-color: #cbd2d9;
+  background: #fff;
+  box-shadow: 0 12px 34px rgb(25 35 45 / 18%);
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu button {
+  color: #252b32;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu button:hover,
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu button:focus-visible {
+  background: #edf1f4;
+  color: #111820;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu kbd {
+  border-color: #d5dbe1;
+  background: #f2f4f6;
+  color: #59636e;
+}
