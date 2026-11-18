@@ -3504,3 +3504,15 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option:focus-vis
 body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-selected { border-color: #cbd4dd; background: #edf1f4; color: #1f2932; }
 @keyframes sk-tool-choice-enter { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .app .sk-tool-choice-trigger, .sk-tool-choice-option { transition: none; } .sk-tool-choice-menu { animation: none; } }
+
+
+/* Font picker glyph matches the optical size and baseline of adjacent dock icons. */
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger-glyph.is-font-family {
+  width: 20px;
+  height: 20px;
+  transform: translateY(-1px);
+}
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger-glyph.is-font-family > svg {
+  width: 18px;
+  height: 18px;
+}
