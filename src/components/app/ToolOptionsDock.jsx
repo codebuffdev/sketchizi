@@ -223,9 +223,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       const liveSelectedElements = liveSelectedIds
         .map((id) => liveElements.find((element) => element.id === id))
         .filter((element) => element && !element.isDeleted && !element.deleted);
+      // Excalidraw may expose selectedElementIds before its scene snapshot
+      // has caught up. Prefer the live selected elements when present; otherwise
+      // use the React selection snapshot explicitly instead of letting stale IDs
+      // mask it inside getTextFormattingTargetIds().
+      const hasLiveSelection = liveSelectedElements.length > 0;
       const targets = getTextFormattingTargetIds({
-        selectedElements: liveSelectedElements.length ? liveSelectedElements : selectedElements,
-        appState: liveState,
+        selectedElements: hasLiveSelection ? liveSelectedElements : selectedElements,
+        appState: hasLiveSelection ? liveState : { ...liveState, selectedElementIds: {} },
         elements: liveElements,
         retainedIds: lastTextSelectionIdsRef.current,
       });
@@ -338,9 +343,11 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     const liveSelectedElements = liveSelectedIds
       .map((id) => liveElements.find((element) => element.id === id))
       .filter((element) => element && !element.isDeleted && !element.deleted);
+    const hasLiveSelection = liveSelectedElements.length > 0;
+    const formattingSelection = hasLiveSelection ? liveSelectedElements : selected;
     const liveTextTargetIds = getTextFormattingTargetIds({
-      selectedElements: liveSelectedElements.length ? liveSelectedElements : selected,
-      appState: liveState,
+      selectedElements: formattingSelection,
+      appState: hasLiveSelection ? liveState : { ...liveState, selectedElementIds: {} },
       elements: liveElements,
       retainedIds: lastTextSelectionIdsRef.current,
     });
