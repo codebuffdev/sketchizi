@@ -297,16 +297,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
           </button>
           {layerMenuOpen && layerMenuPosition && createPortal(
             <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
-              <div className="sk-tool-layer-menu-header">
-                <span className="sk-tool-layer-menu-header-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="m12 3 8 4-8 4-8-4 8-4Z" /><path d="m4 12 8 4 8-4M4 17l8 4 8-4" /></svg>
-                </span>
-                <span className="sk-tool-layer-menu-title-wrap">
-                  <strong>Arrange layers</strong>
-                  <small>Change object stacking order</small>
-                </span>
-              </div>
-              <div className="sk-tool-layer-menu-section-label">Move forward</div>
               <button type="button" role="menuitem" onClick={() => moveLayers("front")}>
                 <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M7 6l5-4 5 4M4 15h16M4 20h16" /></svg></span>
                 <span className="sk-tool-layer-action-label">Bring to front</span>
@@ -317,8 +307,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
                 <span className="sk-tool-layer-action-label">Bring forward</span>
                 <kbd><span>Ctrl</span><i>+</i><span>]</span></kbd>
               </button>
-              <div className="sk-tool-layer-menu-divider" />
-              <div className="sk-tool-layer-menu-section-label">Move backward</div>
               <button type="button" role="menuitem" onClick={() => moveLayers("backward")}>
                 <span className="sk-tool-layer-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M10 6l-6 6 6 6M4 5h16M4 19h16" /></svg></span>
                 <span className="sk-tool-layer-action-label">Send backward</span>
@@ -333,13 +321,13 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
             document.querySelector(".app") || document.body,
           )}
         </div>
-        <div className="sk-tool-font-family" title="Change font family">
+        <label className="sk-tool-font-family" title="Change font family">
           <span className="sk-tool-font-family-current" aria-hidden="true">{FONT_FAMILIES.find(([value]) => value === fontFamily)?.[1] || "Helvetica"}</span>
           <svg className="sk-tool-font-family-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
           <select className="sk-tool-font-family-select" aria-label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })}>
             {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
-        </div>
+        </label>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
           <button type="button" className="sk-tool-text-size-step" aria-label="Decrease font size" title="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
           <label className="sk-tool-text-size-input">
