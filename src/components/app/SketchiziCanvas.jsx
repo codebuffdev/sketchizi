@@ -334,7 +334,7 @@ export default function SketchiziCanvas({
       if (!api?.updateScene || appState?.activeTool?.type !== "freedraw") return;
 
       attachPreview();
-      if (!previewContext || !wrapper) return;
+      if (!previewContext) return;
 
       if (clearFrame) {
         cancelAnimationFrame(clearFrame);
