@@ -3581,9 +3581,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 }
 
 
-/* Contextual Dock takes over the Primary Dock's bottom-center position.
-   The native Primary Dock remains mounted and returns as soon as contextual
-   controls are no longer needed. */
+/* Contextual Dock takes over the Primary Dock's bottom-center position. */
 .app .canvas:has(.sketchizi-tool-options-dock) .App-toolbar-container {
   visibility: hidden !important;
   pointer-events: none !important;
