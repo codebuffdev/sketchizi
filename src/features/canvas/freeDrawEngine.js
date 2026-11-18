@@ -48,20 +48,6 @@ export function scenePointFromPointerSample(sample, appState) {
   };
 }
 
-const previewStrokeWidth = (appState, pressure) => {
-  const strokeWidth = getStrokeWidthByKey(
-    "freedraw",
-    appState?.currentItemStrokeWidthKey || "medium",
-  );
-  const zoom = Math.max(0.0001, appState?.zoom?.value || 1);
-  const variability = appState?.currentItemStrokeVariability || "variable";
-  const sizeFactor = variability === "constant" ? 1.4 : 4.25;
-  const pressureFactor = variability === "constant"
-    ? 1
-    : clamp(0.4 + 1.2 * pressure, 0.1, 1.6);
-  return Math.max(0.5, strokeWidth * sizeFactor * zoom * pressureFactor);
-};
-
 export function drawFreeDrawPreviewSample(context, session, sample, appState, wrapperRect) {
   const point = {
     x: sample.clientX - wrapperRect.left,
