@@ -2720,10 +2720,10 @@
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   height: 34px;
   min-width: 148px;
-  padding: 0 30px 0 10px;
+  padding: 0 10px;
   position: relative;
   border: 1px solid var(--sk-options-border, #414750);
   border-radius: 9px;
@@ -2738,18 +2738,6 @@
 .app .sketchizi-tool-options-dock .sk-tool-font-family:focus-within {
   border-color: #9ba6b2;
   box-shadow: 0 0 0 2px rgb(155 166 178 / 16%);
-}
-.app .sketchizi-tool-options-dock .sk-tool-font-family::after {
-  content: "";
-  position: absolute;
-  right: 11px;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  border-right: 1.5px solid var(--sk-options-muted, #a7afb9);
-  border-bottom: 1.5px solid var(--sk-options-muted, #a7afb9);
-  transform: translateY(-70%) rotate(45deg);
-  pointer-events: none;
 }
 .app .sketchizi-tool-options-dock .sk-tool-font-family-preview {
   flex: 0 0 auto;
@@ -2804,8 +2792,8 @@
   .app .sketchizi-tool-options-dock .sk-tool-font-family {
     min-width: 128px;
     height: 30px;
-    gap: 6px;
-    padding-left: 8px;
+    gap: 0;
+    padding: 0 8px;
   }
   .app .sketchizi-tool-options-dock .sk-tool-font-family-select {
     height: 28px;
