@@ -3508,11 +3508,11 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 
 /* Font picker glyph matches the optical size and baseline of adjacent dock icons. */
 .app .sketchizi-tool-options-dock .sk-tool-choice-trigger-glyph.is-font-family {
-  width: 20px;
-  height: 20px;
-  transform: translateY(-1px);
-}
-.app .sketchizi-tool-options-dock .sk-tool-choice-trigger-glyph.is-font-family > svg {
   width: 18px;
   height: 18px;
+  transform: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger-glyph.is-font-family > svg {
+  width: 16px;
+  height: 16px;
 }
