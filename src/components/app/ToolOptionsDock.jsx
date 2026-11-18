@@ -244,6 +244,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   // An active Pen tool controls the next stroke even if Excalidraw still
   // reports a previous selection during the tool-switch transition.
   const isPenToolActive = activeTool === "freedraw";
+  const hasOnlyPenSelection = selected.length > 0 && selected.every((element) => element.type === "freedraw");
   const type = isPenToolActive ? activeTool : selectionType || tool;
   const isShape = ["rectangle", "diamond", "ellipse"].includes(type);
   const isLine = ["line", "arrow"].includes(type);
@@ -252,7 +253,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const isFill = type === "bucket-fill";
   const isAutoShape = type === "draw-to-shape";
   const supported = isShape || isLine || isDraw || isText || isFill || isAutoShape;
-  const isSelection = !isPenToolActive && (selected.length > 0 || Boolean(isText && editingTextElement?.id));
+  // Keep selected freedraw strokes editable while Pen is active; unrelated
+  // stale selections must not redirect Pen defaults to another element.
+  const isSelection = (selected.length > 0 && (!isPenToolActive || hasOnlyPenSelection))
+    || Boolean(isText && editingTextElement?.id);
   const isVisible = canEdit && (isSelection ? supported || selected.length > 1 : supported);
   const first = selected[0] || editingTextElement;
 
