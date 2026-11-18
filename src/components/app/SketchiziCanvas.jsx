@@ -353,11 +353,14 @@ export default function SketchiziCanvas({
     const clampDockToViewport = () => {
       const container = root.querySelector(".App-toolbar-container");
       if (!container || !container.style.left || !container.style.top) return;
+      const canvasRect = root.getBoundingClientRect();
       const rect = container.getBoundingClientRect();
-      const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
-      const maxTop = Math.max(8, window.innerHeight - rect.height - 8);
-      const left = Math.min(maxLeft, Math.max(8, rect.left));
-      const top = Math.min(maxTop, Math.max(8, rect.top));
+      const minLeft = canvasRect.left + 8;
+      const minTop = canvasRect.top + 8;
+      const maxLeft = Math.max(minLeft, canvasRect.right - rect.width - 8);
+      const maxTop = Math.max(minTop, canvasRect.bottom - rect.height - 8);
+      const left = Math.min(maxLeft, Math.max(minLeft, rect.left));
+      const top = Math.min(maxTop, Math.max(minTop, rect.top));
       container.style.setProperty("left", `${left}px`, "important");
       container.style.setProperty("top", `${top}px`, "important");
     };
@@ -373,28 +376,25 @@ export default function SketchiziCanvas({
       toolbar.querySelectorAll(":scope > .dropdown-menu-button").forEach((control) => {
         control.dataset.sketchiziHideOverflowTools = "true";
       });
-      // The Primary Dock starts vertically on the left on desktop. Align its
-      // Selection trigger with the canvas hamburger/menu control, while leaving
-      // mobile layout and any user-positioned dock untouched.
+      // The Primary Dock defaults to a horizontal strip centered at the
+      // bottom of the canvas. Keep any explicitly user-positioned dock intact.
       if (!toolbar.dataset.sketchiziOrientation && !window.matchMedia("(max-width: 760px)").matches) {
-        toolbar.dataset.sketchiziOrientation = "vertical";
-        toolbar.dataset.sketchiziDockSide = "left";
+        toolbar.dataset.sketchiziOrientation = "horizontal";
+        delete toolbar.dataset.sketchiziDockSide;
       }
       if (!container.dataset.sketchiziDockPositioned && !window.matchMedia("(max-width: 760px)").matches) {
-        const menuControl = root.querySelector(
-          ".App-menu__left button, .App-menu__left [role='button'], button[aria-label*='menu' i], [role='button'][aria-label*='menu' i], button[data-testid*='menu' i]"
-        );
-        const menuRect = menuControl?.getBoundingClientRect();
-        const dockWidth = container.getBoundingClientRect().width || 48;
-        const menuCenterX = menuRect
-          ? menuRect.left + menuRect.width / 2
-          : 32 + dockWidth / 2;
-        const alignedLeft = Math.max(8, menuCenterX - dockWidth / 2);
-        const belowMenuTop = menuRect
-          ? menuRect.bottom + 8
-          : 8;
-        container.style.setProperty("left", `${alignedLeft}px`, "important");
-        container.style.setProperty("top", `${Math.max(8, belowMenuTop)}px`, "important");
+        const canvasRect = root.getBoundingClientRect();
+        const dockRect = container.getBoundingClientRect();
+        const dockWidth = dockRect.width || 48;
+        const dockHeight = dockRect.height || 48;
+        const minLeft = canvasRect.left + 8;
+        const maxLeft = Math.max(minLeft, canvasRect.right - dockWidth - 8);
+        const centeredLeft = canvasRect.left + (canvasRect.width - dockWidth) / 2;
+        const left = Math.min(maxLeft, Math.max(minLeft, centeredLeft));
+        const top = Math.max(canvasRect.top + 8, canvasRect.bottom - dockHeight - 16);
+        container.style.setProperty("position", "fixed", "important");
+        container.style.setProperty("left", `${left}px`, "important");
+        container.style.setProperty("top", `${top}px`, "important");
         container.style.setProperty("right", "auto", "important");
         container.style.setProperty("bottom", "auto", "important");
         container.style.setProperty("transform", "none", "important");
