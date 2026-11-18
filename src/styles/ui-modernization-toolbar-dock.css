@@ -3631,3 +3631,29 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
     bottom: 10px !important;
   }
 }
+
+
+/* Primary Dock default placement: bottom-center of the canvas, sharing the
+   exact slot used by the Contextual Dock. */
+.app .canvas .App-toolbar-container {
+  position: absolute !important;
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: 16px !important;
+  width: max-content !important;
+  max-width: calc(100% - 24px) !important;
+  transform: translateX(-50%) !important;
+}
+.app .canvas .Island.App-toolbar[data-sketchizi-orientation="horizontal"] {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  width: max-content !important;
+  max-width: calc(100vw - 32px) !important;
+  max-height: none !important;
+}
+.app .canvas .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="horizontal"]) {
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 24px) !important;
+}
