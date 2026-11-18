@@ -152,6 +152,21 @@ export function useNativeSketchiziMenu({
           // Excalidraw's duplicate native Open entry, including its Ctrl+O hint.
           if (item && item !== menu) item.remove();
         }
+
+        // Remove only the standalone native Save to... action. A containing
+        // list/group is never eligible, even if it wraps multiple menu rows.
+        const saveToLabel = exactLeaves.find(
+          (node) => node.textContent?.replace(/\\s+/g, " ").trim().toLowerCase() === "save to..."
+        );
+        const saveToAction = saveToLabel?.closest("button, [role='menuitem']");
+        const saveToActionText = saveToAction?.textContent?.replace(/\\s+/g, " ").trim().toLowerCase();
+        if (
+          saveToAction &&
+          saveToActionText === "save to..." &&
+          saveToAction.closest(".dropdown-menu-container") === menu
+        ) {
+          saveToAction.remove();
+        }
       });
       document.querySelectorAll("body *").forEach((node) => {
         const text = node.textContent?.replace(/\s+/g, " ").trim();
