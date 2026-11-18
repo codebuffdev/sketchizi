@@ -236,7 +236,7 @@ export default function SketchiziCanvas({
 
   // Free-draw uses a dedicated input/render path rather than Excalidraw's
   // per-pointermove React state + full-stroke outline regeneration. Capture
-  // high-frequency samples, paint an incremental quadratic preview, then
+  // high-frequency samples, paint an incremental Bézier preview, then
   // commit one native Excalidraw free-draw element on pointer-up.
   useEffect(() => {
     const root = canvasRootRef.current;
