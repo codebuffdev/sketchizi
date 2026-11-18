@@ -3504,3 +3504,66 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option:focus-vis
 body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-selected { border-color: #cbd4dd; background: #edf1f4; color: #1f2932; }
 @keyframes sk-tool-choice-enter { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .app .sk-tool-choice-trigger, .sk-tool-choice-option { transition: none; } .sk-tool-choice-menu { animation: none; } }
+
+
+/* Primary Dock rebuild: one compact, uninterrupted vertical tool stack. */
+@media (min-width: 761px) {
+  .app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-dock-layout="continuous"]) {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    overflow: visible !important;
+  }
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] {
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100vh - 24px) !important;
+    gap: 0 !important;
+    row-gap: 0 !important;
+    padding: 4px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > [data-sketchizi-primary-tool] {
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex: 0 0 34px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > [data-sketchizi-primary-tool] .ToolIcon__icon,
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > [data-sketchizi-primary-tool].sketchizi-dock-quick-tool {
+    box-sizing: border-box !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+  }
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > .sketchizi-dock-grip,
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > .sketchizi-dock-separator,
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > .dropdown-menu-button {
+    display: none !important;
+  }
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > [data-sketchizi-primary-tool] {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+}
