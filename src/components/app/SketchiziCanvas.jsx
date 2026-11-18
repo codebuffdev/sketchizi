@@ -350,6 +350,11 @@ export default function SketchiziCanvas({
       attachPreview();
       if (!previewContext || !wrapper) return;
 
+      if (clearFrame) {
+        cancelAnimationFrame(clearFrame);
+        clearFrame = 0;
+      }
+      clearPreview();
       session = {
         pointerId: event.pointerId,
         useRaw: event.pointerType === "pen" && "onpointerrawupdate" in window,
@@ -413,7 +418,7 @@ export default function SketchiziCanvas({
       clearFrame = requestAnimationFrame(() => {
         clearFrame = requestAnimationFrame(() => {
           clearFrame = 0;
-          clearPreview();
+          if (!session) clearPreview();
         });
       });
     };
