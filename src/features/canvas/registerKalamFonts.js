@@ -30,18 +30,29 @@ const subsets = [
 ];
 
 const registerKalamFamily = (family, id, weight) => {
-  if (Fonts.registered.has(id)) return;
+  // Resolve the registry once and pass it as the registration context. This
+  // mirrors Excalidraw's own initialization path and avoids relying on the
+  // static getter as the method's `this` context.
+  const registeredFonts = Fonts.registered;
+  if (registeredFonts.has(id)) return;
+
   const descriptors = subsets.map(({ file, unicodeRange }) => ({
     uri: `https://cdn.jsdelivr.net/fontsource/fonts/kalam@18/${file}-${weight}-normal.woff2`,
     descriptors: { unicodeRange, weight: String(weight) },
   }));
-  // Excalidraw keeps this registration hook private in its type surface, but
-  // exposes it as a normal static method in the shipped JavaScript bundle.
+
+  // Excalidraw keeps this hook private in its type surface, but its runtime
+  // registration method accepts an object containing the shared font registry.
   const register = Fonts.register;
   if (typeof register !== "function") {
     throw new Error("This Excalidraw build does not support custom font registration.");
   }
-  register.call(Fonts, family, metrics, ...descriptors);
+
+  register.call({ registered: registeredFonts }, family, metrics, ...descriptors);
+
+  if (!registeredFonts.has(id)) {
+    throw new Error(`Excalidraw did not register the ${family} font family.`);
+  }
 };
 
 registerKalamFamily("Kalam", 4, 400);
