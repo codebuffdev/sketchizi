@@ -179,6 +179,7 @@ function VisualOptionSelect({ label, value, onChange, kind, options }) {
 }
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   const [customTool, setCustomTool] = useState(null);
+  const [expanded, setExpanded] = useState(false);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
   const layerTriggerRef = useRef(null);
@@ -422,7 +423,27 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   if (!isVisible) return null;
 
   return (
-    <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
+    <div
+      className={`sketchizi-tool-options-dock${expanded ? " is-expanded" : " is-compact"}`}
+      role="toolbar"
+      aria-label={`${title} options`}
+      data-tool={type}
+      onMouseLeave={() => setExpanded(false)}
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="sk-tool-dock-expand"
+        aria-label={expanded ? "Collapse contextual options" : "Expand contextual options"}
+        aria-expanded={expanded}
+        title={expanded ? "Collapse options" : "More options"}
+        onMouseEnter={() => setExpanded(true)}
+        onFocus={() => setExpanded(true)}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d={expanded ? "m7 14 5-5 5 5" : "m7 10 5 5 5-5"} /></svg>
+      </button>
       <span className="sk-tool-dock-context" aria-label={title} title={title}><ContextShapeIcon type={type} title={title} multiple={selected.length > 1} /></span>
       <DockGroup label="Stroke color">
         {!isFill && <>{COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
