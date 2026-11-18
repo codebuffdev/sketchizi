@@ -68,3 +68,11 @@ test("Icon cards use accessible buttons, stop propagation on favorite/insert act
   assert.match(insertion, /encodeURIComponent\(svg\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+
+test("Icon Library portal applies the light palette from the app root data-theme attribute", () => {
+  assert.match(compact, /\.app\[data-theme="light"\] > \.sk-icon-library-portal-host > \.library-panel\.library-panel-redesign\.sk-icon-panel/);
+  assert.match(compact, /--skp-bg:\s*#ffffff/);
+  assert.match(compact, /--skp-text:\s*#181e2c/);
+  assert.match(compact, /color-scheme:\s*light/);
+});
