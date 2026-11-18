@@ -304,18 +304,26 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />
       </DockGroup>}
       {!isText && !isFill && <DockGroup label="Stroke width">
-        {WIDTHS.map((width) => <ToolButton key={width} active={strokeWidth === width} title={`Stroke width ${width}`} onClick={() => update({ strokeWidth: width })}><svg className="sk-tool-stroke-width-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth={width === 1 ? 1.5 : width === 2 ? 2.5 : width === 4 ? 4 : 5.5} strokeLinecap="round" /></svg></ToolButton>)}
+        <select aria-label="Stroke width" title="Stroke width" value={strokeWidth} onChange={(event) => update({ strokeWidth: Number(event.target.value) })}>
+          {WIDTHS.map((width) => <option key={width} value={width}>{width} px</option>)}
+        </select>
       </DockGroup>}
       {(isShape || isLine || isDraw || isAutoShape) && <DockGroup label="Stroke style">
-        {LINE_STYLES.map(([value, label]) => <ToolButton key={value} active={strokeStyle === value} title={label} onClick={() => update({ strokeStyle: value })}>{value === "solid" ? "—" : value === "dashed" ? "┄" : "···"}</ToolButton>)}
+        <select aria-label="Stroke style" title="Stroke style" value={strokeStyle} onChange={(event) => update({ strokeStyle: event.target.value })}>
+          {LINE_STYLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
       </DockGroup>}
       {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
-        {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>{value === "solid" ? "■" : value === "hachure" ? "▨" : "▦"}</ToolButton>)}
+        <select aria-label="Fill style" title="Fill style" value={fillStyle} onChange={(event) => update({ fillStyle: event.target.value })}>
+          {FILL_STYLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
       </DockGroup>}
       {(isShape || isLine) && <DockGroup label="Layers">{layerControl}</DockGroup>}
       {isShape && <DockGroup label="Corners">
-        <ToolButton active={!current("roundness", "currentItemRoundness", null)} title="Square corners" onClick={() => update({ roundness: null })}>□</ToolButton>
-        <ToolButton active={Boolean(current("roundness", "currentItemRoundness", null))} title="Rounded corners" onClick={() => update({ roundness: { type: 3 } })}>▢</ToolButton>
+        <select aria-label="Corners" title="Corners" value={current("roundness", "currentItemRoundness", null) ? "rounded" : "square"} onChange={(event) => update({ roundness: event.target.value === "rounded" ? { type: 3 } : null })}>
+          <option value="square">Square</option>
+          <option value="rounded">Rounded</option>
+        </select>
       </DockGroup>}
       {type === "arrow" && <DockGroup label="Arrowheads">
         <select aria-label="Start arrowhead" value={current("startArrowhead", "currentItemStartArrowhead", null) || "none"} onChange={(event) => update({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
@@ -368,11 +376,17 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </div>
       </DockGroup>}
       {(isShape || isLine || isAutoShape) && <DockGroup label="Sloppiness">
-        {["Architect", "Artist", "Cartoonist"].map((label, value) => <ToolButton key={value} active={roughness === value} title={label} onClick={() => update({ roughness: value })}>{label}</ToolButton>)}
+        <select aria-label="Sloppiness" title="Sloppiness" value={roughness} onChange={(event) => update({ roughness: Number(event.target.value) })}>
+          <option value={0}>Architect</option>
+          <option value={1}>Artist</option>
+          <option value={2}>Cartoonist</option>
+        </select>
       </DockGroup>}
       {isDraw && <DockGroup label="Pen pressure">
-        <ToolButton active={pressure} title="Pressure sensitivity on" onClick={() => update({ pressure: true })}>P</ToolButton>
-        <ToolButton active={!pressure} title="Pressure sensitivity off" onClick={() => update({ pressure: false })}>—</ToolButton>
+        <select aria-label="Pen pressure" title="Pen pressure" value={pressure ? "on" : "off"} onChange={(event) => update({ pressure: event.target.value === "on" })}>
+          <option value="on">On</option>
+          <option value="off">Off</option>
+        </select>
       </DockGroup>}
       <DockGroup label="Opacity">
         <span className="sk-tool-dock-opacity-value">{opacity}%</span>
