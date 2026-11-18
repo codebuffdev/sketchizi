@@ -94,7 +94,7 @@ function DockSelect({ label, value, onChange, icon, children }) {
         <svg className={`sk-tool-icon-select-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && <div className="sk-tool-icon-select-menu" role="listbox" aria-label={label}>
-        {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={String(option.value) === String(value)} aria-label={option.label} title={option.label} className={`sk-tool-icon-select-option${String(option.value) === String(value) ? " is-selected" : ""}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onChange(option.value); setOpen(false); }}>
+        {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={String(option.value) === String(value)} aria-label={option.label} title={option.label} className={`sk-tool-icon-select-option${String(option.value) === String(value) ? " is-selected" : ""}`} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); } }}>
           <DockOptionGlyph label={label} value={option.value} />
         </button>)}
       </div>}
@@ -134,7 +134,7 @@ function VisualOptionSelect({ label, value, onChange, kind, options }) {
         <svg className="sk-tool-icon-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && <div className="sk-tool-visual-select-menu" role="listbox" aria-label={label}>
-        {safeOptions.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onChange(option.value); setOpen(false); }}>
+        {safeOptions.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onChange(option.value); setOpen(false); } }}>
           <OptionGlyph kind={kind} value={option.value} />
         </button>)}
       </div>}
