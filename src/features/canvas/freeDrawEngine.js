@@ -48,12 +48,6 @@ export function scenePointFromPointerSample(sample, appState) {
   };
 }
 
-const midpoint = (a, b) => ({
-  x: (a.x + b.x) / 2,
-  y: (a.y + b.y) / 2,
-  pressure: (a.pressure + b.pressure) / 2,
-});
-
 const previewStrokeWidth = (appState, pressure) => {
   const strokeWidth = getStrokeWidthByKey(
     "freedraw",
