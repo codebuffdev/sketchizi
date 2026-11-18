@@ -133,13 +133,6 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
   session.previewEnd = point;
 }
 
-export function finishFreeDrawPreview(context, session, appState) {
-  const last = session.previewPoints[session.previewPoints.length - 1];
-  if (!last || !session.previewEnd) return;
-  // Preview segments already terminate at the newest pointer sample. There
-  // is no delayed midpoint tail to catch up on pointer-up.
-}
-
 export function createFreeDrawElementFromSamples(samples, appState) {
   if (!samples?.length || !appState) return null;
 
