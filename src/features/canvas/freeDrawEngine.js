@@ -113,17 +113,30 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
     return;
   }
 
-  const before = session.previewPoints[session.previewPoints.length - 3] || previous;
-  const control1 = session.previewPoints.length > 2
-    ? {
-        x: previous.x + (previous.x - before.x) / 6,
-        y: previous.y + (previous.y - before.y) / 6,
-        pressure: previous.pressure,
-      }
-    : previous;
+  const before = session.previewPoints[session.previewPoints.length - 3];
+  let tension = 0;
+  if (before) {
+    const incomingX = previous.x - before.x;
+    const incomingY = previous.y - before.y;
+    const outgoingX = point.x - previous.x;
+    const outgoingY = point.y - previous.y;
+    const incomingLength = Math.hypot(incomingX, incomingY);
+    const outgoingLength = Math.hypot(outgoingX, outgoingY);
+    const direction = incomingLength && outgoingLength
+      ? (incomingX * outgoingX + incomingY * outgoingY) / (incomingLength * outgoingLength)
+      : 1;
+    // Reduce curve tension around corners and reversals so interpolation
+    // smooths jitter without rounding away intentional direction changes.
+    tension = clamp((direction - 0.1) / 0.9, 0, 1) / 6;
+  }
+  const control1 = {
+    x: previous.x + (before ? (previous.x - before.x) * tension : 0),
+    y: previous.y + (before ? (previous.y - before.y) * tension : 0),
+    pressure: previous.pressure,
+  };
   const control2 = {
-    x: point.x - (point.x - previous.x) / 6,
-    y: point.y - (point.y - previous.y) / 6,
+    x: point.x - (point.x - previous.x) * tension,
+    y: point.y - (point.y - previous.y) * tension,
     pressure: point.pressure,
   };
   // Each incremental cubic ends at the newest hardware sample, so curve
