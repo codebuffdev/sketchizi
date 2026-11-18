@@ -280,6 +280,44 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const update = (patch) => {
     const api = apiRef?.current;
     if (!api) return;
+
+    // Resolve Pen width changes from Excalidraw's live selection at the moment
+    // the user changes the control. The dock's selectedElements prop can lag
+    // behind appState during tool/selection transitions.
+    if (Object.prototype.hasOwnProperty.call(patch, "strokeWidth") && (isDraw || selected.some((element) => element.type === "freedraw"))) {
+      const liveAppState = api.getAppState?.() || appState;
+      const liveSelectedIds = new Set(
+        Object.entries(liveAppState.selectedElementIds || {})
+          .filter(([, isSelected]) => isSelected)
+          .map(([id]) => id),
+      );
+      selected.forEach((element) => {
+        if (element.type === "freedraw") liveSelectedIds.add(element.id);
+      });
+      const elements = api.getSceneElements?.() || [];
+      const selectedPenIds = new Set(
+        elements.filter((element) => liveSelectedIds.has(element.id) && element.type === "freedraw")
+          .map((element) => element.id),
+      );
+      const next = selectedPenIds.size
+        ? elements.map((element) => selectedPenIds.has(element.id)
+          ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+          : element)
+        : undefined;
+      const penToolIsActive = String(liveAppState.activeTool?.type || "").toLowerCase() === "freedraw";
+      const appStatePatch = (penToolIsActive || selectedPenIds.size)
+        ? { currentItemStrokeWidth: Number(patch.strokeWidth) }
+        : undefined;
+      if (next || appStatePatch) {
+        api.updateScene({
+          ...(next ? { elements: next } : {}),
+          ...(appStatePatch ? { appState: appStatePatch } : {}),
+          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        });
+      }
+      return;
+    }
+
     if (!isSelection) {
       const appStatePatch = {};
       const mapping = {
