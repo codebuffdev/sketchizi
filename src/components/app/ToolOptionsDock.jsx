@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 
 const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8", "#ffffff"];
@@ -50,6 +51,8 @@ function DockGroup({ label, children }) {
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   const [customTool, setCustomTool] = useState(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
+  const [layerMenuPosition, setLayerMenuPosition] = useState(null);
+  const layerTriggerRef = useRef(null);
   useEffect(() => {
     const handleCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
@@ -88,7 +91,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   useEffect(() => {
     if (!layerMenuOpen) return undefined;
     const closeOnOutsideClick = (event) => {
-      if (!event.target?.closest?.(".sk-tool-layer-control")) setLayerMenuOpen(false);
+      if (!event.target?.closest?.(".sk-tool-layer-control, .sk-tool-layer-menu")) setLayerMenuOpen(false);
     };
     window.addEventListener("pointerdown", closeOnOutsideClick, true);
     return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
@@ -253,19 +256,36 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
             aria-haspopup="menu"
             aria-expanded={layerMenuOpen}
             title="Layer order"
-            onClick={() => setLayerMenuOpen((open) => !open)}
+            ref={layerTriggerRef}
+            onClick={() => {
+              if (layerMenuOpen) {
+                setLayerMenuOpen(false);
+                return;
+              }
+              const rect = layerTriggerRef.current?.getBoundingClientRect();
+              if (rect) {
+                setLayerMenuPosition({
+                  left: Math.max(8, Math.min(rect.left, window.innerWidth - 258)),
+                  bottom: Math.max(8, window.innerHeight - rect.top + 9),
+                });
+              }
+              setLayerMenuOpen(true);
+            }}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m12 3 8 4-8 4-8-4 8-4Z" />
               <path d="m4 12 8 4 8-4M4 17l8 4 8-4" />
             </svg>
           </button>
-          {layerMenuOpen && <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order">
-            <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span>Bring to front</span><kbd>Ctrl+Shift+]</kbd></button>
-            <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span>Bring forward</span><kbd>Ctrl+]</kbd></button>
-            <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span>Send backward</span><kbd>Ctrl+[</kbd></button>
-            <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span>Send to back</span><kbd>Ctrl+Shift+[</kbd></button>
-          </div>}
+          {layerMenuOpen && layerMenuPosition && createPortal(
+            <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
+              <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span>Bring to front</span><kbd>Ctrl+Shift+]</kbd></button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span>Bring forward</span><kbd>Ctrl+]</kbd></button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span>Send backward</span><kbd>Ctrl+[</kbd></button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span>Send to back</span><kbd>Ctrl+Shift+[</kbd></button>
+            </div>,
+            document.body,
+          )}
         </div>
         <div className="sk-tool-font-family" title="Font family">
           <span className="sk-tool-font-family-preview" aria-hidden="true">Aa</span>
