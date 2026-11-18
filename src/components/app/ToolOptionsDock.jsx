@@ -266,7 +266,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
   const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : 2;
   const pressure = current("pressure", "currentItemPressure", true) !== false;
-  const roughness = Number(current("roughness", "currentItemRoughness", 1));
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
   useEffect(() => setFontSizeDraft(String(fontSize)), [fontSize]);
 
@@ -506,9 +505,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
           </label>
           <button type="button" className="sk-tool-text-size-step" aria-label="Increase font size" title="Increase font size" disabled={fontSize >= 999} onClick={() => update({ fontSize: Math.min(999, fontSize + 1) })}>+</button>
         </div>
-      </DockGroup>}
-      {(isShape || isLine || isAutoShape) && <DockGroup label="Sloppiness">
-        <VisualOptionSelect label="Sloppiness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />
       </DockGroup>}
       {isDraw && <DockGroup label="Pen pressure">
         <DockSelect label="Pen pressure" value={pressure ? "on" : "off"} onChange={(value) => update({ pressure: value === "on" })} icon={<svg viewBox="0 0 24 24"><path d="M4 18c3-1 4-2 6-5s3-7 5-7 3 4 5 5" strokeWidth={pressure ? 2.2 : 1.2} /><path d="M4 20h16" opacity=".45" /></svg>}>
