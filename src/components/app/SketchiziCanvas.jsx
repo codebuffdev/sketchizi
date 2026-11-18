@@ -246,7 +246,6 @@ export default function SketchiziCanvas({
     let previewCanvas = null;
     let previewContext = null;
     let resizeObserver = null;
-    let mutationObserver = null;
     let clearFrame = 0;
     let wrapperPositionWasChanged = false;
     let previousWrapperPosition = "";
@@ -287,6 +286,9 @@ export default function SketchiziCanvas({
 
       resizeObserver?.disconnect();
       previewCanvas?.remove();
+      if (wrapperPositionWasChanged && wrapper?.style.position === "relative") {
+        wrapper.style.position = previousWrapperPosition;
+      }
       wrapper = nextWrapper;
       wrapperPositionWasChanged = getComputedStyle(wrapper).position === "static";
       if (wrapperPositionWasChanged) {
@@ -382,8 +384,9 @@ export default function SketchiziCanvas({
 
     const onPointerRawUpdate = (event) => {
       if (!session || event.pointerId !== session.pointerId) return;
-      session.receivedRaw = true;
       stopNativeEvent(event);
+      if (!session.useRaw) return;
+      session.receivedRaw = true;
       appendSamples(session, event);
     };
 
