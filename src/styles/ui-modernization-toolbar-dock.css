@@ -2713,3 +2713,102 @@
     flex-basis: 23px;
   }
 }
+
+
+/* Text Contextual Dock: make the font picker read as a dedicated typography control. */
+.app .sketchizi-tool-options-dock .sk-tool-font-family {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  min-width: 148px;
+  padding: 0 30px 0 10px;
+  position: relative;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--sk-options-hover, #343a42), #252b32);
+  color: var(--sk-options-ink, #e6e9ed);
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family:hover {
+  border-color: #737e89;
+  background: var(--sk-options-selected, #414a54);
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family:focus-within {
+  border-color: #9ba6b2;
+  box-shadow: 0 0 0 2px rgb(155 166 178 / 16%);
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family::after {
+  content: "";
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--sk-options-muted, #a7afb9);
+  border-bottom: 1.5px solid var(--sk-options-muted, #a7afb9);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-preview {
+  flex: 0 0 auto;
+  color: var(--sk-options-muted, #a7afb9);
+  font: 600 15px/1 Georgia, serif;
+  letter-spacing: -1px;
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-select {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--sk-options-ink, #e6e9ed);
+  font: 550 12px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-family-select option {
+  background: #252b32;
+  color: #e6e9ed;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family {
+  border-color: #cbd2d9;
+  background: linear-gradient(180deg, #fff, #f0f2f4);
+  color: #252b32;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family:hover {
+  border-color: #aeb7c1;
+  background: #e9edf1;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family:focus-within {
+  border-color: #7d8995;
+  box-shadow: 0 0 0 2px rgb(90 103 116 / 12%);
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-preview {
+  color: #59636e;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-select {
+  color: #252b32;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-font-family-select option {
+  background: #fff;
+  color: #252b32;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock .sk-tool-font-family {
+    min-width: 128px;
+    height: 30px;
+    gap: 6px;
+    padding-left: 8px;
+  }
+  .app .sketchizi-tool-options-dock .sk-tool-font-family-select {
+    height: 28px;
+    font-size: 11px;
+  }
+}
