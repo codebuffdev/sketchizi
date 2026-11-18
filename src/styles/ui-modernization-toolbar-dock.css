@@ -3635,3 +3635,54 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
     height: 29px;
   }
 }
+
+
+/* Contextual dock overflow guard: keep the opacity control fully visible.
+   Long contextual toolsets scroll horizontally instead of shrinking/clipping
+   the opacity slider, its thumb, or the percentage readout. */
+.app .sketchizi-tool-options-dock {
+  box-sizing: border-box !important;
+  max-width: min(640px, calc(100vw - 24px)) !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.app .sketchizi-tool-options-dock::-webkit-scrollbar {
+  display: none;
+}
+.app .sketchizi-tool-options-dock > *,
+.app .sketchizi-tool-options-dock .sk-tool-dock-group {
+  flex-shrink: 0 !important;
+  min-width: max-content;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group:has(input[type="range"]) {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  overflow: visible !important;
+}
+.app .sketchizi-tool-options-dock input[type="range"] {
+  box-sizing: border-box !important;
+  display: inline-block !important;
+  flex: 0 0 76px !important;
+  width: 76px !important;
+  min-width: 76px !important;
+  max-width: 76px !important;
+  margin-inline: 3px !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-opacity-value {
+  display: inline-block !important;
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock {
+    max-width: calc(100vw - 20px) !important;
+  }
+}
