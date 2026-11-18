@@ -3567,3 +3567,16 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
     pointer-events: auto !important;
   }
 }
+
+@media (min-width: 761px) {
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > .App-toolbar__spacer,
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > .toolbar__spacer,
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-layout="continuous"] > [data-toolbar-spacer="true"] {
+    display: none !important;
+    flex: 0 0 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
