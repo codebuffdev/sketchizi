@@ -148,6 +148,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         fontSize: "currentItemFontSize",
         fontFamily: "currentItemFontFamily",
         pressure: "currentItemPressure",
+        roughness: "currentItemRoughness",
         startArrowhead: "currentItemStartArrowhead",
         endArrowhead: "currentItemEndArrowhead",
         roundness: "currentItemRoundness",
@@ -366,7 +367,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
           <button type="button" className="sk-tool-text-size-step" aria-label="Increase font size" title="Increase font size" disabled={fontSize >= 999} onClick={() => update({ fontSize: Math.min(999, fontSize + 1) })}>+</button>
         </div>
       </DockGroup>}
-      {isAutoShape && <DockGroup label="Roughness">
+      {(isShape || isLine || isAutoShape) && <DockGroup label="Sloppiness">
         {[0, 1, 2].map((value) => <ToolButton key={value} active={roughness === value} title={["Architect", "Artist", "Cartoonist"][value]} onClick={() => update({ roughness: value })}>{["A", "B", "C"][value]}</ToolButton>)}
       </DockGroup>}
       {isDraw && <DockGroup label="Pen pressure">
