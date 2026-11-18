@@ -1,0 +1,80 @@
+/* Adaptive contextual dock: compact at rest, reveal full controls from the expand affordance. */
+.app .sketchizi-tool-options-dock {
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  pointer-events: auto;
+  transition: max-width 150ms ease, padding 150ms ease, box-shadow 150ms ease;
+}
+.app .sketchizi-tool-options-dock > * {
+  pointer-events: auto;
+}
+.app .sketchizi-tool-options-dock.is-compact {
+  max-width: min(calc(100vw - 24px), 430px);
+  flex-wrap: nowrap;
+}
+.app .sketchizi-tool-options-dock.is-compact > .sk-tool-dock-group:nth-of-type(n+4):not(:last-child) {
+  display: none !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-expand {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-width: 28px;
+  height: 30px;
+  min-height: 30px;
+  margin: 0 2px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-expand:hover,
+.app .sketchizi-tool-options-dock .sk-tool-dock-expand:focus-visible {
+  background: rgb(127 135 155 / 16%);
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-expand svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sketchizi-tool-options-dock.is-expanded {
+  max-width: min(calc(100vw - 24px), 900px);
+  flex-wrap: wrap;
+  z-index: 1200;
+}
+.app .sketchizi-tool-options-dock.is-expanded .sk-tool-dock-expand {
+  background: rgb(127 135 155 / 12%);
+}
+.app .sketchizi-tool-options-dock :is(button, input, label, [role="menu"]) {
+  pointer-events: auto;
+}
+@media (max-width: 700px) {
+  .app .sketchizi-tool-options-dock.is-compact {
+    max-width: calc(100vw - 16px);
+  }
+  .app .sketchizi-tool-options-dock.is-expanded {
+    max-width: calc(100vw - 16px);
+    max-height: min(48vh, 320px);
+    overflow-y: auto;
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-tool-options-dock,
+  .app .sketchizi-tool-options-dock .sk-tool-dock-expand {
+    transition: none !important;
+  }
+}
