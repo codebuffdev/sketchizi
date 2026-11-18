@@ -292,7 +292,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     const activeEditingText = liveState.editingTextElement?.type === "text"
       ? liveState.editingTextElement
       : editingTextElement;
-    if (isText && activeEditingText?.id) targetIds.add(activeEditingText.id);
+    if (activeEditingText?.id) targetIds.add(activeEditingText.id);
     if (!targetIds.size) {
       const appStatePatch = {};
       const mapping = {
