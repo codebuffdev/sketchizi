@@ -481,18 +481,18 @@ export default function SketchiziCanvas({
         .map((button) => ({ button, label: labelOf(button), wrapper: directChildFor(button) }))
         .filter((entry) => entry.wrapper && !entry.wrapper.matches(".dropdown-menu-button, .sketchizi-dock-grip"));
       const toolOrder = [
-        ["selection", /\b(select|selection)\\b/],
-        ["hand", /\b(hand|pan)\\b/],
-        ["rectangle", /\b(rectangle|rect)\\b/],
-        ["diamond", /\bdiamond\\b/],
-        ["ellipse", /\b(ellipse|oval)\\b/],
-        ["arrow", /\barrow\\b/],
-        ["line", /\bline\\b/],
-        ["draw", /\b(draw|freedraw|freehand|pen)\\b/],
-        ["text", /\btext\\b/],
-        ["sticky-note", /\b(sticky note|note)\\b/],
-        ["image", /\bimage\\b/],
-        ["eraser", /\beraser\\b/],
+        ["selection", /\b(select|selection)\b/],
+        ["hand", /\b(hand|pan)\b/],
+        ["rectangle", /\b(rectangle|rect)\b/],
+        ["diamond", /\bdiamond\b/],
+        ["ellipse", /\b(ellipse|oval)\b/],
+        ["arrow", /\barrow\b/],
+        ["line", /\bline\b/],
+        ["draw", /\b(draw|freedraw|freehand|pen)\b/],
+        ["text", /\btext\b/],
+        ["sticky-note", /\b(sticky note|note)\b/],
+        ["image", /\bimage\b/],
+        ["eraser", /\beraser\b/],
       ];
       const ordered = [];
       const used = new Set();
