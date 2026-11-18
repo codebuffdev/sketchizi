@@ -864,7 +864,7 @@ export default function SketchiziCanvas({
             // were saved in Zen Mode do not force it on for every new session.
             zenModeEnabled: false,
             zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
-            currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
+            currentItemFontFamily: DEFAULT_FONT_FAMILY_ID,
             viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasAppearanceBackground(activeAppearance, isDarkTheme),
             currentItemRoughness: savedSketch?.appState?.currentItemRoughness ?? (savedSketch ? 1 : getCanvasAppearanceRoughness(activeAppearance)),
             gridModeEnabled: false,
