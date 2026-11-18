@@ -48,15 +48,42 @@ function DockGroup({ label, children }) {
   return <div className="sk-tool-dock-group" role="group" aria-label={label}>{children}</div>;
 }
 
-function DockSelect({ label, value, onChange, icon, children }) {
+function OptionGlyph({ kind, value }) {
+  if (kind === "line-style") {
+    return <svg viewBox="0 0 36 20" aria-hidden="true"><path d="M3 10h30" strokeDasharray={value === "dashed" ? "6 4" : value === "dotted" ? "1 4" : undefined} strokeLinecap="round" /></svg>;
+  }
+  return <svg viewBox="0 0 36 20" aria-hidden="true"><path d={value === 0 ? "M3 10h30" : value === 1 ? "M3 10c4-8 7 8 11 0s7 8 11 0 5 4 8 0" : "M3 10 7 4l4 12 4-12 4 12 4-12 4 12 6-6"} /></svg>;
+}
+
+function VisualOptionSelect({ label, value, onChange, kind, options }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+  const selected = options.find((option) => option.value === value) || options[0];
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event) => {
+      if (event.type === "keydown" && event.key === "Escape") setOpen(false);
+      if (event.type === "pointerdown" && !rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close, true);
+    document.addEventListener("keydown", close, true);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      document.removeEventListener("keydown", close, true);
+    };
+  }, [open]);
   return (
-    <label className="sk-tool-icon-select" title={label}>
-      <span className="sk-tool-icon-select-preview" aria-hidden="true">{icon}</span>
-      <svg className="sk-tool-icon-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
-      <select aria-label={label} value={value} onChange={onChange}>
-        {children}
-      </select>
-    </label>
+    <div className="sk-tool-visual-select" ref={rootRef}>
+      <button type="button" className="sk-tool-icon-select" title={`${label}: ${selected.label}`} aria-label={`${label}: ${selected.label}`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+        <span className="sk-tool-icon-select-preview" aria-hidden="true"><OptionGlyph kind={kind} value={selected.value} /></span>
+        <svg className="sk-tool-icon-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+      </button>
+      {open && <div className="sk-tool-visual-select-menu" role="listbox" aria-label={label}>
+        {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onClick={() => { onChange(option.value); setOpen(false); }}>
+          <OptionGlyph kind={kind} value={option.value} />
+        </button>)}
+      </div>}
+    </div>
   );
 }
 
@@ -322,9 +349,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </DockSelect>
       </DockGroup>}
       {(isShape || isLine || isDraw || isAutoShape) && <DockGroup label="Stroke style">
-        <DockSelect label="Stroke style" value={strokeStyle} onChange={(event) => update({ strokeStyle: event.target.value })} icon={<svg viewBox="0 0 24 24"><path d="M3 12h18" strokeDasharray={strokeStyle === "dashed" ? "4 3" : strokeStyle === "dotted" ? "1 3" : undefined} strokeLinecap="round" /></svg>}>
-          {LINE_STYLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </DockSelect>
+        <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />
       </DockGroup>}
       {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
         <DockSelect label="Fill style" value={fillStyle} onChange={(event) => update({ fillStyle: event.target.value })} icon={<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" /><path d={fillStyle === "solid" ? "M4 4h16v16H4z" : fillStyle === "hachure" ? "m5 17 12-12M9 20 20 9M4 12l8-8" : "m4 4 16 16M20 4 4 20M12 4v16M4 12h16"} fill={fillStyle === "solid" ? "currentColor" : "none"} /></svg>}>
@@ -385,11 +410,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </div>
       </DockGroup>}
       {(isShape || isLine || isAutoShape) && <DockGroup label="Sloppiness">
-        <DockSelect label="Sloppiness" value={roughness} onChange={(event) => update({ roughness: Number(event.target.value) })} icon={<svg viewBox="0 0 24 24"><path d={roughness === 0 ? "M3 12h18" : roughness === 1 ? "M3 12c3-7 6 7 9 0s6 7 9 0" : "M3 12 6 7l3 10 3-10 3 10 3-10 3 5"} /></svg>}>
-          <option value={0}>Architect</option>
-          <option value={1}>Artist</option>
-          <option value={2}>Cartoonist</option>
-        </DockSelect>
+        <VisualOptionSelect label="Sloppiness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />
       </DockGroup>}
       {isDraw && <DockGroup label="Pen pressure">
         <DockSelect label="Pen pressure" value={pressure ? "on" : "off"} onChange={(event) => update({ pressure: event.target.value === "on" })} icon={<svg viewBox="0 0 24 24"><path d="M4 18c3-1 4-2 6-5s3-7 5-7 3 4 5 5" strokeWidth={pressure ? 2.2 : 1.2} /><path d="M4 20h16" opacity=".45" /></svg>}>
