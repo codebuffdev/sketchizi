@@ -3599,40 +3599,29 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 }
 
 
-/* Draw the font-family mark as a fixed-size icon so font metrics cannot enlarge it. */
-.app .contextual-formatting-toolbar .format-icon-glyph-font-family {
-  display: block;
-  flex: 0 0 12px;
-  width: 12px !important;
-  min-width: 12px !important;
-  max-width: 12px !important;
-  height: 14px !important;
-  min-height: 14px !important;
-  max-height: 14px !important;
-  overflow: hidden;
-  box-sizing: border-box;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.45;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transform: translateY(0);
-  pointer-events: none;
-}
-
-
-/* Give the font-family control a slightly narrower footprint without
-   changing the size or alignment of the other contextual toolbar buttons. */
+/* Match the font-family letter to the neighboring text glyphs, but give it
+   a slightly tighter footprint so its visual weight doesn't dominate the rail. */
 .app .contextual-formatting-toolbar .format-icon-button-fontFamily {
   box-sizing: border-box !important;
-  width: 28px !important;
-  min-width: 28px !important;
-  max-width: 28px !important;
+  flex: 0 0 26px !important;
+  width: 26px !important;
+  min-width: 26px !important;
+  max-width: 26px !important;
   padding: 0 !important;
 }
 .app .contextual-formatting-toolbar .format-icon-button-fontFamily .format-icon-glyph-font-family {
+  display: inline-flex !important;
+  flex: 0 0 10px !important;
   width: 10px !important;
   min-width: 10px !important;
   max-width: 10px !important;
-  flex-basis: 10px !important;
+  height: 14px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  font: 600 11px/14px system-ui, sans-serif !important;
+  letter-spacing: -0.04em !important;
+  transform: none !important;
+  pointer-events: none !important;
 }
