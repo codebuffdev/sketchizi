@@ -38,3 +38,21 @@ test("stroke style and sloppiness use visual option menus with accessible names"
   assert.match(dock, /kind="line-style"/);
   assert.match(dock, /kind="roughness"/);
 });
+
+
+test("all contextual setting dropdowns are icon-only custom menus", () => {
+  assert.match(dock, /function DockOptionGlyph\(\{ label, value \}\)/);
+  assert.match(dock, /function DockSelect\(\{ label, value, onChange, icon, children \}\)/);
+  assert.match(dock, /role="listbox" aria-label=\{label\}/);
+  assert.match(dock, /role="option"/);
+  assert.doesNotMatch(dock.slice(dock.indexOf("function DockSelect("), dock.indexOf("\\nfunction OptionGlyph")), /<select/);
+  for (const label of ["Stroke width", "Fill style", "Corners", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
+    assert.ok(dock.includes(`label="${label}"`), `missing icon dropdown for ${label}`);
+  }
+});
+
+test("icon dropdowns expose selection state and dismiss on outside click or Escape", () => {
+  assert.match(dock, /aria-selected=\{String\(option\.value\) === String\(value\)\}/);
+  assert.match(dock, /event\.key === "Escape"/);
+  assert.match(dock, /event\.type === "pointerdown"/);
+});
