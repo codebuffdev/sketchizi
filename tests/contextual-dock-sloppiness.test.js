@@ -65,3 +65,11 @@ test("custom dropdowns safely normalize option children and empty option lists",
   assert.match(c.result.content, /safeOptions = Array\.isArray\(options\)/);
   assert.match(c.result.content, /\|\| safeOptions\[0\] \|\| \{ value: 0, label \}/);
 });
+
+test("dropdown option selection passes the raw value and stops canvas pointer handling", () => {
+  assert.doesNotMatch(dock, /onChange\(\{ target: \{ value: option\.value \} \}\)/);
+  assert.match(dock, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\} onClick=\{\(event\) => \{ event\.stopPropagation\(\); onChange\(option\.value\); setOpen\(false\); \}\}/);
+  for (const label of ["Stroke width", "Fill style", "Corners", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
+    assert.match(dock, new RegExp(`<DockSelect label="${label}" value=[^>]*onChange=\\{\\(value\\) =>`));
+  }
+});
