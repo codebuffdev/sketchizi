@@ -845,7 +845,7 @@ export default function ContextualFormattingToolbar({
           <button
             key={group.id}
             type="button"
-            className={`format-icon-button${activeGroup === group.id ? " is-active" : ""}`}
+            className={`format-icon-button format-icon-button-${group.id}${activeGroup === group.id ? " is-active" : ""}`}
             aria-label={group.label}
             aria-expanded={activeGroup === group.id}
             aria-pressed={activeGroup === group.id}
