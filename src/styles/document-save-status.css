@@ -482,3 +482,15 @@
   background: rgba(34, 160, 107, .24);
   color: #91edbd;
 }
+
+
+/* The document identity dot turns green only after a local autosave completes. */
+.desktop-app-document-identity-dirty-dot.is-saved {
+  background: #22a06b;
+  box-shadow: 0 0 0 3px rgba(34, 160, 107, .14);
+  animation: none;
+}
+.app.theme-dark .desktop-app-document-identity-dirty-dot.is-saved {
+  background: #45c48b;
+  box-shadow: 0 0 0 3px rgba(69, 196, 139, .18);
+}
