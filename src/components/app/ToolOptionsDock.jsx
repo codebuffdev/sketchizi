@@ -202,7 +202,16 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     const handleEscapeToPrimaryDock = (event) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       const target = event.target;
-      if (target?.closest?.("input, textarea, select, [contenteditable='true'], [role='dialog']")) return;
+      // Let Escape close an open dock menu first, and never steal it from
+      // editable controls or dialogs.
+      if (target?.closest?.(
+        "input, textarea, select, [contenteditable='true'], [role='dialog'], .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
+      )) return;
+
+      // Capture Escape before Excalidraw consumes it so the contextual dock
+      // reliably yields its slot back to the Primary Dock.
+      event.preventDefault();
+      event.stopPropagation();
       setCustomTool(null);
       apiRef?.current?.updateScene?.({
         appState: {
@@ -212,8 +221,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         },
       });
     };
-    window.addEventListener("keydown", handleEscapeToPrimaryDock);
-    return () => window.removeEventListener("keydown", handleEscapeToPrimaryDock);
+    window.addEventListener("keydown", handleEscapeToPrimaryDock, true);
+    return () => window.removeEventListener("keydown", handleEscapeToPrimaryDock, true);
   }, [apiRef]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
