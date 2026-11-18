@@ -2049,6 +2049,95 @@
   color: #dce1e7;
   font-size: 11px;
 }
+
+/* Icon-first contextual selectors: the native select remains the interactive
+   and accessible control while its visible face is a compact SVG preview. */
+.app .sketchizi-tool-options-dock .sk-tool-icon-select {
+  position: relative;
+  display: inline-flex;
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #d5dbe2;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select:hover,
+.app .sketchizi-tool-options-dock .sk-tool-icon-select:focus-within {
+  border-color: #59636e;
+  background: #343b44;
+  color: #fff;
+}
+.app .sk-tool-icon-select-preview {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.app .sk-tool-icon-select-preview svg {
+  width: 19px;
+  height: 19px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sk-tool-icon-select-chevron {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .72;
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-icon-select select {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  opacity: 0;
+  cursor: pointer;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-icon-select {
+  color: #39434d;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-icon-select:hover,
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-icon-select:focus-within {
+  border-color: #c4ccd4;
+  background: #e9edf1;
+  color: #202830;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock .sk-tool-icon-select {
+    width: 31px;
+    min-width: 31px;
+    height: 28px;
+  }
+  .app .sk-tool-icon-select-preview,
+  .app .sk-tool-icon-select-preview svg {
+    width: 18px;
+    height: 18px;
+  }
+}
 .app .sketchizi-tool-options-dock input[type="range"] { width: 76px; accent-color: #aeb7c1; }
 .app .sk-tool-dock-opacity-value { min-width: 31px; color: #b8c0c9; font-size: 10px; text-align: right; }
 .app .excalidraw .App-menu__left { display: none !important; }
