@@ -2648,62 +2648,17 @@
 }
 
 
-/* Primary Dock hover expansion: Selection remains visible as the single
-   collapsed trigger. Hovering or keyboard-focusing the dock reveals all tools. */
-.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-hover-expand="true"]) {
-  overflow: visible !important;
-}
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] {
-  box-sizing: border-box !important;
-  position: relative !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-  overflow: hidden !important;
-  gap: 0 !important;
-  transition: max-height 180ms ease, box-shadow 180ms ease !important;
-  z-index: 30 !important;
-}
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] > :not([data-sketchizi-selection-trigger="true"]) {
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:hover,
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:focus-within {
+/* Primary Dock is permanently expanded: every native tool stays visible. */
+.app .excalidraw .Island.App-toolbar {
   height: auto !important;
   min-height: 38px !important;
-  max-height: calc(100vh - 32px) !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  box-shadow: 0 8px 28px rgb(0 0 0 / 24%) !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:hover > *,
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:focus-within > * {
+.app .excalidraw .Island.App-toolbar > * {
   visibility: visible !important;
   pointer-events: auto !important;
 }
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] > [data-sketchizi-selection-trigger="true"] {
-  order: -1 !important;
-  flex: 0 0 34px !important;
-  width: 34px !important;
-  min-width: 34px !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:hover > [data-sketchizi-selection-trigger="true"],
-.app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"]:focus-within > [data-sketchizi-selection-trigger="true"] {
-  flex-shrink: 0 !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  .app .excalidraw .Island.App-toolbar[data-sketchizi-hover-expand="true"] {
-    transition: none !important;
-  }
-}
-
 
 /* Text Contextual Dock: precise, editable font sizing in a compact control. */
 .app .sketchizi-tool-options-dock .sk-tool-text-size {
@@ -3586,5 +3541,41 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   .app .sk-tool-dock-group {
     gap: 1px !important;
     padding-left: 2px !important;
+  }
+}
+
+/* Primary Dock default placement: horizontal, centered along the canvas bottom. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="horizontal"]) {
+  position: fixed !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="horizontal"] {
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  height: auto !important;
+  min-height: 62px !important;
+  max-height: none !important;
+  overflow: visible !important;
+  flex-wrap: nowrap !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="horizontal"] > * {
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex-shrink: 0 !important;
+}
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="horizontal"]) {
+    position: static !important;
+    width: min(calc(100vw - 16px), max-content) !important;
+    max-width: calc(100vw - 16px) !important;
   }
 }
