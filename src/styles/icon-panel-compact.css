@@ -408,3 +408,30 @@
   color: var(--skp-text, #f5f7fb) !important;
   background-color: var(--skp-bg, #202532) !important;
 }
+
+
+/* Keep the icon-library portal in lockstep with the app theme.
+   The portal is mounted directly under .app, so key the light palette from
+   the root theme attribute rather than relying on descendant theme selectors. */
+.app[data-theme="light"] > .sk-icon-library-portal-host > .library-panel.library-panel-redesign.sk-icon-panel {
+  --skp-bg: #ffffff;
+  --skp-surface: #f5f7fb;
+  --skp-surface-hover: #edf1f8;
+  --skp-surface-active: #e4e9f5;
+  --skp-border: #e5e8f0;
+  --skp-border-strong: #c9d1e2;
+  --skp-text: #181e2c;
+  --skp-text-muted: #5a657d;
+  --skp-text-faint: #848ea3;
+  --skp-accent: #555a62;
+  --skp-accent-soft: rgba(85, 90, 98, 0.1);
+  --skp-stage-bg: #eef2f8;
+  --skp-kbd-bg: #eef1f7;
+  --skp-kbd-border: #d5dce9;
+  --skp-shadow: 0 14px 40px rgba(15, 23, 42, 0.12);
+  color-scheme: light;
+  background: var(--skp-bg) !important;
+  color: var(--skp-text) !important;
+  border-color: var(--skp-border) !important;
+  box-shadow: var(--skp-shadow) !important;
+}
