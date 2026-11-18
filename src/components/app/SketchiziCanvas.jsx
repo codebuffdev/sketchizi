@@ -418,6 +418,15 @@ export default function SketchiziCanvas({
       });
     };
 
+    const onWindowBlur = () => {
+      if (session) finishStroke({ pointerId: session.pointerId });
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && session) {
+        finishStroke({ pointerId: session.pointerId });
+      }
+    };
+
     const observer = new MutationObserver(attachPreview);
     observer.observe(root, { childList: true, subtree: true });
     attachPreview();
@@ -426,6 +435,8 @@ export default function SketchiziCanvas({
     window.addEventListener("pointerrawupdate", onPointerRawUpdate, true);
     window.addEventListener("pointerup", finishStroke, true);
     window.addEventListener("pointercancel", finishStroke, true);
+    window.addEventListener("blur", onWindowBlur);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("resize", resizePreview, { passive: true });
 
     return () => {
@@ -436,6 +447,8 @@ export default function SketchiziCanvas({
       window.removeEventListener("pointerrawupdate", onPointerRawUpdate, true);
       window.removeEventListener("pointerup", finishStroke, true);
       window.removeEventListener("pointercancel", finishStroke, true);
+      window.removeEventListener("blur", onWindowBlur);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("resize", resizePreview);
       if (clearFrame) cancelAnimationFrame(clearFrame);
       previewCanvas?.remove();
