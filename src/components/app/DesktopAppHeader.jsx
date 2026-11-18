@@ -583,24 +583,6 @@ export default function DesktopAppHeader({
                 <span className="sketchizi-header-grid-switch" aria-hidden="true" />
               </label>
             </div>
-            <div className="sketchizi-header-appearance-section" aria-label="Canvas appearance">
-              <strong>Appearance preset</strong>
-              <div className="sketchizi-header-appearance-options" role="group" aria-label="Canvas appearance preset">
-                {[
-                  ["sketch", "Sketch", "Hand-drawn, expressive strokes across the canvas."],
-                  ["clean", "Clean", "Neutral surface for professional diagrams."],
-                  ["chalkboard", "Chalkboard", "Dark board with contrasting drawing colors."],
-                ].map(([value, label, description]) => (
-                  <button key={value} type="button" disabled={!canEditCanvas} aria-pressed={canvasAppearance === value}
-                    onClick={() => onCanvasAppearanceChange?.(value)}>
-                    <span className={`sketchizi-appearance-preview is-${value}`} aria-hidden="true"><i /><i /><i /></span>
-                    <strong>{label}</strong>
-                    <small>{description}</small>
-                    {canvasAppearance === value && <span className="sketchizi-grid-selected-check" aria-hidden="true">✓</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
             <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
               <strong>Canvas patterns</strong>
               <div className="sketchizi-header-grid-options" role="group" aria-label="Grid mode">
