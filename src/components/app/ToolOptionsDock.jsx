@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 
@@ -65,11 +65,15 @@ function DockOptionGlyph({ label, value }) {
 function DockSelect({ label, value, onChange, icon, children }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
-  const options = (Array.isArray(children) ? children : [children]).filter(Boolean).map((child) => ({
-    value: child.props.value,
-    label: String(child.props.children ?? child.props.value),
-  }));
-  const selected = options.find((option) => String(option.value) === String(value)) || options[0];
+  const options = Children.toArray(children)
+    .filter((child) => isValidElement(child) && child.props?.value !== undefined)
+    .map((child) => ({
+      value: child.props.value,
+      label: String(child.props.children ?? child.props.value),
+    }));
+  const selected = options.find((option) => String(option.value) === String(value))
+    || options[0]
+    || { value: "", label };
   useEffect(() => {
     if (!open) return undefined;
     const close = (event) => {
@@ -108,7 +112,7 @@ function OptionGlyph({ kind, value }) {
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
-  const selected = options.find((option) => option.value === value) || options[0];
+  const safeOptions = Array.isArray(options) ? options.filter((option) => option && option.value !== undefined) : [];\n  const selected = safeOptions.find((option) => option.value === value) || safeOptions[0] || { value: 0, label };
   useEffect(() => {
     if (!open) return undefined;
     const close = (event) => {
@@ -129,7 +133,7 @@ function VisualOptionSelect({ label, value, onChange, kind, options }) {
         <svg className="sk-tool-icon-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && <div className="sk-tool-visual-select-menu" role="listbox" aria-label={label}>
-        {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onClick={() => { onChange(option.value); setOpen(false); }}>
+        {safeOptions.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={option.value === value} aria-label={option.label} title={option.label} className={`sk-tool-visual-select-option${option.value === value ? " is-selected" : ""}`} onClick={() => { onChange(option.value); setOpen(false); }}>
           <OptionGlyph kind={kind} value={option.value} />
         </button>)}
       </div>}
