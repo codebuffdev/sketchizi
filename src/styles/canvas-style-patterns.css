@@ -168,6 +168,14 @@
 .sketchizi-appearance-preview.is-clean i { background: #586779; }
 .sketchizi-appearance-preview.is-chalkboard { border-color: #315447; background: #1b382f; }
 .sketchizi-appearance-preview.is-chalkboard i { background: #f0f0df; }
+.sketchizi-appearance-preview.is-architect { background: #f5f7fa; }
+.sketchizi-appearance-preview.is-architect i { height: 1px; border-radius: 0; background: #334155; }
+.sketchizi-appearance-preview.is-artist { background: #fffaf2; }
+.sketchizi-appearance-preview.is-artist i { height: 2px; background: #786b5e; transform: rotate(-2deg); }
+.sketchizi-appearance-preview.is-cartoonist { background: #fff; }
+.sketchizi-appearance-preview.is-cartoonist i { height: 3px; border: 1px solid #252a32; background: #f4c95d; border-radius: 999px; }
+.sketchizi-appearance-preview.is-cartoonist i:nth-child(2) { transform: rotate(2deg); }
+
 .app.theme-dark .sketchizi-header-appearance-section { border-color: var(--ui-border-soft, #343943); }
 .app.theme-dark .sketchizi-header-appearance-section > strong,
 .app.theme-dark .sketchizi-header-appearance-options button > strong { color: var(--ui-text-strong, #f1f3f6); }
