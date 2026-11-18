@@ -630,19 +630,25 @@ export default function SketchiziCanvas({
       // Keep the native Selection tool as the visible collapsed-dock trigger.
       // Move its existing native wrapper to the first position; its original
       // React handler and keyboard shortcut remain untouched.
-      const selectionButton = [...toolbar.querySelectorAll("button, [role='button']")].find((button) => {
+      const toolbarButtons = [...toolbar.querySelectorAll("button, [role='button']")]
+        .filter((button) => !button.classList.contains("sketchizi-dock-grip"));
+      const selectionButton = toolbarButtons.find((button) => {
         const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""} ${button.dataset.testid || ""}`.trim();
-        return /(^|\\s)(select|selection)(?=\\s|$)/i.test(label);
+        return /select|selection/i.test(label);
       });
-      if (selectionButton) {
-        let selectionAnchor = selectionButton;
-        while (selectionAnchor.parentElement && selectionAnchor.parentElement !== toolbar) {
-          selectionAnchor = selectionAnchor.parentElement;
+      // Excalidraw changes accessible labels between versions/locales. If the
+      // Selection label cannot be identified, keep the first native tool
+      // visible rather than allowing the collapsed dock to disappear entirely.
+      const collapsedTrigger = selectionButton || toolbarButtons[0];
+      if (collapsedTrigger) {
+        let triggerAnchor = collapsedTrigger;
+        while (triggerAnchor.parentElement && triggerAnchor.parentElement !== toolbar) {
+          triggerAnchor = triggerAnchor.parentElement;
         }
-        if (selectionAnchor.parentElement === toolbar) {
-          selectionAnchor.dataset.sketchiziSelectionTrigger = "true";
-          selectionButton.dataset.sketchiziSelectionTrigger = "true";
-          toolbar.insertBefore(selectionAnchor, toolbar.firstChild);
+        if (triggerAnchor.parentElement === toolbar) {
+          triggerAnchor.dataset.sketchiziSelectionTrigger = "true";
+          collapsedTrigger.dataset.sketchiziSelectionTrigger = "true";
+          toolbar.insertBefore(triggerAnchor, toolbar.firstChild);
         }
       }
       toolbar.dataset.sketchiziHoverExpand = "true";
