@@ -3504,3 +3504,13 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option:focus-vis
 body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-selected { border-color: #cbd4dd; background: #edf1f4; color: #1f2932; }
 @keyframes sk-tool-choice-enter { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .app .sk-tool-choice-trigger, .sk-tool-choice-option { transition: none; } .sk-tool-choice-menu { animation: none; } }
+
+
+/* Primary Dock: remove only the divider immediately before the Hand/navigation tool. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="vertical"] > .sketchizi-dock-separator:has(+ [data-sketchizi-tool-group="navigation"]) {
+  display: none !important;
+  width: 0 !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+}
