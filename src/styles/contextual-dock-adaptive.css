@@ -1,36 +1,57 @@
-/* Adaptive contextual dock: compact at rest, reveal full controls from the expand affordance. */
+/* Compact bottom trigger with a separate, canvas-anchored options surface. */
 .app .sketchizi-tool-options-dock {
-  box-sizing: border-box;
   position: absolute;
+  z-index: 10045;
+  left: 50%;
+  right: auto;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  min-height: 42px;
+  padding: 5px 8px;
+  overflow: visible;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 12px;
+  background: var(--sk-options-surface, rgb(27 30 35 / 97%));
+  color: var(--sk-options-ink, #e6e9ed);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  transform: translateX(-50%);
   isolation: isolate;
   pointer-events: auto;
-  transition: max-width 150ms ease, padding 150ms ease, box-shadow 150ms ease;
 }
 .app .sketchizi-tool-options-dock > * {
   pointer-events: auto;
 }
-.app .sketchizi-tool-options-dock.is-compact {
-  max-width: min(calc(100vw - 24px), 430px);
-  flex-wrap: nowrap;
-}
-.app .sketchizi-tool-options-dock.is-compact > .sk-tool-dock-group:nth-of-type(n+4):not(:last-child) {
-  display: none !important;
+.app .sketchizi-tool-options-dock .sk-tool-dock-context {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--sk-options-ink, #e6e9ed);
 }
 .app .sketchizi-tool-options-dock .sk-tool-dock-expand {
   appearance: none;
   -webkit-appearance: none;
   display: inline-flex;
-  flex: 0 0 28px;
+  flex: 0 0 30px;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  min-width: 28px;
+  width: 30px;
+  min-width: 30px;
   height: 30px;
   min-height: 30px;
-  margin: 0 2px 0 0;
+  margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -38,55 +59,71 @@
 }
 .app .sketchizi-tool-options-dock .sk-tool-dock-expand:hover,
 .app .sketchizi-tool-options-dock .sk-tool-dock-expand:focus-visible {
-  background: rgb(127 135 155 / 16%);
+  background: var(--sk-options-hover, #363d46);
+  outline: none;
 }
 .app .sketchizi-tool-options-dock .sk-tool-dock-expand svg {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.app .sketchizi-tool-options-dock.is-expanded {
-  /* Keep the original absolute bottom anchor. The dock grows upward naturally
-     from bottom: 16px; do not translate the whole dock by its own height. */
+.app .sketchizi-tool-options-dock .sk-tool-dock-panel {
+  position: absolute;
   left: 50%;
-  right: auto;
-  bottom: 16px;
-  max-width: min(calc(100vw - 24px), 900px);
-  max-height: min(72vh, calc(100% - 88px));
-  height: auto;
+  bottom: calc(100% + 10px);
+  display: none;
+  align-items: center;
+  align-content: flex-start;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 7px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(900px, calc(100vw - 32px));
+  max-height: min(62vh, calc(100% - 104px));
+  padding: 10px;
   overflow-x: hidden;
   overflow-y: auto;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  border: 1px solid var(--sk-options-border, #414750);
+  border-radius: 14px;
+  background: var(--sk-options-surface, rgb(27 30 35 / 98%));
+  color: var(--sk-options-ink, #e6e9ed);
+  box-shadow: 0 16px 42px rgb(0 0 0 / 34%), 0 3px 10px rgb(0 0 0 / 18%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  z-index: 1200;
-  transform: translateX(-50%) !important;
+  transform: translateX(-50%);
+  z-index: 2;
 }
-.app .sketchizi-tool-options-dock.is-expanded .sk-tool-dock-expand {
-  background: rgb(127 135 155 / 12%);
+.app .sketchizi-tool-options-dock.is-expanded .sk-tool-dock-panel {
+  display: flex;
 }
-.app .sketchizi-tool-options-dock :is(button, input, label, [role="menu"]) {
+.app .sketchizi-tool-options-dock .sk-tool-dock-panel > .sk-tool-dock-context {
+  display: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-panel .sk-tool-dock-group {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+.app .sketchizi-tool-options-dock :is(button, input, select, label, [role="menu"]) {
   pointer-events: auto;
 }
-@media (max-width: 700px) {
-  .app .sketchizi-tool-options-dock.is-compact {
-    max-width: calc(100vw - 16px);
-  }
-  .app .sketchizi-tool-options-dock.is-expanded {
-    left: 50%;
-    right: auto;
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock {
     bottom: 10px;
-    max-width: calc(100vw - 16px);
-    max-height: min(72vh, calc(100% - 72px));
-    overflow-y: auto;
-    flex-wrap: wrap;
-    transform: translateX(-50%) !important;
+    max-width: calc(100% - 24px);
+  }
+  .app .sketchizi-tool-options-dock .sk-tool-dock-panel {
+    max-width: calc(100vw - 20px);
+    max-height: min(64vh, calc(100% - 82px));
+    padding: 8px;
+    gap: 5px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
