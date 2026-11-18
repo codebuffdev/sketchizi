@@ -297,10 +297,24 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
           </button>
           {layerMenuOpen && layerMenuPosition && createPortal(
             <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
-              <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span>Bring to front</span><kbd>Ctrl+Shift+]</kbd></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span>Bring forward</span><kbd>Ctrl+]</kbd></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span>Send backward</span><kbd>Ctrl+[</kbd></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span>Send to back</span><kbd>Ctrl+Shift+[</kbd></button>
+              <div className="sk-tool-layer-menu-heading">Arrange layers</div>
+              <button type="button" role="menuitem" onClick={() => moveLayers("front")}>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M3 8h14M6 12h8M8 16h4" /></svg>
+                <span>Bring to front</span><kbd>Ctrl <i>+</i> Shift <i>+</i> ]</kbd>
+              </button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 9h14M6 13h8M8 17h4" /><path d="m14 2 3 3-3 3" /></svg>
+                <span>Bring forward</span><kbd>Ctrl <i>+</i> ]</kbd>
+              </button>
+              <div className="sk-tool-layer-menu-divider" />
+              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7h14M3 11h14M6 15h8M8 19h4" /><path d="m6 2-3 3 3 3" /></svg>
+                <span>Send backward</span><kbd>Ctrl <i>+</i> [</kbd>
+              </button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("back")}>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h14M3 12h14M6 16h8M8 20h4" /></svg>
+                <span>Send to back</span><kbd>Ctrl <i>+</i> Shift <i>+</i> [</kbd>
+              </button>
             </div>,
             document.body,
           )}
