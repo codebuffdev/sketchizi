@@ -9,7 +9,7 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const getAdjustedFreeDrawStrokeWidth = (strokeWidthKey) => {
   const width = getStrokeWidthByKey("freedraw", strokeWidthKey || "medium");
-  return strokeWidthKey === "medium" || !strokeWidthKey ? width * 0.8 : width;
+  return strokeWidthKey === "medium" || !strokeWidthKey ? width * 0.8 * 0.9 : width;
 };
 
 export function getPointerEventSamples(event) {
