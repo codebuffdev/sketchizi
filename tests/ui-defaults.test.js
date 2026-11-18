@@ -7,10 +7,10 @@ function storageWith(value) {
   return { getItem: (key) => key === THEME_PREFERENCE_KEY ? value : null };
 }
 
-test("missing, invalid, or unavailable theme preference defaults to dark", () => {
-  assert.equal(getInitialThemeMode(storageWith(null)), "dark");
-  assert.equal(getInitialThemeMode(storageWith("sepia")), "dark");
-  assert.equal(getInitialThemeMode({ getItem() { throw new Error("blocked"); } }), "dark");
+test("missing, invalid, or unavailable theme preference defaults to light", () => {
+  assert.equal(getInitialThemeMode(storageWith(null)), "light");
+  assert.equal(getInitialThemeMode(storageWith("sepia")), "light");
+  assert.equal(getInitialThemeMode({ getItem() { throw new Error("blocked"); } }), "light");
 });
 
 test("saved light, dark, and system preferences are accepted", () => {
@@ -122,4 +122,14 @@ test("hamburger panel removes trailing empty separators after Reset the canvas",
   assert.match(source, /hasMeaningfulMenuContent/);
   assert.match(source, /actionGroup\.style\.setProperty\("border-bottom", "0", "important"\)/);
   assert.match(source, /actionGroup\.style\.setProperty\("padding-bottom", "0", "important"\)/);
+});
+
+
+test("new canvases default to a visible focus grid while saved grid preferences win", async () => {
+  const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+  assert.match(app, /stored === null \? true : stored === "true"/);
+  assert.match(app, /catch \{ return true; \}/);
+  assert.match(app, /includes\(stored\) \? stored : "focus"/);
+  assert.match(app, /catch \{ return "focus"; \}/);
+  assert.match(app, /stored === null \? true : stored === "true"/);
 });
