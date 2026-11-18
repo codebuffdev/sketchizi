@@ -156,10 +156,16 @@ export function createFreeDrawElementFromSamples(samples, appState) {
     });
   }
 
-  const minX = Math.min(...scenePoints.map((point) => point.x));
-  const minY = Math.min(...scenePoints.map((point) => point.y));
-  const maxX = Math.max(...scenePoints.map((point) => point.x));
-  const maxY = Math.max(...scenePoints.map((point) => point.y));
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const point of scenePoints) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
   const firstSample = samples[0];
   const simulatePressure = firstSample.pressure === 0.5;
   const pointerType = firstSample.pointerType || "mouse";
