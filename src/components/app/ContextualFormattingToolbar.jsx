@@ -29,6 +29,8 @@ const NOTE_FONT_FAMILIES = [
   [1, "Hand-drawn", "✎"],
   [2, "Sans", "A"],
   [3, "Code", "</>"],
+  [4, "Kalam", "K"],
+  [11, "Kalam Bold", "B"],
   [9, "Serif", "A"],
 ];
 const FILL_COLORS = [
@@ -43,7 +45,7 @@ const LINE_TYPES = new Set(["line", "arrow", "rectangle", "diamond", "ellipse"])
 const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]];
 const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— —"], ["dotted", "Dotted", "· · ·"]];
 const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
-const FONT_FAMILIES = [[1, "Hand-drawn", "✎"], [2, "Sans", "A"], [3, "Code", "</>"], [5, "Excalifont", "E"], [6, "Nunito", "N"], [7, "Lilita", "L"], [8, "Comic", "C"], [9, "Liberation", "L"]];
+const FONT_FAMILIES = [[1, "Hand-drawn", "✎"], [2, "Sans", "A"], [3, "Code", "</>"], [4, "Kalam", "K"], [11, "Kalam Bold", "B"], [5, "Excalifont", "E"], [6, "Nunito", "N"], [7, "Lilita", "L"], [8, "Comic", "C"], [9, "Liberation", "L"]];
 const FONT_SIZES = [[12, "XS"], [16, "S"], [20, "M"], [28, "L"], [36, "XL"]];
 const OPACITY_PRESETS = [25, 50, 75, 100];
 const TEXT_ALIGNMENTS = [["left", "Left", "≡"], ["center", "Center", "☰"], ["right", "Right", "≡"]];
