@@ -148,7 +148,7 @@ export default function SketchiziCanvas({
     // Do not recalculate the workspace focus grid on every pen sample.
     // The focus anchor is captured at pointer-down and refreshed after the
     // gesture ends; Excalidraw owns the time-critical drawing pointer stream.
-    const onPointerMove = () => {};
+
     const onPointerEnd = (event) => {
       if (drawingPointerRef.current !== event.pointerId) return;
       drawingPointerRef.current = null;
@@ -192,7 +192,7 @@ export default function SketchiziCanvas({
     observer.observe(root, { childList: true, subtree: true });
     attach();
     root.addEventListener("pointerdown", onPointerDown, true);
-    root.addEventListener("pointermove", onPointerMove, { passive: true });
+
     window.addEventListener("pointerup", onPointerEnd, true);
     window.addEventListener("pointercancel", onPointerEnd, true);
     root.addEventListener("focusin", onTextFocus, true);
@@ -203,7 +203,7 @@ export default function SketchiziCanvas({
     return () => {
       observer.disconnect();
       root.removeEventListener("pointerdown", onPointerDown, true);
-      root.removeEventListener("pointermove", onPointerMove);
+
       window.removeEventListener("pointerup", onPointerEnd, true);
       window.removeEventListener("pointercancel", onPointerEnd, true);
       root.removeEventListener("focusin", onTextFocus, true);
