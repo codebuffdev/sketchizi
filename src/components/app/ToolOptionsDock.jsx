@@ -283,7 +283,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
               const rect = layerTriggerRef.current?.getBoundingClientRect();
               if (rect) {
                 setLayerMenuPosition({
-                  left: Math.max(8, Math.min(rect.left, window.innerWidth - 258)),
+                  left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)),
                   bottom: Math.max(8, window.innerHeight - rect.top + 9),
                 });
               }
