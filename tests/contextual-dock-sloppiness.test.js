@@ -4,6 +4,10 @@ import { readFileSync } from "node:fs";
 
 const dock = readFileSync(new URL("../src/components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
 
+test("DockSelect remains defined for the other contextual controls", () => {
+  assert.match(dock, /function DockSelect\\(\\{ label, value, onChange, icon, children \\}\\)/);
+});
+
 test("sloppiness dropdown is available for shapes, lines, arrows, and draw-to-shape", () => {
   assert.match(dock, /const isShape = \["rectangle", "diamond", "ellipse"\]\.includes\(type\)/);
   assert.match(dock, /const isLine = \["line", "arrow"\]\.includes\(type\)/);
