@@ -8,15 +8,13 @@ test("sloppiness dropdown is available for shapes, lines, arrows, and draw-to-sh
   assert.match(dock, /const isShape = \["rectangle", "diamond", "ellipse"\]\.includes\(type\)/);
   assert.match(dock, /const isLine = \["line", "arrow"\]\.includes\(type\)/);
   assert.match(dock, /\{\(isShape \|\| isLine \|\| isAutoShape\) && <DockGroup label="Sloppiness">/);
-  assert.match(dock, /<DockSelect label="Sloppiness"/);
-  assert.match(dock, /<option value=\{0\}>Architect<\/option>/);
-  assert.match(dock, /<option value=\{1\}>Artist<\/option>/);
-  assert.match(dock, /<option value=\{2\}>Cartoonist<\/option>/);
+  assert.match(dock, /<VisualOptionSelect label="Sloppiness"/);
+  for (const label of ["Architect", "Artist", "Cartoonist"]) assert.ok(dock.includes(`label: "${label}"`));
 });
 
 test("sloppiness changes selected elements and the active drawing tool", () => {
   assert.match(dock, /roughness: "currentItemRoughness"/);
-  assert.match(dock, /onChange=\{\(event\) => update\(\{ roughness: Number\(event\.target\.value\) \}\)\}/);
+  assert.match(dock, /onChange=\{\(value\) => update\(\{ roughness: Number\(value\) \}\)\}/);
   assert.match(dock, /const roughness = Number\(current\("roughness", "currentItemRoughness", 1\)\)/);
 });
 
@@ -29,10 +27,10 @@ test("mutually exclusive contextual style choices use compact dropdowns", () => 
   assert.doesNotMatch(dock, /FILL_STYLES\.map\(\(\[value, label\]\) => <ToolButton/);
 });
 
-test("contextual option selectors render icon-first triggers with accessible native selects", () => {
-  assert.match(dock, /function DockSelect\(\{ label, value, onChange, icon, children \}\)/);
-  assert.match(dock, /className="sk-tool-icon-select-preview"/);
-  assert.match(dock, /<select aria-label=\{label\} value=\{value\} onChange=\{onChange\}>/);
-  assert.match(dock, /className="sk-tool-icon-select-chevron"/);
-  assert.doesNotMatch(dock, /<option value=\{0\}>Architect<\/option>\s*<\/select>\s*<\/DockGroup>/);
+test("stroke style and sloppiness use visual option menus with accessible names", () => {
+  assert.match(dock, /function VisualOptionSelect\(\{ label, value, onChange, kind, options \}\)/);
+  assert.match(dock, /role="listbox" aria-label=\{label\}/);
+  assert.match(dock, /aria-label=\{option\.label\} title=\{option\.label\}/);
+  assert.match(dock, /kind="line-style"/);
+  assert.match(dock, /kind="roughness"/);
 });
