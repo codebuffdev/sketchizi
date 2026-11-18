@@ -242,13 +242,9 @@ export default function SketchiziCanvas({
     const root = canvasRootRef.current;
     if (!root || !canEdit || viewModeEnabled) return undefined;
 
-    let wrapper = null;
     let previewCanvas = null;
     let previewContext = null;
-    let resizeObserver = null;
     let clearFrame = 0;
-    let wrapperPositionWasChanged = false;
-    let previousWrapperPosition = "";
     let session = null;
 
     const clearPreview = () => {
@@ -257,52 +253,42 @@ export default function SketchiziCanvas({
     };
 
     const redrawPreview = () => {
-      if (!session || !previewContext || !wrapper) return;
+      if (!session || !previewContext) return;
       clearPreview();
       session.previewPoints = [];
-      const rect = wrapper.getBoundingClientRect();
+      // The preview canvas is viewport-fixed, so client coordinates map
+      // directly to its CSS pixel coordinate space.
+      const rect = { left: 0, top: 0 };
       for (const sample of session.samples) {
         drawFreeDrawPreviewSample(previewContext, session, sample, session.appState, rect);
       }
     };
 
     const resizePreview = () => {
-      if (!wrapper || !previewCanvas) return;
-      const rect = wrapper.getBoundingClientRect();
+      if (!previewCanvas) return;
+      const width = document.documentElement.clientWidth || window.innerWidth;
+      const height = document.documentElement.clientHeight || window.innerHeight;
       const ratio = Math.max(1, window.devicePixelRatio || 1);
-      previewCanvas.width = Math.max(1, Math.round(rect.width * ratio));
-      previewCanvas.height = Math.max(1, Math.round(rect.height * ratio));
-      previewCanvas.style.width = `${rect.width}px`;
-      previewCanvas.style.height = `${rect.height}px`;
+      previewCanvas.width = Math.max(1, Math.round(width * ratio));
+      previewCanvas.height = Math.max(1, Math.round(height * ratio));
+      previewCanvas.style.width = `${width}px`;
+      previewCanvas.style.height = `${height}px`;
       previewContext = previewCanvas.getContext("2d", { alpha: true });
       previewContext?.setTransform(ratio, 0, 0, ratio, 0, 0);
       redrawPreview();
     };
 
     const attachPreview = () => {
-      const nextWrapper = root.querySelector(".excalidraw__canvas-wrapper");
-      if (!nextWrapper || nextWrapper === wrapper && previewCanvas?.parentElement === nextWrapper) return;
-
-      resizeObserver?.disconnect();
+      if (previewCanvas?.parentElement === document.body) return;
       previewCanvas?.remove();
-      if (wrapperPositionWasChanged && wrapper?.style.position === "relative") {
-        wrapper.style.position = previousWrapperPosition;
-      }
-      wrapper = nextWrapper;
-      wrapperPositionWasChanged = getComputedStyle(wrapper).position === "static";
-      if (wrapperPositionWasChanged) {
-        previousWrapperPosition = wrapper.style.position;
-        wrapper.style.position = "relative";
-      }
-
       previewCanvas = document.createElement("canvas");
       previewCanvas.className = "sketchizi-free-draw-preview";
       previewCanvas.setAttribute("aria-hidden", "true");
       Object.assign(previewCanvas.style, {
-        position: "absolute",
-        inset: "0",
-        width: "100%",
-        height: "100%",
+        position: "fixed",
+        inset: "0 auto auto 0",
+        width: "100vw",
+        height: "100vh",
         pointerEvents: "none",
         display: "block",
         visibility: "visible",
@@ -310,17 +296,13 @@ export default function SketchiziCanvas({
         zIndex: "2147483647",
         transform: "translateZ(0)",
       });
-      wrapper.appendChild(previewCanvas);
+      document.body.appendChild(previewCanvas);
       resizePreview();
-      if (typeof ResizeObserver !== "undefined") {
-        resizeObserver = new ResizeObserver(resizePreview);
-        resizeObserver.observe(wrapper);
-      }
     };
 
     const appendSamples = (activeSession, event) => {
-      const rect = wrapper?.getBoundingClientRect();
-      if (!rect || !previewContext) return;
+      if (!previewContext) return;
+      const rect = { left: 0, top: 0 };
       for (const sample of getPointerEventSamples(event)) {
         const previous = activeSession.samples[activeSession.samples.length - 1];
         if (
@@ -436,8 +418,6 @@ export default function SketchiziCanvas({
       }
     };
 
-    const observer = new MutationObserver(attachPreview);
-    observer.observe(root, { childList: true, subtree: true });
     attachPreview();
     root.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("pointermove", onPointerMove, true);
@@ -449,8 +429,6 @@ export default function SketchiziCanvas({
     window.addEventListener("resize", resizePreview, { passive: true });
 
     return () => {
-      observer.disconnect();
-      resizeObserver?.disconnect();
       root.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("pointermove", onPointerMove, true);
       window.removeEventListener("pointerrawupdate", onPointerRawUpdate, true);
@@ -461,9 +439,6 @@ export default function SketchiziCanvas({
       window.removeEventListener("resize", resizePreview);
       if (clearFrame) cancelAnimationFrame(clearFrame);
       previewCanvas?.remove();
-      if (wrapperPositionWasChanged && wrapper?.style.position === "relative") {
-        wrapper.style.position = previousWrapperPosition;
-      }
       session = null;
     };
   }, [apiRef, canEdit, viewModeEnabled]);
