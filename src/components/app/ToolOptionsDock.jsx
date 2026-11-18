@@ -368,7 +368,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </div>
       </DockGroup>}
       {(isShape || isLine || isAutoShape) && <DockGroup label="Sloppiness">
-        {[0, 1, 2].map((value) => <ToolButton key={value} active={roughness === value} title={["Architect", "Artist", "Cartoonist"][value]} onClick={() => update({ roughness: value })}>{["A", "B", "C"][value]}</ToolButton>)}
+        {["Architect", "Artist", "Cartoonist"].map((label, value) => <ToolButton key={value} active={roughness === value} title={label} onClick={() => update({ roughness: value })}>{label}</ToolButton>)}
       </DockGroup>}
       {isDraw && <DockGroup label="Pen pressure">
         <ToolButton active={pressure} title="Pressure sensitivity on" onClick={() => update({ pressure: true })}>P</ToolButton>
