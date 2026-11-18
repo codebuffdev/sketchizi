@@ -32,8 +32,8 @@ const subsets = [
 const registerKalamFamily = (family, id, weight) => {
   if (Fonts.registered.has(id)) return;
   const descriptors = subsets.map(({ file, unicodeRange }) => ({
-    uri: `https://cdn.jsdelivr.net/fontsource/fonts/kalam@latest/${file}-${weight}-normal.woff2`,
-    descriptors: { unicodeRange, weight: "400" },
+    uri: `https://cdn.jsdelivr.net/fontsource/fonts/kalam@18/${file}-${weight}-normal.woff2`,
+    descriptors: { unicodeRange, weight: String(weight) },
   }));
   // Excalidraw keeps this registration hook private in its type surface, but
   // exposes it as a normal static method in the shipped JavaScript bundle.
