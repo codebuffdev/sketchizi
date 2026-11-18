@@ -55,7 +55,10 @@ const previewStrokeWidth = (appState, pressure) => {
   );
   const zoom = Math.max(0.0001, appState?.zoom?.value || 1);
   const variability = appState?.currentItemStrokeVariability || "variable";
-  const sizeFactor = variability === "constant" ? 1.4 : 4.25;
+  // Excalidraw's committed perfect-freehand outline is visibly wider than
+  // a raw canvas stroke at the same nominal size. Match its rendered footprint
+  // in the live preview (4.25 * ~1.4 at neutral mouse pressure).
+  const sizeFactor = variability === "constant" ? 1.4 : 5.95;
   const pressureFactor = variability === "constant"
     ? 1
     : clamp(0.4 + 1.2 * pressure, 0.1, 1.6);
