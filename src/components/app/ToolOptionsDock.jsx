@@ -312,7 +312,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} /></>}
       </DockGroup>
       {(isShape || isFill || isAutoShape) && <DockGroup label="Fill">
-        <ToolButton active={fillColor === "transparent"} title="No fill" onClick={() => update({ backgroundColor: "transparent" })}>∅</ToolButton>
+        <ToolButton active={fillColor === "transparent"} title="No fill" onClick={() => update({ backgroundColor: "transparent" })}><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg></ToolButton>
         <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />
       </DockGroup>}
       {!isText && !isFill && <DockGroup label="Stroke width">
@@ -348,7 +348,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       </DockGroup>}
       {isText && <DockGroup label="Text options">
         {layerControl}
-        <DockSelect label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })} icon={<svg viewBox="0 0 24 24"><path d="M4 19 10 5h4l6 14M7 13h10" /><text x="12" y="22" textAnchor="middle" fontSize="5" fill="currentColor" stroke="none">{String(fontFamily)}</text></svg>}>
+        <DockSelect label="Font family" value={fontFamily} onChange={(event) => update({ fontFamily: Number(event.target.value) })} icon={<svg viewBox="0 0 24 24"><path d="m4 19 6-14h4l6 14M7 13h10" /></svg>}>
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </DockSelect>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
@@ -398,6 +398,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         </DockSelect>
       </DockGroup>}
       <DockGroup label="Opacity">
+        <svg className="sk-tool-opacity-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3c-3 4-7 8-7 12a7 7 0 0 0 14 0c0-4-4-8-7-12Z" /><path d="M8 16a4 4 0 0 0 4 3" /></svg>
         <span className="sk-tool-dock-opacity-value">{opacity}%</span>
         <input aria-label="Opacity" type="range" min="0" max="100" step="5" value={opacity} onChange={(event) => update({ opacity: Number(event.target.value) })} />
       </DockGroup>
