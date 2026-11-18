@@ -577,7 +577,7 @@ export default function DesktopAppHeader({
             <div className="sketchizi-header-grid-top">
               <div className="sketchizi-header-grid-heading">
                 <ViewCommandIcon name="grid" />
-                <div><strong>Canvas Style</strong><small>Choose how your canvas looks.</small></div>
+                <div><strong>Canvas Style</strong><small>Choose your drawing environment, surface, and pattern.</small></div>
               </div>
               <label className="sketchizi-header-grid-toggle">
                 <span>Show pattern</span>
@@ -585,9 +585,9 @@ export default function DesktopAppHeader({
                 <span className="sketchizi-header-grid-switch" aria-hidden="true" />
               </label>
             </div>
-            <div className="sketchizi-header-appearance-section" aria-label="Canvas appearance">
-              <strong>Appearance preset</strong>
-              <div className="sketchizi-header-appearance-options" role="group" aria-label="Canvas appearance preset">
+            <div className="sketchizi-header-appearance-section" aria-label="Canvas surface">
+              <strong>Canvas surface</strong>
+              <div className="sketchizi-header-appearance-options" role="group" aria-label="Canvas surface preset">
                 {[
                   ["sketch", "Sketch", "Hand-drawn, expressive strokes across the canvas."],
                   ["clean", "Clean", "Neutral surface for professional diagrams."],
