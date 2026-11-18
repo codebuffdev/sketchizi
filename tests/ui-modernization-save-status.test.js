@@ -54,12 +54,11 @@ test("save status stylesheet is imported with the other stylesheets before CSS r
 });
 
 
-test("local save control receives a green treatment only for the saved state", () => {
-  assert.match(styles, /\.desktop-app-save-status-trigger\.is-saved\s*\{/);
-  assert.match(styles, /\.app\.theme-dark \.desktop-app-save-status-trigger\.is-saved/);
-  assert.match(header, /className=\{\`desktop-app-save-status-trigger is-\$\{saveState\}\`\}/);
+test("download option stays neutral when local autosave succeeds", () => {
+  assert.match(header, /className="desktop-app-save-status-trigger"/);
+  assert.doesNotMatch(styles, /\.desktop-app-save-status-trigger\.is-saved\s*\{/);
+  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
 });
-
 
 test("document identity dot follows local autosave state, not file dirty state", () => {
   assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "saved", "error"\]\.includes\(saveState\)/);
