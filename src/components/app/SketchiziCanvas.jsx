@@ -304,7 +304,11 @@ export default function SketchiziCanvas({
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: "4",
+        display: "block",
+        visibility: "visible",
+        opacity: "1",
+        zIndex: "2147483647",
+        transform: "translateZ(0)",
       });
       wrapper.appendChild(previewCanvas);
       resizePreview();
