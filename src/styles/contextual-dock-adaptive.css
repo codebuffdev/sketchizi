@@ -1,7 +1,7 @@
 /* Adaptive contextual dock: compact at rest, reveal full controls from the expand affordance. */
 .app .sketchizi-tool-options-dock {
   box-sizing: border-box;
-  position: relative;
+  position: absolute;
   isolation: isolate;
   pointer-events: auto;
   transition: max-width 150ms ease, padding 150ms ease, box-shadow 150ms ease;
