@@ -3543,3 +3543,39 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
     padding-left: 2px !important;
   }
 }
+
+/* Primary Dock default placement: horizontal, centered along the canvas bottom. */
+.app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="horizontal"]) {
+  position: fixed !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="horizontal"] {
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  height: auto !important;
+  min-height: 62px !important;
+  max-height: none !important;
+  overflow: visible !important;
+  flex-wrap: nowrap !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-orientation="horizontal"] > * {
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex-shrink: 0 !important;
+}
+@media (max-width: 760px) {
+  .app .excalidraw .App-toolbar-container:has(.App-toolbar[data-sketchizi-orientation="horizontal"]) {
+    position: static !important;
+    width: min(calc(100vw - 16px), max-content) !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+}
