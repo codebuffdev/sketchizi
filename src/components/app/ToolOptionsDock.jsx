@@ -1,6 +1,7 @@
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { DEFAULT_FONT_FAMILY_ID, getTextFormattingTargetIds } from "../../features/canvas/fontFamilyDefaults.js";
 
 const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8", "#ffffff"];
 const WIDTHS = [1, 2, 4, 6];
@@ -131,7 +132,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
         title={`${label}: ${selected.label || ""}`}
         aria-label={`${label}: ${selected.label || ""}`}
         aria-haspopup="menu" aria-expanded={open} onClick={toggle}>
-        <span className="sk-tool-choice-trigger-glyph" aria-hidden="true">{icon || renderGlyph(selected)}</span>
+        <span className={`sk-tool-choice-trigger-glyph${String(label).toLowerCase() === "font family" ? " is-font-family" : ""}`} aria-hidden="true">{icon || renderGlyph(selected)}</span>
         <svg className={`sk-tool-choice-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && position && createPortal(
@@ -179,16 +180,21 @@ function VisualOptionSelect({ label, value, onChange, kind, options }) {
 }
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   const [customTool, setCustomTool] = useState(null);
+  const lastTextSelectionIdsRef = useRef(new Set());
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
   const layerTriggerRef = useRef(null);
   useEffect(() => {
     const handleCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
+      lastTextSelectionIdsRef.current.clear();
       if (["bucketfill", "autoshape", "note", "sticky-note", "stickynote", "notes"].includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
-      if (event.target?.closest?.(".App-toolbar button, .App-toolbar [role='button']")) setCustomTool(null);
+      if (event.target?.closest?.(".App-toolbar button, .App-toolbar [role='button']")) {
+        lastTextSelectionIdsRef.current.clear();
+        setCustomTool(null);
+      }
     };
     window.addEventListener("sketchizi:activate-tool", handleCustomTool);
     window.addEventListener("click", clearCustomTool, true);
@@ -203,6 +209,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       if (event.key !== "Escape" || event.defaultPrevented) return;
       const target = event.target;
       if (target?.closest?.("input, textarea, select, [contenteditable='true'], [role='dialog']")) return;
+      lastTextSelectionIdsRef.current.clear();
       setCustomTool(null);
       apiRef?.current?.updateScene?.({
         appState: {
@@ -217,6 +224,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   }, [apiRef]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
+  const sceneElements = apiRef?.current?.getSceneElements?.() || [];
   useEffect(() => {
     if (!layerMenuOpen) return undefined;
     const closeOnOutsideClick = (event) => {
@@ -225,10 +233,36 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     window.addEventListener("pointerdown", closeOnOutsideClick, true);
     return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
   }, [layerMenuOpen]);
-  const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const liveSelectedIds = Object.entries(appState.selectedElementIds || {})
+    .filter(([, selected]) => Boolean(selected))
+    .map(([id]) => id);
+  const sceneById = new Map(sceneElements.map((element) => [element.id, element]));
+  const liveSelected = liveSelectedIds.map((id) => sceneById.get(id))
+    .filter((element) => element && !element.isDeleted && !element.deleted);
+  const selected = (liveSelectedIds.length ? liveSelected : selectedElements)
+    .filter((element) => element && !element.isDeleted && !element.deleted);
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
-  const selectionType = selected.length ? selected[0].type : editingTextElement?.type || null;
+  const activeTextTargetIds = getTextFormattingTargetIds({
+    selectedElements: selected,
+    appState,
+    elements: sceneElements,
+  });
+  if (activeTextTargetIds.size) {
+    lastTextSelectionIdsRef.current = new Set(activeTextTargetIds);
+  } else if (selected.some((element) => element.type !== "text")
+    || (activeTool !== "selection" && activeTool !== "text" && activeTool !== "hand")) {
+    lastTextSelectionIdsRef.current.clear();
+  }
+  const textTargetIds = getTextFormattingTargetIds({
+    selectedElements: selected,
+    appState,
+    elements: sceneElements,
+    retainedIds: lastTextSelectionIdsRef.current,
+  });
+  const retainedTextElements = [...textTargetIds].map((id) => sceneById.get(id)).filter(Boolean);
+  const selectionType = selected.length ? selected[0].type
+    : editingTextElement?.type || (retainedTextElements.length ? "text" : null);
   const tool = customTool === "bucketfill" ? "bucket-fill"
     : customTool === "autoshape" ? "draw-to-shape"
       : ["note", "sticky-note", "stickynote", "notes"].includes(customTool) ? "text"
@@ -241,9 +275,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const isFill = type === "bucket-fill";
   const isAutoShape = type === "draw-to-shape";
   const supported = isShape || isLine || isDraw || isText || isFill || isAutoShape;
-  const isSelection = selected.length > 0 || Boolean(isText && editingTextElement?.id);
+  const isSelection = selected.length > 0 || Boolean(isText && (editingTextElement?.id || textTargetIds.size));
   const isVisible = canEdit && (isSelection ? supported || selected.length > 1 : supported);
-  const first = selected[0] || editingTextElement;
+  const first = selected[0] || editingTextElement || retainedTextElements[0];
 
   const current = (elementKey, appKey, fallback) => isSelection
     ? (first?.[elementKey] ?? fallback)
@@ -256,7 +290,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const opacity = Number(current("opacity", "currentItemOpacity", 100));
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
   const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
-  const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : 2;
+  const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : DEFAULT_FONT_FAMILY_ID;
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
@@ -265,7 +299,26 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const update = (patch) => {
     const api = apiRef?.current;
     if (!api) return;
-    if (!isSelection) {
+    const liveState = api.getAppState?.() || appState;
+    const liveElements = api.getSceneElements?.() || sceneElements;
+    const liveSelectedIds = Object.entries(liveState.selectedElementIds || {})
+      .filter(([, selected]) => Boolean(selected))
+      .map(([id]) => id);
+    const liveSelectedElements = liveSelectedIds
+      .map((id) => liveElements.find((element) => element.id === id))
+      .filter((element) => element && !element.isDeleted && !element.deleted);
+    const liveTextTargetIds = getTextFormattingTargetIds({
+      selectedElements: liveSelectedElements.length ? liveSelectedElements : selected,
+      appState: liveState,
+      elements: liveElements,
+      retainedIds: lastTextSelectionIdsRef.current,
+    });
+    if (liveTextTargetIds.size) lastTextSelectionIdsRef.current = new Set(liveTextTargetIds);
+
+    const targetIds = isText
+      ? liveTextTargetIds
+      : new Set(liveSelectedElements.length ? liveSelectedElements.map((element) => element.id) : selected.map((element) => element.id));
+    if (!targetIds.size) {
       const appStatePatch = {};
       const mapping = {
         strokeColor: "currentItemStrokeColor",
@@ -288,11 +341,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
       return;
     }
-    const ids = new Set(selected.map((element) => element.id));
-    if (isText && editingTextElement?.id) ids.add(editingTextElement.id);
     const now = Date.now();
-    const elements = api.getSceneElements?.() || [];
-    const next = elements.map((element) => ids.has(element.id)
+    const next = liveElements.map((element) => targetIds.has(element.id)
       ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
     api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
