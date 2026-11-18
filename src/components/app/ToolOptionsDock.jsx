@@ -48,15 +48,53 @@ function DockGroup({ label, children }) {
   return <div className="sk-tool-dock-group" role="group" aria-label={label}>{children}</div>;
 }
 
+function DockOptionGlyph({ label, value }) {
+  const name = String(label || "").toLowerCase();
+  if (name.includes("font")) {
+    const family = ({2:"Arial, sans-serif",3:"monospace",5:"cursive",6:"Nunito, sans-serif",7:"cursive",8:"monospace"})[Number(value)] || "sans-serif";
+    return <span className="sk-tool-option-font-glyph" style={{fontFamily:family}}>Aa</span>;
+  }
+  if (name.includes("width")) return <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M3 12h26" strokeWidth={Math.max(1,Math.min(7,Number(value)||2))} /></svg>;
+  if (name.includes("fill style")) return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill={value==="solid"?"currentColor":"none"} /><path d={value==="hachure"?"m5 17 12-12M9 20 20 9M4 12l8-8":value==="cross-hatch"?"m4 4 16 16M20 4 4 20M12 4v16M4 12h16":"M4 4h16v16H4z"} /></svg>;
+  if (name.includes("corner")) return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx={value==="rounded"?6:0.5} /></svg>;
+  if (name.includes("arrowhead")) return <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M4 12h24" />{value==="arrow"&&<path d={name.includes("start")?"m11 5-7 7 7 7":"m21 5 7 7-7 7"} />}{value==="bar"&&<path d={name.includes("start")?"M4 5v14":"M28 5v14"} />}{value==="dot"&&<circle cx={name.includes("start")?4:28} cy="12" r="3" fill="currentColor" />}</svg>;
+  if (name.includes("pressure")) return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={value==="on"?"M3 17c4 0 4-10 9-10s5 10 9 10":"M3 12h18"} strokeWidth={value==="on"?2.8:1.4} /></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /></svg>;
+}
+
 function DockSelect({ label, value, onChange, icon, children }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+  const options = (Array.isArray(children) ? children : [children]).filter(Boolean).map((child) => ({
+    value: child.props.value,
+    label: String(child.props.children ?? child.props.value),
+  }));
+  const selected = options.find((option) => String(option.value) === String(value)) || options[0];
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event) => {
+      if (event.type === "keydown" && event.key === "Escape") setOpen(false);
+      if (event.type === "pointerdown" && !rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close, true);
+    document.addEventListener("keydown", close, true);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      document.removeEventListener("keydown", close, true);
+    };
+  }, [open]);
   return (
-    <label className="sk-tool-icon-select" title={label}>
-      <span className="sk-tool-icon-select-preview" aria-hidden="true">{icon}</span>
-      <svg className="sk-tool-icon-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
-      <select aria-label={label} value={value} onChange={onChange}>
-        {children}
-      </select>
-    </label>
+    <div className="sk-tool-icon-select-wrap" ref={rootRef}>
+      <button type="button" className="sk-tool-icon-select" title={`${label}: ${selected?.label || ""}`} aria-label={`${label}: ${selected?.label || ""}`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+        <span className="sk-tool-icon-select-preview" aria-hidden="true">{icon}</span>
+        <svg className={`sk-tool-icon-select-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+      </button>
+      {open && <div className="sk-tool-icon-select-menu" role="listbox" aria-label={label}>
+        {options.map((option) => <button key={String(option.value)} type="button" role="option" aria-selected={String(option.value) === String(value)} aria-label={option.label} title={option.label} className={`sk-tool-icon-select-option${String(option.value) === String(value) ? " is-selected" : ""}`} onClick={() => { onChange({ target: { value: option.value } }); setOpen(false); }}>
+          <DockOptionGlyph label={label} value={option.value} />
+        </button>)}
+      </div>}
+    </div>
   );
 }
 
