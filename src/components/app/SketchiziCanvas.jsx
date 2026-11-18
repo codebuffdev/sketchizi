@@ -346,6 +346,8 @@ export default function SketchiziCanvas({
         useRaw: event.pointerType === "pen" && "onpointerrawupdate" in window,
         receivedRaw: false,
         appState,
+        pointerType: event.pointerType || "mouse",
+        simulatePressure: event.pressure === 0.5,
         samples: [],
         previewPoints: [],
       };
