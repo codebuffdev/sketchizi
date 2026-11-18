@@ -204,6 +204,37 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     };
   }, []);
 
+  // Snapshot the text target on canvas pointer-down, before Excalidraw's
+  // own pointer handlers blur the editor or clear selectedElementIds. This is
+  // the hand-off that keeps the contextual font/size controls attached to the
+  // text the user had selected immediately before clicking the canvas.
+  useEffect(() => {
+    const captureTextTargetBeforeCanvasBlur = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest(".canvas, .excalidraw")) return;
+      if (target.closest(".sketchizi-tool-options-dock, .sk-tool-choice-menu, .sk-tool-layer-menu")) return;
+      const api = apiRef?.current;
+      if (!api) return;
+      const liveState = api.getAppState?.() || {};
+      const liveElements = api.getSceneElements?.() || [];
+      const liveSelectedIds = Object.entries(liveState.selectedElementIds || {})
+        .filter(([, isSelected]) => Boolean(isSelected))
+        .map(([id]) => id);
+      const liveSelectedElements = liveSelectedIds
+        .map((id) => liveElements.find((element) => element.id === id))
+        .filter((element) => element && !element.isDeleted && !element.deleted);
+      const targets = getTextFormattingTargetIds({
+        selectedElements: liveSelectedElements.length ? liveSelectedElements : selectedElements,
+        appState: liveState,
+        elements: liveElements,
+        retainedIds: lastTextSelectionIdsRef.current,
+      });
+      if (targets.size) lastTextSelectionIdsRef.current = new Set(targets);
+    };
+    window.addEventListener("pointerdown", captureTextTargetBeforeCanvasBlur, true);
+    return () => window.removeEventListener("pointerdown", captureTextTargetBeforeCanvasBlur, true);
+  }, [apiRef, selectedElements]);
+
   useEffect(() => {
     const handleEscapeToPrimaryDock = (event) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
