@@ -3504,3 +3504,134 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option:focus-vis
 body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-selected { border-color: #cbd4dd; background: #edf1f4; color: #1f2932; }
 @keyframes sk-tool-choice-enter { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .app .sk-tool-choice-trigger, .sk-tool-choice-option { transition: none; } .sk-tool-choice-menu { animation: none; } }
+
+
+/* Contextual Dock refinement — compact, calmer, and focused on the current object. */
+.app .sketchizi-tool-options-dock {
+  --sk-options-surface: rgb(24 28 33 / 97%);
+  --sk-options-border: #343c45;
+  --sk-options-ink: #e7ebef;
+  --sk-options-muted: #aab3bd;
+  --sk-options-hover: #303943;
+  --sk-options-selected: #46515d;
+  width: max-content;
+  max-width: min(760px, calc(100% - 96px));
+  min-height: 42px;
+  gap: 4px;
+  padding: 4px 7px;
+  border-radius: 11px;
+  border-color: #39424c;
+  background: var(--sk-options-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%), inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+.app .sk-tool-dock-context {
+  min-height: 25px;
+  margin: 0;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #aeb8c2;
+}
+.app .sk-tool-dock-context svg {
+  width: 18px;
+  height: 18px;
+}
+.app .sk-tool-dock-group {
+  min-height: 26px;
+  gap: 3px;
+  padding-left: 6px;
+  border-left-color: rgb(160 172 184 / 15%);
+}
+.app .sk-tool-option-button {
+  min-width: 25px;
+  height: 25px;
+  padding-inline: 5px;
+  border-radius: 7px;
+}
+.app .sk-tool-color-dot {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+  border-width: 1.5px;
+}
+.app .sk-tool-color-control {
+  width: 23px;
+  height: 23px;
+  border-radius: 7px;
+}
+.app .sk-tool-color-swatch {
+  width: 13px;
+  height: 13px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger {
+  width: 34px;
+  min-width: 34px;
+  height: 31px;
+  border-radius: 7px;
+  background: #2b323a;
+}
+.app .sk-tool-choice-trigger-glyph {
+  width: 22px;
+  height: 22px;
+}
+.app .sk-tool-choice-trigger-glyph > svg {
+  width: 20px;
+  height: 20px;
+}
+.app .sk-tool-choice-chevron {
+  width: 8px;
+  height: 8px;
+  flex-basis: 8px;
+}
+.app .sketchizi-tool-options-dock input[type="range"] {
+  width: 62px;
+}
+.app .sk-tool-dock-opacity-value {
+  min-width: 28px;
+  font-size: 10px;
+}
+.app .sk-tool-text-size-step {
+  width: 24px;
+  min-width: 24px;
+  height: 25px;
+}
+.app .sk-tool-text-size-input input {
+  width: 34px;
+  height: 25px;
+}
+.app.theme-light .sketchizi-tool-options-dock {
+  --sk-options-surface: rgb(250 251 252 / 98%);
+  --sk-options-border: #d8dee5;
+  --sk-options-ink: #28313a;
+  --sk-options-muted: #66717d;
+  --sk-options-hover: #edf1f4;
+  --sk-options-selected: #e0e6eb;
+  border-color: #d8dee5;
+  box-shadow: 0 8px 24px rgb(25 32 40 / 12%), inset 0 1px 0 #fff;
+}
+.app.theme-light .sk-tool-dock-group {
+  border-left-color: #e1e6eb;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-choice-trigger {
+  background: #f0f3f6;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock {
+    width: max-content;
+    max-width: calc(100% - 76px);
+    min-height: 40px;
+    gap: 3px;
+    padding: 4px 6px;
+  }
+  .app .sk-tool-dock-group {
+    min-height: 25px;
+    gap: 2px;
+    padding-left: 4px;
+  }
+  .app .sketchizi-tool-options-dock .sk-tool-choice-trigger {
+    width: 31px;
+    min-width: 31px;
+    height: 29px;
+  }
+}
