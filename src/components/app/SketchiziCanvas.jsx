@@ -14,7 +14,7 @@ import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.
 import { applyMarkdownListEdit, getMarkdownListEdit } from "../../features/canvas/markdownListShortcuts.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
-import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, finishFreeDrawPreview, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
+import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
 
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
@@ -353,7 +353,6 @@ export default function SketchiziCanvas({
 
       session = {
         pointerId: event.pointerId,
-        pointerType: event.pointerType || "mouse",
         useRaw: event.pointerType === "pen" && "onpointerrawupdate" in window,
         receivedRaw: false,
         appState,
@@ -395,7 +394,6 @@ export default function SketchiziCanvas({
       const completed = session;
       stopNativeEvent(event);
       appendSamples(completed, event);
-      finishFreeDrawPreview(previewContext, completed, completed.appState);
 
       try {
         const element = createFreeDrawElementFromSamples(completed.samples, completed.appState);
