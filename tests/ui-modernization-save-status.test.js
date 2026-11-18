@@ -61,10 +61,12 @@ test("local save control receives a green treatment only for the saved state", (
 });
 
 
-test("document identity dot is green only after a successful local autosave", () => {
-  assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \(currentDocumentDirty \|\| saveState === "saved"\)/);
-  assert.match(header, /desktop-app-document-identity-dirty-dot\$\{!currentDocumentDirty && saveState === "saved" \? " is-saved" : ""\}/);
+test("document identity dot follows local autosave state, not file dirty state", () => {
+  assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "saved", "error"\]\.includes\(saveState\)/);
+  assert.match(header, /desktop-app-document-identity-dirty-dot is-\$\{saveState\}/);
   assert.match(header, /Saved locally on this device/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
+  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-pending/);
+  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-error/);
   assert.match(styles, /background: #22a06b/);
 });
