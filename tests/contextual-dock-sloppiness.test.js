@@ -59,17 +59,19 @@ test("icon dropdowns expose selection state and dismiss on outside click or Esca
 
 
 test("custom dropdowns safely normalize option children and empty option lists", () => {
-  assert.match(c.result.content, /Children\.toArray\(children\)/);
-  assert.match(c.result.content, /isValidElement\(child\) && child\.props\?\.value !== undefined/);
-  assert.match(c.result.content, /\|\| \{ value: \"\", label \}/);
-  assert.match(c.result.content, /safeOptions = Array\.isArray\(options\)/);
-  assert.match(c.result.content, /\|\| safeOptions\[0\] \|\| \{ value: 0, label \}/);
+  assert.match(dock, /Children\.toArray\(children\)/);
+  assert.match(dock, /isValidElement\(child\) && child\.props\?\.value !== undefined/);
+  assert.match(dock, /\|\| \{ value: \"\", label \}/);
+  assert.match(dock, /safeOptions = Array\.isArray\(options\)/);
+  assert.match(dock, /\|\| safeOptions\[0\] \|\| \{ value: 0, label \}/);
 });
 
-test("dropdown option selection passes the raw value and stops canvas pointer handling", () => {
-  assert.doesNotMatch(dock, /onChange\(\{ target: \{ value: option\.value \} \}\)/);
-  assert.equal((dock.match(/onPointerDown=\{\(event\) => \{ event\.preventDefault\(\); event\.stopPropagation\(\); onChange\(option\.value\); setOpen\(false\); \}\}/g) || []).length, 2);
+test("dropdown menus render above the canvas and keep portal clicks inside the menu", () => {
+  assert.equal((dock.match(/createPortal\\(/g) || []).length, 2);
+  assert.equal((dock.match(/menuRef\\.current\\?\\.contains\\(event\\.target\\)/g) || []).length, 2);
+  assert.equal((dock.match(/onClick=\\{\\(event\\) => \\{ event\\.preventDefault\\(\\); event\\.stopPropagation\\(\\); onChange\\(option\\.value\\); setOpen\\(false\\); \\}\\}/g) || []).length, 2);
+  assert.doesNotMatch(dock, /onPointerDown=\\{\\(event\\) => \\{ event\\.preventDefault\\(\\); event\\.stopPropagation\\(\\); onChange\\(option\\.value\\); setOpen\\(false\\); \\}\\}/);
   for (const label of ["Stroke width", "Fill style", "Corners", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
-    assert.match(dock, new RegExp(`<DockSelect label="${label}" value=[^>]*onChange=\\{\\(value\\) =>`));
+    assert.match(dock, new RegExp(`<DockSelect label="${label}" value=[^>]*onChange=\\\\{\\\\(value\\\\) =>`));
   }
 });
