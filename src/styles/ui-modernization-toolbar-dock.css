@@ -2853,83 +2853,114 @@
   outline: 2px solid #9ba6b2;
   outline-offset: 2px;
 }
+/* Refined layer arrangement menu */
 .app .sketchizi-tool-options-dock .sk-tool-layer-menu {
-  position: absolute;
-  z-index: 100;
-  left: 0;
-  bottom: calc(100% + 9px);
+  z-index: 1000;
   display: flex;
-  width: max-content;
-  min-width: 242px;
+  width: 276px;
   flex-direction: column;
-  gap: 2px;
-  padding: 5px;
-  border: 1px solid #424a54;
-  border-radius: 11px;
-  background: #20252b;
-  box-shadow: 0 12px 34px rgb(0 0 0 / 32%);
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid #424b56;
+  border-radius: 13px;
+  background: #20252c;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 42%), 0 2px 8px rgb(0 0 0 / 24%);
+  color: #edf0f3;
+  animation: sk-layer-menu-enter 120ms ease-out;
 }
-.app .sketchizi-tool-options-dock .sk-tool-layer-menu button {
-  display: flex;
-  min-height: 34px;
+.app .sk-tool-layer-menu-heading {
+  padding: 4px 9px 8px;
+  color: #929daa;
+  font: 650 10px/1.2 system-ui, sans-serif;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.app .sk-tool-layer-menu button {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  min-height: 38px;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  gap: 10px;
   padding: 0 9px;
-  border: 0;
-  border-radius: 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
-  color: #e7ebef;
+  color: #e5e9ee;
   font: 500 12px/1 system-ui, sans-serif;
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
-.app .sketchizi-tool-options-dock .sk-tool-layer-menu button:hover,
-.app .sketchizi-tool-options-dock .sk-tool-layer-menu button:focus-visible {
+.app .sk-tool-layer-menu button > svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: #9ca8b5;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sk-tool-layer-menu button:hover,
+.app .sk-tool-layer-menu button:focus-visible {
   outline: 0;
-  background: #343c45;
+  border-color: #46515d;
+  background: #303943;
   color: #fff;
 }
-.app .sketchizi-tool-options-dock .sk-tool-layer-menu kbd {
-  padding: 3px 5px;
-  border: 1px solid #454e59;
+.app .sk-tool-layer-menu button:hover > svg,
+.app .sk-tool-layer-menu button:focus-visible > svg {
+  stroke: #dbe3eb;
+}
+.app .sk-tool-layer-menu kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  border: 1px solid #424c58;
   border-radius: 5px;
-  background: #2b3139;
-  color: #aeb7c1;
-  font: 10px/1.2 system-ui, sans-serif;
+  background: #292f37;
+  color: #aeb8c3;
+  font: 10px/1 system-ui, sans-serif;
   white-space: nowrap;
 }
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-trigger {
-  border-color: #cbd2d9;
-  background: #f0f2f4;
-  color: #424b55;
+.app .sk-tool-layer-menu kbd i {
+  color: #778391;
+  font-style: normal;
 }
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-trigger:hover,
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-trigger.is-active {
-  border-color: #aeb7c1;
-  background: #dce2e8;
-  color: #20262d;
+.app .sk-tool-layer-menu-divider {
+  height: 1px;
+  margin: 3px 5px;
+  background: #39424c;
 }
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu {
-  border-color: #cbd2d9;
+.app.theme-light .sk-tool-layer-menu {
+  border-color: #d3dae1;
   background: #fff;
-  box-shadow: 0 12px 34px rgb(25 35 45 / 18%);
+  box-shadow: 0 16px 42px rgb(28 39 51 / 18%), 0 2px 8px rgb(28 39 51 / 8%);
+  color: #202832;
 }
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu button {
-  color: #252b32;
+.app.theme-light .sk-tool-layer-menu-heading { color: #7b8793; }
+.app.theme-light .sk-tool-layer-menu button { color: #303943; }
+.app.theme-light .sk-tool-layer-menu button > svg { stroke: #788592; }
+.app.theme-light .sk-tool-layer-menu button:hover,
+.app.theme-light .sk-tool-layer-menu button:focus-visible {
+  border-color: #dce2e8;
+  background: #f0f3f6;
+  color: #141b22;
 }
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu button:hover,
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu button:focus-visible {
-  background: #edf1f4;
-  color: #111820;
+.app.theme-light .sk-tool-layer-menu button:hover > svg,
+.app.theme-light .sk-tool-layer-menu button:focus-visible > svg { stroke: #394653; }
+.app.theme-light .sk-tool-layer-menu kbd {
+  border-color: #d9dfe5;
+  background: #f4f6f8;
+  color: #5d6874;
 }
-.app.theme-light .sketchizi-tool-options-dock .sk-tool-layer-menu kbd {
-  border-color: #d5dbe1;
-  background: #f2f4f6;
-  color: #59636e;
+.app.theme-light .sk-tool-layer-menu kbd i { color: #9aa4ae; }
+.app.theme-light .sk-tool-layer-menu-divider { background: #e3e7eb; }
+@keyframes sk-layer-menu-enter {
+  from { opacity: 0; transform: translateY(4px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 .app .sketchizi-tool-options-dock .sk-tool-layer-trigger:disabled {
   opacity: .4;
   cursor: not-allowed;
