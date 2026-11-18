@@ -311,7 +311,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
         {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>{value === "solid" ? "■" : value === "hachure" ? "▨" : "▦"}</ToolButton>)}
       </DockGroup>}
-      {isShape && <DockGroup label="Layers">{layerControl}</DockGroup>}
+      {(isShape || isLine) && <DockGroup label="Layers">{layerControl}</DockGroup>}
       {isShape && <DockGroup label="Corners">
         <ToolButton active={!current("roundness", "currentItemRoundness", null)} title="Square corners" onClick={() => update({ roundness: null })}>□</ToolButton>
         <ToolButton active={Boolean(current("roundness", "currentItemRoundness", null))} title="Rounded corners" onClick={() => update({ roundness: { type: 3 } })}>▢</ToolButton>
