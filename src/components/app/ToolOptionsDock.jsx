@@ -1,6 +1,7 @@
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 
 const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8", "#ffffff"];
 const WIDTHS = [1, 2, 4, 6];
@@ -131,7 +132,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
         title={`${label}: ${selected.label || ""}`}
         aria-label={`${label}: ${selected.label || ""}`}
         aria-haspopup="menu" aria-expanded={open} onClick={toggle}>
-        <span className="sk-tool-choice-trigger-glyph" aria-hidden="true">{icon || renderGlyph(selected)}</span>
+        <span className={`sk-tool-choice-trigger-glyph${String(label).toLowerCase().includes("font") ? " is-font-family" : ""}`} aria-hidden="true">{icon || renderGlyph(selected)}</span>
         <svg className={`sk-tool-choice-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && position && createPortal(
@@ -225,7 +226,20 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     window.addEventListener("pointerdown", closeOnOutsideClick, true);
     return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
   }, [layerMenuOpen]);
-  const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const liveSelectionState = appState.selectedElementIds && typeof appState.selectedElementIds === "object"
+    ? appState.selectedElementIds
+    : null;
+  const liveSceneElements = apiRef?.current?.getSceneElements?.() || [];
+  const liveElementsById = new Map(liveSceneElements.map((element) => [element.id, element]));
+  const liveSelected = liveSelectionState
+    ? Object.entries(liveSelectionState)
+      .filter(([, isSelected]) => Boolean(isSelected))
+      .map(([id]) => liveElementsById.get(id))
+      .filter((element) => element && !element.isDeleted && !element.deleted)
+    : null;
+  // Excalidraw's live selection is authoritative. The prop is only a fallback
+  // for API states that do not expose selectedElementIds (e.g. during startup).
+  const selected = (liveSelected ?? selectedElements).filter((element) => element && !element.isDeleted && !element.deleted);
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
   const selectionType = selected.length ? selected[0].type : editingTextElement?.type || null;
@@ -255,8 +269,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fillStyle = current("fillStyle", "currentItemFillStyle", "solid");
   const opacity = Number(current("opacity", "currentItemOpacity", 100));
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
-  const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
-  const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : 2;
+  const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", DEFAULT_FONT_FAMILY_ID));
+  const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : DEFAULT_FONT_FAMILY_ID;
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
@@ -265,7 +279,21 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const update = (patch) => {
     const api = apiRef?.current;
     if (!api) return;
-    if (!isSelection) {
+    // Resolve targets at interaction time instead of relying on the last React
+    // selection snapshot. Text editing can end between a canvas click and a dock
+    // action, while Excalidraw already has the correct selectedElementIds.
+    const liveState = api.getAppState?.() || appState;
+    const liveIdsState = liveState.selectedElementIds && typeof liveState.selectedElementIds === "object"
+      ? liveState.selectedElementIds
+      : null;
+    const targetIds = new Set(liveIdsState
+      ? Object.entries(liveIdsState).filter(([, isSelected]) => Boolean(isSelected)).map(([id]) => id)
+      : selected.map((element) => element.id));
+    const activeEditingText = liveState.editingTextElement?.type === "text"
+      ? liveState.editingTextElement
+      : editingTextElement;
+    if (isText && activeEditingText?.id) targetIds.add(activeEditingText.id);
+    if (!targetIds.size) {
       const appStatePatch = {};
       const mapping = {
         strokeColor: "currentItemStrokeColor",
@@ -288,8 +316,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
       return;
     }
-    const ids = new Set(selected.map((element) => element.id));
-    if (isText && editingTextElement?.id) ids.add(editingTextElement.id);
+    const ids = targetIds;
     const now = Date.now();
     const elements = api.getSceneElements?.() || [];
     const next = elements.map((element) => ids.has(element.id)
