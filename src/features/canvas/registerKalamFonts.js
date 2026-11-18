@@ -1,5 +1,6 @@
-import { FONT_FAMILY } from "@excalidraw/common";
-import { Fonts } from "@excalidraw/excalidraw";
+// Import both from Excalidraw’s public entry so the IDs and registry belong
+// to the same bundled module instance used by its native FontPickerList.
+import { FONT_FAMILY, Fonts } from "@excalidraw/excalidraw";
 
 // Excalidraw reserves ID 4 for host-registered custom fonts. ID 11 is free
 // in the pinned build and gives Kalam Bold its own persisted family value.
