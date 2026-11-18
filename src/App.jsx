@@ -77,14 +77,14 @@ function App() {
   const [gridEnabled, setGridEnabled] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-enabled");
-      return stored === null ? getInitialThemeMode() === "dark" : stored === "true";
-    } catch { return getInitialThemeMode() === "dark"; }
+      return stored === null ? true : stored === "true";
+    } catch { return true; }
   });
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-style");
-      return ["normal", "focus", "local", "dots", "ruled"].includes(stored) ? stored : (getInitialThemeMode() === "dark" ? "dots" : "focus");
-    } catch { return getInitialThemeMode() === "dark" ? "dots" : "focus"; }
+      return ["normal", "focus", "local", "dots", "ruled"].includes(stored) ? stored : "focus";
+    } catch { return "focus"; }
   });
   useEffect(() => {
     try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Private browsing. */ }
