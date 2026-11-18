@@ -27,6 +27,7 @@ export default function SketchiziCanvas({
   const canvasRootRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const canvasRevisionFrameRef = useRef(0);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
@@ -144,19 +145,18 @@ export default function SketchiziCanvas({
       workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
       schedulePaint();
     };
-    const onPointerMove = (event) => {
-      // Never move or show detail for plain hover. Only an active gesture
-      // can update the work anchor.
-      if (drawingPointerRef.current === null || drawingPointerRef.current !== event.pointerId) return;
-      const rect = root.getBoundingClientRect();
-      workAnchorRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-      schedulePaint();
-    };
+    // Do not recalculate the workspace focus grid on every pen sample.
+    // The focus anchor is captured at pointer-down and refreshed after the
+    // gesture ends; Excalidraw owns the time-critical drawing pointer stream.
+    const onPointerMove = () => {};
     const onPointerEnd = (event) => {
       if (drawingPointerRef.current !== event.pointerId) return;
       drawingPointerRef.current = null;
       workAnchorRef.current = null;
       schedulePaint();
+      // Publish one settled revision after the gesture, not one React render
+      // for every intermediate freehand sample.
+      setCanvasRevision((revision) => revision + 1);
     };
     const isTextEditor = (event) =>
       event.target instanceof Element &&
@@ -213,6 +213,8 @@ export default function SketchiziCanvas({
       window.removeEventListener("resize", schedulePaint);
       if (dropTimer !== null) window.clearTimeout(dropTimer);
       if (frame) cancelAnimationFrame(frame);
+      if (canvasRevisionFrameRef.current) cancelAnimationFrame(canvasRevisionFrameRef.current);
+      canvasRevisionFrameRef.current = 0;
       layer?.remove();
       if (spotlightNodeRef.current === layer) spotlightNodeRef.current = null;
       drawingPointerRef.current = null;
@@ -222,11 +224,24 @@ export default function SketchiziCanvas({
   }, [canEdit, viewModeEnabled, paintWorkspaceGrid]);
 
   const handleSceneChange = useCallback((elements, appState, files) => {
-    setCanvasRevision((revision) => revision + 1);
+    // Excalidraw can emit many scene changes during a single freehand gesture.
+    // Avoid driving a React render (and grid/overlay recalculation) for every
+    // point. While drawing, pointer-up publishes the settled revision.
+    if (drawingPointerRef.current === null && !canvasRevisionFrameRef.current) {
+      canvasRevisionFrameRef.current = requestAnimationFrame(() => {
+        canvasRevisionFrameRef.current = 0;
+        setCanvasRevision((revision) => revision + 1);
+      });
+    }
     handleChange?.(elements, appState, files);
-  }, [canEdit, handleChange, viewModeEnabled, onGridVisibilityChange]);
+  }, [handleChange]);
   const handleViewportChange = useCallback((...args) => {
-    setCanvasRevision((revision) => revision + 1);
+    if (!canvasRevisionFrameRef.current) {
+      canvasRevisionFrameRef.current = requestAnimationFrame(() => {
+        canvasRevisionFrameRef.current = 0;
+        setCanvasRevision((revision) => revision + 1);
+      });
+    }
     onViewportChange?.(...args);
   }, [onViewportChange]);
   const registerExcalidrawAPI = useCallback((api) => {
@@ -828,17 +843,14 @@ export default function SketchiziCanvas({
     syncNavigationControls();
     observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
-    const repositionOnPointerMove = () => placeScrollBackControl();
-    window.addEventListener("resize", repositionOnPointerMove);
-    window.addEventListener("pointermove", repositionOnPointerMove, { passive: true });
+    window.addEventListener("resize", placeScrollBackControl);
     const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
     tooltipObserver.observe(document.body, { childList: true, subtree: true });
     suppressNativeScrollBackTooltip();
     return () => {
       disposed = true;
       observer?.disconnect();
-      window.removeEventListener("resize", repositionOnPointerMove);
-      window.removeEventListener("pointermove", repositionOnPointerMove);
+      window.removeEventListener("resize", placeScrollBackControl);
       tooltipObserver.disconnect();
       root.querySelectorAll(".sketchizi-scroll-back-control").forEach((button) => {
         button.classList.remove("sketchizi-scroll-back-control");
