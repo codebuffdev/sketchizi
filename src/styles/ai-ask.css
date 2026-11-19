@@ -323,7 +323,7 @@
   }
 
   .app.ai-ask-open .ai-ask-panel {
-    top: max(66px, calc(var(--header-top, 18px) + var(--header-top-control-height, 40px) + 12px));
+    top: 14px;
     right: calc(var(--header-rail-right, calc(18px + var(--safe-right, 0px))) + var(--header-rail-width, 56px) + 14px);
     bottom: 14px;
     box-sizing: border-box;
@@ -346,7 +346,7 @@
   }
 
   .app.ai-ask-open .ai-ask-panel {
-    top: 66px;
+    top: 14px;
     right: 14px;
     bottom: 14px;
     box-sizing: border-box;
@@ -477,4 +477,46 @@
   .ai-ask-provider-settings .ai-ask-provider-row { align-items: flex-start; flex-direction: column; gap: 6px; }
   .ai-ask-provider-settings .ai-ask-provider-row select { width: 100%; }
   .ai-ask-provider-settings .ai-ask-byok-settings { padding: 10px; }
+}
+
+
+/* The AI panel can grow leftward into the unused canvas area. */
+.ai-ask-width-resize {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.ai-ask-width-resize span {
+  width: 4px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--ui-border, #cfd1d4);
+  opacity: .72;
+  transition: height .16s ease, background .16s ease, opacity .16s ease;
+}
+.ai-ask-width-resize:hover span,
+.ai-ask-width-resize:active span {
+  height: 58px;
+  background: var(--ai-ask-accent, #555a62);
+  opacity: 1;
+}
+.ai-ask-panel > .ai-ask-header,
+.ai-ask-panel > .ai-ask-provider-disclosure,
+.ai-ask-panel > .ai-ask-scope-row,
+.ai-ask-panel > .ai-ask-provider-settings,
+.ai-ask-panel > .ai-ask-messages,
+.ai-ask-panel > .ai-ask-composer,
+.ai-ask-panel > .ai-ask-privacy-note {
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .ai-ask-width-resize { display: none; }
 }

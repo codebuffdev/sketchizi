@@ -266,6 +266,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     ? `the current page${activePage?.name ? ` (${activePage.name})` : ""}`
     : "the entire current canvas";
   const transcriptRef = useRef(null);
+  const panelRef = useRef(null);
   const hydratedAccountRef = useRef(null);
   const activeAccountRef = useRef(null);
   const requestInFlightRef = useRef(false);
@@ -1011,10 +1012,44 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     }
   };
 
+  const beginPanelResize = (event) => {
+    if (event.button !== 0 || window.innerWidth <= 760) return;
+    event.preventDefault();
+    const panelElement = panelRef.current;
+    const appElement = panelElement?.closest(".app");
+    if (!panelElement || !appElement) return;
+
+    const startX = event.clientX;
+    const startWidth = panelElement.getBoundingClientRect().width;
+    const minWidth = window.innerWidth <= 1024 ? 360 : 400;
+    const appStyle = getComputedStyle(appElement);
+    const rightRail = Number.parseFloat(appStyle.getPropertyValue("--header-rail-width")) || 56;
+    const railRight = Number.parseFloat(appStyle.getPropertyValue("--header-rail-right")) || 18;
+    const rightOffset = window.innerWidth > 1024 ? railRight + rightRail + 14 : 14;
+    const minWorkspaceWidth = window.innerWidth > 1024 ? 420 : 360;
+    const maxWidth = Math.max(minWidth, Math.min(900, window.innerWidth - rightOffset - minWorkspaceWidth));
+
+    const onPointerMove = (moveEvent) => {
+      const nextWidth = Math.round(Math.max(minWidth, Math.min(maxWidth, startWidth + startX - moveEvent.clientX)));
+      panelElement.style.width = `${nextWidth}px`;
+      appElement.style.setProperty("--ai-ask-panel-width", `${nextWidth}px`);
+    };
+    const onPointerUp = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+  };
+
   if (!open) return null;
 
   return (
-    <section className="ai-ask-panel" role="dialog" aria-modal="false" aria-labelledby="ai-ask-title">
+    <section ref={panelRef} className="ai-ask-panel" role="dialog" aria-modal="false" aria-labelledby="ai-ask-title">
+      <div className="ai-ask-width-resize" role="separator" aria-orientation="vertical" aria-label="Resize AI chat width" onPointerDown={beginPanelResize}><span /></div>
       <header className="ai-ask-header">
         <div className="ai-ask-heading">
           <span className="ai-ask-mark" role="img" aria-label="AI Ask">
