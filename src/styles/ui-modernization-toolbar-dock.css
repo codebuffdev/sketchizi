@@ -3700,24 +3700,24 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   margin: 5px 0;
   background: #e6e9ec;
 }
-.app.theme-dark .sketchizi-experimental-primary-dock {
+.app .sketchizi-experimental-primary-dock.is-dark {
   border-color: #343d46;
   background: rgb(32 39 46 / 96%);
   box-shadow: 0 5px 20px rgb(0 0 0 / 28%), 0 1px 3px rgb(0 0 0 / 20%);
   color: #c2cbd3;
 }
-.app.theme-dark .sketchizi-experimental-dock-tool { color: #b0bac3; }
-.app.theme-dark .sketchizi-experimental-dock-tool:hover:not(:disabled) {
+.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-tool { color: #b0bac3; }
+.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-tool:hover:not(:disabled) {
   border-color: #414b55;
   background: #303943;
   color: #f4f6f8;
 }
-.app.theme-dark .sketchizi-experimental-dock-tool.is-active {
+.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-tool.is-active {
   border-color: #f0f2f4;
   background: #f0f2f4;
   color: #20272e;
 }
-.app.theme-dark .sketchizi-experimental-dock-divider { background: #414b55; }
+.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-divider { background: #414b55; }
 @media (max-width: 760px) {
   .app .sketchizi-experimental-primary-dock {
     left: 8px;
@@ -3727,4 +3727,54 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 }
 @media (prefers-reduced-motion: reduce) {
   .app .sketchizi-experimental-dock-tool { transition: none; }
+}
+
+
+.app .sketchizi-dock-preview-toggle {
+  position: fixed;
+  z-index: 10040;
+  right: 18px;
+  bottom: 18px;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #e1e6ea;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 96%);
+  color: #35414c;
+  box-shadow: 0 4px 16px rgb(27 39 52 / 10%);
+  font: 600 11px/1 system-ui, sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+}
+.app .sketchizi-dock-preview-toggle:hover { background: #fff; border-color: #c9d2da; }
+.app .sketchizi-dock-preview-toggle[aria-pressed="true"] {
+  border-color: #26313a;
+  background: #26313a;
+  color: #fff;
+}
+.app .sketchizi-dock-preview-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9aa6b0;
+}
+.app .sketchizi-dock-preview-toggle[aria-pressed="true"] .sketchizi-dock-preview-indicator {
+  background: #8fe0ad;
+}
+.app.theme-dark .sketchizi-dock-preview-toggle {
+  border-color: #39434e;
+  background: rgb(31 39 47 / 96%);
+  color: #e8edf2;
+}
+.app.theme-dark .sketchizi-dock-preview-toggle[aria-pressed="true"] {
+  border-color: #e8edf2;
+  background: #e8edf2;
+  color: #202832;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-dock-preview-toggle { right: 10px; bottom: 10px; }
 }
