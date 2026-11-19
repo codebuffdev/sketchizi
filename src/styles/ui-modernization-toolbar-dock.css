@@ -3610,7 +3610,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 
 /* Independent experimental Primary Dock. This is a separately rendered React
    component with its own controls, icons, grouping, and active states. */
-.app .sketchizi-experimental-primary-dock {
+.app .sketchizi-primary-dock {
   position: fixed;
   z-index: 10035;
   left: 12px;
@@ -3634,15 +3634,15 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
-.app .sketchizi-experimental-primary-dock::-webkit-scrollbar { display: none; }
-.app .sketchizi-experimental-dock-group {
+.app .sketchizi-primary-dock::-webkit-scrollbar { display: none; }
+.app .sketchizi-primary-dock-group {
   display: flex;
   width: 100%;
   flex-direction: column;
   align-items: center;
   gap: 2px;
 }
-.app .sketchizi-experimental-dock-tool {
+.app .sketchizi-primary-dock-tool {
   position: relative;
   display: inline-flex;
   box-sizing: border-box;
@@ -3660,27 +3660,27 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
-.app .sketchizi-experimental-dock-tool:hover:not(:disabled) {
+.app .sketchizi-primary-dock-tool:hover:not(:disabled) {
   border-color: #e8ebee;
   background: #f3f5f7;
   color: #202830;
 }
-.app .sketchizi-experimental-dock-tool:active:not(:disabled) { transform: scale(.94); }
-.app .sketchizi-experimental-dock-tool.is-active {
+.app .sketchizi-primary-dock-tool:active:not(:disabled) { transform: scale(.94); }
+.app .sketchizi-primary-dock-tool.is-active {
   border-color: #202326;
   background: #202326;
   color: #fff;
   box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
 }
-.app .sketchizi-experimental-dock-tool:focus-visible {
+.app .sketchizi-primary-dock-tool:focus-visible {
   outline: 2px solid #8a9cf5;
   outline-offset: 2px;
 }
-.app .sketchizi-experimental-dock-tool:disabled {
+.app .sketchizi-primary-dock-tool:disabled {
   cursor: not-allowed;
   opacity: .42;
 }
-.app .sketchizi-experimental-dock-shortcut {
+.app .sketchizi-primary-dock-shortcut {
   position: absolute;
   right: 1px;
   bottom: 0;
@@ -3689,7 +3689,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   opacity: .55;
   pointer-events: none;
 }
-.app .sketchizi-experimental-dock-divider {
+.app .sketchizi-primary-dock-divider {
   display: block;
   flex: 0 0 1px;
   width: 20px;
@@ -3697,38 +3697,38 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   margin: 5px 0;
   background: #e6e9ec;
 }
-.app .sketchizi-experimental-primary-dock.is-dark {
+.app .sketchizi-primary-dock.is-dark {
   border-color: #343d46;
   background: rgb(32 39 46 / 96%);
   box-shadow: 0 5px 20px rgb(0 0 0 / 28%), 0 1px 3px rgb(0 0 0 / 20%);
   color: #c2cbd3;
 }
-.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-tool { color: #b0bac3; }
-.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-tool:hover:not(:disabled) {
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-tool { color: #b0bac3; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-tool:hover:not(:disabled) {
   border-color: #414b55;
   background: #303943;
   color: #f4f6f8;
 }
-.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-tool.is-active {
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-tool.is-active {
   border-color: #f0f2f4;
   background: #f0f2f4;
   color: #20272e;
 }
-.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-divider { background: #414b55; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-divider { background: #414b55; }
 @media (max-width: 760px) {
-  .app .sketchizi-experimental-primary-dock {
+  .app .sketchizi-primary-dock {
     left: 8px;
     max-height: calc(100dvh - 112px);
     padding: 6px 4px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .app .sketchizi-experimental-dock-tool { transition: none; }
+  .app .sketchizi-primary-dock-tool { transition: none; }
 }
 
 
 
-.app .sketchizi-experimental-dock-grip {
+.app .sketchizi-primary-dock-grip {
   display: inline-flex;
   width: 27px;
   min-width: 27px;
@@ -3744,18 +3744,18 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   color: #a0a8b0;
   cursor: grab;
 }
-.app .sketchizi-experimental-dock-grip:hover:not(:disabled) {
+.app .sketchizi-primary-dock-grip:hover:not(:disabled) {
   background: #f1f3f5;
   color: #59636d;
 }
-.app .sketchizi-experimental-dock-grip:active:not(:disabled) { cursor: grabbing; }
-.app .sketchizi-experimental-dock-grip:disabled { cursor: default; opacity: .55; }
-.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-grip { color: #84909b; }
-.app .sketchizi-experimental-primary-dock.is-dark .sketchizi-experimental-dock-grip:hover:not(:disabled) {
+.app .sketchizi-primary-dock-grip:active:not(:disabled) { cursor: grabbing; }
+.app .sketchizi-primary-dock-grip:disabled { cursor: default; opacity: .55; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-grip { color: #84909b; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-grip:hover:not(:disabled) {
   background: #303943;
   color: #e1e7ec;
 }
-.app .sketchizi-experimental-dock-lock { margin-top: 1px; }
+.app .sketchizi-primary-dock-lock { margin-top: 1px; }
 
 
 /* The standalone Sketchizi dock is now the only primary drawing dock.
