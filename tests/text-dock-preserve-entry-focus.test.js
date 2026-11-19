@@ -35,3 +35,13 @@ test("nested font picker glyphs cannot bypass Excalidraw's exact properties-trig
   assert.match(styles, /\.properties-trigger > \*[\s\S]*?pointer-events: none !important/);
   assert.match(styles, /\.properties-trigger \*[\s\S]*?pointer-events: none !important/);
 });
+
+test("font family changes resolve live selected text and update only text elements", () => {
+  assert.match(source, /const liveSelected = \(apiRef\?\.current\?\.getSceneElements\?\.\(\) \|\| \[\]\)\.filter/);
+  assert.match(source, /const updateTextFontFamily = \(value\) =>/);
+  assert.match(source, /const liveIds = Object\.entries\(liveState\.selectedElementIds \|\| \{\}\)/);
+  assert.match(source, /const propTextIds = selectedFromProps[\s\S]*?element\.type === "text"/);
+  assert.match(source, /targetIds\.has\(element\.id\) && element\.type === "text"/);
+  assert.match(source, /fontFamily: Number\(value\)/);
+  assert.match(source, /onChange=\{updateTextFontFamily\} preserveFocus=\{preserveTextEditorFocus\}/);
+});
