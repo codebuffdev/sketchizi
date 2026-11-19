@@ -27,3 +27,14 @@ test('vertical docks preserve their side-positioned button', () => {
   const verticalDock = { left: 1100, right: 1148, top: 250, bottom: 650, width: 48, height: 400 };
   assert.deepEqual(getScrollBackPlacement({ dock: verticalDock, viewportWidth: 1200, viewportHeight: 800, vertical: true, dockSide: 'right' }), { left: 940, top: 429 });
 });
+
+test('bottom-aligned control is centered at the canvas bottom, independent of dock placement', () => {
+  const canvas = { left: 120, right: 1080, top: 40, bottom: 780, width: 960, height: 740 };
+  assert.deepEqual(getScrollBackPlacement({
+    dock: canvas,
+    viewportWidth: 1200,
+    viewportHeight: 800,
+    bottomAligned: true,
+    gap: 16,
+  }), { left: 526, top: 722 });
+});
