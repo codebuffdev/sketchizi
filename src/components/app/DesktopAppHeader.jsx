@@ -577,11 +577,6 @@ export default function DesktopAppHeader({
                 <ViewCommandIcon name="grid" />
                 <div><strong>Canvas Style</strong><small>Choose how your canvas looks.</small></div>
               </div>
-              <label className="sketchizi-header-grid-toggle">
-                <span>Show pattern</span>
-                <input type="checkbox" checked={gridEnabled} onChange={() => onToggleGrid?.()} />
-                <span className="sketchizi-header-grid-switch" aria-hidden="true" />
-              </label>
             </div>
             <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
               <strong>Canvas patterns</strong>
@@ -594,7 +589,6 @@ export default function DesktopAppHeader({
                   <button key={value} type="button" aria-pressed={gridStyle === value}
                     onClick={() => {
                       onGridStyleChange?.(value);
-                      if (!gridEnabled) onToggleGrid?.();
                     }}>
                     <span className={`sketchizi-grid-preview is-${value}`} aria-hidden="true"><span /></span>
                     <strong>{label}</strong>
@@ -606,8 +600,7 @@ export default function DesktopAppHeader({
             </div>
             <p className="sketchizi-header-grid-description">
               <span aria-hidden="true">ⓘ</span>
-              {!gridEnabled ? "Choose a canvas style, then turn on Show pattern whenever you want it visible." :
-                gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
+              {gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
                 gridStyle === "ruled" ? "Ruled Paper adds evenly spaced horizontal guides." :
                 gridStyle === "local" ? "Local Focus Grid concentrates detail around drawing content." :
                 gridStyle === "focus" ? "Focus Grid emphasizes the central canvas area." :
