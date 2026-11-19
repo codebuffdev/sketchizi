@@ -312,8 +312,8 @@ function App() {
       elements: activeApi?.getSceneElementsIncludingDeleted?.() || activeApi?.getSceneElements?.() || [],
       appState: activeApi?.getAppState?.() || {}, files: activeApi?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {}, extensions: documentMetadataRef.current?.extensions || {},
-      format: documentMetadataRef.current?.format || "excalidraw", file: fileManager.currentFileRef.current || null,
-      fileSceneSignature: fileManager.getCurrentFileSceneSignature?.() || null,
+      format: documentMetadataRef.current?.format || "excalidraw", file: currentFileRef.current || null,
+      fileSceneSignature: getCurrentFileSceneSignature?.() || null,
       cloudSession: { ...cloudSessionRef.current }, cloudDetached: false,
       cloudSaveState: { state: "saved", error: "" }, cloudDocumentName: diagram.name || name.trim(),
     };
@@ -506,7 +506,7 @@ function App() {
     apiRef, closeNativeMenu, showToast, queueSketchSave, saveTimerRef, resetLocalSketch, setSavedSketch, documentMetadataRef,
     lastSelectionSignature, startCollaboration,
   });
-  const { recentFiles, recentFolders, currentFolder, currentFolderFiles, currentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef, refreshCurrentFolderFiles, handleFileError, replacementPrompt, resolveReplacementPrompt } = fileManager;
+  const { recentFiles, recentFolders, currentFolder, currentFolderFiles, currentFile, currentFileRef, getCurrentFileSceneSignature, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef, refreshCurrentFolderFiles, handleFileError, replacementPrompt, resolveReplacementPrompt } = fileManager;
 
   const captureCanvasTabSnapshot = useCallback((elements, appState) => {
     const api = apiRef.current;
@@ -525,7 +525,7 @@ function App() {
       cloudSaveState: { ...cloudSaveState },
       cloudDocumentName,
     };
-  }, [apiRef, fileManager, cloudDocumentName, cloudSaveState, documentDirty]);
+  }, [apiRef, currentFileRef, getCurrentFileSceneSignature, cloudDocumentName, cloudSaveState, documentDirty]);
 
   const persistCanvasTabs = useCallback((nextTabs) => {
     const normalizedTabs = nextTabs.map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
@@ -574,9 +574,9 @@ function App() {
     const files = Object.values(snapshot.files || {});
     if (files.length) api.addFiles?.(files);
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
-    fileManager.setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
+    setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
-  }, [apiRef, fileManager, setSavedSketch]);
+  }, [apiRef, setCurrentFile, setSavedSketch]);
 
   const switchCanvasTab = useCallback((nextId) => {
     if (!nextId || nextId === activeCanvasIdRef.current || !apiRef.current) return;
