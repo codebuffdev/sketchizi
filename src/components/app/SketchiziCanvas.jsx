@@ -52,7 +52,7 @@ export default function SketchiziCanvas({
     // underneath the selected custom pattern.
     const showGrid = !!gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
-    ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].forEach((style) => {
+    ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates", "technical"].forEach((style) => {
       node.classList.toggle(`is-${style}-style`, gridStyle === style);
     });
 
