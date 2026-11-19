@@ -188,6 +188,7 @@ export default function DesktopAppHeader({
 
   useEffect(() => {
     setSaveDetailsOpen(false);
+    setDocumentNameEditing(false);
   }, [activeCanvasId]);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
