@@ -30,7 +30,7 @@ export function useNativeSketchiziMenu({
       if (canvasModeButton) {
         event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
         const mode = canvasModeButton.dataset.sketchiziCanvasMode;
-        window.dispatchEvent(new CustomEvent('sketchizi:choose-canvas-mode', { detail: { mode } }));
+        window.dispatchEvent(new CustomEvent('sketchizi:workspace-canvas-choice', { detail: { mode } }));
         if (mode === 'infinite') fileActionsRef.current.createNewFile?.();
         return;
       }
