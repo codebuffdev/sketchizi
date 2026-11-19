@@ -811,7 +811,7 @@ function App() {
       setCanvasTabsReady(true);
     });
     return () => { cancelled = true; };
-  }, [sketchReady, apiReady, cloudDiagramId, applyCanvasTabSnapshot, captureCanvasTabSnapshot]);
+  }, [sketchReady, apiReady, cloudDiagramId, applyCanvasTabSnapshot, captureCanvasTabSnapshot, setSavedSketch]);
 
   useEffect(() => {
     const flushCanvasTabs = () => {
