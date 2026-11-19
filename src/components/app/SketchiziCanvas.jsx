@@ -730,11 +730,13 @@ export default function SketchiziCanvas({
         width, height, seed: seed + suffix.length,
         versionNonce: seed + suffix.length,
       });
-      const note = makeShape("paper", "rectangle", 0, 0, 180, 140, {
-        strokeColor: "#171717", backgroundColor: "#fff3a6", strokeWidth: 2,
+      const note = makeShape("paper", "rectangle", 0, 0, 180, 180, {
+        strokeColor: "#171717", backgroundColor: "#ffeb3b", strokeWidth: 2,
+        roundness: { type: 3 },
       });
-      const cornerMask = makeShape("corner-mask", "rectangle", 139, 103, 43, 39, {
-        strokeColor: "#fff3a6", backgroundColor: "#fff3a6", strokeWidth: 0,
+      const cornerMask = makeShape("corner-mask", "rectangle", 136, 136, 44, 44, {
+        strokeColor: "#ffeb3b", backgroundColor: "#ffeb3b", strokeWidth: 0,
+        roundness: null,
       });
       const makeLine = (suffix, sx, sy, dx, dy, strokeWidth = 2, reverse = false) => ({
         ...common, id: `${id}-${suffix}`, type: "line",
@@ -744,13 +746,11 @@ export default function SketchiziCanvas({
         fillStyle: "solid", strokeWidth, seed: seed + suffix.length,
         versionNonce: seed + suffix.length,
       });
+      // A blank yellow paper square with a simple folded lower-right corner.
       const noteParts = [
         note, cornerMask,
-        makeLine("fold-top", 140, 105, 40, 0),
-        makeLine("fold-diagonal", 140, 105, 40, 35, 2, true),
-        makeLine("writing-one", 22, 42, 115, 0, 1.5),
-        makeLine("writing-two", 22, 62, 85, 0, 1.5),
-        makeLine("writing-three", 22, 82, 62, 0, 1.5),
+        makeLine("fold-top", 136, 136, 44, 0),
+        makeLine("fold-diagonal", 136, 136, 44, 44, 2, true),
       ];
       event.preventDefault();
       event.stopPropagation();
