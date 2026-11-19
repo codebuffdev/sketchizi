@@ -37,7 +37,7 @@ function ToolIcon({ name }) {
 
 function activateTool({ id, root, apiRef }) {
   if (id === "image") {
-    const imageButton = root?.querySelector('[data-testid="toolbar-image"], button[aria-label*="image" i]');
+    const imageButton = root?.querySelector('.excalidraw [data-testid="toolbar-image"], .excalidraw button[aria-label*="image" i]');
     if (imageButton instanceof HTMLElement) imageButton.click();
     else apiRef.current?.setActiveTool?.({ type: "image" });
     return;
