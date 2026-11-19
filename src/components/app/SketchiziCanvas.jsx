@@ -656,25 +656,6 @@ export default function SketchiziCanvas({
       const container = root.querySelector(".App-toolbar-container");
       if (!toolbar || !container) return;
       toolbar.dataset.sketchiziDock = "true";
-      if (root.dataset.sketchiziDockPreview === "true") {
-        toolbar.dataset.sketchiziDockPreview = "true";
-        toolbar.dataset.sketchiziOrientation = "vertical";
-        toolbar.dataset.sketchiziDockSide = "left";
-        container.dataset.sketchiziDockPositioned = "true";
-        container.style.setProperty("position", "fixed", "important");
-        container.style.setProperty("left", "16px", "important");
-        container.style.setProperty("top", "50%", "important");
-        container.style.setProperty("right", "auto", "important");
-        container.style.setProperty("bottom", "auto", "important");
-        container.style.setProperty("transform", "translateY(-50%)", "important");
-        container.style.setProperty("width", "max-content", "important");
-        container.style.setProperty("max-width", "64px", "important");
-        container.style.setProperty("height", "auto", "important");
-        container.style.setProperty("max-height", "calc(100dvh - 32px)", "important");
-        container.style.setProperty("overflow", "visible", "important");
-      } else {
-        toolbar.removeAttribute("data-sketchizi-dock-preview");
-      }
       // Excalidraw renders its More Tools overflow trigger as a dropdown-menu
       // control in the toolbar. Hide that native trigger directly; matching
       // its localized accessible label is unreliable across Excalidraw builds.
