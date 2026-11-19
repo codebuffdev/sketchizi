@@ -48,7 +48,10 @@ test("Sticky Note uses Sketchizi placement instead of Excalidraw's unimplemented
   assert.doesNotMatch(dock, /setActiveTool\?\.\(\{ type: id \}\)[\s\S]{0,80}note/);
   assert.match(canvas, /Sticky Notes are regular Excalidraw rectangles/);
   assert.match(canvas, /type: "rectangle"/);
-  assert.match(canvas, /customData: \{ isNote: true \}/);
+  assert.match(canvas, /customData: \{ isNote: true, stickyNoteGroup: groupId \}/);
+  assert.match(canvas, /fold-diagonal/);
+  assert.match(canvas, /writing-three/);
+  assert.match(canvas, /stickyNoteGroup/);
   assert.match(canvas, /addEventListener\("pointerdown", placeNote, true\)/);
 });
 
