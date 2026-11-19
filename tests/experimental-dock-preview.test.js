@@ -33,6 +33,7 @@ test("test mode hides the native dock and displays an independent floating panel
   assert.match(dockCss, /\.sketchizi-experimental-primary-dock[\s\S]*?position: fixed/);
   assert.match(dockCss, /width: 38px/);
   assert.match(dockCss, /border-radius: 14px/);
-  assert.match(dockCss, /\.app\.theme-dark \.sketchizi-experimental-primary-dock/);
+  assert.match(dockCss, /\.sketchizi-dock-preview-toggle[\\s\\S]*?position: fixed/);
+  assert.match(dockCss, /\.sketchizi-experimental-primary-dock\.is-dark/);
   assert.match(stylesEntry, /ui-modernization-toolbar-dock\.css/);
 });
