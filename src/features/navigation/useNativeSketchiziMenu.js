@@ -207,7 +207,7 @@ export function useNativeSketchiziMenu({
 <button type="button" class="sketchizi-folder-action" data-sketchizi-canvas-mode="pages"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg></span> Pages</button>
 </div>
 <div class="sketchizi-file-menu-actions sketchizi-file-menu-secondary-actions" role="group" aria-label="File actions">
-<button type="button" class="sketchizi-folder-action" data-sketchizi-open-workspace><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M8 20v-6h8v6"/></svg></span> Cloud Files</button>
+<button type="button" class="sketchizi-folder-action" data-sketchizi-open-workspace><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.5a3.5 3.5 0 0 0-3.7-3.5 5.5 5.5 0 0 0-10.6-1.3A3.8 3.8 0 0 0 6.5 19H19a3 3 0 0 0 1-2.5Z"/></svg></span> Cloud Files</button>
 <button type="button" class="sketchizi-folder-action" data-sketchizi-open-file><span aria-hidden="true">↗</span> Open file</button>
 </div>
 <div class="sketchizi-file-menu-announcement" data-file-menu-announcement role="status" aria-live="polite" aria-atomic="true"></div>
