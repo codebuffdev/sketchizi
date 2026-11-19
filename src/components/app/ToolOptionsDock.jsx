@@ -233,7 +233,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
 
   return (
     <div className="sk-tool-choice">
-      <button ref={triggerRef} type="button" className="sk-tool-choice-trigger"
+      <button ref={triggerRef} type="button" className={`sk-tool-choice-trigger${preserveFocus ? " properties-trigger" : ""}`}
         onPointerDown={preserveFocus ? (event) => event.preventDefault() : undefined}
         title={`${label}: ${selected.label || ""}`}
         aria-label={`${label}: ${selected.label || ""}`}
@@ -249,7 +249,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
             return <button key={String(option.value)} type="button" role="menuitemradio"
               onPointerDown={preserveFocus ? (event) => event.preventDefault() : undefined}
               aria-checked={active} aria-label={option.label} title={option.label}
-              className={`sk-tool-choice-option${active ? " is-selected" : ""}`}
+              className={`sk-tool-choice-option${active ? " is-selected" : ""}${preserveFocus ? " properties-trigger" : ""}`}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -420,8 +420,18 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
       return;
     }
+    // Read selection from Excalidraw at the moment of the click as well as
+    // from React props. The props can lag one render behind a just-made text
+    // selection, which otherwise makes a font choice silently update nothing.
+    const liveAppState = api.getAppState?.() || {};
     const ids = new Set(selected.map((element) => element.id));
-    if (isText && editingTextElement?.id) ids.add(editingTextElement.id);
+    Object.entries(liveAppState.selectedElementIds || {}).forEach(([id, active]) => {
+      if (active) ids.add(id);
+    });
+    const activeEditingText = liveAppState.editingTextElement?.type === "text"
+      ? liveAppState.editingTextElement
+      : editingTextElement;
+    if (isText && activeEditingText?.id) ids.add(activeEditingText.id);
     const now = Date.now();
     const elements = api.getSceneElements?.() || [];
     const next = elements.map((element) => ids.has(element.id)
