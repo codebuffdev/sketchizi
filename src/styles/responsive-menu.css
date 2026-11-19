@@ -898,3 +898,48 @@ html[data-sketchizi-theme="dark"] .dropdown-menu:has([data-sketchizi-custom-menu
     transition: none !important;
   }
 }
+
+
+/* Follow-up: keep the redesigned workspace menu compact like the original. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+  width: min(224px, calc(100vw - 20px)) !important;
+  padding: 6px !important;
+  border-radius: 12px !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-native-settings-section {
+  padding: 5px 4px 7px !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-native-settings-title,
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-group-title {
+  font-size: 9px !important;
+  letter-spacing: .06em !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-actions {
+  gap: 5px !important;
+  padding: 5px 3px 7px !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-actions > button {
+  min-height: 30px !important;
+  gap: 6px !important;
+  padding: 5px 6px !important;
+  border-radius: 7px !important;
+  font-size: 11px !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown {
+  margin-top: 3px !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-recent-dropdown > summary {
+  min-height: 30px !important;
+  padding-inline: 6px !important;
+  border-radius: 7px !important;
+  font-size: 11px !important;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-actions > button > span:first-child {
+  width: 14px;
+  flex-basis: 14px;
+}
+@media (max-width: 620px) {
+  .dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+    width: min(224px, calc(100vw - 16px)) !important;
+  }
+}
