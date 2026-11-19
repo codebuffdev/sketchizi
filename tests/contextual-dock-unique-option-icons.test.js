@@ -18,12 +18,12 @@ test("contextual dock option glyphs are selected using both control type and opt
 test("fill, corner, arrowhead and pressure choices have distinct visual representations", () => {
   assert.match(glyph, /value === "solid"/);
   assert.match(glyph, /value === "hachure"/);
-  assert.match(glyph, /cross hatch/i);
+  assert.match(glyph, /m8 4 16 16/);
   assert.match(glyph, /value === "rounded"/);
   assert.match(glyph, /value === "arrow"/);
   assert.match(glyph, /value === "bar"/);
   assert.match(glyph, /value === "dot"/);
-  assert.match(glyph, /value === "none"/);
+  assert.match(source, /option value="none"/);
   assert.match(glyph, /value === "on"/);
   assert.match(glyph, /value === "off"/);
 });
