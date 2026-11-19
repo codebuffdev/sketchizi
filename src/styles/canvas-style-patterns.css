@@ -59,6 +59,14 @@
     linear-gradient(90deg, rgb(155 180 210 / 27%) 1px, transparent 1px);
 }
 .sketchizi-grid-preview.is-normal { background-size: 12px 12px; }
+.sketchizi-grid-preview.is-technical {
+  background-color: #fff;
+  background-image:
+    radial-gradient(circle, rgb(105 122 145 / 35%) .65px, transparent .9px),
+    linear-gradient(to right, rgb(105 122 145 / 24%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(105 122 145 / 24%) 1px, transparent 1px);
+  background-size: 5px 5px, 25px 25px, 25px 25px;
+}
 .sketchizi-grid-preview.is-focus::after { inset: 5%; }
 .sketchizi-grid-preview.is-local::after { inset: 25% 18%; }
 .sketchizi-grid-preview.is-dots {
