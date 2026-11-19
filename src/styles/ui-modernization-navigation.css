@@ -48,21 +48,23 @@
 }
 
 
-/* Keep the zoom percentage visible as a single compact control. */
-.app .excalidraw .zoom-actions .zoom-out,
-.app .excalidraw .zoom-actions .zoom-in {
+/* Keep only the zoom percentage; Excalidraw 0.18 uses these button class names. */
+.app .excalidraw .zoom-actions .zoom-out-button,
+.app .excalidraw .zoom-actions .zoom-in-button {
   display: none !important;
 }
-.app .excalidraw .zoom-actions .reset-zoom {
+.app .excalidraw .zoom-actions .reset-zoom-button {
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  min-height: 30px;
+  width: auto !important;
+  min-width: 48px !important;
+  height: 30px !important;
+  min-height: 30px !important;
   margin: 0 !important;
-  padding: 0 10px !important;
-  border: 1px solid var(--ui-border-soft, rgb(120 128 145 / 24%)) !important;
-  border-radius: 9px !important;
+  padding: 0 9px !important;
+  border: 1px solid var(--ui-border-soft, rgb(120 128 145 / 28%)) !important;
+  border-radius: 8px !important;
   background: var(--ui-surface, #fff) !important;
   color: var(--ui-text, #394253) !important;
   box-shadow: 0 1px 3px rgb(20 28 44 / 7%);
@@ -71,12 +73,12 @@
   font-weight: 650 !important;
   line-height: 1;
 }
-.app .excalidraw .zoom-actions .reset-zoom:hover:not(:disabled) {
+.app .excalidraw .zoom-actions .reset-zoom-button:hover:not(:disabled) {
   border-color: var(--ui-accent, #7968ee) !important;
   background: var(--ui-hover, #f5f4ff) !important;
   color: var(--ui-accent, #7968ee) !important;
 }
-html[data-sketchizi-theme="dark"] .app .excalidraw .zoom-actions .reset-zoom {
+html[data-sketchizi-theme="dark"] .app .excalidraw .zoom-actions .reset-zoom-button {
   border-color: #3a4353 !important;
   background: #1b2230 !important;
   color: #e5eaf3 !important;
