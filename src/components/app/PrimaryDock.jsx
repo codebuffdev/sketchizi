@@ -10,7 +10,7 @@ const ICONS = {
   line: <path d="M4 20 20 4" />,
   freedraw: <path d="M4 17c2-8 4-10 6-7s3 8 5 5 3-7 5-7" />,
   text: <><path d="M4 6V4h16v2" /><path d="M12 4v16" /><path d="M8 20h8" /></>,
-  note: <><path d="M5 3.5h10l4 4V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path d="M14 3.5V8h5M8 12h8M8 16h6" /></>,
+  note: <><path d="M5 3.5h14a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5Z" /><path d="M7.5 8h9M7.5 11.5h9M7.5 15h5" /><path d="m15.5 20.5 4-4" /></>,
   image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" /><path d="m5 17 5-5 3 3 2-2 4 4" /></>,
   frame: <><rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 2" /><path d="M8 4v3M16 4v3M8 17v3M16 17v3M4 8h3M4 16h3M17 8h3M17 16h3" /></>,
   laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
@@ -40,7 +40,7 @@ function activateTool({ id, root, apiRef }) {
     else apiRef.current?.setActiveTool?.({ type: "image" });
     return;
   }
-  if (id === "bucketfill" || id === "autoshape") {
+  if (id === "bucketfill" || id === "autoshape" || id === "note") {
     window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
     return;
   }
