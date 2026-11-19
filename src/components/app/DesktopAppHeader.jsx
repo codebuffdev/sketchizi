@@ -70,8 +70,8 @@ function runNativeEditAction(pattern) {
 
 export default function DesktopAppHeader({
   commands,
-  gridEnabled = false,
-  gridStyle = "focus",
+  gridEnabled = true,
+  gridStyle = "technical",
   canvasAppearance = "clean",
   onCanvasAppearanceChange,
   onToggleGrid,
