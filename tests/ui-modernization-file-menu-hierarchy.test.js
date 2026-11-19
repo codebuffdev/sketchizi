@@ -62,14 +62,14 @@ test("workspace menu offers Open file and improved community action icons", () =
 });
 
 test("only the exact native Save to button is removed from the hamburger", () => {
-  assert.match(menu, /const saveToLabel = exactLeaves\\.find/);
-  assert.ok(menu.includes(String.raw`/^save to\\.\\.\\.$/i`));
-  assert.ok(menu.includes('closest("button, a, [role=\'menuitem\']")'));
-  assert.match(menu, /itemLabel === "save to\\.\\.\\."/);
-  assert.match(menu, /Never remove a containing group/);
-  assert.match(menu, /data-sketchizi-custom-menu-block/);
-  assert.match(menu, /class="sketchizi-native-settings-title">Workspace/);
-  assert.match(menu, /data-sketchizi-review-link/);
-  assert.match(menu, /data-sketchizi-coder-link/);
-  assert.match(menu, /key === "s"/);
+  assert.ok(menu.includes("const saveToLabel = exactLeaves.find"));
+  assert.ok(menu.includes(String.raw\`/^save to\.\.\.$/i\`));
+  assert.ok(menu.includes('closest("button, a, [role=\\'menuitem\\']")'));
+  assert.ok(menu.includes('itemLabel === "save to..."'));
+  assert.ok(menu.includes("Never remove a containing group"));
+  assert.ok(menu.includes("data-sketchizi-custom-menu-block"));
+  assert.ok(menu.includes('class="sketchizi-native-settings-title">Workspace'));
+  assert.ok(menu.includes("data-sketchizi-review-link"));
+  assert.ok(menu.includes("data-sketchizi-coder-link"));
+  assert.ok(menu.includes('key === "s"'));
 });
