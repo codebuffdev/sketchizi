@@ -786,6 +786,15 @@ function App() {
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
   }, []);
 
+  useEffect(() => {
+    const handleWorkspaceCanvasChoice = (event) => {
+      const mode = event.detail?.mode;
+      if (mode === "infinite" || mode === "pages") chooseStartupCanvas(mode);
+    };
+    window.addEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
+    return () => window.removeEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
+  }, [chooseStartupCanvas]);
+
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit || !resource?.manifest) {

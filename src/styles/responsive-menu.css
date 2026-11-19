@@ -778,3 +778,26 @@ html[data-sketchizi-theme="light"] .dropdown-menu:has([data-sketchizi-custom-men
   max-height: inherit;
   overflow: visible !important;
 }
+
+
+/* Workspace menu: separate canvas creation from file actions. */
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-canvas-menu-actions {
+  margin-bottom: 0;
+  padding-bottom: 5px;
+  border-bottom: 0;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-secondary-actions {
+  padding-top: 3px;
+  padding-bottom: 10px;
+  border-bottom: 0;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-actions > button > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  flex: 0 0 17px;
+}
+.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-actions > button > span:first-child svg {
+  display: block;
+}
