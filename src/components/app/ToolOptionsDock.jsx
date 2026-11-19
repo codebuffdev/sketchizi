@@ -367,11 +367,17 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const selected = liveSelected.length ? liveSelected : selectedFromProps;
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
-  const selectionType = selected.length ? selected[0].type : editingTextElement?.type || null;
   const tool = customTool === "bucketfill" ? "bucket-fill"
     : customTool === "autoshape" ? "draw-to-shape"
       : ["note", "sticky-note", "stickynote", "notes"].includes(customTool) ? "text"
         : activeTool;
+  // While the text tool is active and no text editor is open, the user is
+  // configuring the next text object. Ignore any stale canvas selection:
+  // it must not make the dock read/write the previous element's font.
+  const isTextCreationMode = tool === "text" && activeTool === "text" && !editingTextElement;
+  const selectionType = isTextCreationMode
+    ? null
+    : selected.length ? selected[0].type : editingTextElement?.type || null;
   const type = selectionType || tool;
   const isShape = ["rectangle", "diamond", "ellipse"].includes(type);
   const isLine = ["line", "arrow"].includes(type);
@@ -380,7 +386,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const isFill = type === "bucket-fill";
   const isAutoShape = type === "draw-to-shape";
   const supported = isShape || isLine || isDraw || isText || isFill || isAutoShape;
-  const isSelection = selected.length > 0 || Boolean(isText && editingTextElement?.id);
+  const isSelection = !isTextCreationMode && (selected.length > 0 || Boolean(isText && editingTextElement?.id));
   const isVisible = canEdit && (isSelection ? supported || selected.length > 1 : supported);
   const first = selected[0] || editingTextElement;
 
@@ -455,6 +461,15 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     if (!api) return;
     const nextFontFamily = Number(value);
     const liveState = api.getAppState?.() || {};
+
+    // In text-creation mode the picker controls the next text object's
+    // default. Do not redirect the change to a previously selected element.
+    if (String(liveState.activeTool?.type || "").toLowerCase() === "text"
+      && liveState.editingTextElement?.type !== "text") {
+      api.updateScene({ appState: { currentItemFontFamily: nextFontFamily } });
+      return;
+    }
+
     const liveIds = Object.entries(liveState.selectedElementIds || {})
       .filter(([, active]) => active)
       .map(([id]) => id);
