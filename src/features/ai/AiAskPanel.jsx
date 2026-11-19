@@ -277,6 +277,33 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     if (open) setProviderSettingsOpen(false);
   }, [open]);
 
+  // Anchor the desktop drawer to the actual canvas bounds. The app header can
+  // change height between workspace states, so a fixed viewport offset lets
+  // the AI header drift above the canvas. Track the canvas edge instead.
+  useEffect(() => {
+    if (!open || window.matchMedia("(max-width: 760px)").matches) return undefined;
+    const canvasRegion = document.querySelector(".desktop-canvas-region");
+    const panel = panelRef.current;
+    if (!canvasRegion || !panel) return undefined;
+
+    const syncPanelTop = () => {
+      const bounds = canvasRegion.getBoundingClientRect();
+      panel.style.top = `${Math.max(0, bounds.top + 14)}px`;
+    };
+
+    syncPanelTop();
+    const observer = new ResizeObserver(syncPanelTop);
+    observer.observe(canvasRegion);
+    window.addEventListener("resize", syncPanelTop);
+    window.addEventListener("scroll", syncPanelTop, true);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncPanelTop);
+      window.removeEventListener("scroll", syncPanelTop, true);
+      panel.style.removeProperty("top");
+    };
+  }, [open]);
+
   const refreshUsage = useCallback(async (conversationId, accountId = activeAccountRef.current) => {
     if (!conversationId) {
       setUsage(null);
