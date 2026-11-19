@@ -42,7 +42,7 @@ import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinit
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
-import { hasCloudSceneChange, isActiveCloudSession, usesLocalAutosave } from "./features/workspace/cloudSavePolicy.js";
+import { hasCloudSceneChange, isActiveCloudSession } from "./features/workspace/cloudSavePolicy.js";
 import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
 import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -956,7 +956,7 @@ function App() {
     syncStartupChooser(elements, false, appState);
     handleExcalidrawChange(elements, appState);
     persistActiveCanvasSnapshot(elements, appState);
-    if (cloudDiagramId && cloudSessionRef.current.active) queueSketchSave(elements, appState);
+    if (cloudSessionRef.current.active && !cloudDetachedRef.current) queueSketchSave(elements, appState);
   }, [cloudDiagramId, handleExcalidrawChange, persistActiveCanvasSnapshot, queueSketchSave, syncStartupChooser]);
 
   const chooseStartupCanvas = useCallback((mode) => {
@@ -2220,7 +2220,7 @@ function App() {
           </div>
         </section>
       </div>}
-      {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudDiagramId && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
+      {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudSessionRef.current.active && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
       {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
       {designStudioOpen && (
