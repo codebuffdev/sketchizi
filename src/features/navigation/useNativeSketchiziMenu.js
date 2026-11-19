@@ -26,6 +26,14 @@ export function useNativeSketchiziMenu({
       const text = target.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "";
       const inMenu = Boolean(target.closest?.(".dropdown-menu, [class*='dropdown-menu']"));
       let action = null;
+      const canvasModeButton = target.closest?.('[data-sketchizi-canvas-mode]');
+      if (canvasModeButton) {
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
+        const mode = canvasModeButton.dataset.sketchiziCanvasMode;
+        window.dispatchEvent(new CustomEvent('sketchizi:choose-canvas-mode', { detail: { mode } }));
+        if (mode === 'infinite') fileActionsRef.current.createNewFile?.();
+        return;
+      }
       if (target.matches?.("[data-sketchizi-open-file]")) action = "openDrawingFromDisk";
       else if (target.matches?.("[data-sketchizi-open-folder]")) action = "openFolderFromDisk";
       else if (target.matches?.("[data-sketchizi-close-folder]")) action = "closeCurrentFolder";
@@ -193,7 +201,17 @@ export function useNativeSketchiziMenu({
           const recentSection = document.createElement("div");
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
-          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Workspace</div><div class="sketchizi-file-menu-actions" role="group" aria-label="File actions"><button type="button" class="sketchizi-recent-save" data-sketchizi-new-file>Blank Canvas</button><button type="button" class="sketchizi-folder-action" data-sketchizi-open-file><span aria-hidden="true">↗</span> Open file</button><button type="button" class="sketchizi-folder-action" data-sketchizi-open-workspace><span aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M8 20v-6h8v6"/></svg></span> Your Files</button></div><div class="sketchizi-file-menu-announcement" data-file-menu-announcement role="status" aria-live="polite" aria-atomic="true"></div><section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-files-panel"><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details></section>`;
+          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Workspace</div>
+<div class="sketchizi-file-menu-actions sketchizi-canvas-menu-actions" role="group" aria-label="Canvas creation">
+<button type="button" class="sketchizi-recent-save" data-sketchizi-canvas-mode="infinite"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2.2-5.8 5.2-5.8 9 0s6.8 5.8 9 0c-2.2-5.8-5.2-5.8-9 0S5.2 17.8 3 12Z"/></svg></span> Infinity Canvas</button>
+<button type="button" class="sketchizi-folder-action" data-sketchizi-canvas-mode="pages"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg></span> Pages</button>
+</div>
+<div class="sketchizi-file-menu-actions sketchizi-file-menu-secondary-actions" role="group" aria-label="File actions">
+<button type="button" class="sketchizi-folder-action" data-sketchizi-open-workspace><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M8 20v-6h8v6"/></svg></span> Cloud Files</button>
+<button type="button" class="sketchizi-folder-action" data-sketchizi-open-file><span aria-hidden="true">↗</span> Open file</button>
+</div>
+<div class="sketchizi-file-menu-announcement" data-file-menu-announcement role="status" aria-live="polite" aria-atomic="true"></div>
+<section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-files-panel"><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details></section>`;
           // Remove only the horizontal rules called out in the menu mockup;
           // retain the existing rows, content, and spacing.
           recentSection.style.setProperty("border-top", "0", "important");
