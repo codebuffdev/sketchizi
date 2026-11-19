@@ -1,3 +1,5 @@
+/* Kalam custom font used by the text font-family picker. */
+@import url("https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap");
 @import "./styles/base.css";
 @import "./styles/alignment-guides.css";
 @import "./styles/library.css";

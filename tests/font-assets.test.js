@@ -99,3 +99,12 @@ test("an invalid saved default font falls back safely to Excalifont", () => {
   const restored = parseDrawing(json);
   assert.equal(restored.appState.currentItemFontFamily, 5);
 });
+
+test("Kalam is exposed as a custom text font and its web font is loaded", async () => {
+  const dock = await readFile(path.join(root, "src/components/app/ToolOptionsDock.jsx"), "utf8");
+  const styles = await readFile(path.join(root, "src/styles.css"), "utf8");
+  assert.match(dock, /FONT_FAMILY\.Kalam = 4/);
+  assert.match(dock, /\[4, "Kalam"\]/);
+  assert.match(dock, /document\.fonts\?\.load\('16px "Kalam"'/);
+  assert.match(styles, /fonts\.googleapis\.com\/css2\?family=Kalam/);
+});
