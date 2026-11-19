@@ -105,6 +105,7 @@ function App() {
   const [apiReady, setApiReady] = useState(false);
   const [canvasTabs, setCanvasTabs] = useState([{ id: "canvas-1", name: "Canvas 1", snapshot: null, dirty: false }]);
   const [activeCanvasId, setActiveCanvasId] = useState("canvas-1");
+  const [canvasTabsReady, setCanvasTabsReady] = useState(false);
   const canvasTabsRef = useRef(canvasTabs);
   const activeCanvasIdRef = useRef("canvas-1");
   const canvasTabsRestoredRef = useRef(false);
@@ -393,7 +394,7 @@ function App() {
   }, [apiRef, cloudDiagramId, queueSketchSave]);
 
   useEffect(() => {
-    if (!cloudDiagramId || !apiReady || !sketchReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
+    if (!cloudDiagramId || !apiReady || !sketchReady || !canvasTabsReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
     let cancelled = false;
     cloudLoadStartedRef.current = true;
     setCloudSaveState({ state: "loading", error: "" });
@@ -422,7 +423,8 @@ function App() {
         revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
         name: diagram.name || "Cloud diagram",
       };
-      setCloudDocumentName(diagram.name || "Cloud diagram");
+      const loadedCloudName = diagram.name || "Cloud diagram";
+      setCloudDocumentName(loadedCloudName);
       api.updateScene({
         elements,
         appState: { ...api.getAppState(), ...sanitizeCloudAppState(document.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
@@ -431,8 +433,22 @@ function App() {
       api.history?.clear?.();
       const files = Object.values(document.files || {});
       if (files.length) api.addFiles?.(files);
+      setCurrentFile(null);
       setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format: document.format || diagram.format || "excalidraw" });
       cloudSceneReadyRef.current = true;
+      const loadedSnapshot = {
+        elements, appState: document.appState || {}, files: document.files || {},
+        metadata: document.metadata || {}, extensions: document.extensions || {},
+        format: document.format || diagram.format || "excalidraw", file: null,
+        cloudSession: { ...cloudSessionRef.current }, cloudDetached: false,
+        cloudSaveState: { state: "saved", error: "" }, cloudDocumentName: loadedCloudName,
+      };
+      const loadedTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
+        ? { ...tab, name: loadedCloudName, snapshot: loadedSnapshot, dirty: false }
+        : tab);
+      canvasTabsRef.current = loadedTabs;
+      setCanvasTabs(loadedTabs);
+      saveCanvasTabs(loadedTabs).catch(() => {});
       if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
       setCloudSaveState({ state: "saved", error: "" });
     }).catch((error) => {
@@ -442,7 +458,7 @@ function App() {
       setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
     });
     return () => { cancelled = true; };
-  }, [apiReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
+  }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
 
   useEffect(() => {
     const flushPendingCloudSave = () => {
@@ -673,7 +689,6 @@ function App() {
 
   useEffect(() => {
     if (!sketchReady || !apiReady || canvasTabsRestoredRef.current) return;
-    if (cloudDiagramId && cloudSaveState.state === "loading") return;
     let cancelled = false;
     loadCanvasTabs().then((stored) => {
       if (cancelled) return;
@@ -694,15 +709,51 @@ function App() {
         setCanvasTabs([initial]);
         saveCanvasTabs([initial]).catch(() => {});
       }
+      if (cloudDiagramId) {
+        const api = apiRef.current;
+        const nextCloudTab = {
+          id: `cloud-${cloudDiagramId}-${Date.now()}`,
+          name: "Cloud diagram",
+          dirty: false,
+          snapshot: {
+            elements: [],
+            appState: { viewBackgroundColor: api?.getAppState?.().viewBackgroundColor },
+            files: {}, metadata: {}, extensions: {}, format: "excalidraw",
+            file: null,
+            cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
+            cloudDetached: true,
+            cloudSaveState: { state: "inactive", error: "" },
+            cloudDocumentName: "Cloud diagram",
+          },
+        };
+        const nextTabs = [...canvasTabsRef.current, nextCloudTab].map((tab) => ({ ...tab, active: tab.id === nextCloudTab.id }));
+        canvasTabsRef.current = nextTabs;
+        setCanvasTabs(nextTabs);
+        activeCanvasIdRef.current = nextCloudTab.id;
+        setActiveCanvasId(nextCloudTab.id);
+        saveCanvasTabs(nextTabs).catch(() => {});
+      }
       canvasTabsRestoredRef.current = true;
+      setCanvasTabsReady(true);
     }).catch(() => {
       const initial = { id: "canvas-1", name: "Canvas 1", dirty: false, snapshot: captureCanvasTabSnapshot() };
-      canvasTabsRef.current = [initial];
-      setCanvasTabs([initial]);
+      const nextTabs = cloudDiagramId ? [initial, {
+        id: `cloud-${cloudDiagramId}-${Date.now()}`, name: "Cloud diagram", dirty: false,
+        snapshot: { elements: [], appState: {}, files: {}, metadata: {}, extensions: {}, format: "excalidraw", file: null,
+          cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" }, cloudDetached: true,
+          cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram" },
+      }] : [initial];
+      canvasTabsRef.current = nextTabs;
+      setCanvasTabs(nextTabs);
+      if (cloudDiagramId) {
+        activeCanvasIdRef.current = nextTabs[1].id;
+        setActiveCanvasId(nextTabs[1].id);
+      }
       canvasTabsRestoredRef.current = true;
+      setCanvasTabsReady(true);
     });
     return () => { cancelled = true; };
-  }, [sketchReady, apiReady, cloudDiagramId, cloudSaveState.state, applyCanvasTabSnapshot, captureCanvasTabSnapshot]);
+  }, [sketchReady, apiReady, cloudDiagramId, applyCanvasTabSnapshot, captureCanvasTabSnapshot]);
 
   useEffect(() => {
     const flushCanvasTabs = () => {
