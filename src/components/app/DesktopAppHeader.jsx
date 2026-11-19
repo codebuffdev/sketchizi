@@ -237,6 +237,35 @@ export default function DesktopAppHeader({
 
   useEffect(() => {
     const header = headerRef.current;
+    const app = header?.closest(".app");
+    const canvasRegion = app?.querySelector(".desktop-canvas-region");
+    if (!header || !app || !canvasRegion || typeof ResizeObserver === "undefined") return undefined;
+
+    // The right rail belongs to the canvas, not the browser viewport. The
+    // header itself is absolutely positioned against the app shell, so convert
+    // the canvas region's right edge into an app-relative right inset.
+    const syncRailToCanvas = () => {
+      const appRect = app.getBoundingClientRect();
+      const canvasRect = canvasRegion.getBoundingClientRect();
+      const safeRight = Number.parseFloat(getComputedStyle(app).getPropertyValue("--safe-right")) || 0;
+      const rightInset = Math.max(0, appRect.right - canvasRect.right) + 18 + safeRight;
+      header.style.right = `${rightInset}px`;
+    };
+
+    syncRailToCanvas();
+    const observer = new ResizeObserver(syncRailToCanvas);
+    observer.observe(app);
+    observer.observe(canvasRegion);
+    window.addEventListener("resize", syncRailToCanvas, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncRailToCanvas);
+      header.style.removeProperty("right");
+    };
+  }, []);
+
+  useEffect(() => {
+    const header = headerRef.current;
     const container = header?.parentElement;
     if (!container || typeof ResizeObserver === "undefined") return undefined;
 
