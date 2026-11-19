@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
@@ -737,6 +737,23 @@ export default function SketchiziCanvas({
   const visibleSceneElements = apiRef?.current?.getSceneElements?.() || savedSketch?.elements || [];
   const isCanvasEmpty = visibleSceneElements.every((element) => element?.isDeleted || element?.deleted);
   const activeAppearance = ["sketch", "clean", "chalkboard"].includes(canvasAppearance) ? canvasAppearance : "clean";
+  // Excalidraw treats initialData as initialization input. Keep the object
+  // stable across unrelated Sketchizi renders so state updates (including
+  // cloud-load status and tab updates) cannot repeatedly reinitialize its
+  // internal scene store.
+  const excalidrawInitialData = useMemo(() => ({
+    elements: savedSketch?.elements || [],
+    appState: {
+      ...(savedSketch?.appState || {}),
+      zenModeEnabled: false,
+      zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
+      currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
+      viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasAppearanceBackground(activeAppearance, isDarkTheme),
+      currentItemRoughness: savedSketch?.appState?.currentItemRoughness ?? (savedSketch ? 1 : getCanvasAppearanceRoughness(activeAppearance)),
+      gridModeEnabled: false,
+    },
+    files: savedSketch?.files || {},
+  }), [savedSketch, activeAppearance, isDarkTheme]);
 
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
@@ -750,23 +767,7 @@ export default function SketchiziCanvas({
       />
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
-        initialData={{
-          elements: savedSketch?.elements || [],
-          appState: {
-            ...(savedSketch?.appState || {}),
-            // Start in the standard Sketchizi workspace. Zen Mode remains
-            // available as an explicit user choice, not the default on startup.
-            // Keep this after the saved appState spread so older drawings that
-            // were saved in Zen Mode do not force it on for every new session.
-            zenModeEnabled: false,
-            zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
-            currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
-            viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasAppearanceBackground(activeAppearance, isDarkTheme),
-            currentItemRoughness: savedSketch?.appState?.currentItemRoughness ?? (savedSketch ? 1 : getCanvasAppearanceRoughness(activeAppearance)),
-            gridModeEnabled: false,
-          },
-          files: savedSketch?.files || {},
-        }}
+        initialData={excalidrawInitialData}
         excalidrawAPI={registerExcalidrawAPI}
         onExcalidrawAPI={registerExcalidrawAPI}
         theme={getCanvasAppearanceTheme(activeAppearance, isDarkTheme)}
