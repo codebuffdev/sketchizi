@@ -695,6 +695,54 @@ export default function SketchiziCanvas({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [apiRef, canEdit, viewModeEnabled]);
 
+  // Sticky Notes are regular Excalidraw rectangles with Sketchizi metadata.
+  // Excalidraw 0.18 has no native "note" tool, so place our own note element.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root || !canEdit || viewModeEnabled) return undefined;
+    let placing = false;
+    const activate = (event) => {
+      if (event.detail?.tool === "note") placing = true;
+    };
+    const placeNote = (event) => {
+      if (!placing || event.button !== 0 || !event.target?.closest?.(".excalidraw")) return;
+      if (event.target.closest("button, input, textarea, [contenteditable='true'], .App-menu")) return;
+      const api = apiRef.current;
+      if (!api?.getAppState || !api?.updateScene) return;
+      const appState = api.getAppState();
+      const zoom = Number(appState.zoom?.value) || 1;
+      const bounds = root.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / zoom - (Number(appState.scrollX) || 0);
+      const y = (event.clientY - bounds.top) / zoom - (Number(appState.scrollY) || 0);
+      const id = `sticky-note-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
+      const seed = Math.floor(Math.random() * 0x7fffffff);
+      const note = {
+        id, type: "rectangle", x, y, width: 180, height: 140, angle: 0,
+        strokeColor: "#d6b84a", backgroundColor: "#fff3a6",
+        fillStyle: "solid", strokeWidth: 1, strokeStyle: "solid",
+        roughness: 0, opacity: 100, groupIds: [], frameId: null,
+        roundness: null, boundElements: null, updated: Date.now(),
+        link: null, locked: false, seed, version: 1, versionNonce: seed,
+        isDeleted: false, customData: { isNote: true },
+      };
+      event.preventDefault();
+      event.stopPropagation();
+      placing = false;
+      api.updateScene({
+        elements: [...(api.getSceneElements?.() || []), note],
+        appState: { selectedElementIds: { [id]: true } },
+        commitToHistory: true,
+      });
+      api.setActiveTool?.({ type: "selection" });
+    };
+    window.addEventListener("sketchizi:activate-tool", activate);
+    root.addEventListener("pointerdown", placeNote, true);
+    return () => {
+      window.removeEventListener("sketchizi:activate-tool", activate);
+      root.removeEventListener("pointerdown", placeNote, true);
+    };
+  }, [apiRef, canEdit, viewModeEnabled]);
+
   // Coalesce high-frequency pointer events before updating collaboration
   // presence. This keeps remote-cursor work to at most one update per frame
   // and avoids competing with Excalidraw's time-critical pen event handling.
