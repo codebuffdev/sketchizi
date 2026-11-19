@@ -3581,7 +3581,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 }
 
 
-/* Contextual Dock takes over the Primary Dock's bottom-center position. */
+/* Contextual formatting controls use the bottom-center workspace slot. */
 .app .canvas:has(.sketchizi-tool-options-dock) .App-toolbar-container {
   visibility: hidden !important;
   pointer-events: none !important;
@@ -3604,4 +3604,127 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 .properties-trigger > *,
 .properties-trigger * {
   pointer-events: none !important;
+}
+
+
+
+/* Sketchizi Primary Dock: compact, icon-only vertical tool rail. */
+.app .sketchizi-primary-dock {
+  position: fixed;
+  z-index: 10035;
+  left: 12px;
+  top: 50%;
+  display: flex;
+  box-sizing: border-box;
+  width: 42px;
+  max-height: calc(100dvh - 28px);
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 5px;
+  border: 1px solid #e5e8eb;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 5px 18px rgb(25 33 42 / 9%), 0 1px 3px rgb(25 33 42 / 5%);
+  color: #59636d;
+  transform: translateY(-50%);
+  scrollbar-width: none;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.app .sketchizi-primary-dock::-webkit-scrollbar { display: none; }
+.app .sketchizi-primary-dock-group {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.app .sketchizi-primary-dock-tool {
+  position: relative;
+  display: inline-flex;
+  box-sizing: border-box;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #626d77;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+.app .sketchizi-primary-dock-tool > svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  overflow: visible;
+}
+.app .sketchizi-primary-dock-tool:hover:not(:disabled) {
+  border-color: #e8ebee;
+  background: #f3f5f7;
+  color: #202830;
+}
+.app .sketchizi-primary-dock-tool:active:not(:disabled) { transform: scale(.94); }
+.app .sketchizi-primary-dock-tool.is-active {
+  border-color: #202326;
+  background: #202326;
+  color: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+}
+.app .sketchizi-primary-dock-tool:focus-visible {
+  outline: 2px solid #8a9cf5;
+  outline-offset: 2px;
+}
+.app .sketchizi-primary-dock-tool:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+.app .sketchizi-primary-dock.is-dark {
+  border-color: #343d46;
+  background: rgb(32 39 46 / 97%);
+  box-shadow: 0 5px 20px rgb(0 0 0 / 28%), 0 1px 3px rgb(0 0 0 / 20%);
+  color: #c2cbd3;
+}
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-tool { color: #b0bac3; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-tool:hover:not(:disabled) {
+  border-color: #414b55;
+  background: #303943;
+  color: #f4f6f8;
+}
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-tool.is-active {
+  border-color: #f0f2f4;
+  background: #f0f2f4;
+  color: #20272e;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-primary-dock {
+    left: 8px;
+    max-height: calc(100dvh - 112px);
+    padding: 7px 4px;
+  }
+  .app .sketchizi-primary-dock-tool {
+    width: 31px;
+    min-width: 31px;
+    height: 31px;
+    min-height: 31px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-primary-dock-tool { transition: none; }
+}
+
+
+/* The standalone Sketchizi dock is now the only primary drawing dock.
+   Keep Excalidraw's native toolbar mounted internally for API compatibility,
+   but remove it from the visible and interactive UI. */
+.app .canvas .excalidraw .App-toolbar-container {
+  display: none !important;
 }
