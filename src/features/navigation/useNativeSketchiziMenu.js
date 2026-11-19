@@ -176,12 +176,17 @@ export function useNativeSketchiziMenu({
       // architecture validation, and theme selection already live in the app
       // header, so duplicating them here wastes space and creates ambiguity.
       if (!document.querySelector("[data-sketchizi-custom-menu-block]")) {
-        const menuAnchor = [...document.querySelectorAll(".dropdown-menu-container")]
-          .find((node) => [...node.querySelectorAll("*")].some(
-            (child) => child.children.length === 0 && child.textContent?.replace(/\s+/g, " ").trim() === "Canvas background"
-          ));
-        const menuParent = menuAnchor || [...document.querySelectorAll(".dropdown-menu-container")]
-          .find((node) => node.querySelector('[data-testid="load-button"], [data-testid="json-export-button"]'));
+        // Canvas background is removed above, so it cannot be used as an
+        // insertion anchor here. Anchor to stable, visible native menu actions
+        // instead; Excalidraw versions differ in their data-testid attributes.
+        const hasNativeMenuAction = (container) => [...container.querySelectorAll("*")].some((node) => {
+          if (node.children.length !== 0) return false;
+          const label = node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "";
+          return label === "export image..." || label === "export image" ||
+            label === "find on canvas" || label === "reset the canvas";
+        });
+        const menuParent = [...document.querySelectorAll(".dropdown-menu-container")]
+          .find(hasNativeMenuAction);
         if (menuParent) {
           const customBlock = document.createElement("div");
           customBlock.dataset.sketchiziCustomMenuBlock = "true";
