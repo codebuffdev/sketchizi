@@ -50,21 +50,15 @@ function activateTool({ id, root, apiRef }) {
 }
 
 export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0 }) {
-  const activeTool = apiRef.current?.getAppState?.()?.activeTool?.type || "selection";
-  const [dockLocked, setDockLocked] = useState(() => {
-    const value = rootRef.current?.querySelector(".App-toolbar-container")?.dataset.sketchiziDockLocked;
-    return value !== "false";
-  });
+  const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
+  const [dockLocked, setDockLocked] = useState(true);
   const [position, setPosition] = useState({ left: 12, top: null });
   const dragRef = useRef(null);
 
   useEffect(() => {
-    const syncLock = (event) => {
-      if (typeof event.detail?.locked === "boolean") setDockLocked(event.detail.locked);
-    };
-    window.addEventListener("sketchizi:dock-lock-state", syncLock);
-    return () => window.removeEventListener("sketchizi:dock-lock-state", syncLock);
-  }, []);
+    const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
+    if (nextTool) setActiveTool(nextTool);
+  }, [apiRef, canvasRevision]);
 
   useEffect(() => {
     const onMove = (event) => {
@@ -88,10 +82,7 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
     };
   }, []);
 
-  const toggleLock = () => {
-    window.dispatchEvent(new CustomEvent("sketchizi:toggle-dock-lock"));
-    setDockLocked((locked) => !locked);
-  };
+  const toggleLock = () => setDockLocked((locked) => !locked);
 
   return (
     <nav
@@ -130,7 +121,7 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
                   aria-pressed={selected}
                   title={`${label} · ${shortcut}`}
                   disabled={!canEdit}
-                  onClick={() => activateTool({ id, root: rootRef.current, apiRef })}
+                  onClick={() => { activateTool({ id, root: rootRef.current, apiRef }); setActiveTool(id); }}
                 >
                   <ToolIcon name={id} />
                   <span className="sketchizi-experimental-dock-shortcut" aria-hidden="true">{shortcut}</span>
