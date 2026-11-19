@@ -559,7 +559,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
           {WIDTHS.map((width) => <option key={width} value={width}>{width} px</option>)}
         </DockSelect>
       </DockGroup>}
-      {isLine && <DockGroup label="Line type">\n        <VisualOptionSelect label="Line type" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry" options={LINE_GEOMETRIES.map(([value, label]) => ({ value, label }))} />\n      </DockGroup>}\n      {(isShape || isLine || isAutoShape) && <DockGroup label="Stroke style">
+      {isLine && <DockGroup label="Line type">
+        <VisualOptionSelect label="Line type" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry" options={LINE_GEOMETRIES.map(([value, label]) => ({ value, label }))} />
+      </DockGroup>}
+      {(isShape || isLine || isAutoShape) && <DockGroup label="Stroke style">
         <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />
       </DockGroup>}
       {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
