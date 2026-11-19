@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReorder, disabled = false }) {
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReorder, disabled = false, showAddButton = true }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const visibleTabs = useMemo(() => {
     if (tabs.length <= 3) return tabs;
@@ -76,7 +76,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReord
             )}
           </div>
         )}
-        <button
+        {showAddButton && (<button
           type="button"
           className="canvas-tabs-add"
           aria-label="Create new canvas"
@@ -85,7 +85,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReord
           disabled={disabled}
         >
           +
-        </button>
+        </button>)}
       </div>
     </div>
   );
