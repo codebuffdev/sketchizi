@@ -646,11 +646,9 @@ function App() {
       },
     };
     const nextTabs = [...currentTabs, nextTab];
-    activeCanvasIdRef.current = id;
-    setActiveCanvasId(id);
     persistCanvasTabs(nextTabs);
-    applyCanvasTabSnapshot(nextTab);
-  }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, applyCanvasTabSnapshot]);
+    switchCanvasTab(id);
+  }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, switchCanvasTab]);
 
   const reorderCanvasTabs = useCallback((sourceId, targetId) => {
     const current = [...canvasTabsRef.current];
