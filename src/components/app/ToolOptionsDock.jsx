@@ -693,7 +693,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       </DockGroup>}
       {isText && <DockGroup label="Text options">
         {layerControl}
-        <DockSelect label="Font family" value={fontFamily} onChange={updateTextFontFamily} preserveFocus={preserveTextEditorFocus} icon={<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>}>
+        <DockSelect label="Font family" value={fontFamily} onChange={updateTextFontFamily} preserveFocus icon={<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>}>
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </DockSelect>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
