@@ -37,6 +37,13 @@ export function useNativeSketchiziMenu({
       fileActionsRef.current[action]?.();
     };
     const onKeyDown = (event) => {
+      // Retire Ctrl+apostrophe; Canvas patterns now owns grid presentation.
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && (event.key === "'" || event.code === "Quote")) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        return;
+      }
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const key = event.key.toLowerCase();
       const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
