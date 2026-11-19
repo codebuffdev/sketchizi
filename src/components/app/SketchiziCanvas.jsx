@@ -570,12 +570,36 @@ export default function SketchiziCanvas({
         bottomAligned: true,
         gap: 16,
       });
+
+      // The contextual dock also occupies the bottom-center canvas slot.
+      // When it is open, lift the scroll-back action just above it so both
+      // controls remain visible and independently clickable.
+      const contextualDock = root.querySelector(".sketchizi-tool-options-dock");
+      if (contextualDock && contextualDock.getClientRects().length) {
+        const contextualRect = contextualDock.getBoundingClientRect();
+        const buttonHeight = button.getBoundingClientRect().height || 42;
+        const buttonWidth = button.getBoundingClientRect().width || 148;
+        const overlapsHorizontally = position.left < contextualRect.right &&
+          position.left + buttonWidth > contextualRect.left;
+        const liftedTop = contextualRect.top - buttonHeight - 12;
+        if (overlapsHorizontally && liftedTop >= canvasRect.top + 8) {
+          position.top = Math.min(position.top, Math.round(liftedTop));
+        } else if (overlapsHorizontally) {
+          const rightSpace = canvasRect.right - contextualRect.right;
+          const leftSpace = contextualRect.left - canvasRect.left;
+          if (rightSpace >= buttonWidth + 12) {
+            position.left = Math.round(contextualRect.right + 12);
+          } else if (leftSpace >= buttonWidth + 12) {
+            position.left = Math.round(contextualRect.left - buttonWidth - 12);
+          }
+        }
+      }
       button.style.setProperty("position", "fixed", "important");
       button.style.setProperty("left", `${position.left}px`, "important");
       button.style.setProperty("top", `${position.top}px`, "important");
       button.style.setProperty("right", "auto", "important");
       button.style.setProperty("bottom", "auto", "important");
-      button.style.setProperty("z-index", "10020", "important");
+      button.style.setProperty("z-index", "10040", "important");
     };
     const suppressNativeScrollBackTooltip = () => {
       document.querySelectorAll('[role="tooltip"]').forEach((tooltip) => {
