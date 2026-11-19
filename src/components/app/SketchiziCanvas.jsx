@@ -710,10 +710,12 @@ export default function SketchiziCanvas({
       const api = apiRef.current;
       if (!api?.getAppState || !api?.updateScene) return;
       const appState = api.getAppState();
-      const zoom = Number(appState.zoom?.value) || 1;
-      const bounds = root.getBoundingClientRect();
-      const x = (event.clientX - bounds.left) / zoom - (Number(appState.scrollX) || 0);
-      const y = (event.clientY - bounds.top) / zoom - (Number(appState.scrollY) || 0);
+      // Use Excalidraw's own viewport transform so the note lands under the
+      // pointer at every zoom level, pan position, and canvas offset.
+      const scenePoint = api.screenToScene?.({ clientX: event.clientX, clientY: event.clientY });
+      if (!scenePoint) return;
+      const x = scenePoint.x;
+      const y = scenePoint.y;
       const id = `sticky-note-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
       const groupId = `sticky-note-group-${id}`;
       const seed = Math.floor(Math.random() * 0x7fffffff);
@@ -734,8 +736,11 @@ export default function SketchiziCanvas({
         strokeColor: "#171717", backgroundColor: "#ffeb3b", strokeWidth: 2,
         roundness: { type: 3 },
       });
+      // Clear the paper's lower-right corner with the actual canvas color,
+      // leaving a clean diagonal silhouette rather than a yellow square patch.
+      const canvasColor = appState.viewBackgroundColor || "#ffffff";
       const cornerMask = makeShape("corner-mask", "rectangle", 136, 136, 44, 44, {
-        strokeColor: "#ffeb3b", backgroundColor: "#ffeb3b", strokeWidth: 0,
+        strokeColor: canvasColor, backgroundColor: canvasColor, strokeWidth: 0,
         roundness: null,
       });
       const makeLine = (suffix, sx, sy, dx, dy, strokeWidth = 2, reverse = false) => ({
