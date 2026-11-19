@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
@@ -737,11 +737,10 @@ export default function SketchiziCanvas({
   const visibleSceneElements = apiRef?.current?.getSceneElements?.() || savedSketch?.elements || [];
   const isCanvasEmpty = visibleSceneElements.every((element) => element?.isDeleted || element?.deleted);
   const activeAppearance = ["sketch", "clean", "chalkboard"].includes(canvasAppearance) ? canvasAppearance : "clean";
-  // Excalidraw treats initialData as initialization input. Keep the object
-  // stable across unrelated Sketchizi renders so state updates (including
-  // cloud-load status and tab updates) cannot repeatedly reinitialize its
-  // internal scene store.
-  const excalidrawInitialData = useMemo(() => ({
+  // Excalidraw's initialData is mount-only. Freeze it for this editor
+  // instance; cloud loads and canvas-tab switches update the live scene via
+  // api.updateScene and must never feed a new initialization object back in.
+  const [excalidrawInitialData] = useState(() => ({
     elements: savedSketch?.elements || [],
     appState: {
       ...(savedSketch?.appState || {}),
@@ -753,7 +752,7 @@ export default function SketchiziCanvas({
       gridModeEnabled: false,
     },
     files: savedSketch?.files || {},
-  }), [savedSketch, activeAppearance, isDarkTheme]);
+  }));
 
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
