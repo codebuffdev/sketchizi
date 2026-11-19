@@ -43,5 +43,6 @@ test("contextual tools and the Tools menu integrate with the new primary dock", 
   assert.match(toolOptions, /\.sketchizi-primary-dock button/);
   assert.match(moreTools, /\.sketchizi-primary-dock/);
   assert.match(moreTools, /sketchizi:toggle-dock-lock/);
+  assert.doesNotMatch(moreTools, /sketchizi-more-tools-hidden/);
   assert.match(stylesEntry, /ui-modernization-toolbar-dock\.css/);
 });
