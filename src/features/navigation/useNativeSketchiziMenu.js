@@ -203,7 +203,7 @@ export function useNativeSketchiziMenu({
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
           recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Workspace</div>
 <div class="sketchizi-file-menu-actions sketchizi-canvas-menu-actions" role="group" aria-label="Canvas creation">
-<button type="button" class="sketchizi-recent-save" data-sketchizi-canvas-mode="infinite"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2.2-5.8 5.2-5.8 9 0s6.8 5.8 9 0c-2.2-5.8-5.2-5.8-9 0S5.2 17.8 3 12Z"/></svg></span> Infinity Canvas</button>
+<button type="button" class="sketchizi-recent-save" data-sketchizi-canvas-mode="infinite"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2.2-5.8 5.2-5.8 9 0s6.8 5.8 9 0c-2.2-5.8-5.2-5.8-9 0S5.2 17.8 3 12Z"/></svg></span> Canvas</button>
 <button type="button" class="sketchizi-folder-action" data-sketchizi-canvas-mode="pages"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg></span> Pages</button>
 </div>
 <div class="sketchizi-file-menu-actions sketchizi-file-menu-secondary-actions" role="group" aria-label="File actions">
