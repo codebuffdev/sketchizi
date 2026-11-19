@@ -72,3 +72,12 @@
     max-width: min(520px, 54vw);
   }
 }
+
+/* The create control closes the full document identity group, after cloud save. */
+.app.canvas-first-header .desktop-app-document-identity {
+  overflow: visible;
+}
+.desktop-app-canvas-add {
+  flex: 0 0 28px;
+  margin-left: 7px;
+}
