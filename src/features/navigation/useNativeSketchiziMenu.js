@@ -157,12 +157,13 @@ export function useNativeSketchiziMenu({
           (node) => /^save to\.\.\.$/i.test(node.textContent?.replace(/\\s+/g, " ").trim() || "")
         );
         if (saveToLabel) {
-          const item = saveToLabel.closest(
-            "li, [role='menuitem'], .dropdown-menu-item, .context-menu-item, .menu-item, button, a"
-          ) || saveToLabel.parentElement;
-          // Save As remains available through the document controls and keyboard
-          // shortcut; remove only this duplicate native hamburger-menu action.
-          if (item && item !== menu) item.remove();
+          // Resolve the actual actionable control, not a broad menu wrapper:
+          // some Excalidraw versions place several menu sections inside a
+          // shared .dropdown-menu-item ancestor.
+          const item = saveToLabel.closest("button, a, [role='menuitem']") || saveToLabel.parentElement;
+          const itemLabel = item?.textContent?.replace(/\\s+/g, " ").trim().toLowerCase();
+          // Remove only the exact Save to… row. Never remove a containing group.
+          if (item && item !== menu && itemLabel === "save to...") item.remove();
         }
       });
       document.querySelectorAll("body *").forEach((node) => {
