@@ -350,14 +350,14 @@ export default function DesktopAppHeader({
     }
     const nextName = documentNameDraft.trim();
     setDocumentNameEditing(false);
-    if (!nextName || nextName === currentDocumentName) {
+    if (!nextName || nextName === activeCanvasTabName) {
       setDocumentNameDraft(activeCanvasTabName);
       return;
     }
     try {
       await onRenameDocument?.(nextName);
     } catch {
-      setDocumentNameDraft(currentDocumentName);
+      setDocumentNameDraft(activeCanvasTabName);
     }
   };
 
