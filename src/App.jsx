@@ -2184,6 +2184,7 @@ function App() {
         onSelectCanvasTab={switchCanvasTab}
         onCreateCanvasTab={createCanvasTab}
         onReorderCanvasTabs={reorderCanvasTabs}
+        onCloseCanvasTab={closeCanvasTab}
         workspaceToggle={workspaceToggle}
         moreToolsToggle={moreToolsToggle}
         libraryToggle={collaborationCanEdit ? (
