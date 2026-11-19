@@ -3605,3 +3605,189 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 .properties-trigger * {
   pointer-events: none !important;
 }
+
+
+/* Experimental Primary Dock — opt-in preview. The native toolbar remains the
+   source of truth for tool state and handlers; this is a visual/layout skin only. */
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] {
+  --sk-preview-ink: #25303a;
+  --sk-preview-muted: #788491;
+  --sk-preview-border: #e3e8ed;
+  --sk-preview-hover: #f1f4f7;
+  --sk-preview-active: #202a33;
+  box-sizing: border-box !important;
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+  padding: 8px 6px !important;
+  gap: 5px !important;
+  border: 1px solid var(--sk-preview-border) !important;
+  border-radius: 16px !important;
+  background: rgb(255 255 255 / 94%) !important;
+  color: var(--sk-preview-ink) !important;
+  box-shadow: 0 12px 32px rgb(26 38 52 / 13%), 0 2px 6px rgb(26 38 52 / 6%) !important;
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-grip {
+  flex: 0 0 12px !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 12px !important;
+  min-height: 12px !important;
+  margin: 0 0 3px !important;
+  color: #9aa4ae !important;
+  opacity: .8;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon__icon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .dropdown-menu-button,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-quick-tool {
+  box-sizing: border-box !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--sk-preview-muted) !important;
+  box-shadow: none !important;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon__icon:hover,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .dropdown-menu-button:hover,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-quick-tool:hover {
+  border-color: #e6eaee !important;
+  background: var(--sk-preview-hover) !important;
+  color: #25303a !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon.active .ToolIcon__icon,
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: var(--sk-preview-active) !important;
+  background: var(--sk-preview-active) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 5px rgb(25 35 45 / 18%) !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-separator {
+  flex: 0 0 1px !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  margin: 3px 0 !important;
+  background: #e5e9ed !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-quick-tools {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0 !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-quick-tool svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+.app .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon__keybinding {
+  color: #9aa4ae !important;
+}
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] {
+  --sk-preview-ink: #e8edf2;
+  --sk-preview-muted: #9aa6b2;
+  --sk-preview-border: #39434e;
+  --sk-preview-hover: #2d3741;
+  --sk-preview-active: #e8edf2;
+  border-color: #39434e !important;
+  background: rgb(31 39 47 / 94%) !important;
+  color: var(--sk-preview-ink) !important;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 34%), 0 2px 8px rgb(0 0 0 / 22%) !important;
+}
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon__icon:hover,
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .dropdown-menu-button:hover,
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-quick-tool:hover {
+  border-color: #46525e !important;
+  background: var(--sk-preview-hover) !important;
+  color: #f2f5f7 !important;
+}
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon.active .ToolIcon__icon,
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon:has(input:checked) .ToolIcon__icon {
+  border-color: #e8edf2 !important;
+  background: #e8edf2 !important;
+  color: #202832 !important;
+}
+.app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .sketchizi-dock-separator {
+  background: #3a4550 !important;
+}
+.app .sketchizi-dock-preview-toggle {
+  position: fixed;
+  z-index: 10040;
+  right: 18px;
+  bottom: 18px;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #dce3e9;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 94%);
+  color: #35414c;
+  box-shadow: 0 5px 18px rgb(27 39 52 / 12%);
+  font: 600 11px/1 system-ui, sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+.app .sketchizi-dock-preview-toggle:hover {
+  transform: translateY(-1px);
+  border-color: #bfcbd5;
+  background: #fff;
+}
+.app .sketchizi-dock-preview-toggle.is-active {
+  border-color: #27323c;
+  background: #27323c;
+  color: #fff;
+}
+.app .sketchizi-dock-preview-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9aa6b0;
+}
+.app .sketchizi-dock-preview-toggle.is-active .sketchizi-dock-preview-indicator {
+  background: #8fe0ad;
+}
+.app.theme-dark .sketchizi-dock-preview-toggle {
+  border-color: #39434e;
+  background: rgb(31 39 47 / 94%);
+  color: #e8edf2;
+}
+.app.theme-dark .sketchizi-dock-preview-toggle.is-active {
+  border-color: #e8edf2;
+  background: #e8edf2;
+  color: #202832;
+}
+.app.theme-dark .sketchizi-dock-preview-toggle.is-active .sketchizi-dock-preview-indicator {
+  background: #23824a;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-dock-preview-toggle {
+    right: 10px;
+    bottom: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-dock-preview-toggle,
+  .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon__icon {
+    transition: none !important;
+  }
+}
