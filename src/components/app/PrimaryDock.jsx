@@ -51,6 +51,7 @@ function activateTool({ id, root, apiRef }) {
 
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0 }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
+  const [customTool, setCustomTool] = useState(null);
   const [dockLocked, setDockLocked] = useState(true);
   const dockLockedRef = useRef(true);
   const [position, setPosition] = useState({ left: 12, top: null });
@@ -75,16 +76,21 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     };
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
-      if (["bucketfill", "autoshape"].includes(tool)) setActiveTool(tool);
+      if (["bucketfill", "autoshape"].includes(tool)) setCustomTool(tool);
     };
     window.addEventListener("sketchizi:dock-lock-state", syncLock);
     window.addEventListener("sketchizi:toggle-dock-lock", toggleLockFromMenu);
+    const clearCustomTool = (event) => {
+      if (event.target?.closest?.(".sketchizi-primary-dock button")) setCustomTool(null);
+    };
     window.addEventListener("sketchizi:activate-tool", syncCustomTool);
+    window.addEventListener("click", clearCustomTool, true);
     window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: true } }));
     return () => {
       window.removeEventListener("sketchizi:dock-lock-state", syncLock);
       window.removeEventListener("sketchizi:toggle-dock-lock", toggleLockFromMenu);
       window.removeEventListener("sketchizi:activate-tool", syncCustomTool);
+      window.removeEventListener("click", clearCustomTool, true);
     };
   }, []);
 
@@ -144,7 +150,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           {groupIndex > 0 && <span className="sketchizi-primary-dock-divider" aria-hidden="true" />}
           <div className="sketchizi-primary-dock-group">
             {group.map(({ id, label, shortcut }) => {
-              const selected = activeTool === id;
+              const selected = customTool ? customTool === id : activeTool === id;
               return (
                 <button
                   key={id}
@@ -154,7 +160,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
                   aria-pressed={selected}
                   title={`${label} · ${shortcut}`}
                   disabled={!canEdit}
-                  onClick={() => { activateTool({ id, root: rootRef.current, apiRef }); setActiveTool(id); }}
+                  onClick={() => { activateTool({ id, root: rootRef.current, apiRef }); setActiveTool(id); if (id !== "bucketfill" && id !== "autoshape") setCustomTool(null); }}
                 >
                   <ToolIcon name={id} />
                   <span className="sketchizi-primary-dock-shortcut" aria-hidden="true">{shortcut}</span>
