@@ -14,7 +14,7 @@ test("text font-family menu preserves the active text editor focus", () => {
 
 test("pending text size can be adjusted without moving focus away from the text editor", () => {
   assert.match(source, /readOnly=\{preserveTextEditorFocus\}/);
-  assert.match(source, /aria-label="Decrease font size"[\s\S]*?onPointerDown=\{preserveTextEditorFocus \? \(event\) => event\.preventDefault\(\) : undefined\}/);
-  assert.match(source, /aria-label="Increase font size"[\s\S]*?onPointerDown=\{preserveTextEditorFocus \? \(event\) => event\.preventDefault\(\) : undefined\}/);
+  assert.match(source, /onPointerDown=\{preserveTextEditorFocus \? \(event\) => event\.preventDefault\(\) : undefined\}[\s\S]*?aria-label="Decrease font size"/);
+  assert.match(source, /onPointerDown=\{preserveTextEditorFocus \? \(event\) => event\.preventDefault\(\) : undefined\}[\s\S]*?aria-label="Increase font size"/);
   assert.match(source, /if \(preserveTextEditorFocus\) event\.preventDefault\(\)/);
 });
