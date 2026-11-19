@@ -580,17 +580,53 @@ function App() {
 
   const switchCanvasTab = useCallback((nextId) => {
     if (!nextId || nextId === activeCanvasIdRef.current || !apiRef.current) return;
+    const previousId = activeCanvasIdRef.current;
     const currentSnapshot = captureCanvasTabSnapshot();
-    const currentTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
+    const currentTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
       ? { ...tab, snapshot: currentSnapshot }
       : tab);
     const target = currentTabs.find((tab) => tab.id === nextId);
     if (!target) return;
+    if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
+      retryLocalSave();
+    } else {
+      const session = cloudSessionRef.current;
+      const api = apiRef.current;
+      const cloudDocument = createCloudDocument({
+        api,
+        elements: currentSnapshot.elements,
+        appState: currentSnapshot.appState,
+        metadata: { metadata: currentSnapshot.metadata, extensions: currentSnapshot.extensions, format: currentSnapshot.format },
+      });
+      if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+      cloudSaveTimerRef.current = null;
+      cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
+        const latest = await workspaceClient.getDiagram(session.diagramId);
+        const latestDiagram = latest?.diagram || latest;
+        const revision = latestDiagram?.revision ?? session.revision;
+        const result = await workspaceClient.saveDiagram(session.diagramId, revision, cloudDocument);
+        session.revision = result?.revision ?? (typeof revision === "number" ? revision + 1 : revision);
+        const savedTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
+          ? { ...tab, dirty: false, snapshot: { ...tab.snapshot, cloudSession: { ...session }, cloudSaveState: { state: "saved", error: "" } } }
+          : tab);
+        canvasTabsRef.current = savedTabs;
+        setCanvasTabs(savedTabs);
+        saveCanvasTabs(savedTabs).catch(() => {});
+      }).catch((error) => {
+        const failedTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
+          ? { ...tab, dirty: true, snapshot: { ...tab.snapshot, cloudSaveState: { state: "error", error: error.message || "Could not save this cloud canvas." } } }
+          : tab);
+        canvasTabsRef.current = failedTabs;
+        setCanvasTabs(failedTabs);
+        saveCanvasTabs(failedTabs).catch(() => {});
+        showToast(error.message || "Could not save this cloud canvas.", "error");
+      });
+    }
     activeCanvasIdRef.current = nextId;
     setActiveCanvasId(nextId);
     persistCanvasTabs(currentTabs);
     applyCanvasTabSnapshot(target);
-  }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, applyCanvasTabSnapshot]);
+  }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, applyCanvasTabSnapshot, retryLocalSave, showToast]);
 
   const createCanvasTab = useCallback(() => {
     if (!apiRef.current) return;
