@@ -37,3 +37,8 @@ test("existing visual option families retain dedicated line, geometry and roughn
   assert.match(source, /kind === "line-style" \|\| kind === "line-geometry" \|\| kind === "roughness"/);
   assert.match(source, /const paths = \{/);
 });
+
+test("contextual dock triggers display the selected option glyph instead of a fixed category icon", () => {
+  assert.match(source, /className="sk-tool-choice-trigger-glyph" aria-hidden="true"\}>\{renderGlyph\(selected\)\}/);
+  assert.doesNotMatch(source, /icon \|\| renderGlyph\(selected\)/);
+});
