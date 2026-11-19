@@ -182,17 +182,6 @@ export function createSketchiziCommandRegistry(context) {
       execute: () => setThemeMode((mode) => mode === "dark" ? "light" : "dark"),
     },
     {
-      id: "view.toggle-grid",
-      label: gridEnabled ? "Hide Grid" : "Show Grid",
-      description: "Toggle Excalidraw's native grid and grid snapping",
-      keywords: ["grid", "snap", "snapping", "canvas", "alignment"],
-      category: "View",
-      shortcut: "G",
-      icon: "▦",
-      available: () => true,
-      execute: toggleGrid,
-    },
-    {
       id: "collaboration.start",
       label: "Start Collaboration",
       description: "Create a new collaboration room",
