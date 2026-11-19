@@ -61,7 +61,6 @@ import "./styles/ai-ask.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
-import CanvasTabs from "./components/app/CanvasTabs.jsx";
 import { loadCanvasTabs, saveCanvasTabs } from "./persistence.js";
 import "./styles/canvas-tabs.css";
 
@@ -748,6 +747,8 @@ function App() {
         const savedName = diagram?.name || normalizedName;
         cloudSessionRef.current.name = savedName;
         setCloudDocumentName(savedName);
+        const renamedTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current ? { ...tab, name: savedName } : tab);
+        persistCanvasTabs(renamedTabs);
         showToast("Canvas renamed");
       } catch (error) {
         showToast(error?.message || "Unable to rename this cloud canvas.", "error");
@@ -758,7 +759,7 @@ function App() {
     const rename = fileActionsRef.current.renameCurrentDocument;
     if (typeof rename !== "function") throw new Error("Canvas rename is not available right now.");
     await rename(normalizedName);
-  }, [cloudDiagramId, showToast]);
+  }, [cloudDiagramId, showToast, persistCanvasTabs]);
 
   const closeExportDialog = useCallback(() => {
     const api = apiRef.current;
@@ -2013,6 +2014,11 @@ function App() {
         onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
+        canvasTabs={canvasTabs}
+        activeCanvasId={activeCanvasId}
+        onSelectCanvasTab={switchCanvasTab}
+        onCreateCanvasTab={createCanvasTab}
+        onReorderCanvasTabs={reorderCanvasTabs}
         workspaceToggle={workspaceToggle}
         moreToolsToggle={moreToolsToggle}
         libraryToggle={collaborationCanEdit ? (
@@ -2088,7 +2094,6 @@ function App() {
         )}
 
         <section className="desktop-canvas-region" aria-label="Canvas workspace">
-          <CanvasTabs tabs={canvasTabs} activeId={activeCanvasId} onSelect={switchCanvasTab} onCreate={createCanvasTab} onReorder={reorderCanvasTabs} />
           <SketchiziCanvas
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
