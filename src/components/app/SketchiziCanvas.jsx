@@ -539,7 +539,6 @@ export default function SketchiziCanvas({
     let disposed = false;
     let observer;
     const placeScrollBackControl = () => {
-      const toolbar = root.querySelector(".sketchizi-primary-dock");
       const buttons = [...root.querySelectorAll("button, [role='button']")];
       const button = buttons.find((candidate) => {
         const label = [
@@ -549,17 +548,26 @@ export default function SketchiziCanvas({
         ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
         return /scroll back to content/i.test(label);
       });
-      if (!button || !toolbar) return;
+      if (!button) return;
       button.classList.add("sketchizi-scroll-back-control");
       button.dataset.sketchiziTooltip = "Scroll back to content";
       if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", "Scroll back to content");
 
+      // Anchor the native action to the canvas bottom edge, independently of
+      // the primary dock's position or orientation.
+      const canvasRect = root.getBoundingClientRect();
+      const bottomAnchor = {
+        left: canvasRect.left,
+        right: canvasRect.right,
+        top: canvasRect.bottom - 42,
+        bottom: canvasRect.bottom,
+        width: canvasRect.width,
+        height: 42,
+      };
       const position = getScrollBackPlacement({
-        dock: toolbar.getBoundingClientRect(),
+        dock: bottomAnchor,
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
-        vertical: true,
-        dockSide: "left",
       });
       button.style.setProperty("position", "fixed", "important");
       button.style.setProperty("left", `${position.left}px`, "important");
