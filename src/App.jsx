@@ -1097,6 +1097,13 @@ function App() {
 
   // Save the live background with the scene instead of forcing a theme color.
   const handleThemeAwareExcalidrawChange = useCallback((elements, appState) => {
+    // Loading a cloud document calls updateScene while the editor is still
+    // reconciling the restored scene. Ignore those restoration callbacks:
+    // running the normal scene/state pipeline against an intermediate scene
+    // can feed React updates back into Excalidraw and trigger update-depth
+    // error #185. Normal edits resume as soon as the cloud scene is ready.
+    if (cloudDiagramId && cloudLoadStartedRef.current && !cloudSceneReadyRef.current) return;
+
     // Excalidraw emits intermediate onChange snapshots for every freehand
     // pointer sample. Defer scene analysis, collaboration broadcasts, minimap
     // updates and persistence until the completed stroke callback arrives.
