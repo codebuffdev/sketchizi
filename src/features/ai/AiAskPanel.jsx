@@ -1046,6 +1046,7 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
 
   return (
     <section ref={panelRef} className="ai-ask-panel" role="dialog" aria-modal="false" aria-labelledby="ai-ask-title">
+      <div className="ai-ask-width-resize" role="separator" aria-orientation="vertical" aria-label="Resize AI chat width" onPointerDown={beginPanelResize}><span /></div>
       <header className="ai-ask-header">
         <div className="ai-ask-heading">
           <span className="ai-ask-mark" role="img" aria-label="AI Ask">
