@@ -5,40 +5,43 @@ import { readFileSync } from "node:fs";
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const dock = readFileSync(new URL("../src/components/app/ExperimentalPrimaryDock.jsx", import.meta.url), "utf8");
 const dockCss = readFileSync(new URL("../src/styles/ui-modernization-toolbar-dock.css", import.meta.url), "utf8");
+const toolOptions = readFileSync(new URL("../src/components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
+const moreTools = readFileSync(new URL("../src/features/navigation/useMoreTools.js", import.meta.url), "utf8");
 const stylesEntry = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
-test("experimental dock is a separate React component and remains opt-in", () => {
-  assert.match(canvas, /const \[dockPreviewEnabled, setDockPreviewEnabled\] = useState\(false\)/);
+test("standalone dock is the permanent primary dock, with no preview toggle", () => {
   assert.match(canvas, /import ExperimentalPrimaryDock from "\.\/ExperimentalPrimaryDock"/);
   assert.match(canvas, /<ExperimentalPrimaryDock[\s\S]*?apiRef=\{apiRef\}/);
-  assert.match(canvas, /data-sketchizi-dock-preview=\{dockPreviewEnabled \? "true" : undefined\}/);
-  assert.match(canvas, /Preview new dock/);
-  assert.match(canvas, /Exit dock preview/);
-  assert.doesNotMatch(dock, /App-toolbar/);
+  assert.doesNotMatch(canvas, /dockPreviewEnabled|Preview new dock|Exit dock preview|data-sketchizi-dock-preview/);
+  assert.doesNotMatch(canvas, /Enhance Excalidraw's own toolbar in place/);
   assert.doesNotMatch(canvas, /toolbar\.dataset\.sketchiziDockPreview/);
-  assert.doesNotMatch(canvas, /container\.style\.setProperty\("left", "16px"/);
+  assert.match(dockCss, /\.app \.canvas \.excalidraw \.App-toolbar-container\s*\{\s*display: none !important;/);
+  assert.doesNotMatch(dockCss, /data-sketchizi-dock-preview/);
+  assert.doesNotMatch(dockCss, /sketchizi-dock-preview-toggle/);
 });
 
-test("independent dock renders its own grouped tools and uses Excalidraw API actions", () => {
+test("independent dock contains the full drawing tool set and dock lock", () => {
   for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill", "autoshape"]) {
-    assert.ok(dock.includes(`id: "${tool}"`), `missing independent dock tool: ${tool}`);
+    assert.ok(dock.includes(`id: "${tool}"`), `missing primary dock tool: ${tool}`);
   }
   assert.match(dock, /function ToolIcon/);
   assert.match(dock, /apiRef\.current\?\.setActiveTool/);
   assert.match(dock, /aria-pressed=\{selected\}/);
   assert.match(dock, /sketchizi:activate-tool/);
   assert.match(dock, /sketchizi:toggle-dock-lock/);
+  assert.match(dock, /sketchizi:dock-lock-state/);
   assert.match(dock, /Lock dock/);
   assert.match(dock, /Unlock dock/);
   assert.match(dock, /sketchizi-experimental-dock-grip/);
-});
-
-test("test mode hides the native dock and displays an independent floating panel", () => {
-  assert.match(dockCss, /\.canvas\[data-sketchizi-dock-preview="true"\] \.excalidraw \.App-toolbar-container[\s\S]*?display: none !important/);
   assert.match(dockCss, /\.sketchizi-experimental-primary-dock[\s\S]*?position: fixed/);
   assert.match(dockCss, /width: 38px/);
   assert.match(dockCss, /border-radius: 14px/);
-  assert.match(dockCss, /\.sketchizi-dock-preview-toggle\s*\{[\s\S]*?position: fixed/);
   assert.match(dockCss, /\.sketchizi-experimental-primary-dock\.is-dark/);
+});
+
+test("contextual tools and the Tools menu integrate with the new primary dock", () => {
+  assert.match(toolOptions, /\.sketchizi-experimental-primary-dock button/);
+  assert.match(moreTools, /\.sketchizi-experimental-primary-dock/);
+  assert.match(moreTools, /sketchizi:toggle-dock-lock/);
   assert.match(stylesEntry, /ui-modernization-toolbar-dock\.css/);
 });
