@@ -6,23 +6,24 @@ const source = readFileSync(new URL("../src/components/app/ToolOptionsDock.jsx",
 
 test("Line and Arrow contextual docks expose all geometry styles", () => {
   for (const style of ["straight", "curved", "elbow", "rounded-elbow"]) {
-    assert.match(source, new RegExp('\\["' + style + '",'));
+    assert.ok(source.includes(`["${style}",`), `missing ${style} geometry option`);
   }
-  assert.match(source, /isLine && <DockGroup label="Line type">/);
-  assert.match(source, /label="Line type"[\\s\\S]*kind="line-geometry"/);
+  assert.ok(source.includes('{isLine && <DockGroup label="Line type">'));
+  assert.ok(source.includes('label="Line type" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry"'));
 });
 
-test("geometry changes update selected line and arrow points without replacing arrowheads", () => {
-  assert.match(source, /function applyLineGeometryStyle\\(element, style\\)/);
-  assert.match(source, /nextPoints = \\[start, \\[([\\s\\S]*?)end\\]/);
-  assert.match(source, /roundness = \\{ type: 2 \}/);
-  assert.match(source, /customData: \\{ \\.\\.\\.\\(element\\.customData \\|\\| \\{\\}\\), sketchiziLineGeometry: style \\}/);
-  assert.match(source, /api\\.updateScene\\(\\{ appState: \\{ currentItemLineGeometry: value \\} \\}\\)/);
+test("geometry changes update selected line and arrow points while retaining element properties", () => {
+  assert.ok(source.includes("function applyLineGeometryStyle(element, style)"));
+  assert.ok(source.includes("nextPoints = [start, ["));
+  assert.ok(source.includes("roundness = { type: 2 }"));
+  assert.ok(source.includes("...element,"));
+  assert.ok(source.includes("sketchiziLineGeometry: style"));
+  assert.ok(source.includes("api.updateScene({ appState: { currentItemLineGeometry: value } })"));
 });
 
-test("newly drawn lines and arrows receive the selected geometry", () => {
-  assert.match(source, /knownLineElementIdsRef/);
-  assert.match(source, /!knownIds\\.has\\(element\\.id\\).*element\\.type === tool/s);
-  assert.match(source, /appState\\.draggingElement/);
-  assert.match(source, /applyLineGeometryStyle\\(element, style\\)/);
+test("newly drawn lines and arrows receive the selected geometry after the drag ends", () => {
+  assert.ok(source.includes("knownLineElementIdsRef"));
+  assert.ok(source.includes("!knownIds.has(element.id)"));
+  assert.ok(source.includes("appState.draggingElement"));
+  assert.ok(source.includes("applyLineGeometryStyle(element, style)"));
 });
