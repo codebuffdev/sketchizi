@@ -25,6 +25,7 @@ test("independent dock contains the full drawing tool set and dock lock", () => 
     assert.ok(dock.includes(`id: "${tool}"`), `missing primary dock tool: ${tool}`);
   }
   assert.match(dock, /function ToolIcon/);
+  assert.match(dock, /\.excalidraw \\[data-testid="toolbar-image"\\]/);
   assert.match(dock, /apiRef\.current\?\.setActiveTool/);
   assert.match(dock, /aria-pressed=\{selected\}/);
   assert.match(dock, /sketchizi:activate-tool/);
