@@ -308,7 +308,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       if (["bucketfill", "autoshape", "note", "sticky-note", "stickynote", "notes"].includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
-      if (event.target?.closest?.(".sketchizi-experimental-primary-dock button, .App-toolbar button, .App-toolbar [role='button']")) setCustomTool(null);
+      if (event.target?.closest?.(".sketchizi-primary-dock button, .App-toolbar button, .App-toolbar [role='button']")) setCustomTool(null);
     };
     window.addEventListener("sketchizi:activate-tool", handleCustomTool);
     window.addEventListener("click", clearCustomTool, true);
