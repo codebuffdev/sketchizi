@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const ICONS = {
   selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
@@ -48,7 +48,7 @@ function activateTool({ id, root, apiRef }) {
 
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0 }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
-  const [customTool, setCustomTool] = useState(null);
+  const [customTool, setCustomTool] = useState(null);\n  const [isRevealed, setIsRevealed] = useState(false);\n  const hideTimerRef = useRef(null);\n  const cancelHide = () => { if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current); hideTimerRef.current = null; };\n  const scheduleHide = () => { cancelHide(); hideTimerRef.current = window.setTimeout(() => setIsRevealed(false), 700); };\n  useEffect(() => () => cancelHide(), []);
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
     if (nextTool) setActiveTool(nextTool);
