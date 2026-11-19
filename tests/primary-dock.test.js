@@ -51,8 +51,11 @@ test("Sticky Note uses Sketchizi placement instead of Excalidraw's unimplemented
   assert.match(canvas, /type: "rectangle"/);
   assert.match(canvas, /customData: \{ isNote: true, stickyNoteGroup: groupId \}/);
   assert.match(canvas, /fold-diagonal/);
-  assert.match(canvas, /writing-three/);
-  assert.match(canvas, /backgroundColor: "#fff3a6"/);
+  assert.match(canvas, /viewportCoordsToSceneCoords/);
+  assert.doesNotMatch(canvas, /api\.screenToScene/);
+  assert.match(canvas, /backgroundColor: "#ffeb3b"/);
+  assert.match(canvas, /captureUpdate: "IMMEDIATELY"/);
+  assert.doesNotMatch(canvas, /writing-three|writing-two|writing-one/);
   assert.match(canvas, /stickyNoteGroup/);
   assert.match(canvas, /addEventListener\("pointerdown", placeNote, true\)/);
 });
