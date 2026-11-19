@@ -106,20 +106,63 @@ function DockGroup({ label, children }) {
   return <div className="sk-tool-dock-group" role="group" aria-label={label}>{children}</div>;
 }
 
-function DockOptionGlyph({ label, value }) {
+function DockOptionGlyph({ label, value, optionLabel }) {
   const name = String(label || "").toLowerCase();
-  if (name.includes("font")) {
-    const family = ({2:"Arial, sans-serif",3:"monospace",5:"cursive",6:"Nunito, sans-serif",7:"cursive",8:"monospace"})[Number(value)] || "sans-serif";
-    return <span className="sk-tool-option-font-glyph" style={{fontFamily:family}}>Aa</span>;
-  }
-  if (name.includes("width")) return <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M3 12h26" style={{ strokeWidth: Math.max(1, Math.min(7, Number(value) || 2)) }} /></svg>;
-  if (name.includes("fill style")) return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" style={{ fill: value==="solid" ? "currentColor" : "none" }} /><path d={value==="hachure"?"m5 17 12-12M9 20 20 9M4 12l8-8":value==="cross-hatch"?"m4 4 16 16M20 4 4 20M12 4v16M4 12h16":"M4 4h16v16H4z"} /></svg>;
-  if (name.includes("corner")) return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx={value==="rounded"?6:0.5} /></svg>;
-  if (name.includes("arrowhead")) return <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M4 12h24" />{value==="arrow"&&<path d={name.includes("start")?"m11 5-7 7 7 7":"m21 5 7 7-7 7"} />}{value==="bar"&&<path d={name.includes("start")?"M4 5v14":"M28 5v14"} />}{value==="dot"&&<circle cx={name.includes("start")?4:28} cy="12" r="3" fill="currentColor" />}</svg>;
-  if (name.includes("pressure")) return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={value==="on"?"M3 17c4 0 4-10 9-10s5 10 9 10":"M3 12h18"} style={{ strokeWidth: value==="on" ? 2.8 : 1.4 }} /></svg>;
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /></svg>;
-}
+  const option = String(optionLabel || value || "").toLowerCase();
+  const svg = (children) => (
+    <svg viewBox="0 0 32 24" aria-hidden="true" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+  );
 
+  if (name.includes("font")) {
+    const families = {
+      3: '"Cascadia Code", monospace',
+      5: '"Excalifont", cursive',
+      7: '"Lilita One", cursive',
+      8: '"Comic Shanns", cursive',
+    };
+    const weights = { 3: 500, 5: 400, 7: 700, 8: 600 };
+    const styles = { 3: "normal", 5: "italic", 7: "normal", 8: "oblique" };
+    return <span className="sk-tool-option-font-glyph"
+      style={{ fontFamily: families[Number(value)] || "sans-serif", fontWeight: weights[Number(value)] || 500, fontStyle: styles[Number(value)] || "normal" }}>Aa</span>;
+  }
+  if (name.includes("width")) {
+    return svg(<path d="M3 12h26" style={{ strokeWidth: Math.max(1, Math.min(8, Number(value) || 2)) }} />);
+  }
+  if (name.includes("fill style")) {
+    if (value === "solid") return svg(<><rect x="7" y="3" width="18" height="18" rx="2" fill="currentColor" /></>);
+    if (value === "hachure") return svg(<><rect x="7" y="3" width="18" height="18" rx="2" /><path d="m8 17 12-12M12 21 25 8M7 11l8-8" /></>);
+    return svg(<><rect x="7" y="3" width="18" height="18" rx="2" /><path d="m8 4 16 16M24 4 8 20M16 3v18M7 12h18" /></>);
+  }
+  if (name.includes("corner")) {
+    return svg(value === "rounded"
+      ? <path d="M7 21V10a7 7 0 0 1 7-7h11" />
+      : <path d="M7 21V3h18" />);
+  }
+  if (name.includes("arrowhead")) {
+    const atStart = name.includes("start");
+    const tip = atStart ? 5 : 27;
+    const arrow = atStart
+      ? "M13 5 5 12l8 7"
+      : "m19 5 8 7-8 7";
+    return svg(<>
+      <path d="M5 12h22" />
+      {value === "arrow" && <path d={arrow} />}
+      {value === "bar" && <path d={`M${tip} 4v16`} />}
+      {value === "dot" && <circle cx={tip} cy="12" r="3" fill="currentColor" stroke="none" />}
+    </>);
+  }
+  if (name.includes("pressure")) {
+    return svg(value === "on"
+      ? <><path d="M3 18c5 0 5-13 12-13 6 0 7 12 14 12" strokeWidth="3" /><path d="M3 21h26" opacity=".3" /></>
+      : <><path d="M3 12h26" strokeWidth="1.5" /><path d="M3 18h26" opacity=".35" /></>);
+  }
+
+  // Keep future standard option menus identifiable instead of falling back
+  // to the same generic circle for every option.
+  const abbreviation = String(optionLabel || value || "?").trim().slice(0, 2).toUpperCase();
+  return <span className="sk-tool-option-font-glyph" aria-hidden="true">{abbreviation}</span>;
+}
 function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standard", preserveFocus = false }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
@@ -180,7 +223,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
 
   const renderGlyph = (option) => {
     if (kind === "line-style" || kind === "line-geometry" || kind === "roughness") return <OptionGlyph kind={kind} value={option.value} />;
-    return <DockOptionGlyph label={label} value={option.value} />;
+    return <DockOptionGlyph label={label} value={option.value} optionLabel={option.label} />;
   };
 
   return (
@@ -190,7 +233,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
         title={`${label}: ${selected.label || ""}`}
         aria-label={`${label}: ${selected.label || ""}`}
         aria-haspopup="menu" aria-expanded={open} onClick={toggle}>
-        <span className="sk-tool-choice-trigger-glyph" aria-hidden="true">{icon || renderGlyph(selected)}</span>
+        <span className="sk-tool-choice-trigger-glyph" aria-hidden="true">{renderGlyph(selected)}</span>
         <svg className={`sk-tool-choice-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && position && createPortal(
