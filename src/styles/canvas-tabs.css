@@ -1,0 +1,58 @@
+.canvas-tabs-bar {
+  position: relative;
+  z-index: 24;
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  flex: 0 0 38px;
+  padding: 0 14px;
+  background: var(--canvas-background, var(--default-bg, #fff));
+  border-bottom: 1px solid var(--color-border, rgba(120, 120, 120, .18));
+}
+.canvas-tabs-list { display: flex; align-items: stretch; gap: 4px; min-width: 0; height: 38px; }
+.canvas-tab, .canvas-tabs-overflow-trigger, .canvas-tabs-add {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 88px;
+  max-width: 180px;
+  padding: 0 13px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary, #333);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.canvas-tab:hover, .canvas-tabs-overflow-trigger:hover, .canvas-tabs-add:hover { background: rgba(127, 127, 127, .09); }
+.canvas-tab.is-active { border-bottom-color: var(--color-primary, #647fca); color: var(--text-primary, #222); font-weight: 600; }
+.canvas-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.canvas-tab-dirty { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #d69a32; }
+.canvas-tabs-overflow { position: relative; display: flex; }
+.canvas-tabs-overflow-trigger { min-width: 42px; padding: 0 9px; }
+.canvas-tabs-overflow-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 100;
+  min-width: 180px;
+  padding: 5px;
+  border: 1px solid var(--color-border, rgba(120,120,120,.2));
+  border-radius: 8px;
+  background: var(--island-bg, var(--default-bg, #fff));
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+.canvas-tabs-overflow-menu button {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; padding: 9px 10px; border: 0; border-radius: 5px;
+  background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer;
+}
+.canvas-tabs-overflow-menu button:hover, .canvas-tabs-overflow-menu button.is-active { background: rgba(127,127,127,.12); }
+.canvas-tabs-add { min-width: 34px; width: 34px; padding: 0; font-size: 20px; font-weight: 400; }
+.canvas-tabs-add:disabled { opacity: .4; cursor: not-allowed; }
+.app.theme-dark .canvas-tabs-bar { background: var(--island-bg, #1d1d1d); border-color: rgba(255,255,255,.12); }
+.app.theme-dark .canvas-tabs-overflow-menu { background: #252525; border-color: rgba(255,255,255,.14); }
