@@ -277,40 +277,6 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     if (open) setProviderSettingsOpen(false);
   }, [open]);
 
-  // Keep the drawer's top edge aligned with the canvas top edge. The drawer
-  // is fixed inside the app shell, which may itself establish a containing
-  // block; therefore calculate the visual delta instead of copying a viewport
-  // coordinate directly into CSS top.
-  // The drawer is a viewport-level sibling of the workspace. Align its top
-  // edge with the workspace top (below the app header), not the browser top.
-  useEffect(() => {
-    if (!open || window.matchMedia("(max-width: 760px)").matches) return undefined;
-    const workspace = document.querySelector(".desktop-workspace");
-    const panel = panelRef.current;
-    if (!workspace || !panel) return undefined;
-
-    const syncPanelTop = () => {
-      const workspaceTop = workspace.getBoundingClientRect().top;
-      const panelTop = panel.getBoundingClientRect().top;
-      const cssTop = Number.parseFloat(window.getComputedStyle(panel).top) || 0;
-      panel.style.top = `${Math.max(0, cssTop + workspaceTop - panelTop)}px`;
-    };
-
-    syncPanelTop();
-    const observer = new ResizeObserver(syncPanelTop);
-    observer.observe(workspace);
-    const header = document.querySelector(".desktop-app-header");
-    if (header) observer.observe(header);
-    window.addEventListener("resize", syncPanelTop);
-    window.addEventListener("scroll", syncPanelTop, true);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", syncPanelTop);
-      window.removeEventListener("scroll", syncPanelTop, true);
-      panel.style.removeProperty("top");
-    };
-  }, [open]);
-
   const refreshUsage = useCallback(async (conversationId, accountId = activeAccountRef.current) => {
     if (!conversationId) {
       setUsage(null);
