@@ -166,7 +166,8 @@ export default function DesktopAppHeader({
   useEffect(() => () => clearHeaderCollapseTimer(), []);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
-  const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
+  const activeCanvasTabName = canvasTabs.find((tab) => tab.id === activeCanvasId)?.name || currentDocumentName;
+  const [documentNameDraft, setDocumentNameDraft] = useState(activeCanvasTabName);
   const cancelDocumentRenameRef = useRef(false);
 
   useEffect(() => {
@@ -177,12 +178,12 @@ export default function DesktopAppHeader({
   }, [aiAskOpen]);
 
   useEffect(() => {
-    document.title = getCanvasBrowserTitle(currentDocumentName);
-  }, [currentDocumentName]);
+    document.title = getCanvasBrowserTitle(activeCanvasTabName);
+  }, [activeCanvasTabName]);
 
   useEffect(() => {
-    if (!documentNameEditing) setDocumentNameDraft(currentDocumentName);
-  }, [currentDocumentName, documentNameEditing]);
+    if (!documentNameEditing) setDocumentNameDraft(activeCanvasTabName);
+  }, [activeCanvasTabName, documentNameEditing]);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
   nativeMenuOpenLatestRef.current = nativeMenuOpen;
@@ -344,13 +345,13 @@ export default function DesktopAppHeader({
   const commitDocumentRename = async () => {
     if (cancelDocumentRenameRef.current) {
       cancelDocumentRenameRef.current = false;
-      setDocumentNameDraft(currentDocumentName);
+      setDocumentNameDraft(activeCanvasTabName);
       return;
     }
     const nextName = documentNameDraft.trim();
     setDocumentNameEditing(false);
     if (!nextName || nextName === currentDocumentName) {
-      setDocumentNameDraft(currentDocumentName);
+      setDocumentNameDraft(activeCanvasTabName);
       return;
     }
     try {
@@ -697,8 +698,8 @@ export default function DesktopAppHeader({
     </header>
       <div
         className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
-        title={`${currentDocumentName} — ${documentStatusLabel}`}
-        aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
+        title={`${activeCanvasTabName} — ${documentStatusLabel}`}
+        aria-label={`Current document: ${activeCanvasTabName}. ${documentStatusLabel}.`}
       >
         <div className="desktop-app-save-status-wrap">
           <button
@@ -774,7 +775,7 @@ export default function DesktopAppHeader({
                 } else if (event.key === "Escape") {
                   event.preventDefault();
                   cancelDocumentRenameRef.current = true;
-                  setDocumentNameDraft(currentDocumentName);
+                  setDocumentNameDraft(activeCanvasTabName);
                   setDocumentNameEditing(false);
                 }
               }}
