@@ -3,7 +3,7 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
-import ExperimentalPrimaryDock from "./ExperimentalPrimaryDock";
+import PrimaryDock from "./PrimaryDock";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import ShapeMeasurements from "./ShapeMeasurements";
@@ -538,7 +538,7 @@ export default function SketchiziCanvas({
     let disposed = false;
     let observer;
     const placeScrollBackControl = () => {
-      const toolbar = root.querySelector(".sketchizi-experimental-primary-dock");
+      const toolbar = root.querySelector(".sketchizi-primary-dock");
       const buttons = [...root.querySelectorAll("button, [role='button']")];
       const button = buttons.find((candidate) => {
         const label = [
@@ -694,7 +694,7 @@ export default function SketchiziCanvas({
 
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
-      <ExperimentalPrimaryDock
+      <PrimaryDock
         rootRef={canvasRootRef}
         apiRef={apiRef}
         canEdit={canEdit && !viewModeEnabled}
