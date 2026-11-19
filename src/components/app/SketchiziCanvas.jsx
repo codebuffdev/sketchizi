@@ -538,8 +538,11 @@ export default function SketchiziCanvas({
     if (!root) return undefined;
     let disposed = false;
     let observer;
+    let observedContextualDock = null;
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => placeScrollBackControl())
+      : null;
     const placeScrollBackControl = () => {
-      const toolbar = root.querySelector(".sketchizi-primary-dock");
       const buttons = [...root.querySelectorAll("button, [role='button']")];
       const button = buttons.find((candidate) => {
         const label = [
@@ -549,24 +552,63 @@ export default function SketchiziCanvas({
         ].filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
         return /scroll back to content/i.test(label);
       });
-      if (!button || !toolbar) return;
+      if (!button) return;
       button.classList.add("sketchizi-scroll-back-control");
       button.dataset.sketchiziTooltip = "Scroll back to content";
       if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", "Scroll back to content");
 
+      // Anchor the native action to the canvas bottom edge, independently of
+      // the primary dock's position or orientation.
+      const canvasRect = root.getBoundingClientRect();
       const position = getScrollBackPlacement({
-        dock: toolbar.getBoundingClientRect(),
+        dock: {
+          left: canvasRect.left,
+          right: canvasRect.right,
+          top: canvasRect.top,
+          bottom: canvasRect.bottom,
+          width: canvasRect.width,
+          height: canvasRect.height,
+        },
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
-        vertical: true,
-        dockSide: "left",
+        bottomAligned: true,
+        gap: 16,
       });
+
+      // The contextual dock also occupies the bottom-center canvas slot.
+      // When it is open, lift the scroll-back action just above it so both
+      // controls remain visible and independently clickable.
+      const contextualDock = root.querySelector(".sketchizi-tool-options-dock");
+      if (contextualDock !== observedContextualDock) {
+        if (observedContextualDock) resizeObserver?.unobserve(observedContextualDock);
+        observedContextualDock = contextualDock;
+        if (observedContextualDock) resizeObserver?.observe(observedContextualDock);
+      }
+      if (contextualDock && contextualDock.getClientRects().length) {
+        const contextualRect = contextualDock.getBoundingClientRect();
+        const buttonHeight = button.getBoundingClientRect().height || 42;
+        const buttonWidth = button.getBoundingClientRect().width || 148;
+        const overlapsHorizontally = position.left < contextualRect.right &&
+          position.left + buttonWidth > contextualRect.left;
+        const liftedTop = contextualRect.top - buttonHeight - 12;
+        if (overlapsHorizontally && liftedTop >= canvasRect.top + 8) {
+          position.top = Math.min(position.top, Math.round(liftedTop));
+        } else if (overlapsHorizontally) {
+          const rightSpace = canvasRect.right - contextualRect.right;
+          const leftSpace = contextualRect.left - canvasRect.left;
+          if (rightSpace >= buttonWidth + 12) {
+            position.left = Math.round(contextualRect.right + 12);
+          } else if (leftSpace >= buttonWidth + 12) {
+            position.left = Math.round(contextualRect.left - buttonWidth - 12);
+          }
+        }
+      }
       button.style.setProperty("position", "fixed", "important");
       button.style.setProperty("left", `${position.left}px`, "important");
       button.style.setProperty("top", `${position.top}px`, "important");
       button.style.setProperty("right", "auto", "important");
       button.style.setProperty("bottom", "auto", "important");
-      button.style.setProperty("z-index", "10020", "important");
+      button.style.setProperty("z-index", "10040", "important");
     };
     const suppressNativeScrollBackTooltip = () => {
       document.querySelectorAll('[role="tooltip"]').forEach((tooltip) => {
@@ -601,6 +643,7 @@ export default function SketchiziCanvas({
     syncNavigationControls();
     observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
+    resizeObserver?.observe(root);
     window.addEventListener("resize", placeScrollBackControl);
     const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
     tooltipObserver.observe(document.body, { childList: true, subtree: true });
@@ -608,6 +651,8 @@ export default function SketchiziCanvas({
     return () => {
       disposed = true;
       observer?.disconnect();
+      resizeObserver?.disconnect();
+      observedContextualDock = null;
       window.removeEventListener("resize", placeScrollBackControl);
       tooltipObserver.disconnect();
       root.querySelectorAll(".sketchizi-scroll-back-control").forEach((button) => {
