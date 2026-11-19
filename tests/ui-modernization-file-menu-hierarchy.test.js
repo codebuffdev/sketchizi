@@ -73,3 +73,19 @@ test("only the exact native Save to button is removed from the hamburger", () =>
   assert.ok(menu.includes("data-sketchizi-coder-link"));
   assert.ok(menu.includes('key === "s"'));
 });
+
+test("workspace and review sections are injected into the visible hamburger menu", () => {
+  assert.match(menu, /const hasNativeMenuAction = \(container\)/);
+  assert.match(menu, /label === "export image\.\.\."/);
+  assert.match(menu, /label === "find on canvas"/);
+  assert.match(menu, /label === "reset the canvas"/);
+  assert.match(menu, /\.find\(hasNativeMenuAction\)/);
+  assert.match(menu, /customBlock\.append\(recentSection\)/);
+  assert.match(menu, /customBlock\.append\(communitySection\)/);
+});
+
+test("Save to removal targets only its own action row", () => {
+  assert.match(menu, /const saveToLabel = exactLeaves\.find/);
+  assert.match(menu, /saveToLabel\.closest\("button, a, \[role='menuitem'\]"\)/);
+  assert.match(menu, /itemLabel === "save to\.\.\."/);
+});
