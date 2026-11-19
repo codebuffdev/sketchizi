@@ -73,6 +73,6 @@ test("text tool mode ignores stale selected elements and changes the next text d
   assert.match(source, /const isTextCreationMode = tool === "text" && !editingTextElement/);
   assert.match(source, /const selectionType = isTextCreationMode\s*\? null/);
   assert.match(source, /const isSelection = !isTextCreationMode &&/);
-  assert.match(source, /liveState\.activeTool\?\.type \|\| ""\)\.toLowerCase\(\) === "text"/);
+  assert.match(source, /if \\(tool === "text" && liveState\\.editingTextElement\\?\\.type !== "text"\\)/);
   assert.match(source, /api\.updateScene\(\{ appState: \{ currentItemFontFamily: nextFontFamily \} \}\)/);
 });
