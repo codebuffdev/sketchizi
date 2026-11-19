@@ -48,7 +48,12 @@ function activateTool({ id, root, apiRef }) {
 
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0 }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
-  const [customTool, setCustomTool] = useState(null);\n  const [isRevealed, setIsRevealed] = useState(false);\n  const hideTimerRef = useRef(null);\n  const cancelHide = () => { if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current); hideTimerRef.current = null; };\n  const scheduleHide = () => { cancelHide(); hideTimerRef.current = window.setTimeout(() => setIsRevealed(false), 700); };\n  useEffect(() => () => cancelHide(), []);
+  const [customTool, setCustomTool] = useState(null);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const hideTimerRef = useRef(null);
+  const cancelHide = () => { if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current); hideTimerRef.current = null; };
+  const scheduleHide = () => { cancelHide(); hideTimerRef.current = window.setTimeout(() => setIsRevealed(false), 700); };
+  useEffect(() => () => cancelHide(), []);
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
     if (nextTool) setActiveTool(nextTool);
@@ -69,7 +74,9 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     };
   }, []);
   return (
-    <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
+    <div className={`sketchizi-primary-dock-shell${isRevealed ? " is-revealed" : ""}${isDarkTheme ? " is-dark" : ""}`} onPointerEnter={cancelHide} onPointerLeave={scheduleHide} onFocusCapture={() => { cancelHide(); setIsRevealed(true); }} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) scheduleHide(); }}>
+      <button className="sketchizi-primary-dock-reveal" type="button" aria-label="Show drawing tools" tabIndex={isRevealed ? -1 : 0} onFocus={() => setIsRevealed(true)} onClick={() => { cancelHide(); setIsRevealed(true); }} />
+      <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
       {GROUPS.map((group, groupIndex) => (
         <React.Fragment key={groupIndex}>
           <div className="sketchizi-primary-dock-group">
@@ -84,6 +91,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           </div>
         </React.Fragment>
       ))}
-    </nav>
+      </nav>
+    </div>
   );
 }
