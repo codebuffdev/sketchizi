@@ -730,7 +730,7 @@ export default function SketchiziCanvas({
       placing = false;
       api.updateScene({
         elements: [...(api.getSceneElements?.() || []), note],
-        appState: { selectedElementIds: { [id]: true } },
+        appState: { ...appState, selectedElementIds: { [id]: true } },
         commitToHistory: true,
       });
       api.setActiveTool?.({ type: "selection" });
