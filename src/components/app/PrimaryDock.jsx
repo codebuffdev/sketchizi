@@ -72,7 +72,6 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
       {GROUPS.map((group, groupIndex) => (
         <React.Fragment key={groupIndex}>
-          {groupIndex > 0 && <span className="sketchizi-primary-dock-divider" aria-hidden="true" /> }
           <div className="sketchizi-primary-dock-group">
             {group.map(({ id, label }) => {
               const selected = customTool ? customTool === id : activeTool === id;
