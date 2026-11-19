@@ -24,5 +24,8 @@ test("font family controls use Excalidraw's text-property interaction hook while
   assert.match(source, /className=\{\`sk-tool-choice-option\$\{active \? " is-selected" : ""\}\$\{preserveFocus \? " properties-trigger" : ""\}\`\}/);
   assert.match(source, /const liveAppState = api\.getAppState\?\.\(\) \|\| \{\}/);
   assert.match(source, /Object\.entries\(liveAppState\.selectedElementIds \|\| \{\}\)/);
+  assert.match(source, /const selectedFromProps = selectedElements\.filter/);
+  assert.match(source, /const liveSelectedIds = Object\.entries\(appState\.selectedElementIds \|\| \{\}\)/);
+  assert.match(source, /Prefer the live Excalidraw selection when React.s selectedElements prop/);
   assert.match(source, /activeEditingText\?\.id/);
 });
