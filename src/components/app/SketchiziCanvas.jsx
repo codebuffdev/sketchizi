@@ -25,6 +25,7 @@ export default function SketchiziCanvas({
   selectedElements = [], canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
+  nativeMenuOpen = false,
 }) {
   const canvasRootRef = useRef(null);
   const collaborationCursorFrameRef = useRef(0);
@@ -695,6 +696,7 @@ export default function SketchiziCanvas({
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       <PrimaryDock
+        menuOpen={nativeMenuOpen}
         rootRef={canvasRootRef}
         apiRef={apiRef}
         canEdit={canEdit && !viewModeEnabled}
