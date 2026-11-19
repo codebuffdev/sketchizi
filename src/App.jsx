@@ -102,6 +102,7 @@ function App() {
   const architectureValidationSignatureRef = useRef("");
   const lastSelectionSignature = useRef("");
   const apiRef = useRef(null);
+  const setCurrentFileRef = useRef(null);
   const [apiReady, setApiReady] = useState(false);
   const [canvasTabs, setCanvasTabs] = useState([{ id: "canvas-1", name: "Canvas 1", snapshot: null, dirty: false }]);
   const [activeCanvasId, setActiveCanvasId] = useState("canvas-1");
@@ -433,7 +434,7 @@ function App() {
       api.history?.clear?.();
       const files = Object.values(document.files || {});
       if (files.length) api.addFiles?.(files);
-      setCurrentFile(null);
+      setCurrentFileRef.current?.(null);
       setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format: document.format || diagram.format || "excalidraw" });
       cloudSceneReadyRef.current = true;
       const loadedSnapshot = {
@@ -522,6 +523,7 @@ function App() {
     lastSelectionSignature, startCollaboration,
   });
   const { recentFiles, recentFolders, currentFolder, currentFolderFiles, currentFile, currentFileRef, getCurrentFileSceneSignature, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef, refreshCurrentFolderFiles, handleFileError, replacementPrompt, resolveReplacementPrompt } = fileManager;
+  setCurrentFileRef.current = setCurrentFile;
 
   const captureCanvasTabSnapshot = useCallback((elements, appState) => {
     const api = apiRef.current;
