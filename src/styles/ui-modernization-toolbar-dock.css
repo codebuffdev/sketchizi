@@ -3581,7 +3581,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 }
 
 
-/* Contextual Dock takes over the Primary Dock's bottom-center position. */
+/* Contextual formatting controls use the bottom-center workspace slot. */
 .app .canvas:has(.sketchizi-tool-options-dock) .App-toolbar-container {
   visibility: hidden !important;
   pointer-events: none !important;
