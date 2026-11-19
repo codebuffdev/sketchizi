@@ -3608,8 +3608,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 
 
 
-/* Independent experimental Primary Dock. This is a separately rendered React
-   component with its own controls, icons, grouping, and active states. */
+/* Sketchizi Primary Dock: standalone React controls, icons, and grouped tools. */
 .app .sketchizi-primary-dock {
   position: fixed;
   z-index: 10035;
