@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import CanvasPages from "../../features/pages/CanvasPages.jsx";
+import CanvasTabs from "./CanvasTabs.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
@@ -99,6 +100,11 @@ export default function DesktopAppHeader({
   saveStatus = { state: "ready", lastSavedAt: null },
   currentDocumentName = "Untitled drawing",
   currentDocumentDirty = false,
+  canvasTabs = [],
+  activeCanvasId,
+  onSelectCanvasTab,
+  onCreateCanvasTab,
+  onReorderCanvasTabs,
   onRenameDocument,
   currentDocumentFileBacked = false,
   onSaveNow,
@@ -751,8 +757,8 @@ export default function DesktopAppHeader({
             </section>
           )}
         </div>
-        <span className="desktop-app-document-identity-copy">
-          {documentNameEditing ? (
+        {documentNameEditing ? (
+          <span className="desktop-app-document-identity-copy">
             <input
               className="desktop-app-document-identity-name-input"
               aria-label="Canvas name"
@@ -773,10 +779,16 @@ export default function DesktopAppHeader({
                 }
               }}
             />
-          ) : (
-            <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
-          )}
-        </span>
+          </span>
+        ) : (
+          <CanvasTabs
+            tabs={canvasTabs}
+            activeId={activeCanvasId}
+            onSelect={onSelectCanvasTab}
+            onCreate={onCreateCanvasTab}
+            onReorder={onReorderCanvasTabs}
+          />
+        )}
         <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
         {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
           <span
