@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 function CanvasGlyph() {
   return (
@@ -20,8 +20,13 @@ function NewCanvasGlyph() {
   );
 }
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReorder, disabled = false, showAddButton = true }) {
+function CloseGlyph() {
+  return <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>;
+}
+
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, disabled = false, showAddButton = true }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const rootRef = useRef(null);
   const visibleTabs = useMemo(() => {
     if (tabs.length <= 3) return tabs;
     const activeIndex = Math.max(0, tabs.findIndex((tab) => tab.id === activeId));
@@ -33,6 +38,22 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReord
   const hiddenCount = hiddenTabs.length;
   const dragId = useRef(null);
 
+  useEffect(() => {
+    if (!overflowOpen) return undefined;
+    const closeOnOutsideInteraction = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOverflowOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOverflowOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideInteraction, true);
+    document.addEventListener("keydown", closeOnEscape, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideInteraction, true);
+      document.removeEventListener("keydown", closeOnEscape, true);
+    };
+  }, [overflowOpen]);
+
   const handleDrop = (event, targetId) => {
     event.preventDefault();
     const sourceId = dragId.current;
@@ -40,75 +61,57 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReord
     if (sourceId && sourceId !== targetId) onReorder?.(sourceId, targetId);
   };
 
+  const renderTab = (tab) => (
+    <div className={`canvas-tab-item${activeId === tab.id ? " is-active" : ""}`} key={tab.id}>
+      <button
+        type="button"
+        role="tab"
+        className={`canvas-tab${activeId === tab.id ? " is-active" : ""}`}
+        aria-selected={activeId === tab.id}
+        title={tab.name}
+        draggable={!disabled}
+        onDragStart={(event) => {
+          dragId.current = tab.id;
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", tab.id);
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => handleDrop(event, tab.id)}
+        onDragEnd={() => { dragId.current = null; }}
+        onClick={() => { setOverflowOpen(false); onSelect?.(tab.id); }}
+        disabled={disabled}
+      >
+        <CanvasGlyph />
+        <span className="canvas-tab-name">{tab.name}</span>
+        {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
+      </button>
+      {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || tabs.length <= 1}><CloseGlyph /></button>}
+    </div>
+  );
+
   return (
-    <div className="canvas-tabs-bar" role="tablist" aria-label="Open canvases">
+    <div className="canvas-tabs-bar" role="tablist" aria-label="Open canvases" ref={rootRef}>
       <div className="canvas-tabs-list">
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            className={`canvas-tab${activeId === tab.id ? " is-active" : ""}`}
-            aria-selected={activeId === tab.id}
-            title={tab.name}
-            draggable={!disabled}
-            onDragStart={(event) => {
-              dragId.current = tab.id;
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", tab.id);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => handleDrop(event, tab.id)}
-            onDragEnd={() => { dragId.current = null; }}
-            onClick={() => onSelect?.(tab.id)}
-            disabled={disabled}
-          >
-            <CanvasGlyph />
-            <span className="canvas-tab-name">{tab.name}</span>
-            {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
-          </button>
-        ))}
+        {visibleTabs.map(renderTab)}
         {hiddenCount > 0 && (
           <div className="canvas-tabs-overflow">
-            <button
-              type="button"
-              className={`canvas-tabs-overflow-trigger${overflowOpen ? " is-open" : ""}`}
-              aria-haspopup="menu"
-              aria-expanded={overflowOpen}
-              onClick={() => setOverflowOpen((open) => !open)}
-            >
-              +{hiddenCount}
-            </button>
+            <button type="button" className={`canvas-tabs-overflow-trigger${overflowOpen ? " is-open" : ""}`} aria-haspopup="menu" aria-expanded={overflowOpen} onClick={() => setOverflowOpen((open) => !open)}>+{hiddenCount}</button>
             {overflowOpen && (
               <div className="canvas-tabs-overflow-menu" role="menu">
                 {hiddenTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="menuitem"
-                    className={activeId === tab.id ? "is-active" : ""}
-                    onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}
-                  >
-                    <span className="canvas-tabs-overflow-name"><CanvasGlyph />{tab.name}</span>
-                    {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
-                  </button>
+                  <div className="canvas-tabs-overflow-item" role="none" key={tab.id}>
+                    <button type="button" role="menuitem" className={activeId === tab.id ? "is-active" : ""} onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}>
+                      <span className="canvas-tabs-overflow-name"><CanvasGlyph />{tab.name}</span>
+                      {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
+                    </button>
+                    {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || tabs.length <= 1}><CloseGlyph /></button>}
+                  </div>
                 ))}
               </div>
             )}
           </div>
         )}
-        {showAddButton && (
-          <button
-            type="button"
-            className="canvas-tabs-add"
-            aria-label="Create new canvas"
-            title="Create new canvas"
-            onClick={onCreate}
-            disabled={disabled}
-          >
-            <NewCanvasGlyph />
-          </button>
-        )}
+        {showAddButton && <button type="button" className="canvas-tabs-add" aria-label="Create new canvas" title="Create new canvas" onClick={() => { setOverflowOpen(false); onCreate?.(); }} disabled={disabled}><NewCanvasGlyph /></button>}
       </div>
     </div>
   );
