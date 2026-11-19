@@ -61,10 +61,15 @@ test("workspace menu offers Open file and improved community action icons", () =
   assert.match(menu, /sketchizi-git-icon/);
 });
 
-test("only the native Save to menu item is removed from the hamburger", () => {
-  assert.match(menu, /const saveToLabel = exactLeaves\.find/);
-  assert.ok(menu.includes(String.raw`/^save to\.\.\.$/i`));
-  assert.match(menu, /remove only this duplicate native hamburger-menu action/);
-  assert.match(menu, /fileActionsRef\.current\[action\]\?\.\(\)/);
+test("only the exact native Save to button is removed from the hamburger", () => {
+  assert.match(menu, /const saveToLabel = exactLeaves\\.find/);
+  assert.ok(menu.includes(String.raw`/^save to\\.\\.\\.$/i`));
+  assert.ok(menu.includes('closest("button, a, [role=\'menuitem\']")'));
+  assert.match(menu, /itemLabel === "save to\\.\\.\\."/);
+  assert.match(menu, /Never remove a containing group/);
+  assert.match(menu, /data-sketchizi-custom-menu-block/);
+  assert.match(menu, /class="sketchizi-native-settings-title">Workspace/);
+  assert.match(menu, /data-sketchizi-review-link/);
+  assert.match(menu, /data-sketchizi-coder-link/);
   assert.match(menu, /key === "s"/);
 });
