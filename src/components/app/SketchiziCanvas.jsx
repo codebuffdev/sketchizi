@@ -649,33 +649,6 @@ export default function SketchiziCanvas({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [apiRef, canEdit, viewModeEnabled]);
 
-  // Swap the Primary Dock out of the layout whenever contextual controls appear.
-  useEffect(() => {
-    const root = canvasRootRef.current;
-    if (!root) return undefined;
-    const syncDockVisibility = () => {
-      const contextualDock = document.querySelector(".sketchizi-tool-options-dock");
-      const primaryDock = root.querySelector(".App-toolbar-container");
-      if (!primaryDock) return;
-      const replacing = !!contextualDock;
-      primaryDock.style.setProperty("display", replacing ? "none" : "", "important");
-      primaryDock.setAttribute("aria-hidden", String(replacing));
-      primaryDock.inert = replacing;
-    };
-    const observer = new MutationObserver(syncDockVisibility);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
-    syncDockVisibility();
-    return () => {
-      observer.disconnect();
-      const primaryDock = root.querySelector(".App-toolbar-container");
-      if (primaryDock) {
-        primaryDock.style.removeProperty("display");
-        primaryDock.removeAttribute("aria-hidden");
-        primaryDock.inert = false;
-      }
-    };
-  }, []);
-
   // Coalesce high-frequency pointer events before updating collaboration
   // presence. This keeps remote-cursor work to at most one update per frame
   // and avoids competing with Excalidraw's time-critical pen event handling.
