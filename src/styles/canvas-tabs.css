@@ -1,27 +1,25 @@
 .canvas-tabs-bar {
-  position: relative;
-  z-index: 24;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  min-height: 38px;
-  flex: 0 0 38px;
-  padding: 0 14px;
-  background: var(--canvas-background, var(--default-bg, #fff));
-  border-bottom: 1px solid var(--color-border, rgba(120, 120, 120, .18));
+  min-width: 0;
+  flex: 0 1 auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
-.canvas-tabs-list { display: flex; align-items: stretch; gap: 4px; min-width: 0; height: 38px; }
+.canvas-tabs-list { display: flex; align-items: center; gap: 3px; min-width: 0; height: 32px; }
 .canvas-tab, .canvas-tabs-overflow-trigger, .canvas-tabs-add {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  min-width: 88px;
+  gap: 7px;
+  min-width: 64px;
   max-width: 180px;
-  padding: 0 13px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-primary, #333);
   font: inherit;
@@ -29,16 +27,16 @@
   cursor: pointer;
 }
 .canvas-tab:hover, .canvas-tabs-overflow-trigger:hover, .canvas-tabs-add:hover { background: rgba(127, 127, 127, .09); }
-.canvas-tab.is-active { border-bottom-color: var(--color-primary, #647fca); color: var(--text-primary, #222); font-weight: 600; }
+.canvas-tab.is-active { border-color: var(--color-border, rgba(120,120,120,.2)); background: var(--island-bg, rgba(127,127,127,.07)); color: var(--text-primary, #222); font-weight: 600; }
 .canvas-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .canvas-tab-dirty { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #d69a32; }
 .canvas-tabs-overflow { position: relative; display: flex; }
-.canvas-tabs-overflow-trigger { min-width: 42px; padding: 0 9px; }
+.canvas-tabs-overflow-trigger { min-width: 38px; padding: 0 7px; }
 .canvas-tabs-overflow-menu {
   position: absolute;
   top: calc(100% + 5px);
   left: 0;
-  z-index: 100;
+  z-index: 1000;
   min-width: 180px;
   padding: 5px;
   border: 1px solid var(--color-border, rgba(120,120,120,.2));
@@ -52,28 +50,15 @@
   background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer;
 }
 .canvas-tabs-overflow-menu button:hover, .canvas-tabs-overflow-menu button.is-active { background: rgba(127,127,127,.12); }
-.canvas-tabs-add { min-width: 34px; width: 34px; padding: 0; font-size: 20px; font-weight: 400; }
+.canvas-tabs-add { min-width: 28px; width: 28px; padding: 0; font-size: 20px; font-weight: 400; }
 .canvas-tabs-add:disabled { opacity: .4; cursor: not-allowed; }
-.app.theme-dark .canvas-tabs-bar { background: var(--island-bg, #1d1d1d); border-color: rgba(255,255,255,.12); }
+.app.theme-dark .canvas-tab.is-active { background: rgba(255,255,255,.08); }
 .app.theme-dark .canvas-tabs-overflow-menu { background: #252525; border-color: rgba(255,255,255,.14); }
 
-/* The application header floats over the workspace; keep the tab strip just
-   below its document-title row and reserve real canvas space beneath it. */
-.desktop-canvas-region > .canvas-tabs-bar {
-  position: absolute;
-  top: 76px;
-  right: 0;
-  left: 0;
-}
-.desktop-canvas-region > .canvas {
-  inset: 114px 0 0 !important;
-  height: auto !important;
-}
+.desktop-app-document-identity .canvas-tabs-bar { margin-left: 2px; }
+.desktop-app-document-identity .canvas-tabs-list { max-width: min(52vw, 620px); overflow: visible; }
+.desktop-app-document-identity .canvas-tab { flex: 0 1 auto; }
+.desktop-app-document-identity .canvas-tabs-add { flex: 0 0 28px; }
 @media (max-width: 760px) {
-  .desktop-canvas-region > .canvas-tabs-bar { top: 68px; }
-  .desktop-canvas-region > .canvas { inset: 106px 0 0 !important; }
-}
-@media (max-width: 520px) {
-  .desktop-canvas-region > .canvas-tabs-bar { top: 52px; }
-  .desktop-canvas-region > .canvas { inset: 90px 0 0 !important; }
+  .desktop-app-document-identity .canvas-tabs-list { max-width: min(45vw, 420px); }
 }
