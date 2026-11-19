@@ -62,7 +62,7 @@ function DockOptionGlyph({ label, value }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /></svg>;
 }
 
-function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standard" }) {
+function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standard", preserveFocus = false }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
   const triggerRef = useRef(null);
@@ -72,9 +72,9 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
 
   useEffect(() => {
     if (open) {
-      menuRef.current?.querySelector('[role="menuitemradio"]')?.focus();
+      if (!preserveFocus) menuRef.current?.querySelector('[role="menuitemradio"]')?.focus();
     }
-  }, [open]);
+  }, [open, preserveFocus]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -128,6 +128,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
   return (
     <div className="sk-tool-choice">
       <button ref={triggerRef} type="button" className="sk-tool-choice-trigger"
+        onPointerDown={preserveFocus ? (event) => event.preventDefault() : undefined}
         title={`${label}: ${selected.label || ""}`}
         aria-label={`${label}: ${selected.label || ""}`}
         aria-haspopup="menu" aria-expanded={open} onClick={toggle}>
@@ -140,6 +141,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
           {safeOptions.map((option) => {
             const active = String(option.value) === String(value);
             return <button key={String(option.value)} type="button" role="menuitemradio"
+              onPointerDown={preserveFocus ? (event) => event.preventDefault() : undefined}
               aria-checked={active} aria-label={option.label} title={option.label}
               className={`sk-tool-choice-option${active ? " is-selected" : ""}`}
               onClick={(event) => {
@@ -147,7 +149,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
                 event.stopPropagation();
                 onChange(option.value);
                 setOpen(false);
-                triggerRef.current?.focus();
+                if (!preserveFocus) triggerRef.current?.focus();
               }}>
               <span className="sk-tool-choice-option-glyph" aria-hidden="true">{renderGlyph(option)}</span>
               <span className="sk-tool-choice-option-label">{option.label}</span>
@@ -160,11 +162,11 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
   );
 }
 
-function DockSelect({ label, value, onChange, icon, children }) {
+function DockSelect({ label, value, onChange, icon, children, preserveFocus = false }) {
   const options = Children.toArray(children)
     .filter((child) => isValidElement(child) && child.props?.value !== undefined)
     .map((child) => ({ value: child.props.value, label: String(child.props.children ?? child.props.value) }));
-  return <DockChoiceMenu label={label} value={value} onChange={onChange} icon={icon} options={options} />;
+  return <DockChoiceMenu label={label} value={value} onChange={onChange} icon={icon} options={options} preserveFocus={preserveFocus} />;
 }
 
 function OptionGlyph({ kind, value }) {
@@ -265,6 +267,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
   const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
   const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : 2;
+  const preserveTextEditorFocus = isText && Boolean(appState.editingTextElement);
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
@@ -471,15 +474,17 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       </DockGroup>}
       {isText && <DockGroup label="Text options">
         {layerControl}
-        <DockSelect label="Font family" value={fontFamily} onChange={(value) => update({ fontFamily: Number(value) })} icon={<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>}>
+        <DockSelect label="Font family" value={fontFamily} onChange={(value) => update({ fontFamily: Number(value) })} preserveFocus={preserveTextEditorFocus} icon={<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>}>
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </DockSelect>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
-          <button type="button" className="sk-tool-text-size-step" aria-label="Decrease font size" title="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
+          <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Decrease font size" title="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
           <label className="sk-tool-text-size-input">
             <input
               type="number"
               aria-label="Font size in pixels"
+              readOnly={preserveTextEditorFocus}
+              onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined}
               min="1"
               max="999"
               step="1"
@@ -504,7 +509,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
             />
             <span>px</span>
           </label>
-          <button type="button" className="sk-tool-text-size-step" aria-label="Increase font size" title="Increase font size" disabled={fontSize >= 999} onClick={() => update({ fontSize: Math.min(999, fontSize + 1) })}>+</button>
+          <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Increase font size" title="Increase font size" disabled={fontSize >= 999} onClick={() => update({ fontSize: Math.min(999, fontSize + 1) })}>+</button>
         </div>
       </DockGroup>}
       {(isShape || isLine || isAutoShape) && <DockGroup label="Sloppiness">
