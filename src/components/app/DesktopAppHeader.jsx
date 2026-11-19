@@ -836,7 +836,11 @@ export default function DesktopAppHeader({
           title="Create new canvas"
           onClick={onCreateCanvasTab}
         >
-          +
+          <svg className="canvas-tabs-add-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="13" height="14" rx="2" />
+            <path d="M8 5V3.8A1.8 1.8 0 0 1 9.8 2h9.4A1.8 1.8 0 0 1 21 3.8v10.4a1.8 1.8 0 0 1-1.8 1.8H16" />
+            <path d="M10 12h6M13 9v6" />
+          </svg>
         </button>
       </div>
 
