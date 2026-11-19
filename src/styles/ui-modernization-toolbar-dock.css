@@ -3633,11 +3633,10 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   background: #9aa4ae;
   opacity: .42;
   transform: translateY(-50%);
-  cursor: pointer;
+  cursor: default;
   pointer-events: auto;
 }
-.app .sketchizi-primary-dock-shell:hover .sketchizi-primary-dock-reveal,
-.app .sketchizi-primary-dock-reveal:focus-visible { opacity: .8; }
+.app .sketchizi-primary-dock-shell:hover .sketchizi-primary-dock-reveal { opacity: .8; }
 .app .sketchizi-primary-dock {
   position: relative;
   z-index: 1;
