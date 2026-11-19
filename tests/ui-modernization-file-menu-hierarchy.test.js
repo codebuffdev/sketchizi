@@ -63,8 +63,8 @@ test("workspace menu offers Open file and improved community action icons", () =
 
 test("only the exact native Save to button is removed from the hamburger", () => {
   assert.ok(menu.includes("const saveToLabel = exactLeaves.find"));
-  assert.ok(menu.includes(String.raw\`/^save to\.\.\.$/i\`));
-  assert.ok(menu.includes('closest("button, a, [role=\\'menuitem\\']")'));
+  assert.ok(menu.includes('/^save to\\.\\.\\.$/i'));
+  assert.ok(menu.includes("closest(\"button, a, [role='menuitem']\")"));
   assert.ok(menu.includes('itemLabel === "save to..."'));
   assert.ok(menu.includes("Never remove a containing group"));
   assert.ok(menu.includes("data-sketchizi-custom-menu-block"));
