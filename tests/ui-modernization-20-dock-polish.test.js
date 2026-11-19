@@ -56,3 +56,11 @@ test('Scroll back to content uses accessible native-title suppression and the sh
   assert.match(canvas, /bindToolbarTooltip\(button\)/);
   assert.match(canvas, /return \/scroll back to content\/i\.test\(label\)/);
 });
+
+test('horizontal Primary Dock controls share one centered alignment box', () => {
+  assert.match(css, /Primary Dock alignment: normalize every horizontal dock item/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="horizontal"\][\s\S]*?align-items: center !important/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="horizontal"\] > \.ToolIcon[\s\S]*?height: 34px !important/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="horizontal"\] > \.sketchizi-dock-separator[\s\S]*?align-self: center !important/);
+  assert.match(css, /Island\.App-toolbar\[data-sketchizi-orientation="horizontal"\] \.sketchizi-dock-quick-tool[\s\S]*?height: 34px !important/);
+});
