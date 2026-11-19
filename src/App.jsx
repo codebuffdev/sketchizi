@@ -704,6 +704,19 @@ function App() {
     switchCanvasTab(id);
   }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, switchCanvasTab]);
 
+  useEffect(() => {
+    const createCanvasFromShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "n") return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], .monaco-editor, .cm-editor")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      createCanvasTab();
+    };
+    window.addEventListener("keydown", createCanvasFromShortcut, true);
+    return () => window.removeEventListener("keydown", createCanvasFromShortcut, true);
+  }, [createCanvasTab]);
+
   const closeCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
