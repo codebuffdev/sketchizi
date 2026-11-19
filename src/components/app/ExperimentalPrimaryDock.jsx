@@ -55,7 +55,7 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
     const value = rootRef.current?.querySelector(".App-toolbar-container")?.dataset.sketchiziDockLocked;
     return value !== "false";
   });
-  const [position, setPosition] = useState({ left: 12, top: 50 });
+  const [position, setPosition] = useState({ left: 12, top: null });
   const dragRef = useRef(null);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
       className={`sketchizi-experimental-primary-dock${isDarkTheme ? " is-dark" : ""}${dockLocked ? " is-locked" : " is-unlocked"}`}
       aria-label="Experimental drawing tools"
       data-canvas-revision={canvasRevision}
-      style={{ left: position.left, top: position.top === 50 ? "50%" : position.top, transform: position.top === 50 ? "translateY(-50%)" : "none" }}
+      style={{ left: position.left, top: position.top === null ? "50%" : position.top, transform: position.top === null ? "translateY(-50%)" : "none" }}
     >
       <button
         type="button"
