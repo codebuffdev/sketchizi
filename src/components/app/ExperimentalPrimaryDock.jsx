@@ -11,6 +11,8 @@ const ICONS = {
   freedraw: <path d="M4 17c2-8 4-10 6-7s3 8 5 5 3-7 5-7" />,
   text: <><path d="M4 6V4h16v2" /><path d="M12 4v16" /><path d="M8 20h8" /></>,
   image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" /><path d="m5 17 5-5 3 3 2-2 4 4" /></>,
+  frame: <><rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 2" /><path d="M8 4v3M16 4v3M8 17v3M16 17v3M4 8h3M4 16h3M17 8h3M17 16h3" /></>,
+  laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
   eraser: <><path d="m7 16 8-10a2 2 0 0 1 3 0l2 2a2 2 0 0 1 0 3l-8 9H9l-5-5a2 2 0 0 1 0-3l3-4" /><path d="m11 20 8 0" /></>,
   bucketfill: <><path d="m7 4 12 12-5 5-9-9 5-5Z" /><path d="m12 9 5-5 3 3-5 5" /><path d="M18 17c0 2 1 3 2 3s2-1 2-3" /></>,
   autoshape: <><path d="M3 16c2-7 5-9 7-6" /><path d="M11 12h3m-2-2 2 2-2 2" /><rect x="16" y="6" width="5" height="12" rx="1" /></>,
@@ -21,8 +23,8 @@ const GROUPS = [
   [{ id: "rectangle", label: "Rectangle", shortcut: "R" }, { id: "ellipse", label: "Ellipse", shortcut: "O" }, { id: "diamond", label: "Diamond", shortcut: "D" }],
   [{ id: "arrow", label: "Arrow", shortcut: "A" }, { id: "line", label: "Line", shortcut: "L" }],
   [{ id: "freedraw", label: "Draw", shortcut: "P" }, { id: "text", label: "Text", shortcut: "T" }],
-  [{ id: "image", label: "Image", shortcut: "I" }, { id: "eraser", label: "Eraser", shortcut: "E" }],
-  [{ id: "bucketfill", label: "Bucket Fill", shortcut: "B", custom: true }, { id: "autoshape", label: "Draw to Shape", shortcut: "⇧X", custom: true }],
+  [{ id: "image", label: "Image", shortcut: "I" }, { id: "frame", label: "Frame", shortcut: "F" }],
+  [{ id: "eraser", label: "Eraser", shortcut: "E" }, { id: "laser", label: "Laser pointer", shortcut: "K" }],
 ];
 
 function ToolIcon({ name }) {
@@ -30,11 +32,6 @@ function ToolIcon({ name }) {
 }
 
 function activateTool({ id, root, apiRef }) {
-  if (id === "bucketfill" || id === "autoshape") {
-    const button = root?.querySelector(`[data-sketchizi-quick-tool="${id}"]`);
-    button?.click();
-    return;
-  }
   if (id === "image") {
     const imageButton = root?.querySelector('[data-testid="toolbar-image"], button[aria-label*="image" i]');
     if (imageButton instanceof HTMLElement) imageButton.click();
