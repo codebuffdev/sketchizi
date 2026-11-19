@@ -116,6 +116,13 @@ export default function SketchiziCanvas({
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root) return undefined;
+    // Use Sketchizi Canvas patterns instead of Excalidraw's right-click menu.
+    const suppressContextMenu = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+    };
+    root.addEventListener("contextmenu", suppressContextMenu, true);
     let layer = null;
     let frame = 0;
     let dropTimer = null;
@@ -213,6 +220,7 @@ export default function SketchiziCanvas({
     window.addEventListener("resize", schedulePaint, { passive: true });
     return () => {
       observer.disconnect();
+      root.removeEventListener("contextmenu", suppressContextMenu, true);
       root.removeEventListener("pointerdown", onPointerDown, true);
 
       window.removeEventListener("pointerup", onPointerEnd, true);
