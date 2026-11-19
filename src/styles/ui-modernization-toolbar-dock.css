@@ -3641,8 +3641,8 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 .app .sketchizi-primary-dock::-webkit-scrollbar { display: none; }
 .app .sketchizi-primary-dock-group {
   display: flex;
-  width: 100%;
-  flex-direction: column;
+  width: auto;
+  flex-direction: row;
   align-items: center;
   gap: 3px;
 }
