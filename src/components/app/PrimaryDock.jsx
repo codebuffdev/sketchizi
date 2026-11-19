@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const ICONS = {
   selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
@@ -16,19 +16,16 @@ const ICONS = {
   eraser: <><path d="m7 16 8-10a2 2 0 0 1 3 0l2 2a2 2 0 0 1 0 3l-8 9H9l-5-5a2 2 0 0 1 0-3l3-4" /><path d="m11 20 8 0" /></>,
   bucketfill: <><path d="M4 13.5 13.5 4 20 10.5 10.5 20 4 13.5Z" /><path d="m9 8.5 6.5 6.5M17 16c0 2 1 3 2 3s2-1 2-3" /></>,
   autoshape: <><path d="M3 16c2-7 5-9 7-6" /><path d="M11 12h3m-2-2 2 2-2 2" /><rect x="16" y="6" width="5" height="12" rx="1" /></>,
-  lock: <><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
-  unlock: <><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 7.5-2" /></>,
-  grip: <><circle cx="9" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="17" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="17" r="1" fill="currentColor" stroke="none"/></> ,
 };
 
 const GROUPS = [
-  [{ id: "selection", label: "Select", shortcut: "V" }, { id: "hand", label: "Hand", shortcut: "H" }],
-  [{ id: "rectangle", label: "Rectangle", shortcut: "R" }, { id: "ellipse", label: "Ellipse", shortcut: "O" }, { id: "diamond", label: "Diamond", shortcut: "D" }],
-  [{ id: "arrow", label: "Arrow", shortcut: "A" }, { id: "line", label: "Line", shortcut: "L" }],
-  [{ id: "freedraw", label: "Draw", shortcut: "P" }, { id: "text", label: "Text", shortcut: "T" }],
-  [{ id: "image", label: "Image", shortcut: "I" }, { id: "frame", label: "Frame", shortcut: "F" }],
-  [{ id: "eraser", label: "Eraser", shortcut: "E" }, { id: "laser", label: "Laser pointer", shortcut: "K" }],
-  [{ id: "bucketfill", label: "Bucket Fill", shortcut: "B", custom: true }, { id: "autoshape", label: "Draw to Shape", shortcut: "⇧X", custom: true }],
+  [{ id: "selection", label: "Select" }, { id: "hand", label: "Hand" }],
+  [{ id: "rectangle", label: "Rectangle" }, { id: "ellipse", label: "Ellipse" }, { id: "diamond", label: "Diamond" }],
+  [{ id: "arrow", label: "Arrow" }, { id: "line", label: "Line" }],
+  [{ id: "freedraw", label: "Draw" }, { id: "text", label: "Text" }],
+  [{ id: "image", label: "Image" }, { id: "frame", label: "Frame" }],
+  [{ id: "eraser", label: "Eraser" }, { id: "laser", label: "Laser pointer" }],
+  [{ id: "bucketfill", label: "Bucket Fill", custom: true }, { id: "autoshape", label: "Draw to Shape", custom: true }],
 ];
 
 function ToolIcon({ name }) {
@@ -52,136 +49,42 @@ function activateTool({ id, root, apiRef }) {
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0 }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
-  const [dockLocked, setDockLocked] = useState(true);
-  const dockLockedRef = useRef(true);
-  const [position, setPosition] = useState({ left: 12, top: null });
-  const dragRef = useRef(null);
-
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
     if (nextTool) setActiveTool(nextTool);
   }, [apiRef, canvasRevision]);
-
   useEffect(() => {
-    const syncLock = (event) => {
-      if (typeof event.detail?.locked !== "boolean") return;
-      dockLockedRef.current = event.detail.locked;
-      setDockLocked(event.detail.locked);
-    };
-    const toggleLockFromMenu = () => {
-      const next = !dockLockedRef.current;
-      dockLockedRef.current = next;
-      setDockLocked(next);
-      window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
-    };
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
       if (["bucketfill", "autoshape"].includes(tool)) setCustomTool(tool);
     };
-    window.addEventListener("sketchizi:dock-lock-state", syncLock);
-    window.addEventListener("sketchizi:toggle-dock-lock", toggleLockFromMenu);
     const clearCustomTool = (event) => {
       if (event.target?.closest?.(".sketchizi-primary-dock button")) setCustomTool(null);
     };
     window.addEventListener("sketchizi:activate-tool", syncCustomTool);
     window.addEventListener("click", clearCustomTool, true);
-    window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: true } }));
     return () => {
-      window.removeEventListener("sketchizi:dock-lock-state", syncLock);
-      window.removeEventListener("sketchizi:toggle-dock-lock", toggleLockFromMenu);
       window.removeEventListener("sketchizi:activate-tool", syncCustomTool);
       window.removeEventListener("click", clearCustomTool, true);
     };
   }, []);
-
-  useEffect(() => {
-    const onMove = (event) => {
-      if (!dragRef.current) return;
-      const { offsetX, offsetY } = dragRef.current;
-      const width = 48;
-      const height = document.querySelector(".sketchizi-primary-dock")?.offsetHeight || 400;
-      setPosition({
-        left: Math.max(4, Math.min(window.innerWidth - width - 4, event.clientX - offsetX)),
-        top: Math.max(4, Math.min(window.innerHeight - height - 4, event.clientY - offsetY)),
-      });
-    };
-    const onUp = () => { dragRef.current = null; };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
-    };
-  }, []);
-
-  const toggleLock = () => {
-    const next = !dockLockedRef.current;
-    dockLockedRef.current = next;
-    setDockLocked(next);
-    window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
-  };
-
   return (
-    <nav
-      className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}${dockLocked ? " is-locked" : " is-unlocked"}`}
-      aria-label="Primary drawing tools"
-      data-canvas-revision={canvasRevision}
-      style={{ left: position.left, top: position.top === null ? "50%" : position.top, transform: position.top === null ? "translateY(-50%)" : "none" }}
-    >
-      <button
-        type="button"
-        className="sketchizi-primary-dock-grip"
-        aria-label={dockLocked ? "Dock locked. Unlock to move" : "Move dock"}
-        title={dockLocked ? "Unlock dock to move" : "Drag to move dock"}
-        disabled={dockLocked || !canEdit}
-        onPointerDown={(event) => {
-          if (dockLocked || event.button !== 0) return;
-          const rect = event.currentTarget.closest("nav").getBoundingClientRect();
-          dragRef.current = { offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
-          event.preventDefault();
-        }}
-      >
-        <ToolIcon name="grip" />
-      </button>
+    <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
       {GROUPS.map((group, groupIndex) => (
         <React.Fragment key={groupIndex}>
-          {groupIndex > 0 && <span className="sketchizi-primary-dock-divider" aria-hidden="true" />}
+          {groupIndex > 0 && <span className="sketchizi-primary-dock-divider" aria-hidden="true" /> }
           <div className="sketchizi-primary-dock-group">
-            {group.map(({ id, label, shortcut }) => {
+            {group.map(({ id, label }) => {
               const selected = customTool ? customTool === id : activeTool === id;
               return (
-                <button
-                  key={id}
-                  type="button"
-                  className={`sketchizi-primary-dock-tool${selected ? " is-active" : ""}`}
-                  aria-label={label}
-                  aria-pressed={selected}
-                  title={`${label} · ${shortcut}`}
-                  disabled={!canEdit}
-                  onClick={() => { activateTool({ id, root: rootRef.current, apiRef }); setActiveTool(id); if (id !== "bucketfill" && id !== "autoshape") setCustomTool(null); }}
-                >
+                <button key={id} type="button" className={`sketchizi-primary-dock-tool${selected ? " is-active" : ""}`} aria-label={label} aria-pressed={selected} title={label} disabled={!canEdit} onClick={() => { activateTool({ id, root: rootRef.current, apiRef }); setActiveTool(id); if (id !== "bucketfill" && id !== "autoshape") setCustomTool(null); }}>
                   <ToolIcon name={id} />
-                  <span className="sketchizi-primary-dock-shortcut" aria-hidden="true">{shortcut}</span>
                 </button>
               );
             })}
           </div>
         </React.Fragment>
       ))}
-      <span className="sketchizi-primary-dock-divider" aria-hidden="true" />
-      <button
-        type="button"
-        className={`sketchizi-primary-dock-tool sketchizi-primary-dock-lock${dockLocked ? " is-active" : ""}`}
-        aria-label={dockLocked ? "Unlock dock" : "Lock dock"}
-        aria-pressed={dockLocked}
-        title={dockLocked ? "Unlock dock" : "Lock dock"}
-        disabled={!canEdit}
-        onClick={toggleLock}
-      >
-        <ToolIcon name={dockLocked ? "lock" : "unlock"} />
-      </button>
     </nav>
   );
 }
