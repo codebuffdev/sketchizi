@@ -1244,3 +1244,12 @@
   border-color: #41464d !important;
   background: #41464d !important;
 }
+
+
+/* Classic square-corner UI: remove rounded geometry throughout the editor,
+   including Excalidraw controls, canvas shell, panels, dialogs and chat. */
+.app *,
+.app *::before,
+.app *::after {
+  border-radius: 0 !important;
+}
