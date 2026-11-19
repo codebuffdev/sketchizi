@@ -337,7 +337,11 @@ function App() {
     // Keep any already queued non-empty save intact when an empty callback
     // arrives during restoration.
     if (!hasCloudSceneChange(elements)) return;
-    setCloudSaveState((current) => ({ ...current, state: "pending", error: "" }));
+    // Excalidraw fires onChange from componentDidUpdate. Returning a new object
+    // here on every callback re-renders App, which rebuilds the onChange prop,
+    // which makes Excalidraw update and fire onChange again (React #185).
+    // Bail out when nothing actually changes.
+    setCloudSaveState((current) => (current.state === "pending" && !current.error ? current : { ...current, state: "pending", error: "" }));
     const session = cloudSessionRef.current;
     const api = apiRef.current;
     if (!api || !Array.isArray(elements)) return;
@@ -351,7 +355,7 @@ function App() {
     cloudSaveTimerRef.current = window.setTimeout(() => {
       cloudSaveTimerRef.current = null;
       if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
-      setCloudSaveState((current) => ({ ...current, state: "saving", error: "" }));
+      setCloudSaveState((current) => (current.state === "saving" && !current.error ? current : { ...current, state: "saving", error: "" }));
       cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
         // The user may have created a new local drawing while a previous
         // cloud save was waiting in the queue. Never send that stale request.
@@ -538,8 +542,15 @@ function App() {
   const { recentFiles, recentFolders, currentFolder, currentFolderFiles, currentFile, currentFileRef, getCurrentFileSceneSignature, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef, refreshCurrentFolderFiles, handleFileError, replacementPrompt, resolveReplacementPrompt } = fileManager;
   setCurrentFileRef.current = setCurrentFile;
 
+  // Read volatile UI state through a ref so captureCanvasTabSnapshot (and every
+  // callback built on it, including Excalidraw's onChange) keeps a stable
+  // identity. A changing onChange prop makes Excalidraw re-run componentDidUpdate
+  // and call onChange again, which is what turned a status update into a loop.
+  const canvasSnapshotStateRef = useRef(null);
+  canvasSnapshotStateRef.current = { documentDirty, cloudSaveState, cloudDocumentName };
   const captureCanvasTabSnapshot = useCallback((elements, appState) => {
     const api = apiRef.current;
+    const live = canvasSnapshotStateRef.current;
     return {
       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
       appState: appState || api?.getAppState?.() || {},
@@ -550,12 +561,12 @@ function App() {
       file: currentFileRef.current || null,
       cloudSession: { ...cloudSessionRef.current },
       fileSceneSignature: getCurrentFileSceneSignature?.() || null,
-      fileDirty: documentDirty,
+      fileDirty: live.documentDirty,
       cloudDetached: cloudDetachedRef.current,
-      cloudSaveState: { ...cloudSaveState },
-      cloudDocumentName,
+      cloudSaveState: { ...live.cloudSaveState },
+      cloudDocumentName: live.cloudDocumentName,
     };
-  }, [apiRef, currentFileRef, getCurrentFileSceneSignature, cloudDocumentName, cloudSaveState, documentDirty]);
+  }, [apiRef, currentFileRef, getCurrentFileSceneSignature]);
 
   const persistCanvasTabs = useCallback((nextTabs) => {
     const normalizedTabs = nextTabs.map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
