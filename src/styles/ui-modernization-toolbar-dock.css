@@ -3687,15 +3687,6 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   cursor: not-allowed;
   opacity: .42;
 }
-.app .sketchizi-primary-dock-divider {
-  display: block;
-  flex: 0 0 1px;
-  width: 22px;
-  height: 1px;
-  margin: 5px 0;
-  border-radius: 1px;
-  background: #e6e9ec;
-}
 .app .sketchizi-primary-dock.is-dark {
   border-color: #343d46;
   background: rgb(32 39 46 / 97%);
@@ -3713,7 +3704,6 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   background: #f0f2f4;
   color: #20272e;
 }
-.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-divider { background: #414b55; }
 @media (max-width: 760px) {
   .app .sketchizi-primary-dock {
     left: 8px;
