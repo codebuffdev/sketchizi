@@ -7,6 +7,64 @@ const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
 const FONT_FAMILIES = [[3, "Cascadia"], [5, "Excalifont"], [7, "Lilita One"], [8, "Comic Shanns"]];
+const LINE_GEOMETRIES = [
+  ["straight", "Straight"],
+  ["curved", "Curved"],
+  ["elbow", "Elbow"],
+  ["rounded-elbow", "Rounded elbow"],
+];
+
+function applyLineGeometryStyle(element, style) {
+  if (!element || !["line", "arrow"].includes(element.type)) return element;
+  const points = Array.isArray(element.points) && element.points.length >= 2
+    ? element.points
+    : [[0, 0], [Number(element.width) || 0, Number(element.height) || 0]];
+  const start = points[0];
+  const end = points[points.length - 1];
+  let nextPoints = [start, end];
+  let roundness = null;
+
+  if (style === "curved") {
+    const dx = end[0] - start[0];
+    const dy = end[1] - start[1];
+    const length = Math.hypot(dx, dy) || 1;
+    const offset = Math.max(24, length * 0.22);
+    nextPoints = [start, [
+      (start[0] + end[0]) / 2 - (dy / length) * offset,
+      (start[1] + end[1]) / 2 + (dx / length) * offset,
+    ], end];
+    roundness = { type: 2 };
+  } else if (style === "elbow" || style === "rounded-elbow") {
+    const dx = end[0] - start[0];
+    const dy = end[1] - start[1];
+    nextPoints = [start, Math.abs(dx) >= Math.abs(dy) ? [end[0], start[1]] : [start[0], end[1]], end];
+    if (style === "rounded-elbow") roundness = { type: 2 };
+  }
+
+  const compactPoints = nextPoints.filter((point, index) =>
+    index === 0 || point[0] !== nextPoints[index - 1][0] || point[1] !== nextPoints[index - 1][1],
+  );
+  return {
+    ...element,
+    points: compactPoints,
+    roundness,
+    elbowed: element.type === "arrow" ? false : element.elbowed,
+    customData: { ...(element.customData || {}), sketchiziLineGeometry: style },
+    width: Math.max(Number(element.width) || 0, ...compactPoints.map((point) => Math.abs(point[0]))),
+    height: Math.max(Number(element.height) || 0, ...compactPoints.map((point) => Math.abs(point[1]))),
+    version: (Number(element.version) || 0) + 1,
+    versionNonce: Math.floor(Math.random() * 2147483647),
+    updated: Date.now(),
+  };
+}
+
+function getLineGeometryStyle(element) {
+  const saved = element?.customData?.sketchiziLineGeometry;
+  if (LINE_GEOMETRIES.some(([value]) => value === saved)) return saved;
+  if (element?.points?.length > 2) return element.roundness ? "rounded-elbow" : "elbow";
+  return "straight";
+}
+
 
 function ContextShapeIcon({ type, title, multiple = false }) {
   let shape;
@@ -121,7 +179,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
   };
 
   const renderGlyph = (option) => {
-    if (kind === "line-style" || kind === "roughness") return <OptionGlyph kind={kind} value={option.value} />;
+    if (kind === "line-style" || kind === "line-geometry" || kind === "roughness") return <OptionGlyph kind={kind} value={option.value} />;
     return <DockOptionGlyph label={label} value={option.value} />;
   };
 
@@ -173,6 +231,15 @@ function OptionGlyph({ kind, value }) {
   if (kind === "line-style") {
     return <svg viewBox="0 0 36 20" aria-hidden="true"><path d="M3 10h30" strokeDasharray={value === "dashed" ? "6 4" : value === "dotted" ? "1 4" : undefined} strokeLinecap="round" /></svg>;
   }
+  if (kind === "line-geometry") {
+    const paths = {
+      straight: "M3 15h30",
+      curved: "M3 15c8 0 8-11 15-11s7 11 13 11",
+      elbow: "M3 4v11h30",
+      "rounded-elbow": "M3 4v5q0 6 6 6h24",
+    };
+    return <svg viewBox="0 0 36 20" aria-hidden="true"><path d={paths[value] || paths.straight} /></svg>;
+  }
   return <svg viewBox="0 0 36 20" aria-hidden="true"><path d={value === 0 ? "M3 10h30" : value === 1 ? "M3 10c4-8 7 8 11 0s7 8 11 0 5 4 8 0" : "M3 10 7 4l4 12 4-12 4 12 4-12 4 12 6-6"} /></svg>;
 }
 
@@ -184,6 +251,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
   const layerTriggerRef = useRef(null);
+  const knownLineElementIdsRef = useRef(null);
   useEffect(() => {
     const handleCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
@@ -268,6 +336,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
   const fontFamily = FONT_FAMILIES.some(([value]) => value === rawFontFamily) ? rawFontFamily : 2;
   const preserveTextEditorFocus = isText && Boolean(appState.editingTextElement);
+  const lineGeometry = isLine ? (isSelection ? getLineGeometryStyle(first) : (appState.currentItemLineGeometry || "straight")) : "straight";
   const pressure = current("pressure", "currentItemPressure", true) !== false;
   const roughness = Number(current("roughness", "currentItemRoughness", 1));
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
@@ -308,6 +377,47 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       : element);
     api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   };
+
+
+  const updateLineGeometry = (value) => {
+    const api = apiRef?.current;
+    if (!api) return;
+    if (!isSelection) {
+      api.updateScene({ appState: { currentItemLineGeometry: value } });
+      return;
+    }
+    const ids = new Set(selected.filter((element) => ["line", "arrow"].includes(element.type)).map((element) => element.id));
+    if (!ids.size) return;
+    const elements = api.getSceneElements?.() || [];
+    api.updateScene({
+      elements: elements.map((element) => ids.has(element.id) ? applyLineGeometryStyle(element, value) : element),
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+  };
+
+  useEffect(() => {
+    const api = apiRef?.current;
+    if (!api || !isLine || isSelection) return;
+    const elements = api.getSceneElements?.() || [];
+    if (!knownLineElementIdsRef.current) {
+      knownLineElementIdsRef.current = new Set(elements.map((element) => element.id));
+      return;
+    }
+    if (appState.draggingElement) return;
+    const knownIds = knownLineElementIdsRef.current;
+    const fresh = elements.filter((element) =>
+      !knownIds.has(element.id) && element.type === tool && ["line", "arrow"].includes(element.type),
+    );
+    elements.forEach((element) => knownIds.add(element.id));
+    if (!fresh.length) return;
+    const style = appState.currentItemLineGeometry || "straight";
+    if (style === "straight") return;
+    const freshIds = new Set(fresh.map((element) => element.id));
+    api.updateScene({
+      elements: elements.map((element) => freshIds.has(element.id) ? applyLineGeometryStyle(element, style) : element),
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+  }, [apiRef, canvasRevision, appState, isLine, isSelection, tool]);
 
   const moveLayers = (direction) => {
     const api = apiRef?.current;
@@ -448,6 +558,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
           {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth} px</option>}
           {WIDTHS.map((width) => <option key={width} value={width}>{width} px</option>)}
         </DockSelect>
+      </DockGroup>}
+      {isLine && <DockGroup label="Line type">
+        <VisualOptionSelect label="Line type" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry" options={LINE_GEOMETRIES.map(([value, label]) => ({ value, label }))} />
       </DockGroup>}
       {(isShape || isLine || isAutoShape) && <DockGroup label="Stroke style">
         <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />
