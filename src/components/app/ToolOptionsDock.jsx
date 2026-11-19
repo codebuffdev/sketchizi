@@ -440,13 +440,13 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         <ToolButton active={fillColor === "transparent"} title="No fill" onClick={() => update({ backgroundColor: "transparent" })}><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg></ToolButton>
         <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />
       </DockGroup>}
-      {!isText && !isFill && <DockGroup label="Stroke width">
+      {!isText && !isFill && !isDraw && <DockGroup label="Stroke width">
         <DockSelect label="Stroke width" value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })} icon={<svg viewBox="0 0 24 24"><path d="M3 12h18" strokeWidth={Math.min(6, Math.max(1.5, strokeWidth))} /></svg>}>
           {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth} px</option>}
           {WIDTHS.map((width) => <option key={width} value={width}>{width} px</option>)}
         </DockSelect>
       </DockGroup>}
-      {(isShape || isLine || isDraw || isAutoShape) && <DockGroup label="Stroke style">
+      {(isShape || isLine || isAutoShape) && <DockGroup label="Stroke style">
         <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />
       </DockGroup>}
       {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
