@@ -50,3 +50,12 @@ test("font family changes resolve live selected text and update only text elemen
 test("font picker preserves a selected text element even when it is not in edit mode", () => {
   assert.match(source, /<DockSelect label="Font family"[\\s\\S]*?onChange=\\{updateTextFontFamily\\} preserveFocus icon=/);
 });
+
+
+test("font picker always updates the text-tool default before text exists", () => {
+  assert.match(source, /const nextFontFamily = Number\(value\)/);
+  assert.match(source, /const appState = \{ currentItemFontFamily: nextFontFamily \}/);
+  assert.match(source, /api\.updateScene\(\{ appState \}\)/);
+  assert.match(source, /api\.updateScene\(\{[\s\S]*?appState,[\s\S]*?elements:/);
+  assert.match(source, /const targetIds = new Set\(\[\.\.\.liveIds, \.\.\.propTextIds\]\)/);
+});
