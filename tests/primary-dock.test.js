@@ -42,15 +42,15 @@ test("independent dock contains the full drawing tool set without decorative con
 
 test("hamburger menu collapses the primary dock into an active-tool launcher", () => {
   const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
-  assert.match(app, /<SketchiziCanvas[\\s\\S]*?nativeMenuOpen=\\{nativeMenuOpen\\}/);
+  assert.match(app, /<SketchiziCanvas[\s\S]*?nativeMenuOpen=\{nativeMenuOpen\}/);
   assert.match(canvas, /nativeMenuOpen = false/);
-  assert.match(canvas, /<PrimaryDock[\\s\\S]*?menuOpen=\\{nativeMenuOpen\\}/);
-  assert.match(dock, /if \\(menuOpen\\)/);
+  assert.match(canvas, /<PrimaryDock[\s\S]*?menuOpen=\{nativeMenuOpen\}/);
+  assert.match(dock, /if \(menuOpen\)/);
   assert.match(dock, /sketchizi-dock-launcher/);
   assert.match(dock, /sketchizi-dock-quick-palette/);
-  assert.match(dock, /aria-expanded=\\{paletteOpen\\}/);
-  assert.match(dockCss, /\\.sketchizi-dock-launcher-wrap/);
-  assert.match(dockCss, /\\.sketchizi-dock-quick-palette-grid/);
+  assert.match(dock, /aria-expanded=\{paletteOpen\}/);
+  assert.match(dockCss, /\.sketchizi-dock-launcher-wrap/);
+  assert.match(dockCss, /\.sketchizi-dock-quick-palette-grid/);
 });
 
 test("contextual tools and the Tools menu integrate with the new primary dock", () => {
