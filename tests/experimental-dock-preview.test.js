@@ -15,6 +15,8 @@ test("experimental dock is a separate React component and remains opt-in", () =>
   assert.match(canvas, /Preview new dock/);
   assert.match(canvas, /Exit dock preview/);
   assert.doesNotMatch(dock, /App-toolbar/);
+  assert.doesNotMatch(canvas, /toolbar\.dataset\.sketchiziDockPreview/);
+  assert.doesNotMatch(canvas, /container\.style\.setProperty\("left", "16px"/);
 });
 
 test("independent dock renders its own grouped tools and uses Excalidraw API actions", () => {
