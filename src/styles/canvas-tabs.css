@@ -134,3 +134,22 @@
   flex: 0 0 30px;
   margin-left: 7px;
 }
+
+
+/* Make the selected canvas unmistakable at a glance. */
+.canvas-tab {
+  color: var(--text-secondary, var(--text-primary, #666));
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+}
+.canvas-tab.is-active {
+  border-color: var(--color-border, rgba(120,120,120,.28));
+  background: var(--island-bg, #fff);
+  color: var(--text-primary, #222);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
+}
+.app.theme-dark .canvas-tab.is-active {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+}
