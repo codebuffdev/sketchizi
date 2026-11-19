@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import CanvasPages from "../../features/pages/CanvasPages.jsx";
+import CanvasTabs from "./CanvasTabs.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
@@ -99,6 +100,11 @@ export default function DesktopAppHeader({
   saveStatus = { state: "ready", lastSavedAt: null },
   currentDocumentName = "Untitled drawing",
   currentDocumentDirty = false,
+  canvasTabs = [],
+  activeCanvasId,
+  onSelectCanvasTab,
+  onCreateCanvasTab,
+  onReorderCanvasTabs,
   onRenameDocument,
   currentDocumentFileBacked = false,
   onSaveNow,
@@ -160,7 +166,8 @@ export default function DesktopAppHeader({
   useEffect(() => () => clearHeaderCollapseTimer(), []);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
-  const [documentNameDraft, setDocumentNameDraft] = useState(currentDocumentName);
+  const activeCanvasTabName = canvasTabs.find((tab) => tab.id === activeCanvasId)?.name || currentDocumentName;
+  const [documentNameDraft, setDocumentNameDraft] = useState(activeCanvasTabName);
   const cancelDocumentRenameRef = useRef(false);
 
   useEffect(() => {
@@ -171,12 +178,12 @@ export default function DesktopAppHeader({
   }, [aiAskOpen]);
 
   useEffect(() => {
-    document.title = getCanvasBrowserTitle(currentDocumentName);
-  }, [currentDocumentName]);
+    document.title = getCanvasBrowserTitle(activeCanvasTabName);
+  }, [activeCanvasTabName]);
 
   useEffect(() => {
-    if (!documentNameEditing) setDocumentNameDraft(currentDocumentName);
-  }, [currentDocumentName, documentNameEditing]);
+    if (!documentNameEditing) setDocumentNameDraft(activeCanvasTabName);
+  }, [activeCanvasTabName, documentNameEditing]);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
   nativeMenuOpenLatestRef.current = nativeMenuOpen;
@@ -338,19 +345,19 @@ export default function DesktopAppHeader({
   const commitDocumentRename = async () => {
     if (cancelDocumentRenameRef.current) {
       cancelDocumentRenameRef.current = false;
-      setDocumentNameDraft(currentDocumentName);
+      setDocumentNameDraft(activeCanvasTabName);
       return;
     }
     const nextName = documentNameDraft.trim();
     setDocumentNameEditing(false);
-    if (!nextName || nextName === currentDocumentName) {
-      setDocumentNameDraft(currentDocumentName);
+    if (!nextName || nextName === activeCanvasTabName) {
+      setDocumentNameDraft(activeCanvasTabName);
       return;
     }
     try {
       await onRenameDocument?.(nextName);
     } catch {
-      setDocumentNameDraft(currentDocumentName);
+      setDocumentNameDraft(activeCanvasTabName);
     }
   };
 
@@ -691,17 +698,17 @@ export default function DesktopAppHeader({
     </header>
       <div
         className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
-        title={`${currentDocumentName} — ${documentStatusLabel}`}
-        aria-label={`Current document: ${currentDocumentName}. ${documentStatusLabel}.`}
+        title={`${activeCanvasTabName} — ${documentStatusLabel}`}
+        aria-label={`Current document: ${activeCanvasTabName}. ${documentStatusLabel}.`}
       >
         <div className="desktop-app-save-status-wrap">
           <button
             type="button"
             className="desktop-app-save-status-trigger"
-            aria-label="Download and save options"
+            aria-label={`Download and save options for ${activeCanvasTabName}`}
             aria-haspopup="dialog"
             aria-expanded={saveDetailsOpen}
-            title="Download and save options"
+            title={`Download and save options for ${activeCanvasTabName}`}
             onClick={() => {
               setOpenMenu(null);
               if (!saveDetailsOpen) onBeforeOpenPanel?.();
@@ -715,9 +722,9 @@ export default function DesktopAppHeader({
             </svg>
           </button>
           {saveDetailsOpen && (
-            <section className="desktop-app-save-status-popover" role="dialog" aria-label="Local save and recovery">
+            <section className="desktop-app-save-status-popover" role="dialog" aria-label={`Local save and recovery for ${activeCanvasTabName}`}>
               <div className="desktop-app-save-status-heading">
-                <strong>Local save &amp; recovery</strong>
+                <strong>Local save &amp; recovery · {activeCanvasTabName}</strong>
                 <span className={`desktop-app-save-status-summary is-${saveState}`}>{saveStateLabel}</span>
               </div>
               <p>Sketchizi autosaves this canvas in this browser on this device.</p>
@@ -745,14 +752,14 @@ export default function DesktopAppHeader({
                 <button type="button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save" : "Save to file…"}</button>
                 {currentDocumentFileBacked && <button type="button" onClick={() => { onSaveAs?.(); setSaveDetailsOpen(false); }}>Save As…</button>}
                 <button type="button" onClick={() => { onOpenExport?.(); setSaveDetailsOpen(false); }}>Export studio…</button>
-                <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup</button>
+                <button type="button" className="secondary" onClick={() => onDownloadRecoveryBackup?.()}>Download recovery backup for {activeCanvasTabName}</button>
               </div>
               <p className="desktop-app-save-status-footnote">Local autosave is not a cloud backup. Download a recovery file before clearing browser data or changing devices.</p>
             </section>
           )}
         </div>
-        <span className="desktop-app-document-identity-copy">
-          {documentNameEditing ? (
+        {documentNameEditing ? (
+          <span className="desktop-app-document-identity-copy">
             <input
               className="desktop-app-document-identity-name-input"
               aria-label="Canvas name"
@@ -768,15 +775,22 @@ export default function DesktopAppHeader({
                 } else if (event.key === "Escape") {
                   event.preventDefault();
                   cancelDocumentRenameRef.current = true;
-                  setDocumentNameDraft(currentDocumentName);
+                  setDocumentNameDraft(activeCanvasTabName);
                   setDocumentNameEditing(false);
                 }
               }}
             />
-          ) : (
-            <span className="desktop-app-document-identity-name">{currentDocumentName}</span>
-          )}
-        </span>
+          </span>
+        ) : (
+          <CanvasTabs
+            tabs={canvasTabs}
+            activeId={activeCanvasId}
+            onSelect={onSelectCanvasTab}
+            onCreate={onCreateCanvasTab}
+            onReorder={onReorderCanvasTabs}
+            showAddButton={false}
+          />
+        )}
         <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
         {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
           <span
@@ -792,7 +806,7 @@ export default function DesktopAppHeader({
             className="desktop-app-document-rename"
             aria-label="Rename canvas"
             title="Rename canvas"
-            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
+            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(activeCanvasTabName); setDocumentNameEditing(true); }}
           >
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
@@ -805,14 +819,27 @@ export default function DesktopAppHeader({
           onClick={() => { setOpenMenu(null); onSaveToCloud?.(); }}
           disabled={cloudSaveState === "loading" || cloudSaveState === "saving"}
           title={isCloudDocument
-            ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved cloud changes" : cloudSaveState === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save the current diagram to Cloud Workspace now"
-            : "Save this drawing to Cloud Workspace"}
+            ? cloudSaveState === "saved" ? `Saved ${activeCanvasTabName} to Cloud Workspace` : cloudSaveState === "pending" ? `Unsaved changes in ${activeCanvasTabName}` : cloudSaveState === "saving" ? `Saving ${activeCanvasTabName} to Cloud Workspace…` : cloudSaveState === "error" || cloudSaveState === "conflict" ? `Cloud save needs attention for ${activeCanvasTabName}` : `Save ${activeCanvasTabName} to Cloud Workspace now`
+            : `Save ${activeCanvasTabName} to Cloud Workspace`}
           aria-label={isCloudDocument
-            ? cloudSaveState === "saved" ? "Saved to Cloud Workspace" : cloudSaveState === "pending" ? "Unsaved changes — save to Cloud Workspace" : cloudSaveState === "saving" ? "Saving to Cloud Workspace" : cloudSaveState === "error" || cloudSaveState === "conflict" ? "Cloud save needs attention" : "Save current diagram to Cloud Workspace now"
-            : "Save drawing to Cloud Workspace"}
+            ? cloudSaveState === "saved" ? `Saved ${activeCanvasTabName} to Cloud Workspace` : cloudSaveState === "pending" ? `Unsaved changes in ${activeCanvasTabName} — save to Cloud Workspace` : cloudSaveState === "saving" ? `Saving ${activeCanvasTabName} to Cloud Workspace` : cloudSaveState === "error" || cloudSaveState === "conflict" ? `Cloud save needs attention for ${activeCanvasTabName}` : `Save ${activeCanvasTabName} to Cloud Workspace now`
+            : `Save ${activeCanvasTabName} to Cloud Workspace`}
         >
           <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" fillRule="evenodd" aria-hidden="true">
             <path d="M257 247 153 347 175 369 242 302 243 447 272 447 272 303 336 369 358 347Z M39 193 39 232 54 265 86 292 126 302 127 274 133 252 148 227 173 206 208 194 244 195 270 205 301 233 317 264 336 257 365 261 389 280 400 302 426 300 448 289 465 270 474 242 469 213 448 185 427 174 399 171 391 121 366 80 330 52 285 38 240 40 203 55 171 83 149 123 140 120 107 122 71 140 52 161Z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          className="canvas-tabs-add desktop-app-canvas-add"
+          aria-label="Create new canvas"
+          title="Create new canvas"
+          onClick={onCreateCanvasTab}
+        >
+          <svg className="canvas-tabs-add-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="13" height="14" rx="2" />
+            <path d="M8 5V3.8A1.8 1.8 0 0 1 9.8 2h9.4A1.8 1.8 0 0 1 21 3.8v10.4a1.8 1.8 0 0 1-1.8 1.8H16" />
+            <path d="M10 12h6M13 9v6" />
           </svg>
         </button>
       </div>

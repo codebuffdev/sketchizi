@@ -99,7 +99,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   }, [updateDocumentDirty]);
   const recentState = useRecentFiles({ currentFileRef, currentFolderRef });
   const { recentFiles, setRecentFiles, recentFolders, setRecentFolders, rememberRecentFile, updateRecentFileStatus, forgetRecentFile, clearRecentFiles, rememberRecentFolder, markRecentFolderOpened, updateRecentFolderStatus, forgetRecentFolder, clearRecentFolders } = recentState;
-  const setCurrentFile = (file, baselineSignature = undefined) => {
+  const setCurrentFile = useCallback((file, baselineSignature = undefined) => {
     currentFileRef.current = file;
     const api = apiRef.current;
     const currentSignature = getLiveSceneSignature(api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []);
@@ -121,7 +121,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         localStorage.removeItem("sketchizi-current-file-scene-signature");
       }
     } catch {}
-  };
+  }, [apiRef, updateDocumentDirty]);
   const fileActionsRef = useRef({});
   // Reuse the recent entry when the same file is opened/saved again.
   const findRecentIdForHandle = async (handle) => {
@@ -722,7 +722,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   return {
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,
-    currentFile, currentFileRef, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef,
+    currentFile, currentFileRef, setCurrentFile, getCurrentFileSceneSignature: useCallback(() => currentFileSceneSignatureRef.current, []), documentDirty, markCurrentDocumentChanged, fileActionsRef,
     replacementPrompt, resolveReplacementPrompt,
     rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, markRecentFolderOpened, updateRecentFolderStatus, forgetRecentFolder, clearRecentFolders,
     handleFileError, currentSceneText, loadDrawingIntoCanvas, openFolderFromDisk, openRecentFolder, openDrawingFromDisk,

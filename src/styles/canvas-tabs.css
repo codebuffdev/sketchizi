@@ -1,0 +1,155 @@
+.canvas-tabs-bar {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.canvas-tabs-list { display: flex; align-items: center; gap: 3px; min-width: 0; height: 32px; }
+.canvas-tab, .canvas-tabs-overflow-trigger, .canvas-tabs-add {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 64px;
+  max-width: 180px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary, #333);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.canvas-tab:hover, .canvas-tabs-overflow-trigger:hover, .canvas-tabs-add:hover { background: rgba(127, 127, 127, .09); }
+.canvas-tab.is-active { border-color: var(--color-border, rgba(120,120,120,.2)); background: var(--island-bg, rgba(127,127,127,.07)); color: var(--text-primary, #222); font-weight: 600; }
+.canvas-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.canvas-tab-dirty { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #d69a32; }
+.canvas-tabs-overflow { position: relative; display: flex; }
+.canvas-tabs-overflow-trigger { min-width: 38px; padding: 0 7px; }
+.canvas-tabs-overflow-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 1000;
+  min-width: 180px;
+  padding: 5px;
+  border: 1px solid var(--color-border, rgba(120,120,120,.2));
+  border-radius: 8px;
+  background: var(--island-bg, var(--default-bg, #fff));
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+.canvas-tabs-overflow-menu button {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; padding: 9px 10px; border: 0; border-radius: 5px;
+  background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer;
+}
+.canvas-tabs-overflow-menu button:hover, .canvas-tabs-overflow-menu button.is-active { background: rgba(127,127,127,.12); }
+.canvas-tabs-add { min-width: 28px; width: 28px; padding: 0; font-size: 20px; font-weight: 400; }
+.canvas-tabs-add:disabled { opacity: .4; cursor: not-allowed; }
+.app.theme-dark .canvas-tab.is-active { background: rgba(255,255,255,.08); }
+.app.theme-dark .canvas-tabs-overflow-menu { background: #252525; border-color: rgba(255,255,255,.14); }
+
+.desktop-app-document-identity .canvas-tabs-bar { margin-left: 2px; }
+.desktop-app-document-identity .canvas-tabs-list { max-width: min(52vw, 620px); overflow: visible; }
+.desktop-app-document-identity .canvas-tab { flex: 0 1 auto; }
+.desktop-app-document-identity .canvas-tabs-add { flex: 0 0 28px; }
+@media (max-width: 760px) {
+  .desktop-app-document-identity .canvas-tabs-list { max-width: min(45vw, 420px); }
+}
+
+/* The header now hosts the canvas switcher beside the active canvas name. */
+.app.canvas-first-header .desktop-app-document-identity {
+  max-width: min(680px, 58vw);
+}
+@media (max-width: 760px) {
+  .app.canvas-first-header .desktop-app-document-identity {
+    max-width: min(520px, 54vw);
+  }
+}
+
+/* The create control closes the full document identity group, after cloud save. */
+.app.canvas-first-header .desktop-app-document-identity {
+  overflow: visible;
+}
+.desktop-app-canvas-add {
+  flex: 0 0 28px;
+  margin-left: 7px;
+}
+
+/* Compact, Notion-inspired page tabs with distinct canvas and create glyphs. */
+.canvas-tab {
+  min-width: 88px;
+  padding: 0 10px;
+  gap: 7px;
+  border-radius: 6px 6px 0 0;
+}
+.canvas-tab-icon {
+  flex: 0 0 15px;
+  opacity: .68;
+}
+.canvas-tab.is-active .canvas-tab-icon {
+  opacity: 1;
+}
+.canvas-tabs-overflow-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.canvas-tabs-overflow-name .canvas-tab-icon {
+  flex: 0 0 15px;
+}
+.canvas-tabs-add,
+.desktop-app-canvas-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary, var(--text-primary, #666));
+  cursor: pointer;
+}
+.canvas-tabs-add-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+.canvas-tabs-add:hover,
+.desktop-app-canvas-add:hover {
+  background: rgba(127, 127, 127, .12);
+  color: var(--text-primary, #222);
+}
+.desktop-app-canvas-add {
+  flex: 0 0 30px;
+  margin-left: 7px;
+}
+
+
+/* Make the selected canvas unmistakable at a glance. */
+.canvas-tab {
+  color: var(--text-secondary, var(--text-primary, #666));
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+}
+.canvas-tab.is-active {
+  border-color: var(--color-border, rgba(120,120,120,.28));
+  background: var(--island-bg, #fff);
+  color: var(--text-primary, #222);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
+}
+.app.theme-dark .canvas-tab.is-active {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+}
