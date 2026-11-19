@@ -74,8 +74,8 @@ function App() {
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
-  // Canvas patterns stay visible; choose a pattern instead of toggling visibility.
-  const [gridEnabled] = useState(true);
+  // Canvas patterns stay visible by default; the picker selects the pattern.
+  const [gridEnabled, setGridEnabled] = useState(true);
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-style");
