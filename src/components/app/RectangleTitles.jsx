@@ -90,17 +90,13 @@ export default function RectangleTitles({ api, canvasRootRef, elements, pageCont
   const selectionTool = state?.activeTool?.type === "selection";
   const selection = getActiveSelectedElementIds(state?.selectedElementIds);
   const selectedId = selection.length === 1 ? selection[0] : null;
-  const canOfferName = editingAllowed && selectionTool && !state.newElement && !state.selectionElement
-    && !state.editingTextElement && !state.isResizing && !state.isRotating;
-
   const candidates = [];
   for (const element of elements) {
     if (!isTitleableRectangle(element)) continue;
     const title = getTitle(element);
     const selected = element.id === selectedId;
     const editing = editingAllowed && !element.locked && editor?.id === element.id;
-    const showAdd = selected && canOfferName && !element.locked;
-    if (title || editing || showAdd) candidates.push({ element, title, selected, editing });
+    if (title || editing) candidates.push({ element, title, selected, editing });
   }
 
   const host = candidates.length ? canvasRootRef.current?.querySelector(":scope > .excalidraw") : null;
