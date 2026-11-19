@@ -577,11 +577,6 @@ export default function DesktopAppHeader({
                 <ViewCommandIcon name="grid" />
                 <div><strong>Canvas Style</strong><small>Choose how your canvas looks.</small></div>
               </div>
-              <label className="sketchizi-header-grid-toggle">
-                <span>Show pattern</span>
-                <input type="checkbox" checked={gridEnabled} onChange={() => onToggleGrid?.()} />
-                <span className="sketchizi-header-grid-switch" aria-hidden="true" />
-              </label>
             </div>
             <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
               <strong>Canvas patterns</strong>
@@ -590,12 +585,10 @@ export default function DesktopAppHeader({
                   ["focus", "Focus Grid", "Dense central grid with soft edges."],
                   ["local", "Local Focus Grid", "Dense grid around drawing content."],
                   ["dots", "Dot Grid", "Subtle dotted drafting surface."],
-                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."]].map(([value, label, description]) => (
+                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."],
+                  ["technical", "Technical Grid", "Fine dotted grid with stronger major lines."]].map(([value, label, description]) => (
                   <button key={value} type="button" aria-pressed={gridStyle === value}
-                    onClick={() => {
-                      onGridStyleChange?.(value);
-                      if (!gridEnabled) onToggleGrid?.();
-                    }}>
+                    onClick={() => onGridStyleChange?.(value)}>
                     <span className={`sketchizi-grid-preview is-${value}`} aria-hidden="true"><span /></span>
                     <strong>{label}</strong>
                     <small>{description}</small>
@@ -606,7 +599,7 @@ export default function DesktopAppHeader({
             </div>
             <p className="sketchizi-header-grid-description">
               <span aria-hidden="true">ⓘ</span>
-              {!gridEnabled ? "Choose a canvas style, then turn on Show pattern whenever you want it visible." :
+              {gridStyle === "technical" ? "Technical Grid combines fine drafting dots with stronger major lines." :
                 gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
                 gridStyle === "ruled" ? "Ruled Paper adds evenly spaced horizontal guides." :
                 gridStyle === "local" ? "Local Focus Grid concentrates detail around drawing content." :
