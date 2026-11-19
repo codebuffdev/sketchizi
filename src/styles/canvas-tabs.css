@@ -62,3 +62,13 @@
 @media (max-width: 760px) {
   .desktop-app-document-identity .canvas-tabs-list { max-width: min(45vw, 420px); }
 }
+
+/* The header now hosts the canvas switcher beside the active canvas name. */
+.app.canvas-first-header .desktop-app-document-identity {
+  max-width: min(680px, 58vw);
+}
+@media (max-width: 760px) {
+  .app.canvas-first-header .desktop-app-document-identity {
+    max-width: min(520px, 54vw);
+  }
+}
