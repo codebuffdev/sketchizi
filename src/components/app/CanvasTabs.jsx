@@ -3,10 +3,10 @@ import { useMemo, useRef, useState } from "react";
 export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReorder, disabled = false }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const visibleTabs = useMemo(() => {
-    const first = tabs.slice(0, 3);
-    if (first.some((tab) => tab.id === activeId)) return first;
-    const active = tabs.find((tab) => tab.id === activeId);
-    return active ? [active, ...tabs.filter((tab) => tab.id !== activeId).slice(0, 2)] : first;
+    if (tabs.length <= 3) return tabs;
+    const activeIndex = Math.max(0, tabs.findIndex((tab) => tab.id === activeId));
+    const start = Math.min(Math.max(0, activeIndex - 2), tabs.length - 3);
+    return tabs.slice(start, start + 3);
   }, [tabs, activeId]);
   const visibleIds = new Set(visibleTabs.map((tab) => tab.id));
   const hiddenTabs = tabs.filter((tab) => !visibleIds.has(tab.id));
