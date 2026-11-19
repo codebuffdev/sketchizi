@@ -736,10 +736,10 @@ export default function SketchiziCanvas({
       const cornerMask = makeShape("corner-mask", "rectangle", 139, 103, 43, 39, {
         strokeColor: "#ffffff", backgroundColor: "#ffffff", strokeWidth: 0,
       });
-      const makeLine = (suffix, sx, sy, dx, dy, strokeWidth = 2) => ({
+      const makeLine = (suffix, sx, sy, dx, dy, strokeWidth = 2, reverse = false) => ({
         ...common, id: `${id}-${suffix}`, type: "line",
         x: x + sx, y: y + sy, width: dx, height: dy,
-        points: [[0, 0], [dx, dy]], lastCommittedPoint: null,
+        points: reverse ? [[dx, 0], [0, dy]] : [[0, 0], [dx, dy]], lastCommittedPoint: null,
         strokeColor: "#171717", backgroundColor: "transparent",
         fillStyle: "solid", strokeWidth, seed: seed + suffix.length,
         versionNonce: seed + suffix.length,
@@ -747,7 +747,7 @@ export default function SketchiziCanvas({
       const noteParts = [
         note, cornerMask,
         makeLine("fold-top", 140, 105, 40, 0),
-        makeLine("fold-diagonal", 180, 105, -40, 35),
+        makeLine("fold-diagonal", 140, 105, 40, 35, 2, true),
         makeLine("writing-one", 22, 42, 115, 0, 1.5),
         makeLine("writing-two", 22, 62, 85, 0, 1.5),
         makeLine("writing-three", 22, 82, 62, 0, 1.5),
