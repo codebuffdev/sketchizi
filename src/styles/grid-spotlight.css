@@ -28,6 +28,25 @@
   contain: paint;
 }
 
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-technical-style::before {
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgb(112 128 148 / 27%) .7px, transparent 1px),
+    linear-gradient(to right, rgb(78 96 115 / 20%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(78 96 115 / 20%) 1px, transparent 1px);
+  background-size: 5px 5px, 100px 100px, 100px 100px;
+  background-position: 0 0, var(--sk-grid-coarse-offset-x) var(--sk-grid-coarse-offset-y), var(--sk-grid-coarse-offset-x) var(--sk-grid-coarse-offset-y);
+}
+.app .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-technical-style::after {
+  display: none !important;
+}
+.app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight.is-grid-enabled.is-technical-style::before {
+  background-image:
+    radial-gradient(circle, rgb(180 198 220 / 28%) .7px, transparent 1px),
+    linear-gradient(to right, rgb(158 173 194 / 24%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(158 173 194 / 24%) 1px, transparent 1px);
+}
+
 /* OFF means no grid of any kind, even while editing or selecting.
    Hide the entire decorative layer to avoid stale focus transitions. */
 .app .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight:not(.is-grid-enabled) {
