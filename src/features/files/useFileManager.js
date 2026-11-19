@@ -722,7 +722,7 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
   return {
     recentFiles, setRecentFiles, recentFolders, setRecentFolders,
     currentFolder, currentFolderRef, currentFolderFiles, setCurrentFolder, setCurrentFolderFiles, refreshCurrentFolderFiles,
-    currentFile, currentFileRef, setCurrentFile, documentDirty, markCurrentDocumentChanged, fileActionsRef,
+    currentFile, currentFileRef, setCurrentFile, getCurrentFileSceneSignature: () => currentFileSceneSignatureRef.current, documentDirty, markCurrentDocumentChanged, fileActionsRef,
     replacementPrompt, resolveReplacementPrompt,
     rememberRecentFile, forgetRecentFile, clearRecentFiles, rememberRecentFolder, markRecentFolderOpened, updateRecentFolderStatus, forgetRecentFolder, clearRecentFolders,
     handleFileError, currentSceneText, loadDrawingIntoCanvas, openFolderFromDisk, openRecentFolder, openDrawingFromDisk,
