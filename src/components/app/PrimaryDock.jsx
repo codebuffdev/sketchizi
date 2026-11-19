@@ -64,7 +64,11 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     const syncLock = (event) => {
       if (typeof event.detail?.locked === "boolean") setDockLocked(event.detail.locked);
     };
-    const toggleLockFromMenu = () => setDockLocked((locked) => !locked);
+    const toggleLockFromMenu = () => setDockLocked((locked) => {
+      const next = !locked;
+      window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
+      return next;
+    });
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
       if (["bucketfill", "autoshape"].includes(tool)) setActiveTool(tool);
