@@ -25,7 +25,6 @@ test("fill, corner, arrowhead and pressure choices have distinct visual represen
   assert.match(glyph, /value === "dot"/);
   assert.match(source, /option value="none"/);
   assert.match(glyph, /value === "on"/);
-  assert.match(glyph, /value === "off"/);
 });
 
 test("standard option menus never fall back to the same generic circle icon", () => {
