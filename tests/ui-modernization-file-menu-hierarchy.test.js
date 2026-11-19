@@ -63,7 +63,7 @@ test("workspace menu offers Open file and improved community action icons", () =
 
 test("only the native Save to menu item is removed from the hamburger", () => {
   assert.match(menu, /const saveToLabel = exactLeaves\.find/);
-  assert.match(menu, /\^save to\\\\\.\\\\\.\$\/i/);
+  assert.ok(menu.includes(String.raw`/^save to\.\.\.$/i`));
   assert.match(menu, /remove only this duplicate native hamburger-menu action/);
   assert.match(menu, /fileActionsRef\.current\[action\]\?\.\(\)/);
   assert.match(menu, /key === "s"/);
