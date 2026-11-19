@@ -52,6 +52,7 @@ function activateTool({ id, root, apiRef }) {
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0 }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [dockLocked, setDockLocked] = useState(true);
+  const dockLockedRef = useRef(true);
   const [position, setPosition] = useState({ left: 12, top: null });
   const dragRef = useRef(null);
 
@@ -62,13 +63,16 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
 
   useEffect(() => {
     const syncLock = (event) => {
-      if (typeof event.detail?.locked === "boolean") setDockLocked(event.detail.locked);
+      if (typeof event.detail?.locked !== "boolean") return;
+      dockLockedRef.current = event.detail.locked;
+      setDockLocked(event.detail.locked);
     };
-    const toggleLockFromMenu = () => setDockLocked((locked) => {
-      const next = !locked;
+    const toggleLockFromMenu = () => {
+      const next = !dockLockedRef.current;
+      dockLockedRef.current = next;
+      setDockLocked(next);
       window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
-      return next;
-    });
+    };
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
       if (["bucketfill", "autoshape"].includes(tool)) setActiveTool(tool);
@@ -106,11 +110,12 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     };
   }, []);
 
-  const toggleLock = () => setDockLocked((locked) => {
-    const next = !locked;
+  const toggleLock = () => {
+    const next = !dockLockedRef.current;
+    dockLockedRef.current = next;
+    setDockLocked(next);
     window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
-    return next;
-  });
+  };
 
   return (
     <nav
