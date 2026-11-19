@@ -49,10 +49,17 @@ test("contextual tools and the Tools menu integrate with the new primary dock", 
 });
 
 
-test("primary dock supports bottom-edge auto-hide reveal", () => {
- assert.match(dock, /sketchizi-primary-dock-shell/);
- assert.match(dock, /sketchizi-primary-dock-reveal/);
- assert.match(dock, /setIsRevealed\\(false\\), 700/);
- assert.match(dockCss, /bottom: 10px/);
- assert.match(dockCss, /is-revealed \\.sketchizi-primary-dock/);
+
+test("primary dock reveals only on pointer hover and preserves the left vertical rail", () => {
+  assert.match(dock, /onPointerEnter=\{\(\) => \{ cancelHide\(\); setIsRevealed\(true\); \}\}/);
+  assert.match(dock, /onPointerLeave=\{scheduleHide\}/);
+  assert.match(dock, /setIsRevealed\(false\), 700/);
+  assert.match(dock, /sketchizi-primary-dock-reveal/);
+  assert.doesNotMatch(dock, /onClick=\{\(\) => \{ cancelHide\(\); setIsRevealed\(true\); \}\}/);
+  assert.doesNotMatch(dock, /onFocusCapture|onBlurCapture/);
+  assert.match(dockCss, /left: 12px/);
+  assert.match(dockCss, /top: 50%/);
+  assert.match(dockCss, /flex-direction: column/);
+  assert.match(dockCss, /transform: translateX\(calc\(-100% - 18px\)\)/);
+  assert.match(dockCss, /is-revealed \\.sketchizi-primary-dock/);
 });
