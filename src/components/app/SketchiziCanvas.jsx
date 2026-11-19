@@ -731,10 +731,10 @@ export default function SketchiziCanvas({
         versionNonce: seed + suffix.length,
       });
       const note = makeShape("paper", "rectangle", 0, 0, 180, 140, {
-        strokeColor: "#171717", backgroundColor: "#ffffff", strokeWidth: 2,
+        strokeColor: "#171717", backgroundColor: "#fff3a6", strokeWidth: 2,
       });
       const cornerMask = makeShape("corner-mask", "rectangle", 139, 103, 43, 39, {
-        strokeColor: "#ffffff", backgroundColor: "#ffffff", strokeWidth: 0,
+        strokeColor: "#fff3a6", backgroundColor: "#fff3a6", strokeWidth: 0,
       });
       const makeLine = (suffix, sx, sy, dx, dy, strokeWidth = 2, reverse = false) => ({
         ...common, id: `${id}-${suffix}`, type: "line",
