@@ -307,8 +307,21 @@ function App() {
     nextUrl.searchParams.set("cloudDiagramId", diagram.id);
     nextUrl.searchParams.set("cloudProjectId", projectId);
     window.history.replaceState(window.history.state, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
-    persistActiveCanvasSnapshot();
-  }, [showToast, persistActiveCanvasSnapshot]);
+    const activeApi = apiRef.current;
+    const activeSnapshot = {
+      elements: activeApi?.getSceneElementsIncludingDeleted?.() || activeApi?.getSceneElements?.() || [],
+      appState: activeApi?.getAppState?.() || {}, files: activeApi?.getFiles?.() || {},
+      metadata: documentMetadataRef.current?.metadata || {}, extensions: documentMetadataRef.current?.extensions || {},
+      format: documentMetadataRef.current?.format || "excalidraw", file: fileManager.currentFileRef.current || null,
+      fileSceneSignature: fileManager.getCurrentFileSceneSignature?.() || null,
+      cloudSession: { ...cloudSessionRef.current }, cloudDetached: false,
+      cloudSaveState: { state: "saved", error: "" }, cloudDocumentName: diagram.name || name.trim(),
+    };
+    const updatedTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current ? { ...tab, snapshot: activeSnapshot, dirty: false } : tab);
+    canvasTabsRef.current = updatedTabs;
+    setCanvasTabs(updatedTabs);
+    saveCanvasTabs(updatedTabs).catch(() => {});
+  }, [showToast]);
 
   const queueSketchSave = useCallback((elements, appState) => {
     if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
@@ -324,18 +337,19 @@ function App() {
     // arrives during restoration.
     if (!hasCloudSceneChange(elements)) return;
     setCloudSaveState((current) => ({ ...current, state: "pending", error: "" }));
+    const session = cloudSessionRef.current;
+    const api = apiRef.current;
+    if (!api || !Array.isArray(elements)) return;
+    const document = createCloudDocument({
+      api,
+      elements,
+      appState: appState || api.getAppState?.() || {},
+      metadata: documentMetadataRef.current,
+    });
     if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
     cloudSaveTimerRef.current = window.setTimeout(() => {
       cloudSaveTimerRef.current = null;
-      const session = cloudSessionRef.current;
-      const api = apiRef.current;
-      if (!isActiveCloudSession(session, cloudSessionRef.current) || !api || !Array.isArray(elements)) return;
-      const document = createCloudDocument({
-        api,
-        elements,
-        appState: appState || api.getAppState?.() || {},
-        metadata: documentMetadataRef.current,
-      });
+      if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
       setCloudSaveState((current) => ({ ...current, state: "saving", error: "" }));
       cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
         // The user may have created a new local drawing while a previous
@@ -514,12 +528,13 @@ function App() {
   }, [apiRef, fileManager, cloudDocumentName, cloudSaveState, documentDirty]);
 
   const persistCanvasTabs = useCallback((nextTabs) => {
-    canvasTabsRef.current = nextTabs;
-    setCanvasTabs(nextTabs);
+    const normalizedTabs = nextTabs.map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
+    canvasTabsRef.current = normalizedTabs;
+    setCanvasTabs(normalizedTabs);
     if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
     canvasTabsSaveTimerRef.current = window.setTimeout(() => {
       canvasTabsSaveTimerRef.current = null;
-      saveCanvasTabs(nextTabs).catch((error) => {
+      saveCanvasTabs(normalizedTabs).catch((error) => {
         logger.warn("Canvas tabs could not be saved", { category: "persistence", error });
       });
     }, 450);
@@ -571,9 +586,9 @@ function App() {
       : tab);
     const target = currentTabs.find((tab) => tab.id === nextId);
     if (!target) return;
-    persistCanvasTabs(currentTabs);
     activeCanvasIdRef.current = nextId;
     setActiveCanvasId(nextId);
+    persistCanvasTabs(currentTabs);
     applyCanvasTabSnapshot(target);
   }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, applyCanvasTabSnapshot]);
 
@@ -595,9 +610,9 @@ function App() {
       },
     };
     const nextTabs = [...currentTabs, nextTab];
-    persistCanvasTabs(nextTabs);
     activeCanvasIdRef.current = id;
     setActiveCanvasId(id);
+    persistCanvasTabs(nextTabs);
     applyCanvasTabSnapshot(nextTab);
   }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, applyCanvasTabSnapshot]);
 
@@ -618,9 +633,7 @@ function App() {
     loadCanvasTabs().then((stored) => {
       if (cancelled) return;
       if (Array.isArray(stored) && stored.length) {
-        const activeId = stored.some((tab) => tab.id === activeCanvasIdRef.current)
-          ? activeCanvasIdRef.current
-          : stored[0].id;
+        const activeId = stored.find((tab) => tab.active)?.id || stored[0].id;
         const activeTab = stored.find((tab) => tab.id === activeId) || stored[0];
         canvasTabsRef.current = stored;
         setCanvasTabs(stored);
