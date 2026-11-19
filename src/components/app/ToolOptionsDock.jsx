@@ -355,7 +355,17 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     window.addEventListener("pointerdown", closeOnOutsideClick, true);
     return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
   }, [layerMenuOpen]);
-  const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const selectedFromProps = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const liveSelectedIds = Object.entries(appState.selectedElementIds || {})
+    .filter(([, active]) => active)
+    .map(([id]) => id);
+  // Prefer the live Excalidraw selection when React's selectedElements prop
+  // has not caught up yet (common immediately after clicking a text element).
+  const selected = selectedFromProps.length
+    ? selectedFromProps
+    : (apiRef?.current?.getSceneElements?.() || []).filter((element) =>
+        liveSelectedIds.includes(element.id) && !element.isDeleted && !element.deleted,
+      );
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
   const selectionType = selected.length ? selected[0].type : editingTextElement?.type || null;
