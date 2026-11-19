@@ -556,18 +556,19 @@ export default function SketchiziCanvas({
       // Anchor the native action to the canvas bottom edge, independently of
       // the primary dock's position or orientation.
       const canvasRect = root.getBoundingClientRect();
-      const bottomAnchor = {
-        left: canvasRect.left,
-        right: canvasRect.right,
-        top: canvasRect.bottom - 42,
-        bottom: canvasRect.bottom,
-        width: canvasRect.width,
-        height: 42,
-      };
       const position = getScrollBackPlacement({
-        dock: bottomAnchor,
+        dock: {
+          left: canvasRect.left,
+          right: canvasRect.right,
+          top: canvasRect.top,
+          bottom: canvasRect.bottom,
+          width: canvasRect.width,
+          height: canvasRect.height,
+        },
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
+        bottomAligned: true,
+        gap: 16,
       });
       button.style.setProperty("position", "fixed", "important");
       button.style.setProperty("left", `${position.left}px`, "important");
