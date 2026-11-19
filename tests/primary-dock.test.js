@@ -42,6 +42,16 @@ test("independent dock contains the full drawing tool set without decorative con
   assert.doesNotMatch(dockCss, /sketchizi-primary-dock-divider/);
 });
 
+test("Sticky Note uses Sketchizi placement instead of Excalidraw's unimplemented note tool", () => {
+  assert.match(dock, /id === "note"/);
+  assert.match(dock, /detail: \{ tool: id \}/);
+  assert.doesNotMatch(dock, /setActiveTool\?\.\(\{ type: id \}\)[\s\S]{0,80}note/);
+  assert.match(canvas, /Sticky Notes are regular Excalidraw rectangles/);
+  assert.match(canvas, /type: "rectangle"/);
+  assert.match(canvas, /customData: \{ isNote: true \}/);
+  assert.match(canvas, /addEventListener\("pointerdown", placeNote, true\)/);
+});
+
 test("hamburger menu collapses the primary dock into an active-tool launcher", () => {
   const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
   assert.match(app, /<SketchiziCanvas[\s\S]*?nativeMenuOpen=\{nativeMenuOpen\}/);
