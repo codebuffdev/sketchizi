@@ -7,9 +7,13 @@ import { getFreedrawOutlinePoints, newFreeDrawElement } from "@excalidraw/elemen
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+const getAdjustedFreeDrawStreamline = (pointerType) => (pointerType !== "mouse"
+  ? DEFAULT_STROKE_STREAMLINE_PRECISE
+  : DEFAULT_STROKE_STREAMLINE) * 0.95;
+
 const getAdjustedFreeDrawStrokeWidth = (strokeWidthKey) => {
   const width = getStrokeWidthByKey("freedraw", strokeWidthKey || "medium");
-  return strokeWidthKey === "medium" || !strokeWidthKey ? width * 0.8 * 0.9 : width;
+  return strokeWidthKey === "medium" || !strokeWidthKey ? width * 0.8 * 0.9 * 0.85 : width;
 };
 
 export function getPointerEventSamples(event) {
@@ -75,9 +79,7 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
   // A canvas lineWidth approximation cannot match perfect-freehand's
   // pressure, streamline, easing, and end-cap geometry.
   const variability = appState?.currentItemStrokeVariability || "variable";
-  const streamline = session.pointerType !== "mouse"
-    ? DEFAULT_STROKE_STREAMLINE_PRECISE
-    : DEFAULT_STROKE_STREAMLINE;
+  const streamline = getAdjustedFreeDrawStreamline(session.pointerType);
   const strokeWidth = getAdjustedFreeDrawStrokeWidth(appState?.currentItemStrokeWidthKey);
   const previewElement = {
     type: "freedraw",
@@ -171,9 +173,7 @@ export function createFreeDrawElementFromSamples(samples, appState) {
     simulatePressure,
     strokeOptions: {
       variability: appState.currentItemStrokeVariability || "variable",
-      streamline: pointerType !== "mouse"
-        ? DEFAULT_STROKE_STREAMLINE_PRECISE
-        : DEFAULT_STROKE_STREAMLINE,
+      streamline: getAdjustedFreeDrawStreamline(pointerType),
     },
     locked: false,
     frameId: appState.frameToHighlight?.id || null,
