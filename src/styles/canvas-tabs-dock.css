@@ -1,0 +1,274 @@
+/* Canvas tab dock
+   Each tab is its own pill. Only the ACTIVE tab carries download, storage
+   badge, rename and cloud-save controls; inactive tabs stay compact with
+   icon, name and a close (x). "+N" lists hidden tabs, "+" creates a canvas. */
+
+.app .canvas-tabs-dock.desktop-app-document-title-float {
+  --tab-h: 38px;
+  --tab-radius: 12px;
+  --tab-surface: var(--ui-surface-solid, #fff);
+  --tab-border: var(--ui-border, #dfe3eb);
+  --tab-text: var(--ui-text, #252631);
+  --tab-muted: var(--ui-text-muted, #737b8c);
+  --tab-hover: var(--ui-hover, #f3f4f6);
+  --tab-accent: #6965db;
+}
+.app.theme-dark .canvas-tabs-dock.desktop-app-document-title-float {
+  --tab-surface: var(--ui-surface-solid, #202733);
+  --tab-border: var(--ui-border, #384252);
+  --tab-text: var(--ui-text, #f2f2f4);
+  --tab-muted: var(--ui-text-muted, #a3a8b8);
+  --tab-hover: var(--ui-hover, #2a3341);
+  --tab-accent: #a8a5ff;
+}
+
+/* The outer container becomes a transparent row; the pills carry the chrome. */
+.app.canvas-first-header .canvas-tabs-dock.desktop-app-document-title-float {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  max-width: min(820px, calc(100vw - 180px));
+  overflow: visible;
+}
+@media (min-width: 1025px) {
+  .app.canvas-first-header .canvas-tabs-dock.desktop-app-document-title-float {
+    height: var(--header-top-control-height, 40px);
+    min-height: var(--header-top-control-height, 40px);
+    max-width: min(880px, calc(100vw - 88px - var(--safe-left, 0px) - var(--safe-right, 0px) - 150px));
+  }
+}
+.app.theme-dark.canvas-first-header .canvas-tabs-dock.desktop-app-document-title-float {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.canvas-tabs-dock .canvas-tabs-bar { margin: 0; flex: 0 1 auto; min-width: 0; }
+.canvas-tabs-dock .canvas-tabs-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: auto;
+  max-width: none;
+  min-width: 0;
+}
+
+/* ---------- Tab pill ---------- */
+.canvas-tabs-dock .canvas-tab-shell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 1 auto;
+  min-width: 0;
+  height: var(--tab-h);
+  padding: 0 4px 0 4px;
+  border: 1px solid var(--tab-border);
+  border-radius: var(--tab-radius);
+  background: var(--tab-surface);
+  color: var(--tab-muted);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 7%);
+  transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tab-shell { box-shadow: 0 2px 8px rgb(0 0 0 / 26%); }
+.canvas-tabs-dock .canvas-tab-shell:not(.is-active):hover { background: var(--tab-hover); border-color: var(--ui-border-strong, #b8bfcc); }
+.canvas-tabs-dock .canvas-tab-shell.is-active {
+  color: var(--tab-text);
+  border-color: color-mix(in srgb, var(--tab-accent) 55%, var(--tab-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tab-accent) 22%, transparent), 0 3px 12px rgb(15 23 42 / 12%);
+  gap: 4px;
+  padding-inline: 6px;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tab-shell.is-active {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tab-accent) 30%, transparent), 0 3px 14px rgb(0 0 0 / 38%);
+}
+
+/* The tab label button itself: no chrome of its own inside the pill. */
+.canvas-tabs-dock .canvas-tab,
+.canvas-tabs-dock .canvas-tab.is-active {
+  min-width: 0;
+  max-width: 150px;
+  height: calc(var(--tab-h) - 8px);
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 500;
+}
+.canvas-tabs-dock .canvas-tab:hover { background: transparent; }
+.canvas-tabs-dock .canvas-tab.is-active { max-width: 220px; font-weight: 650; }
+.canvas-tabs-dock .canvas-tab.is-editing { max-width: none; padding: 0 4px; }
+.canvas-tabs-dock .canvas-tab-name { max-width: 100%; }
+.canvas-tabs-dock .canvas-tab-shell.is-active .canvas-tab-icon { color: var(--tab-accent); opacity: 1; }
+
+/* ---------- Close (x) ---------- */
+.canvas-tabs-dock .canvas-tab-close,
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-close {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--tab-muted, #737b8c);
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease, opacity .12s ease;
+}
+.canvas-tabs-dock .canvas-tab-close:hover,
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-close:hover {
+  background: rgb(214 69 69 / 14%);
+  color: #c23b3b;
+}
+.canvas-tabs-dock .canvas-tab-close:focus-visible,
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-close:focus-visible { outline: 2px solid var(--tab-accent, #6965db); outline-offset: 1px; }
+.canvas-tabs-dock .canvas-tab-shell:not(.is-active) .canvas-tab-close { opacity: .55; }
+.canvas-tabs-dock .canvas-tab-shell:not(.is-active):hover .canvas-tab-close,
+.canvas-tabs-dock .canvas-tab-shell:not(.is-active) .canvas-tab-close:focus-visible { opacity: 1; }
+
+/* ---------- Controls that live inside the active tab ---------- */
+.app.canvas-first-header .canvas-tabs-dock .canvas-tab-shell .desktop-app-save-status-wrap {
+  flex: 0 0 28px; width: 28px; min-width: 28px; margin: 0;
+}
+.app.canvas-first-header .canvas-tabs-dock .canvas-tab-shell .desktop-app-save-status-trigger {
+  flex: 0 0 28px; width: 28px; min-width: 28px; max-width: 28px; height: 28px; min-height: 28px; max-height: 28px;
+  border-radius: 8px; color: var(--tab-muted);
+}
+.app.canvas-first-header .canvas-tabs-dock .canvas-tab-shell .desktop-app-save-status-trigger:hover,
+.app.canvas-first-header .canvas-tabs-dock .canvas-tab-shell .desktop-app-save-status-trigger[aria-expanded="true"] {
+  background: var(--tab-hover); color: var(--tab-text);
+}
+.app.canvas-first-header .canvas-tabs-dock .desktop-app-save-status-popover {
+  top: calc(100% + 12px); left: 0; right: auto;
+}
+.app.canvas-first-header .canvas-tabs-dock .desktop-app-document-location {
+  font-size: 9.5px; padding: 1px 7px; flex: 0 0 auto; color: var(--tab-muted); border-color: var(--tab-border);
+}
+.app.canvas-first-header .canvas-tabs-dock .desktop-app-document-rename {
+  flex: 0 0 26px; width: 26px; height: 26px; border-radius: 8px;
+}
+.app.canvas-first-header .canvas-tabs-dock .desktop-app-save-to-cloud-button {
+  flex: 0 0 28px; width: 28px; min-width: 28px; max-width: 28px; height: 28px; min-height: 28px; max-height: 28px;
+  margin-left: 0; border-radius: 8px;
+}
+
+/* Inline rename inside the active tab (previously a floating field). */
+.app.canvas-first-header .canvas-tabs-dock .desktop-app-document-identity-copy {
+  display: block; max-width: none; overflow: visible;
+}
+.app.canvas-first-header .canvas-tabs-dock .desktop-app-document-identity-name-input {
+  position: static; transform: none; width: clamp(120px, 16vw, 200px); max-width: 200px;
+  height: 26px; padding: 0 8px; font-size: 12px; border-radius: 7px;
+}
+
+/* ---------- "+N" and "+" (dashed, as in the design) ---------- */
+.canvas-tabs-dock .canvas-tabs-overflow-trigger,
+.canvas-tabs-dock .canvas-tabs-add,
+.canvas-tabs-dock .desktop-app-canvas-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--tab-h); min-width: var(--tab-h); width: auto; max-width: none;
+  margin: 0; padding: 0 10px;
+  border: 1.5px dashed color-mix(in srgb, var(--tab-muted) 55%, transparent);
+  border-radius: var(--tab-radius);
+  background: var(--tab-surface);
+  color: var(--tab-muted);
+  font-size: 12.5px; font-weight: 650; letter-spacing: .01em;
+  box-shadow: 0 1px 4px rgb(15 23 42 / 6%);
+  cursor: pointer;
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease, transform .1s ease;
+}
+.canvas-tabs-dock .canvas-tabs-add,
+.canvas-tabs-dock .desktop-app-canvas-add { width: var(--tab-h); padding: 0; flex: 0 0 var(--tab-h); }
+.canvas-tabs-dock .canvas-tabs-overflow-trigger:hover,
+.canvas-tabs-dock .desktop-app-canvas-add:hover,
+.canvas-tabs-dock .canvas-tabs-overflow-trigger.is-open {
+  border-style: solid; border-color: var(--tab-accent); color: var(--tab-accent); background: var(--tab-hover);
+}
+.canvas-tabs-dock .desktop-app-canvas-add:active,
+.canvas-tabs-dock .canvas-tabs-overflow-trigger:active { transform: scale(.96); }
+.canvas-tabs-dock .canvas-tabs-add-icon { width: 17px; height: 17px; }
+
+/* ---------- Overflow menu ---------- */
+.canvas-tabs-dock .canvas-tabs-overflow { position: relative; display: flex; }
+.canvas-tabs-dock .canvas-tabs-overflow-menu {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 1002;
+  width: 288px; max-width: calc(100vw - 32px);
+  padding: 6px; border-radius: 14px;
+  border: 1px solid var(--tab-border);
+  background: var(--tab-surface); color: var(--tab-text);
+  box-shadow: 0 18px 48px rgb(14 18 36 / 22%), 0 2px 8px rgb(14 18 36 / 8%);
+  transform-origin: top left;
+  animation: canvas-tabs-menu-in .14s ease-out;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-menu {
+  background: var(--tab-surface); border-color: var(--tab-border);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 55%);
+}
+@keyframes canvas-tabs-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .canvas-tabs-dock .canvas-tabs-overflow-menu { animation: none; } }
+
+.canvas-tabs-overflow-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--tab-muted);
+}
+.canvas-tabs-overflow-count {
+  min-width: 20px; padding: 1px 7px; border-radius: 99px; text-align: center;
+  background: var(--tab-hover); color: var(--tab-text); letter-spacing: 0; font-size: 11px;
+}
+.canvas-tabs-overflow-scroll { max-height: min(320px, 50vh); overflow-y: auto; display: grid; gap: 2px; padding-right: 1px; scrollbar-width: thin; }
+.canvas-tabs-overflow-row { position: relative; display: flex; align-items: center; border-radius: 10px; }
+.canvas-tabs-overflow-row:hover { background: var(--tab-hover); }
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-item {
+  display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+  flex: 1 1 auto; min-width: 0; width: auto; padding: 7px 4px 7px 8px;
+  border: 0; border-radius: 10px; background: transparent; color: inherit; text-align: left; cursor: pointer;
+}
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-item:hover { background: transparent; }
+.canvas-tabs-overflow-tile {
+  display: inline-grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border-radius: 9px;
+  background: color-mix(in srgb, var(--tab-accent) 12%, transparent); color: var(--tab-accent);
+}
+.canvas-tabs-overflow-text { display: grid; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.canvas-tabs-overflow-name {
+  display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 13px; font-weight: 600; color: var(--tab-text);
+}
+.canvas-tabs-overflow-meta { font-size: 10.5px; color: var(--tab-muted); }
+.canvas-tabs-overflow-row .canvas-tab-dirty { flex: 0 0 6px; margin-right: 2px; }
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-close { margin-right: 6px; opacity: 0; }
+.canvas-tabs-dock .canvas-tabs-overflow-row:hover .canvas-tabs-overflow-close,
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-close:focus-visible { opacity: 1; }
+@media (hover: none) { .canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-close { opacity: .7; } }
+
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-new {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  margin-top: 6px; padding: 9px 10px;
+  border: 1.5px dashed color-mix(in srgb, var(--tab-muted) 50%, transparent); border-radius: 10px;
+  background: transparent; color: var(--tab-muted); font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.canvas-tabs-dock .canvas-tabs-overflow-menu .canvas-tabs-overflow-new:hover { border-style: solid; border-color: var(--tab-accent); color: var(--tab-accent); background: var(--tab-hover); }
+
+/* ---------- Narrow layouts ---------- */
+@media (max-width: 1024px) {
+  .canvas-tabs-dock .canvas-tab { max-width: 110px; }
+  .canvas-tabs-dock .canvas-tab.is-active { max-width: 150px; }
+}
+@media (max-width: 760px) {
+  .app.canvas-first-header .canvas-tabs-dock .desktop-app-document-location { display: none; }
+  .canvas-tabs-dock .canvas-tab { max-width: 84px; }
+  .canvas-tabs-dock .canvas-tab.is-active { max-width: 110px; }
+}

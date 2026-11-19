@@ -63,6 +63,7 @@ import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
 import { loadCanvasTabs, saveCanvasTabs } from "./persistence.js";
 import "./styles/canvas-tabs.css";
+import "./styles/canvas-tabs-dock.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
