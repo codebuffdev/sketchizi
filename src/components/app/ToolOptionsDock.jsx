@@ -483,17 +483,30 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     }
 
     const now = Date.now();
+    const nextElements = elements.map((element) => textTargetIds.has(element.id)
+      ? {
+          ...element,
+          fontFamily: nextFontFamily,
+          version: (Number(element.version) || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647),
+          updated: now,
+        }
+      : element);
+    const nextEditingTextElement = liveState.editingTextElement?.type === "text"
+      && textTargetIds.has(liveState.editingTextElement.id)
+      ? { ...liveState.editingTextElement, fontFamily: nextFontFamily }
+      : undefined;
+
+    // Excalidraw keeps a separate editingTextElement snapshot while its
+    // WYSIWYG textarea is open. Updating only the scene element leaves that
+    // snapshot (and therefore the visible editor font) stale until commit.
+    if (nextEditingTextElement) {
+      appState.editingTextElement = nextEditingTextElement;
+    }
+
     api.updateScene({
       appState,
-      elements: elements.map((element) => textTargetIds.has(element.id)
-        ? {
-            ...element,
-            fontFamily: nextFontFamily,
-            version: (Number(element.version) || 0) + 1,
-            versionNonce: Math.floor(Math.random() * 2147483647),
-            updated: now,
-          }
-        : element),
+      elements: nextElements,
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
   };
