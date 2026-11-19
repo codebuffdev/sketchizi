@@ -3601,7 +3601,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 /* Excalidraw's text editor checks the exact pointerdown target for
    .properties-trigger (it does not use closest()). Make nested glyphs and
    labels transparent to hit-testing so clicks land on the marked button. */
-.sk-tool-choice .properties-trigger > *,
-.sk-tool-choice .properties-trigger * {
+.properties-trigger > *,
+.properties-trigger * {
   pointer-events: none !important;
 }
