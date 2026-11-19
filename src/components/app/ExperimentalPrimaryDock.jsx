@@ -56,8 +56,26 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
   const dragRef = useRef(null);
 
   useEffect(() => {
-    const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
-    if (nextTool) setActiveTool(nextTool);
+    const syncTool = () => {
+      const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
+      if (nextTool) setActiveTool(nextTool);
+    };
+    const syncLock = (event) => {
+      if (typeof event.detail?.locked === "boolean") setDockLocked(event.detail.locked);
+    };
+    const toggleLock = () => setDockLocked((locked) => {
+    const next = !locked;
+    window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
+    return next;
+  });
+    window.addEventListener("sketchizi:dock-lock-state", syncLock);
+    window.addEventListener("sketchizi:toggle-dock-lock", toggleLock);
+    window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: true } }));
+    syncTool();
+    return () => {
+      window.removeEventListener("sketchizi:dock-lock-state", syncLock);
+      window.removeEventListener("sketchizi:toggle-dock-lock", toggleLock);
+    };
   }, [apiRef, canvasRevision]);
 
   useEffect(() => {
