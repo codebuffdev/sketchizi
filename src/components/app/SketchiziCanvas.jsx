@@ -39,6 +39,20 @@ export default function SketchiziCanvas({
   const spotlightSelectedRef = useRef(selectedElements);
   spotlightSelectedRef.current = selectedElements;
 
+  // Excalidraw binds Ctrl+' to its native grid toggle. Canvas patterns now
+  // own grid visibility, so prevent that shortcut from switching the native
+  // grid independently of the selected Sketchizi pattern.
+  useEffect(() => {
+    const preventNativeGridToggle = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || (event.key !== "'" && event.code !== "Quote")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+    };
+    window.addEventListener("keydown", preventNativeGridToggle, true);
+    return () => window.removeEventListener("keydown", preventNativeGridToggle, true);
+  }, []);
+
   const paintWorkspaceGrid = useCallback(() => {
     const root = canvasRootRef.current;
     const node = spotlightNodeRef.current;
@@ -52,7 +66,7 @@ export default function SketchiziCanvas({
     // underneath the selected custom pattern.
     const showGrid = !!gridEnabled;
     node.classList.toggle("is-grid-enabled", !!showGrid);
-    ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].forEach((style) => {
+    ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates", "technical"].forEach((style) => {
       node.classList.toggle(`is-${style}-style`, gridStyle === style);
     });
 

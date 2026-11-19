@@ -4,7 +4,7 @@ import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { applyCanvasThemeBackground } from "./canvasTheme.js";
 import { applyCanvasAppearance } from "./canvasAppearance.js";
 
-export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true, canvasAppearance = "clean", setCanvasAppearance = () => {} }) {
+export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true, canvasAppearance = "clean", setCanvasAppearance = () => {} }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
   const themeMode = themeModeState;
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -77,14 +77,13 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
       }
       if (!plainKey) return;
       if (key === "d") { event.preventDefault(); setThemeMode((mode) => mode === "dark" ? "light" : "dark"); return; }
-      if (!event.shiftKey && key === "g") { event.preventDefault(); toggleGrid(); return; }
       if (key === "p" && selectedCount > 0) { event.preventDefault(); togglePanel("properties"); return; }
       if (key === "m") { event.preventDefault(); setMinimapOpen((open) => !open); return; }
       if (key === "f") { event.preventDefault(); fitDiagram(); }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canEdit, fitDiagram, openPanel, searchRef, selectedCount, setMinimapOpen, toggleGrid, togglePanel]);
+  }, [canEdit, fitDiagram, openPanel, searchRef, selectedCount, setMinimapOpen, togglePanel]);
 
   useEffect(() => {
     const handleResetCanvas = (event) => {

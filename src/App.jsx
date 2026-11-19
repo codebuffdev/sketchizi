@@ -74,24 +74,16 @@ function App() {
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
-  const [gridEnabled, setGridEnabled] = useState(() => {
-    try {
-      const stored = window.localStorage.getItem("sketchizi-grid-enabled");
-      return stored === null ? true : stored === "true";
-    } catch { return true; }
-  });
+  const [gridEnabled, setGridEnabled] = useState(true);
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-style");
-      return ["normal", "focus", "local", "dots", "ruled"].includes(stored) ? stored : "focus";
+      return ["normal", "focus", "local", "dots", "ruled", "technical"].includes(stored) ? stored : "focus";
     } catch { return "focus"; }
   });
   useEffect(() => {
     try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Private browsing. */ }
   }, [gridStyle]);
-  useEffect(() => {
-    try { window.localStorage.setItem("sketchizi-grid-enabled", String(gridEnabled)); } catch { /* Private browsing. */ }
-  }, [gridEnabled]);
   const [canvasAppearance, setCanvasAppearance] = useState(() => getInitialThemeMode() === "dark" ? "sketch" : "clean");
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
