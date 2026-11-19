@@ -46,9 +46,11 @@ function activateTool({ id, root, apiRef }) {
   apiRef.current?.setActiveTool?.({ type: id });
 }
 
-export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0 }) {
+export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => { if (!menuOpen) setPaletteOpen(false); }, [menuOpen]);
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
     if (nextTool) setActiveTool(nextTool);
@@ -68,21 +70,53 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       window.removeEventListener("click", clearCustomTool, true);
     };
   }, []);
+  const activeId = customTool || activeTool;
+  const activeEntry = GROUPS.flat().find((tool) => tool.id === activeId) || GROUPS[0][0];
+  const renderTool = ({ id, label }) => {
+    const selected = customTool ? customTool === id : activeTool === id;
+    return (
+      <button key={id} type="button" className={`sketchizi-primary-dock-tool${selected ? " is-active" : ""}`}
+        aria-label={label} aria-pressed={selected} title={label} disabled={!canEdit}
+        onClick={() => {
+          activateTool({ id, root: rootRef.current, apiRef });
+          setActiveTool(id);
+          if (id !== "bucketfill" && id !== "autoshape") setCustomTool(null);
+          if (menuOpen) setPaletteOpen(false);
+        }}>
+        <ToolIcon name={id} />
+        {menuOpen && <span className="sketchizi-primary-dock-tool-label">{label}</span>}
+      </button>
+    );
+  };
+  if (menuOpen) {
+    return (
+      <div className={`sketchizi-dock-launcher-wrap${isDarkTheme ? " is-dark" : ""}`} data-canvas-revision={canvasRevision}>
+        <button type="button" className="sketchizi-dock-launcher" aria-label="Open drawing tools"
+          aria-expanded={paletteOpen} aria-haspopup="dialog" onClick={() => setPaletteOpen((open) => !open)}>
+          <ToolIcon name={activeEntry.id} />
+          <span>{activeEntry.label}</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+        </button>
+        {paletteOpen && (
+          <div className="sketchizi-dock-quick-palette" role="dialog" aria-label="Drawing tools">
+            <div className="sketchizi-dock-quick-palette-heading">
+              <span>Drawing tools</span>
+              <button type="button" aria-label="Close drawing tools" onClick={() => setPaletteOpen(false)}>×</button>
+            </div>
+            <div className="sketchizi-dock-quick-palette-grid">
+              {GROUPS.flat().map(renderTool)}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
       {GROUPS.map((group, groupIndex) => (
-        <React.Fragment key={groupIndex}>
-          <div className="sketchizi-primary-dock-group">
-            {group.map(({ id, label }) => {
-              const selected = customTool ? customTool === id : activeTool === id;
-              return (
-                <button key={id} type="button" className={`sketchizi-primary-dock-tool${selected ? " is-active" : ""}`} aria-label={label} aria-pressed={selected} title={label} disabled={!canEdit} onClick={() => { activateTool({ id, root: rootRef.current, apiRef }); setActiveTool(id); if (id !== "bucketfill" && id !== "autoshape") setCustomTool(null); }}>
-                  <ToolIcon name={id} />
-                </button>
-              );
-            })}
-          </div>
-        </React.Fragment>
+        <div className="sketchizi-primary-dock-group" key={groupIndex}>
+          {group.map(renderTool)}
+        </div>
       ))}
     </nav>
   );
