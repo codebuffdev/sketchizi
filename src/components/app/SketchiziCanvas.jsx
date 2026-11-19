@@ -485,8 +485,8 @@ export default function SketchiziCanvas({
     return () => observer.disconnect();
   }, []);
 
-  // Keep the contextual dock in the Primary Dock's bottom-center slot.
-  // The Primary Dock is removed from layout while contextual controls are mounted.
+  // Keep contextual formatting controls in the bottom-center workspace slot.
+  // The Primary Dock remains independently fixed along the left edge.
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root) return undefined;
