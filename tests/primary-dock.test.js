@@ -21,10 +21,12 @@ test("standalone dock is the permanent primary dock, with no preview toggle", ()
 });
 
 test("independent dock contains the full drawing tool set without decorative controls", () => {
-  for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill", "autoshape"]) {
+  for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "note", "image", "frame", "eraser", "laser", "bucketfill", "autoshape"]) {
     assert.ok(dock.includes(`id: "${tool}"`), `missing primary dock tool: ${tool}`);
   }
   assert.match(dock, /function ToolIcon/);
+  assert.match(dock, /label: "Sticky Note"/);
+  assert.match(dock, /note: <><path/);
   assert.ok(dock.includes('.excalidraw [data-testid="toolbar-image"]'));
   assert.match(dock, /apiRef\.current\?\.setActiveTool/);
   assert.match(dock, /aria-pressed=\{selected\}/);
