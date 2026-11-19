@@ -228,3 +228,18 @@
   background: rgba(255,255,255,.12);
   border-color: rgba(255,255,255,.2);
 }
+
+.canvas-tabs-overflow-item > .canvas-tabs-overflow-close {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+}
+.canvas-tabs-overflow-item > .canvas-tabs-overflow-close:hover:not(:disabled) {
+  background: rgba(220, 70, 70, .13);
+  color: #c33;
+}
