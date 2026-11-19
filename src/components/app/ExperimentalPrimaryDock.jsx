@@ -52,7 +52,7 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
         <React.Fragment key={groupIndex}>
           {groupIndex > 0 && <span className="sketchizi-experimental-dock-divider" aria-hidden="true" />}
           <div className="sketchizi-experimental-dock-group">
-            {group.map(({ id, label, shortcut, custom }) => {
+            {group.map(({ id, label, shortcut }) => {
               const selected = activeTool === id || (id === "freedraw" && activeTool === "freedraw");
               return (
                 <button
