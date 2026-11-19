@@ -471,7 +471,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       </DockGroup>}
       {isText && <DockGroup label="Text options">
         {layerControl}
-        <DockSelect label="Font family" value={fontFamily} onChange={(value) => update({ fontFamily: Number(value) })} icon={<svg viewBox="0 0 24 24"><path d="m4 19 6-14h4l6 14M7 13h10" /></svg>}>
+        <DockSelect label="Font family" value={fontFamily} onChange={(value) => update({ fontFamily: Number(value) })} icon={<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>}>
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </DockSelect>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
