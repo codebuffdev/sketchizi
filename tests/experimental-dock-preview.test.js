@@ -20,12 +20,17 @@ test("experimental dock is a separate React component and remains opt-in", () =>
 });
 
 test("independent dock renders its own grouped tools and uses Excalidraw API actions", () => {
-  for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser"]) {
+  for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill", "autoshape"]) {
     assert.ok(dock.includes(`id: "${tool}"`), `missing independent dock tool: ${tool}`);
   }
   assert.match(dock, /function ToolIcon/);
   assert.match(dock, /apiRef\.current\?\.setActiveTool/);
   assert.match(dock, /aria-pressed=\{selected\}/);
+  assert.match(dock, /sketchizi:activate-tool/);
+  assert.match(dock, /sketchizi:toggle-dock-lock/);
+  assert.match(dock, /Lock dock/);
+  assert.match(dock, /Unlock dock/);
+  assert.match(dock, /sketchizi-experimental-dock-grip/);
 });
 
 test("test mode hides the native dock and displays an independent floating panel", () => {
