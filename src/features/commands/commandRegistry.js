@@ -17,8 +17,6 @@ export function createSketchiziCommandRegistry(context) {
     selectedCount,
     themeMode,
     setThemeMode,
-    gridEnabled,
-    toggleGrid,
     setMinimapOpen,
     fitDiagram,
     activateMoreTool,
