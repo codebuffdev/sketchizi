@@ -3044,7 +3044,9 @@
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transform: translateY(calc(100% + 18px));\n  pointer-events: auto;\n  transition: transform 220ms ease;
+  transform: translateY(calc(100% + 18px));
+  pointer-events: auto;
+  transition: transform 220ms ease;
   pointer-events: none;
 }
 .app .sketchizi-tool-options-dock .sk-tool-font-family:hover .sk-tool-font-family-chevron {
@@ -3634,7 +3636,9 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
-.app .sketchizi-primary-dock-shell.is-revealed .sketchizi-primary-dock { transform: translateY(0); }\n.app .sketchizi-primary-dock-shell.is-revealed .sketchizi-primary-dock-reveal { opacity: 0; pointer-events: none; }\n.app .sketchizi-primary-dock::-webkit-scrollbar { display: none; }
+.app .sketchizi-primary-dock-shell.is-revealed .sketchizi-primary-dock { transform: translateY(0); }
+.app .sketchizi-primary-dock-shell.is-revealed .sketchizi-primary-dock-reveal { opacity: 0; pointer-events: none; }
+.app .sketchizi-primary-dock::-webkit-scrollbar { display: none; }
 .app .sketchizi-primary-dock-group {
   display: flex;
   width: 100%;
