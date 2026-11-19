@@ -36,6 +36,8 @@ test("independent dock contains the full drawing tool set without decorative con
   assert.match(dockCss, /\.sketchizi-primary-dock-tool > svg/);
   assert.match(dockCss, /border-radius: 16px/);
   assert.match(dockCss, /\.sketchizi-primary-dock\.is-dark/);
+  assert.doesNotMatch(dock, /sketchizi-primary-dock-divider/);
+  assert.doesNotMatch(dockCss, /sketchizi-primary-dock-divider/);
 });
 
 test("contextual tools and the Tools menu integrate with the new primary dock", () => {
