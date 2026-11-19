@@ -64,17 +64,19 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
     const syncLock = (event) => {
       if (typeof event.detail?.locked === "boolean") setDockLocked(event.detail.locked);
     };
-    const toggleLock = () => setDockLocked((locked) => {
-    const next = !locked;
-    window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
-    return next;
-  });
+    const toggleLockFromMenu = () => setDockLocked((locked) => !locked);
+    const syncCustomTool = (event) => {
+      const tool = String(event.detail?.tool || "").toLowerCase();
+      if (["bucketfill", "autoshape"].includes(tool)) setActiveTool(tool);
+    };
     window.addEventListener("sketchizi:dock-lock-state", syncLock);
-    window.addEventListener("sketchizi:toggle-dock-lock", toggleLock);
+    window.addEventListener("sketchizi:toggle-dock-lock", toggleLockFromMenu);
+    window.addEventListener("sketchizi:activate-tool", syncCustomTool);
     window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: true } }));
     return () => {
       window.removeEventListener("sketchizi:dock-lock-state", syncLock);
-      window.removeEventListener("sketchizi:toggle-dock-lock", toggleLock);
+      window.removeEventListener("sketchizi:toggle-dock-lock", toggleLockFromMenu);
+      window.removeEventListener("sketchizi:activate-tool", syncCustomTool);
     };
   }, []);
 
@@ -100,7 +102,11 @@ export default function ExperimentalPrimaryDock({ rootRef, apiRef, canEdit = tru
     };
   }, []);
 
-  const toggleLock = () => setDockLocked((locked) => !locked);
+  const toggleLock = () => setDockLocked((locked) => {
+    const next = !locked;
+    window.dispatchEvent(new CustomEvent("sketchizi:dock-lock-state", { detail: { locked: next } }));
+    return next;
+  });
 
   return (
     <nav
