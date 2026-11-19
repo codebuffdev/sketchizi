@@ -25,11 +25,11 @@ const GROUPS = [
   [{ id: "freedraw", label: "Draw" }, { id: "text", label: "Text" }],
   [{ id: "image", label: "Image" }, { id: "frame", label: "Frame" }],
   [{ id: "eraser", label: "Eraser" }, { id: "laser", label: "Laser pointer" }],
-  [{ id: "bucketfill", label: "Bucket Fill", custom: true }, { id: "autoshape", label: "Draw to Shape", custom: true }],
+  [{ id: "bucketfill", label: "Bucket Fill" }, { id: "autoshape", label: "Draw to Shape", custom: true }],
 ];
 
 function ToolIcon({ name }) {
-  return <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
+  return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
 }
 
 function activateTool({ id, root, apiRef }) {
