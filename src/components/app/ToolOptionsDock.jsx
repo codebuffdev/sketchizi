@@ -1,12 +1,16 @@
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
+
+// Excalidraw reserves font-family ID 4 for host-provided custom fonts.
+// Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
+if (FONT_FAMILY.Kalam === undefined) FONT_FAMILY.Kalam = 4;
 
 const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8", "#ffffff"];
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
-const FONT_FAMILIES = [[3, "Cascadia"], [5, "Excalifont"], [7, "Lilita One"], [8, "Comic Shanns"]];
+const FONT_FAMILIES = [[3, "Cascadia"], [4, "Kalam"], [5, "Excalifont"], [7, "Lilita One"], [8, "Comic Shanns"]];
 const LINE_GEOMETRIES = [
   ["straight", "Straight"],
   ["curved", "Curved"],
@@ -117,12 +121,13 @@ function DockOptionGlyph({ label, value, optionLabel }) {
   if (name.includes("font")) {
     const families = {
       3: '"Cascadia Code", monospace',
+      4: '"Kalam", cursive',
       5: '"Excalifont", cursive',
       7: '"Lilita One", cursive',
       8: '"Comic Shanns", cursive',
     };
-    const weights = { 3: 500, 5: 400, 7: 700, 8: 600 };
-    const styles = { 3: "normal", 5: "italic", 7: "normal", 8: "oblique" };
+    const weights = { 3: 500, 4: 400, 5: 400, 7: 700, 8: 600 };
+    const styles = { 3: "normal", 4: "normal", 5: "italic", 7: "normal", 8: "oblique" };
     return <span className="sk-tool-option-font-glyph"
       style={{ fontFamily: families[Number(value)] || "sans-serif", fontWeight: weights[Number(value)] || 500, fontStyle: styles[Number(value)] || "normal" }}>Aa</span>;
   }
