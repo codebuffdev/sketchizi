@@ -15,9 +15,9 @@ test("workspace menu has a refined surface, grouped actions, and light/dark them
 });
 
 test("zoom controls show a percentage chip without plus/minus buttons", () => {
-  assert.match(navigationStyles, /\.zoom-actions \.zoom-out[\s\S]*?display: none !important/);
-  assert.match(navigationStyles, /\.zoom-actions \.zoom-in[\s\S]*?display: none !important/);
-  assert.match(navigationStyles, /\.zoom-actions \.reset-zoom/);
-  assert.match(navigationStyles, /border-radius: 9px/);
+  assert.match(navigationStyles, /\.zoom-actions \.zoom-out-button[\s\S]*?display: none !important/);
+  assert.match(navigationStyles, /\.zoom-actions \.zoom-in-button[\s\S]*?display: none !important/);
+  assert.match(navigationStyles, /\.zoom-actions \.reset-zoom-button/);
+  assert.match(navigationStyles, /border-radius: 8px/);
   assert.match(navigationStyles, /font-variant-numeric: tabular-nums/);
 });
