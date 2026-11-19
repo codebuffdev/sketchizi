@@ -6,6 +6,7 @@ export function getScrollBackPlacement({
   viewportWidth,
   viewportHeight,
   vertical = false,
+  bottomAligned = false,
   dockSide = "left",
   buttonWidth = 148,
   buttonHeight = 42,
@@ -19,7 +20,10 @@ export function getScrollBackPlacement({
   let left;
   let top;
 
-  if (vertical) {
+  if (bottomAligned) {
+    left = dock.left + (dock.width - buttonWidth) / 2;
+    top = dock.bottom - buttonHeight - gap;
+  } else if (vertical) {
     const before = dock.left - buttonWidth - gap;
     const after = dock.right + gap;
     const preferred = dockSide === "right" ? before : after;
