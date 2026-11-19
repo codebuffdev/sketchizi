@@ -43,5 +43,10 @@ test("font family changes resolve live selected text and update only text elemen
   assert.match(source, /const propTextIds = selectedFromProps[\s\S]*?element\.type === "text"/);
   assert.match(source, /targetIds\.has\(element\.id\) && element\.type === "text"/);
   assert.match(source, /fontFamily: Number\(value\)/);
-  assert.match(source, /onChange=\{updateTextFontFamily\} preserveFocus=\{preserveTextEditorFocus\}/);
+  assert.match(source, /onChange=\{updateTextFontFamily\} preserveFocus icon=/);
+});
+
+
+test("font picker preserves a selected text element even when it is not in edit mode", () => {
+  assert.match(source, /<DockSelect label="Font family"[\\s\\S]*?onChange=\\{updateTextFontFamily\\} preserveFocus icon=/);
 });
