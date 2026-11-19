@@ -83,8 +83,8 @@ function App() {
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-style");
-      return ["normal", "focus", "local", "dots", "ruled"].includes(stored) ? stored : "focus";
-    } catch { return "focus"; }
+      return ["normal", "focus", "local", "dots", "ruled"].includes(stored) ? stored : "normal";
+    } catch { return "normal"; }
   });
   useEffect(() => {
     try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Private browsing. */ }
