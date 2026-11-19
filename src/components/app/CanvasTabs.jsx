@@ -1,11 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReorder, disabled = false }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
-  const visibleTabs = tabs.slice(0, 3);
-  const hiddenTabs = tabs.slice(3);
+  const visibleTabs = useMemo(() => {
+    const first = tabs.slice(0, 3);
+    if (first.some((tab) => tab.id === activeId)) return first;
+    const active = tabs.find((tab) => tab.id === activeId);
+    return active ? [active, ...tabs.filter((tab) => tab.id !== activeId).slice(0, 2)] : first;
+  }, [tabs, activeId]);
+  const visibleIds = new Set(visibleTabs.map((tab) => tab.id));
+  const hiddenTabs = tabs.filter((tab) => !visibleIds.has(tab.id));
   const hiddenCount = hiddenTabs.length;
-  const dragId = useMemo(() => ({ current: null }), []);
+  const dragId = useRef(null);
 
   const handleDrop = (event, targetId) => {
     event.preventDefault();
