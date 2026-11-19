@@ -188,6 +188,32 @@ export async function saveSketch({ elements, appState, files, metadata = {}, ext
   }
 }
 
+export async function loadCanvasTabs() {
+  const db = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readonly");
+      const request = transaction.objectStore(STORE_NAME).get("canvas-tabs-manifest");
+      request.onsuccess = () => resolve(Array.isArray(request.result?.tabs) ? request.result.tabs : null);
+      request.onerror = () => reject(toPersistenceError(request.error, "Unable to restore open canvases.", "read"));
+      transaction.onerror = () => reject(toPersistenceError(transaction.error, "Unable to restore open canvases.", "read"));
+    });
+  } finally { try { db.close(); } catch {} }
+}
+
+export async function saveCanvasTabs(tabs) {
+  const db = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readwrite");
+      transaction.objectStore(STORE_NAME).put({ tabs: structuredClone(tabs), savedAt: Date.now() }, "canvas-tabs-manifest");
+      transaction.oncomplete = () => resolve(true);
+      transaction.onerror = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));
+      transaction.onabort = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));
+    });
+  } finally { try { db.close(); } catch {} }
+}
+
 // Small emergency fallback. It is only used after IndexedDB fails, and may
 // itself be unavailable or too small. The caller still receives the original
 // IndexedDB failure so the UI can warn the user when neither storage works.
