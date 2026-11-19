@@ -241,7 +241,11 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     : customTool === "autoshape" ? "draw-to-shape"
       : ["note", "sticky-note", "stickynote", "notes"].includes(customTool) ? "text"
         : activeTool;
-  const type = selectionType || tool;
+  // An active Pen tool controls the next stroke even if Excalidraw still
+  // reports a previous selection during the tool-switch transition.
+  const isPenToolActive = activeTool === "freedraw";
+  const hasOnlyPenSelection = selected.length > 0 && selected.every((element) => element.type === "freedraw");
+  const type = isPenToolActive ? activeTool : selectionType || tool;
   const isShape = ["rectangle", "diamond", "ellipse"].includes(type);
   const isLine = ["line", "arrow"].includes(type);
   const isDraw = ["freedraw", "draw"].includes(type);
@@ -249,7 +253,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const isFill = type === "bucket-fill";
   const isAutoShape = type === "draw-to-shape";
   const supported = isShape || isLine || isDraw || isText || isFill || isAutoShape;
-  const isSelection = selected.length > 0 || Boolean(isText && editingTextElement?.id);
+  // Keep selected freedraw strokes editable while Pen is active; unrelated
+  // stale selections must not redirect Pen defaults to another element.
+  const isSelection = (selected.length > 0 && (!isPenToolActive || hasOnlyPenSelection))
+    || Boolean(isText && editingTextElement?.id);
   const isVisible = canEdit && (isSelection ? supported || selected.length > 1 : supported);
   const first = selected[0] || editingTextElement;
 
@@ -273,6 +280,44 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const update = (patch) => {
     const api = apiRef?.current;
     if (!api) return;
+
+    // Resolve Pen width changes from Excalidraw's live selection at the moment
+    // the user changes the control. The dock's selectedElements prop can lag
+    // behind appState during tool/selection transitions.
+    if (Object.prototype.hasOwnProperty.call(patch, "strokeWidth") && (isDraw || selected.some((element) => element.type === "freedraw"))) {
+      const liveAppState = api.getAppState?.() || appState;
+      const liveSelectedIds = new Set(
+        Object.entries(liveAppState.selectedElementIds || {})
+          .filter(([, isSelected]) => isSelected)
+          .map(([id]) => id),
+      );
+      selected.forEach((element) => {
+        if (element.type === "freedraw") liveSelectedIds.add(element.id);
+      });
+      const elements = api.getSceneElements?.() || [];
+      const selectedPenIds = new Set(
+        elements.filter((element) => liveSelectedIds.has(element.id) && element.type === "freedraw")
+          .map((element) => element.id),
+      );
+      const next = selectedPenIds.size
+        ? elements.map((element) => selectedPenIds.has(element.id)
+          ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+          : element)
+        : undefined;
+      const penToolIsActive = String(liveAppState.activeTool?.type || "").toLowerCase() === "freedraw";
+      const appStatePatch = (penToolIsActive || selectedPenIds.size)
+        ? { currentItemStrokeWidth: Number(patch.strokeWidth) }
+        : undefined;
+      if (next || appStatePatch) {
+        api.updateScene({
+          ...(next ? { elements: next } : {}),
+          ...(appStatePatch ? { appState: appStatePatch } : {}),
+          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        });
+      }
+      return;
+    }
+
     if (!isSelection) {
       const appStatePatch = {};
       const mapping = {
@@ -303,7 +348,19 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     const next = elements.map((element) => ids.has(element.id)
       ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
-    api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+
+    // Pen width is both an element property and the default for the next
+    // freedraw stroke. Keep the default in sync while editing a Pen stroke;
+    // otherwise the selected stroke changes but the next stroke keeps the
+    // previous width (or vice versa).
+    const appStatePatch = isDraw && Number.isFinite(Number(patch.strokeWidth))
+      ? { currentItemStrokeWidth: Number(patch.strokeWidth) }
+      : undefined;
+    api.updateScene({
+      elements: next,
+      ...(appStatePatch ? { appState: appStatePatch } : {}),
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
   };
 
   const moveLayers = (direction) => {
@@ -440,13 +497,13 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         <ToolButton active={fillColor === "transparent"} title="No fill" onClick={() => update({ backgroundColor: "transparent" })}><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg></ToolButton>
         <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />
       </DockGroup>}
-      {!isText && !isFill && <DockGroup label="Stroke width">
+      {!isText && !isFill && !isDraw && <DockGroup label="Stroke width">
         <DockSelect label="Stroke width" value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })} icon={<svg viewBox="0 0 24 24"><path d="M3 12h18" strokeWidth={Math.min(6, Math.max(1.5, strokeWidth))} /></svg>}>
           {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth} px</option>}
           {WIDTHS.map((width) => <option key={width} value={width}>{width} px</option>)}
         </DockSelect>
       </DockGroup>}
-      {(isShape || isLine || isDraw || isAutoShape) && <DockGroup label="Stroke style">
+      {(isShape || isLine || isAutoShape) && <DockGroup label="Stroke style">
         <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />
       </DockGroup>}
       {(isShape || isAutoShape || isFill) && <DockGroup label="Fill style">
