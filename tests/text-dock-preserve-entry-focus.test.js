@@ -18,3 +18,11 @@ test("pending text size can be adjusted without moving focus away from the text 
   assert.match(source, /onPointerDown=\{preserveTextEditorFocus \? \(event\) => event\.preventDefault\(\) : undefined\}[\s\S]*?aria-label="Increase font size"/);
   assert.match(source, /if \(preserveTextEditorFocus\) event\.preventDefault\(\)/);
 });
+
+test("font family controls use Excalidraw's text-property interaction hook while editing", () => {
+  assert.match(source, /className=\{\`sk-tool-choice-trigger\$\{preserveFocus \? " properties-trigger" : ""\}\`\}/);
+  assert.match(source, /className=\{\`sk-tool-choice-option\$\{active \? " is-selected" : ""\}\$\{preserveFocus \? " properties-trigger" : ""\}\`\}/);
+  assert.match(source, /const liveAppState = api\.getAppState\?\.\(\) \|\| \{\}/);
+  assert.match(source, /Object\.entries\(liveAppState\.selectedElementIds \|\| \{\}\)/);
+  assert.match(source, /activeEditingText\?\.id/);
+});
