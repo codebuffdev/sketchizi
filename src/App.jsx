@@ -603,7 +603,7 @@ function App() {
       cloudSaveQueueRef.current = cloudSaveQueueRef.current.catch(() => {}).then(async () => {
         const latest = await workspaceClient.getDiagram(session.diagramId);
         const latestDiagram = latest?.diagram || latest;
-        const revision = latestDiagram?.revision ?? session.revision;
+        const revision = latestDiagram?.revision ?? latest?.revision ?? latest?.version ?? session.revision;
         const result = await workspaceClient.saveDiagram(session.diagramId, revision, cloudDocument);
         session.revision = result?.revision ?? (typeof revision === "number" ? revision + 1 : revision);
         const savedTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
@@ -693,9 +693,21 @@ function App() {
     return () => { cancelled = true; };
   }, [sketchReady, apiReady, cloudDiagramId, cloudSaveState.state, applyCanvasTabSnapshot, captureCanvasTabSnapshot]);
 
-  useEffect(() => () => {
-    if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
-  }, []);
+  useEffect(() => {
+    const flushCanvasTabs = () => {
+      const snapshot = captureCanvasTabSnapshot();
+      const latest = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
+        ? { ...tab, snapshot }
+        : tab);
+      canvasTabsRef.current = latest;
+      saveCanvasTabs(latest).catch(() => {});
+    };
+    window.addEventListener("pagehide", flushCanvasTabs);
+    return () => {
+      window.removeEventListener("pagehide", flushCanvasTabs);
+      if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
+    };
+  }, [captureCanvasTabSnapshot]);
 
   useEffect(() => {
     if (!canvasTabsRestoredRef.current) return;
