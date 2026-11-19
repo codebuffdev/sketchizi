@@ -74,12 +74,8 @@ function App() {
   const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
   const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
-  const [gridEnabled, setGridEnabled] = useState(() => {
-    try {
-      const stored = window.localStorage.getItem("sketchizi-grid-enabled");
-      return stored === null ? true : stored === "true";
-    } catch { return true; }
-  });
+  // Canvas patterns stay visible; choose a pattern instead of toggling visibility.
+  const [gridEnabled] = useState(true);
   const [gridStyle, setGridStyle] = useState(() => {
     try {
       const stored = window.localStorage.getItem("sketchizi-grid-style");
@@ -89,9 +85,6 @@ function App() {
   useEffect(() => {
     try { window.localStorage.setItem("sketchizi-grid-style", gridStyle); } catch { /* Private browsing. */ }
   }, [gridStyle]);
-  useEffect(() => {
-    try { window.localStorage.setItem("sketchizi-grid-enabled", String(gridEnabled)); } catch { /* Private browsing. */ }
-  }, [gridEnabled]);
   const [canvasAppearance, setCanvasAppearance] = useState(() => getInitialThemeMode() === "dark" ? "sketch" : "clean");
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
