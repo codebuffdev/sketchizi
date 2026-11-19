@@ -6,7 +6,7 @@ const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8"
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
-const FONT_FAMILIES = [[2, "Helvetica"], [3, "Cascadia"], [5, "Excalifont"], [6, "Nunito"], [7, "Lilita One"], [8, "Comic Shanns"]];
+const FONT_FAMILIES = [[3, "Cascadia"], [5, "Excalifont"], [7, "Lilita One"], [8, "Comic Shanns"]];
 
 function ContextShapeIcon({ type, title, multiple = false }) {
   let shape;
