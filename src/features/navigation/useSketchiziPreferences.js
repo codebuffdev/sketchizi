@@ -4,7 +4,7 @@ import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { applyCanvasThemeBackground } from "./canvasTheme.js";
 import { applyCanvasAppearance } from "./canvasAppearance.js";
 
-export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true, canvasAppearance = "clean", setCanvasAppearance = () => {} }) {
+export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true, canvasAppearance = "clean", setCanvasAppearance = () => {} }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
   const themeMode = themeModeState;
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
