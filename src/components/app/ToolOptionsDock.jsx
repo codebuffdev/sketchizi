@@ -453,6 +453,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   const updateTextFontFamily = (value) => {
     const api = apiRef?.current;
     if (!api) return;
+    const nextFontFamily = Number(value);
     const liveState = api.getAppState?.() || {};
     const liveIds = Object.entries(liveState.selectedElementIds || {})
       .filter(([, active]) => active)
@@ -463,23 +464,35 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     const editingId = liveState.editingTextElement?.type === "text"
       ? liveState.editingTextElement.id
       : editingTextElement?.id;
-    const targetIds = new Set(liveIds.length ? liveIds : propTextIds);
+    const targetIds = new Set([...liveIds, ...propTextIds]);
     if (editingId) targetIds.add(editingId);
 
     const elements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-    const textTargets = elements.filter((element) =>
-      targetIds.has(element.id) && element.type === "text" && !element.isDeleted && !element.deleted,
-    );
-    if (!textTargets.length) {
-      // No selected text element: set the font for the next text object.
-      api.updateScene({ appState: { currentItemFontFamily: Number(value) } });
+    const textTargetIds = new Set(elements
+      .filter((element) => targetIds.has(element.id)
+        && element.type === "text" && !element.isDeleted && !element.deleted)
+      .map((element) => element.id));
+
+    // Always update the text-tool default as well as existing text. This is
+    // important when the font is chosen before the user starts typing: there
+    // is no scene element yet, so changing elements alone cannot affect it.
+    const appState = { currentItemFontFamily: nextFontFamily };
+    if (!textTargetIds.size) {
+      api.updateScene({ appState });
       return;
     }
+
     const now = Date.now();
     api.updateScene({
-      elements: elements.map((element) => textTargets.some((target) => target.id === element.id)
-        ? { ...element, fontFamily: Number(value), version: (Number(element.version) || 0) + 1,
-            versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
+      appState,
+      elements: elements.map((element) => textTargetIds.has(element.id)
+        ? {
+            ...element,
+            fontFamily: nextFontFamily,
+            version: (Number(element.version) || 0) + 1,
+            versionNonce: Math.floor(Math.random() * 2147483647),
+            updated: now,
+          }
         : element),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
