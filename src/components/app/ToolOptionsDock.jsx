@@ -233,8 +233,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
 
   return (
     <div className="sk-tool-choice">
-      <button ref={triggerRef} type="button" className="sk-tool-choice-trigger"
-        onPointerDown={preserveFocus ? (event) => event.preventDefault() : undefined}
+      <button ref={triggerRef} type="button" className={`sk-tool-choice-trigger${preserveFocus ? " properties-trigger" : ""}`}
         title={`${label}: ${selected.label || ""}`}
         aria-label={`${label}: ${selected.label || ""}`}
         aria-haspopup="menu" aria-expanded={open} onClick={toggle}>
@@ -247,9 +246,8 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
           {safeOptions.map((option) => {
             const active = String(option.value) === String(value);
             return <button key={String(option.value)} type="button" role="menuitemradio"
-              onPointerDown={preserveFocus ? (event) => event.preventDefault() : undefined}
               aria-checked={active} aria-label={option.label} title={option.label}
-              className={`sk-tool-choice-option${active ? " is-selected" : ""}`}
+              className={`sk-tool-choice-option${active ? " is-selected" : ""}${preserveFocus ? " properties-trigger" : ""}`}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -355,7 +353,18 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     window.addEventListener("pointerdown", closeOnOutsideClick, true);
     return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
   }, [layerMenuOpen]);
-  const selected = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const selectedFromProps = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const liveSelectedIds = Object.entries(appState.selectedElementIds || {})
+    .filter(([, active]) => active)
+    .map(([id]) => id);
+  // Prefer the live Excalidraw selection when React's selectedElements prop
+  // has not caught up yet (common immediately after clicking a text element).
+  const liveSelected = (apiRef?.current?.getSceneElements?.() || []).filter((element) =>
+    liveSelectedIds.includes(element.id) && !element.isDeleted && !element.deleted,
+  );
+  // Excalidraw's live selection is authoritative; React props can still refer
+  // to the previous selection for one render after a click.
+  const selected = liveSelected.length ? liveSelected : selectedFromProps;
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
   const selectionType = selected.length ? selected[0].type : editingTextElement?.type || null;
@@ -420,8 +429,18 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
       return;
     }
+    // Read selection from Excalidraw at the moment of the click as well as
+    // from React props. The props can lag one render behind a just-made text
+    // selection, which otherwise makes a font choice silently update nothing.
+    const liveAppState = api.getAppState?.() || {};
     const ids = new Set(selected.map((element) => element.id));
-    if (isText && editingTextElement?.id) ids.add(editingTextElement.id);
+    Object.entries(liveAppState.selectedElementIds || {}).forEach(([id, active]) => {
+      if (active) ids.add(id);
+    });
+    const activeEditingText = liveAppState.editingTextElement?.type === "text"
+      ? liveAppState.editingTextElement
+      : editingTextElement;
+    if (isText && activeEditingText?.id) ids.add(activeEditingText.id);
     const now = Date.now();
     const elements = api.getSceneElements?.() || [];
     const next = elements.map((element) => ids.has(element.id)
@@ -430,6 +449,41 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
     api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   };
 
+
+  const updateTextFontFamily = (value) => {
+    const api = apiRef?.current;
+    if (!api) return;
+    const liveState = api.getAppState?.() || {};
+    const liveIds = Object.entries(liveState.selectedElementIds || {})
+      .filter(([, active]) => active)
+      .map(([id]) => id);
+    const propTextIds = selectedFromProps
+      .filter((element) => element.type === "text")
+      .map((element) => element.id);
+    const editingId = liveState.editingTextElement?.type === "text"
+      ? liveState.editingTextElement.id
+      : editingTextElement?.id;
+    const targetIds = new Set(liveIds.length ? liveIds : propTextIds);
+    if (editingId) targetIds.add(editingId);
+
+    const elements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+    const textTargets = elements.filter((element) =>
+      targetIds.has(element.id) && element.type === "text" && !element.isDeleted && !element.deleted,
+    );
+    if (!textTargets.length) {
+      // No selected text element: set the font for the next text object.
+      api.updateScene({ appState: { currentItemFontFamily: Number(value) } });
+      return;
+    }
+    const now = Date.now();
+    api.updateScene({
+      elements: elements.map((element) => textTargets.some((target) => target.id === element.id)
+        ? { ...element, fontFamily: Number(value), version: (Number(element.version) || 0) + 1,
+            versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
+        : element),
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+  };
 
   const updateLineGeometry = (value) => {
     const api = apiRef?.current;
@@ -639,7 +693,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       </DockGroup>}
       {isText && <DockGroup label="Text options">
         {layerControl}
-        <DockSelect label="Font family" value={fontFamily} onChange={(value) => update({ fontFamily: Number(value) })} preserveFocus={preserveTextEditorFocus} icon={<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>}>
+        <DockSelect label="Font family" value={fontFamily} onChange={updateTextFontFamily} preserveFocus icon={<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>}>
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </DockSelect>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">

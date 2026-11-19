@@ -3597,3 +3597,11 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   overflow-y: visible !important;
   z-index: 10030 !important;
 }
+
+/* Excalidraw's text editor checks the exact pointerdown target for
+   .properties-trigger (it does not use closest()). Make nested glyphs and
+   labels transparent to hit-testing so clicks land on the marked button. */
+.properties-trigger > *,
+.properties-trigger * {
+  pointer-events: none !important;
+}
