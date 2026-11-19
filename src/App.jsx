@@ -664,6 +664,25 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!canvasTabsRestoredRef.current) return;
+    const dirty = Boolean(documentDirty) || (
+      cloudSessionRef.current.active
+        ? ["pending", "saving", "error", "conflict"].includes(cloudSaveState.state)
+        : ["pending", "saving", "error"].includes(saveStatus.state)
+    );
+    const current = canvasTabsRef.current;
+    const next = current.map((tab) => tab.id === activeCanvasIdRef.current && tab.dirty !== dirty
+      ? { ...tab, dirty }
+      : tab);
+    if (next !== current) persistCanvasTabs(next);
+  }, [documentDirty, cloudSaveState.state, saveStatus.state, persistCanvasTabs]);
+
+  useEffect(() => {
+    if (!canvasTabsRestoredRef.current || !apiReady || !currentFile) return;
+    persistActiveCanvasSnapshot();
+  }, [apiReady, currentFile, persistActiveCanvasSnapshot]);
+
+  useEffect(() => {
     if (!apiReady || !currentFile) return;
     markCurrentDocumentChanged(apiRef.current?.getSceneElementsIncludingDeleted?.() || apiRef.current?.getSceneElements?.() || []);
   }, [apiReady, currentFile, markCurrentDocumentChanged]);
