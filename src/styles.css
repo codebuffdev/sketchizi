@@ -1246,10 +1246,11 @@
 }
 
 
-/* Classic square-corner UI: remove rounded geometry throughout the editor,
-   including Excalidraw controls, canvas shell, panels, dialogs and chat. */
-.app *,
-.app *::before,
-.app *::after {
+
+/* Keep the classic square silhouette on the canvas frame only.
+   Individual canvas tools and controls retain their own original shapes. */
+.app .desktop-canvas-region,
+.app .desktop-canvas-region > .canvas,
+.app .desktop-canvas-region > .excalidraw {
   border-radius: 0 !important;
 }
