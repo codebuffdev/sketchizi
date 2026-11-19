@@ -72,6 +72,23 @@
     margin-left: auto;
   }
 
+  /* The pin/dropdown control is a separate flex child after the right island.
+     Let the island shrink before it can push that control beyond the canvas. */
+  .app.canvas-first-header .desktop-app-header {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .app.canvas-first-header .desktop-app-header-island-right {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .app.canvas-first-header .desktop-app-header-pin-button {
+    flex: 0 0 28px;
+    margin-left: 0;
+  }
+
   .app.canvas-first-header .desktop-app-header .desktop-app-header-spacer {
     display: none !important;
   }
