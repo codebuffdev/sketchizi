@@ -7,7 +7,7 @@ const navigationStyles = readFileSync(new URL("../src/styles/ui-modernization-na
 
 test("workspace menu has a refined surface, grouped actions, and light/dark theme support", () => {
   assert.match(menuStyles, /Workspace menu refresh/);
-  assert.match(menuStyles, /width: min\(288px, calc\(100vw - 20px\)\)/);
+  assert.match(menuStyles, /width: min\(224px, calc\(100vw - 20px\)\)/);
   assert.match(menuStyles, /border-radius: 12px/);
   assert.match(menuStyles, /sketchizi-file-menu-actions > button:hover:not\(:disabled\)/);
   assert.match(menuStyles, /data-sketchizi-theme="dark"/);
