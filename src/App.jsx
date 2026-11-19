@@ -598,7 +598,7 @@ function App() {
     const currentTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
       ? { ...tab, snapshot: currentSnapshot }
       : tab);
-    const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\\d+)/)?.[1] || 0)), 0) + 1;
+    const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = `canvas-${Date.now()}`;
     const nextTab = {
       id, name: `Canvas ${nextNumber}`, dirty: false,
