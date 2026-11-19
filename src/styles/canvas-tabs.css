@@ -56,3 +56,24 @@
 .canvas-tabs-add:disabled { opacity: .4; cursor: not-allowed; }
 .app.theme-dark .canvas-tabs-bar { background: var(--island-bg, #1d1d1d); border-color: rgba(255,255,255,.12); }
 .app.theme-dark .canvas-tabs-overflow-menu { background: #252525; border-color: rgba(255,255,255,.14); }
+
+/* The application header floats over the workspace; keep the tab strip just
+   below its document-title row and reserve real canvas space beneath it. */
+.desktop-canvas-region > .canvas-tabs-bar {
+  position: absolute;
+  top: 76px;
+  right: 0;
+  left: 0;
+}
+.desktop-canvas-region > .canvas {
+  inset: 114px 0 0 !important;
+  height: auto !important;
+}
+@media (max-width: 760px) {
+  .desktop-canvas-region > .canvas-tabs-bar { top: 68px; }
+  .desktop-canvas-region > .canvas { inset: 106px 0 0 !important; }
+}
+@media (max-width: 520px) {
+  .desktop-canvas-region > .canvas-tabs-bar { top: 52px; }
+  .desktop-canvas-region > .canvas { inset: 90px 0 0 !important; }
+}
