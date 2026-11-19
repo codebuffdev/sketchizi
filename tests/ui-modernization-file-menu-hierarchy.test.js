@@ -60,3 +60,32 @@ test("workspace menu offers Open file and improved community action icons", () =
   assert.match(menu, /sketchizi-review-icon/);
   assert.match(menu, /sketchizi-git-icon/);
 });
+
+test("only the exact native Save to button is removed from the hamburger", () => {
+  assert.ok(menu.includes("const saveToLabel = exactLeaves.find"));
+  assert.ok(menu.includes('/^save to\\.\\.\\.$/i'));
+  assert.ok(menu.includes("closest(\"button, a, [role='menuitem']\")"));
+  assert.ok(menu.includes('itemLabel === "save to..."'));
+  assert.ok(menu.includes("Never remove a containing group"));
+  assert.ok(menu.includes("data-sketchizi-custom-menu-block"));
+  assert.ok(menu.includes('class="sketchizi-native-settings-title">Workspace'));
+  assert.ok(menu.includes("data-sketchizi-review-link"));
+  assert.ok(menu.includes("data-sketchizi-coder-link"));
+  assert.ok(menu.includes('key === "s"'));
+});
+
+test("workspace and review sections are injected into the visible hamburger menu", () => {
+  assert.match(menu, /const hasNativeMenuAction = \(container\)/);
+  assert.match(menu, /label === "export image\.\.\."/);
+  assert.match(menu, /label === "find on canvas"/);
+  assert.match(menu, /label === "reset the canvas"/);
+  assert.match(menu, /\.find\(hasNativeMenuAction\)/);
+  assert.match(menu, /customBlock\.append\(recentSection\)/);
+  assert.match(menu, /customBlock\.append\(communitySection\)/);
+});
+
+test("Save to removal targets only its own action row", () => {
+  assert.match(menu, /const saveToLabel = exactLeaves\.find/);
+  assert.match(menu, /saveToLabel\.closest\("button, a, \[role='menuitem'\]"\)/);
+  assert.match(menu, /itemLabel === "save to\.\.\."/);
+});
