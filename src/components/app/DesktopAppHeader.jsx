@@ -835,7 +835,6 @@ export default function DesktopAppHeader({
           aria-label="Create new canvas"
           title="Create new canvas"
           onClick={onCreateCanvasTab}
-          disabled={canvasTabs.length >= 100}
         >
           +
         </button>
