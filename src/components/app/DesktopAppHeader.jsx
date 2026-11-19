@@ -788,6 +788,7 @@ export default function DesktopAppHeader({
             onSelect={onSelectCanvasTab}
             onCreate={onCreateCanvasTab}
             onReorder={onReorderCanvasTabs}
+            showAddButton={false}
           />
         )}
         <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
@@ -805,7 +806,7 @@ export default function DesktopAppHeader({
             className="desktop-app-document-rename"
             aria-label="Rename canvas"
             title="Rename canvas"
-            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(currentDocumentName); setDocumentNameEditing(true); }}
+            onClick={() => { cancelDocumentRenameRef.current = false; setDocumentNameDraft(activeCanvasTabName); setDocumentNameEditing(true); }}
           >
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
@@ -827,6 +828,16 @@ export default function DesktopAppHeader({
           <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" fillRule="evenodd" aria-hidden="true">
             <path d="M257 247 153 347 175 369 242 302 243 447 272 447 272 303 336 369 358 347Z M39 193 39 232 54 265 86 292 126 302 127 274 133 252 148 227 173 206 208 194 244 195 270 205 301 233 317 264 336 257 365 261 389 280 400 302 426 300 448 289 465 270 474 242 469 213 448 185 427 174 399 171 391 121 366 80 330 52 285 38 240 40 203 55 171 83 149 123 140 120 107 122 71 140 52 161Z" />
           </svg>
+        </button>
+        <button
+          type="button"
+          className="canvas-tabs-add desktop-app-canvas-add"
+          aria-label="Create new canvas"
+          title="Create new canvas"
+          onClick={onCreateCanvasTab}
+          disabled={canvasTabs.length >= 100}
+        >
+          +
         </button>
       </div>
 
