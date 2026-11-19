@@ -67,3 +67,12 @@ test("font picker updates Excalidraw's active text-editing snapshot as well as t
   assert.match(source, /appState\.editingTextElement = nextEditingTextElement/);
   assert.match(source, /elements: nextElements/);
 });
+
+
+test("text tool mode ignores stale selected elements and changes the next text default", () => {
+  assert.match(source, /const isTextCreationMode = tool === "text" && activeTool === "text" && !editingTextElement/);
+  assert.match(source, /const selectionType = isTextCreationMode\s*\? null/);
+  assert.match(source, /const isSelection = !isTextCreationMode &&/);
+  assert.match(source, /liveState\.activeTool\?\.type \|\| ""\)\.toLowerCase\(\) === "text"/);
+  assert.match(source, /api\.updateScene\(\{ appState: \{ currentItemFontFamily: nextFontFamily \} \}\)/);
+});
