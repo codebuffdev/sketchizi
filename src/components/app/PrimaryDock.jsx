@@ -74,8 +74,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     };
   }, []);
   return (
-    <div className={`sketchizi-primary-dock-shell${isRevealed ? " is-revealed" : ""}${isDarkTheme ? " is-dark" : ""}`} onPointerEnter={cancelHide} onPointerLeave={scheduleHide} onFocusCapture={() => { cancelHide(); setIsRevealed(true); }} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) scheduleHide(); }}>
-      <button className="sketchizi-primary-dock-reveal" type="button" aria-label="Show drawing tools" tabIndex={isRevealed ? -1 : 0} onFocus={() => setIsRevealed(true)} onClick={() => { cancelHide(); setIsRevealed(true); }} />
+    <div className={`sketchizi-primary-dock-shell${isRevealed ? " is-revealed" : ""}${isDarkTheme ? " is-dark" : ""}`} onPointerEnter={() => { cancelHide(); setIsRevealed(true); }} onPointerLeave={scheduleHide}>
+      <div className="sketchizi-primary-dock-reveal" aria-hidden="true" />
       <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
       {GROUPS.map((group, groupIndex) => (
         <React.Fragment key={groupIndex}>
