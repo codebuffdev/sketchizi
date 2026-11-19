@@ -59,3 +59,11 @@ test("font picker always updates the text-tool default before text exists", () =
   assert.match(source, /api\.updateScene\(\{[\s\S]*?appState,[\s\S]*?elements:/);
   assert.match(source, /const targetIds = new Set\(\[\.\.\.liveIds, \.\.\.propTextIds\]\)/);
 });
+
+
+test("font picker updates Excalidraw's active text-editing snapshot as well as the scene element", () => {
+  assert.match(source, /const nextEditingTextElement = liveState\.editingTextElement\?\.type === "text"/);
+  assert.match(source, /\{ \.\.\.liveState\.editingTextElement, fontFamily: nextFontFamily \}/);
+  assert.match(source, /appState\.editingTextElement = nextEditingTextElement/);
+  assert.match(source, /elements: nextElements/);
+});
