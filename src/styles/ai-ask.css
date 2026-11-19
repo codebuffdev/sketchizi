@@ -323,7 +323,7 @@
   }
 
   .app.ai-ask-open .ai-ask-panel {
-    top: max(66px, calc(var(--header-top, 18px) + var(--header-top-control-height, 40px) + 12px));
+    top: 14px;
     right: calc(var(--header-rail-right, calc(18px + var(--safe-right, 0px))) + var(--header-rail-width, 56px) + 14px);
     bottom: 14px;
     box-sizing: border-box;
