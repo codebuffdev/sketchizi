@@ -55,21 +55,30 @@ export function handleStickyNoteRapidFlow(event, api) {
     nextY = selectedElement.y + height + gap;
   }
 
+  const groupId = selectedElement.customData?.stickyNoteGroup;
+  const group = groupId
+    ? sceneElements.filter((element) => element.groupIds?.includes(groupId))
+    : [selectedElement];
   const newId = `note-${Date.now()}`;
-  const newNote = {
-    ...selectedElement,
-    id: newId,
-    x: nextX,
-    y: nextY,
+  const newGroupId = groupId ? `${groupId}-${newId}` : null;
+  const clones = group.map((element, index) => ({
+    ...element,
+    id: index === 0 ? newId : `${newId}-${index}`,
+    x: element.x + (nextX - selectedElement.x),
+    y: element.y + (nextY - selectedElement.y),
+    groupIds: newGroupId ? element.groupIds.map((id) => id === groupId ? newGroupId : id) : element.groupIds,
+    customData: element.customData?.stickyNoteGroup
+      ? { ...element.customData, stickyNoteGroup: newGroupId }
+      : element.customData,
     seed: Math.floor(Math.random() * 100000),
     version: 1,
-    versionNonce: 1,
+    versionNonce: Math.floor(Math.random() * 100000),
     isDeleted: false,
     text: "",
-  };
+  }));
 
   api.updateScene?.({
-    elements: [...sceneElements, newNote],
+    elements: [...sceneElements, ...clones],
     appState: {
       ...appState,
       selectedElementIds: { [newId]: true },
