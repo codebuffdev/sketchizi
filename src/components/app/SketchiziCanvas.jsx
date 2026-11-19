@@ -30,6 +30,8 @@ export default function SketchiziCanvas({
   const pendingCollaborationCursorRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [dockPreviewEnabled, setDockPreviewEnabled] = useState(false);
+  const dockPreviewSnapshotRef = useRef(null);
   const canvasRevisionFrameRef = useRef(0);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
@@ -38,6 +40,61 @@ export default function SketchiziCanvas({
   const workAnchorRef = useRef(null);
   const spotlightSelectedRef = useRef(selectedElements);
   spotlightSelectedRef.current = selectedElements;
+
+
+  // Experimental dock preview: restyle and reposition the existing native
+  // Excalidraw toolbar so every control keeps its original React handler.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    const toolbar = root?.querySelector(".App-toolbar");
+    const container = root?.querySelector(".App-toolbar-container");
+    if (!root || !toolbar || !container) return;
+
+    if (dockPreviewEnabled) {
+      if (!dockPreviewSnapshotRef.current) {
+        dockPreviewSnapshotRef.current = {
+          containerStyle: container.getAttribute("style"),
+          orientation: toolbar.dataset.sketchiziOrientation,
+          side: toolbar.dataset.sketchiziDockSide,
+          positioned: container.dataset.sketchiziDockPositioned,
+        };
+      }
+      root.dataset.sketchiziDockPreview = "true";
+      toolbar.dataset.sketchiziDockPreview = "true";
+      toolbar.dataset.sketchiziOrientation = "vertical";
+      toolbar.dataset.sketchiziDockSide = "left";
+      container.dataset.sketchiziDockPositioned = "true";
+      container.style.setProperty("position", "fixed", "important");
+      container.style.setProperty("left", "16px", "important");
+      container.style.setProperty("top", "50%", "important");
+      container.style.setProperty("right", "auto", "important");
+      container.style.setProperty("bottom", "auto", "important");
+      container.style.setProperty("transform", "translateY(-50%)", "important");
+      container.style.setProperty("width", "max-content", "important");
+      container.style.setProperty("max-width", "64px", "important");
+      container.style.setProperty("height", "auto", "important");
+      container.style.setProperty("max-height", "calc(100dvh - 32px)", "important");
+      container.style.setProperty("overflow", "visible", "important");
+      window.dispatchEvent(new CustomEvent("sketchizi:dock-preview-change", { detail: { enabled: true } }));
+      return;
+    }
+
+    delete root.dataset.sketchiziDockPreview;
+    toolbar.removeAttribute("data-sketchizi-dock-preview");
+    const snapshot = dockPreviewSnapshotRef.current;
+    if (snapshot) {
+      if (snapshot.orientation === undefined) delete toolbar.dataset.sketchiziOrientation;
+      else toolbar.dataset.sketchiziOrientation = snapshot.orientation;
+      if (snapshot.side === undefined) delete toolbar.dataset.sketchiziDockSide;
+      else toolbar.dataset.sketchiziDockSide = snapshot.side;
+      if (snapshot.containerStyle === null) container.removeAttribute("style");
+      else container.setAttribute("style", snapshot.containerStyle);
+      if (snapshot.positioned === undefined) delete container.dataset.sketchiziDockPositioned;
+      else container.dataset.sketchiziDockPositioned = snapshot.positioned;
+      dockPreviewSnapshotRef.current = null;
+    }
+    window.dispatchEvent(new CustomEvent("sketchizi:dock-preview-change", { detail: { enabled: false } }));
+  }, [dockPreviewEnabled]);
 
   const paintWorkspaceGrid = useCallback(() => {
     const root = canvasRootRef.current;
@@ -653,6 +710,25 @@ export default function SketchiziCanvas({
       const container = root.querySelector(".App-toolbar-container");
       if (!toolbar || !container) return;
       toolbar.dataset.sketchiziDock = "true";
+      if (root.dataset.sketchiziDockPreview === "true") {
+        toolbar.dataset.sketchiziDockPreview = "true";
+        toolbar.dataset.sketchiziOrientation = "vertical";
+        toolbar.dataset.sketchiziDockSide = "left";
+        container.dataset.sketchiziDockPositioned = "true";
+        container.style.setProperty("position", "fixed", "important");
+        container.style.setProperty("left", "16px", "important");
+        container.style.setProperty("top", "50%", "important");
+        container.style.setProperty("right", "auto", "important");
+        container.style.setProperty("bottom", "auto", "important");
+        container.style.setProperty("transform", "translateY(-50%)", "important");
+        container.style.setProperty("width", "max-content", "important");
+        container.style.setProperty("max-width", "64px", "important");
+        container.style.setProperty("height", "auto", "important");
+        container.style.setProperty("max-height", "calc(100dvh - 32px)", "important");
+        container.style.setProperty("overflow", "visible", "important");
+      } else {
+        toolbar.removeAttribute("data-sketchizi-dock-preview");
+      }
       // Excalidraw renders its More Tools overflow trigger as a dropdown-menu
       // control in the toolbar. Hide that native trigger directly; matching
       // its localized accessible label is unreliable across Excalidraw builds.
@@ -1186,6 +1262,15 @@ export default function SketchiziCanvas({
 
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
+      <button
+        type="button"
+        className={`sketchizi-dock-preview-toggle${dockPreviewEnabled ? " is-active" : ""}`}
+        aria-pressed={dockPreviewEnabled}
+        onClick={() => setDockPreviewEnabled((enabled) => !enabled)}
+      >
+        <span className="sketchizi-dock-preview-indicator" aria-hidden="true" />
+        {dockPreviewEnabled ? "Exit dock preview" : "Preview new dock"}
+      </button>
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
         initialData={{
