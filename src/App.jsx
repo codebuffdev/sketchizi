@@ -394,7 +394,7 @@ function App() {
   }, [apiRef, cloudDiagramId, queueSketchSave]);
 
   useEffect(() => {
-    if (!cloudDiagramId || !apiReady || !sketchReady || cloudLoadStartedRef.current) return undefined;
+    if (!cloudDiagramId || !apiReady || !sketchReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
     let cancelled = false;
     cloudLoadStartedRef.current = true;
     setCloudSaveState({ state: "loading", error: "" });
@@ -671,10 +671,13 @@ function App() {
         : ["pending", "saving", "error"].includes(saveStatus.state)
     );
     const current = canvasTabsRef.current;
-    const next = current.map((tab) => tab.id === activeCanvasIdRef.current && tab.dirty !== dirty
-      ? { ...tab, dirty }
-      : tab);
-    if (next !== current) persistCanvasTabs(next);
+    let changed = false;
+    const next = current.map((tab) => {
+      if (tab.id !== activeCanvasIdRef.current || tab.dirty === dirty) return tab;
+      changed = true;
+      return { ...tab, dirty };
+    });
+    if (changed) persistCanvasTabs(next);
   }, [documentDirty, cloudSaveState.state, saveStatus.state, persistCanvasTabs]);
 
   useEffect(() => {
