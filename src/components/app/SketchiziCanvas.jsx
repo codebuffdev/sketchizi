@@ -538,6 +538,10 @@ export default function SketchiziCanvas({
     if (!root) return undefined;
     let disposed = false;
     let observer;
+    let observedContextualDock = null;
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => placeScrollBackControl())
+      : null;
     const placeScrollBackControl = () => {
       const buttons = [...root.querySelectorAll("button, [role='button']")];
       const button = buttons.find((candidate) => {
@@ -575,6 +579,11 @@ export default function SketchiziCanvas({
       // When it is open, lift the scroll-back action just above it so both
       // controls remain visible and independently clickable.
       const contextualDock = root.querySelector(".sketchizi-tool-options-dock");
+      if (contextualDock !== observedContextualDock) {
+        if (observedContextualDock) resizeObserver?.unobserve(observedContextualDock);
+        observedContextualDock = contextualDock;
+        if (observedContextualDock) resizeObserver?.observe(observedContextualDock);
+      }
       if (contextualDock && contextualDock.getClientRects().length) {
         const contextualRect = contextualDock.getBoundingClientRect();
         const buttonHeight = button.getBoundingClientRect().height || 42;
@@ -634,6 +643,7 @@ export default function SketchiziCanvas({
     syncNavigationControls();
     observer = new MutationObserver(syncNavigationControls);
     observer.observe(root, { childList: true, subtree: true });
+    resizeObserver?.observe(root);
     window.addEventListener("resize", placeScrollBackControl);
     const tooltipObserver = new MutationObserver(suppressNativeScrollBackTooltip);
     tooltipObserver.observe(document.body, { childList: true, subtree: true });
@@ -641,6 +651,8 @@ export default function SketchiziCanvas({
     return () => {
       disposed = true;
       observer?.disconnect();
+      resizeObserver?.disconnect();
+      observedContextualDock = null;
       window.removeEventListener("resize", placeScrollBackControl);
       tooltipObserver.disconnect();
       root.querySelectorAll(".sketchizi-scroll-back-control").forEach((button) => {
