@@ -296,11 +296,22 @@ function App() {
     if (!diagram?.id) throw new Error("Cloud Workspace did not return the saved diagram ID.");
     setCloudSaveDialogOpen(false);
     showToast("Saved to Cloud Workspace", "success");
-    window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(diagram.id)}&cloudProjectId=${encodeURIComponent(projectId)}`);
-  }, [showToast]);
+    cloudSessionRef.current = { active: true, diagramId: diagram.id, projectId, revision: diagram.revision ?? result?.revision ?? 0, name: diagram.name || name.trim() };
+    cloudSceneReadyRef.current = true;
+    cloudDetachedRef.current = false;
+    setCloudDetached(false);
+    setCloudDocumentName(cloudSessionRef.current.name);
+    setCloudSaveState({ state: "saved", error: "" });
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("editor", "1");
+    nextUrl.searchParams.set("cloudDiagramId", diagram.id);
+    nextUrl.searchParams.set("cloudProjectId", projectId);
+    window.history.replaceState(window.history.state, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+    persistActiveCanvasSnapshot();
+  }, [showToast, persistActiveCanvasSnapshot]);
 
   const queueSketchSave = useCallback((elements, appState) => {
-    if (usesLocalAutosave(cloudDiagramId, cloudDetachedRef.current)) {
+    if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
       queueLocalSketchSave(elements, appState);
       return;
     }
@@ -361,7 +372,7 @@ function App() {
 
   const saveCloudDiagramNow = useCallback(() => {
     const api = apiRef.current;
-    if (!cloudDiagramId || !cloudSessionRef.current.active || !api) return;
+    if (!cloudSessionRef.current.active || !api) return;
     cloudManualSaveRequestedRef.current = true;
     cloudFlushImmediatelyRef.current = true;
     queueSketchSave(api.getSceneElements?.() || [], api.getAppState?.() || {});
@@ -422,7 +433,7 @@ function App() {
 
   useEffect(() => {
     const flushPendingCloudSave = () => {
-      if (!cloudDiagramId || !cloudSessionRef.current.active || !apiRef.current) return;
+      if (!cloudSessionRef.current.active || cloudDetachedRef.current || !apiRef.current) return;
       const api = apiRef.current;
       cloudFlushImmediatelyRef.current = true;
       queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
@@ -494,11 +505,13 @@ function App() {
       format: documentMetadataRef.current?.format || "excalidraw",
       file: fileManager.currentFileRef.current || null,
       cloudSession: { ...cloudSessionRef.current },
+      fileSceneSignature: fileManager.getCurrentFileSceneSignature?.() || null,
+      fileDirty: documentDirty,
       cloudDetached: cloudDetachedRef.current,
       cloudSaveState: { ...cloudSaveState },
       cloudDocumentName,
     };
-  }, [apiRef, fileManager, cloudDocumentName, cloudSaveState]);
+  }, [apiRef, fileManager, cloudDocumentName, cloudSaveState, documentDirty]);
 
   const persistCanvasTabs = useCallback((nextTabs) => {
     canvasTabsRef.current = nextTabs;
@@ -533,6 +546,7 @@ function App() {
     };
     cloudDetachedRef.current = snapshot.cloudDetached !== false;
     setCloudDetached(cloudDetachedRef.current);
+    cloudSceneReadyRef.current = Boolean(snapshot.cloudSession?.active);
     cloudSessionRef.current = snapshot.cloudSession || { active: false, diagramId: "", projectId: "", revision: null, name: "" };
     setCloudSaveState(snapshot.cloudSaveState || { state: "inactive", error: "" });
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
@@ -545,7 +559,7 @@ function App() {
     const files = Object.values(snapshot.files || {});
     if (files.length) api.addFiles?.(files);
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
-    fileManager.setCurrentFile(snapshot.file || null);
+    fileManager.setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
   }, [apiRef, fileManager, setSavedSketch]);
 
@@ -645,10 +659,10 @@ function App() {
     const normalizedName = String(name || "").trim();
     if (!normalizedName) throw new Error("Enter a name for this canvas.");
     if (normalizedName.length > 120) throw new Error("Canvas names must be 120 characters or fewer.");
-    if (cloudDiagramId && !cloudDetachedRef.current) {
+    if (cloudSessionRef.current.active && !cloudDetachedRef.current) {
       if (!cloudSessionRef.current.active) throw new Error("The Cloud Workspace document is still loading.");
       try {
-        const result = await workspaceClient.updateDiagram(cloudDiagramId, { name: normalizedName });
+        const result = await workspaceClient.updateDiagram(cloudSessionRef.current.diagramId, { name: normalizedName });
         const diagram = result?.diagram || result;
         const savedName = diagram?.name || normalizedName;
         cloudSessionRef.current.name = savedName;
@@ -1861,7 +1875,7 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {cloudDiagramId && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+      {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
           <button type="button" onClick={() => {
@@ -1903,15 +1917,15 @@ function App() {
         canEditCanvas={collaborationCanEdit}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
-        currentDocumentName={cloudDiagramId && !cloudDetached ? cloudDocumentName : (currentFile?.name || "Untitled drawing")}
+        currentDocumentName={cloudSessionRef.current.active && !cloudDetached ? cloudDocumentName : (currentFile?.name || "Untitled drawing")}
         currentDocumentDirty={documentDirty}
         onRenameDocument={renameActiveDocument}
         currentDocumentFileBacked={Boolean(currentFile?.handle)}
         onSaveNow={retryLocalSave}
         onSaveToFile={() => fileActionsRef.current.saveCurrentDrawing?.()}
         onSaveAs={() => fileActionsRef.current.saveDrawingAs?.()}
-        isCloudDocument={Boolean(cloudDiagramId && !cloudDetached)}
-        onSaveToCloud={() => cloudDiagramId && !cloudDetachedRef.current ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
+        isCloudDocument={Boolean(cloudSessionRef.current.active && !cloudDetached)}
+        onSaveToCloud={() => cloudSessionRef.current.active && !cloudDetachedRef.current ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
         cloudSaveState={cloudSaveState.state}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
         onOpenExport={() => setExportStudioOpen(true)}
