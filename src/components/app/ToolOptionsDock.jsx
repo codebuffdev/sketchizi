@@ -82,7 +82,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
       if (event.type === "keydown" && event.key === "Escape") {
         event.preventDefault();
         setOpen(false);
-        triggerRef.current?.focus();
+        if (!preserveFocus) triggerRef.current?.focus();
       } else if (event.type === "pointerdown"
         && !triggerRef.current?.contains(event.target)
         && !menuRef.current?.contains(event.target)) {
@@ -101,7 +101,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
       window.removeEventListener("resize", close, true);
       window.removeEventListener("scroll", close, true);
     };
-  }, [open]);
+  }, [open, preserveFocus]);
 
   const toggle = () => {
     if (open) {
@@ -484,7 +484,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
               type="number"
               aria-label="Font size in pixels"
               readOnly={preserveTextEditorFocus}
-              onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined}
               min="1"
               max="999"
               step="1"
@@ -497,7 +496,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
               }}
               onKeyUp={(event) => event.stopPropagation()}
               onKeyPress={(event) => event.stopPropagation()}
-              onPointerDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                if (preserveTextEditorFocus) event.preventDefault();
+              }}
               onBlur={() => {
                 const parsed = Number(fontSizeDraft);
                 const nextSize = Number.isFinite(parsed) && fontSizeDraft.trim() !== ""
