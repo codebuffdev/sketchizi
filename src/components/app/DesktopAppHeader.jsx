@@ -105,6 +105,7 @@ export default function DesktopAppHeader({
   onSelectCanvasTab,
   onCreateCanvasTab,
   onReorderCanvasTabs,
+  onCloseCanvasTab,
   onRenameDocument,
   currentDocumentFileBacked = false,
   onSaveNow,
@@ -184,6 +185,10 @@ export default function DesktopAppHeader({
   useEffect(() => {
     if (!documentNameEditing) setDocumentNameDraft(activeCanvasTabName);
   }, [activeCanvasTabName, documentNameEditing]);
+
+  useEffect(() => {
+    setSaveDetailsOpen(false);
+  }, [activeCanvasId]);
   const nativeMenuOpenLatestRef = useRef(nativeMenuOpen);
   const menuWasOpenOnPointerDownRef = useRef(null);
   nativeMenuOpenLatestRef.current = nativeMenuOpen;
@@ -788,6 +793,7 @@ export default function DesktopAppHeader({
             onSelect={onSelectCanvasTab}
             onCreate={onCreateCanvasTab}
             onReorder={onReorderCanvasTabs}
+            onClose={onCloseCanvasTab}
             showAddButton={false}
           />
         )}
