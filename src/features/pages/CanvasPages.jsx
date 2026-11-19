@@ -62,8 +62,6 @@ function runAfterCanvasLayoutSettles(api, callback) {
 }
 
 export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange }) {
-  const [open, setOpen] = useState(false);
-  const [headerHost, setHeaderHost] = useState(null);
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
   const [pages, setPages] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -82,7 +80,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   const panelWasOpenRef = useRef(false);
   const panelViewportInteractionRef = useRef(false);
   const spacePanHeldRef = useRef(false);
-  const root = useRef(null);
   const signature = useRef('');
   const sceneSnapshot = useRef(null);
   const active = pages.find(p => p.id === activeId) || pages[0];
@@ -90,10 +87,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   activePageRef.current = active;
   const index = pages.findIndex(p => p.id === active?.id);
   const host = document.querySelector('.app');
-
-  useEffect(() => {
-    setHeaderHost(document.querySelector('.desktop-app-header-island-center'));
-  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -444,7 +437,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     setError(''); setMode('pages'); setOpen(false); fit(frame);
   };
   const add = () => {
-    setOpen(false);
     createPage();
   };
   const changeMode = value => {
@@ -453,7 +445,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       const currentView = api?.getAppState?.();
       previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
     }
-    setMode(value); setOpen(false);
+    setMode(value);
     if (value === 'infinite') {
       setPageMask(null);
       activeIdRef.current = null;
@@ -547,30 +539,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     }));
   };
   return <>
-    {headerHost && createPortal(<div className="canvas-pages-control" ref={root}>
-      <button
-        type="button"
-        className="canvas-pages-trigger"
-        aria-label={`Canvas mode: ${mode === 'pages' ? 'Pages' : 'Infinite canvas'}. Open canvas options`}
-        title={`Canvas mode: ${mode === 'pages' ? 'Pages' : 'Infinite canvas'}`}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => { setOpen(!open); setError(''); }}
-      >
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          {mode === 'pages'
-            ? <><path d="M7.5 7.5h9v9h-9z"/><path d="M8 5H5v3M16 5h3v3M19 16v3h-3M8 19H5v-3"/></>
-            : <><path d="M12 12V4m-3 3 3-3 3 3M12 12v8m-3-3 3 3 3-3M12 12H4m3-3-3 3 3 3M12 12h8m-3-3 3 3-3 3"/></>}
-        </svg>
-      </button>
-      {open && <div className="canvas-pages-menu" role="dialog" aria-label="Canvas options">
-        <strong>Canvas</strong>
-        <button type="button" aria-pressed={mode === 'infinite'} onClick={() => changeMode('infinite')}>∞ Infinite canvas<small>Draw without boundaries</small></button>
-        <button type="button" disabled={!api || (!canEdit && !pages.length)} aria-pressed={mode === 'pages'} onClick={() => changeMode('pages')}>▧ Pages<small>Organize into separate pages</small></button>
-        <small>Hover near a page edge to reveal its grip and drag to extend. On touch, tap near an edge to reveal its grip. Drag a corner to adjust both dimensions.</small>
-        {error && <p role="alert">{error}</p>}
-      </div>}
-    </div>, headerHost)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
