@@ -3696,7 +3696,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   width: 18px !important;
   height: 18px !important;
 }
-.app .app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon__keybinding {
+.app .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] .ToolIcon__keybinding {
   color: #9aa4ae !important;
 }
 .app.theme-dark .excalidraw .Island.App-toolbar[data-sketchizi-dock-preview="true"] {
