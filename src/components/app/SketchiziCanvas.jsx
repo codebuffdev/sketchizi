@@ -715,25 +715,52 @@ export default function SketchiziCanvas({
       const x = (event.clientX - bounds.left) / zoom - (Number(appState.scrollX) || 0);
       const y = (event.clientY - bounds.top) / zoom - (Number(appState.scrollY) || 0);
       const id = `sticky-note-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
+      const groupId = `sticky-note-group-${id}`;
       const seed = Math.floor(Math.random() * 0x7fffffff);
-      const note = {
-        id, type: "rectangle", x, y, width: 180, height: 140, angle: 0,
-        strokeColor: "#d6b84a", backgroundColor: "#fff3a6",
-        fillStyle: "solid", strokeWidth: 1, strokeStyle: "solid",
-        roughness: 0, opacity: 100, groupIds: [], frameId: null,
+      const common = {
+        angle: 0, strokeColor: "#171717", backgroundColor: "transparent",
+        fillStyle: "solid", strokeWidth: 2, strokeStyle: "solid",
+        roughness: 0, opacity: 100, groupIds: [groupId], frameId: null,
         roundness: null, boundElements: null, updated: Date.now(),
-        link: null, locked: false, seed, version: 1, versionNonce: seed,
-        isDeleted: false, customData: { isNote: true },
+        link: null, locked: false, version: 1, isDeleted: false,
+        customData: { isNote: true, stickyNoteGroup: groupId },
       };
+      const makeShape = (suffix, type, sx, sy, width, height, extra = {}) => ({
+        ...common, ...extra, id: `${id}-${suffix}`, type, x: x + sx, y: y + sy,
+        width, height, seed: seed + suffix.length,
+        versionNonce: seed + suffix.length,
+      });
+      const note = makeShape("paper", "rectangle", 0, 0, 180, 140, {
+        strokeColor: "#171717", backgroundColor: "#ffffff", strokeWidth: 2,
+      });
+      const cornerMask = makeShape("corner-mask", "rectangle", 139, 103, 43, 39, {
+        strokeColor: "#ffffff", backgroundColor: "#ffffff", strokeWidth: 0,
+      });
+      const makeLine = (suffix, sx, sy, dx, dy, strokeWidth = 2) => ({
+        ...common, id: `${id}-${suffix}`, type: "line",
+        x: x + sx, y: y + sy, width: dx, height: dy,
+        points: [[0, 0], [dx, dy]], lastCommittedPoint: null,
+        strokeColor: "#171717", backgroundColor: "transparent",
+        fillStyle: "solid", strokeWidth, seed: seed + suffix.length,
+        versionNonce: seed + suffix.length,
+      });
+      const noteParts = [
+        note, cornerMask,
+        makeLine("fold-top", 140, 105, 40, 0),
+        makeLine("fold-diagonal", 180, 105, -40, 35),
+        makeLine("writing-one", 22, 42, 115, 0, 1.5),
+        makeLine("writing-two", 22, 62, 85, 0, 1.5),
+        makeLine("writing-three", 22, 82, 62, 0, 1.5),
+      ];
       event.preventDefault();
       event.stopPropagation();
       placing = false;
       api.updateScene({
-        elements: [...(api.getSceneElements?.() || []), note],
-        appState: { ...appState, selectedElementIds: { [id]: true } },
+        elements: [...(api.getSceneElements?.() || []), ...noteParts],
+        appState: { ...appState, selectedElementIds: { [note.id]: true } },
         commitToHistory: true,
       });
-      api.setActiveTool?.({ type: "selection" });
+
     };
     window.addEventListener("sketchizi:activate-tool", activate);
     root.addEventListener("pointerdown", placeNote, true);
