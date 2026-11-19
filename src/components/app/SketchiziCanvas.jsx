@@ -31,6 +31,7 @@ export default function SketchiziCanvas({
   const pendingCollaborationCursorRef = useRef(null);
   const bindToolbarTooltipRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [dockPreviewEnabled, setDockPreviewEnabled] = useState(false);
   const canvasRevisionFrameRef = useRef(0);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
