@@ -277,9 +277,10 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     if (open) setProviderSettingsOpen(false);
   }, [open]);
 
-  // Anchor the desktop drawer to the actual canvas bounds. The app header can
-  // change height between workspace states, so a fixed viewport offset lets
-  // the AI header drift above the canvas. Track the canvas edge instead.
+  // Keep the drawer's top edge aligned with the canvas top edge. The drawer
+  // is fixed inside the app shell, which may itself establish a containing
+  // block; therefore calculate the visual delta instead of copying a viewport
+  // coordinate directly into CSS top.
   useEffect(() => {
     if (!open || window.matchMedia("(max-width: 760px)").matches) return undefined;
     const canvasRegion = document.querySelector(".desktop-canvas-region");
@@ -287,13 +288,18 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     if (!canvasRegion || !panel) return undefined;
 
     const syncPanelTop = () => {
-      const bounds = canvasRegion.getBoundingClientRect();
-      panel.style.top = `${Math.max(0, bounds.top + 14)}px`;
+      const canvasTop = canvasRegion.getBoundingClientRect().top;
+      const panelTop = panel.getBoundingClientRect().top;
+      const cssTop = Number.parseFloat(window.getComputedStyle(panel).top) || 0;
+      panel.style.top = `${Math.max(0, cssTop + canvasTop - panelTop)}px`;
     };
 
     syncPanelTop();
     const observer = new ResizeObserver(syncPanelTop);
     observer.observe(canvasRegion);
+    if (canvasRegion.parentElement) observer.observe(canvasRegion.parentElement);
+    const appHeader = document.querySelector(".desktop-app-header");
+    if (appHeader) observer.observe(appHeader);
     window.addEventListener("resize", syncPanelTop);
     window.addEventListener("scroll", syncPanelTop, true);
     return () => {
