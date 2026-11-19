@@ -34,7 +34,7 @@ test("independent dock contains the full drawing tool set without decorative con
   assert.match(dockCss, /width: 42px/);
   assert.match(dockCss, /width: 32px/);
   assert.match(dockCss, /\.sketchizi-primary-dock-tool > svg/);
-  assert.match(dockCss, /border-radius: 14px/);
+  assert.match(dockCss, /border-radius: 16px/);
   assert.match(dockCss, /\.sketchizi-primary-dock\.is-dark/);
 });
 
