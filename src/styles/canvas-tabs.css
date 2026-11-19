@@ -153,3 +153,93 @@
   border-color: rgba(255, 255, 255, .2);
   box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
 }
+
+
+/* Tab close controls are separate from the tab button to keep the tab
+   semantics valid and make closing an individual canvas predictable. */
+.canvas-tab-item {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+.canvas-tab-item.is-active {
+  border-color: var(--color-border, rgba(120,120,120,.28));
+  background: var(--island-bg, #fff);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+.canvas-tab-item .canvas-tab {
+  min-width: 0;
+  border: 0;
+  box-shadow: none;
+  border-radius: 5px 0 0 5px;
+}
+.canvas-tab-item.is-active .canvas-tab {
+  background: transparent;
+  border-color: transparent;
+}
+.canvas-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  margin-right: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary, #777);
+  cursor: pointer;
+  opacity: .58;
+}
+.canvas-tab-item:hover .canvas-tab-close,
+.canvas-tab-item.is-active .canvas-tab-close,
+.canvas-tab-close:focus-visible {
+  opacity: 1;
+}
+.canvas-tab-close:hover:not(:disabled) {
+  background: rgba(220, 70, 70, .13);
+  color: #c33;
+}
+.canvas-tab-close:disabled {
+  opacity: 0;
+  cursor: default;
+  pointer-events: none;
+}
+.canvas-tabs-overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.canvas-tabs-overflow-item > button:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.canvas-tabs-overflow-item .canvas-tabs-overflow-close {
+  flex: 0 0 24px;
+  width: 24px;
+  margin: 0 3px 0 0;
+}
+.app.theme-dark .canvas-tab-item.is-active {
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.2);
+}
+
+.canvas-tabs-overflow-item > .canvas-tabs-overflow-close {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+}
+.canvas-tabs-overflow-item > .canvas-tabs-overflow-close:hover:not(:disabled) {
+  background: rgba(220, 70, 70, .13);
+  color: #c33;
+}

@@ -704,6 +704,42 @@ function App() {
     switchCanvasTab(id);
   }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, switchCanvasTab]);
 
+  useEffect(() => {
+    const createCanvasFromShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "n") return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], .monaco-editor, .cm-editor")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      createCanvasTab();
+    };
+    window.addEventListener("keydown", createCanvasFromShortcut, true);
+    return () => window.removeEventListener("keydown", createCanvasFromShortcut, true);
+  }, [createCanvasTab]);
+
+  const closeCanvasTab = useCallback((tabId) => {
+    const currentTabs = canvasTabsRef.current;
+    const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
+    if (tabIndex < 0 || currentTabs.length <= 1) return;
+    const tab = currentTabs[tabIndex];
+    const isActive = tabId === activeCanvasIdRef.current;
+    const hasUnsavedChanges = Boolean(tab.dirty || (isActive && (
+      canvasSnapshotStateRef.current?.documentDirty ||
+      ["pending", "saving", "error", "conflict"].includes(canvasSnapshotStateRef.current?.cloudSaveState?.state)
+    )));
+    if (hasUnsavedChanges && !window.confirm(`“${tab.name}” has unsaved changes. Close it anyway?`)) return;
+
+    const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
+    if (isActive) {
+      const nextActive = currentTabs[tabIndex - 1] || remainingTabs[0];
+      if (!nextActive) return;
+      // Switching first captures and persists the live scene before the tab
+      // is removed, so a close can never race the active canvas snapshot.
+      switchCanvasTab(nextActive.id);
+    }
+    persistCanvasTabs(remainingTabs);
+  }, [persistCanvasTabs, switchCanvasTab]);
+
   const reorderCanvasTabs = useCallback((sourceId, targetId) => {
     const current = [...canvasTabsRef.current];
     const from = current.findIndex((tab) => tab.id === sourceId);
@@ -2161,6 +2197,7 @@ function App() {
         onSelectCanvasTab={switchCanvasTab}
         onCreateCanvasTab={createCanvasTab}
         onReorderCanvasTabs={reorderCanvasTabs}
+        onCloseCanvasTab={closeCanvasTab}
         workspaceToggle={workspaceToggle}
         moreToolsToggle={moreToolsToggle}
         libraryToggle={collaborationCanEdit ? (
