@@ -142,7 +142,7 @@ export function useNativeSketchiziMenu({
         }
 
         const openLabel = exactLeaves.find(
-          (node) => node.textContent?.replace(/\\s+/g, " ").trim() === "Open"
+          (node) => node.textContent?.replace(/\s+/g, " ").trim() === "Open"
         );
         if (openLabel) {
           const item = openLabel.closest(
@@ -154,14 +154,14 @@ export function useNativeSketchiziMenu({
         }
 
         const saveToLabel = exactLeaves.find(
-          (node) => /^save to\.\.\.$/i.test(node.textContent?.replace(/\\s+/g, " ").trim() || "")
+          (node) => /^save to\.\.\.$/i.test(node.textContent?.replace(/\s+/g, " ").trim() || "")
         );
         if (saveToLabel) {
           // Resolve the actual actionable control, not a broad menu wrapper:
           // some Excalidraw versions place several menu sections inside a
           // shared .dropdown-menu-item ancestor.
           const item = saveToLabel.closest("button, a, [role='menuitem']") || saveToLabel.parentElement;
-          const itemLabel = item?.textContent?.replace(/\\s+/g, " ").trim().toLowerCase();
+          const itemLabel = item?.textContent?.replace(/\s+/g, " ").trim().toLowerCase();
           // Remove only the exact Save to… row. Never remove a containing group.
           if (item && item !== menu && itemLabel === "save to...") item.remove();
         }
