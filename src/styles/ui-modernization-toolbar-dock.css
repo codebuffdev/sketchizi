@@ -3612,7 +3612,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 
 /* Sketchizi Primary Dock: retain the original left-side vertical rail and auto-hide it in place. */
 .app .sketchizi-primary-dock-shell {
-  position: absolute;
+  position: fixed;
   z-index: 10035;
   left: 12px;
   top: 50%;
