@@ -520,3 +520,10 @@
 @media (max-width: 760px) {
   .ai-ask-width-resize { display: none; }
 }
+
+
+/* Only the outer AI chat drawer uses the classic square-corner treatment.
+   Inputs, prompt chips, status marks and message content keep their styling. */
+.app .ai-ask-panel {
+  border-radius: 0 !important;
+}
