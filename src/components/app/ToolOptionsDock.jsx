@@ -374,7 +374,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
   // While the text tool is active and no text editor is open, the user is
   // configuring the next text object. Ignore any stale canvas selection:
   // it must not make the dock read/write the previous element's font.
-  const isTextCreationMode = tool === "text" && activeTool === "text" && !editingTextElement;
+  const isTextCreationMode = tool === "text" && !editingTextElement;
   const selectionType = isTextCreationMode
     ? null
     : selected.length ? selected[0].type : editingTextElement?.type || null;
@@ -464,8 +464,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
 
     // In text-creation mode the picker controls the next text object's
     // default. Do not redirect the change to a previously selected element.
-    if (String(liveState.activeTool?.type || "").toLowerCase() === "text"
-      && liveState.editingTextElement?.type !== "text") {
+    if (tool === "text" && liveState.editingTextElement?.type !== "text") {
       api.updateScene({ appState: { currentItemFontFamily: nextFontFamily } });
       return;
     }
