@@ -47,4 +47,12 @@ test("contextual tools and the Tools menu integrate with the new primary dock", 
   assert.doesNotMatch(moreTools, /sketchizi-more-tools-hidden/);
   assert.match(stylesEntry, /ui-modernization-toolbar-dock\.css/);
 });
-\n\ntest("primary dock supports bottom-edge auto-hide reveal", () => {\n assert.match(dock, /sketchizi-primary-dock-shell/);\n assert.match(dock, /sketchizi-primary-dock-reveal/);\n assert.match(dock, /setIsRevealed\\(false\\), 700/);\n assert.match(dockCss, /bottom: 10px/);\n assert.match(dockCss, /is-revealed \\.sketchizi-primary-dock/);\n});\n
+
+
+test("primary dock supports bottom-edge auto-hide reveal", () => {
+ assert.match(dock, /sketchizi-primary-dock-shell/);
+ assert.match(dock, /sketchizi-primary-dock-reveal/);
+ assert.match(dock, /setIsRevealed\\(false\\), 700/);
+ assert.match(dockCss, /bottom: 10px/);
+ assert.match(dockCss, /is-revealed \\.sketchizi-primary-dock/);
+});
