@@ -39,25 +39,25 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
     api.setActiveTool({ type: tool });
   }, [apiRef, canEdit, closePanel]);
   useEffect(() => {
-    const restore = () => document.querySelectorAll(".excalidraw .App-toolbar button[data-sketchizi-more-tools-hidden=\"true\"]").forEach((node) => {
-      if (!(node instanceof HTMLElement)) return;
-      node.style.visibility = node.dataset.sketchiziOriginalVisibility || "";
-      node.style.display = node.dataset.sketchiziOriginalDisplay || "";
-      node.style.pointerEvents = "";
-      delete node.dataset.sketchiziMoreToolsHidden;
-      delete node.dataset.sketchiziOriginalVisibility;
-      delete node.dataset.sketchiziOriginalDisplay;
-    });
     if (!canEdit) {
-      restore();
       closePanel("more-tools");
       return undefined;
     }
     const update = () => position();
-    const observer = new MutationObserver(update); observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("resize", update); window.addEventListener("scroll", update, true);
-    update(); const frame = requestAnimationFrame(update); const timer = setTimeout(update, 250);
-    return () => { cancelAnimationFrame(frame); clearTimeout(timer); observer.disconnect(); window.removeEventListener("resize", update); window.removeEventListener("scroll", update, true); restore(); };
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    update();
+    const frame = requestAnimationFrame(update);
+    const timer = setTimeout(update, 250);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
   }, [canEdit, closePanel, position]);
   return { anchor, position, activate };
 }
