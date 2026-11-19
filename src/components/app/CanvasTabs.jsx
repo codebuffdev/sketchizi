@@ -74,7 +74,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onReord
           type="button"
           className="canvas-tabs-add"
           aria-label="Create new canvas"
-          title={tabs.length >= 3 ? "Create another canvas" : "Create new canvas"}
+          title="Create new canvas"
           onClick={onCreate}
           disabled={disabled}
         >
