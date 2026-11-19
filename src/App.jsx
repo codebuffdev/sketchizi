@@ -1829,6 +1829,7 @@ function App() {
 
         <section className="desktop-canvas-region" aria-label="Canvas workspace">
           <SketchiziCanvas
+            nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
             pageContext={canvasPageContext}
