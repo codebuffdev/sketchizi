@@ -545,8 +545,20 @@ function App() {
     const next = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
       ? { ...tab, snapshot, dirty: true }
       : tab);
-    persistCanvasTabs(next);
-  }, [captureCanvasTabSnapshot, persistCanvasTabs]);
+
+    // Scene changes arrive from Excalidraw's onChange callback. Persist the
+    // snapshot without setting React state here: updating the tab manifest UI
+    // on every scene event can feed a render loop back into the editor while
+    // a cloud document is being restored.
+    canvasTabsRef.current = next;
+    if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
+    canvasTabsSaveTimerRef.current = window.setTimeout(() => {
+      canvasTabsSaveTimerRef.current = null;
+      saveCanvasTabs(next).catch((error) => {
+        logger.warn("Canvas tabs could not be saved", { category: "persistence", error });
+      });
+    }, 450);
+  }, [captureCanvasTabSnapshot]);
 
   const applyCanvasTabSnapshot = useCallback((tab) => {
     const api = apiRef.current;
