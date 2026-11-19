@@ -29,3 +29,9 @@ test("font family controls use Excalidraw's text-property interaction hook while
   assert.match(source, /Prefer the live Excalidraw selection when React.s selectedElements prop/);
   assert.match(source, /activeEditingText\?\.id/);
 });
+
+test("nested font picker glyphs cannot bypass Excalidraw's exact properties-trigger target check", () => {
+  const styles = readFileSync(new URL("../src/styles/ui-modernization-toolbar-dock.css", import.meta.url), "utf8");
+  assert.match(styles, /\.sk-tool-choice \.properties-trigger > \*[\s\S]*?pointer-events: none !important/);
+  assert.match(styles, /\.sk-tool-choice \.properties-trigger \*[\s\S]*?pointer-events: none !important/);
+});
