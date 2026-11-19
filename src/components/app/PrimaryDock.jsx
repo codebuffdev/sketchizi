@@ -72,11 +72,12 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   }, []);
   const activeId = customTool || activeTool;
   const activeEntry = GROUPS.flat().find((tool) => tool.id === activeId) || GROUPS[0][0];
-  const renderTool = ({ id, label }) => {
+  const renderTool = ({ id, label }, index = 0, radial = false) => {
     const selected = customTool ? customTool === id : activeTool === id;
     return (
       <button key={id} type="button" className={`sketchizi-primary-dock-tool${selected ? " is-active" : ""}`}
         aria-label={label} aria-pressed={selected} title={label} disabled={!canEdit}
+        style={radial ? { "--tool-angle": `${(index * 360) / GROUPS.flat().length}deg`, "--tool-counter-angle": `${-(index * 360) / GROUPS.flat().length}deg` } : undefined}
         onClick={() => {
           activateTool({ id, root: rootRef.current, apiRef });
           setActiveTool(id);
@@ -99,13 +100,9 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
         </button>
         {paletteOpen && (
           <div className="sketchizi-dock-quick-palette" role="dialog" aria-label="Drawing tools">
-            <div className="sketchizi-dock-quick-palette-heading">
-              <span>Drawing tools</span>
-              <button type="button" aria-label="Close drawing tools" onClick={() => setPaletteOpen(false)}>×</button>
-            </div>
-            <div className="sketchizi-dock-quick-palette-grid">
-              {GROUPS.flat().map(renderTool)}
-            </div>
+            <div className="sketchizi-dock-radial-hub"><ToolIcon name={activeEntry.id} /><span>{activeEntry.label}</span><small>ACTIVE TOOL</small></div>
+            <div className="sketchizi-dock-radial-tools">{GROUPS.flat().map((tool, index) => renderTool(tool, index, true))}</div>
+            <button type="button" className="sketchizi-dock-radial-close" aria-label="Close drawing tools" onClick={() => setPaletteOpen(false)}>×</button>
           </div>
         )}
       </div>
