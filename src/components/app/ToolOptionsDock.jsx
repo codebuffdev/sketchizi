@@ -295,6 +295,10 @@ function VisualOptionSelect({ label, value, onChange, kind, options }) {
   return <DockChoiceMenu label={label} value={value} onChange={onChange} options={options} kind={kind} />;
 }
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
+  useEffect(() => {
+    // Warm the host-provided font so canvas text measurement uses Kalam immediately.
+    document.fonts?.load('16px "Kalam"', "Kalam").catch(() => {});
+  }, []);
   const [customTool, setCustomTool] = useState(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
