@@ -759,6 +759,8 @@ function App() {
     const rename = fileActionsRef.current.renameCurrentDocument;
     if (typeof rename !== "function") throw new Error("Canvas rename is not available right now.");
     await rename(normalizedName);
+    const renamedTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current ? { ...tab, name: normalizedName } : tab);
+    persistCanvasTabs(renamedTabs);
   }, [cloudDiagramId, showToast, persistCanvasTabs]);
 
   const closeExportDialog = useCallback(() => {
