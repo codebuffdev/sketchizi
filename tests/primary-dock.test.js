@@ -27,6 +27,7 @@ test("independent dock contains the full drawing tool set without decorative con
   assert.match(dock, /function ToolIcon/);
   assert.match(dock, /label: "Sticky Note"/);
   assert.match(dock, /note: <><path/);
+  assert.doesNotMatch(dock.match(/note: <><path[\\s\\S]*?<\\/>,/)?.[0] || "", /M7\\.5 8|M7\\.5 11\\.5|M7\\.5 15/);
   assert.ok(dock.includes('.excalidraw [data-testid="toolbar-image"]'));
   assert.match(dock, /apiRef\.current\?\.setActiveTool/);
   assert.match(dock, /aria-pressed=\{selected\}/);
@@ -51,6 +52,7 @@ test("Sticky Note uses Sketchizi placement instead of Excalidraw's unimplemented
   assert.match(canvas, /customData: \{ isNote: true, stickyNoteGroup: groupId \}/);
   assert.match(canvas, /fold-diagonal/);
   assert.match(canvas, /writing-three/);
+  assert.match(canvas, /backgroundColor: "#fff3a6"/);
   assert.match(canvas, /stickyNoteGroup/);
   assert.match(canvas, /addEventListener\("pointerdown", placeNote, true\)/);
 });
