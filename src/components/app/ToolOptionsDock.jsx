@@ -142,7 +142,6 @@ function DockOptionGlyph({ label, value, optionLabel }) {
   if (name.includes("arrowhead")) {
     const atStart = name.includes("start");
     const tip = atStart ? 5 : 27;
-    const opposite = atStart ? 27 : 5;
     const arrow = atStart
       ? "M13 5 5 12l8 7"
       : "m19 5 8 7-8 7";
@@ -151,7 +150,6 @@ function DockOptionGlyph({ label, value, optionLabel }) {
       {value === "arrow" && <path d={arrow} />}
       {value === "bar" && <path d={`M${tip} 4v16`} />}
       {value === "dot" && <circle cx={tip} cy="12" r="3" fill="currentColor" stroke="none" />}
-      {value === "none" && <circle cx={tip} cy="12" r="2.2" fill="currentColor" stroke="none" />}
     </>);
   }
   if (name.includes("pressure")) {
