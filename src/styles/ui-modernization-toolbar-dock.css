@@ -3610,9 +3610,6 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 
 /* Independent experimental Primary Dock. This is a separately rendered React
    component with its own controls, icons, grouping, and active states. */
-.app .canvas[data-sketchizi-dock-preview="true"] .excalidraw .App-toolbar-container {
-  display: none !important;
-}
 .app .sketchizi-experimental-primary-dock {
   position: fixed;
   z-index: 10035;
@@ -3730,55 +3727,6 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 }
 
 
-.app .sketchizi-dock-preview-toggle {
-  position: fixed;
-  z-index: 10040;
-  right: 18px;
-  bottom: 18px;
-  display: inline-flex;
-  min-height: 34px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1px solid #e1e6ea;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 96%);
-  color: #35414c;
-  box-shadow: 0 4px 16px rgb(27 39 52 / 10%);
-  font: 600 11px/1 system-ui, sans-serif;
-  cursor: pointer;
-  backdrop-filter: blur(14px);
-}
-.app .sketchizi-dock-preview-toggle:hover { background: #fff; border-color: #c9d2da; }
-.app .sketchizi-dock-preview-toggle[aria-pressed="true"] {
-  border-color: #26313a;
-  background: #26313a;
-  color: #fff;
-}
-.app .sketchizi-dock-preview-indicator {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #9aa6b0;
-}
-.app .sketchizi-dock-preview-toggle[aria-pressed="true"] .sketchizi-dock-preview-indicator {
-  background: #8fe0ad;
-}
-.app.theme-dark .sketchizi-dock-preview-toggle {
-  border-color: #39434e;
-  background: rgb(31 39 47 / 96%);
-  color: #e8edf2;
-}
-.app.theme-dark .sketchizi-dock-preview-toggle[aria-pressed="true"] {
-  border-color: #e8edf2;
-  background: #e8edf2;
-  color: #202832;
-}
-@media (max-width: 760px) {
-  .app .sketchizi-dock-preview-toggle { right: 10px; bottom: 10px; }
-}
-
 
 .app .sketchizi-experimental-dock-grip {
   display: inline-flex;
@@ -3808,3 +3756,11 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   color: #e1e7ec;
 }
 .app .sketchizi-experimental-dock-lock { margin-top: 1px; }
+
+
+/* The standalone Sketchizi dock is now the only primary drawing dock.
+   Keep Excalidraw's native toolbar mounted internally for API compatibility,
+   but remove it from the visible and interactive UI. */
+.app .canvas .excalidraw .App-toolbar-container {
+  display: none !important;
+}
