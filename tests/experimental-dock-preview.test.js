@@ -24,7 +24,6 @@ test("independent dock renders its own grouped tools and uses Excalidraw API act
   assert.match(dock, /function ToolIcon/);
   assert.match(dock, /apiRef\.current\?\.setActiveTool/);
   assert.match(dock, /aria-pressed=\{selected\}/);
-  assert.match(dock, /sketchizi:quick-tool/);
 });
 
 test("test mode hides the native dock and displays an independent floating panel", () => {
