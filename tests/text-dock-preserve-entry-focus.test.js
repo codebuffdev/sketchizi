@@ -50,3 +50,9 @@ test("font family changes resolve live selected text and update only text elemen
 test("font picker preserves a selected text element even when it is not in edit mode", () => {
   assert.match(source, /<DockSelect label="Font family"[\\s\\S]*?onChange=\\{updateTextFontFamily\\} preserveFocus icon=/);
 });
+
+test("font family changes also refresh the active Excalidraw WYSIWYG editor style", () => {
+  assert.match(source, /document\.querySelector\("\.excalidraw-wysiwyg"\)/);
+  assert.match(source, /editor\.style\.fontFamily = fontFamilies\[Number\(value\)\]/);
+  assert.match(source, /document\.fonts\?\.load/);
+});
