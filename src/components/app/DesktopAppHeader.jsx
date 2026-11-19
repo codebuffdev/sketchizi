@@ -751,12 +751,6 @@ export default function DesktopAppHeader({
             </section>
           )}
         </div>
-        <svg className="desktop-app-document-identity-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
-          <path d="m7 16.5 3.2-3.7 2.8 1.7 4-6" />
-          <circle cx="7" cy="16.5" r="1" fill="currentColor" stroke="none" />
-          <circle cx="17" cy="8.5" r="1" fill="currentColor" stroke="none" />
-        </svg>
         <span className="desktop-app-document-identity-copy">
           {documentNameEditing ? (
             <input
