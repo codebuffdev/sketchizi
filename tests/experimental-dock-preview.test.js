@@ -19,7 +19,7 @@ test("experimental dock is a separate React component and remains opt-in", () =>
 
 test("independent dock renders its own grouped tools and uses Excalidraw API actions", () => {
   for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "eraser"]) {
-    assert.match(dock, new RegExp(`id: "\\${tool}"`));
+    assert.ok(dock.includes(`id: "${tool}"`), `missing independent dock tool: ${tool}`);
   }
   assert.match(dock, /function ToolIcon/);
   assert.match(dock, /apiRef\.current\?\.setActiveTool/);
