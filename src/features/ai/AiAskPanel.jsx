@@ -1022,9 +1022,12 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     const startX = event.clientX;
     const startWidth = panelElement.getBoundingClientRect().width;
     const minWidth = window.innerWidth <= 1024 ? 360 : 400;
-    const rightRail = Number.parseFloat(getComputedStyle(appElement).getPropertyValue("--header-rail-width")) || 56;
-    const rightOffset = window.innerWidth > 1024 ? rightRail + 46 : 28;
-    const maxWidth = Math.max(minWidth, Math.min(900, window.innerWidth - rightOffset - 360));
+    const appStyle = getComputedStyle(appElement);
+    const rightRail = Number.parseFloat(appStyle.getPropertyValue("--header-rail-width")) || 56;
+    const railRight = Number.parseFloat(appStyle.getPropertyValue("--header-rail-right")) || 18;
+    const rightOffset = window.innerWidth > 1024 ? railRight + rightRail + 14 : 14;
+    const minWorkspaceWidth = window.innerWidth > 1024 ? 420 : 360;
+    const maxWidth = Math.max(minWidth, Math.min(900, window.innerWidth - rightOffset - minWorkspaceWidth));
 
     const onPointerMove = (moveEvent) => {
       const nextWidth = Math.round(Math.max(minWidth, Math.min(maxWidth, startWidth + startX - moveEvent.clientX)));
