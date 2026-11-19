@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { Excalidraw, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
@@ -712,8 +712,10 @@ export default function SketchiziCanvas({
       const appState = api.getAppState();
       // Use Excalidraw's own viewport transform so the note lands under the
       // pointer at every zoom level, pan position, and canvas offset.
-      const scenePoint = api.screenToScene?.({ clientX: event.clientX, clientY: event.clientY });
-      if (!scenePoint) return;
+      const scenePoint = viewportCoordsToSceneCoords(
+        { clientX: event.clientX, clientY: event.clientY },
+        appState,
+      );
       const x = scenePoint.x;
       const y = scenePoint.y;
       const id = `sticky-note-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
@@ -763,7 +765,7 @@ export default function SketchiziCanvas({
       api.updateScene({
         elements: [...(api.getSceneElements?.() || []), ...noteParts],
         appState: { ...appState, selectedElementIds: { [note.id]: true } },
-        commitToHistory: true,
+        captureUpdate: "IMMEDIATELY",
       });
 
     };
