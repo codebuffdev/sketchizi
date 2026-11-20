@@ -43,6 +43,7 @@ import { applyKubernetesRelationshipSuggestion } from "./features/architecture/k
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
+import { resetCloudLoadAttempt, shouldShowCloudLoadFailure } from "./features/workspace/cloudLoadRecovery.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
@@ -243,6 +244,18 @@ function App() {
   const [cloudDetached, setCloudDetached] = useState(false);
   const cloudSceneReadyRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+  const [cloudLoadFailed, setCloudLoadFailed] = useState(false);
+  const [cloudLoadRetryToken, setCloudLoadRetryToken] = useState(0);
+  const retryCloudLoad = useCallback(() => {
+    if (!cloudDiagramId) return;
+    resetCloudLoadAttempt(cloudLoadStartedRef);
+    cloudRestoringTabIdRef.current = activeCanvasIdRef.current;
+    cloudDetachedRef.current = false;
+    setCloudDetached(false);
+    setCloudLoadFailed(false);
+    setCloudSaveState({ state: "loading", error: "" });
+    setCloudLoadRetryToken((attempt) => attempt + 1);
+  }, [cloudDiagramId]);
   const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
@@ -438,6 +451,7 @@ function App() {
     // the user has switched to (or opened) another tab.
     const targetTabId = cloudRestoringTabIdRef.current || activeCanvasIdRef.current;
     cloudLoadStartedRef.current = true;
+    setCloudLoadFailed(false);
     cloudSceneReadyRef.current = false;
     setCloudSaveState({ state: "loading", error: "" });
     const updateTargetTab = (patch) => {
@@ -526,9 +540,13 @@ function App() {
       if (cancelled) return;
       settled = true;
       const message = error.message || "Could not load this cloud diagram.";
+      resetCloudLoadAttempt(cloudLoadStartedRef);
       cloudRestoringTabIdRef.current = "";
       if (activeCanvasIdRef.current === targetTabId) {
         cloudSessionRef.current.active = false;
+        cloudDetachedRef.current = false;
+        setCloudDetached(false);
+        setCloudLoadFailed(true);
         cloudSceneReadyRef.current = true;
         setCloudSaveState({ state: "error", error: message });
       } else {
@@ -552,7 +570,7 @@ function App() {
         cloudLoadStartedRef.current = false;
       }
     };
-  }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
+  }, [apiReady, canvasTabsReady, cloudDiagramId, cloudLoadRetryToken, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
 
   useEffect(() => {
     const flushPendingCloudSave = () => {
@@ -2450,9 +2468,10 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+      {(cloudSessionRef.current.active && !cloudDetached) || shouldShowCloudLoadFailure({ loadFailed: cloudLoadFailed, cloudDetached }) ? <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
-        {cloudSaveState.state === "error" && <>
+        {cloudLoadFailed && <button type="button" onClick={retryCloudLoad}>Retry load</button>}
+        {cloudSaveState.state === "error" && !cloudLoadFailed && <>
           <button type="button" onClick={() => {
             const api = apiRef.current;
             if (!api) return;
@@ -2465,7 +2484,7 @@ function App() {
           <button type="button" onClick={() => window.location.reload()}>Reload latest version</button>
         </>}
         <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
-      </div>}
+      </div> : null}
       <DesktopAppHeader
         commands={commands}
         gridEnabled={gridEnabled}
