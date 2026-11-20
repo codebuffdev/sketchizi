@@ -327,7 +327,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       // Escape there must still clear the element selection and restore the
       // full dock; treating every dialog as protected swallowed that action.
       if (target?.closest?.(
-        "input, textarea, select, [contenteditable='true'], .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
+        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
       )) return;
 
       // Capture Escape before Excalidraw consumes it so the Primary Dock returns.
