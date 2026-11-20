@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
 import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "../src/features/workspace/cloudLoadRecovery.js";
 import { markCloudStartupLoadFailure } from "../src/features/workspace/cloudStartupRecovery.js";
+import { getCloudRecoveryActions } from "../src/features/workspace/cloudRecoveryActions.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -381,9 +382,20 @@ test("startup cloud refresh failure is a load error and preserves the cached doc
   assert.equal(tab.snapshot.cloudSaveState.state, "saved", "the original persisted snapshot is not mutated");
 });
 
-test("startup cloud load failures expose Retry load and never the Retry save action", async () => {
-  const app = await read("../src/App.jsx");
-  assert.match(app, /state === "load-error" && <button type="button" onClick=\{\(\) => window\.location\.reload\(\)\}>Retry load<\/button>/);
-  assert.match(app, /cloudSaveState\.state === "error" && !cloudLoadFailed/);
-  assert.match(app, /\["error", "load-error", "conflict"\]\.includes\(cloudSaveState\.state\)/);
+test("cloud recovery actions distinguish failed loads, failed saves, and revision conflicts", () => {
+  assert.deepEqual(getCloudRecoveryActions({ state: "load-error" }), {
+    retryLoad: true, retrySave: false, downloadBackup: false, reloadLatest: false,
+  });
+  assert.deepEqual(getCloudRecoveryActions({ state: "error" }), {
+    retryLoad: false, retrySave: true, downloadBackup: true, reloadLatest: false,
+  });
+  assert.deepEqual(getCloudRecoveryActions({ state: "error", loadFailed: true }), {
+    retryLoad: true, retrySave: false, downloadBackup: false, reloadLatest: false,
+  });
+  assert.deepEqual(getCloudRecoveryActions({ state: "conflict" }), {
+    retryLoad: false, retrySave: false, downloadBackup: true, reloadLatest: true,
+  });
+  assert.deepEqual(getCloudRecoveryActions({ state: "saved" }), {
+    retryLoad: false, retrySave: false, downloadBackup: false, reloadLatest: false,
+  });
 });
