@@ -60,7 +60,7 @@ function activateTool({ id, root, apiRef, onOpenTodoTab }) {
   apiRef.current?.setActiveTool?.({ type: id });
 }
 
-export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab }) {
+export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab, nativeMenuOpen = false }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
 
@@ -89,8 +89,10 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
 
   return (
     <nav
-      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}`}
+      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}${nativeMenuOpen ? " is-menu-open" : ""}`}
       aria-label="Drawing tools"
+      aria-hidden={nativeMenuOpen}
+      inert={nativeMenuOpen}
       data-canvas-revision={canvasRevision}
     >
       {TOOLS.map((tool) => {
