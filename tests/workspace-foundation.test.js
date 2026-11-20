@@ -88,7 +88,8 @@ test("Workspace stylesheet is scoped and imported by the dashboard component", a
   const component = await read("../src/features/workspace/WorkspaceDashboard.jsx");
   const stylesheet = await read("../src/features/workspace/workspace.css");
   assert.match(component, /import "\.\/workspace\.css"/);
-  assert.match(stylesheet, /\.cloud-workspace\{min-height:100vh/);
+  assert.match(stylesheet, /\.cloud-workspace\{/);
+  assert.match(stylesheet, /--cw-bg:/);
   assert.match(stylesheet, /\.cw-layout\{display:grid/);
 });
 
@@ -192,6 +193,21 @@ test("Workspace API requests time out instead of leaving save operations pending
   assert.match(app, /above the 2 MiB Cloud Workspace limit/);
 });
 
+
+
+test("Cloud Workspace follows the saved canvas theme, including system preference", async () => {
+  const dashboard = await read("../src/features/workspace/WorkspaceDashboard.jsx");
+  const preference = await read("../src/features/navigation/themePreference.js");
+  const stylesheet = await read("../src/features/workspace/workspace.css");
+  assert.match(dashboard, /getInitialThemeMode/);
+  assert.match(dashboard, /THEME_PREFERENCE_KEY/);
+  assert.match(dashboard, /prefers-color-scheme: dark/);
+  assert.match(dashboard, /data-theme=\{isDarkTheme \? "dark" : "light"\}/);
+  assert.match(dashboard, /addEventListener\("storage", syncTheme\)/);
+  assert.match(preference, /THEME_PREFERENCE_KEY = "diagram-app-theme"/);
+  assert.match(stylesheet, /\.cloud-workspace\[data-theme="light"\]/);
+  assert.match(stylesheet, /--cw-bg: #0f1318/);
+});
 
 test("cloud document excludes deleted elements and unreferenced cached files", () => {
   const api = {
