@@ -1424,9 +1424,12 @@ function App() {
 
   const chooseStartupCanvas = useCallback((mode) => {
     startupChoiceMadeRef.current = true;
+    // Closing the final tab leaves the workspace empty. Create a fresh canvas
+    // when the user makes their next startup-canvas choice.
+    if (canvasTabsRef.current.length === 0) createCanvasTab();
     setStartupChooserOpen(false);
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
-  }, []);
+  }, [createCanvasTab]);
 
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {
