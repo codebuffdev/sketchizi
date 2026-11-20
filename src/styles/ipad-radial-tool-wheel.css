@@ -103,3 +103,11 @@
 @media (prefers-reduced-motion: reduce) {
   .sketchizi-tool-sidebar-button { transition: none; }
 }
+
+/* Keep the floating tool rail out of the way while the hamburger menu is open. */
+.sketchizi-tool-sidebar.is-menu-open {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-8px, -50%);
+}
