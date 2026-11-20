@@ -1,278 +1,251 @@
+/* Canvas tab system — one cohesive tab strip for light and dark themes. */
 .canvas-tabs-bar {
+  --tab-strip-bg: #f5f6f8;
+  --tab-strip-border: #e1e5eb;
+  --tab-text: #687386;
+  --tab-text-hover: #273244;
+  --tab-text-active: #172033;
+  --tab-active-bg: #ffffff;
+  --tab-active-border: #d7dce5;
+  --tab-hover-bg: #e9edf3;
+  --tab-divider: #e1e5eb;
+  --tab-control-hover: #edf0f5;
+  --tab-accent: #7168d8;
+  --tab-dirty: #d99a35;
+  --tab-danger: #d34c4c;
   display: inline-flex;
   align-items: center;
-  min-width: 0;
   flex: 0 1 auto;
-  padding: 0;
-  background: transparent;
-  border: 0;
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid var(--tab-strip-border);
+  border-radius: 11px;
+  background: var(--tab-strip-bg);
+  color: var(--tab-text-active);
+  box-shadow: 0 1px 2px rgb(20 30 50 / 5%);
 }
-.canvas-tabs-list { display: flex; align-items: center; gap: 3px; min-width: 0; height: 32px; }
-.canvas-tab, .canvas-tabs-overflow-trigger, .canvas-tabs-add {
+
+.app.theme-dark .canvas-tabs-bar {
+  --tab-strip-bg: #171d27;
+  --tab-strip-border: #303a4a;
+  --tab-text: #aab4c4;
+  --tab-text-hover: #f2f5fa;
+  --tab-text-active: #f5f7fb;
+  --tab-active-bg: #303a4b;
+  --tab-active-border: #59677e;
+  --tab-hover-bg: #242d3b;
+  --tab-divider: #536075;
+  --tab-control-hover: #3a4659;
+  --tab-accent: #aaa3ff;
+  --tab-dirty: #edb24e;
+  --tab-danger: #ff8585;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 24%);
+}
+
+.canvas-tabs-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  height: 34px;
+}
+
+.canvas-tab-item {
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-width: 64px;
-  max-width: 180px;
-  height: 30px;
-  padding: 0 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 34px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
+  color: var(--tab-text);
   background: transparent;
-  color: var(--text-primary, #333);
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.canvas-tab-item:not(.is-active):hover {
+  color: var(--tab-text-hover);
+  background: var(--tab-hover-bg);
+}
+
+.canvas-tab-item.is-active {
+  max-width: min(760px, calc(100vw - 220px));
+  width: max-content;
+  flex-wrap: nowrap;
+  border-color: var(--tab-active-border);
+  background: var(--tab-active-bg);
+  color: var(--tab-text-active);
+  box-shadow: 0 1px 2px rgb(20 30 50 / 9%), inset 0 1px 0 rgb(255 255 255 / 45%);
+}
+
+.app.theme-dark .canvas-tab-item.is-active {
+  box-shadow: 0 2px 5px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+
+.canvas-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 88px;
+  max-width: 180px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
   font: inherit;
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-}
-.canvas-tab:hover, .canvas-tabs-overflow-trigger:hover, .canvas-tabs-add:hover { background: rgba(127, 127, 127, .09); }
-.canvas-tab.is-active { border-color: var(--color-border, rgba(120,120,120,.2)); background: var(--island-bg, rgba(127,127,127,.07)); color: var(--text-primary, #222); font-weight: 600; }
-.canvas-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.canvas-tab-dirty { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #d69a32; }
-.canvas-tabs-overflow { position: relative; display: flex; }
-.canvas-tabs-overflow-trigger { min-width: 38px; padding: 0 7px; }
-.canvas-tabs-overflow-menu {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  z-index: 1000;
-  min-width: 180px;
-  padding: 5px;
-  border: 1px solid var(--color-border, rgba(120,120,120,.2));
-  border-radius: 8px;
-  background: var(--island-bg, var(--default-bg, #fff));
-  box-shadow: 0 8px 24px rgba(0,0,0,.16);
-}
-.canvas-tabs-overflow-menu button {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  width: 100%; padding: 9px 10px; border: 0; border-radius: 5px;
-  background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer;
-}
-.canvas-tabs-overflow-menu button:hover, .canvas-tabs-overflow-menu button.is-active { background: rgba(127,127,127,.12); }
-.canvas-tabs-add { min-width: 28px; width: 28px; padding: 0; font-size: 20px; font-weight: 400; }
-.canvas-tabs-add:disabled { opacity: .4; cursor: not-allowed; }
-.app.theme-dark .canvas-tab.is-active { background: rgba(255,255,255,.08); }
-.app.theme-dark .canvas-tabs-overflow-menu { background: #252525; border-color: rgba(255,255,255,.14); }
-
-.desktop-app-document-identity .canvas-tabs-bar { margin-left: 2px; }
-.desktop-app-document-identity .canvas-tabs-list { max-width: min(52vw, 620px); overflow: visible; }
-.desktop-app-document-identity .canvas-tab { flex: 0 1 auto; }
-.desktop-app-document-identity .canvas-tabs-add { flex: 0 0 28px; }
-@media (max-width: 760px) {
-  .desktop-app-document-identity .canvas-tabs-list { max-width: min(45vw, 420px); }
+  transition: color .16s ease, background-color .16s ease;
 }
 
-/* The header now hosts the canvas switcher beside the active canvas name. */
-.app.canvas-first-header .desktop-app-document-identity {
-  max-width: min(680px, 58vw);
-}
-@media (max-width: 760px) {
-  .app.canvas-first-header .desktop-app-document-identity {
-    max-width: min(520px, 54vw);
-  }
+.canvas-tab-item.is-active > .canvas-tab {
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 220px;
+  color: var(--tab-text-active);
+  font-weight: 650;
 }
 
-/* The create control closes the full document identity group, after cloud save. */
-.app.canvas-first-header .desktop-app-document-identity {
-  overflow: visible;
-}
-.desktop-app-canvas-add {
-  flex: 0 0 28px;
-  margin-left: 7px;
+.canvas-tab-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Compact, Notion-inspired page tabs with distinct canvas and create glyphs. */
-.canvas-tab {
-  min-width: 88px;
-  padding: 0 10px;
-  gap: 7px;
-  border-radius: 6px 6px 0 0;
-}
 .canvas-tab-icon {
   flex: 0 0 15px;
-  opacity: .68;
+  width: 15px;
+  height: 15px;
+  color: var(--tab-text);
+  opacity: .82;
 }
-.canvas-tab.is-active .canvas-tab-icon {
+
+.canvas-tab-item.is-active .canvas-tab-icon {
+  color: var(--tab-accent);
   opacity: 1;
 }
-.canvas-tabs-overflow-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.canvas-tabs-overflow-name .canvas-tab-icon {
-  flex: 0 0 15px;
-}
-.canvas-tabs-add,
-.desktop-app-canvas-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-secondary, var(--text-primary, #666));
-  cursor: pointer;
-}
-.canvas-tabs-add-icon {
-  display: block;
-  width: 18px;
-  height: 18px;
-}
-.canvas-tabs-add:hover,
-.desktop-app-canvas-add:hover {
-  background: rgba(127, 127, 127, .12);
-  color: var(--text-primary, #222);
-}
-.desktop-app-canvas-add {
-  flex: 0 0 30px;
-  margin-left: 7px;
+
+.canvas-tab-dirty {
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tab-dirty);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tab-dirty) 16%, transparent);
 }
 
-
-/* Make the selected canvas unmistakable at a glance. */
-.canvas-tab {
-  color: var(--text-secondary, var(--text-primary, #666));
-  transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
-}
-.canvas-tab.is-active {
-  border-color: var(--color-border, rgba(120,120,120,.28));
-  background: var(--island-bg, #fff);
-  color: var(--text-primary, #222);
-  font-weight: 650;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
-}
-.app.theme-dark .canvas-tab.is-active {
-  background: rgba(255, 255, 255, .12);
-  border-color: rgba(255, 255, 255, .2);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
-}
-
-
-/* Tab close controls are separate from the tab button to keep the tab
-   semantics valid and make closing an individual canvas predictable. */
-.canvas-tab-item {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  position: relative;
-  border: 1px solid transparent;
-  border-radius: 6px;
-}
-.canvas-tab-item.is-active {
-  border-color: var(--color-border, rgba(120,120,120,.28));
-  background: var(--island-bg, #fff);
-  box-shadow: 0 1px 3px rgba(0,0,0,.1);
-}
-.canvas-tab-item .canvas-tab {
-  min-width: 0;
-  border: 0;
-  box-shadow: none;
-  border-radius: 5px 0 0 5px;
-}
-.canvas-tab-item.is-active .canvas-tab {
-  background: transparent;
-  border-color: transparent;
-}
 .canvas-tab-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
-  margin-right: 3px;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin: 0 4px 0 0;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary, #777);
+  color: var(--tab-text);
   cursor: pointer;
-  opacity: .58;
+  opacity: .62;
+  transition: opacity .14s ease, background-color .14s ease, color .14s ease;
 }
+
 .canvas-tab-item:hover .canvas-tab-close,
 .canvas-tab-item.is-active .canvas-tab-close,
 .canvas-tab-close:focus-visible {
   opacity: 1;
 }
+
 .canvas-tab-close:hover:not(:disabled) {
-  background: rgba(220, 70, 70, .13);
-  color: #c33;
+  color: var(--tab-danger);
+  background: color-mix(in srgb, var(--tab-danger) 12%, transparent);
 }
+
 .canvas-tab-close:disabled {
   opacity: 0;
-  cursor: default;
   pointer-events: none;
-}
-.canvas-tabs-overflow-item {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-.canvas-tabs-overflow-item > button:first-child {
-  min-width: 0;
-  flex: 1 1 auto;
-}
-.canvas-tabs-overflow-item .canvas-tabs-overflow-close {
-  flex: 0 0 24px;
-  width: 24px;
-  margin: 0 3px 0 0;
-}
-.app.theme-dark .canvas-tab-item.is-active {
-  background: rgba(255,255,255,.12);
-  border-color: rgba(255,255,255,.2);
+  cursor: default;
 }
 
-.canvas-tabs-overflow-item > .canvas-tabs-overflow-close {
-  width: 24px;
-  min-width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-}
-.canvas-tabs-overflow-item > .canvas-tabs-overflow-close:hover:not(:disabled) {
-  background: rgba(220, 70, 70, .13);
-  color: #c33;
-}
-
-
-/* Keep document actions inside the active tab only. */
-.canvas-tab-item.is-active {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: min(760px, 72vw);
-  padding: 0 3px;
-  background: var(--island-bg, #fff);
-  border-color: var(--color-border, rgba(120,120,120,.28));
-}
-.app.theme-dark .canvas-tab-item.is-active {
-  background: rgba(255,255,255,.1);
-  border-color: rgba(255,255,255,.2);
-}
-.canvas-tab-item.is-active .canvas-tab {
-  flex: 0 1 auto;
-  min-width: 72px;
-  max-width: 220px;
-}
+/* Keep every active-canvas action in the same row, after the title. */
 .canvas-tab-active-actions {
   display: inline-flex;
   align-items: center;
-  flex: 0 1 auto;
-  min-width: 0;
-  gap: 4px;
-  padding-left: 3px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  min-width: max-content;
+  gap: 3px;
+  padding: 0 4px 0 2px;
+  color: var(--tab-text);
+  white-space: nowrap;
 }
+
+.canvas-tab-active-actions > * {
+  flex: 0 0 auto;
+}
+
+.canvas-tab-active-actions button,
+.canvas-tab-item.is-active > .desktop-app-save-status-wrap .desktop-app-save-status-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 29px;
+  width: 29px;
+  min-width: 29px;
+  height: 29px;
+  min-height: 29px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease;
+}
+
+.canvas-tab-active-actions button:hover,
+.canvas-tab-item.is-active > .desktop-app-save-status-wrap .desktop-app-save-status-trigger:hover {
+  background: var(--tab-control-hover);
+  color: var(--tab-text-active);
+}
+
+.canvas-tab-active-actions .desktop-app-document-location {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  margin: 0 2px;
+  padding: 0 8px;
+  border: 1px solid var(--tab-divider);
+  border-radius: 6px;
+  color: var(--tab-text);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+.canvas-tab-active-actions .desktop-app-document-identity-dirty-dot {
+  flex: 0 0 6px;
+}
+
+.canvas-tab-active-actions .desktop-app-document-identity-copy {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.canvas-tab-active-actions .desktop-app-document-identity-name-input {
+  width: min(150px, 18vw);
+  min-width: 70px;
+}
+
 .canvas-tab-item.is-active > .desktop-app-save-status-wrap {
   position: relative;
   display: inline-flex;
@@ -280,201 +253,221 @@
   flex: 0 0 auto;
   margin: 0;
 }
-.canvas-tab-item.is-active > .desktop-app-save-status-wrap .desktop-app-save-status-trigger,
-.canvas-tab-active-actions .desktop-app-document-rename,
-.canvas-tab-active-actions .desktop-app-save-to-cloud-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 28px;
-  width: 28px;
-  min-width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0;
-  border-radius: 7px;
-}
-.canvas-tab-active-actions .desktop-app-document-location {
-  flex: 0 0 auto;
-  margin: 0 2px;
-  font-size: 10px;
-  white-space: nowrap;
-}
-.canvas-tab-active-actions .desktop-app-document-identity-dirty-dot {
-  flex: 0 0 6px;
-}
-.canvas-tab-active-actions .desktop-app-document-identity-copy {
-  display: inline-flex;
-  min-width: 0;
-}
-.canvas-tab-active-actions .desktop-app-document-identity-name-input {
-  width: min(150px, 18vw);
-  min-width: 70px;
-}
+
 .canvas-tab-active-actions .desktop-app-save-status-popover {
   z-index: 1100;
 }
-.canvas-tab-item.is-active > .canvas-tab-close {
-  flex: 0 0 22px;
-}
-@media (max-width: 760px) {
-  .canvas-tab-item.is-active {
-    max-width: min(88vw, 620px);
-  }
-  .canvas-tab-active-actions .desktop-app-document-location {
-    display: none;
-  }
-}
 
-
-/* Approved layout: keep the canvas title and every active-canvas action
-   together inside one tab row. Never wrap actions onto a second line. */
-.canvas-tab-item.is-active {
-  display: inline-flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  align-content: center;
-  width: max-content;
-  max-width: min(760px, calc(100vw - 220px));
-  min-width: 0;
-  white-space: nowrap;
-}
-.canvas-tab-item.is-active > .canvas-tab {
-  display: inline-flex;
-  flex: 1 1 180px;
-  min-width: 0;
-  max-width: 220px;
-  white-space: nowrap;
-}
-.canvas-tab-item.is-active > .canvas-tab .canvas-tab-name {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.canvas-tab-item.is-active > .canvas-tab-active-actions {
-  display: inline-flex;
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
-  align-items: center;
-  white-space: nowrap;
-  min-width: max-content;
-  padding: 0 4px 0 2px;
-}
-.canvas-tab-item.is-active > .canvas-tab-active-actions > * {
-  flex: 0 0 auto;
-}
 .canvas-tab-item.is-active > .canvas-tab-close {
   flex: 0 0 26px;
   width: 26px;
   height: 28px;
-  margin: 0 2px;
+  margin: 0 3px 0 0;
 }
+
+/* Download remains immediately before the active canvas title. */
+.canvas-tab-item.is-active > .desktop-app-download-button,
+.canvas-tab-item.is-active > [data-canvas-download] {
+  flex: 0 0 30px;
+}
+
+/* Add-canvas and overflow controls use the same quiet control language. */
+.canvas-tabs-add,
+.desktop-app-canvas-add,
+.canvas-tabs-overflow-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--tab-text);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease;
+}
+
+.canvas-tabs-add:hover,
+.desktop-app-canvas-add:hover,
+.canvas-tabs-overflow-trigger:hover,
+.canvas-tabs-overflow-trigger.is-open {
+  color: var(--tab-text-active);
+  background: var(--tab-hover-bg);
+  border-color: var(--tab-active-border);
+}
+
+.canvas-tabs-add:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.canvas-tabs-add-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.desktop-app-document-identity .canvas-tabs-bar {
+  margin-left: 2px;
+}
+
+.desktop-app-document-identity .canvas-tabs-list {
+  max-width: min(52vw, 620px);
+  overflow: visible;
+}
+
+.desktop-app-document-identity .canvas-tab {
+  flex: 0 1 auto;
+}
+
+.desktop-app-document-identity .canvas-tabs-add {
+  flex: 0 0 32px;
+}
+
+.app.canvas-first-header .desktop-app-document-identity {
+  max-width: min(680px, 58vw);
+  overflow: visible;
+}
+
+.desktop-app-canvas-add {
+  flex: 0 0 32px;
+  margin-left: 5px;
+}
+
+/* Overflow menu follows the same surface, border and hover states. */
+.canvas-tabs-overflow {
+  position: relative;
+  display: flex;
+}
+
+.canvas-tabs-overflow-trigger {
+  min-width: 36px;
+  width: 36px;
+  flex-basis: 36px;
+}
+
+.canvas-tabs-overflow-menu {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  z-index: 1100;
+  min-width: 190px;
+  padding: 5px;
+  border: 1px solid var(--tab-active-border);
+  border-radius: 10px;
+  background: var(--tab-active-bg);
+  color: var(--tab-text-active);
+  box-shadow: 0 10px 30px rgb(15 23 42 / 16%);
+}
+
+.canvas-tabs-overflow-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.canvas-tabs-overflow-menu button:hover,
+.canvas-tabs-overflow-menu button.is-active {
+  background: var(--tab-hover-bg);
+}
+
+.canvas-tabs-overflow-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.canvas-tabs-overflow-name .canvas-tab-icon {
+  flex: 0 0 15px;
+}
+
+.canvas-tabs-overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.canvas-tabs-overflow-item > button:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.canvas-tabs-overflow-item .canvas-tabs-overflow-close,
+.canvas-tabs-overflow-item > .canvas-tabs-overflow-close {
+  flex: 0 0 26px;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  margin: 0 2px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.canvas-tabs-overflow-item > .canvas-tabs-overflow-close:hover:not(:disabled) {
+  color: var(--tab-danger);
+  background: color-mix(in srgb, var(--tab-danger) 12%, transparent);
+}
+
 @media (max-width: 1100px) {
   .canvas-tab-item.is-active {
     max-width: min(680px, calc(100vw - 180px));
   }
+
   .canvas-tab-item.is-active > .canvas-tab {
     flex-basis: 130px;
     max-width: 180px;
   }
 }
+
 @media (max-width: 760px) {
+  .desktop-app-document-identity .canvas-tabs-list {
+    max-width: min(45vw, 420px);
+  }
+
+  .app.canvas-first-header .desktop-app-document-identity {
+    max-width: min(520px, 54vw);
+  }
+
   .canvas-tab-item.is-active {
     max-width: calc(100vw - 112px);
   }
+
   .canvas-tab-item.is-active > .canvas-tab {
     flex-basis: 90px;
     max-width: 130px;
   }
+
   .canvas-tab-active-actions .desktop-app-document-location {
     display: none;
   }
 }
 
-
-/* Dark theme: keep canvas names and tab controls legible against the header. */
-.app.theme-dark .desktop-app-document-identity {
-  color: var(--ui-text, #f2f2f4);
-}
-.app.theme-dark .canvas-tab-item {
-  color: var(--ui-text-muted, #b8becb);
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-}
-.app.theme-dark .canvas-tab-item:not(.is-active):hover {
-  background: var(--ui-hover, #272d38);
-  border-color: var(--ui-border, #3b4352);
-}
-.app.theme-dark .canvas-tab,
-.app.theme-dark .canvas-tab-name {
-  color: var(--ui-text-muted, #b8becb);
-}
-.app.theme-dark .canvas-tab:hover {
-  color: var(--ui-text-strong, #fff);
-}
-.app.theme-dark .canvas-tab-item.is-active {
-  background: #242a35;
-  border-color: #515c70;
-  color: #f4f6fb;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 32%), inset 0 1px 0 rgb(255 255 255 / 4%);
-}
-.app.theme-dark .canvas-tab-item.is-active .canvas-tab,
-.app.theme-dark .canvas-tab-item.is-active .canvas-tab-name {
-  color: #f4f6fb;
-}
-.app.theme-dark .canvas-tab-icon {
-  color: #a9a5ff;
-  opacity: .9;
-}
-.app.theme-dark .canvas-tab-close {
-  color: #aeb6c5;
-}
-.app.theme-dark .canvas-tab-close:hover:not(:disabled) {
-  background: rgb(239 91 91 / 16%);
-  color: #ff8585;
-}
-.app.theme-dark .canvas-tab-dirty {
-  background: #f0b85a;
-  box-shadow: 0 0 0 2px rgb(240 184 90 / 14%);
-}
-.app.theme-dark .canvas-tab-active-actions {
-  color: #dce2ed;
-}
-.app.theme-dark .canvas-tab-active-actions button {
-  color: inherit;
-}
-.app.theme-dark .canvas-tab-active-actions button:hover {
-  background: #343d4c;
-  color: #fff;
-}
-.app.theme-dark .desktop-app-canvas-add,
-.app.theme-dark .canvas-tabs-add,
-.app.theme-dark .canvas-tabs-overflow-trigger {
-  color: #b9c1d0;
-  border-color: #566174;
-  background: #202631;
-}
-.app.theme-dark .desktop-app-canvas-add:hover,
-.app.theme-dark .canvas-tabs-add:hover,
-.app.theme-dark .canvas-tabs-overflow-trigger:hover,
-.app.theme-dark .canvas-tabs-overflow-trigger.is-open {
-  color: #c4c0ff;
-  border-color: #817bea;
-  background: #2b3040;
-}
-.app.theme-dark .canvas-tabs-overflow-menu {
-  background: #202631;
-  border-color: #485366;
-  color: #edf0f6;
-}
-.app.theme-dark .canvas-tabs-overflow-menu button {
-  color: #d6dce7;
-}
-.app.theme-dark .canvas-tabs-overflow-menu button:hover,
-.app.theme-dark .canvas-tabs-overflow-menu button.is-active {
-  background: #30394a;
-  color: #fff;
+@media (prefers-reduced-motion: reduce) {
+  .canvas-tab,
+  .canvas-tab-item,
+  .canvas-tab-close,
+  .canvas-tab-active-actions button,
+  .canvas-tabs-add,
+  .desktop-app-canvas-add,
+  .canvas-tabs-overflow-trigger {
+    transition: none;
+  }
 }
