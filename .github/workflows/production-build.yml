@@ -65,10 +65,12 @@ jobs:
         run: npm run report:build-assets
 
       - name: Install temporary browser-test tooling
-        run: npm install --no-save --no-package-lock playwright
+        run: |
+          npm install --prefix /tmp/sketchizi-browser-tools --no-save --no-package-lock playwright
+          ln -s /tmp/sketchizi-browser-tools/node_modules/playwright node_modules/playwright
 
       - name: Install Chromium for browser smoke test
-        run: npx playwright install --with-deps chromium
+        run: /tmp/sketchizi-browser-tools/node_modules/.bin/playwright install --with-deps chromium
 
       - name: Start production preview
         run: npm run preview -- --host 127.0.0.1 > /tmp/sketchizi-preview.log 2>&1 &
