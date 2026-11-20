@@ -814,6 +814,7 @@ export default function SketchiziCanvas({
         canEdit={canEdit && !viewModeEnabled}
         isDarkTheme={isDarkTheme}
         canvasRevision={canvasRevision}
+        nativeMenuOpen={nativeMenuOpen}
         selectedElements={selectedElements}
         onOpenTodoTab={onOpenTodoTab}
       />
