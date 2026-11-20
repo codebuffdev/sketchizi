@@ -67,6 +67,6 @@ test("workflow emits a CI summary and preserves preview logs after failures", as
 test("workflow compares known regression failures against main and blocks new failures", async () => {
   const source = await workflow();
   assert.match(source, /Compare regression failures with main/);
-  assert.match(source, /compare-test-baseline\\.mjs/);
-  assert.match(source, /steps\\.regression-baseline\\.outcome != 'success'/);
+  assert.ok(source.includes("compare-test-baseline.mjs"));
+  assert.ok(source.includes("steps.regression-baseline.outcome != 'success'"));
 });
