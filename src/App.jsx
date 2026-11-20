@@ -445,6 +445,7 @@ function App() {
   useEffect(() => {
     if (!cloudDiagramId || !apiReady || !sketchReady || !canvasTabsReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
     let cancelled = false;
+    let requestSettled = false;
     let readyFrame = 0;
     const targetTabId = cloudHydratingTabIdRef.current && cloudHydratingTabIdRef.current !== "pending"
       ? cloudHydratingTabIdRef.current
@@ -455,6 +456,7 @@ function App() {
     setCloudDetached(false);
     setCloudSaveState({ state: "loading", error: "" });
     workspaceClient.getDiagram(cloudDiagramId).then((result) => {
+      requestSettled = true;
       if (cancelled) return;
       const { diagram, document, name: loadedCloudName } = normalizeCloudDiagramResponse(result, cloudDiagramId);
       const api = apiRef.current;
@@ -526,6 +528,7 @@ function App() {
         setCloudSaveState({ state: "saved", error: "" });
       });
     }).catch((error) => {
+      requestSettled = true;
       if (cancelled) return;
       const message = error.message || "Could not load this cloud diagram.";
       const failedTabs = canvasTabsRef.current.map((tab) => tab.id === targetTabId
@@ -542,7 +545,6 @@ function App() {
       canvasTabsRef.current = failedTabs;
       setCanvasTabs(failedTabs);
       saveCanvasTabs(failedTabs).catch(() => {});
-      cloudLoadStartedRef.current = false;
       if (activeCanvasIdRef.current === targetTabId) {
         cloudSessionRef.current.active = false;
         cloudDetachedRef.current = false;
@@ -557,7 +559,7 @@ function App() {
       if (readyFrame) window.cancelAnimationFrame(readyFrame);
       // If React tears down an in-flight request (including StrictMode replay),
       // allow the next effect instance to retry instead of leaving the tab stuck.
-      if (!cloudSceneReadyRef.current) cloudLoadStartedRef.current = false;
+      if (!requestSettled) cloudLoadStartedRef.current = false;
     };
   }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, cloudLoadAttempt, documentMetadataRef, setSavedSketch, sketchReady]);
 
