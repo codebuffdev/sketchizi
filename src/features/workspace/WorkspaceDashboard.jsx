@@ -3,7 +3,12 @@ import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../navigation/themePr
 import { workspaceClient } from "./workspaceClient.js";
 import "./workspace.css";
 
-const dateLabel = (value) => value ? new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Recently";
+const dateLabel = (value) => value ? new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }) : "Recently";
+const activityTime = (item = {}) => {
+  const value = [item.lastOpenedAt, item.lastUsedAt, item.updatedAt, item.createdAt].map(Number).find((time) => Number.isFinite(time) && time > 0);
+  return value || 0;
+};
+const sortRecentlyUsed = (items = []) => [...items].sort((a, b) => activityTime(b) - activityTime(a));
 
 const DiagramThumbnail = ({ diagram }) => {
   const document = diagram?.document && typeof diagram.document === "object" ? diagram.document : {};
@@ -92,7 +97,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     try {
       const result = await workspaceClient.listProjects();
       const rows = Array.isArray(result) ? result : result?.projects || [];
-      setProjects(rows);
+      setProjects(sortRecentlyUsed(rows));
       setActiveId((current) => rows.some((p) => p.id === preferred) ? preferred : rows.some((p) => p.id === current) ? current : rows[0]?.id || "");
     } catch (e) { setError(e.message || "Could not load cloud projects."); }
     finally { setLoading(false); }
@@ -106,7 +111,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     if (!activeId) { setDiagrams([]); return undefined; }
     let cancelled = false;
     setDiagramLoading(true);
-    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) setDiagrams(Array.isArray(r) ? r : r?.diagrams || []); })
+    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) setDiagrams(sortRecentlyUsed(Array.isArray(r) ? r : r?.diagrams || [])); })
       .catch((e) => { if (!cancelled) setError(e.message || "Could not load diagrams."); })
       .finally(() => { if (!cancelled) setDiagramLoading(false); });
     return () => { cancelled = true; };
@@ -136,7 +141,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
         window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(created.id)}&cloudProjectId=${encodeURIComponent(active.id)}`);
         return;
       }
-      const rows = await workspaceClient.listDiagrams(active.id); setDiagrams(Array.isArray(rows) ? rows : rows?.diagrams || []);
+      const rows = await workspaceClient.listDiagrams(active.id); setDiagrams(sortRecentlyUsed(Array.isArray(rows) ? rows : rows?.diagrams || []));
       await reloadProjects(active.id); setNotice("Diagram created. Open it to begin editing.");
     } catch (e) { setError(e.message || "Could not create diagram."); } finally { setBusy(false); }
   };
@@ -172,10 +177,10 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
       {projectForm && <form className="cw-form" onSubmit={createProject}><label htmlFor="cw-project-name">Project name</label><input id="cw-project-name" autoFocus maxLength={120} required value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="e.g. E-commerce architecture"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setProjectForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create project"}</button></div></form>}
       <div className="cw-toolbar"><strong>PROJECTS <span>{projects.length}</span></strong><input aria-label="Search projects" className="cw-search" placeholder="Search projects…" value={query} onChange={(e) => setQuery(e.target.value)}/></div>
       {loading ? <div className="cw-loading">Loading your workspace…</div> : projects.length === 0 ? <div className="cw-empty"><div className="cw-empty-icon">▦</div><h2>Your workspace starts here</h2><p>Create a project to keep your architecture diagrams together. Projects are private to your account.</p><button className="cw-button cw-primary" onClick={() => setProjectForm(true)}>Create your first project</button></div> : <div className="cw-layout">
-        <aside className="cw-project-list" aria-label="Projects">{filtered.map((p) => <article className={p.id === activeId ? "cw-project is-active" : "cw-project"} key={p.id}><button className="cw-project-select" onClick={() => setActiveId(p.id)}><span className="cw-project-icon">▦</span><span><b>{p.name}</b><small>{p.diagramCount ?? 0} diagrams · {dateLabel(p.updatedAt)}</small></span></button><div className="cw-project-actions"><button disabled={busy} onClick={() => renameProject(p)}>Rename</button><button disabled={busy} onClick={() => deleteProject(p)}>Delete</button></div></article>)}{!filtered.length && <p className="cw-muted">No matching projects.</p>}</aside>
+        <aside className="cw-project-list" aria-label="Projects">{filtered.map((p) => <article className={p.id === activeId ? "cw-project is-active" : "cw-project"} key={p.id}><button className="cw-project-select" onClick={() => setActiveId(p.id)}><span className="cw-project-icon">▦</span><span><b>{p.name}</b><small>{p.diagramCount ?? 0} diagrams · {dateLabel(p.lastOpenedAt || p.lastUsedAt || p.updatedAt || p.createdAt)}</small></span></button><div className="cw-project-actions"><button disabled={busy} onClick={() => renameProject(p)}>Rename</button><button disabled={busy} onClick={() => deleteProject(p)}>Delete</button></div></article>)}{!filtered.length && <p className="cw-muted">No matching projects.</p>}</aside>
         <section className="cw-diagrams">{active ? <><div className="cw-diagram-heading"><div><div className="cw-eyebrow">PROJECT</div><h2>{active.name}</h2><p>{active.description || "Diagrams in this project"}</p></div><button className="cw-button cw-primary" disabled={busy || (!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3))} title={!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3) ? "Delete a diagram to create another" : undefined} onClick={() => setDiagramForm(!diagramForm)}>+ New diagram</button></div>
           {diagramForm && <form className="cw-form" onSubmit={createDiagram}><label htmlFor="cw-diagram-name">Diagram name</label><input id="cw-diagram-name" autoFocus maxLength={120} required value={diagramName} onChange={(e) => setDiagramName(e.target.value)} placeholder="e.g. System overview"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setDiagramForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create diagram"}</button></div></form>}
-          {diagramLoading ? <div className="cw-loading">Loading diagrams…</div> : diagrams.length ? <div className="cw-diagram-grid">{diagrams.map((d) => <article className="cw-diagram-card" key={d.id}><DiagramThumbnail diagram={d} /><div className="cw-diagram-body"><b>{d.name}</b><small>{d.format} · {dateLabel(d.updatedAt)}</small><div className="cw-diagram-actions"><button disabled={busy} onClick={() => window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`)}>Open</button><button disabled={busy} onClick={() => diagramAction(d,"rename")}>Rename</button><button disabled={busy} onClick={() => diagramAction(d,"duplicate")}>Duplicate</button><button disabled={busy} onClick={() => diagramAction(d,"delete")}>Delete</button></div></div></article>)}</div> : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No diagrams yet</h3><p>Create a diagram to start building this project.</p><button className="cw-button cw-quiet" onClick={() => setDiagramForm(true)}>Create diagram</button></div>}
+          {diagramLoading ? <div className="cw-loading">Loading diagrams…</div> : diagrams.length ? <div className="cw-diagram-grid">{diagrams.map((d) => <article className="cw-diagram-card" key={d.id}><DiagramThumbnail diagram={d} /><div className="cw-diagram-body"><b>{d.name}</b><small>sketchizi · {dateLabel(d.lastOpenedAt || d.lastUsedAt || d.updatedAt || d.createdAt)}</small><div className="cw-diagram-actions"><button disabled={busy} onClick={() => window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`)}>Open</button><button disabled={busy} onClick={() => diagramAction(d,"rename")}>Rename</button><button disabled={busy} onClick={() => diagramAction(d,"duplicate")}>Duplicate</button><button disabled={busy} onClick={() => diagramAction(d,"delete")}>Delete</button></div></div></article>)}</div> : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No diagrams yet</h3><p>Create a diagram to start building this project.</p><button className="cw-button cw-quiet" onClick={() => setDiagramForm(true)}>Create diagram</button></div>}
         </> : <div className="cw-empty cw-empty-small"><h3>Select a project</h3></div>}</section></div>}
       <footer className="cw-footnote"><span/> Cloud storage · PostgreSQL · Private to your account</footer>
     </section>
