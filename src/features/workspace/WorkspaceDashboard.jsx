@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../navigation/themePreference.js";
 import { workspaceClient } from "./workspaceClient.js";
 import "./workspace.css";
 
@@ -44,6 +45,28 @@ const DiagramThumbnail = ({ diagram }) => {
 };
 
 export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
+  const [themeMode, setThemeMode] = useState(() => getInitialThemeMode());
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false);
+  const isDarkTheme = themeMode === "dark" || (themeMode === "system" && systemDark);
+
+  useEffect(() => {
+    const syncTheme = () => setThemeMode(getInitialThemeMode());
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)");
+    const syncSystem = () => setSystemDark(Boolean(media?.matches));
+    window.addEventListener("storage", syncTheme);
+    media?.addEventListener?.("change", syncSystem);
+    syncSystem();
+    return () => {
+      window.removeEventListener("storage", syncTheme);
+      media?.removeEventListener?.("change", syncSystem);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.sketchiziTheme = isDarkTheme ? "dark" : "light";
+    return () => { delete document.documentElement.dataset.sketchiziTheme; };
+  }, [isDarkTheme]);
+
   const [projects, setProjects] = useState([]);
   const [activeId, setActiveId] = useState("");
   const [diagrams, setDiagrams] = useState([]);
@@ -139,7 +162,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     } catch (e) { setError(e.message || `Could not ${action} diagram.`); } finally { setBusy(false); }
   };
 
-  return <main className="cloud-workspace">
+  return <main className="cloud-workspace" data-theme={isDarkTheme ? "dark" : "light"}>
     <header className="cw-header"><a className="cw-brand" href="/" aria-label="Sketchizi"><span className="cw-brand-mark">S</span> Sketchizi <span className="cw-brand-sub">CLOUD WORKSPACE</span></a><div className="cw-header-actions"><span className="cw-user">{user?.name || user?.email || "Signed in"}</span><button className="cw-button cw-quiet" onClick={onOpenEditor}>Open editor</button><button className="cw-button cw-quiet" onClick={onSignOut}>Sign out</button></div></header>
     <section className="cw-content"><div className="cw-eyebrow">YOUR WORKSPACE</div><div className="cw-title-row"><div><h1>Cloud Workspace</h1><p>Your projects and diagrams, saved to your account.</p><p className="cw-quota">{limits.admin ? `${limits.diagramCount} diagrams · Admin account (unlimited)` : `${limits.diagramCount} of ${limits.diagramLimit ?? 3} cloud diagrams used`}</p></div><button className="cw-button cw-primary" onClick={() => setProjectForm(!projectForm)}>+ New project</button></div>
       {error && <div className="cw-message cw-error" role="alert">{error}<button onClick={() => setError("")} aria-label="Dismiss">×</button></div>}{notice && <div className="cw-message cw-success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss">×</button></div>}
