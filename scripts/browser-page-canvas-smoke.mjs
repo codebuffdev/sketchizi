@@ -16,14 +16,19 @@ async function waitScene(predicate) {
  throw new Error('Expected page scene was not persisted: '+JSON.stringify(await scene()));
 }
 const pages = es => es.filter(e=>e.type==='frame' && e.customData?.sketchiziPage);
-const canvasOptions = () => page.getByRole('button',{name:'Canvas options',exact:true});
+const canvasStyle = () => page.getByRole('button',{name:'Canvas style',exact:true});
+async function ensureHeaderVisible() {
+ const reveal = page.getByRole('button',{name:'Show application header',exact:true});
+ if (await reveal.count()) await reveal.click();
+}
 try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
  await page.locator('.excalidraw').waitFor();
  await page.locator('.desktop-app-document-identity-dirty-dot.is-saved').waitFor({state:'attached',timeout:20000});
- assert.equal(await canvasOptions().count(),1,'Pages controller must render only one canvas selector');
- await canvasOptions().click();
+ await ensureHeaderVisible();
+ assert.equal(await canvasStyle().count(),1,'Pages controller must render only one canvas selector');
+ await canvasStyle().click();
  page.once('dialog',dialog=>dialog.accept('Cover'));
  await page.getByRole('button',{name:/Pages Organize/}).click();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
@@ -68,23 +73,23 @@ try {
  assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Details');
  await page.reload();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
- await canvasOptions().click();
+ await canvasStyle().click();
  await page.getByRole('button',{name:/Infinite canvas Draw/}).click();
  assert.equal(await page.getByRole('navigation',{name:'Page navigation'}).count(),0);
  assert.equal(await page.locator('.canvas-pages-mask').count(),0,'Infinite canvas must remove the Pages mask');
  assert.equal(pages(await scene()).length,2,'Switching views must preserve all pages');
  // Re-enter Pages mode, then verify the selector remains usable on narrow screens.
- await canvasOptions().click();
+ await canvasStyle().click();
  await page.getByRole('button',{name:/Pages Organize/}).click();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
  await page.setViewportSize({width:390,height:844});
- await canvasOptions().click();
- const menu=await page.getByRole('dialog',{name:'Canvas options'}).boundingBox();
+ await canvasStyle().click();
+ const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
  assert(menu.x>=0 && menu.x+menu.width<=390);
  await page.getByRole('button',{name:/Infinite canvas Draw/}).click();
  await page.screenshot({path:'/tmp/sketchizi-page-mobile.png'});
  await page.setViewportSize({width:1440,height:1000});
- await canvasOptions().click();
+ await canvasStyle().click();
  await page.getByRole('button',{name:/Pages Organize/}).click();
  await page.getByRole('button',{name:'Fit page',exact:true}).click();
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
