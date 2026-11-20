@@ -10,6 +10,13 @@ const makePage = async (viewport) => {
   return { context, page };
 };
 
+const chooseStartupCanvas = async (page) => {
+  const chooser = page.getByRole("dialog", { name: "Start with" });
+  await chooser.waitFor({ timeout: 30000 });
+  await chooser.getByRole("button", { name: "Infinity" }).click();
+  await chooser.waitFor({ state: "detached" });
+};
+
 const openCreateMenu = async (page) => {
   await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("menu", { name: "Create a drawing" }).waitFor();
@@ -26,6 +33,7 @@ try {
   const desktop = await makePage({ width: 1440, height: 1000 });
   const page = desktop.page;
   await page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await chooseStartupCanvas(page);
   await openDesignStudio(page);
   await page.getByRole("tab", { name: "AWS architecture" }).click();
   await page.getByRole("button", { name: /Three-Tier AWS Web Application/i }).waitFor();
@@ -64,6 +72,7 @@ try {
   // A fresh browser context validates the primary blank drawing action.
   const blank = await makePage({ width: 1280, height: 800 });
   await blank.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await chooseStartupCanvas(blank.page);
   await openCreateMenu(blank.page);
   await blank.page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
@@ -163,6 +172,7 @@ try {
   // Isolate drawing interactions from unrelated smoke checks.
   const gridSession = await makePage({ width: 1280, height: 800 });
   await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await chooseStartupCanvas(gridSession.page);
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
   const canvasLocator = gridSession.page.locator(".desktop-canvas-region > .canvas");
@@ -348,6 +358,7 @@ try {
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
   await responsive.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await chooseStartupCanvas(responsive.page);
   await openCreateMenu(responsive.page);
   await responsive.page.getByRole("menuitem", { name: /^Templates/ }).waitFor();
   await responsive.page.keyboard.press("Escape");
@@ -368,6 +379,7 @@ try {
     body: JSON.stringify({ authenticated: false, user: null }),
   }));
   await authLayout.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await chooseStartupCanvas(authLayout.page);
   await authLayout.page.getByRole("button", { name: "Sign in", exact: true }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor();
 
