@@ -11,5 +11,6 @@ test("freedraw maps the legacy numeric dock width to the matching key", () => {
   assert.equal(getFreeDrawStrokeWidthKey({ currentItemStrokeWidth: 1 }), "thin");
   assert.equal(getFreeDrawStrokeWidthKey({ currentItemStrokeWidth: 2 }), "medium");
   assert.equal(getFreeDrawStrokeWidthKey({ currentItemStrokeWidth: 4 }), "bold");
+  assert.equal(getFreeDrawStrokeWidthKey({ currentItemStrokeWidth: 4, currentItemStrokeWidthKey: "medium" }), "bold");
   assert.equal(getFreeDrawStrokeWidthKey({}), "medium");
 });
