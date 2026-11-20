@@ -876,8 +876,10 @@ function App() {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
     if (tabIndex < 0) return;
-    const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
     const isActive = tabId === activeCanvasIdRef.current;
+    const remainingTabs = currentTabs
+      .filter((item) => item.id !== tabId)
+      .map((item) => isActive ? { ...item, todoTabActive: false } : item);
 
     if (remainingTabs.length === 0) {
       // Closing the final tab returns to the workspace welcome screen, where
