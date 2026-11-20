@@ -397,7 +397,7 @@ try {
   if (overflow) throw new Error("Creation screen has horizontal overflow at 390px viewport width.");
   console.log("PASS: creation screen remains usable at 390px without horizontal overflow.");
 
-  // Sign-in is a true canvas-centered modal, not a popup clipped by the header.
+  // Sign-in is a centered modal, not a popup clipped by the header.
   // Stub only the current-user endpoint to keep the layout smoke independent
   // from optional authentication backend availability.
   const authLayout = await makePage({ width: 1280, height: 800 });
@@ -416,14 +416,12 @@ try {
     const layout = await page.evaluate(() => {
       const dialog = document.querySelector(".auth-dialog");
       const backdrop = document.querySelector(".auth-dialog-backdrop");
-      const canvas = document.querySelector(".desktop-canvas-region");
-      if (!dialog || !backdrop || !canvas) return null;
+      if (!dialog || !backdrop) return null;
       const rect = dialog.getBoundingClientRect();
-      const canvasRect = canvas.getBoundingClientRect();
       return {
         portalled: backdrop.parentElement?.classList.contains("app") === true,
-        dx: Math.abs(rect.left + rect.width / 2 - (canvasRect.left + canvasRect.width / 2)),
-        dy: Math.abs(rect.top + rect.height / 2 - (canvasRect.top + canvasRect.height / 2)),
+        dx: Math.abs(rect.left + rect.width / 2 - window.innerWidth / 2),
+        dy: Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2),
         withinViewport: rect.left >= 0 && rect.top >= 0 &&
           rect.right <= window.innerWidth && rect.bottom <= window.innerHeight,
       };
