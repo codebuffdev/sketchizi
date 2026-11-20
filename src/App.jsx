@@ -24,6 +24,7 @@ import { useCanvasTools } from "./features/canvas/useCanvasTools";
 import { useMinimapController } from "./features/canvas/useMinimapController";
 import { useExcalidrawScene } from "./features/canvas/useExcalidrawScene";
 import SketchiziCanvas from "./components/app/SketchiziCanvas";
+import "./styles/canvas-tab-close-dialog.css";
 import CollaborationUI from "./components/app/CollaborationUI";
 import MoreTools from "./components/app/MoreTools";
 import { useIconInsertion } from "./features/icon-library/useIconInsertion";
@@ -106,6 +107,7 @@ function App() {
   const setCurrentFileRef = useRef(null);
   const [apiReady, setApiReady] = useState(false);
   const [canvasTabs, setCanvasTabs] = useState([{ id: "canvas-1", name: "Canvas 1", snapshot: null, dirty: false }]);
+  const [closeTabPrompt, setCloseTabPrompt] = useState(null);
   const [activeCanvasId, setActiveCanvasId] = useState("canvas-1");
   const [canvasTabsReady, setCanvasTabsReady] = useState(false);
   const canvasTabsRef = useRef(canvasTabs);
@@ -717,28 +719,37 @@ function App() {
     return () => window.removeEventListener("keydown", createCanvasFromShortcut, true);
   }, [createCanvasTab]);
 
-  const closeCanvasTab = useCallback((tabId) => {
+  const performCloseCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
     if (tabIndex < 0 || currentTabs.length <= 1) return;
-    const tab = currentTabs[tabIndex];
+    const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
+    const isActive = tabId === activeCanvasIdRef.current;
+    if (isActive) {
+      const nextActive = currentTabs[tabIndex - 1] || remainingTabs[0];
+      if (!nextActive) return;
+      // Switching first captures and persists the live scene before removal.
+      switchCanvasTab(nextActive.id);
+    }
+    persistCanvasTabs(remainingTabs);
+    setCloseTabPrompt(null);
+  }, [persistCanvasTabs, switchCanvasTab]);
+
+  const closeCanvasTab = useCallback((tabId) => {
+    const currentTabs = canvasTabsRef.current;
+    const tab = currentTabs.find((item) => item.id === tabId);
+    if (!tab || currentTabs.length <= 1) return;
     const isActive = tabId === activeCanvasIdRef.current;
     const hasUnsavedChanges = Boolean(tab.dirty || (isActive && (
       canvasSnapshotStateRef.current?.documentDirty ||
       ["pending", "saving", "error", "conflict"].includes(canvasSnapshotStateRef.current?.cloudSaveState?.state)
     )));
-    if (hasUnsavedChanges && !window.confirm(`“${tab.name}” has unsaved changes. Close it anyway?`)) return;
-
-    const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
-    if (isActive) {
-      const nextActive = currentTabs[tabIndex - 1] || remainingTabs[0];
-      if (!nextActive) return;
-      // Switching first captures and persists the live scene before the tab
-      // is removed, so a close can never race the active canvas snapshot.
-      switchCanvasTab(nextActive.id);
+    if (hasUnsavedChanges) {
+      setCloseTabPrompt({ tabId, name: tab.name });
+      return;
     }
-    persistCanvasTabs(remainingTabs);
-  }, [persistCanvasTabs, switchCanvasTab]);
+    performCloseCanvasTab(tabId);
+  }, [performCloseCanvasTab]);
 
   const reorderCanvasTabs = useCallback((sourceId, targetId) => {
     const current = [...canvasTabsRef.current];
@@ -2471,6 +2482,40 @@ function App() {
         </div>
       )}
       <Suspense fallback={<div className="sketchizi-toast" role="status" aria-live="polite">Opening tool…</div>}>
+      {closeTabPrompt && (
+        <div
+          className="canvas-tab-close-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCloseTabPrompt(null);
+          }}
+        >
+          <section
+            className="canvas-tab-close-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="canvas-tab-close-title"
+            aria-describedby="canvas-tab-close-description"
+          >
+            <div className="canvas-tab-close-dialog-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3.5 21 19a1 1 0 0 1-.87 1.5H3.87A1 1 0 0 1 3 19l9-15.5Z" />
+                <path d="M12 9v4.5M12 17h.01" />
+              </svg>
+            </div>
+            <div className="canvas-tab-close-dialog-copy">
+              <span className="canvas-tab-close-eyebrow">UNSAVED CHANGES</span>
+              <h2 id="canvas-tab-close-title">Close this canvas?</h2>
+              <p className="canvas-tab-close-name">{closeTabPrompt.name}</p>
+              <p id="canvas-tab-close-description">This canvas has changes that haven’t been saved yet. If you close it now, those changes may be lost.</p>
+            </div>
+            <div className="canvas-tab-close-dialog-actions">
+              <button type="button" className="canvas-tab-close-keep" autoFocus onClick={() => setCloseTabPrompt(null)}>Keep editing</button>
+              <button type="button" className="canvas-tab-close-confirm" onClick={() => performCloseCanvasTab(closeTabPrompt.tabId)}>Close tab</button>
+            </div>
+          </section>
+        </div>
+      )}
       {replacementPrompt && <div className="canvas-replacement-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) resolveReplacementPrompt(false); }}>
         <section className="canvas-replacement-dialog" role="alertdialog" aria-modal="true" aria-labelledby="canvas-replacement-title" aria-describedby="canvas-replacement-description">
           <div className="canvas-replacement-icon" aria-hidden="true">!</div>
