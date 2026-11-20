@@ -55,7 +55,15 @@ function normalizedDiagramName(value) {
 }
 
 function unwrapDiagram(value) { return value?.diagram || value || null; }
-function unwrapDiagrams(value) { return Array.isArray(value) ? value : Array.isArray(value?.diagrams) ? value.diagrams : []; }
+function unwrapDiagrams(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.diagrams)) return value.diagrams;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.data?.diagrams)) return value.data.diagrams;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  return null;
+}
 
 async function rejectDuplicateDiagramName({ method, targetPath, body, backendOrigin, headers, requestId }) {
   const creates = method === "POST" && targetPath === "/api/workspace/diagrams";
@@ -78,6 +86,7 @@ async function rejectDuplicateDiagramName({ method, targetPath, body, backendOri
     const listResponse = await fetch(listUrl, { headers, cache: "no-store", signal: AbortSignal.timeout(10000) });
     if (!listResponse.ok) throw new Error("lookup_failed");
     const diagrams = unwrapDiagrams(await listResponse.json());
+    if (!diagrams) throw new Error("unexpected_diagram_list_shape");
     const duplicate = diagrams.find((diagram) => diagram && diagram.id !== currentId && normalizedDiagramName(diagram.name) === name);
     if (duplicate) return jsonError(409, "A diagram with this name already exists in this project. Choose a different name.", "duplicate_diagram_name", requestId);
     return null;
