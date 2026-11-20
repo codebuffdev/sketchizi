@@ -124,6 +124,17 @@ try {
   const nameInput = page.getByRole("textbox", { name: "Rectangle name", exact: true });
   const rectangleName = "Backend services";
   const title = page.getByRole("button", { name: `Rename rectangle: ${rectangleName}`, exact: true });
+  const selectionDiagnostics = await page.evaluate(() => ({
+    activeTools: [...document.querySelectorAll('[data-testid^="toolbar-"]')]
+      .filter((button) => button.getAttribute("aria-pressed") === "true")
+      .map((button) => ({ label: button.getAttribute("aria-label"), visible: Boolean(button.getClientRects().length) })),
+    visibleNameActions: [...document.querySelectorAll("button")].filter((button) =>
+      /name.*rectangle|rectangle.*name/i.test(button.getAttribute("aria-label") || button.innerText || ""),
+    ).map((button) => ({ label: button.getAttribute("aria-label"), visible: Boolean(button.getClientRects().length) })),
+    pageText: document.body.innerText.slice(0, 1200),
+  }));
+  console.log("Rectangle selection diagnostics:", JSON.stringify(selectionDiagnostics));
+  await page.screenshot({ path: "/tmp/sketchizi-drawing-selection.png" });
   await addName.waitFor();
   await page.mouse.click(x - 70, y - 70);
   await addName.waitFor({ state: "hidden" });
