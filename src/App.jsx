@@ -2446,6 +2446,7 @@ function App() {
             onActivityChange={updateCanvasActivity}
             todoItems={canvasTabs.find((tab) => tab.id === activeCanvasId)?.todoItems || []}
             onTodoItemsChange={updateCanvasTodoItems}
+            onOpenTodoTab={openTodoTab}
             onStartDateChange={updateActiveCanvasStartDate}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
