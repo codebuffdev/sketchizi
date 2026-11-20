@@ -292,7 +292,7 @@ function OptionGlyph({ kind, value }) {
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
   return <DockChoiceMenu label={label} value={value} onChange={onChange} options={options} kind={kind} />;
 }
-export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
+export default function ToolOptionsDock({ apiRef, selectedElements = [], onClearSelection, canvasRevision, canEdit = true }) {
   useEffect(() => {
     // Warm the host-provided font so canvas text measurement uses Kalam immediately.
     document.fonts?.load('16px "Kalam"', "Kalam").catch(() => {});
@@ -332,17 +332,20 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
       event.preventDefault();
       event.stopPropagation();
       setCustomTool(null);
+      onClearSelection?.();
+      window.dispatchEvent(new CustomEvent("sketchizi:escape-to-primary-dock"));
       apiRef?.current?.updateScene?.({
         appState: {
           activeTool: { type: "selection" },
           selectedElementIds: {},
           selectedGroupIds: {},
+          selectedLinearElement: null,
         },
       });
     };
     window.addEventListener("keydown", handleEscapeToPrimaryDock, true);
     return () => window.removeEventListener("keydown", handleEscapeToPrimaryDock, true);
-  }, [apiRef]);
+  }, [apiRef, onClearSelection]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
   useEffect(() => {
