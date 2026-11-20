@@ -234,6 +234,7 @@ function App() {
   const cloudSaveQueueRef = useRef(Promise.resolve());
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
+  const cloudHydrationPendingTabIdRef = useRef("");
   const cloudDetachedRef = useRef(false);
   const [cloudDetached, setCloudDetached] = useState(false);
   const cloudSceneReadyRef = useRef(false);
@@ -688,6 +689,12 @@ function App() {
 
   useEffect(() => {
     if (!apiReady || !apiRef.current) return;
+    // A cloud deep-link is already restoring this tab from the server. Do not
+    // let the generic tab effect reapply its cached snapshot over that load.
+    if (cloudHydrationPendingTabIdRef.current === activeCanvasId) {
+      cloudHydrationPendingTabIdRef.current = "";
+      return;
+    }
     const activeTab = canvasTabsRef.current.find((tab) => tab.id === activeCanvasId);
     if (activeTab?.snapshot) applyCanvasTabSnapshot(activeTab);
   }, [apiReady, activeCanvasId, applyCanvasTabSnapshot]);
@@ -980,6 +987,9 @@ function App() {
           }));
           canvasTabsRef.current = focusedTabs;
           setCanvasTabs(focusedTabs);
+          if (activeCanvasIdRef.current !== existingCloudTab.id) {
+            cloudHydrationPendingTabIdRef.current = existingCloudTab.id;
+          }
           activeCanvasIdRef.current = existingCloudTab.id;
           setActiveCanvasId(existingCloudTab.id);
           setActiveWorkspaceTabId(existingCloudTab.id);

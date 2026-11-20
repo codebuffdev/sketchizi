@@ -282,3 +282,14 @@ test("reopening an existing cloud tab always fetches the authoritative cloud doc
   assert.match(existingTabBranch, /setCloudSaveState\(\{ state: "loading", error: "" \}\)/);
   assert.doesNotMatch(existingTabBranch, /cloudLoadStartedRef\.current = true/);
 });
+
+test("cloud deep-link hydration is not overwritten by the generic active-tab snapshot effect", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /cloudHydrationPendingTabIdRef = useRef\(""\)/);
+  assert.match(app, /cloudHydrationPendingTabIdRef\.current = existingCloudTab\.id/);
+  const activeTabEffectStart = app.indexOf("useEffect(() => {\n    if (!apiReady || !apiRef.current) return;");
+  const activeTabEffect = app.slice(activeTabEffectStart, app.indexOf("const switchCanvasTab", activeTabEffectStart));
+  assert.match(activeTabEffect, /cloudHydrationPendingTabIdRef\.current === activeCanvasId/);
+  assert.match(activeTabEffect, /cloudHydrationPendingTabIdRef\.current = ""/);
+  assert.match(activeTabEffect, /return;/);
+});
