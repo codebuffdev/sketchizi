@@ -8,6 +8,14 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 800 
 const page = await context.newPage();
 page.on("pageerror", (error) => errors.push(error.message));
 
+async function dismissStartupChooser() {
+  const title = page.getByRole("heading", { name: "Start with" });
+  await title.waitFor({ timeout: 15000 });
+  const chooser = page.getByRole("dialog").filter({ has: title });
+  await chooser.getByRole("button", { name: "Infinity" }).click();
+  await chooser.waitFor({ state: "detached" });
+}
+
 async function ensureHeaderVisible() {
   const reveal = page.locator(".desktop-app-header-reveal-handle");
   await reveal.waitFor({ state: "attached", timeout: 15000 });
@@ -81,6 +89,7 @@ async function awaitScene(check, description) {
 
 try {
   await page.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
+  await dismissStartupChooser();
   const viewport = page.locator(".excalidraw");
   await viewport.waitFor({ state: "visible" });
   // Do not draw while IndexedDB restoration is still replacing the scene.
