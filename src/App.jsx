@@ -1018,10 +1018,11 @@ function App() {
             },
           };
           const current = canvasTabsRef.current.find((item) => item.id === tab.id);
-          if (current?.snapshot?.cloudSession?.diagramId !== session.diagramId) return;
+          if (current?.snapshot?.cloudSession?.diagramId !== session.diagramId || current.dirty) return;
           const nextTabs = canvasTabsRef.current.map((item) => item.id === tab.id ? refreshedTab : item);
           canvasTabsRef.current = nextTabs;
           setCanvasTabs(nextTabs);
+          if (tab.id === activeCanvasIdRef.current) applyCanvasTabSnapshot(refreshedTab);
           saveCanvasTabs(nextTabs).catch(() => {});
         },
         onFailed: (tab, error) => {
