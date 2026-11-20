@@ -4076,3 +4076,144 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 .app .desktop-canvas-region { position: relative; }
 .canvas-tab-todo-icon { color: #16a34a; }
 .app.theme-dark .canvas-tab-todo-icon { color: #4ade80; }
+
+ 
+/* Completed tasks — compact summary row with a calm, expandable history. */
+.app .sketchizi-todo-completed-section {
+  margin-top: 14px;
+  border-top: 1px solid #e8edf2;
+}
+.app .sketchizi-todo-completed-toggle {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 2px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #344252;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+.app .sketchizi-todo-completed-toggle:hover {
+  background: #f7f9fb;
+}
+.app .sketchizi-todo-completed-mark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: #eaf7ee;
+  color: #16803d;
+}
+.app .sketchizi-todo-completed-toggle strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+.app .sketchizi-todo-completed-toggle em {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: #eaf7ee;
+  color: #16803d;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+.app .sketchizi-todo-completed-hint {
+  margin-left: auto;
+  color: #8995a2;
+  font-size: 10px;
+  font-weight: 550;
+}
+.app .sketchizi-todo-completed-chevron {
+  display: inline-block;
+  color: #8995a2;
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+.app .sketchizi-todo-completed-section.is-open .sketchizi-todo-completed-chevron {
+  transform: rotate(90deg);
+}
+.app .sketchizi-todo-completed-content {
+  padding: 5px 0 2px 4px;
+  animation: sketchizi-completed-reveal 160ms ease both;
+}
+.app .sketchizi-todo-completed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-task {
+  padding-left: 7px;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-task-text {
+  color: #8995a2;
+  text-decoration: line-through;
+  text-decoration-color: #b8c1ca;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-row-actions {
+  opacity: 0;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-task:hover .sketchizi-todo-row-actions,
+.app .sketchizi-todo-completed-list .sketchizi-todo-task:focus-within .sketchizi-todo-row-actions {
+  opacity: 1;
+}
+.app .sketchizi-todo-completed-empty {
+  padding: 12px 8px 10px 40px;
+  color: #98a3af;
+  font-size: 11px;
+}
+.app .sketchizi-todo-completed-content .sketchizi-todo-clear {
+  margin: 5px 0 0 35px;
+  padding: 4px 0;
+  color: #8995a2;
+  font-size: 10px;
+}
+.app .sketchizi-todo-completed-content .sketchizi-todo-clear:hover {
+  color: #0866ff;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-section {
+  border-color: #354252;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle {
+  color: #d5dde6;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle:hover {
+  background: #2a3542;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-mark,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle em {
+  background: #203d2d;
+  color: #72d69a;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-hint,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-chevron,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-empty {
+  color: #9aa7b5;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-list .sketchizi-todo-task-text {
+  color: #9aa7b5;
+  text-decoration-color: #657180;
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-completed-toggle {
+  min-height: 54px;
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-completed-toggle strong {
+  font-size: 13px;
+}
+@keyframes sketchizi-completed-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-todo-completed-chevron,
+  .app .sketchizi-todo-completed-content { transition: none; animation: none; }
+}
