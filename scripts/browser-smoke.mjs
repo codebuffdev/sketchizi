@@ -159,11 +159,20 @@ try {
   }
   const mobileHitTest = await library.evaluate((panel) => {
     const control = panel.querySelector('select[aria-label="Icon category"]');
+    const describe = (element) => element && ({
+      tag: element.tagName,
+      id: element.id || null,
+      className: typeof element.className === "string" ? element.className : null,
+      pointerEvents: getComputedStyle(element).pointerEvents,
+      zIndex: getComputedStyle(element).zIndex,
+    });
     if (!control) return { clickable: false, reason: "Category selector missing" };
     const rect = control.getBoundingClientRect();
     const atPoint = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
     return {
       clickable: atPoint === control || control.contains(atPoint),
+      coveredBy: describe(atPoint),
+      control: describe(control),
       rect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
       viewport: [window.innerWidth, window.innerHeight],
     };
