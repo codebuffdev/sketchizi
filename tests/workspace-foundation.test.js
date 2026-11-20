@@ -154,12 +154,20 @@ test("authenticated users keep the editor as the default route; Workspace is opt
   assert.match(source, /const workspaceRoute = window\.location\.pathname === "\/workspace"/);
 });
 
+test("cloud hydration response updates only the tab that initiated the request", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /const targetTabId = cloudHydratingTabIdRef\.current/);
+  assert.match(app, /tab\.id === targetTabId/);
+  assert.match(app, /if \(activeCanvasIdRef\.current !== targetTabId\) \{/);
+  assert.match(app, /update only that tab's cached snapshot/);
+});
+
 test("cloud-opened diagrams use their saved name in the editor identity", async () => {
   const source = await read("../src/App.jsx");
   assert.match(source, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
   assert.match(source, /setCloudDetached\(true\)/);
-  assert.match(source, /setCloudDocumentName\(diagram\.name \|\| "Cloud diagram"\)/);
-  assert.match(source, /name: diagram\.name \|\| "Cloud diagram"/);
+  assert.match(source, /setCloudDocumentName\(loadedCloudName\)/);
+  assert.match(source, /name: loadedCloudName/);
   const stylesheet = await read("../src/features/workspace/workspace.css");
   assert.match(stylesheet, /cloud-editor-save-status:not\(\.cloud-editor-save-status-error\):not\(\.cloud-editor-save-status-conflict\)\{display:none!important\}/);
 });
