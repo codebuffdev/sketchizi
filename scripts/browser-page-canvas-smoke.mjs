@@ -21,7 +21,7 @@ try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
  await page.locator('.excalidraw').waitFor();
- await page.locator('.desktop-app-save-status-trigger.is-ready, .desktop-app-save-status-trigger.is-saved').waitFor({state:'attached',timeout:20000});
+ await page.locator('.desktop-app-document-identity-dirty-dot.is-saved').waitFor({state:'attached',timeout:20000});
  assert.equal(await canvasOptions().count(),1,'Pages controller must render only one canvas selector');
  await canvasOptions().click();
  page.once('dialog',dialog=>dialog.accept('Cover'));
