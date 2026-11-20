@@ -1,0 +1,16 @@
+/* On-demand LanguageTool grammar suggestions */
+.sketchizi-grammar-check { display:flex; flex-wrap:wrap; align-items:center; gap:7px; min-width:0; color:var(--ui-text,#292d32); font-size:11px; }
+.sketchizi-grammar-trigger { border:1px solid var(--ui-border,#d8dce0); border-radius:7px; padding:5px 9px; background:var(--ui-surface-solid,#fff); color:var(--ui-text,#292d32); font:inherit; cursor:pointer; }
+.sketchizi-grammar-trigger:hover:not(:disabled) { background:var(--ui-surface-hover,#f1f3f4); }
+.sketchizi-grammar-trigger:disabled { opacity:.55; cursor:default; }
+.sketchizi-grammar-credit { color:var(--ui-text-muted,#72777d); text-decoration:underline; }
+.sketchizi-grammar-results { flex-basis:100%; display:grid; gap:7px; max-height:180px; overflow:auto; padding:8px; border:1px solid var(--ui-border,#d8dce0); border-radius:8px; background:var(--ui-surface-solid,#fff); }
+.sketchizi-grammar-results p,.sketchizi-grammar-match { margin:0; }
+.sketchizi-grammar-match { display:grid; gap:5px; padding-bottom:7px; border-bottom:1px solid var(--ui-border-soft,#e8eaed); }
+.sketchizi-grammar-match:last-child { padding-bottom:0; border-bottom:0; }
+.sketchizi-grammar-replacements { display:flex; flex-wrap:wrap; gap:5px; }
+.sketchizi-grammar-replacements button { border:1px solid #a8cdb5; border-radius:6px; padding:3px 7px; background:#edf7f0; color:#23643a; font:inherit; cursor:pointer; }
+.sketchizi-grammar-error { flex-basis:100%; margin:0; color:#b54708; }
+.sketchizi-grammar-check.is-dark { color:#e6e8eb; }
+.sketchizi-grammar-check.is-dark .sketchizi-grammar-trigger,.sketchizi-grammar-check.is-dark .sketchizi-grammar-results { background:#24272c; color:#e6e8eb; border-color:#484d54; }
+.sketchizi-grammar-check.is-dark .sketchizi-grammar-match { border-color:#484d54; }
