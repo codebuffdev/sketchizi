@@ -97,6 +97,7 @@ function App() {
     try { window.localStorage.setItem("sketchizi-grid-enabled", String(gridEnabled)); } catch { /* Private browsing. */ }
   }, [gridEnabled]);
   const [canvasAppearance, setCanvasAppearance] = useState(() => getInitialThemeMode() === "dark" ? "sketch" : "clean");
+  const canvasAppearanceRef = useRef(canvasAppearance);
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -116,6 +117,7 @@ function App() {
   const canvasTabsSaveTimerRef = useRef(null);
   canvasTabsRef.current = canvasTabs;
   activeCanvasIdRef.current = activeCanvasId;
+  canvasAppearanceRef.current = canvasAppearance;
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
   const [minimapOpen, setMinimapOpen] = useState(false);
@@ -550,7 +552,7 @@ function App() {
   // identity. A changing onChange prop makes Excalidraw re-run componentDidUpdate
   // and call onChange again, which is what turned a status update into a loop.
   const canvasSnapshotStateRef = useRef(null);
-  canvasSnapshotStateRef.current = { documentDirty, cloudSaveState, cloudDocumentName, canvasAppearance };
+  canvasSnapshotStateRef.current = { documentDirty, cloudSaveState, cloudDocumentName, canvasAppearance: canvasAppearanceRef.current };
   const captureCanvasTabSnapshot = useCallback((elements, appState) => {
     const api = apiRef.current;
     const live = canvasSnapshotStateRef.current;
@@ -623,10 +625,12 @@ function App() {
     setCloudSaveState(snapshot.cloudSaveState || { state: "inactive", error: "" });
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
     const restoredAppState = snapshot.appState || {};
-    setCanvasAppearance(snapshot.appearance || getCanvasAppearanceFromBackground(
+    const restoredAppearance = snapshot.appearance || getCanvasAppearanceFromBackground(
       restoredAppState.viewBackgroundColor,
       restoredAppState.currentItemRoughness,
-    ));
+    );
+    canvasAppearanceRef.current = restoredAppearance;
+    setCanvasAppearance(restoredAppearance);
     api.updateScene({
       elements,
       appState: { ...api.getAppState(), ...(snapshot.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
@@ -1166,6 +1170,7 @@ function App() {
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
   const handleCanvasAppearanceChange = useCallback((appearance) => {
     if (!collaborationCanEdit) return;
+    canvasAppearanceRef.current = appearance;
     setCanvasAppearance(appearance);
     if (appearance === "clean") preferences.useThemeDefaultBackground();
     else {
