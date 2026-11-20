@@ -1,0 +1,34 @@
+.canvas-start-date-wrap { position: absolute; right: 18px; bottom: 18px; z-index: 12; }
+.canvas-start-date {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 27px; padding: 0 9px;
+  border: 1px solid var(--color-border, rgba(120, 130, 150, .2)); border-radius: 7px;
+  background: var(--island-bg, rgba(255, 255, 255, .82)); color: var(--text-secondary, #697386);
+  font: inherit; font-size: 11px; line-height: 1; font-weight: 500; opacity: .82; cursor: pointer;
+  transition: opacity .14s ease, border-color .14s ease, background-color .14s ease; backdrop-filter: blur(8px);
+}
+.canvas-start-date:hover, .canvas-start-date:focus-visible { opacity: 1; border-color: var(--color-border, rgba(100, 110, 130, .42)); }
+.canvas-start-date svg { flex: 0 0 auto; }
+.canvas-start-date-chevron { opacity: .65; }
+.canvas-activity-popover {
+  position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 30; width: min(320px, calc(100vw - 32px));
+  max-height: min(440px, calc(100vh - 150px)); overflow: auto; padding: 14px;
+  border: 1px solid var(--color-border, rgba(120, 130, 150, .24)); border-radius: 12px;
+  background: var(--island-bg, #fff); color: var(--text-primary, #242936);
+  box-shadow: 0 12px 36px rgba(0,0,0,.16); backdrop-filter: blur(16px);
+}
+.canvas-activity-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:11px; border-bottom:1px solid var(--color-border, rgba(120,130,150,.16)); }
+.canvas-activity-header div, .canvas-activity-entry div { display:flex; flex-direction:column; gap:3px; }
+.canvas-activity-header strong { font-size:13px; }
+.canvas-activity-header span, .canvas-activity-entry span, .canvas-activity-empty { font-size:11px; color:var(--text-secondary, #788195); }
+.canvas-activity-edit { border:0; background:transparent; color:var(--text-secondary, #68758a); font-size:11px; cursor:pointer; }
+.canvas-activity-date-editor { display:flex; flex-direction:column; gap:6px; padding:10px 0; font-size:11px; color:var(--text-secondary, #788195); }
+.canvas-activity-date-editor input { padding:7px 8px; border:1px solid var(--color-border, #ccd2dc); border-radius:7px; background:transparent; color:inherit; }
+.canvas-activity-list { padding-top:11px; }
+.canvas-activity-day + .canvas-activity-day { margin-top:14px; padding-top:12px; border-top:1px solid var(--color-border, rgba(120,130,150,.16)); }
+.canvas-activity-day h3 { margin:0 0 9px; font-size:11px; font-weight:650; color:var(--text-secondary, #788195); }
+.canvas-activity-entry { display:flex; gap:9px; align-items:flex-start; padding:6px 0; }
+.canvas-activity-dot { width:7px; height:7px; margin:4px 0 0 2px; border-radius:50%; background:var(--color-primary, #7186ad); flex:0 0 auto; }
+.canvas-activity-entry strong { font-size:11px; font-weight:600; }
+.canvas-activity-empty { margin:0; line-height:1.5; }
+.app.theme-dark .canvas-start-date, .app.theme-dark .canvas-activity-popover { background:rgba(31,38,50,.96); border-color:rgba(150,162,184,.2); color:#dce3ed; }
+@media (max-width:520px) { .canvas-start-date-wrap { right:10px; bottom:12px; } .canvas-start-date { min-height:25px; font-size:10px; } }
