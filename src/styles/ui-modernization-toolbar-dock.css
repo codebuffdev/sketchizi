@@ -4270,3 +4270,50 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   border-color: #3b4652 !important;
 }
 
+
+
+/* First-class Todo canvas: the workspace is the surface, not a floating card. */
+.app .sketchizi-todo-workspace {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 0;
+  background: #f7f9fc;
+}
+.app .sketchizi-todo-workspace:has(.sketchizi-todo-popover.is-dark) {
+  background: #171f29;
+}
+.app .sketchizi-todo-popover.is-full-page {
+  width: 100%;
+  max-width: 1120px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 44px clamp(28px, 5vw, 76px) 64px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #1c2733;
+}
+.app .sketchizi-todo-popover.is-full-page.is-dark {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #e8edf3;
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5eaf0;
+}
+.app .sketchizi-todo-popover.is-full-page.is-dark .sketchizi-todo-header {
+  border-color: #354252;
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-section-heading {
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-todo-popover.is-full-page {
+    width: 100%;
+    padding: 28px 22px 48px;
+  }
+}
