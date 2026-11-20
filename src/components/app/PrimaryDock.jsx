@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const ICONS = {
   selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
@@ -12,16 +12,16 @@ const ICONS = {
   text: <><path d="M4 6V4h16v2" /><path d="M12 4v16" /><path d="M8 20h8" /></>,
   image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" /><path d="m5 17 5-5 3 3 2-2 4 4" /></>,
   frame: <><rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 2" /><path d="M8 4v3M16 4v3M8 17v3M16 17v3M4 8h3M4 16h3M17 8h3M17 16h3" /></>,
-  laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
   eraser: <><path d="m7 16 8-10a2 2 0 0 1 3 0l2 2a2 2 0 0 1 0 3l-8 9H9l-5-5a2 2 0 0 1 0-3l3-4" /><path d="m11 20 8 0" /></>,
+  laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
   bucketfill: <><path d="M4 13.5 13.5 4 20 10.5 10.5 20 4 13.5Z" /><path d="m9 8.5 6.5 6.5M17 16c0 2 1 3 2 3s2-1 2-3" /></>,
   autoshape: <><path d="M3 16c2-7 5-9 7-6" /><path d="M11 12h3m-2-2 2 2-2 2" /><rect x="16" y="6" width="5" height="12" rx="1" /></>,
   todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
 };
 
 const TOOLS = [
-  { id: "hand", label: "Hand" },
   { id: "selection", label: "Select" },
+  { id: "hand", label: "Hand" },
   { id: "rectangle", label: "Rectangle" },
   { id: "ellipse", label: "Ellipse" },
   { id: "diamond", label: "Diamond" },
@@ -35,7 +35,7 @@ const TOOLS = [
   { id: "laser", label: "Laser pointer" },
   { id: "bucketfill", label: "Bucket Fill" },
   { id: "autoshape", label: "Draw to Shape" },
-  { id: "todo", label: "Todo List" },
+  { id: "todo", label: "Todo List", separated: true },
 ];
 
 function ToolIcon({ name }) {
@@ -63,10 +63,6 @@ function activateTool({ id, root, apiRef, onOpenTodoTab }) {
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
-  const [position, setPosition] = useState(null);
-  const [expanded, setExpanded] = useState(false);
-  const dragRef = useRef(null);
-  const wheelRef = useRef(null);
 
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
@@ -79,7 +75,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       if (["bucketfill", "autoshape"].includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
-      if (!event.target?.closest?.(".sketchizi-radial-wheel button")) setCustomTool(null);
+      if (!event.target?.closest?.(".sketchizi-tool-sidebar button")) setCustomTool(null);
     };
     window.addEventListener("sketchizi:activate-tool", syncCustomTool);
     window.addEventListener("click", clearCustomTool, true);
@@ -89,81 +85,39 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     };
   }, []);
 
-
-
   const activeId = customTool || activeTool;
-  const tuckedOffset = 110;
-  const style = position
-    ? { left: position.left - (expanded ? 0 : tuckedOffset), top: position.top }
-    : { left: expanded ? 16 : -tuckedOffset, bottom: 16 };
-  const startDrag = (event) => {
-    if (event.button !== 0) return;
-    const rect = wheelRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originLeft: rect.left + (expanded ? 0 : tuckedOffset), originTop: rect.top, moved: false };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
-  };
-  const moveDrag = (event) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const dx = event.clientX - drag.startX;
-    const dy = event.clientY - drag.startY;
-    if (!drag.moved && Math.hypot(dx, dy) > 4) { drag.moved = true; setExpanded(true); }
-    if (!drag.moved) return;
-    const width = wheelRef.current?.offsetWidth || 220;
-    const height = wheelRef.current?.offsetHeight || 220;
-    setPosition({ left: Math.max(8, Math.min(window.innerWidth - width - 8, drag.originLeft + dx)), top: Math.max(8, Math.min(window.innerHeight - height - 8, drag.originTop + dy)) });
-  };
-  const endDrag = (event) => {
-    if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
-    if (!dragRef.current.moved) setExpanded((value) => !value);
-    dragRef.current = null;
-  };
 
   return (
-    <nav ref={wheelRef} className={`sketchizi-radial-wheel${isDarkTheme ? " is-dark" : ""}${expanded ? " is-expanded" : " is-tucked"}`} aria-label="Drawing tools" data-canvas-revision={canvasRevision} style={style}>
-      <div className="sketchizi-radial-wheel-ring" aria-hidden="true" />
-      {TOOLS.map((tool, index) => {
-        const angle = (index * 360) / TOOLS.length - 90;
+    <nav
+      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}`}
+      aria-label="Drawing tools"
+      data-canvas-revision={canvasRevision}
+    >
+      {TOOLS.map((tool) => {
         const selected = activeId === tool.id;
         return (
-          <button
-            key={tool.id}
-            type="button"
-            className={`sketchizi-radial-wheel-tool${selected ? " is-active" : ""}`}
-            aria-label={tool.label}
-            aria-pressed={selected}
-            title={tool.label}
-            disabled={!canEdit && tool.id !== "todo"}
-            style={{ "--tool-angle": `${angle}deg` }}
-            onClick={() => {
-              activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
-              if (tool.id !== "todo") {
-                setActiveTool(tool.id);
-                setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
-              }
-            }}
-          >
-            <ToolIcon name={tool.id} />
-          </button>
+          <React.Fragment key={tool.id}>
+            {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
+            <button
+              type="button"
+              className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
+              aria-label={tool.label}
+              aria-pressed={selected}
+              title={tool.label}
+              disabled={!canEdit && tool.id !== "todo"}
+              onClick={() => {
+                activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
+                if (tool.id !== "todo") {
+                  setActiveTool(tool.id);
+                  setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
+                }
+              }}
+            >
+              <ToolIcon name={tool.id} />
+            </button>
+          </React.Fragment>
         );
       })}
-      <button
-        type="button"
-        className="sketchizi-radial-wheel-hub"
-        aria-label="Move tool wheel"
-        title="Tap to expand or collapse; drag to move"
-        aria-expanded={expanded}
-        onPointerDown={startDrag}
-        onPointerMove={moveDrag}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-      >
-        <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 2v20M2 12h20M12 2l-3 3m3-3 3 3M22 12l-3-3m3 3-3 3M12 22l-3-3m3 3 3-3M2 12l3-3m-3 3 3 3" />
-        </svg>
-      </button>
     </nav>
   );
 }
