@@ -64,7 +64,7 @@ test("gateway rejects duplicate diagram names before forwarding create requests"
   let forwardedCreate = false;
   globalThis.fetch = async (url, options) => {
     const path = new URL(String(url)).pathname;
-    if (options.method === "GET" && path === "/api/workspace/projects/project-1/diagrams") {
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
       return Response.json({ diagrams: [{ id: "existing", name: "System Design" }] });
     }
     if (options.method === "POST") forwardedCreate = true;
@@ -87,10 +87,10 @@ test("gateway rejects duplicate diagram names before forwarding rename requests"
   let forwardedRename = false;
   globalThis.fetch = async (url, options) => {
     const path = new URL(String(url)).pathname;
-    if (options.method === "GET" && path === "/api/workspace/diagrams/current") {
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/diagrams/current") {
       return Response.json({ diagram: { id: "current", projectId: "project-1", name: "Old name" } });
     }
-    if (options.method === "GET" && path === "/api/workspace/projects/project-1/diagrams") {
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
       return Response.json({ diagrams: [{ id: "current", name: "Old name" }, { id: "other", name: "New name" }] });
     }
     if (options.method === "PATCH") forwardedRename = true;
@@ -114,7 +114,7 @@ test("gateway rejects duplicates when the backend wraps diagram rows in data", a
   let forwardedCreate = false;
   globalThis.fetch = async (url, options) => {
     const path = new URL(String(url)).pathname;
-    if (options.method === "GET" && path === "/api/workspace/projects/project-1/diagrams") {
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
       return Response.json({ data: { diagrams: [{ id: "existing", name: "System Design" }] } });
     }
     if (options.method === "POST") forwardedCreate = true;
@@ -137,7 +137,7 @@ test("gateway fails closed when it cannot interpret the diagrams list", async ()
   let forwardedCreate = false;
   globalThis.fetch = async (url, options) => {
     const path = new URL(String(url)).pathname;
-    if (options.method === "GET" && path === "/api/workspace/projects/project-1/diagrams") {
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
       return Response.json({ unexpected: [] });
     }
     if (options.method === "POST") forwardedCreate = true;
