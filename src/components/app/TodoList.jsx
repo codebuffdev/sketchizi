@@ -1,10 +1,14 @@
 import React, { useMemo, useState } from "react";
 
+function normalizeCanvasTitle(value) {
+  return String(value || "").trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+}
+
 function createTask(text) {
   return { id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text: text.trim(), completed: false, section: "active" };
 }
 
-export default function TodoList({ items = [], onChange, onClose, isDarkTheme = false, fullPage = false }) {
+export default function TodoList({ items = [], onChange, onClose, isDarkTheme = false, fullPage = false, canvasTabs = [], onNavigateToCanvas }) {
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
@@ -35,7 +39,10 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
     update(next);
     setDraggedId(null);
   };
-  const renderTask = (task) => (
+  const renderTask = (task) => {
+    const matchingCanvases = canvasTabs.filter((tab) => normalizeCanvasTitle(tab.name) === normalizeCanvasTitle(task.text));
+    const matchingCanvas = matchingCanvases.length === 1 ? matchingCanvases[0] : null;
+    return (
     <div className={`sketchizi-todo-task${task.completed ? " is-completed" : ""}${draggedId === task.id ? " is-dragging" : ""}`} key={task.id}
       draggable onDragStart={() => setDraggedId(task.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(task.id)} onDragEnd={() => setDraggedId(null)}>
       <span className="sketchizi-todo-grip" aria-hidden="true">⠿</span>
@@ -45,7 +52,9 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
           onKeyDown={(event) => { if (event.key === "Enter") { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); } if (event.key === "Escape") setEditingId(null); }}
           onBlur={() => { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); }} />
       ) : (
-        <button type="button" className="sketchizi-todo-task-text" onClick={() => { setEditingId(task.id); setEditingText(task.text); }}>{task.text}</button>
+        <button type="button" className={`sketchizi-todo-task-text${matchingCanvas ? " is-canvas-link" : ""}`} title={matchingCanvas ? `Open ${matchingCanvas.name} canvas` : "Edit task"} onClick={() => { if (matchingCanvas) onNavigateToCanvas?.(matchingCanvas.id); else { setEditingId(task.id); setEditingText(task.text); } }} aria-label={matchingCanvas ? `Open canvas ${matchingCanvas.name}` : `Edit task ${task.text}`}>
+          {task.text}{matchingCanvas && <span className="sketchizi-todo-canvas-link-icon" aria-hidden="true">↗</span>}
+        </button>
       )}
       <span className="sketchizi-todo-row-actions">
         {task.section === "completed" ? (
@@ -56,7 +65,8 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
         <button type="button" className="sketchizi-todo-action is-delete" title="Delete task" aria-label={`Delete ${task.text}`} onClick={() => remove(task.id)}>×</button>
       </span>
     </div>
-  );
+    );
+  };
   const progress = tasks.length ? Math.round((checkedCount / tasks.length) * 100) : 0;
   return (
     <section className={`sketchizi-todo-popover${isDarkTheme ? " is-dark" : ""}${fullPage ? " is-full-page" : ""}`} role={fullPage ? "region" : "dialog"} aria-label="Todo List">
