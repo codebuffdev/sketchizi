@@ -120,7 +120,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
 
   const activeId = customTool || activeTool;
   const style = position
-    ? { left: position.left, top: position.top }
+    ? { left: position.left + (expanded ? 0 : -152), top: position.top }
     : { left: expanded ? 18 : -152, bottom: 18 };
   const startDrag = (event) => {
     if (event.button !== 0) return;
