@@ -9,7 +9,7 @@
   backdrop-filter: blur(2px);
 }
 .startup-canvas-chooser {
-  width: min(310px, calc(100vw - 32px));
+  width: min(480px, calc(100vw - 32px));
   padding: 16px;
   border: 1px solid var(--ui-border, #343a43);
   border-radius: 13px;
@@ -24,7 +24,7 @@
 }
 .startup-canvas-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 9px;
 }
 .startup-canvas-option {
@@ -96,8 +96,11 @@
 .startup-canvas-option:first-child span::after {
   content: "A freeform canvas with no page boundaries.";
 }
-.startup-canvas-option:last-child span::after {
+.startup-canvas-option:nth-child(2) span::after {
   content: "Organize your work across separate pages.";
+}
+.startup-canvas-option:nth-child(3) span::after {
+  content: "Plan and track tasks for your canvas.";
 }
 .startup-canvas-option span::after {
   max-width: 124px;
@@ -117,4 +120,31 @@
   opacity: 0 !important;
   pointer-events: none !important;
   filter: blur(5px);
+}
+
+/* Explicit theme bindings keep the welcome chooser in step with the app theme. */
+.app[data-theme="dark"] .startup-canvas-chooser {
+  border-color: #343a43;
+  background: #191d23;
+  color: #f0f1f3;
+}
+.app[data-theme="dark"] .startup-canvas-option {
+  border-color: #343a43;
+  color: #f0f1f3;
+}
+.app[data-theme="dark"] .startup-canvas-option span::after { color: #a1a6ae; }
+.app[data-theme="light"] .startup-canvas-chooser {
+  border-color: #d5d8dc;
+  background: #fbfbfc;
+  color: #292d32;
+}
+.app[data-theme="light"] .startup-canvas-option {
+  border-color: #d5d8dc;
+  color: #292d32;
+}
+.app[data-theme="light"] .startup-canvas-option span::after { color: #707780; }
+@media (max-width: 420px) {
+  .startup-canvas-chooser { width: min(340px, calc(100vw - 32px)); }
+  .startup-canvas-options { grid-template-columns: 1fr; }
+  .startup-canvas-option { min-height: 86px; }
 }
