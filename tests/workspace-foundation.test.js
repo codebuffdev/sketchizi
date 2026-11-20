@@ -279,6 +279,10 @@ test("cloud document sanitizes Excalidraw runtime appState before persistence an
     zoom: { value: 1.25 },
     gridModeEnabled: true,
     currentItemFontFamily: 3,
+    currentItemStrokeWidth: 4,
+    currentItemStrokeWidthKey: "medium",
+    currentItemStrokeColor: "#222222",
+    currentItemStrokeVariability: "constant",
     collaborators,
     selectedElementIds: { element1: true },
     openMenu: "canvas",
@@ -290,6 +294,10 @@ test("cloud document sanitizes Excalidraw runtime appState before persistence an
     zoom: { value: 1.25 },
     gridModeEnabled: true,
     currentItemFontFamily: 3,
+    currentItemStrokeWidth: 4,
+    currentItemStrokeWidthKey: "medium",
+    currentItemStrokeColor: "#222222",
+    currentItemStrokeVariability: "constant",
   });
   assert.equal(Object.hasOwn(appState, "collaborators"), false);
   assert.equal(Object.hasOwn(appState, "selectedElementIds"), false);
