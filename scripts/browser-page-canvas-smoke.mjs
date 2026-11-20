@@ -93,6 +93,7 @@ try {
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  // Draw through the actual canvas, then ensure the new shape belongs to this page.
+ await page.mouse.click(500,400); // Focus the canvas before using its tool shortcut.
  await page.keyboard.press('r');
  await page.mouse.move(650,450); await page.mouse.down(); await page.mouse.move(760,540,{steps:10}); await page.mouse.up();
  es = await waitScene(es=>es.some(e=>e.type==='rectangle' && !e.customData?.sketchiziPagePaper && e.frameId===pages(es)[0]?.id));
