@@ -107,7 +107,6 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
           </span>
           <strong>Completed</strong>
           <em>{completed.length}</em>
-          <span className="sketchizi-todo-completed-hint">{completedOpen ? "Hide completed" : "Show completed"}</span>
           <span className="sketchizi-todo-completed-chevron" aria-hidden="true">›</span>
         </button>
         {completedOpen && completed.length > 0 && (
