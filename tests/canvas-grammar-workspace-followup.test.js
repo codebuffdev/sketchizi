@@ -25,3 +25,13 @@ test("grammar suggestions are actionable and do not rewrite canvas text automati
   assert.match(component, /replaceContentEditableText/);
   assert.match(component, /onClick=\{apply\}/);
 });
+
+
+test("grammar action buttons preserve the active Excalidraw editor focus", async () => {
+  const component = await read("../src/features/canvas/CanvasGrammarAssistant.jsx");
+  assert.match(component, /const keepEditorFocus = \(event\) => event\.preventDefault\(\)/);
+  assert.match(component, /className="canvas-grammar-apply" onMouseDown=\{keepEditorFocus\} onClick=\{apply\}/);
+  assert.match(component, /className="canvas-grammar-ignore" onMouseDown=\{keepEditorFocus\}/);
+  assert.match(component, /activeField\.isConnected/);
+  assert.match(component, /field\?\.textContent \?\? field\?\.innerText/);
+});
