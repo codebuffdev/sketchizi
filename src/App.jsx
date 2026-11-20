@@ -741,7 +741,14 @@ function App() {
     const tab = currentTabs.find((item) => item.id === tabId);
     if (!tab || currentTabs.length <= 1) return;
     const isActive = tabId === activeCanvasIdRef.current;
-    const hasUnsavedChanges = Boolean(tab.dirty || (isActive && (
+    // An untouched/cleared canvas has nothing to protect. Check the live
+    // Excalidraw scene for the active tab and the persisted snapshot for
+    // inactive tabs, ignoring deleted elements in either case.
+    const sceneElements = isActive
+      ? (apiRef.current?.getSceneElements?.() || [])
+      : (Array.isArray(tab.snapshot?.elements) ? tab.snapshot.elements.filter((element) => element && !element.isDeleted) : []);
+    const isEmptyCanvas = sceneElements.length === 0;
+    const hasUnsavedChanges = !isEmptyCanvas && Boolean(tab.dirty || (isActive && (
       canvasSnapshotStateRef.current?.documentDirty ||
       ["pending", "saving", "error", "conflict"].includes(canvasSnapshotStateRef.current?.cloudSaveState?.state)
     )));
