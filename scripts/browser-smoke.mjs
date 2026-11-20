@@ -72,6 +72,10 @@ try {
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: the canvas-tab add action opens an editable canvas.");
 
+  // The floating header may collapse after canvas interaction; reveal it with
+  // the same keyboard shortcut users have before opening header-only actions.
+  await ensureHeaderVisible(blank.page);
+
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
   const library = blank.page.getByRole("dialog", { name: "Icon Library" });
