@@ -39,6 +39,10 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   const dragId = useRef(null);
 
   useEffect(() => {
+    setOverflowOpen(false);
+  }, [activeId]);
+
+  useEffect(() => {
     if (!overflowOpen) return undefined;
     const closeOnOutsideInteraction = (event) => {
       if (!rootRef.current?.contains(event.target)) setOverflowOpen(false);
