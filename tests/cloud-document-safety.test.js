@@ -22,7 +22,7 @@ test("local autosave resumes once a cloud diagram is detached", () => {
 
 test("an empty visible cloud diagram saves deletions, but not transient empty callbacks", () => {
   assert.equal(hasCloudSceneChange(null), false);
-  assert.equal(hasCloudSceneChange([]), false);
+  assert.equal(hasCloudSceneChange([]), true, "an empty scene after hydration is a real deletion snapshot");
   assert.equal(hasCloudSceneChange([null, undefined]), false);
   assert.equal(hasCloudSceneChange([{ id: "one", isDeleted: false }]), true);
   assert.equal(hasCloudSceneChange([{ id: "one", isDeleted: true }]), true);
