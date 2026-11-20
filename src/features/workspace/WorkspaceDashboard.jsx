@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../navigation/themePreference.js";
 import { workspaceClient } from "./workspaceClient.js";
+import { findDuplicateDiagramName } from "./diagramNames.js";
 import "./workspace.css";
 
 const dateLabel = (value) => value ? new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }) : "Recently";
 const activityTime = (item = {}) => {
-  const value = [item.lastOpenedAt, item.lastUsedAt, item.updatedAt, item.createdAt].map(Number).find((time) => Number.isFinite(time) && time > 0);
-  return value || 0;
+  for (const candidate of [item.lastOpenedAt, item.lastUsedAt, item.updatedAt, item.createdAt]) {
+    const value = typeof candidate === "number" ? candidate : Date.parse(candidate || "");
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return 0;
 };
 const sortRecentlyUsed = (items = []) => [...items].sort((a, b) => activityTime(b) - activityTime(a));
 
@@ -127,6 +131,12 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     event.preventDefault(); if (!active || !diagramName.trim() || busy) return;
     setBusy(true); setError(""); setNotice("");
     try {
+      const currentDiagramsResult = await workspaceClient.listDiagrams(active.id);
+      const currentDiagrams = Array.isArray(currentDiagramsResult) ? currentDiagramsResult : currentDiagramsResult?.diagrams || [];
+      if (findDuplicateDiagramName(currentDiagrams, diagramName.trim())) {
+        setError("A diagram with this name already exists in this project. Choose a different name.");
+        return;
+      }
       const currentLimits = await workspaceClient.getLimits();
       setLimits(currentLimits);
       if (!currentLimits.admin && currentLimits.diagramCount >= currentLimits.diagramLimit) {
@@ -162,7 +172,15 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     if (action === "delete" && !window.confirm(`Delete "${d.name}"? This cannot be undone.`)) return;
     setBusy(true); setError("");
     try {
-      if (action === "rename") await workspaceClient.updateDiagram(d.id, { name: d.nextName, projectId: d.projectId });
+      if (action === "rename") {
+        const currentDiagramsResult = await workspaceClient.listDiagrams(activeId);
+        const currentDiagrams = Array.isArray(currentDiagramsResult) ? currentDiagramsResult : currentDiagramsResult?.diagrams || [];
+        if (findDuplicateDiagramName(currentDiagrams, d.nextName, d.id)) {
+          setError("A diagram with this name already exists in this project. Choose a different name.");
+          return;
+        }
+        await workspaceClient.updateDiagram(d.id, { name: d.nextName, projectId: activeId });
+      }
       if (action === "duplicate") await workspaceClient.duplicateDiagram(d.id);
       if (action === "delete") await workspaceClient.deleteDiagram(d.id);
       const rows = await workspaceClient.listDiagrams(activeId); setDiagrams(Array.isArray(rows) ? rows : rows?.diagrams || []);
