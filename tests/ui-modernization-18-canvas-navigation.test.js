@@ -45,5 +45,8 @@ test('native hamburger menu and floating catalogs are mutually exclusive', () =>
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
   assert.match(app, /nativeMenuOpenRef\.current = false;[\s\S]*?setNativeMenuOpen\(false\);[\s\S]*?api\.updateScene\(\{ appState: \{ openMenu: null \}/);
   assert.match(app, /if \(nativeMenuOpen && activePanel\) setActivePanel\(null\)/);
-  assert.match(app, /usePanelState\(\{ apiRef, closeNativeMenu \}\)/);
+  assert.match(app, /usePanelState\(\{ apiRef, closeNativeMenu, setAiAskOpen \}\)/);
+  assert.match(app, /setActivePanel\(null\);[\s\S]*?setAiAskOpen\(\(value\) => !value\)/);
+  const panelState = readFileSync(new URL('../src/features/navigation/usePanelState.js', import.meta.url), 'utf8');
+  assert.match(panelState, /setAiAskOpen\?\.\(false\)/);
 });
