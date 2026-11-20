@@ -31,6 +31,7 @@
 @import "./styles/floating-segmented-header.css";
 @import "./styles/right-header-rail.css";
 @import "./styles/advanced-canvas-suite.css";
+@import "./styles/grammar-check.css";
 @import "./styles/canvas-style-patterns.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
