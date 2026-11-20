@@ -348,8 +348,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.canvas-tab-item.is-active > .canvas-tab-active-actions {
-  flex: 0 0 auto;
+ .canvas-tab-item.is-active > .canvas-tab-active-actions {
+  flex: 1 1 240px;
+  min-width: 0;
   flex-wrap: wrap;
   white-space: nowrap;
   gap: 3px;
