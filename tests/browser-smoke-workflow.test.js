@@ -25,16 +25,16 @@ test("browser smoke covers blank canvas and narrow viewport overflow", () => {
   assert.match(script, /horizontal overflow/);
 });
 
-test("browser smoke chooses a startup canvas before Create and tests templates and replacement", () => {
+test("browser smoke follows the current canvas tabs and template entry points", () => {
   assert.match(script, /getByRole\("dialog", \{ name: "Start with" \}\)/);
   assert.match(script, /getByRole\("button", \{ name: "Infinity" \}\)/);
-  assert.match(script, /getByRole\("button", \{ name: "Create" \}\)/);
-  assert.match(script, /getByRole\("menu", \{ name: "Create a drawing" \}\)/);
-  assert.match(script, /getByRole\("menuitem", \{ name: \/\^Templates\/ \}\)/);
-  assert.match(script, /getByRole\("menuitem", \{ name: \/\^Blank drawing\/ \}\)/);
-  assert.match(script, /getByRole\("alertdialog", \{ name: "Replace the current canvas\?" \}\)/);
-  assert.match(script, /getByRole\("button", \{ name: "Cancel" \}\)/);
-  assert.match(script, /getByRole\("button", \{ name: "Continue" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "Canvas style" \}\)/);
+  assert.match(script, /getByRole\("dialog", \{ name: "Canvas style" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "Browse templates" \}\)/);
+  assert.match(script, /getByRole\("heading", \{ name: "What are you designing\?" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "Create new canvas" \}\)/);
+  assert.match(script, /canvas-tabs-bar \[role="tab"\]/);
+  assert.doesNotMatch(script, /Create a drawing|Blank drawing/);
 });
 
 test("production workflow builds and performs browser smoke even when unrelated regression tests fail", () => {
