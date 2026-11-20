@@ -3,14 +3,26 @@ import { createPortal } from "react-dom";
 import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
-// Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
-if (FONT_FAMILY.Kalam === undefined) FONT_FAMILY.Kalam = 4;
+// Register host-provided handwriting fonts on Excalidraw's shared enum.
+// IDs 11 and 12 follow the pinned package's built-in Assistant family (10).
+if (FONT_FAMILY.Kalam === undefined) {
+  FONT_FAMILY.Kalam = 4;
+  FONT_FAMILY[4] = "Kalam";
+}
+if (FONT_FAMILY.Caveat === undefined) {
+  FONT_FAMILY.Caveat = 11;
+  FONT_FAMILY[11] = "Caveat";
+}
+if (FONT_FAMILY["Architects Daughter"] === undefined) {
+  FONT_FAMILY["Architects Daughter"] = 12;
+  FONT_FAMILY[12] = "Architects Daughter";
+}
 
 const COLORS = ["#1e1e1e", "#6b7280", "#d94848", "#d97706", "#2f855a", "#2875b8", "#ffffff"];
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
 const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
-const FONT_FAMILIES = [[3, "Cascadia"], [4, "Kalam"], [5, "Excalifont"], [7, "Lilita One"], [8, "Comic Shanns"]];
+const FONT_FAMILIES = [[3, "Cascadia"], [4, "Kalam"], [5, "Excalifont"], [7, "Lilita One"], [8, "Comic Shanns"], [11, "Caveat"], [12, "Architects Daughter"]];
 const LINE_GEOMETRIES = [
   ["straight", "Straight"],
   ["curved", "Curved"],
@@ -125,9 +137,11 @@ function DockOptionGlyph({ label, value, optionLabel }) {
       5: '"Excalifont", cursive',
       7: '"Lilita One", cursive',
       8: '"Comic Shanns", cursive',
+      11: '"Caveat", cursive',
+      12: '"Architects Daughter", cursive',
     };
-    const weights = { 3: 500, 4: 400, 5: 400, 7: 700, 8: 600 };
-    const styles = { 3: "normal", 4: "normal", 5: "italic", 7: "normal", 8: "oblique" };
+    const weights = { 3: 500, 4: 400, 5: 400, 7: 700, 8: 600, 11: 500, 12: 400 };
+    const styles = { 3: "normal", 4: "normal", 5: "italic", 7: "normal", 8: "oblique", 11: "normal", 12: "normal" };
     return <span className="sk-tool-option-font-glyph"
       style={{ fontFamily: families[Number(value)] || "sans-serif", fontWeight: weights[Number(value)] || 500, fontStyle: styles[Number(value)] || "normal" }}>Aa</span>;
   }
@@ -294,8 +308,10 @@ function VisualOptionSelect({ label, value, onChange, kind, options }) {
 }
 export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
   useEffect(() => {
-    // Warm the host-provided font so canvas text measurement uses Kalam immediately.
-    document.fonts?.load('16px "Kalam"', "Kalam").catch(() => {});
+    // Warm host-provided handwriting fonts so canvas text measurement is accurate.
+    ["Kalam", "Caveat", "Architects Daughter"].forEach((family) => {
+      document.fonts?.load(`16px "${family}"`, family).catch(() => {});
+    });
   }, []);
   const [customTool, setCustomTool] = useState(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
