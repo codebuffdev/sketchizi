@@ -9,7 +9,10 @@ function parseTap(source, label) {
   const failures = [];
   for (const line of source.split(/\r?\n/)) {
     const match = line.match(/^\s*not ok \d+ - (.+?)(?:\s+#.*)?$/);
-    if (match) failures.push(match[1].trim());
+    if (match) {
+      const name = match[1].trim().replace(/^.*\\/tests\\//, "tests/");
+      failures.push(name);
+    }
   }
   if (failures.length !== Number(failuresReported[1])) {
     throw new Error(`${label} TAP summary reports ${failuresReported[1]} failures, but ${failures.length} failure records were parsed.`);
