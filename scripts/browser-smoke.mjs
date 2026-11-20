@@ -268,7 +268,8 @@ try {
   }
   // Select Excalidraw's actual rectangle tool; a keyboard shortcut can
   // be ignored if another UI control still owns focus.
-  await gridSession.page.locator('[data-testid="toolbar-rectangle"]').click();
+  await gridSession.page.getByRole("navigation", { name: "Drawing tools" })
+    .locator('[data-testid="toolbar-rectangle"]').click();
   await gridSession.page.mouse.move(x, y);
   await gridSession.page.mouse.down();
   await gridSession.page.mouse.move(x + 160, y + 95, { steps: 6 });
