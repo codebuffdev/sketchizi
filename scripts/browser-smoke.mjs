@@ -192,6 +192,12 @@ try {
   await dismissStartupChooser(gridSession.page);
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
+  // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
+  await ensureHeaderVisible(gridSession.page);
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
+  await gridSession.page.getByRole("dialog", { name: "Canvas style" })
+    .getByRole("checkbox", { name: "Show pattern" }).uncheck();
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const canvasLocator = gridSession.page.locator(".desktop-canvas-region .desktop-canvas-view .canvas");
   const sceneBounds = await canvasLocator.boundingBox();
   if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
