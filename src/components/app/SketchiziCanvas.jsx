@@ -17,30 +17,6 @@ import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacemen
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
 
-// Install before Excalidraw mounts its own keyboard listeners. Excalidraw's
-// S shortcut is global, so a component effect can run too late in the capture
-// phase and allow the Selection shortcut to win first.
-const PRIMARY_DOCK_SHAPE_TOOL_LABELS = new Set([
-  "Rectangle", "Ellipse", "Diamond", "Arrow", "Line", "Draw", "Frame", "Draw to Shape",
-]);
-const preventPrimaryDockShapeSelectionShortcut = (event) => {
-  if (event.key?.toLowerCase() !== "s" || event.ctrlKey || event.metaKey || event.altKey) return;
-  if (event.target instanceof Element &&
-    event.target.closest("input, textarea, select, [contenteditable='true']")) return;
-  const targetRoot = event.target instanceof Element ? event.target.closest(".canvas") : null;
-  const canvasRoot = targetRoot || document.querySelector(".canvas:not(.viewer-mode)");
-  if (!canvasRoot || canvasRoot.classList.contains("viewer-mode")) return;
-  const activeToolButton = canvasRoot.querySelector(".sketchizi-primary-dock-tool.is-active");
-  const activeToolLabel = activeToolButton?.getAttribute("aria-label");
-  if (!PRIMARY_DOCK_SHAPE_TOOL_LABELS.has(activeToolLabel)) return;
-  event.preventDefault();
-  event.stopPropagation();
-  event.stopImmediatePropagation?.();
-};
-if (typeof window !== "undefined") {
-  window.addEventListener("keydown", preventPrimaryDockShapeSelectionShortcut, true);
-}
-
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
   pageContext,
@@ -63,6 +39,30 @@ export default function SketchiziCanvas({
   const workAnchorRef = useRef(null);
   const spotlightSelectedRef = useRef(selectedElements);
   spotlightSelectedRef.current = selectedElements;
+
+  // Excalidraw assigns "S" to its color panel. When a shape is selected,
+  // keep that shortcut from opening the panel; window capture runs before
+  // Excalidraw's editor-level keyboard handlers.
+  useEffect(() => {
+    const shapeTypes = new Set([
+      "rectangle", "ellipse", "diamond", "arrow", "line",
+      "freedraw", "frame",
+    ]);
+    const handleShapeSelectionShortcut = (event) => {
+      if (event.key?.toLowerCase() !== "s" ||
+        event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+      if (event.target instanceof Element &&
+        event.target.closest("input, textarea, select, [contenteditable='true']")) return;
+      const hasSelectedShape = selectedElements.some((element) =>
+        element && !element.isDeleted && shapeTypes.has(element.type));
+      if (!hasSelectedShape) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+    };
+    window.addEventListener("keydown", handleShapeSelectionShortcut, true);
+    return () => window.removeEventListener("keydown", handleShapeSelectionShortcut, true);
+  }, [selectedElements]);
 
 
   const paintWorkspaceGrid = useCallback(() => {
