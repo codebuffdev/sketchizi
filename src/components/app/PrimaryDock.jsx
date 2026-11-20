@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import TodoList from "./TodoList.jsx";
 
 const ICONS = {
   selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
@@ -46,10 +47,11 @@ function activateTool({ id, root, apiRef }) {
   apiRef.current?.setActiveTool?.({ type: id });
 }
 
-export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false }) {
+export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false, todoItems = [], onTodoItemsChange }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [todoOpen, setTodoOpen] = useState(false);
   useEffect(() => { if (!menuOpen) setPaletteOpen(false); }, [menuOpen]);
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
@@ -115,6 +117,17 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           {group.map(renderTool)}
         </div>
       ))}
+      <div className="sketchizi-primary-dock-group sketchizi-primary-dock-utility-group">
+        <button type="button" className={`sketchizi-primary-dock-tool sketchizi-todo-dock-trigger${todoOpen ? " is-active" : ""}`}
+          aria-label="Todo List" title="Todo List" aria-expanded={todoOpen} aria-haspopup="dialog"
+          onClick={() => setTodoOpen((open) => !open)}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="4" y="3.5" width="16" height="17" rx="2" />
+            <path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" />
+          </svg>
+        </button>
+      </div>
+      {todoOpen && <TodoList items={todoItems} onChange={onTodoItemsChange} onClose={() => setTodoOpen(false)} isDarkTheme={isDarkTheme} />}
     </nav>
   );
 }
