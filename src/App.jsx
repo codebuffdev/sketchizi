@@ -66,6 +66,7 @@ import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
 import { loadCanvasTabs, saveCanvasTabs } from "./persistence.js";
 import { getLocalDateString, isValidCanvasStartDate } from "./features/canvas/canvasStartDate.js";
+import { createCanvasTabId } from "./features/canvas/canvasTabIdentity.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 
@@ -793,7 +794,7 @@ function App() {
       ? { ...tab, ...(currentSnapshot ? { snapshot: currentSnapshot } : {}) }
       : tab);
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
-    const id = `canvas-${Date.now()}`;
+    const id = createCanvasTabId(currentTabs);
     const nextTab = {
       id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: {
@@ -810,7 +811,7 @@ function App() {
 
   useEffect(() => {
     const createCanvasFromShortcut = (event) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "n") return;
+      if (event.repeat || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "n") return;
       const target = event.target;
       if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], .monaco-editor, .cm-editor")) return;
       event.preventDefault();
