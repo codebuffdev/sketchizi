@@ -18,6 +18,7 @@ const unwrapDiagram = (payload) => {
       value?.data &&
       typeof value.data === "object" &&
       !Array.isArray(value.data) &&
+      !Array.isArray(value.data.elements) &&
       !hasDiagramIdentityOrDocument(value)
     ) {
       value = value.data;
