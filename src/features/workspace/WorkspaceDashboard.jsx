@@ -167,7 +167,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     try {
       if (action === "rename") {
         const currentDiagramsResult = await workspaceClient.listDiagrams(activeId);
-        const currentDiagrams = Array.isArray(currentDiagramsResult) ? currentDiagramsResult : currentDiagramsResult?.diagrams || [];
+        const currentDiagrams = readDiagramRows(currentDiagramsResult);
         if (findDuplicateDiagramName(currentDiagrams, d.nextName, d.id)) {
           setError("A diagram with this name already exists in this project. Choose a different name.");
           return;
