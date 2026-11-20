@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 
 function normalizeCanvasTitle(value) {
-  return String(value || "").trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+  return String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 }
 
 function createTask(text) {
