@@ -1,5 +1,5 @@
 export function normalizeDiagramName(name) {
-  return String(name ?? "").trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+  return String(name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 }
 
 export function findDuplicateDiagramName(diagrams, name, excludeId = null) {
