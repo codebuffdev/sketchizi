@@ -550,13 +550,14 @@ function App() {
   // identity. A changing onChange prop makes Excalidraw re-run componentDidUpdate
   // and call onChange again, which is what turned a status update into a loop.
   const canvasSnapshotStateRef = useRef(null);
-  canvasSnapshotStateRef.current = { documentDirty, cloudSaveState, cloudDocumentName };
+  canvasSnapshotStateRef.current = { documentDirty, cloudSaveState, cloudDocumentName, canvasAppearance };
   const captureCanvasTabSnapshot = useCallback((elements, appState) => {
     const api = apiRef.current;
     const live = canvasSnapshotStateRef.current;
     return {
       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
       appState: appState || api?.getAppState?.() || {},
+      appearance: live.canvasAppearance,
       files: api?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {},
       extensions: documentMetadataRef.current?.extensions || {},
@@ -621,6 +622,11 @@ function App() {
     cloudSessionRef.current = snapshot.cloudSession || { active: false, diagramId: "", projectId: "", revision: null, name: "" };
     setCloudSaveState(snapshot.cloudSaveState || { state: "inactive", error: "" });
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
+    const restoredAppState = snapshot.appState || {};
+    setCanvasAppearance(snapshot.appearance || getCanvasAppearanceFromBackground(
+      restoredAppState.viewBackgroundColor,
+      restoredAppState.currentItemRoughness,
+    ));
     api.updateScene({
       elements,
       appState: { ...api.getAppState(), ...(snapshot.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
@@ -632,7 +638,7 @@ function App() {
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
-  }, [apiRef, setCurrentFile, setSavedSketch]);
+  }, [apiRef, setCurrentFile, setSavedSketch, setCanvasAppearance]);
 
   const switchCanvasTab = useCallback((nextId) => {
     if (!nextId || nextId === activeCanvasIdRef.current || !apiRef.current) return;
@@ -695,7 +701,13 @@ function App() {
     const nextTab = {
       id, name: `Canvas ${nextNumber}`, dirty: false,
       snapshot: {
-        elements: [], appState: { viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor },
+        elements: [],
+        appearance: canvasSnapshotStateRef.current?.canvasAppearance || "clean",
+        appState: {
+          theme: apiRef.current.getAppState?.().theme,
+          viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor,
+          currentItemRoughness: apiRef.current.getAppState?.().currentItemRoughness,
+        },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
         file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
         cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
@@ -1152,21 +1164,6 @@ function App() {
     canvasAppearance, setCanvasAppearance,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
-  useEffect(() => {
-    if (!savedSketch) return;
-    const hasElements = (savedSketch.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
-    const roughness = savedSketch.appState?.currentItemRoughness;
-    const background = String(savedSketch.appState?.viewBackgroundColor || "").trim();
-    const hasExplicitAppearance = background.toLowerCase() === "#1b382f" ||
-      (typeof roughness === "number" && (roughness === 0 || roughness >= 2));
-    if (hasElements || hasExplicitAppearance) {
-      setCanvasAppearance(getCanvasAppearanceFromBackground(background, roughness));
-    } else {
-      const savedCanvasTheme = savedSketch?.appState?.theme;
-      const savedCanvasIsDark = savedCanvasTheme === "dark" || (savedCanvasTheme !== "light" && isDarkTheme);
-      setCanvasAppearance(savedCanvasIsDark ? "sketch" : "clean");
-    }
-  }, [isDarkTheme, savedSketch]);
   const handleCanvasAppearanceChange = useCallback((appearance) => {
     if (!collaborationCanEdit) return;
     setCanvasAppearance(appearance);
