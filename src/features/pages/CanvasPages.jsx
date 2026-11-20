@@ -160,24 +160,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     return () => { unsubscribe(); signature.current = ''; sceneSnapshot.current = null; };
   }, [api, canEdit, mode]);
 
-  useEffect(() => {
-    if (!open) return;
-    const close = e => {
-      if (e.type === 'keydown') {
-        if (e.key !== 'Escape') return;
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation?.();
-        setOpen(false);
-        return;
-      }
-      if (!root.current?.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', close, true);
-    window.addEventListener('keydown', close, true);
-    return () => { document.removeEventListener('pointerdown', close, true); window.removeEventListener('keydown', close, true); };
-  }, [open]);
-
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);
   useEffect(() => {
     const page = mode === 'pages' && active ? {
@@ -434,7 +416,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     update([...elements, ...created]);
     const currentView = api.getAppState?.();
     previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
-    setError(''); setMode('pages'); setOpen(false); fit(frame);
+    setError(''); setMode('pages'); fit(frame);
   };
   const add = () => {
     createPage();
@@ -546,7 +528,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
         <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
       </div>, host)}
     {mode === 'pages' && pageMask && host && createPortal(
-      inlineName?.pageId === active?.id ? <input
+      inlineName && inlineName.pageId === active?.id ? <input
         ref={inlineNameInputRef}
         className="canvas-pages-page-name-input"
         style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 31) }}
