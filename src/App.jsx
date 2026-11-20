@@ -983,8 +983,19 @@ function App() {
           activeCanvasIdRef.current = existingCloudTab.id;
           setActiveCanvasId(existingCloudTab.id);
           setActiveWorkspaceTabId(existingCloudTab.id);
-          cloudLoadStartedRef.current = true;
+          // Reopening a cloud URL must always hydrate from the server. The
+          // startup refresh above is best-effort; if it failed, trusting this
+          // cached tab would leave its placeholder name and stale/empty scene
+          // in place forever. Restore the cached snapshot for continuity, then
+          // detach its session so the cloud-load effect fetches the requested
+          // diagram and replaces it with the authoritative document.
           applyCanvasTabSnapshot(existingCloudTab);
+          cloudLoadStartedRef.current = false;
+          cloudSceneReadyRef.current = false;
+          cloudSessionRef.current = { active: false, diagramId: "", projectId: "", revision: null, name: "" };
+          cloudDetachedRef.current = true;
+          setCloudDetached(true);
+          setCloudSaveState({ state: "loading", error: "" });
           saveCanvasTabs(focusedTabs).catch(() => {});
         } else {
           const api = apiRef.current;
