@@ -485,7 +485,6 @@ export default function DesktopAppHeader({
           />
         </span>
       ) : (
-(
           <button
             type="button"
             className="desktop-app-document-rename"
@@ -497,7 +496,6 @@ export default function DesktopAppHeader({
               <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
             </svg>
           </button>
-        )
       )}
         <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
         {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
