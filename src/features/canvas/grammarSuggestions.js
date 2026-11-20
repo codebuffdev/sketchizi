@@ -13,7 +13,7 @@ export function findGrammarIssues(value) {
     pattern.lastIndex = 0;
     let match;
     while ((match = pattern.exec(text)) !== null) {
-      const suggestion = match[0].replace(pattern, replacement);
+      const suggestion = match[0].replace(new RegExp(pattern.source, pattern.flags), replacement);
       if (suggestion !== match[0]) issues.push({
         start: match.index, end: match.index + match[0].length, original: match[0],
         suggestion, kind, message: kind === "Spelling" ? "Possible spelling mistake" : "Use the first-person pronoun “I” in uppercase",
@@ -30,7 +30,7 @@ export function findGrammarIssues(value) {
     pattern.lastIndex = 0;
     let match;
     while ((match = pattern.exec(text)) !== null) {
-      const suggestion = match[0].replace(pattern, replacement);
+      const suggestion = match[0].replace(new RegExp(pattern.source, pattern.flags), replacement);
       if (suggestion !== match[0]) issues.push({
         start: match.index, end: match.index + match[0].length, original: match[0],
         suggestion, kind: "Grammar", message,
