@@ -392,3 +392,89 @@
     display: none;
   }
 }
+
+
+/* Dark theme: keep canvas names and tab controls legible against the header. */
+.app.theme-dark .desktop-app-document-identity {
+  color: var(--ui-text, #f2f2f4);
+}
+.app.theme-dark .canvas-tab-item {
+  color: var(--ui-text-muted, #b8becb);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.app.theme-dark .canvas-tab-item:not(.is-active):hover {
+  background: var(--ui-hover, #272d38);
+  border-color: var(--ui-border, #3b4352);
+}
+.app.theme-dark .canvas-tab,
+.app.theme-dark .canvas-tab-name {
+  color: var(--ui-text-muted, #b8becb);
+}
+.app.theme-dark .canvas-tab:hover {
+  color: var(--ui-text-strong, #fff);
+}
+.app.theme-dark .canvas-tab-item.is-active {
+  background: #242a35;
+  border-color: #515c70;
+  color: #f4f6fb;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 32%), inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab,
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-name {
+  color: #f4f6fb;
+}
+.app.theme-dark .canvas-tab-icon {
+  color: #a9a5ff;
+  opacity: .9;
+}
+.app.theme-dark .canvas-tab-close {
+  color: #aeb6c5;
+}
+.app.theme-dark .canvas-tab-close:hover:not(:disabled) {
+  background: rgb(239 91 91 / 16%);
+  color: #ff8585;
+}
+.app.theme-dark .canvas-tab-dirty {
+  background: #f0b85a;
+  box-shadow: 0 0 0 2px rgb(240 184 90 / 14%);
+}
+.app.theme-dark .canvas-tab-active-actions {
+  color: #dce2ed;
+}
+.app.theme-dark .canvas-tab-active-actions button {
+  color: inherit;
+}
+.app.theme-dark .canvas-tab-active-actions button:hover {
+  background: #343d4c;
+  color: #fff;
+}
+.app.theme-dark .desktop-app-canvas-add,
+.app.theme-dark .canvas-tabs-add,
+.app.theme-dark .canvas-tabs-overflow-trigger {
+  color: #b9c1d0;
+  border-color: #566174;
+  background: #202631;
+}
+.app.theme-dark .desktop-app-canvas-add:hover,
+.app.theme-dark .canvas-tabs-add:hover,
+.app.theme-dark .canvas-tabs-overflow-trigger:hover,
+.app.theme-dark .canvas-tabs-overflow-trigger.is-open {
+  color: #c4c0ff;
+  border-color: #817bea;
+  background: #2b3040;
+}
+.app.theme-dark .canvas-tabs-overflow-menu {
+  background: #202631;
+  border-color: #485366;
+  color: #edf0f6;
+}
+.app.theme-dark .canvas-tabs-overflow-menu button {
+  color: #d6dce7;
+}
+.app.theme-dark .canvas-tabs-overflow-menu button:hover,
+.app.theme-dark .canvas-tabs-overflow-menu button.is-active {
+  background: #30394a;
+  color: #fff;
+}
