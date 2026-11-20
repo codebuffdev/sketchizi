@@ -49,6 +49,11 @@ async function ensureHeaderVisible() {
  if (await pin.getAttribute('aria-pressed') !== 'true') await pin.click({ force: true });
  await page.waitForFunction(() => document.querySelector('.desktop-app-header-pin-button')?.getAttribute('aria-pressed') === 'true');
 }
+async function closeAiAskIfOpen() {
+ const toggle = page.getByRole('button', { name: 'AI Ask', exact: true });
+ if (await toggle.getAttribute('aria-expanded') === 'true') await toggle.click({ force: true });
+ await page.waitForFunction(() => !document.querySelector('.app')?.classList.contains('ai-ask-open'));
+}
 try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
@@ -112,6 +117,7 @@ try {
  await page.reload();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
  await ensureHeaderVisible();
+ await closeAiAskIfOpen();
  await chooseCanvasMode('infinite');
  assert.equal(await page.getByRole('navigation',{name:'Page navigation'}).count(),0);
  assert.equal(await page.locator('.canvas-pages-mask').count(),0,'Infinite canvas must remove the Pages mask');
