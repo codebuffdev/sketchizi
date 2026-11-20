@@ -309,7 +309,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       if (["bucketfill", "autoshape", "note", "sticky-note", "stickynote", "notes"].includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
-      if (event.target?.closest?.(".sketchizi-primary-dock button, .App-toolbar button, .App-toolbar [role='button']")) setCustomTool(null);
+      if (event.target?.closest?.(".sketchizi-radial-wheel button, .App-toolbar button, .App-toolbar [role='button']")) setCustomTool(null);
     };
     window.addEventListener("sketchizi:activate-tool", handleCustomTool);
     window.addEventListener("click", clearCustomTool, true);
@@ -331,13 +331,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
       )) return;
 
-      // Capture Escape before Excalidraw consumes it so the Primary Dock returns.
+      // Capture Escape before Excalidraw consumes it so selection is cleared consistently.
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation?.();
       setCustomTool(null);
       onClearSelection?.();
-      window.dispatchEvent(new CustomEvent("sketchizi:escape-to-primary-dock"));
       apiRef?.current?.updateScene?.({
         appState: {
           activeTool: { type: "selection" },

@@ -10,14 +10,22 @@ const makePage = async (viewport) => {
   return { context, page };
 };
 
-const openCreateMenu = async (page) => {
-  await page.getByRole("button", { name: "Create" }).click();
-  await page.getByRole("menu", { name: "Create a drawing" }).waitFor();
+const dismissStartupChooser = async (page) => {
+  const title = page.getByRole("heading", { name: "Start with" });
+  await title.waitFor({ timeout: 15000 });
+  const chooser = page.getByRole("dialog").filter({ has: title });
+  await chooser.getByRole("button", { name: "Infinity" }).click();
+  await chooser.waitFor({ state: "detached" });
+};
+
+const openDevOpsMenu = async (page) => {
+  await page.getByRole("button", { name: "DevOps" }).click();
+  await page.getByRole("menu", { name: "DevOps tools" }).waitFor();
 };
 
 const openDesignStudio = async (page) => {
-  await openCreateMenu(page);
-  await page.getByRole("menuitem", { name: /^Templates/ }).click();
+  await page.getByRole("button", { name: "Grid settings" }).click();
+  await page.getByRole("button", { name: "Browse templates" }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
 
@@ -26,6 +34,7 @@ try {
   const desktop = await makePage({ width: 1440, height: 1000 });
   const page = desktop.page;
   await page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await dismissStartupChooser(page);
   await openDesignStudio(page);
   await page.getByRole("tab", { name: "AWS architecture" }).click();
   await page.getByRole("button", { name: /Three-Tier AWS Web Application/i }).waitFor();
@@ -39,36 +48,18 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
-  // Replacing a populated drawing must be explicitly confirmed. Cancel first
-  // to verify that Create does not bypass the replacement safeguard.
-  await openCreateMenu(page);
-  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  const cancelledPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
-  await cancelledPrompt.waitFor();
-  await cancelledPrompt.getByRole("button", { name: "Cancel" }).click();
-  await cancelledPrompt.waitFor({ state: "detached" });
-  console.log("PASS: replacing an existing drawing requires confirmation.");
+  // A populated canvas stays intact while the plus action opens a new canvas tab.
+  await page.getByRole("button", { name: "Create new canvas" }).click();
+  await page.locator(".excalidraw").waitFor({ timeout: 30000 });
+  console.log("PASS: Create new canvas opens a separate editable canvas.");
 
-  // Confirming replacement returns the user to an empty, editable canvas.
-  await openCreateMenu(page);
-  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  const confirmedPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
-  await confirmedPrompt.waitFor();
-  await confirmedPrompt.getByRole("button", { name: "Continue" }).click();
-  await confirmedPrompt.waitFor({ state: "detached" });
-  await page.getByText("New drawing", { exact: true }).waitFor({ timeout: 10000 });
-  await page.locator(".excalidraw").waitFor();
-  console.log("PASS: confirmed replacement creates a blank drawing.");
-
-
-  // A fresh browser context validates the primary blank drawing action.
+  // A fresh browser context validates the blank-canvas startup flow.
   const blank = await makePage({ width: 1280, height: 800 });
   await blank.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
-  await openCreateMenu(blank.page);
-  await blank.page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
+  await dismissStartupChooser(blank.page);
+  await blank.page.getByRole("button", { name: "Create new canvas" }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
-  await blank.page.getByRole("button", { name: "Create" }).waitFor();
-  console.log("PASS: Create > Blank drawing opens the editor.");
+  console.log("PASS: the canvas-tab add action opens an editable canvas.");
 
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
@@ -163,6 +154,7 @@ try {
   // Isolate drawing interactions from unrelated smoke checks.
   const gridSession = await makePage({ width: 1280, height: 800 });
   await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await dismissStartupChooser(gridSession.page);
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
   const canvasLocator = gridSession.page.locator(".desktop-canvas-region > .canvas");
@@ -329,15 +321,15 @@ try {
   console.log("PASS: Architecture Validation remains available in the command palette.");
 
   // Optional studios should download on first use, open, and return to the same editor.
-  await openCreateMenu(blank.page);
-  await blank.page.getByRole("menuitem", { name: /^Docker Compose Studio/ }).click();
+  await openDevOpsMenu(blank.page);
+  await blank.page.getByRole("menuitem", { name: /Docker Compose Studio/ }).click();
   await blank.page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ timeout: 30000 });
   await blank.page.getByRole("button", { name: "Close Docker Compose Studio" }).click();
   await blank.page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ state: "detached" });
   console.log("PASS: lazy Docker Compose Studio opens and closes.");
 
-  await openCreateMenu(blank.page);
-  await blank.page.getByRole("menuitem", { name: /^Kubernetes Studio/ }).click();
+  await openDevOpsMenu(blank.page);
+  await blank.page.getByRole("menuitem", { name: /Kubernetes Studio/ }).click();
   await blank.page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ timeout: 30000 });
   await blank.page.getByRole("button", { name: "Close K8s Studio" }).click();
   await blank.page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ state: "detached" });
@@ -348,10 +340,7 @@ try {
   // Exercise the creation screen in a narrow desktop / mobile-sized viewport.
   const responsive = await makePage({ width: 390, height: 844 });
   await responsive.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
-  await openCreateMenu(responsive.page);
-  await responsive.page.getByRole("menuitem", { name: /^Templates/ }).waitFor();
-  await responsive.page.keyboard.press("Escape");
-  await responsive.page.getByRole("menu", { name: "Create a drawing" }).waitFor({ state: "detached" });
+  await dismissStartupChooser(responsive.page);
   await openDesignStudio(responsive.page);
   await responsive.page.getByRole("button", { name: "Start blank" }).waitFor();
   const overflow = await responsive.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
@@ -368,6 +357,7 @@ try {
     body: JSON.stringify({ authenticated: false, user: null }),
   }));
   await authLayout.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
+  await dismissStartupChooser(authLayout.page);
   await authLayout.page.getByRole("button", { name: "Sign in", exact: true }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor();
 

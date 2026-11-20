@@ -12,27 +12,41 @@ const ICONS = {
   text: <><path d="M4 6V4h16v2" /><path d="M12 4v16" /><path d="M8 20h8" /></>,
   image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" /><path d="m5 17 5-5 3 3 2-2 4 4" /></>,
   frame: <><rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 2" /><path d="M8 4v3M16 4v3M8 17v3M16 17v3M4 8h3M4 16h3M17 8h3M17 16h3" /></>,
-  laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
   eraser: <><path d="m7 16 8-10a2 2 0 0 1 3 0l2 2a2 2 0 0 1 0 3l-8 9H9l-5-5a2 2 0 0 1 0-3l3-4" /><path d="m11 20 8 0" /></>,
+  laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
   bucketfill: <><path d="M4 13.5 13.5 4 20 10.5 10.5 20 4 13.5Z" /><path d="m9 8.5 6.5 6.5M17 16c0 2 1 3 2 3s2-1 2-3" /></>,
   autoshape: <><path d="M3 16c2-7 5-9 7-6" /><path d="M11 12h3m-2-2 2 2-2 2" /><rect x="16" y="6" width="5" height="12" rx="1" /></>,
+  todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
 };
 
-const GROUPS = [
-  [{ id: "selection", label: "Select" }, { id: "hand", label: "Hand" }],
-  [{ id: "rectangle", label: "Rectangle" }, { id: "ellipse", label: "Ellipse" }, { id: "diamond", label: "Diamond" }],
-  [{ id: "arrow", label: "Arrow" }, { id: "line", label: "Line" }],
-  [{ id: "freedraw", label: "Draw" }, { id: "text", label: "Text" }],
-  [{ id: "image", label: "Image" }, { id: "frame", label: "Frame" }],
-  [{ id: "eraser", label: "Eraser" }, { id: "laser", label: "Laser pointer" }],
-  [{ id: "bucketfill", label: "Bucket Fill" }, { id: "autoshape", label: "Draw to Shape", custom: true }],
+const TOOLS = [
+  { id: "selection", label: "Select" },
+  { id: "hand", label: "Hand" },
+  { id: "rectangle", label: "Rectangle" },
+  { id: "ellipse", label: "Ellipse" },
+  { id: "diamond", label: "Diamond" },
+  { id: "arrow", label: "Arrow" },
+  { id: "line", label: "Line" },
+  { id: "freedraw", label: "Draw" },
+  { id: "text", label: "Text" },
+  { id: "image", label: "Image" },
+  { id: "frame", label: "Frame" },
+  { id: "eraser", label: "Eraser" },
+  { id: "laser", label: "Laser pointer" },
+  { id: "bucketfill", label: "Bucket Fill" },
+  { id: "autoshape", label: "Draw to Shape" },
+  { id: "todo", label: "Todo List", separated: true },
 ];
 
 function ToolIcon({ name }) {
-  return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
+  return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
 }
 
-function activateTool({ id, root, apiRef }) {
+function activateTool({ id, root, apiRef, onOpenTodoTab }) {
+  if (id === "todo") {
+    onOpenTodoTab?.();
+    return;
+  }
   if (id === "image") {
     const imageButton = root?.querySelector('.excalidraw [data-testid="toolbar-image"], .excalidraw button[aria-label*="image" i]');
     if (imageButton instanceof HTMLElement) imageButton.click();
@@ -46,37 +60,22 @@ function activateTool({ id, root, apiRef }) {
   apiRef.current?.setActiveTool?.({ type: id });
 }
 
-const ELEMENT_TOOL_IDS = {
-  rectangle: "rectangle", ellipse: "ellipse", diamond: "diamond",
-  arrow: "arrow", line: "line", freedraw: "freedraw", draw: "freedraw",
-  text: "text", image: "image", frame: "frame",
-};
-
-export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false, onOpenTodoTab, selectedElements = [] }) {
+export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab, nativeMenuOpen = false }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  useEffect(() => { if (!menuOpen) setPaletteOpen(false); }, [menuOpen]);
+
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
     if (nextTool) setActiveTool(nextTool);
   }, [apiRef, canvasRevision]);
-  useEffect(() => {
-    const returnToDock = () => {
-      setActiveTool("selection");
-      setCustomTool(null);
-      setPaletteOpen(false);
-    };
-    window.addEventListener("sketchizi:escape-to-primary-dock", returnToDock);
-    return () => window.removeEventListener("sketchizi:escape-to-primary-dock", returnToDock);
-  }, []);
+
   useEffect(() => {
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
       if (["bucketfill", "autoshape"].includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
-      if (event.target?.closest?.(".sketchizi-primary-dock button")) setCustomTool(null);
+      if (!event.target?.closest?.(".sketchizi-tool-sidebar button")) setCustomTool(null);
     };
     window.addEventListener("sketchizi:activate-tool", syncCustomTool);
     window.addEventListener("click", clearCustomTool, true);
@@ -85,82 +84,42 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       window.removeEventListener("click", clearCustomTool, true);
     };
   }, []);
+
   const activeId = customTool || activeTool;
-  const activeEntry = GROUPS.flat().find((tool) => tool.id === activeId) || GROUPS[0][0];
-  const liveSelection = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
-  const selectedToolIds = [...new Set(liveSelection.map((element) => ELEMENT_TOOL_IDS[String(element.type || "").toLowerCase()] || "selection"))];
-  const focusedTool = selectedToolIds.length
-    ? (selectedToolIds.length === 1
-      ? GROUPS.flat().find((tool) => tool.id === selectedToolIds[0]) || GROUPS[0][0]
-      : GROUPS[0][0])
-    : null;
-  const dockEntry = focusedTool || activeEntry;
-  const renderTool = ({ id, label }, index = 0, radial = false) => {
-    const selected = customTool ? customTool === id : activeTool === id;
-    return (
-      <button key={id} type="button" className={`sketchizi-primary-dock-tool${selected ? " is-active" : ""}`}
-        aria-label={label} aria-pressed={selected} title={label} disabled={!canEdit}
-        style={radial ? { "--tool-angle": `${(index * 360) / GROUPS.flat().length}deg`, "--tool-counter-angle": `${-(index * 360) / GROUPS.flat().length}deg` } : undefined}
-        onClick={() => {
-          activateTool({ id, root: rootRef.current, apiRef });
-          setActiveTool(id);
-          if (id !== "bucketfill" && id !== "autoshape") setCustomTool(null);
-          if (menuOpen) setPaletteOpen(false);
-        }}>
-        <ToolIcon name={id} />
-        {menuOpen && <span className="sketchizi-primary-dock-tool-label">{label}</span>}
-      </button>
-    );
-  };
-  const todoControl = (
-    <button type="button" className="sketchizi-primary-dock-tool sketchizi-todo-dock-trigger"
-      aria-label="Open Todo List tab" title="Todo List" onClick={onOpenTodoTab}>
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="4" y="3.5" width="16" height="17" rx="2" />
-        <path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" />
-      </svg>
-    </button>
-  );
-  if (menuOpen) {
-    return (
-      <>
-        <div className={`sketchizi-dock-launcher-wrap${isDarkTheme ? " is-dark" : ""}`} data-canvas-revision={canvasRevision}>
-          <button type="button" className="sketchizi-dock-launcher" aria-label="Open drawing tools"
-            aria-expanded={paletteOpen} aria-haspopup="dialog" onClick={() => setPaletteOpen((open) => !open)}>
-            <ToolIcon name={dockEntry.id} />
-            <span>{dockEntry.label}</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
-          </button>
-          {paletteOpen && (
-            <div className="sketchizi-dock-quick-palette" role="dialog" aria-label="Drawing tools">
-              <div className="sketchizi-dock-radial-hub"><ToolIcon name={dockEntry.id} /><span>{dockEntry.label}</span><small>{focusedTool ? "SELECTED ELEMENT" : "ACTIVE TOOL"}</small></div>
-              <div className="sketchizi-dock-radial-tools">{(focusedTool ? [focusedTool] : GROUPS.flat()).map((tool, index) => renderTool(tool, index, true))}</div>
-              <button type="button" className="sketchizi-dock-radial-close" aria-label="Close drawing tools" onClick={() => setPaletteOpen(false)}>×</button>
-            </div>
-          )}
-        </div>
-        {!focusedTool && todoControl}
-      </>
-    );
-  }
+
   return (
-    <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
-      {focusedTool ? (
-        <div className="sketchizi-primary-dock-group sketchizi-primary-dock-selection-focus">
-          {renderTool(focusedTool)}
-        </div>
-      ) : (
-        <>
-          {GROUPS.map((group, groupIndex) => (
-            <div className="sketchizi-primary-dock-group" key={groupIndex}>
-              {group.map(renderTool)}
-            </div>
-          ))}
-          <div className="sketchizi-primary-dock-group sketchizi-primary-dock-utility-group">
-            {todoControl}
-          </div>
-        </>
-      )}
+    <nav
+      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}${nativeMenuOpen ? " is-menu-open" : ""}`}
+      aria-label="Drawing tools"
+      aria-hidden={nativeMenuOpen}
+      inert={nativeMenuOpen}
+      data-canvas-revision={canvasRevision}
+    >
+      {TOOLS.map((tool) => {
+        const selected = activeId === tool.id;
+        return (
+          <React.Fragment key={tool.id}>
+            {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
+            <button
+              type="button"
+              className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
+              aria-label={tool.label}
+              aria-pressed={selected}
+              title={tool.label}
+              disabled={!canEdit && tool.id !== "todo"}
+              onClick={() => {
+                activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
+                if (tool.id !== "todo") {
+                  setActiveTool(tool.id);
+                  setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
+                }
+              }}
+            >
+              <ToolIcon name={tool.id} />
+            </button>
+          </React.Fragment>
+        );
+      })}
     </nav>
   );
 }

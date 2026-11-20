@@ -32,3 +32,20 @@
 .canvas-activity-empty { margin:0; line-height:1.5; }
 .app.theme-dark .canvas-start-date, .app.theme-dark .canvas-activity-popover { background:rgba(31,38,50,.96); border-color:rgba(150,162,184,.2); color:#dce3ed; }
 @media (max-width:520px) { .canvas-start-date-wrap { right:10px; bottom:12px; } .canvas-start-date { min-height:25px; font-size:10px; } }
+
+
+/* Keep the canvas zoom percentage in the bottom-left corner, clear of the centered tool rail. */
+.app .excalidraw .zoom-actions {
+  position: absolute !important;
+  left: 22px !important;
+  right: auto !important;
+  bottom: 18px !important;
+  z-index: 12 !important;
+}
+
+@media (max-width: 520px) {
+  .app .excalidraw .zoom-actions {
+    left: 10px !important;
+    bottom: 12px !important;
+  }
+}

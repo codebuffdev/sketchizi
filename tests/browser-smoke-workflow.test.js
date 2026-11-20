@@ -25,14 +25,12 @@ test("browser smoke covers blank canvas and narrow viewport overflow", () => {
   assert.match(script, /horizontal overflow/);
 });
 
-test("browser smoke exercises canvas-first Create, templates, blank drawing and replacement guard", () => {
-  assert.match(script, /getByRole\("button", \{ name: "Create drawing" \}\)/);
-  assert.match(script, /getByRole\("menuitem", \{ name: \/\^Templates\/ \}\)/);
-  assert.match(script, /getByRole\("menuitem", \{ name: \/\^Blank drawing\/ \}\)/);
-  assert.match(script, /page\.once\("dialog", async \(dialog\) => \{/);
-  assert.match(script, /await dialog\.dismiss\(\)/);
-  assert.match(script, /await dialog\.accept\(\)/);
-  assert.match(script, /keyboard\.press\("Escape"\)/);
+test("browser smoke follows the current canvas and DevOps entry points", () => {
+  assert.match(script, /getByRole\("button", \{ name: "Grid settings" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "Browse templates" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "Create new canvas" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "DevOps" \}\)/);
+  assert.match(script, /getByRole\("menu", \{ name: "DevOps tools" \}\)/);
 });
 
 test("production workflow builds and performs browser smoke even when unrelated regression tests fail", () => {

@@ -809,12 +809,12 @@ export default function SketchiziCanvas({
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       <CanvasStartDate key={canvasId} canvasId={canvasId} value={startDate} activity={activity} onActivityChange={onActivityChange} onChange={onStartDateChange} disabled={!canEdit || viewModeEnabled} />
       <PrimaryDock
-        menuOpen={nativeMenuOpen}
         rootRef={canvasRootRef}
         apiRef={apiRef}
         canEdit={canEdit && !viewModeEnabled}
         isDarkTheme={isDarkTheme}
         canvasRevision={canvasRevision}
+        nativeMenuOpen={nativeMenuOpen}
         selectedElements={selectedElements}
         onOpenTodoTab={onOpenTodoTab}
       />
