@@ -559,7 +559,7 @@ function App() {
     return {
       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
       appState: appState || api?.getAppState?.() || {},
-      appearance: live.canvasAppearance,
+      appearance: canvasAppearanceRef.current,
       files: api?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {},
       extensions: documentMetadataRef.current?.extensions || {},
@@ -706,7 +706,7 @@ function App() {
       id, name: `Canvas ${nextNumber}`, dirty: false,
       snapshot: {
         elements: [],
-        appearance: canvasSnapshotStateRef.current?.canvasAppearance || "clean",
+        appearance: canvasAppearanceRef.current || "clean",
         appState: {
           theme: apiRef.current.getAppState?.().theme,
           viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor,
@@ -820,7 +820,12 @@ function App() {
           dirty: false,
           snapshot: {
             elements: [],
-            appState: { viewBackgroundColor: api?.getAppState?.().viewBackgroundColor },
+            appearance: "clean",
+            appState: {
+              theme: "light",
+              viewBackgroundColor: "#ffffff",
+              currentItemRoughness: 0,
+            },
             files: {}, metadata: {}, extensions: {}, format: "excalidraw",
             file: null,
             cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
