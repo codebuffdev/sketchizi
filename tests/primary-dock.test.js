@@ -11,7 +11,7 @@ test("primary dock renders the complete tool set in a vertical left sidebar", ()
     assert.ok(dock.includes(`id: "${tool}"`), `missing sidebar tool: ${tool}`);
   }
   assert.match(dock, /sketchizi-tool-sidebar/);
-  assert.match(dock, /flex-direction: column|separated: true/);
+  assert.match(dock, /separated: true/);
   assert.match(dock, /setActiveTool/);
   assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|expanded|tuckedOffset/);
 });
@@ -30,5 +30,9 @@ test("sidebar hides while the hamburger menu is open to prevent overlap", () => 
   const mount = canvas.match(/<PrimaryDock[\s\S]*?\/>/)?.[0] || "";
   assert.match(mount, /rootRef=\{canvasRootRef\}/);
   assert.match(mount, /apiRef=\{apiRef\}/);
-  assert.match(mount, /nativeMenuOpen=\{nativeMenuOpen\}/);\n  assert.match(dock, /nativeMenuOpen \? " is-menu-open" : ""/);\n  assert.match(dock, /aria-hidden=\{nativeMenuOpen\}/);\n  assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-menu-open/);\n  assert.match(sidebarCss, /pointer-events: none/);
+  assert.match(mount, /nativeMenuOpen=\{nativeMenuOpen\}/);
+  assert.match(dock, /nativeMenuOpen \? " is-menu-open" : ""/);
+  assert.match(dock, /aria-hidden=\{nativeMenuOpen\}/);
+  assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-menu-open/);
+  assert.match(sidebarCss, /pointer-events: none/);
 });
