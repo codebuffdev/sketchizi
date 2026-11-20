@@ -8,6 +8,20 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 800 
 const page = await context.newPage();
 page.on("pageerror", (error) => errors.push(error.message));
 
+async function ensureHeaderVisible() {
+  const reveal = page.locator(".desktop-app-header-reveal-handle");
+  await reveal.waitFor({ state: "attached", timeout: 15000 });
+  if (await reveal.getAttribute("aria-expanded") !== "true") await reveal.click({ force: true });
+  await page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "false",
+  );
+  const pin = page.locator(".desktop-app-header-pin-button");
+  if (await pin.getAttribute("aria-pressed") !== "true") await pin.click({ force: true });
+  await page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-pin-button")?.getAttribute("aria-pressed") === "true",
+  );
+}
+
 async function currentDrawing() {
   return page.evaluate(async () => {
     const db = await new Promise((resolve, reject) => {
@@ -70,6 +84,7 @@ try {
   const viewport = page.locator(".excalidraw");
   await viewport.waitFor({ state: "visible" });
   // Do not draw while IndexedDB restoration is still replacing the scene.
+  await ensureHeaderVisible();
   await page.locator(".desktop-app-save-status-trigger.is-ready, .desktop-app-save-status-trigger.is-saved").waitFor({ timeout: 15000 });
   const bounds = await viewport.boundingBox();
   if (!bounds) throw new Error("Excalidraw viewport has no visible bounds.");
