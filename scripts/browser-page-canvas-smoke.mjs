@@ -128,7 +128,7 @@ try {
  await canvasStyle().click();
  const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
  assert(menu.x>=0 && menu.x+menu.width<=390);
- await canvasStyle().click();
+ await page.mouse.click(4,400); // Outside the edge-to-edge phone popup.
  await page.getByRole('dialog',{name:'Canvas style'}).waitFor({state:'detached'});
  await chooseCanvasMode('infinite');
  await page.screenshot({path:'/tmp/sketchizi-page-mobile.png'});
