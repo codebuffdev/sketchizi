@@ -8,7 +8,7 @@ export function resetCloudLoadAttempt(loadStartedRef) {
   return true;
 }
 
-/** A failed fetch remains visible even though there is no active save session. */
-export function shouldShowCloudLoadFailure({ loadFailed, cloudDetached }) {
-  return Boolean(loadFailed && !cloudDetached);
+/** Keep failed and in-progress cloud loads visible without an active save session. */
+export function shouldShowCloudLoadStatus({ loadFailed, loadInProgress, cloudDetached }) {
+  return Boolean((loadFailed || loadInProgress) && !cloudDetached);
 }
