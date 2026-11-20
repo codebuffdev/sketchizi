@@ -108,3 +108,50 @@ test("gateway rejects duplicate diagram names before forwarding rename requests"
   assert.equal((await response.json()).code, "duplicate_diagram_name");
   assert.equal(forwardedRename, false);
 });
+
+
+test("gateway rejects duplicates when the backend wraps diagram rows in data", async () => {
+  let forwardedCreate = false;
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(String(url)).pathname;
+    if (options.method === "GET" && path === "/api/workspace/projects/project-1/diagrams") {
+      return Response.json({ data: { diagrams: [{ id: "existing", name: "System Design" }] } });
+    }
+    if (options.method === "POST") forwardedCreate = true;
+    return Response.json({ ok: true });
+  };
+  const response = await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/workspace/diagrams", {
+      method: "POST",
+      headers: { origin: "https://sketchizi.pages.dev", cookie: "SESSION=session; XSRF-TOKEN=csrf", "x-xsrf-token": "csrf", "content-type": "application/json" },
+      body: JSON.stringify({ projectId: "project-1", name: "system design" }),
+    }),
+    env: { AUTH_SERVICE_ORIGIN: "https://backend.example.test" },
+  });
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, "duplicate_diagram_name");
+  assert.equal(forwardedCreate, false);
+});
+
+test("gateway fails closed when it cannot interpret the diagrams list", async () => {
+  let forwardedCreate = false;
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(String(url)).pathname;
+    if (options.method === "GET" && path === "/api/workspace/projects/project-1/diagrams") {
+      return Response.json({ unexpected: [] });
+    }
+    if (options.method === "POST") forwardedCreate = true;
+    return Response.json({ ok: true });
+  };
+  const response = await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/workspace/diagrams", {
+      method: "POST",
+      headers: { origin: "https://sketchizi.pages.dev", cookie: "SESSION=session; XSRF-TOKEN=csrf", "x-xsrf-token": "csrf", "content-type": "application/json" },
+      body: JSON.stringify({ projectId: "project-1", name: "System Design" }),
+    }),
+    env: { AUTH_SERVICE_ORIGIN: "https://backend.example.test" },
+  });
+  assert.equal(response.status, 502);
+  assert.equal((await response.json()).code, "diagram_name_check_unavailable");
+  assert.equal(forwardedCreate, false);
+});
