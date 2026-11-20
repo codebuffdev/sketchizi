@@ -184,3 +184,42 @@ min-height:100vh;background:var(--cw-bg);color:var(--cw-text);font:14px/1.5 Inte
   --cw-green: #269a68;
   --cw-red: #c43d4a;
 }
+
+
+/* Sketchizi workspace refinement: denser layout, sharper geometry, clearer hierarchy. */
+.cloud-workspace { letter-spacing: -.006em; }
+.cloud-workspace .cw-content { width: min(1440px, calc(100% - 64px)); padding-top: clamp(28px, 4vh, 48px); }
+.cloud-workspace .cw-header { min-height: 58px; }
+.cloud-workspace .cw-button,
+.cloud-workspace .cw-search,
+.cloud-workspace .cw-form input,
+.cloud-workspace .cw-project,
+.cloud-workspace .cw-project-icon,
+.cloud-workspace .cw-diagrams,
+.cloud-workspace .cw-diagram-card,
+.cloud-workspace .cw-form,
+.cloud-workspace .cw-empty,
+.cloud-workspace .cw-message { border-radius: 4px; }
+.cloud-workspace .cw-layout { grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 14px; }
+.cloud-workspace .cw-diagrams { padding: clamp(16px, 2vw, 24px); background: var(--cw-panelBg); }
+.cloud-workspace .cw-diagram-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+.cloud-workspace .cw-diagram-card { transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.cloud-workspace .cw-diagram-card:hover { border-color: var(--cw-accent); box-shadow: 0 8px 22px rgb(15 23 42 / 9%); transform: translateY(-2px); }
+.cloud-workspace .cw-diagram-preview { height: 132px; }
+.cloud-workspace .cw-project.is-active { box-shadow: inset 3px 0 0 var(--cw-accent); }
+.cloud-workspace .cw-title-row { margin-bottom: 28px; }
+.cloud-workspace .cw-toolbar { padding-bottom: 10px; border-bottom: 1px solid var(--cw-border); }
+.cloud-workspace .cw-search { width: min(100%, 340px); }
+.cloud-workspace .cw-diagram-body { padding: 14px; }
+.cloud-workspace .cw-diagram-actions { gap: 6px; }
+.cloud-workspace .cw-diagram-actions button,
+.cloud-workspace .cw-project-actions button { padding: 5px 7px; border: 1px solid var(--cw-border); border-radius: 3px; }
+@media (max-width: 900px) {
+  .cloud-workspace .cw-content { width: calc(100% - 32px); }
+  .cloud-workspace .cw-layout { grid-template-columns: minmax(0, 1fr); }
+  .cloud-workspace .cw-project-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+@media (max-width: 760px) {
+  .cloud-workspace .cw-content { width: calc(100% - 28px); }
+  .cloud-workspace .cw-diagram-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); }
+}
