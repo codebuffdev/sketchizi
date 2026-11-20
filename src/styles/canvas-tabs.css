@@ -669,3 +669,14 @@
   background: transparent !important;
   box-shadow: none !important;
 }
+
+
+/* Keep the workspace tab controls and their overflow menu above the Todo surface. */
+.app .desktop-app-document-title-float {
+  position: relative;
+  z-index: 10040;
+  overflow: visible;
+}
+.app .desktop-app-document-title-float .canvas-tabs-overflow-menu {
+  z-index: 10050;
+}
