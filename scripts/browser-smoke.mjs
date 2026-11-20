@@ -18,12 +18,18 @@ const dismissStartupChooser = async (page) => {
   await chooser.waitFor({ state: "detached" });
 };
 
+const ensureHeaderVisible = async (page) => {
+  const reveal = page.getByRole("button", { name: "Show application header", exact: true });
+  if (await reveal.count()) await reveal.click();
+};
+
 const openDevOpsMenu = async (page) => {
   await page.getByRole("button", { name: "DevOps" }).click();
   await page.getByRole("menu", { name: "DevOps tools" }).waitFor();
 };
 
 const openDesignStudio = async (page) => {
+  await ensureHeaderVisible(page);
   await page.getByRole("button", { name: "Canvas style" }).click();
   await page.getByRole("button", { name: "Browse templates" }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
@@ -199,6 +205,7 @@ try {
     throw new Error(`Show Grid OFF must hide all layers: ${JSON.stringify(off)}`);
   }
   // Grid visibility is controlled from the header, not the View menu.
+  await ensureHeaderVisible(gridSession.page);
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const gridToggle = gridSession.page.getByRole("dialog", { name: "Canvas style" })
     .getByRole("checkbox", { name: "Show pattern" });
