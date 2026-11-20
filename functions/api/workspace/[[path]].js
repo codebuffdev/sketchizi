@@ -54,7 +54,7 @@ function normalizedDiagramName(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 }
 
-function unwrapDiagram(value) { return value?.diagram || value || null; }
+function unwrapDiagram(value) { return value?.diagram || value?.data?.diagram || value?.data || value || null; }
 function unwrapDiagrams(value) {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.diagrams)) return value.diagrams;
@@ -79,7 +79,7 @@ async function rejectDuplicateDiagramName({ method, targetPath, body, backendOri
       const currentResponse = await fetch(new URL(targetPath, backendOrigin), { headers, cache: "no-store", signal: AbortSignal.timeout(10000) });
       if (!currentResponse.ok) throw new Error("lookup_failed");
       const current = unwrapDiagram(await currentResponse.json());
-      projectId = projectId || current?.projectId || current?.project?.id || "";
+      projectId = projectId || current?.projectId || current?.project_id || current?.project?.id || "";
     }
     if (!projectId || !/^[A-Za-z0-9_-]{1,200}$/.test(projectId)) return jsonError(400, "A valid project is required to check diagram names.", "invalid_project", requestId);
     const listUrl = new URL("/api/workspace/projects/" + encodeURIComponent(projectId) + "/diagrams", backendOrigin);
