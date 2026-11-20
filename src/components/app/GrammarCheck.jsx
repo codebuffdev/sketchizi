@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const ENDPOINT = "https://api.languagetool.org/v2/check";
 const MAX_TEXT_LENGTH = 20_000;
@@ -33,17 +33,23 @@ export default function GrammarCheck({ text, onApply, isDarkTheme = false, class
   const [matches, setMatches] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const latestText = useRef(text);
+  latestText.current = text;
+  useEffect(() => { setMatches(null); setError(""); }, [text]);
   const runCheck = async () => {
     setLoading(true); setError(""); setMatches(null);
-    try { setMatches(await checkGrammar(text)); }
+    const checkedText = String(text || "");
+    try {
+      const result = await checkGrammar(checkedText);
+      if (latestText.current === checkedText) setMatches(result);
+    }
     catch (reason) { setError(reason?.message || "Grammar check is temporarily unavailable."); }
     finally { setLoading(false); }
   };
   const apply = (match, replacement) => {
     const value = String(text || "");
-    if (value.slice(match.offset, match.offset + match.length) !== value.slice(match.offset, match.offset + match.length)) return;
     onApply?.(value.slice(0, match.offset) + replacement + value.slice(match.offset + match.length));
-    setMatches((current) => (current || []).filter((item) => item !== match));
+    setMatches(null);
   };
   return (
     <div className={`sketchizi-grammar-check${isDarkTheme ? " is-dark" : ""} ${className}`}>
