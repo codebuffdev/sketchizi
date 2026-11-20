@@ -17,9 +17,13 @@ const chooseStartupCanvas = async (page) => {
   await chooser.waitFor({ state: "detached" });
 };
 
-const openDesignStudio = async (page) => {
+const revealApplicationHeader = async (page) => {
   const reveal = page.getByRole("button", { name: "Show application header" });
   if (await reveal.getAttribute("aria-expanded") === "false") await reveal.click();
+};
+
+const openDesignStudio = async (page) => {
+  await revealApplicationHeader(page);
   await page.getByRole("button", { name: "Canvas style" }).click();
   const canvasStyle = page.getByRole("dialog", { name: "Canvas style" });
   await canvasStyle.getByRole("button", { name: "Browse templates" }).click();
@@ -76,6 +80,7 @@ try {
   console.log("PASS: Create new canvas opens a blank editor tab.");
 
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
+  await revealApplicationHeader(blank.page);
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
   const library = blank.page.getByRole("dialog", { name: "Icon Library" });
   await library.waitFor();
@@ -372,6 +377,7 @@ try {
   }));
   await authLayout.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await chooseStartupCanvas(authLayout.page);
+  await revealApplicationHeader(authLayout.page);
   await authLayout.page.getByRole("button", { name: "Sign in", exact: true }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor();
 
