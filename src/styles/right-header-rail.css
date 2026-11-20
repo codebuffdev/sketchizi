@@ -1047,3 +1047,16 @@
 .app.canvas-first-header .canvas-tabs-add {
   border-radius: 4px !important;
 }
+
+/* When AI Ask is open, dock both controls at the top-right edge of the
+   remaining canvas instead of leaving them beyond the drawer. */
+@media (min-width: 1025px) {
+  .app.ai-ask-open .desktop-app-global-theme-control {
+    left: calc(var(--ai-ask-workspace-width) - 88px);
+    right: auto;
+  }
+  .app.ai-ask-open .desktop-app-global-ai-control {
+    left: calc(var(--ai-ask-workspace-width) - 44px);
+    right: auto;
+  }
+}
