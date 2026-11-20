@@ -16,6 +16,17 @@ test("normalizes nested envelopes and JSON-encoded document payloads", () => {
   assert.deepEqual(result.document, document);
 });
 
+test("preserves diagram metadata when data contains the document itself", () => {
+  const result = normalizeCloudDiagramResponse({
+    id: "d-data",
+    name: "Cloud architecture",
+    data: document,
+  }, "d-data");
+  assert.equal(result.diagram.id, "d-data");
+  assert.equal(result.name, "Cloud architecture");
+  assert.deepEqual(result.document, document);
+});
+
 test("uses the persisted tab name when the API omits a display name", () => {
   const result = normalizeCloudDiagramResponse({ diagram: { id: "d3", document } }, "d3", { fallbackName: "Saved architecture" });
   assert.equal(result.name, "Saved architecture");
