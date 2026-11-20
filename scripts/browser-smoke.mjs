@@ -24,7 +24,7 @@ const openDevOpsMenu = async (page) => {
 };
 
 const openDesignStudio = async (page) => {
-  await page.getByRole("button", { name: "Grid settings" }).click();
+  await page.getByRole("button", { name: "Canvas style" }).click();
   await page.getByRole("button", { name: "Browse templates" }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
@@ -199,19 +199,19 @@ try {
     throw new Error(`Show Grid OFF must hide all layers: ${JSON.stringify(off)}`);
   }
   // Grid visibility is controlled from the header, not the View menu.
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
-  const gridToggle = gridSession.page.getByRole("dialog", { name: "Grid settings" })
-    .getByRole("checkbox", { name: "Show Grid" });
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
+  const gridToggle = gridSession.page.getByRole("dialog", { name: "Canvas style" })
+    .getByRole("checkbox", { name: "Show pattern" });
   await gridToggle.check();
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-grid-enabled"),
   );
   // Legacy content-bound assertions require Focus (Local), not the new default.
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
-  const gridSettings = gridSession.page.getByRole("dialog", { name: "Grid settings" });
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
+  const gridSettings = gridSession.page.getByRole("dialog", { name: "Canvas style" });
   await gridSettings.getByRole("button", { name: /Focus \(Local\)/ }).click();
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-local-style"),
   );
