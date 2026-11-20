@@ -1428,13 +1428,17 @@ function App() {
     // when the user makes their next startup-canvas choice.
     if (canvasTabsRef.current.length === 0) createCanvasTab();
     setStartupChooserOpen(false);
+    if (mode === "todo") {
+      openTodoTab();
+      return;
+    }
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
-  }, [createCanvasTab]);
+  }, [createCanvasTab, openTodoTab]);
 
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {
       const mode = event.detail?.mode;
-      if (mode === "infinite" || mode === "pages") chooseStartupCanvas(mode);
+      if (mode === "infinite" || mode === "pages" || mode === "todo") chooseStartupCanvas(mode);
     };
     window.addEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
     return () => window.removeEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
@@ -2636,6 +2640,10 @@ function App() {
               <button type="button" className="startup-canvas-option" onClick={() => chooseStartupCanvas("pages")}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg>
                 <span>Pages</span>
+              </button>
+              <button type="button" className="startup-canvas-option" onClick={() => chooseStartupCanvas("todo")}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3"/></svg>
+                <span>Todo</span>
               </button>
             </div>
           </section>
