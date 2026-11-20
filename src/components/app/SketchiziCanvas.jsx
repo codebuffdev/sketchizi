@@ -686,6 +686,25 @@ export default function SketchiziCanvas({
     return () => root.removeEventListener("keydown", handleMarkdownListKeyDown, true);
   }, [canEdit, viewModeEnabled]);
 
+  // Excalidraw maps the "S" key to the selection tool. While the free-draw
+  // tool is active, ignore that shortcut so an accidental S does not interrupt
+  // a pen workflow. Leave text editing and modified shortcuts untouched.
+  useEffect(() => {
+    const preventSelectionShortcutWhileDrawing = (event) => {
+      if (!apiRef?.current || !canEdit || viewModeEnabled) return;
+      if (event.key.toLowerCase() !== "s" || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.target instanceof Element &&
+        event.target.closest("input, textarea, select, [contenteditable='true']")) return;
+      const activeTool = apiRef.current.getAppState?.()?.activeTool;
+      if (activeTool?.type !== "freedraw") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+    };
+    window.addEventListener("keydown", preventSelectionShortcutWhileDrawing, true);
+    return () => window.removeEventListener("keydown", preventSelectionShortcutWhileDrawing, true);
+  }, [apiRef, canEdit, viewModeEnabled]);
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (!apiRef?.current || !canEdit || viewModeEnabled) return;
