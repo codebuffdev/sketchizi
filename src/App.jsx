@@ -98,6 +98,8 @@ function App() {
   }, [gridEnabled]);
   const [canvasAppearance, setCanvasAppearance] = useState(() => getInitialThemeMode() === "dark" ? "sketch" : "clean");
   const canvasAppearanceRef = useRef(canvasAppearance);
+  const [canvasTheme, setCanvasTheme] = useState(() => getInitialThemeMode() === "dark" ? "dark" : "light");
+  const canvasThemeRef = useRef(canvasTheme);
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -118,6 +120,7 @@ function App() {
   canvasTabsRef.current = canvasTabs;
   activeCanvasIdRef.current = activeCanvasId;
   canvasAppearanceRef.current = canvasAppearance;
+  canvasThemeRef.current = canvasTheme;
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
   const [minimapOpen, setMinimapOpen] = useState(false);
@@ -560,6 +563,7 @@ function App() {
       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
       appState: appState || api?.getAppState?.() || {},
       appearance: canvasAppearanceRef.current,
+      appTheme: appState?.theme || api?.getAppState?.()?.theme || canvasThemeRef.current,
       files: api?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {},
       extensions: documentMetadataRef.current?.extensions || {},
@@ -631,6 +635,9 @@ function App() {
     );
     canvasAppearanceRef.current = restoredAppearance;
     setCanvasAppearance(restoredAppearance);
+    const restoredTheme = snapshot.appTheme || restoredAppState.theme || "light";
+    canvasThemeRef.current = restoredTheme;
+    setCanvasTheme(restoredTheme);
     api.updateScene({
       elements,
       appState: { ...api.getAppState(), ...(snapshot.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
@@ -707,6 +714,7 @@ function App() {
       snapshot: {
         elements: [],
         appearance: canvasAppearanceRef.current || "clean",
+        appTheme: apiRef.current.getAppState?.().theme || canvasThemeRef.current,
         appState: {
           theme: apiRef.current.getAppState?.().theme,
           viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor,
@@ -821,6 +829,7 @@ function App() {
           snapshot: {
             elements: [],
             appearance: "clean",
+            appTheme: "light",
             appState: {
               theme: "light",
               viewBackgroundColor: "#ffffff",
@@ -1250,6 +1259,10 @@ function App() {
     // updates and persistence until the completed stroke callback arrives.
     // Keeping that work out of the pointer stream reduces pen latency.
     if (appState?.newElement?.type === "freedraw") return;
+    if (appState?.theme && appState.theme !== canvasThemeRef.current) {
+      canvasThemeRef.current = appState.theme;
+      setCanvasTheme(appState.theme);
+    }
     syncStartupChooser(elements, false, appState);
     handleExcalidrawChange(elements, appState);
     persistActiveCanvasSnapshot(elements, appState);
@@ -2313,6 +2326,7 @@ function App() {
           <SketchiziCanvas
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
+            canvasTheme={canvasTheme}
             isDarkTheme={isDarkTheme}
             pageContext={canvasPageContext}
             handleExcalidrawAPI={handleExcalidrawAPI}
