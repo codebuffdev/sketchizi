@@ -15,6 +15,18 @@ async function waitScene(predicate) {
  while(Date.now()<deadline) { try { const elements=await scene(); if(predicate(elements)) return elements; } catch {} await page.waitForTimeout(200); }
  throw new Error('Expected page scene was not persisted: '+JSON.stringify(await scene()));
 }
+async function renameActivePage(name) {
+ await page.locator('.canvas-pages-page-name').click();
+ const input = page.getByRole('textbox', { name: 'Edit page name' });
+ await input.fill(name);
+ await input.press('Enter');
+ await page.waitForFunction(expected => document.querySelector('.canvas-pages-page-name')?.textContent?.trim() === expected, name);
+}
+async function chooseCanvasMode(mode) {
+ await page.evaluate(nextMode => window.dispatchEvent(new CustomEvent('sketchizi:workspace-canvas-choice', { detail: { mode: nextMode } })), mode);
+ if (mode === 'pages') await page.getByRole('navigation', { name: 'Page navigation' }).waitFor();
+ else await page.getByRole('navigation', { name: 'Page navigation' }).waitFor({ state: 'detached' });
+}
 const pages = es => es.filter(e=>e.type==='frame' && e.customData?.sketchiziPage);
 const canvasStyle = () => page.getByRole('button',{name:'Canvas style',exact:true});
 async function chooseStartupPages() {
@@ -81,8 +93,9 @@ try {
  await page.mouse.move(650,450); await page.mouse.down(); await page.mouse.move(760,540,{steps:10}); await page.mouse.up();
  es = await waitScene(es=>es.some(e=>e.type==='rectangle' && !e.customData?.sketchiziPagePaper && e.frameId===pages(es)[0]?.id));
  // Add and name a second page through the page navigation control.
- page.once('dialog',dialog=>dialog.accept('Details'));
  await page.locator('.canvas-pages-add').click();
+ es = await waitScene(es=>pages(es).length===2);
+ await renameActivePage('Details');
  es = await waitScene(es=>pages(es).length===2 && pages(es).some(p=>p.name==='Details'));
  const navigation=page.getByRole('navigation',{name:'Page navigation'});
  await navigation.getByRole('button').nth(0).click();
@@ -93,24 +106,23 @@ try {
  assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Details');
  await page.reload();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
- await canvasStyle().click();
- await page.getByRole('button',{name:/Infinite canvas Draw/}).click();
+ await ensureHeaderVisible();
+ await chooseCanvasMode('infinite');
  assert.equal(await page.getByRole('navigation',{name:'Page navigation'}).count(),0);
  assert.equal(await page.locator('.canvas-pages-mask').count(),0,'Infinite canvas must remove the Pages mask');
  assert.equal(pages(await scene()).length,2,'Switching views must preserve all pages');
- // Re-enter Pages mode, then verify the selector remains usable on narrow screens.
- await canvasStyle().click();
- await page.getByRole('button',{name:/Pages Organize/}).click();
- await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
+ // Re-enter Pages mode through the same workspace choice event used by startup.
+ await chooseCanvasMode('pages');
  await page.setViewportSize({width:390,height:844});
  await canvasStyle().click();
  const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
  assert(menu.x>=0 && menu.x+menu.width<=390);
- await page.getByRole('button',{name:/Infinite canvas Draw/}).click();
+ await canvasStyle().click();
+ await chooseCanvasMode('infinite');
  await page.screenshot({path:'/tmp/sketchizi-page-mobile.png'});
  await page.setViewportSize({width:1440,height:1000});
- await canvasStyle().click();
- await page.getByRole('button',{name:/Pages Organize/}).click();
+ await ensureHeaderVisible();
+ await chooseCanvasMode('pages');
  await page.getByRole('button',{name:'Fit page',exact:true}).click();
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
  assert.deepEqual(errors,[]);
