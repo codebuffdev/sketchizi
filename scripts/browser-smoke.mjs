@@ -17,15 +17,22 @@ const chooseStartupCanvas = async (page) => {
   await chooser.waitFor({ state: "detached" });
 };
 
-const openCreateMenu = async (page) => {
-  await page.getByRole("button", { name: "Create" }).click();
-  await page.getByRole("menu", { name: "Create a drawing" }).waitFor();
+const openDesignStudio = async (page) => {
+  const reveal = page.getByRole("button", { name: "Show application header" });
+  if (await reveal.count()) await reveal.click();
+  await page.getByRole("button", { name: "Canvas style" }).click();
+  const canvasStyle = page.getByRole("dialog", { name: "Canvas style" });
+  await canvasStyle.getByRole("button", { name: "Browse templates" }).click();
+  await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
 
-const openDesignStudio = async (page) => {
-  await openCreateMenu(page);
-  await page.getByRole("menuitem", { name: /^Templates/ }).click();
-  await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
+const createCanvasTab = async (page) => {
+  const before = await page.getByRole("tab").count();
+  await page.getByRole("button", { name: "Create new canvas" }).click();
+  await page.waitForFunction((count) => (
+    document.querySelectorAll('.canvas-tabs-bar [role="tab"]').length === count + 1
+  ), before);
+  await page.getByRole("tab").last().waitFor();
 };
 
 try {
@@ -47,37 +54,26 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
-  // Replacing a populated drawing must be explicitly confirmed. Cancel first
-  // to verify that Create does not bypass the replacement safeguard.
-  await openCreateMenu(page);
-  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  const cancelledPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
-  await cancelledPrompt.waitFor();
-  await cancelledPrompt.getByRole("button", { name: "Cancel" }).click();
-  await cancelledPrompt.waitFor({ state: "detached" });
-  console.log("PASS: replacing an existing drawing requires confirmation.");
-
-  // Confirming replacement returns the user to an empty, editable canvas.
-  await openCreateMenu(page);
-  await page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
-  const confirmedPrompt = page.getByRole("alertdialog", { name: "Replace the current canvas?" });
-  await confirmedPrompt.waitFor();
-  await confirmedPrompt.getByRole("button", { name: "Continue" }).click();
-  await confirmedPrompt.waitFor({ state: "detached" });
-  await page.getByText("New drawing", { exact: true }).waitFor({ timeout: 10000 });
+  // Creating another canvas must preserve the drawing in the original tab.
+  const desktopTabsBefore = await page.getByRole("tab").count();
+  await createCanvasTab(page);
+  if (await page.getByRole("tab").count() !== desktopTabsBefore + 1) {
+    throw new Error("Create new canvas did not add a workspace tab.");
+  }
   await page.locator(".excalidraw").waitFor();
-  console.log("PASS: confirmed replacement creates a blank drawing.");
+  console.log("PASS: Create new canvas opens a separate blank tab.");
 
 
   // A fresh browser context validates the primary blank drawing action.
   const blank = await makePage({ width: 1280, height: 800 });
   await blank.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await chooseStartupCanvas(blank.page);
-  await openCreateMenu(blank.page);
-  await blank.page.getByRole("menuitem", { name: /^Blank drawing/ }).click();
+  await createCanvasTab(blank.page);
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
-  await blank.page.getByRole("button", { name: "Create" }).waitFor();
-  console.log("PASS: Create > Blank drawing opens the editor.");
+  if (await blank.page.getByRole("tab").count() !== 2) {
+    throw new Error("Creating a new canvas did not add a second tab.");
+  }
+  console.log("PASS: Create new canvas opens a blank editor tab.");
 
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
@@ -359,10 +355,6 @@ try {
   const responsive = await makePage({ width: 390, height: 844 });
   await responsive.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await chooseStartupCanvas(responsive.page);
-  await openCreateMenu(responsive.page);
-  await responsive.page.getByRole("menuitem", { name: /^Templates/ }).waitFor();
-  await responsive.page.keyboard.press("Escape");
-  await responsive.page.getByRole("menu", { name: "Create a drawing" }).waitFor({ state: "detached" });
   await openDesignStudio(responsive.page);
   await responsive.page.getByRole("button", { name: "Start blank" }).waitFor();
   const overflow = await responsive.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
