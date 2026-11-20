@@ -25,7 +25,9 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
   const markCanvasBackgroundCustom = useCallback(() => {}, []);
   const useThemeDefaultBackground = useCallback(() => {
     setCanvasAppearance("clean");
-    applyCanvasAppearance(apiRef.current, "clean", isDarkTheme, CaptureUpdateAction.NEVER);
+    const activeCanvasTheme = apiRef.current?.getAppState?.()?.theme;
+    const canvasIsDark = activeCanvasTheme === "dark" || (activeCanvasTheme !== "light" && isDarkTheme);
+    applyCanvasAppearance(apiRef.current, "clean", canvasIsDark, CaptureUpdateAction.NEVER);
   }, [apiRef, isDarkTheme, setCanvasAppearance]);
 
   useEffect(() => { try { localStorage.setItem(THEME_PREFERENCE_KEY, themeMode); } catch {} }, [themeMode]);
@@ -43,8 +45,8 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     let secondFrame = 0;
     firstFrame = window.requestAnimationFrame(() => {
       secondFrame = window.requestAnimationFrame(() => {
-        const storedCanvasTheme = savedSketch?.appState?.theme;
-        const canvasIsDark = storedCanvasTheme === "dark" || (storedCanvasTheme !== "light" && isDarkTheme);
+        const liveCanvasTheme = apiRef.current?.getAppState?.()?.theme ?? savedSketch?.appState?.theme;
+        const canvasIsDark = liveCanvasTheme === "dark" || (liveCanvasTheme !== "light" && isDarkTheme);
         if (canvasAppearance === "clean") applyCanvasThemeBackground(apiRef.current, canvasIsDark);
         else applyCanvasAppearance(apiRef.current, canvasAppearance, canvasIsDark, CaptureUpdateAction.NEVER);
       });
