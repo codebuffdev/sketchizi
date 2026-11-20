@@ -88,6 +88,7 @@ try {
 
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
+  await blank.page.locator(".ai-ask-panel").waitFor({ state: "detached" });
   const library = blank.page.getByRole("dialog", { name: "Icon Library" });
   await library.waitFor();
   const compactLayout = await library.evaluate((panel) => {
