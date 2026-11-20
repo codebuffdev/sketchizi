@@ -101,7 +101,7 @@ test('page edit bounds reject geometry extending beyond the active sheet, includ
 test('Pages component does not register stale popover handlers or dereference a missing page name draft', async () => {
  const { readFile } = await import('node:fs/promises');
  const source = await readFile(new URL('../src/features/pages/CanvasPages.jsx', import.meta.url), 'utf8');
- assert.doesNotMatch(source, /\\bsetOpen\\s*\\(/);
- assert.doesNotMatch(source, /\\broot\\.current/);
- assert.match(source, /inlineName && inlineName\\.pageId === active\\?\\.id/);
+ assert.doesNotMatch(source, /\bsetOpen\s*\(/);
+ assert.doesNotMatch(source, /\broot\.current/);
+ assert.match(source, /inlineName && inlineName\.pageId === active\?\.id/);
 });
