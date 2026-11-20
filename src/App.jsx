@@ -24,6 +24,7 @@ import { useCanvasTools } from "./features/canvas/useCanvasTools";
 import { useMinimapController } from "./features/canvas/useMinimapController";
 import { useExcalidrawScene } from "./features/canvas/useExcalidrawScene";
 import SketchiziCanvas from "./components/app/SketchiziCanvas";
+import TodoList from "./components/app/TodoList.jsx";
 import "./styles/canvas-tab-close-dialog.css";
 import CollaborationUI from "./components/app/CollaborationUI";
 import MoreTools from "./components/app/MoreTools";
@@ -111,6 +112,7 @@ function App() {
   const [canvasTabs, setCanvasTabs] = useState(() => [{ id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), snapshot: null, dirty: false }]);
   const [closeTabPrompt, setCloseTabPrompt] = useState(null);
   const [activeCanvasId, setActiveCanvasId] = useState("canvas-1");
+  const [activeWorkspaceTabId, setActiveWorkspaceTabId] = useState("canvas-1");
   const [canvasTabsReady, setCanvasTabsReady] = useState(false);
   const canvasTabsRef = useRef(canvasTabs);
   const activeCanvasIdRef = useRef("canvas-1");
@@ -599,6 +601,19 @@ function App() {
       : tab));
   }, [persistCanvasTabs]);
 
+  const openTodoTab = useCallback(() => {
+    const tabId = activeCanvasIdRef.current;
+    const nextTabs = canvasTabsRef.current.map((tab) => tab.id === tabId ? { ...tab, todoTabOpen: true, todoTabActive: true } : { ...tab, todoTabActive: false });
+    persistCanvasTabs(nextTabs);
+    setActiveWorkspaceTabId(`todo:${tabId}`);
+  }, [persistCanvasTabs]);
+
+  const closeTodoTab = useCallback((canvasId) => {
+    const nextTabs = canvasTabsRef.current.map((tab) => tab.id === canvasId ? { ...tab, todoTabOpen: false, todoTabActive: false } : tab);
+    persistCanvasTabs(nextTabs);
+    setActiveWorkspaceTabId((current) => current === `todo:${canvasId}` ? canvasId : current);
+  }, [persistCanvasTabs]);
+
   const updateCanvasTodoItems = useCallback((tabId, todoItems) => {
     persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === tabId
       ? { ...tab, todoItems }
@@ -701,9 +716,24 @@ function App() {
     }
     activeCanvasIdRef.current = nextId;
     setActiveCanvasId(nextId);
+    setActiveWorkspaceTabId(nextId);
     persistCanvasTabs(currentTabs);
     applyCanvasTabSnapshot(target);
   }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, applyCanvasTabSnapshot, retryLocalSave, showToast]);
+
+  const selectWorkspaceTab = useCallback((tabId) => {
+    if (String(tabId).startsWith("todo:")) {
+      const canvasId = String(tabId).slice(5);
+      if (canvasId !== activeCanvasIdRef.current) switchCanvasTab(canvasId);
+      const nextTabs = canvasTabsRef.current.map((tab) => tab.id === canvasId ? { ...tab, todoTabOpen: true, todoTabActive: true } : { ...tab, todoTabActive: false });
+      persistCanvasTabs(nextTabs);
+      setActiveWorkspaceTabId(`todo:${canvasId}`);
+      return;
+    }
+    if (tabId !== activeCanvasIdRef.current) switchCanvasTab(tabId);
+    setActiveWorkspaceTabId(tabId);
+    persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === tabId ? { ...tab, todoTabActive: false } : tab));
+  }, [persistCanvasTabs, switchCanvasTab]);
 
   const createCanvasTab = useCallback(() => {
     if (!apiRef.current) return;
@@ -714,7 +744,7 @@ function App() {
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = `canvas-${Date.now()}`;
     const nextTab = {
-      id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], dirty: false,
+      id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: {
         elements: [], appState: { viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
@@ -861,6 +891,7 @@ function App() {
         }));
         const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
+        setActiveWorkspaceTabId(activeTab.todoTabOpen && activeTab.todoTabActive ? `todo:${activeId}` : activeId);
         canvasTabsRef.current = restoredTabs;
         setCanvasTabs(restoredTabs);
         saveCanvasTabs(restoredTabs).catch(() => {});
@@ -869,7 +900,7 @@ function App() {
         if (activeTab.snapshot) applyCanvasTabSnapshot(activeTab);
       } else {
         const initial = {
-          id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), dirty: false,
+          id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
           snapshot: captureCanvasTabSnapshot(),
         };
         canvasTabsRef.current = [initial];
@@ -892,6 +923,7 @@ function App() {
           setCanvasTabs(focusedTabs);
           activeCanvasIdRef.current = existingCloudTab.id;
           setActiveCanvasId(existingCloudTab.id);
+          setActiveWorkspaceTabId(existingCloudTab.id);
           cloudLoadStartedRef.current = true;
           applyCanvasTabSnapshot(existingCloudTab);
           saveCanvasTabs(focusedTabs).catch(() => {});
@@ -918,6 +950,7 @@ function App() {
         setCanvasTabs(nextTabs);
         activeCanvasIdRef.current = nextCloudTab.id;
         setActiveCanvasId(nextCloudTab.id);
+        setActiveWorkspaceTabId(nextCloudTab.id);
 
         // A cloud URL always gets its own clean canvas. The previously active
         // tab has already been restored above, so do not let its live scene
@@ -2318,9 +2351,10 @@ function App() {
         onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
-        canvasTabs={canvasTabs}
-        activeCanvasId={activeCanvasId}
-        onSelectCanvasTab={switchCanvasTab}
+        canvasTabs={canvasTabs.flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id }] : [tab])}
+        activeCanvasId={activeWorkspaceTabId}
+        onSelectCanvasTab={selectWorkspaceTab}
+        onCloseTodoTab={closeTodoTab}
         onCreateCanvasTab={createCanvasTab}
         onReorderCanvasTabs={reorderCanvasTabs}
         onCloseCanvasTab={closeCanvasTab}
@@ -2399,6 +2433,7 @@ function App() {
         )}
 
         <section className="desktop-canvas-region" aria-label="Canvas workspace">
+          <div className={activeWorkspaceTabId.startsWith("todo:") ? "desktop-canvas-view-hidden" : "desktop-canvas-view"}>
           <SketchiziCanvas
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
@@ -2448,6 +2483,13 @@ function App() {
              onGridVisibilityChange={setGridEnabled}
              gridEnabled={gridEnabled}
           />
+          </div>
+          {activeWorkspaceTabId.startsWith("todo:") && (
+            <div className="sketchizi-todo-workspace">
+              <TodoList items={canvasTabs.find((tab) => tab.id === activeWorkspaceTabId.slice(5))?.todoItems || []}
+                onChange={(items) => updateCanvasTodoItems(activeWorkspaceTabId.slice(5), items)} isDarkTheme={isDarkTheme} fullPage />
+            </div>
+          )}
 
           {draggingIcon && (
             <div
