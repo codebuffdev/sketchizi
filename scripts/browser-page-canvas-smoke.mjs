@@ -23,7 +23,9 @@ async function renameActivePage(name) {
  await page.waitForFunction(expected => document.querySelector('.canvas-pages-page-name')?.textContent?.trim() === expected, name);
 }
 async function chooseCanvasMode(mode) {
- await page.evaluate(nextMode => window.dispatchEvent(new CustomEvent('sketchizi:workspace-canvas-choice', { detail: { mode: nextMode } })), mode);
+ await canvasStyle().click();
+ const buttonName = mode === 'pages' ? /Pages Organize/ : /Infinite canvas Draw/;
+ await page.getByRole('button', { name: buttonName }).click();
  if (mode === 'pages') await page.getByRole('navigation', { name: 'Page navigation' }).waitFor();
  else await page.getByRole('navigation', { name: 'Page navigation' }).waitFor({ state: 'detached' });
 }
