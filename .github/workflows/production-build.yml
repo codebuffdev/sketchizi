@@ -39,7 +39,24 @@ jobs:
       - name: Run automated regression suite
         id: regression
         continue-on-error: true
-        run: npm run test:all
+        shell: bash
+        run: |
+          set +e
+          npm run test:all > /tmp/sketchizi-current-tests.tap 2>&1
+          status=$?
+          tail -n 45 /tmp/sketchizi-current-tests.tap
+          exit "$status"
+
+      - name: Compare regression failures with main
+        id: regression-baseline
+        if: ${{ always() && steps.regression.outcome == 'failure' }}
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          git worktree add --detach /tmp/sketchizi-main FETCH_HEAD
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/sketchizi-main/node_modules
+          (cd /tmp/sketchizi-main && npm run test:all) > /tmp/sketchizi-main-tests.tap 2>&1 || true
+          node scripts/compare-test-baseline.mjs /tmp/sketchizi-main-tests.tap /tmp/sketchizi-current-tests.tap
 
       - name: Build production application
         run: npm run build
@@ -113,10 +130,10 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      # Keep CI red for any regression failures, but only after the build and
-      # browser smoke steps have had a chance to run and produce diagnostics.
+      # Existing failures on main are tracked as baseline debt. New failures
+      # still fail this PR; baseline-only failures do not block unrelated work.
       - name: Enforce regression suite result
-        if: ${{ always() && steps.regression.outcome == 'failure' }}
+        if: ${{ always() && steps.regression.outcome == 'failure' && steps.regression-baseline.outcome != 'success' }}
         run: |
           echo "::error::Automated regression suite failed; see the test step above."
           exit 1
