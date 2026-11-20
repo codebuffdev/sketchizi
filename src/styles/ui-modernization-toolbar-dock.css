@@ -4025,3 +4025,50 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 @media (hover:none) {
   .app .sketchizi-todo-grip,.app .sketchizi-todo-row-actions { opacity:1; }
 }
+
+
+/* Dedicated Todo workspace tab */
+.desktop-canvas-view { display: contents; }
+.desktop-canvas-view-hidden { display: none !important; }
+.app .sketchizi-todo-workspace {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: var(--color-surface, #f7f9fc);
+}
+.app .sketchizi-todo-popover.is-full-page {
+  position: relative;
+  inset: auto;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: min(920px, calc(100% - 64px));
+  max-height: none;
+  overflow: visible;
+  box-sizing: border-box;
+  margin: 38px auto;
+  padding: 30px;
+  border: 1px solid #e5eaf0;
+  border-radius: 18px;
+  background: #fff;
+  color: #1c2733;
+  box-shadow: 0 8px 28px rgb(18 35 55 / 7%);
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-header { margin-bottom: 24px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-title strong { font-size: 22px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-title small { font-size: 12px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-title-icon { width: 42px; height: 42px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-progress { margin-bottom: 24px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-progress-track { height: 7px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-add { margin-bottom: 25px; padding: 8px 9px 8px 14px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-add input { font-size: 14px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-add button { height: 38px; padding: 0 16px; font-size: 12px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-section-heading { margin-bottom: 12px; font-size: 13px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-task { min-height: 46px; padding: 5px 8px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-task-text { font-size: 14px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-footer { margin-top: 22px; padding-top: 17px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-completed-toggle { font-size: 13px; }
+.app .sketchizi-todo-popover.is-full-page.is-dark { border-color: #354252; background: #202832; color: #e8edf3; box-shadow: 0 8px 28px rgb(0 0 0 / 18%); }
+@media (max-width: 760px) {
+  .app .sketchizi-todo-popover.is-full-page { width: calc(100% - 28px); margin: 14px auto; padding: 18px; }
+}
