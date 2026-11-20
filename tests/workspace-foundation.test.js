@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
-import { resetCloudLoadAttempt, shouldShowCloudLoadFailure } from "../src/features/workspace/cloudLoadRecovery.js";
+import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "../src/features/workspace/cloudLoadRecovery.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -303,9 +303,10 @@ test("a failed cloud fetch releases the in-flight guard for a later retry", () =
 });
 
 test("a failed cloud fetch remains visible without an active cloud save session", () => {
-  assert.equal(shouldShowCloudLoadFailure({ loadFailed: true, cloudDetached: false }), true);
-  assert.equal(shouldShowCloudLoadFailure({ loadFailed: true, cloudDetached: true }), false);
-  assert.equal(shouldShowCloudLoadFailure({ loadFailed: false, cloudDetached: false }), false);
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: true, loadInProgress: false, cloudDetached: false }), true);
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: true, loadInProgress: false, cloudDetached: true }), false);
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: false, loadInProgress: false, cloudDetached: false }), false);
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: false, loadInProgress: true, cloudDetached: false }), true);
 });
 
 test("cloud load failure exposes Retry load and retries the fetch effect", async () => {
