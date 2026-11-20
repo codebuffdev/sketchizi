@@ -1,4 +1,4 @@
-export const MAX_TAB_LABEL_CHARACTERS = 20;
+export const MAX_TAB_LABEL_CHARACTERS = 70;
 
 /**
  * Display-only truncation for tab labels. The stored tab name is never
