@@ -69,15 +69,15 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
   };
   const progress = tasks.length ? Math.round((checkedCount / tasks.length) * 100) : 0;
   return (
-    <section className={`sketchizi-todo-popover${isDarkTheme ? " is-dark" : ""}${fullPage ? " is-full-page" : ""}`} role={fullPage ? "region" : "dialog"} aria-label="Todo List">
+    <section className={`sketchizi-todo-popover${isDarkTheme ? " is-dark" : ""}${fullPage ? " is-full-page" : ""}`} role={fullPage ? "region" : "dialog"} aria-label="Tasks">
       <header className="sketchizi-todo-header">
         <div className="sketchizi-todo-title">
           <span className="sketchizi-todo-title-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
           </span>
-          <span><strong>Todo List</strong><small>{active.length} {active.length === 1 ? "task" : "tasks"} left</small></span>
+          <span><strong>Tasks</strong><small>{active.length} {active.length === 1 ? "task" : "tasks"} left</small></span>
         </div>
-        {!fullPage && <button type="button" className="sketchizi-todo-close" aria-label="Close Todo List" onClick={onClose}>×</button>}
+        {!fullPage && <button type="button" className="sketchizi-todo-close" aria-label="Close Tasks" onClick={onClose}>×</button>}
       </header>
       <div className="sketchizi-todo-progress" aria-label={`${progress}% complete`}>
         <div className="sketchizi-todo-progress-meta"><span>Progress</span><strong>{checkedCount}/{tasks.length} completed</strong></div>
