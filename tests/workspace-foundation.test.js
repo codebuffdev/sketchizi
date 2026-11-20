@@ -287,10 +287,8 @@ test("cloud deep-link hydration is not overwritten by the generic active-tab sna
   const app = await read("../src/App.jsx");
   assert.match(app, /cloudHydrationPendingTabIdRef = useRef\(""\)/);
   assert.match(app, /cloudHydrationPendingTabIdRef\.current = existingCloudTab\.id/);
-  const activeTabEffect = app.slice(
-    app.indexOf("if (!apiReady || !apiRef.current) return;", app.indexOf("const switchCanvasTab")),
-    app.indexOf("const switchCanvasTab"),
-  );
+  const activeTabEffectStart = app.indexOf("useEffect(() => {\n    if (!apiReady || !apiRef.current) return;");
+  const activeTabEffect = app.slice(activeTabEffectStart, app.indexOf("const switchCanvasTab", activeTabEffectStart));
   assert.match(activeTabEffect, /cloudHydrationPendingTabIdRef\.current === activeCanvasId/);
   assert.match(activeTabEffect, /cloudHydrationPendingTabIdRef\.current = ""/);
   assert.match(activeTabEffect, /return;/);
