@@ -520,3 +520,34 @@
 @media (max-width: 760px) {
   .ai-ask-width-resize { display: none; }
 }
+
+
+/* Sketchizi AI Ask refinement: sharper surfaces, clearer message hierarchy. */
+.ai-ask-panel { border-radius: 4px; box-shadow: 0 18px 48px rgb(15 23 42 / 13%); }
+.ai-ask-header { padding: 15px 16px; }
+.ai-ask-heading h2 { font-size: 16px; font-weight: 760; letter-spacing: -.025em; }
+.ai-ask-heading p { font-size: 11px; line-height: 1.45; }
+.ai-ask-mark, .ai-ask-signin-icon { border-radius: 4px; }
+.ai-ask-starters { gap: 8px; margin-top: 16px; }
+.ai-ask-starters button { min-height: 42px; padding: 11px 12px; border-radius: 4px; font-size: 12px; font-weight: 560; transition: border-color .14s ease, background .14s ease, transform .14s ease; }
+.ai-ask-starters button:hover:not(:disabled) { transform: translateX(2px); }
+.ai-ask-message { padding: 12px 13px; border-radius: 4px; }
+.ai-ask-message.user { margin-left: 34px; }
+.ai-ask-message.assistant { margin-right: 18px; }
+.ai-ask-message-role { font-size: 10px; letter-spacing: .035em; text-transform: uppercase; }
+.ai-ask-composer { padding: 13px 16px 10px; }
+.ai-ask-composer textarea { min-height: 76px; padding: 11px 12px; border-radius: 4px; font-size: 12px; line-height: 1.5; }
+.ai-ask-primary { min-height: 36px; border-radius: 4px; font-size: 12px; }
+.ai-ask-header-actions button,
+.ai-ask-key-row button,
+.ai-ask-key-row input,
+.ai-ask-provider-settings,
+.ai-ask-provider-summary,
+.ai-ask-scope-switch,
+.ai-ask-scope-switch button { border-radius: 4px; }
+.ai-ask-privacy-note { padding-inline: 16px; line-height: 1.5; }
+@media (max-width: 760px) {
+  .ai-ask-panel { border-radius: 4px; }
+  .ai-ask-message.user { margin-left: 12px; }
+  .ai-ask-message.assistant { margin-right: 4px; }
+}
