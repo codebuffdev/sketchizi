@@ -1035,6 +1035,40 @@
     right: calc(12px + var(--safe-right, 0px));
     z-index: 1303;
   }
+
+  .app.canvas-first-header .desktop-app-global-theme-control {
+    position: fixed;
+    top: calc(12px + var(--safe-top, 0px));
+    right: calc(58px + var(--safe-right, 0px));
+    z-index: 1302;
+  }
+}
+
+@media (min-width: 521px) and (max-width: 1024px) {
+  .app.canvas-first-header .desktop-app-header-right-rail {
+    top: calc(58px + var(--safe-top, 0px));
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
+    position: relative;
+    inset: auto;
+    pointer-events: auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-account-menu {
+    left: 0;
+    right: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .app.canvas-first-header .desktop-app-global-ai-control {
+    right: calc(56px + var(--safe-right, 0px));
+  }
+
+  .app.canvas-first-header .desktop-app-global-theme-control {
+    right: calc(102px + var(--safe-right, 0px));
+  }
 }
 
 /* Shared rectangular geometry for the canvas shell and its floating controls. */
