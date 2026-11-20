@@ -645,3 +645,27 @@
   background: #30394a;
   color: #f5f6ff;
 }
+
+
+/* The document-identity wrapper must not read as a second tab container. */
+.app.canvas-first-header .desktop-app-document-identity.desktop-app-document-title-float {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.app.canvas-first-header .desktop-app-document-identity.desktop-app-document-title-float::before,
+.app.canvas-first-header .desktop-app-document-identity.desktop-app-document-title-float::after {
+  display: none !important;
+  content: none !important;
+}
+.app.canvas-first-header .desktop-app-document-identity.desktop-app-document-title-float:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+}
