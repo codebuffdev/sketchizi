@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import GrammarCheck from "./GrammarCheck.jsx";
 import CanvasStartDate from "./CanvasStartDate.jsx";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
@@ -40,6 +42,7 @@ export default function SketchiziCanvas({
   const collaborationCursorFrameRef = useRef(0);
   const pendingCollaborationCursorRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [grammarEditor, setGrammarEditor] = useState(null);
   const canvasRevisionFrameRef = useRef(0);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
@@ -695,6 +698,44 @@ export default function SketchiziCanvas({
     };
   }, [apiRef, canEdit, viewModeEnabled]);
 
+  // Offer an explicit grammar check while editing canvas text. Text is only sent
+  // to LanguageTool after the user presses the check button.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root || !canEdit || viewModeEnabled) return undefined;
+    const updateEditor = (textarea) => {
+      const rect = textarea.getBoundingClientRect();
+      setGrammarEditor({ textarea, text: textarea.value, rect: { left: rect.left, top: rect.top, bottom: rect.bottom, width: rect.width } });
+    };
+    const onFocus = (event) => {
+      if (event.target instanceof HTMLTextAreaElement && event.target.matches(".excalidraw-textEditorContainer textarea")) updateEditor(event.target);
+    };
+    const onInput = (event) => {
+      if (event.target === grammarEditor?.textarea) updateEditor(event.target);
+    };
+    const onFocusOut = (event) => {
+      if (!event.relatedTarget?.closest?.(".sketchizi-grammar-check")) setTimeout(() => {
+        if (!root.contains(document.activeElement) && !document.activeElement?.closest?.(".sketchizi-grammar-check")) setGrammarEditor(null);
+      }, 0);
+    };
+    const onLayout = () => {
+      const textarea = grammarEditor?.textarea;
+      if (textarea?.isConnected) updateEditor(textarea);
+    };
+    root.addEventListener("focusin", onFocus, true);
+    root.addEventListener("input", onInput, true);
+    root.addEventListener("focusout", onFocusOut, true);
+    window.addEventListener("resize", onLayout);
+    window.addEventListener("scroll", onLayout, true);
+    return () => {
+      root.removeEventListener("focusin", onFocus, true);
+      root.removeEventListener("input", onInput, true);
+      root.removeEventListener("focusout", onFocusOut, true);
+      window.removeEventListener("resize", onLayout);
+      window.removeEventListener("scroll", onLayout, true);
+    };
+  }, [canEdit, viewModeEnabled, grammarEditor?.textarea]);
+
   // Markdown-style list shortcuts are handled by the existing Excalidraw text
   // textarea. Keep list markers as plain text for native scene compatibility.
   useEffect(() => {
@@ -818,6 +859,19 @@ export default function SketchiziCanvas({
         selectedElements={selectedElements}
         onOpenTodoTab={onOpenTodoTab}
       />
+      {grammarEditor?.textarea?.isConnected && createPortal(
+        <div className="sketchizi-canvas-grammar" style={{ position: "fixed", left: Math.max(8, grammarEditor.rect.left), top: grammarEditor.rect.bottom + 8, width: Math.min(Math.max(grammarEditor.rect.width, 280), window.innerWidth - 16), zIndex: 100000 }}>
+          <GrammarCheck text={grammarEditor.text} isDarkTheme={isDarkTheme} onApply={(nextText) => {
+            const textarea = grammarEditor.textarea;
+            const previous = textarea.value;
+            textarea.value = nextText;
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
+            textarea.focus();
+            setGrammarEditor((current) => current ? { ...current, text: nextText } : current);
+          }} />
+        </div>,
+        document.body
+      )}
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
         initialData={excalidrawInitialData}
