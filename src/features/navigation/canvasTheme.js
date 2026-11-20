@@ -19,17 +19,24 @@ export function getCanvasBackground(isDarkTheme) {
 export function applyCanvasThemeBackground(api, isDarkTheme, force = false) {
   if (!api?.getAppState || !api?.updateScene) return false;
 
+  const appState = api.getAppState() || {};
   const desiredBackground = getCanvasBackground(isDarkTheme);
-  const actualBackground = String(api.getAppState()?.viewBackgroundColor || "")
-    .trim()
-    .toLowerCase();
+  const desiredTheme = isDarkTheme ? "dark" : "light";
+  const actualBackground = String(appState.viewBackgroundColor || "").trim().toLowerCase();
+  const nextAppState = {};
 
-  if (!force && actualBackground && ![LIGHT_CANVAS_BACKGROUND, DARK_CANVAS_BACKGROUND].includes(actualBackground)) return false;
-
-  if (actualBackground === desiredBackground) return false;
+  // Preserve user-selected canvas colors; only swap the two theme defaults.
+  if (
+    (force || !actualBackground || [LIGHT_CANVAS_BACKGROUND, DARK_CANVAS_BACKGROUND].includes(actualBackground)) &&
+    actualBackground !== desiredBackground
+  ) {
+    nextAppState.viewBackgroundColor = desiredBackground;
+  }
+  if (appState.theme !== desiredTheme) nextAppState.theme = desiredTheme;
+  if (!Object.keys(nextAppState).length) return false;
 
   api.updateScene({
-    appState: { viewBackgroundColor: desiredBackground },
+    appState: nextAppState,
     captureUpdate: CaptureUpdateAction.NEVER,
   });
   return true;

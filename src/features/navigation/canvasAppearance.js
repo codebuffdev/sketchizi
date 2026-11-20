@@ -79,7 +79,7 @@ export function applyCanvasAppearance(
     canvasColorForScene(APPEARANCE_COLORS.sketch, false),
     canvasColorForScene(APPEARANCE_COLORS.sketch, true),
   ].some((color) => String(color).trim().toLowerCase() === currentBackground);
-  const nextAppState = { currentItemRoughness: roughness };
+  const nextAppState = { currentItemRoughness: roughness, theme: isDarkTheme ? "dark" : "light" };
 
   // Sketch changes drawing style across the whole canvas, not its surface.
   // Only replace the warm-paper background left by the earlier implementation.
@@ -92,7 +92,7 @@ export function applyCanvasAppearance(
   const nextElements = applyRoughnessToExistingElements(api, roughness);
   const backgroundUnchanged = nextAppState.viewBackgroundColor === undefined ||
     String(nextAppState.viewBackgroundColor).trim().toLowerCase() === currentBackground;
-  const appStateUnchanged = backgroundUnchanged && appState.currentItemRoughness === roughness;
+  const appStateUnchanged = backgroundUnchanged && appState.currentItemRoughness === roughness && appState.theme === (isDarkTheme ? "dark" : "light");
   if (appStateUnchanged && !nextElements) return false;
 
   api.updateScene({

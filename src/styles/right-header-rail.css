@@ -986,3 +986,19 @@
     height: 18px;
   }
 }
+
+
+/* Global appearance control sits immediately left of the right-rail header toggle. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-global-theme-control {
+    position: fixed;
+    top: var(--header-top, calc(18px + var(--safe-top, 0px)));
+    right: calc(var(--header-rail-right, 18px) + var(--header-top-control-height, 40px) + 6px);
+    z-index: 1302;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--header-top-control-height, 40px);
+    height: var(--header-top-control-height, 40px);
+  }
+}
