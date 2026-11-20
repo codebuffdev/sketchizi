@@ -1049,7 +1049,7 @@ function App() {
       }
       if (Array.isArray(stored) && stored.length) {
         const today = getLocalDateString();
-        const restoredTabs = (refreshedTabs.length ? refreshedTabs : stored).map((tab) => ({
+        const restoredTabs = startupTabs.map((tab) => ({
           ...tab,
           startDate: isValidCanvasStartDate(tab.startDate) ? tab.startDate : today,
         }));
