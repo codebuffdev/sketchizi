@@ -2014,3 +2014,38 @@
     pointer-events: auto;
   }
 }
+
+
+/* Keep the floating catalog compact at phone widths too. Earlier mobile
+   drawer rules expanded it to the full available viewport and overrode the
+   320 × 460 compact-library contract when the viewport changed. */
+@media (max-width: 760px) {
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    padding: var(--sketchizi-desktop-header-height, 58px) 12px 12px !important;
+    pointer-events: none;
+  }
+
+  .app .desktop-resources-region.sk-icon-library-portal-host.mobile-resource-open > .library-panel.library-panel-redesign {
+    position: relative !important;
+    inset: auto !important;
+    flex: 0 1 auto !important;
+    width: min(320px, calc(100vw - 24px)) !important;
+    height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px) !important;
+    margin: 0 !important;
+    align-self: center !important;
+    box-sizing: border-box !important;
+    pointer-events: auto;
+  }
+}
