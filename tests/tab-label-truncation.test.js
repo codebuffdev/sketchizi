@@ -29,7 +29,8 @@ test("emoji are not split in half", () => {
 });
 
 test("truncation never mutates or shortens the stored name", () => {
-  const longName = "A very long canvas name that keeps going ".repeat(3);\n  const tab = Object.freeze({ id: "t", name: longName });
+  const longName = "A very long canvas name that keeps going ".repeat(3);
+  const tab = Object.freeze({ id: "t", name: longName });
   const shown = getTabDisplayName(tab.name);
   assert.notEqual(shown, tab.name);
   assert.equal(tab.name, longName);
@@ -49,5 +50,8 @@ test("CanvasTabs shows truncated text but keeps full name in tooltip and aria la
   assert.match(src, /title=\{tab\.name\}/);
   assert.match(src, /aria-label=\{`Close \$\{tab\.name\}`\}/);
   const header = readFileSync(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
-  assert.match(header, /setDocumentNameDraft\(activeCanvasTabName\)/, "rename starts from the full stored name");\n  const styles = readFileSync(new URL("../src/styles/canvas-tabs.css", import.meta.url), "utf8");\n  assert.match(styles, /desktop-app-document-identity \\.canvas-tab-item\\.is-active > \\.canvas-tab[\\s\\S]*?max-width: 520px/);\n  assert.match(styles, /desktop-app-document-identity \\.canvas-tabs-list[\\s\\S]*?overflow-x: auto/);
+  assert.match(header, /setDocumentNameDraft\(activeCanvasTabName\)/, "rename starts from the full stored name");
+  const styles = readFileSync(new URL("../src/styles/canvas-tabs.css", import.meta.url), "utf8");
+  assert.match(styles, /desktop-app-document-identity \\.canvas-tab-item\\.is-active > \\.canvas-tab[\\s\\S]*?max-width: 520px/);
+  assert.match(styles, /desktop-app-document-identity \\.canvas-tabs-list[\\s\\S]*?overflow-x: auto/);
 });
