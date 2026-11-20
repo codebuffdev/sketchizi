@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
+import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "../src/features/workspace/cloudLoadRecovery.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -292,4 +293,26 @@ test("cloud deep-link hydration is not overwritten by the generic active-tab sna
   assert.match(activeTabEffect, /cloudHydrationPendingTabIdRef\.current === activeCanvasId/);
   assert.match(activeTabEffect, /cloudHydrationPendingTabIdRef\.current = ""/);
   assert.match(activeTabEffect, /return;/);
+});
+
+
+test("a failed cloud fetch releases the in-flight guard for a later retry", () => {
+  const loadStartedRef = { current: true };
+  assert.equal(resetCloudLoadAttempt(loadStartedRef), true);
+  assert.equal(loadStartedRef.current, false);
+});
+
+test("a failed cloud fetch remains visible without an active cloud save session", () => {
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: true, loadInProgress: false, cloudDetached: false }), true);
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: true, loadInProgress: false, cloudDetached: true }), false);
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: false, loadInProgress: false, cloudDetached: false }), false);
+  assert.equal(shouldShowCloudLoadStatus({ loadFailed: false, loadInProgress: true, cloudDetached: false }), true);
+});
+
+test("cloud load failure exposes Retry load and retries the fetch effect", async () => {
+  const app = await read("../src/App.jsx");
+  assert.ok(app.includes("onClick={retryCloudLoad}>Retry load</button>"));
+  assert.match(app, /setCloudLoadRetryToken\(\(attempt\) => attempt \+ 1\)/);
+  assert.match(app, /cloudLoadRetryToken, cloudProjectId/);
+  assert.match(app, /cloudSaveState\.state === "error" && !cloudLoadFailed/);
 });
