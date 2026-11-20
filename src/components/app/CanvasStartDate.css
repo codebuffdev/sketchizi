@@ -34,19 +34,18 @@
 @media (max-width:520px) { .canvas-start-date-wrap { right:10px; bottom:12px; } .canvas-start-date { min-height:25px; font-size:10px; } }
 
 
-/* Keep the canvas zoom percentage beside the canvas date in the bottom-right
-   status cluster instead of separating it at the opposite canvas corner. */
+/* Keep the canvas zoom percentage in the bottom-left corner, clear of the centered tool rail. */
 .app .excalidraw .zoom-actions {
   position: absolute !important;
-  right: 174px !important;
-  left: auto !important;
+  left: 22px !important;
+  right: auto !important;
   bottom: 18px !important;
   z-index: 12 !important;
 }
 
 @media (max-width: 520px) {
   .app .excalidraw .zoom-actions {
-    right: 145px !important;
+    left: 10px !important;
     bottom: 12px !important;
   }
 }
