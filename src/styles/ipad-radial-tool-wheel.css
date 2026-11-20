@@ -1,0 +1,50 @@
+/* iPad-style radial tool wheel. The wheel is the only primary tool dock. */
+.sketchizi-radial-wheel {
+  --wheel-size: 304px;
+  --wheel-radius: 119px;
+  --wheel-tool-size: 42px;
+  position: fixed;
+  z-index: 10040;
+  width: var(--wheel-size);
+  height: var(--wheel-size);
+  border-radius: 50%;
+  color: #4d5261;
+  background: radial-gradient(circle at 35% 28%, rgb(255 255 255 / 96%), rgb(235 237 244 / 90%) 68%, rgb(218 222 232 / 88%));
+  border: 1px solid rgb(255 255 255 / 82%);
+  box-shadow: 0 12px 34px rgb(28 35 55 / 20%), inset 0 2px 8px rgb(255 255 255 / 90%), inset 0 -3px 10px rgb(95 105 130 / 12%);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  touch-action: none;
+  user-select: none;
+}
+.sketchizi-radial-wheel-ring { position: absolute; inset: 13px; border: 1px solid rgb(108 116 137 / 18%); border-radius: 50%; pointer-events: none; }
+.sketchizi-radial-wheel-tool {
+  position: absolute; left: 50%; top: 50%; display: grid; place-items: center;
+  width: var(--wheel-tool-size); height: var(--wheel-tool-size); padding: 0;
+  border: 1px solid rgb(112 120 140 / 14%); border-radius: 13px; color: inherit;
+  background: linear-gradient(145deg, rgb(255 255 255 / 90%), rgb(226 229 238 / 88%));
+  box-shadow: 0 3px 9px rgb(38 45 65 / 12%), inset 0 1px 0 #fff; cursor: pointer;
+  transform: translate(-50%, -50%) rotate(var(--tool-angle)) translateY(calc(-1 * var(--wheel-radius))) rotate(calc(-1 * var(--tool-angle)));
+  transition: background .14s ease, color .14s ease, box-shadow .14s ease, scale .14s ease;
+}
+.sketchizi-radial-wheel-tool:hover { color: #263b56; background: #fff; box-shadow: 0 5px 14px rgb(38 45 65 / 18%); scale: 1.07; }
+.sketchizi-radial-wheel-tool.is-active { color: #253c56; border-color: rgb(80 111 153 / 45%); background: linear-gradient(145deg, #fff, #dce8f8); box-shadow: 0 4px 12px rgb(53 86 130 / 22%), inset 0 1px 0 #fff; }
+.sketchizi-radial-wheel-tool:disabled { opacity: .42; cursor: not-allowed; }
+.sketchizi-radial-wheel-tool:focus-visible, .sketchizi-radial-wheel-hub:focus-visible { outline: 2px solid #668fc2; outline-offset: 3px; }
+.sketchizi-radial-wheel-hub {
+  position: absolute; left: 50%; top: 50%; display: grid; place-items: center;
+  width: 88px; height: 88px; padding: 0; border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 50%; color: #535b6d; background: radial-gradient(circle at 35% 28%, #fff, #e5e8f0 78%);
+  box-shadow: 0 5px 18px rgb(43 50 70 / 16%), inset 0 1px 3px #fff;
+  cursor: grab; transform: translate(-50%, -50%); touch-action: none;
+}
+.sketchizi-radial-wheel-hub:active { cursor: grabbing; }
+.sketchizi-radial-wheel.is-dark { color: #d9deeb; background: radial-gradient(circle at 35% 28%, rgb(76 83 101 / 97%), rgb(37 42 54 / 96%) 72%); border-color: rgb(255 255 255 / 12%); box-shadow: 0 12px 34px rgb(0 0 0 / 40%), inset 0 2px 8px rgb(255 255 255 / 10%); }
+.sketchizi-radial-wheel.is-dark .sketchizi-radial-wheel-tool { color: #d9deeb; border-color: rgb(255 255 255 / 10%); background: linear-gradient(145deg, #42495a, #2d3342); box-shadow: 0 3px 9px rgb(0 0 0 / 28%), inset 0 1px 0 rgb(255 255 255 / 8%); }
+.sketchizi-radial-wheel.is-dark .sketchizi-radial-wheel-tool.is-active { color: #fff; background: linear-gradient(145deg, #526e91, #344d70); }
+.sketchizi-radial-wheel.is-dark .sketchizi-radial-wheel-hub { color: #e0e5f0; background: radial-gradient(circle at 35% 28%, #555d70, #303646 78%); border-color: rgb(255 255 255 / 12%); }
+@media (max-width: 540px) {
+  .sketchizi-radial-wheel { --wheel-size: 268px; --wheel-radius: 103px; --wheel-tool-size: 38px; }
+  .sketchizi-radial-wheel-hub { width: 76px; height: 76px; }
+}
+@media (prefers-reduced-motion: reduce) { .sketchizi-radial-wheel-tool { transition: none; } }
