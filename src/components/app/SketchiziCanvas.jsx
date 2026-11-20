@@ -715,7 +715,7 @@ export default function SketchiziCanvas({
     };
     const onFocusOut = (event) => {
       if (!event.relatedTarget?.closest?.(".sketchizi-grammar-check")) setTimeout(() => {
-        if (!root.contains(document.activeElement) && !document.activeElement?.closest?.(".sketchizi-grammar-check")) setGrammarEditor(null);
+        if (document.activeElement !== grammarEditor?.textarea && !document.activeElement?.closest?.(".sketchizi-grammar-check")) setGrammarEditor(null);
       }, 0);
     };
     const onLayout = () => {
@@ -863,7 +863,6 @@ export default function SketchiziCanvas({
         <div className="sketchizi-canvas-grammar" style={{ position: "fixed", left: Math.max(8, grammarEditor.rect.left), top: grammarEditor.rect.bottom + 8, width: Math.min(Math.max(grammarEditor.rect.width, 280), window.innerWidth - 16), zIndex: 100000 }}>
           <GrammarCheck text={grammarEditor.text} isDarkTheme={isDarkTheme} onApply={(nextText) => {
             const textarea = grammarEditor.textarea;
-            const previous = textarea.value;
             textarea.value = nextText;
             textarea.dispatchEvent(new Event("input", { bubbles: true }));
             textarea.focus();
