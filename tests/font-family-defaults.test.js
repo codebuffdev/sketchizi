@@ -12,8 +12,8 @@ const text = (id, fontFamily, extra = {}) => ({
 });
 
 test("supported font-family IDs are accepted and invalid IDs are ignored", () => {
-  for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9]) assert.equal(normalizeFontFamilyId(id), id);
-  for (const value of [undefined, null, "8", 10, -1, 8.5, NaN]) assert.equal(normalizeFontFamilyId(value), null);
+  for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]) assert.equal(normalizeFontFamilyId(id), id);
+  for (const value of [undefined, null, "8", 10, 13, -1, 8.5, NaN]) assert.equal(normalizeFontFamilyId(value), null);
   assert.equal(DEFAULT_FONT_FAMILY_ID, 5);
 });
 
