@@ -18,16 +18,14 @@ test("primary dock is a radial iPad-style wheel with the complete tool set", () 
   assert.doesNotMatch(dock, /menuOpen|paletteOpen|focusedTool|selection-focus|dock-launcher/);
 });
 
-test("wheel starts bottom-left and can be repositioned by dragging its hub", () => {
-  assert.match(dock, /left: expanded \? 18 : 0, bottom: 18/);
-  assert.match(dock, /is-expanded.*is-tucked/);
-  assert.match(wheelCss, /\.sketchizi-radial-wheel\.is-tucked \{ transform: translateX\(-50%\)/);
+test("wheel starts tucked at bottom-left, expands, and supports reliable pointer dragging", () => {
+  assert.match(dock, /left: expanded \? 16 : -tuckedOffset, bottom: 16/);
   assert.match(dock, /setExpanded\(\(value\) => !value\)/);
-  assert.match(dock, /dragRef\.current\.moved/);
-  assert.match(dock, /title="Tap to expand or collapse; drag to move"/);
-  assert.match(dock, /Math\.max\(8, Math\.min\(window\.innerWidth/);
-  assert.match(wheelCss, /position: fixed/);
-  assert.match(wheelCss, /transition: left \.2s ease/);
+  assert.match(dock, /onPointerMove=\{moveDrag\}/);
+  assert.match(dock, /setPointerCapture/);
+  assert.match(dock, /dragRef\.current\.pointerId/);
+  assert.match(wheelCss, /--wheel-size: 220px/);
+  assert.match(wheelCss, /--wheel-tool-size: 34px/);
   assert.match(wheelCss, /touch-action: none/);
 });
 
