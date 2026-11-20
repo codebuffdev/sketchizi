@@ -320,7 +320,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
   useEffect(() => {
     const handleEscapeToPrimaryDock = (event) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (event.key !== "Escape") return;
       const target = event.target;
       // Let Escape close an open dock menu first, and never steal it from
       // editable controls or dialogs.
@@ -331,6 +331,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       // Capture Escape before Excalidraw consumes it so the Primary Dock returns.
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation?.();
       setCustomTool(null);
       onClearSelection?.();
       window.dispatchEvent(new CustomEvent("sketchizi:escape-to-primary-dock"));
