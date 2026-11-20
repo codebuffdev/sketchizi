@@ -199,7 +199,7 @@ function App() {
     });
   }, []);
 
-  const panelState = usePanelState({ apiRef, closeNativeMenu });
+  const panelState = usePanelState({ apiRef, closeNativeMenu, setAiAskOpen });
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
@@ -2599,7 +2599,10 @@ function App() {
         <button
           type="button"
           className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
-          onClick={() => setAiAskOpen((value) => !value)}
+          onClick={() => {
+            setActivePanel(null);
+            setAiAskOpen((value) => !value);
+          }}
           title="AI Ask"
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
