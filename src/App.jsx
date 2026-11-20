@@ -676,7 +676,7 @@ function App() {
     const currentSnapshot = captureCanvasTabSnapshot();
     const currentTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
       ? { ...tab, snapshot: currentSnapshot }
-      : tab);
+      : tab.id === nextId ? { ...tab, todoTabActive: false } : tab);
     const target = currentTabs.find((tab) => tab.id === nextId);
     if (!target) return;
     if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
