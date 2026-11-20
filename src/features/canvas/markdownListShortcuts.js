@@ -14,6 +14,18 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
 
   if (key === " ") {
     if (afterCursor.length) return null;
+
+    // Markdown heading markers: # / ## / ### followed by Space.
+    const heading = beforeCursor.match(/^(\s*)(#{1,3})$/);
+    if (heading) {
+      const fontSize = { "#": 36, "##": 28, "###": 24 }[heading[2]];
+      return {
+        start: lineStart,
+        end: selectionStart,
+        text: heading[1],
+        headingFontSize: fontSize,
+      };
+    }
     const numbered = beforeCursor.match(/^(\s*)(\d+)\.$/);
     if (numbered) {
       return { start: lineStart, end: selectionStart, text: numbered[1] + numbered[2] + "․ " };

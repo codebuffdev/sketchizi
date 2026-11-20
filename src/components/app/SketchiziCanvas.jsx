@@ -705,6 +705,24 @@ export default function SketchiziCanvas({
       event.preventDefault();
       event.stopPropagation();
       applyMarkdownListEdit(textarea, edit);
+
+      if (edit.headingFontSize) {
+        const api = apiRef?.current;
+        const editingElementId = api?.getAppState?.()?.editingTextElement?.id;
+        if (editingElementId) {
+          const elements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+          const updatedElements = elements.map((element) => element.id === editingElementId
+            ? {
+              ...element,
+              fontSize: edit.headingFontSize,
+              version: (Number(element.version) || 0) + 1,
+              versionNonce: Math.floor(Math.random() * 2147483647),
+              updated: Date.now(),
+            }
+            : element);
+          api.updateScene?.({ elements: updatedElements, captureUpdate: "IMMEDIATELY" });
+        }
+      }
     };
     root.addEventListener("keydown", handleMarkdownListKeyDown, true);
     return () => root.removeEventListener("keydown", handleMarkdownListKeyDown, true);
