@@ -56,9 +56,8 @@ try {
  await page.locator('.desktop-app-document-identity-dirty-dot.is-saved').waitFor({state:'attached',timeout:20000});
  await chooseStartupPages();
  await ensureHeaderVisible();
- assert.equal(await canvasStyle().count(),1,'Pages controller must render only one canvas selector');
- await canvasStyle().click();
- await page.getByRole('button',{name:/Pages Organize/}).click();
+ assert.equal(await canvasStyle().count(),1,'Header must render one Canvas style control');
+ await chooseCanvasMode('pages');
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
  let es = await waitScene(es=>pages(es).length===1);
  assert.equal(pages(es)[0].width,1600); assert.equal(pages(es)[0].height,1400);
