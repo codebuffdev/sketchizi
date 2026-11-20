@@ -527,13 +527,28 @@ function App() {
       });
     }).catch((error) => {
       if (cancelled) return;
+      const message = error.message || "Could not load this cloud diagram.";
+      const failedTabs = canvasTabsRef.current.map((tab) => tab.id === targetTabId
+        ? {
+          ...tab,
+          snapshot: {
+            ...(tab.snapshot || {}),
+            cloudSession: { ...(tab.snapshot?.cloudSession || {}), active: false },
+            cloudDetached: false,
+            cloudSaveState: { state: "error", error: message },
+          },
+        }
+        : tab);
+      canvasTabsRef.current = failedTabs;
+      setCanvasTabs(failedTabs);
+      saveCanvasTabs(failedTabs).catch(() => {});
+      cloudLoadStartedRef.current = false;
       if (activeCanvasIdRef.current === targetTabId) {
         cloudSessionRef.current.active = false;
         cloudDetachedRef.current = false;
         setCloudDetached(false);
         cloudSceneReadyRef.current = true;
-        cloudLoadStartedRef.current = false;
-        setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
+        setCloudSaveState({ state: "error", error: message });
       }
       if (cloudHydratingTabIdRef.current === targetTabId) cloudHydratingTabIdRef.current = "";
     });
