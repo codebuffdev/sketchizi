@@ -409,6 +409,9 @@ try {
   await authLayout.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser(authLayout.page);
   await ensureHeaderVisible(authLayout.page);
+  const aiAskToggle = authLayout.page.getByRole("button", { name: "AI Ask", exact: true });
+  if (await aiAskToggle.getAttribute("aria-expanded") === "true") await aiAskToggle.click({ force: true });
+  await authLayout.page.waitForFunction(() => !document.querySelector(".app")?.classList.contains("ai-ask-open"));
   await authLayout.page.getByRole("button", { name: "Sign in", exact: true }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor();
 
