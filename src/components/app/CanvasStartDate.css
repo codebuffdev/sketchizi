@@ -57,9 +57,7 @@
   --canvas-corner-row-height: 36px;
 }
 .app .excalidraw .zoom-actions.zoom-actions {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
+  align-content: center !important;
   height: var(--canvas-corner-row-height) !important;
   min-height: var(--canvas-corner-row-height) !important;
   box-sizing: border-box !important;
