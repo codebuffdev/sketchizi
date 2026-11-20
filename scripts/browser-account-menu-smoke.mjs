@@ -52,10 +52,10 @@ try {
       }
       await menu.getByRole('menuitem', { name: 'Sign out', exact: true }).waitFor();
       await page.keyboard.press('Escape');
-      assert.equal(await menu.count(), 0, 'Escape closes the account menu');
+      await menu.waitFor({ state: 'detached' });
       await trigger.click();
       await page.mouse.click(20, 450);
-      assert.equal(await menu.count(), 0, 'Clicking the canvas closes the account menu');
+      await menu.waitFor({ state: 'detached' });
       console.log(`PASS: account dropdown ${width}px ${theme}`);
       await page.close();
     }
