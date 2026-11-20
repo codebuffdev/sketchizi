@@ -5,7 +5,7 @@
  * tab-scoped hydration guard in App before reaching the save pipeline.
  */
 export function hasCloudSceneChange(elements) {
-  return Array.isArray(elements);
+  return Array.isArray(elements) && (elements.length === 0 || elements.some((element) => element && typeof element.id === "string"));
 }
 
 /** Once a cloud document is detached, the new canvas belongs to local autosave. */
