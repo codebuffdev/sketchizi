@@ -93,7 +93,10 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     const move = (event) => {
       if (!dragRef.current) return;
       const drag = dragRef.current;
-      if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 5) drag.moved = true;
+      if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 5) {
+        drag.moved = true;
+        setExpanded(true);
+      }
       if (!drag.moved) return;
       const width = wheelRef.current?.offsetWidth || 304;
       const height = wheelRef.current?.offsetHeight || 304;
@@ -120,8 +123,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
 
   const activeId = customTool || activeTool;
   const style = position
-    ? { left: position.left + (expanded ? 0 : -152), top: position.top }
-    : { left: expanded ? 18 : -152, bottom: 18 };
+    ? { left: position.left, top: position.top }
+    : { left: expanded ? 18 : 0, bottom: 18 };
   const startDrag = (event) => {
     if (event.button !== 0) return;
     const rect = wheelRef.current?.getBoundingClientRect();
@@ -137,7 +140,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   };
 
   return (
-    <nav ref={wheelRef} className={`sketchizi-radial-wheel${isDarkTheme ? " is-dark" : ""}`} aria-label="Drawing tools" data-canvas-revision={canvasRevision} style={style}>
+    <nav ref={wheelRef} className={`sketchizi-radial-wheel${isDarkTheme ? " is-dark" : ""}${expanded ? " is-expanded" : " is-tucked"}`} aria-label="Drawing tools" data-canvas-revision={canvasRevision} style={style}>
       <div className="sketchizi-radial-wheel-ring" aria-hidden="true" />
       {TOOLS.map((tool, index) => {
         const angle = (index * 360) / TOOLS.length - 90;
