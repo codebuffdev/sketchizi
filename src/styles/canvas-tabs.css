@@ -680,3 +680,47 @@
 .app .desktop-app-document-title-float .canvas-tabs-overflow-menu {
   z-index: 10050;
 }
+
+
+/* Display up to 70 characters in the actual DesktopAppHeader CanvasTabs.
+   Keep each tab at its content width and scroll the strip when space runs out. */
+.desktop-app-document-identity .canvas-tabs-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.desktop-app-document-identity .canvas-tabs-list::-webkit-scrollbar {
+  display: none;
+}
+.desktop-app-document-identity .canvas-tab-item {
+  flex: 0 0 auto;
+}
+.desktop-app-document-identity .canvas-tab-item > .canvas-tab {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 520px;
+}
+.desktop-app-document-identity .canvas-tab-item.is-active > .canvas-tab {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 520px;
+}
+.desktop-app-document-identity .canvas-tab-item > .canvas-tab .canvas-tab-name {
+  display: inline-block;
+  width: max-content;
+  max-width: 470px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .desktop-app-document-identity .canvas-tab-item > .canvas-tab,
+  .desktop-app-document-identity .canvas-tab-item.is-active > .canvas-tab {
+    flex-basis: auto;
+    max-width: 520px;
+  }
+  .desktop-app-document-identity .canvas-tab-item > .canvas-tab .canvas-tab-name {
+    max-width: 470px;
+  }
+}
