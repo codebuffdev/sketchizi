@@ -273,14 +273,14 @@
   gap: 4px;
   padding-left: 3px;
 }
-.canvas-tab-active-actions .desktop-app-save-status-wrap {
+.canvas-tab-item.is-active > .desktop-app-save-status-wrap {
   position: relative;
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
   margin: 0;
 }
-.canvas-tab-active-actions .desktop-app-save-status-trigger,
+.canvas-tab-item.is-active > .desktop-app-save-status-wrap .desktop-app-save-status-trigger,
 .canvas-tab-active-actions .desktop-app-document-rename,
 .canvas-tab-active-actions .desktop-app-save-to-cloud-button {
   display: inline-flex;
