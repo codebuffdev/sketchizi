@@ -97,13 +97,11 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       <button type="button" className={`sketchizi-primary-dock-tool sketchizi-todo-dock-trigger${todoOpen ? " is-active" : ""}${menuOpen ? " sketchizi-todo-menu-trigger" : ""}`}
         aria-label="Todo List" title="Todo List" aria-expanded={todoOpen} aria-haspopup="dialog"
         onPointerDown={(event) => {
-          event.preventDefault();
           event.stopPropagation();
-          setTodoOpen((open) => !open);
         }}
         onClick={(event) => {
-          event.preventDefault();
           event.stopPropagation();
+          setTodoOpen((open) => !open);
         }}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="4" y="3.5" width="16" height="17" rx="2" />
@@ -112,7 +110,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       </button>
       {todoOpen && typeof document !== "undefined" && createPortal(
         <TodoList items={todoItems} onChange={onTodoItemsChange} onClose={() => setTodoOpen(false)} isDarkTheme={isDarkTheme} />,
-        document.body
+        rootRef.current?.closest(".app") || document.body
       )}
     </>
   );
