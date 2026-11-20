@@ -236,6 +236,9 @@ function App() {
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
   const cloudHydrationPendingTabIdRef = useRef("");
+  // Track hydration by tab, not by the cloudDiagramId URL parameter: the URL
+  // remains present after switching to a local tab or detaching the document.
+  const cloudHydratingTabIdRef = useRef(cloudDiagramId ? "pending" : "");
   const cloudDetachedRef = useRef(false);
   const [cloudDetached, setCloudDetached] = useState(false);
   const cloudSceneReadyRef = useRef(false);
@@ -278,6 +281,7 @@ function App() {
   useEffect(() => {
     const detachCloudDocument = () => {
       cloudDetachedRef.current = true;
+      cloudHydratingTabIdRef.current = "";
       cloudManualSaveRequestedRef.current = false;
       setCloudDetached(true);
       cloudSceneReadyRef.current = false;
@@ -323,6 +327,7 @@ function App() {
     setCloudSaveDialogOpen(false);
     showToast("Saved to Cloud Workspace", "success");
     cloudSessionRef.current = { active: true, diagramId: diagram.id, projectId, revision: diagram.revision ?? result?.revision ?? 0, name: diagram.name || name.trim() };
+    cloudHydratingTabIdRef.current = "";
     cloudSceneReadyRef.current = true;
     cloudDetachedRef.current = false;
     setCloudDetached(false);
@@ -375,6 +380,7 @@ function App() {
       elements,
       appState: appState || api.getAppState?.() || {},
       metadata: documentMetadataRef.current,
+      allowEmpty: true,
     });
     if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
     cloudSaveTimerRef.current = window.setTimeout(() => {
@@ -481,13 +487,16 @@ function App() {
       // Keep the restoration guard active through the next paint so those
       // callbacks cannot start the normal React/persistence pipeline midway
       // through cloud hydration.
+      const loadingTabId = cloudHydratingTabIdRef.current || activeCanvasIdRef.current;
       readyFrame = window.requestAnimationFrame(() => {
         if (cancelled) return;
+        if (cloudHydratingTabIdRef.current === loadingTabId) cloudHydratingTabIdRef.current = "";
         cloudSceneReadyRef.current = true;
         setCloudSaveState({ state: "saved", error: "" });
       });
     }).catch((error) => {
       if (cancelled) return;
+      cloudHydratingTabIdRef.current = "";
       cloudSessionRef.current.active = false;
       cloudSceneReadyRef.current = true;
       setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
@@ -495,6 +504,9 @@ function App() {
     return () => {
       cancelled = true;
       if (readyFrame) window.cancelAnimationFrame(readyFrame);
+      // If React tears down an in-flight request (including StrictMode replay),
+      // allow the next effect instance to retry instead of leaving the tab stuck.
+      if (!cloudSceneReadyRef.current) cloudLoadStartedRef.current = false;
     };
   }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
 
@@ -726,6 +738,7 @@ function App() {
         elements: currentSnapshot.elements,
         appState: currentSnapshot.appState,
         metadata: { metadata: currentSnapshot.metadata, extensions: currentSnapshot.extensions, format: currentSnapshot.format },
+        allowEmpty: true,
       });
       if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
       cloudSaveTimerRef.current = null;
@@ -993,6 +1006,7 @@ function App() {
           // detach its session so the cloud-load effect fetches the requested
           // diagram and replaces it with the authoritative document.
           applyCanvasTabSnapshot(existingCloudTab);
+          cloudHydratingTabIdRef.current = existingCloudTab.id;
           cloudLoadStartedRef.current = false;
           cloudSceneReadyRef.current = false;
           cloudSessionRef.current = { active: false, diagramId: "", projectId: "", revision: null, name: "" };
@@ -1022,6 +1036,7 @@ function App() {
         canvasTabsRef.current = nextTabs;
         setCanvasTabs(nextTabs);
         activeCanvasIdRef.current = nextCloudTab.id;
+        cloudHydratingTabIdRef.current = nextCloudTab.id;
         setActiveCanvasId(nextCloudTab.id);
         setActiveWorkspaceTabId(nextCloudTab.id);
 
@@ -1065,6 +1080,7 @@ function App() {
       setCanvasTabs(nextTabs);
       if (cloudDiagramId) {
         activeCanvasIdRef.current = nextTabs[1].id;
+        cloudHydratingTabIdRef.current = nextTabs[1].id;
         setActiveCanvasId(nextTabs[1].id);
         setActiveWorkspaceTabId(nextTabs[1].id);
         cloudSceneReadyRef.current = false;
@@ -1439,7 +1455,7 @@ function App() {
     // running the normal scene/state pipeline against an intermediate scene
     // can feed React updates back into Excalidraw and trigger update-depth
     // error #185. Normal edits resume as soon as the cloud scene is ready.
-    if (cloudDiagramId && !cloudSceneReadyRef.current) return;
+    if (cloudHydratingTabIdRef.current === activeCanvasIdRef.current) return;
 
     // Excalidraw emits intermediate onChange snapshots for every freehand
     // pointer sample. Defer scene analysis, collaboration broadcasts, minimap
