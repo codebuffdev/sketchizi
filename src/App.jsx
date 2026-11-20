@@ -45,7 +45,7 @@ import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
 import { hasMountableCanvas } from "./features/workspace/tabClose.js";
-import { getTabDisplayName } from "./features/workspace/tabLabel.js";
+import { findDuplicateTabName, getTabDisplayName } from "./features/workspace/tabLabel.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring, resolveCloudLoadTarget } from "./features/workspace/cloudSavePolicy.js";
@@ -1253,6 +1253,12 @@ function App() {
     const normalizedName = String(name || "").trim();
     if (!normalizedName) throw new Error("Enter a name for this canvas.");
     if (normalizedName.length > 120) throw new Error("Canvas names must be 120 characters or fewer.");
+    const duplicateTab = findDuplicateTabName(canvasTabsRef.current, normalizedName, activeCanvasIdRef.current);
+    if (duplicateTab) {
+      const error = new Error(`Another open canvas is already named "${duplicateTab.name}". Choose a different name.`);
+      showToast(error.message, "error");
+      throw error;
+    }
     if (cloudSessionRef.current.active && !cloudDetachedRef.current) {
       if (!cloudSessionRef.current.active) throw new Error("The Cloud Workspace document is still loading.");
       try {
