@@ -19,7 +19,7 @@ const chooseStartupCanvas = async (page) => {
 
 const openDesignStudio = async (page) => {
   const reveal = page.getByRole("button", { name: "Show application header" });
-  if (await reveal.count()) await reveal.click();
+  if (await reveal.getAttribute("aria-expanded") === "false") await reveal.click();
   await page.getByRole("button", { name: "Canvas style" }).click();
   const canvasStyle = page.getByRole("dialog", { name: "Canvas style" });
   await canvasStyle.getByRole("button", { name: "Browse templates" }).click();
