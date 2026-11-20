@@ -778,13 +778,60 @@ function App() {
   useEffect(() => {
     if (!sketchReady || !apiReady || canvasTabsRestoredRef.current) return;
     let cancelled = false;
-    loadCanvasTabs().then((stored) => {
+    loadCanvasTabs().then(async (stored) => {
+      if (cancelled) return;
+      // Rehydrate every open cloud canvas, not only the active tab. Local
+      // canvases already have their complete persisted snapshots; cloud
+      // canvases must refresh from the workspace so tabs are current after
+      // a full app reload.
+      const refreshedTabs = await Promise.all((Array.isArray(stored) ? stored : []).map(async (tab) => {
+        const session = tab.snapshot?.cloudSession;
+        if (!session?.active || !session.diagramId) return tab;
+        try {
+          const result = await workspaceClient.getDiagram(session.diagramId);
+          const diagram = result?.diagram || result;
+          const document = diagram?.document || diagram?.content;
+          if (!document || !Array.isArray(document.elements)) return tab;
+          const name = diagram.name || session.name || tab.name;
+          return {
+            ...tab,
+            name,
+            dirty: false,
+            snapshot: {
+              ...tab.snapshot,
+              elements: document.elements,
+              appState: document.appState || {},
+              files: document.files || {},
+              metadata: document.metadata || {},
+              extensions: document.extensions || {},
+              format: document.format || diagram.format || "excalidraw",
+              cloudSession: {
+                ...session,
+                active: true,
+                diagramId: diagram.id || session.diagramId,
+                projectId: diagram.projectId || session.projectId,
+                revision: diagram.revision ?? result?.revision ?? result?.version ?? session.revision,
+                name,
+              },
+              cloudDetached: false,
+              cloudSaveState: { state: "saved", error: "" },
+              cloudDocumentName: name,
+            },
+          };
+        } catch (error) {
+          logger.warn("A cloud canvas could not be refreshed during startup", {
+            category: "persistence", diagramId: session.diagramId, error,
+          });
+          return tab;
+        }
+      }));
       if (cancelled) return;
       if (Array.isArray(stored) && stored.length) {
-        const activeId = stored.find((tab) => tab.active)?.id || stored[0].id;
-        const activeTab = stored.find((tab) => tab.id === activeId) || stored[0];
-        canvasTabsRef.current = stored;
-        setCanvasTabs(stored);
+        const restoredTabs = refreshedTabs.length ? refreshedTabs : stored;
+        const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
+        const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
+        canvasTabsRef.current = restoredTabs;
+        setCanvasTabs(restoredTabs);
         activeCanvasIdRef.current = activeId;
         setActiveCanvasId(activeId);
         if (activeTab.snapshot) applyCanvasTabSnapshot(activeTab);
