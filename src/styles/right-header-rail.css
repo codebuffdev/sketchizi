@@ -1060,3 +1060,22 @@
     right: auto;
   }
 }
+
+
+/* Keep the canvas-style chooser fully visible on narrow phone screens. */
+@media (max-width: 520px) {
+  .app .desktop-app-header .sketchizi-header-grid-popover {
+    position: fixed !important;
+    top: calc(12px + var(--safe-top, 0px)) !important;
+    right: 12px !important;
+    bottom: auto !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 24px - var(--safe-top, 0px) - var(--safe-bottom, 0px)) !important;
+    overflow-y: auto;
+    box-sizing: border-box;
+    transform: none !important;
+    z-index: 10060;
+  }
+}
