@@ -586,7 +586,7 @@ function App() {
     const live = canvasSnapshotStateRef.current;
     return {
       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
-      appState: appState || api?.getAppState?.() || {},
+      appState: sanitizeCloudAppState(appState || api?.getAppState?.() || {}),
       files: api?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {},
       extensions: documentMetadataRef.current?.extensions || {},
@@ -685,7 +685,7 @@ function App() {
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
     api.updateScene({
       elements,
-      appState: { ...api.getAppState(), ...(snapshot.appState || {}), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+      appState: { ...api.getAppState(), ...sanitizeCloudAppState(snapshot.appState || {}), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
     api.history?.clear?.();
