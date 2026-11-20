@@ -17,15 +17,27 @@ async function waitScene(predicate) {
 }
 const pages = es => es.filter(e=>e.type==='frame' && e.customData?.sketchiziPage);
 const canvasStyle = () => page.getByRole('button',{name:'Canvas style',exact:true});
+async function chooseStartupPages() {
+ const title = page.getByRole('heading', { name: 'Start with' });
+ if (await title.count()) {
+  const chooser = page.getByRole('dialog').filter({ has: title });
+  await chooser.getByRole('button', { name: 'Pages', exact: true }).click();
+  await chooser.waitFor({ state: 'detached' });
+ }
+}
 async function ensureHeaderVisible() {
  const reveal = page.getByRole('button',{name:'Show application header',exact:true});
- if (await reveal.count()) await reveal.click();
+ if (await reveal.count() && await reveal.getAttribute('aria-expanded') !== 'true') {
+  await page.keyboard.press('Control+Shift+H');
+ }
+ await page.waitForFunction(() => document.querySelector('.desktop-app-header-reveal-handle')?.getAttribute('aria-expanded') === 'true');
 }
 try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
  await page.locator('.excalidraw').waitFor();
  await page.locator('.desktop-app-document-identity-dirty-dot.is-saved').waitFor({state:'attached',timeout:20000});
+ await chooseStartupPages();
  await ensureHeaderVisible();
  assert.equal(await canvasStyle().count(),1,'Pages controller must render only one canvas selector');
  await canvasStyle().click();
