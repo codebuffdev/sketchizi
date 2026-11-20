@@ -5,8 +5,8 @@ import { MAX_TAB_LABEL_CHARACTERS, getTabDisplayName } from "../src/features/wor
 test("canvas tab labels display at least 70 characters without changing the stored name", () => {
   const name = "03-Requirements Clarification Explained: Functional & Non-Functional";
   assert.equal(MAX_TAB_LABEL_CHARACTERS, 70);
-  assert.equal(name.length, 70);
-  assert.equal(getTabDisplayName(name), name);
+  assert.equal(name.length, 68);
+  assert.equal(getTabDisplayName(name), name);\n  assert.equal(getTabDisplayName("x".repeat(70)).length, 70);
 });
 
 test("longer tab labels truncate only for display and preserve complete source names", () => {
