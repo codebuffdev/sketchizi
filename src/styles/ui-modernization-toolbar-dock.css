@@ -4217,3 +4217,22 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   .app .sketchizi-todo-completed-chevron,
   .app .sketchizi-todo-completed-content { transition: none; animation: none; }
 }
+
+
+/* Todo quick-add: keep the input caret, but never draw a focus highlight around the field. */
+.app .sketchizi-todo-add:focus-within {
+  border-color: #e3e9f0;
+  outline: none;
+  box-shadow: none;
+}
+.app .sketchizi-todo-add input:focus,
+.app .sketchizi-todo-add input:focus-visible {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-add:focus-within {
+  border-color: #3b4652;
+  outline: none;
+  box-shadow: none;
+}
