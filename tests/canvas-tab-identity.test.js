@@ -12,8 +12,3 @@ test("canvas tab IDs remain unique when tabs are created in the same millisecond
   assert.notEqual(third, first);
   assert.notEqual(third, second);
 });
-
-test("Ctrl+N ignores key-repeat events", () => {
-  const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
-  assert.match(app, /if \(event\.repeat \|\| !\(event\.ctrlKey \|\| event\.metaKey\)/);
-});

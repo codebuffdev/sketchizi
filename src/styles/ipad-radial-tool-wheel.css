@@ -1,23 +1,35 @@
-/* Minimal left-aligned tool rail, based on the supplied sidebar reference. */
+/* Compact, minimal left-aligned tool rail.
+   Dimensions are driven by custom properties so the layout contract is testable:
+   rail = 2*border + 2*padding-x + button width; the vertical budget is capped below
+   so a vertically centred rail can never reach the header / hamburger menu. */
 .sketchizi-tool-sidebar {
+  --sk-dock-btn-w: 34px;
+  --sk-dock-btn-h: 32px;
+  --sk-dock-icon: 19px;
+  --sk-dock-gap: 1px;
+  --sk-dock-pad-x: 4px;
+  --sk-dock-pad-y: 5px;
   position: fixed;
   z-index: 10040;
-  left: 26px;
+  left: 16px;
   top: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  width: 56px;
-  max-height: calc(100vh - 32px);
-  padding: 8px 7px;
+  gap: var(--sk-dock-gap);
+  box-sizing: border-box;
+  width: calc(var(--sk-dock-btn-w) + 2 * var(--sk-dock-pad-x) + 2px);
+  /* Symmetric about the vertical centre, clear of the header on both sides. */
+  max-height: calc(100vh - 2 * (var(--sketchizi-desktop-header-height, 58px) + 8px));
+  max-height: calc(100dvh - 2 * (var(--sketchizi-desktop-header-height, 58px) + 8px));
+  padding: var(--sk-dock-pad-y) var(--sk-dock-pad-x);
   overflow-x: hidden;
   overflow-y: auto;
   border: 1px solid rgb(205 210 219 / 82%);
-  border-radius: 22px;
+  border-radius: 14px;
   background: rgb(248 249 251 / 91%);
   color: #686d75;
-  box-shadow: 0 5px 18px rgb(25 32 45 / 13%), inset 0 1px 2px rgb(255 255 255 / 96%);
+  box-shadow: 0 3px 12px rgb(25 32 45 / 12%), inset 0 1px 2px rgb(255 255 255 / 96%);
   backdrop-filter: blur(15px) saturate(125%);
   -webkit-backdrop-filter: blur(15px) saturate(125%);
   transform: translateY(-50%);
@@ -27,14 +39,15 @@
 .sketchizi-tool-sidebar::-webkit-scrollbar { display: none; }
 .sketchizi-tool-sidebar-button {
   display: grid;
-  flex: 0 0 38px;
+  flex: 0 0 var(--sk-dock-btn-h);
   place-items: center;
-  width: 42px;
-  height: 38px;
-  min-height: 38px;
+  box-sizing: border-box;
+  width: var(--sk-dock-btn-w);
+  height: var(--sk-dock-btn-h);
+  min-height: var(--sk-dock-btn-h);
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 11px;
+  border-radius: 9px;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -42,8 +55,8 @@
 }
 .sketchizi-tool-sidebar-button svg {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: var(--sk-dock-icon);
+  height: var(--sk-dock-icon);
 }
 .sketchizi-tool-sidebar-button:hover:not(:disabled) {
   background: rgb(226 229 234 / 72%);
@@ -53,7 +66,7 @@
   border-color: #292c31;
   background: linear-gradient(145deg, #30343a, #17191d);
   color: #fff;
-  box-shadow: 0 3px 8px rgb(15 18 24 / 28%);
+  box-shadow: 0 2px 6px rgb(15 18 24 / 26%);
 }
 .sketchizi-tool-sidebar-button:active:not(:disabled) { transform: scale(.96); }
 .sketchizi-tool-sidebar-button:disabled { opacity: .38; cursor: not-allowed; }
@@ -63,16 +76,16 @@
 }
 .sketchizi-tool-sidebar-divider {
   flex: 0 0 1px;
-  width: 30px;
+  width: 20px;
   height: 1px;
-  margin: 5px 0 6px;
+  margin: 3px 0 4px;
   background: rgb(119 125 136 / 25%);
 }
 .sketchizi-tool-sidebar.is-dark {
   border-color: rgb(255 255 255 / 13%);
   background: rgb(36 40 47 / 94%);
   color: #c6cbd3;
-  box-shadow: 0 5px 18px rgb(0 0 0 / 30%), inset 0 1px 2px rgb(255 255 255 / 7%);
+  box-shadow: 0 3px 12px rgb(0 0 0 / 28%), inset 0 1px 2px rgb(255 255 255 / 7%);
 }
 .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button:hover:not(:disabled) {
   background: rgb(255 255 255 / 9%);
@@ -86,19 +99,24 @@
 .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-divider { background: rgb(255 255 255 / 17%); }
 @media (max-width: 600px) {
   .sketchizi-tool-sidebar {
-    left: 10px;
-    width: 50px;
-    padding: 6px 5px;
-    border-radius: 18px;
+    --sk-dock-btn-w: 32px;
+    --sk-dock-btn-h: 30px;
+    --sk-dock-icon: 18px;
+    --sk-dock-pad-x: 3px;
+    --sk-dock-pad-y: 4px;
+    left: 8px;
+    border-radius: 12px;
   }
-  .sketchizi-tool-sidebar-button {
-    flex-basis: 35px;
-    width: 38px;
-    height: 35px;
-    min-height: 35px;
-    border-radius: 10px;
+}
+/* Touch devices (iPad): keep comfortable hit targets while staying slimmer than before. */
+@media (pointer: coarse) and (min-width: 601px) {
+  .sketchizi-tool-sidebar {
+    --sk-dock-btn-w: 38px;
+    --sk-dock-btn-h: 36px;
+    --sk-dock-icon: 20px;
+    --sk-dock-gap: 2px;
+    left: 12px;
   }
-  .sketchizi-tool-sidebar-button svg { width: 20px; height: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sketchizi-tool-sidebar-button { transition: none; }

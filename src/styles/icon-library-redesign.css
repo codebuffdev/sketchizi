@@ -1418,10 +1418,11 @@
 /* Final compact-panel card sizing: keep icon previews prominent and prevent card overlap. */
 @media (max-width: 760px) {
   .app .desktop-resources-region > .library-panel.library-panel-redesign {
-    width: min(390px, calc(100vw - 24px)) !important;
+    /* Same 320 x 460 compact budget on phones; never wider than the viewport. */
+    width: min(320px, calc(100vw - 24px)) !important;
     max-width: calc(100vw - 24px) !important;
-    height: min(72dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
-    max-height: min(72dvh, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
+    max-height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 24px)) !important;
     padding: 10px !important;
     box-sizing: border-box;
   }
@@ -1996,8 +1997,9 @@
     position: relative !important;
     inset: auto !important;
     flex: 0 1 auto !important;
-    width: min(390px, calc(100vw - 32px)) !important;
-    height: min(455px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 32px)) !important;
+    /* Compact Icon Library contract (see icon-panel-compact.css): 320 x 460, viewport-bounded. */
+    width: min(320px, calc(100vw - 32px)) !important;
+    height: min(460px, calc(100dvh - var(--sketchizi-desktop-header-height, 58px) - 32px)) !important;
     min-width: 0 !important;
     min-height: 0 !important;
     max-width: calc(100vw - 32px) !important;

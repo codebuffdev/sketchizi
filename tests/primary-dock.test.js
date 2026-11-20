@@ -16,14 +16,13 @@ test("primary dock renders the complete tool set in a vertical left sidebar", ()
   assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|expanded|tuckedOffset/);
 });
 
-test("sidebar matches the left-edge floating toolbar treatment", () => {
-  assert.match(sidebarCss, /left: 26px/);
-  assert.match(sidebarCss, /top: 50%/);
-  assert.match(sidebarCss, /width: 56px/);
-  assert.match(sidebarCss, /border-radius: 22px/);
+test("sidebar stays a left-edge, vertically centred, scrollable floating rail", () => {
+  const rail = sidebarCss.match(/\.sketchizi-tool-sidebar\s*\{([^}]*)\}/)?.[1] || "";
+  assert.match(rail, /position:\s*fixed/);
+  assert.match(rail, /top:\s*50%/);
+  assert.match(rail, /overflow-y:\s*auto/);
+  assert.match(rail, /backdrop-filter:\s*blur/);
   assert.match(sidebarCss, /\.sketchizi-tool-sidebar-button\.is-active/);
-  assert.match(sidebarCss, /backdrop-filter: blur/);
-  assert.match(sidebarCss, /overflow-y: auto/);
 });
 
 test("sidebar hides while the hamburger menu is open to prevent overlap", () => {

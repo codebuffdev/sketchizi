@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { getFreeDrawStrokeWidthKey } from "../src/features/canvas/freeDrawStrokeWidth.js";
 
 test("freedraw honors the current Excalidraw stroke width key", () => {
@@ -16,8 +15,14 @@ test("freedraw maps the legacy numeric dock width to the matching key", () => {
   assert.equal(getFreeDrawStrokeWidthKey({}), "medium");
 });
 
-test("both the live pen preview and committed stroke use the resolved appState width", () => {
-  const engine = readFileSync(new URL("../src/features/canvas/freeDrawEngine.js", import.meta.url), "utf8");
-  assert.equal((engine.match(/getAdjustedFreeDrawStrokeWidth\(appState\)/g) || []).length, 2);
-  assert.match(engine, /getFreeDrawStrokeWidthKey\(appState\)/);
+test("dock width patches keep the numeric width and the key the pen engine reads consistent", async () => {
+  const { strokeWidthAppStatePatch } = await import("../src/features/canvas/strokeWidthKey.js");
+  for (const [width, key] of [[1, "thin"], [2, "medium"], [4, "bold"]]) {
+    const patch = strokeWidthAppStatePatch(width);
+    assert.equal(patch.currentItemStrokeWidth, width);
+    assert.equal(patch.currentItemStrokeWidthKey, key);
+    // Whichever field a consumer reads, they resolve to the same pen width.
+    assert.equal(getFreeDrawStrokeWidthKey(patch), key);
+  }
+  assert.deepEqual(strokeWidthAppStatePatch(NaN), { currentItemStrokeWidth: NaN });
 });

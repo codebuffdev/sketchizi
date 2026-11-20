@@ -15,6 +15,9 @@ test("the left sidebar has no separate dock lock or unlock setting", () => {
 });
 
 test("the sidebar is fixed to the left edge rather than draggable", () => {
-  assert.match(styles, /\.sketchizi-tool-sidebar\s*\{[^}]*position:\s*fixed[^}]*left:\s*26px/s);
+  const rail = styles.match(/\.sketchizi-tool-sidebar\s*\{([^}]*)\}/)?.[1] || "";
+  assert.match(rail, /position:\s*fixed/);
+  const left = Number(rail.match(/\bleft:\s*(\d+)px/)?.[1]);
+  assert.ok(left >= 0 && left <= 26, `rail must hug the left edge, got ${left}px`);
   assert.doesNotMatch(styles, /radial-wheel|wheel-hub|dragging/);
 });

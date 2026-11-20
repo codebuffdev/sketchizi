@@ -53,7 +53,9 @@ test("Icon grid owns vertical scrolling and supports compact grid and list views
   assert.match(styles, /\.sk-icon-grid[\s\S]*?overflow-y:\s*auto/);
   assert.match(compact, /\.sk-icon-grid\.is-grid-view\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/s);
   assert.match(styles, /\.sk-icon-grid\.is-list-view[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
-  assert.match(styles, /--skp-stage-bg:\s*#e7ecf4/);
+  // The icon stage colour is a theme token: it must be defined (any colour) and consumed by the grid stage.
+  assert.match(styles, /--skp-stage-bg:\s*#[0-9a-f]{3,8}/i);
+  assert.match(styles, /background:\s*var\(--skp-stage-bg\)/);
 });
 
 test("Icon cards use accessible buttons, stop propagation on favorite/insert actions, and preserve original SVG insertion", async () => {
