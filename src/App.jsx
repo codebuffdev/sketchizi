@@ -45,7 +45,7 @@ import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
 import { hasMountableCanvas } from "./features/workspace/tabClose.js";
-import { getTabDisplayName } from "./features/workspace/tabLabel.js";
+import { findDuplicateTabName, getTabDisplayName } from "./features/workspace/tabLabel.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring, resolveCloudLoadTarget } from "./features/workspace/cloudSavePolicy.js";
@@ -62,8 +62,11 @@ import CreateMenu from "./components/app/CreateMenu";
 const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
+import { enableCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
+import CanvasGrammarAssistant from "./features/canvas/CanvasGrammarAssistant.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
+import "./styles/canvas-grammar-assistant.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
@@ -79,6 +82,13 @@ function App() {
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
+  useEffect(() => {
+    if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
+    enableCanvasSpellcheck(document);
+    const observer = new MutationObserver(() => enableCanvasSpellcheck(document));
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
   const [canvasPageContext, setCanvasPageContext] = useState({ mode: "infinite", page: null, pageCount: 0 });
   const [startupChooserOpen, setStartupChooserOpen] = useState(false);
   const startupChoiceMadeRef = useRef(false);
@@ -189,7 +199,7 @@ function App() {
     });
   }, []);
 
-  const panelState = usePanelState({ apiRef, closeNativeMenu });
+  const panelState = usePanelState({ apiRef, closeNativeMenu, setAiAskOpen });
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
@@ -1243,6 +1253,12 @@ function App() {
     const normalizedName = String(name || "").trim();
     if (!normalizedName) throw new Error("Enter a name for this canvas.");
     if (normalizedName.length > 120) throw new Error("Canvas names must be 120 characters or fewer.");
+    const duplicateTab = findDuplicateTabName(canvasTabsRef.current, normalizedName, activeCanvasIdRef.current);
+    if (duplicateTab) {
+      const error = new Error(`Another open canvas is already named "${duplicateTab.name}". Choose a different name.`);
+      showToast(error.message, "error");
+      throw error;
+    }
     if (cloudSessionRef.current.active && !cloudDetachedRef.current) {
       if (!cloudSessionRef.current.active) throw new Error("The Cloud Workspace document is still loading.");
       try {
@@ -2583,7 +2599,10 @@ function App() {
         <button
           type="button"
           className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
-          onClick={() => setAiAskOpen((value) => !value)}
+          onClick={() => {
+            setActivePanel(null);
+            setAiAskOpen((value) => !value);
+          }}
           title="AI Ask"
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
@@ -2837,6 +2856,7 @@ function App() {
       />
 
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
+      <CanvasGrammarAssistant />
 
       {toast && (
         <div className={`sketchizi-toast ${toast.kind === "error" ? "error" : ""}`} role="status" aria-live="polite" key={toast.id}>

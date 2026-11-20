@@ -58,3 +58,100 @@ test("gateway rejects non-workspace paths and disallows arbitrary methods", asyn
   const badMethod = await onRequest({ request: new Request("https://sketchizi.pages.dev/api/workspace/projects", { method: "OPTIONS" }), env: { AUTH_SERVICE_ORIGIN: "https://backend.example.test" } });
   assert.equal(badMethod.status, 405);
 });
+
+
+test("gateway rejects duplicate diagram names before forwarding create requests", async () => {
+  let forwardedCreate = false;
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(String(url)).pathname;
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
+      return Response.json({ diagrams: [{ id: "existing", name: "System Design" }] });
+    }
+    if (options.method === "POST") forwardedCreate = true;
+    return Response.json({ ok: true });
+  };
+  const response = await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/workspace/diagrams", {
+      method: "POST",
+      headers: { origin: "https://sketchizi.pages.dev", cookie: "SESSION=session; XSRF-TOKEN=csrf", "x-xsrf-token": "csrf", "content-type": "application/json" },
+      body: JSON.stringify({ projectId: "project-1", name: "  system   design " }),
+    }),
+    env: { AUTH_SERVICE_ORIGIN: "https://backend.example.test" },
+  });
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, "duplicate_diagram_name");
+  assert.equal(forwardedCreate, false);
+});
+
+test("gateway rejects duplicate diagram names before forwarding rename requests", async () => {
+  let forwardedRename = false;
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(String(url)).pathname;
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/diagrams/current") {
+      return Response.json({ diagram: { id: "current", projectId: "project-1", name: "Old name" } });
+    }
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
+      return Response.json({ diagrams: [{ id: "current", name: "Old name" }, { id: "other", name: "New name" }] });
+    }
+    if (options.method === "PATCH") forwardedRename = true;
+    return Response.json({ ok: true });
+  };
+  const response = await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/workspace/diagrams/current", {
+      method: "PATCH",
+      headers: { origin: "https://sketchizi.pages.dev", cookie: "SESSION=session; XSRF-TOKEN=csrf", "x-xsrf-token": "csrf", "content-type": "application/json" },
+      body: JSON.stringify({ name: "new name" }),
+    }),
+    env: { AUTH_SERVICE_ORIGIN: "https://backend.example.test" },
+  });
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, "duplicate_diagram_name");
+  assert.equal(forwardedRename, false);
+});
+
+
+test("gateway rejects duplicates when the backend wraps diagram rows in data", async () => {
+  let forwardedCreate = false;
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(String(url)).pathname;
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
+      return Response.json({ data: { diagrams: [{ id: "existing", name: "System Design" }] } });
+    }
+    if (options.method === "POST") forwardedCreate = true;
+    return Response.json({ ok: true });
+  };
+  const response = await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/workspace/diagrams", {
+      method: "POST",
+      headers: { origin: "https://sketchizi.pages.dev", cookie: "SESSION=session; XSRF-TOKEN=csrf", "x-xsrf-token": "csrf", "content-type": "application/json" },
+      body: JSON.stringify({ projectId: "project-1", name: "system design" }),
+    }),
+    env: { AUTH_SERVICE_ORIGIN: "https://backend.example.test" },
+  });
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, "duplicate_diagram_name");
+  assert.equal(forwardedCreate, false);
+});
+
+test("gateway fails closed when it cannot interpret the diagrams list", async () => {
+  let forwardedCreate = false;
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(String(url)).pathname;
+    if ((!options.method || options.method === "GET") && path === "/api/workspace/projects/project-1/diagrams") {
+      return Response.json({ unexpected: [] });
+    }
+    if (options.method === "POST") forwardedCreate = true;
+    return Response.json({ ok: true });
+  };
+  const response = await onRequest({
+    request: new Request("https://sketchizi.pages.dev/api/workspace/diagrams", {
+      method: "POST",
+      headers: { origin: "https://sketchizi.pages.dev", cookie: "SESSION=session; XSRF-TOKEN=csrf", "x-xsrf-token": "csrf", "content-type": "application/json" },
+      body: JSON.stringify({ projectId: "project-1", name: "System Design" }),
+    }),
+    env: { AUTH_SERVICE_ORIGIN: "https://backend.example.test" },
+  });
+  assert.equal(response.status, 502);
+  assert.equal((await response.json()).code, "diagram_name_check_unavailable");
+  assert.equal(forwardedCreate, false);
+});

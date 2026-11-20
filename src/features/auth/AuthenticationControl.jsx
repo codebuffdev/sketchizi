@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { fetchAuthProviders, fetchCurrentUser, fetchGitHubRepositoryConnection, invalidateCurrentUserCache, disconnectGitHubRepositoryConnection, signOut, startGitHubRepositoryConnection, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
 
@@ -136,7 +136,7 @@ export default function AuthenticationControl() {
     return () => window.removeEventListener("keydown", close, true);
   }, [dialogOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!profileMenuOpen) return undefined;
     const onPointerDown = (event) => {
       if (!(event.target instanceof Element)) return;
@@ -144,13 +144,19 @@ export default function AuthenticationControl() {
       setProfileMenuOpen(false);
     };
     const onKeyDown = (event) => {
-      if (event.key === "Escape") setProfileMenuOpen(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setProfileMenuOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
+    // Editor shortcuts can consume keydown before this listener is reached.
+    window.addEventListener("keyup", onKeyDown, true);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keyup", onKeyDown, true);
     };
   }, [profileMenuOpen]);
 

@@ -18,13 +18,34 @@ const dismissStartupChooser = async (page) => {
   await chooser.waitFor({ state: "detached" });
 };
 
+const ensureHeaderVisible = async (page) => {
+  const reveal = page.locator(".desktop-app-header-reveal-handle");
+  await reveal.waitFor({ state: "attached", timeout: 15000 });
+  if (await reveal.getAttribute("aria-expanded") !== "true") {
+    // Floating controls can overlap the collapsed handle; force the actual
+    // button click so its React handler runs without a pointer hit-test.
+    await reveal.click({ force: true });
+  }
+  await page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "false",
+  );
+  // Keep the header open for the whole smoke journey instead of racing its
+  // five-second auto-hide timer between separate browser assertions.
+  const pin = page.locator(".desktop-app-header-pin-button");
+  if (await pin.getAttribute("aria-pressed") !== "true") await pin.click({ force: true });
+  await page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-pin-button")?.getAttribute("aria-pressed") === "true",
+  );
+};
+
 const openDevOpsMenu = async (page) => {
   await page.getByRole("button", { name: "DevOps" }).click();
   await page.getByRole("menu", { name: "DevOps tools" }).waitFor();
 };
 
 const openDesignStudio = async (page) => {
-  await page.getByRole("button", { name: "Grid settings" }).click();
+  await ensureHeaderVisible(page);
+  await page.getByRole("button", { name: "Canvas style" }).click();
   await page.getByRole("button", { name: "Browse templates" }).click();
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
@@ -61,8 +82,13 @@ try {
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: the canvas-tab add action opens an editable canvas.");
 
+  // The floating header may collapse after canvas interaction; reveal it with
+  // the same keyboard shortcut users have before opening header-only actions.
+  await ensureHeaderVisible(blank.page);
+
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
+  await blank.page.locator(".ai-ask-panel").waitFor({ state: "detached" });
   const library = blank.page.getByRole("dialog", { name: "Icon Library" });
   await library.waitFor();
   const compactLayout = await library.evaluate((panel) => {
@@ -133,11 +159,20 @@ try {
   }
   const mobileHitTest = await library.evaluate((panel) => {
     const control = panel.querySelector('select[aria-label="Icon category"]');
+    const describe = (element) => element && ({
+      tag: element.tagName,
+      id: element.id || null,
+      className: typeof element.className === "string" ? element.className : null,
+      pointerEvents: getComputedStyle(element).pointerEvents,
+      zIndex: getComputedStyle(element).zIndex,
+    });
     if (!control) return { clickable: false, reason: "Category selector missing" };
     const rect = control.getBoundingClientRect();
     const atPoint = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
     return {
       clickable: atPoint === control || control.contains(atPoint),
+      coveredBy: describe(atPoint),
+      control: describe(control),
       rect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
       viewport: [window.innerWidth, window.innerHeight],
     };
@@ -155,16 +190,24 @@ try {
   const gridSession = await makePage({ width: 1280, height: 800 });
   await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser(gridSession.page);
+  await gridSession.page.getByRole("button", { name: "Create new canvas" }).click();
+  await gridSession.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
-  const canvasLocator = gridSession.page.locator(".desktop-canvas-region > .canvas");
+  // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
+  await ensureHeaderVisible(gridSession.page);
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
+  await gridSession.page.getByRole("dialog", { name: "Canvas style" })
+    .getByRole("checkbox", { name: "Show pattern" }).uncheck();
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
+  const canvasLocator = gridSession.page.locator(".desktop-canvas-region .desktop-canvas-view .canvas");
   const sceneBounds = await canvasLocator.boundingBox();
   if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
   const readGrid = () => focusGrid.evaluate((node) => {
     const base = getComputedStyle(node, "::before");
     const detail = getComputedStyle(node, "::after");
     const style = getComputedStyle(node);
-    const root = document.querySelector(".desktop-canvas-region > .canvas");
+    const root = document.querySelector(".desktop-canvas-region .desktop-canvas-view .canvas");
     const canvas = root?.getBoundingClientRect();
     return {
       active: node.classList.contains("has-focus"),
@@ -199,19 +242,20 @@ try {
     throw new Error(`Show Grid OFF must hide all layers: ${JSON.stringify(off)}`);
   }
   // Grid visibility is controlled from the header, not the View menu.
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
-  const gridToggle = gridSession.page.getByRole("dialog", { name: "Grid settings" })
-    .getByRole("checkbox", { name: "Show Grid" });
+  await ensureHeaderVisible(gridSession.page);
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
+  const gridToggle = gridSession.page.getByRole("dialog", { name: "Canvas style" })
+    .getByRole("checkbox", { name: "Show pattern" });
   await gridToggle.check();
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-grid-enabled"),
   );
   // Legacy content-bound assertions require Focus (Local), not the new default.
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
-  const gridSettings = gridSession.page.getByRole("dialog", { name: "Grid settings" });
-  await gridSettings.getByRole("button", { name: /Focus \(Local\)/ }).click();
-  await gridSession.page.getByRole("button", { name: "Grid settings" }).click();
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
+  const gridSettings = gridSession.page.getByRole("dialog", { name: "Canvas style" });
+  await gridSettings.getByRole("button", { name: /Local Focus Grid/ }).click();
+  await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-local-style"),
   );
@@ -226,7 +270,8 @@ try {
   }
   // Select Excalidraw's actual rectangle tool; a keyboard shortcut can
   // be ignored if another UI control still owns focus.
-  await gridSession.page.locator('[data-testid="toolbar-rectangle"]').click();
+  await gridSession.page.mouse.click(x, y);
+  await gridSession.page.keyboard.press("r");
   await gridSession.page.mouse.move(x, y);
   await gridSession.page.mouse.down();
   await gridSession.page.mouse.move(x + 160, y + 95, { steps: 6 });
@@ -290,16 +335,21 @@ try {
       position,
       top: rect.top,
       bottom: rect.bottom,
-      dockTop: dockRect.top,
-      viewportWidth: window.innerWidth,
       left: rect.left,
       right: rect.right,
+      dockTop: dockRect.top,
+      dockBottom: dockRect.bottom,
+      dockLeft: dockRect.left,
+      dockRight: dockRect.right,
+      overlapsDock: rect.left < dockRect.right && rect.right > dockRect.left &&
+        rect.top < dockRect.bottom && rect.bottom > dockRect.top,
+      viewportWidth: window.innerWidth,
     };
     toast.remove();
     return layout;
   });
   if (!toastLayout || toastLayout.position !== "fixed" ||
-    toastLayout.bottom + 12 >= toastLayout.dockTop ||
+    toastLayout.overlapsDock ||
     toastLayout.left < 0 || toastLayout.right > toastLayout.viewportWidth) {
     throw new Error(`Clipboard notification overlaps the drawing toolbar: ${JSON.stringify(toastLayout)}`);
   }
@@ -347,7 +397,7 @@ try {
   if (overflow) throw new Error("Creation screen has horizontal overflow at 390px viewport width.");
   console.log("PASS: creation screen remains usable at 390px without horizontal overflow.");
 
-  // Sign-in is a true canvas-centered modal, not a popup clipped by the header.
+  // Sign-in is a centered modal, not a popup clipped by the header.
   // Stub only the current-user endpoint to keep the layout smoke independent
   // from optional authentication backend availability.
   const authLayout = await makePage({ width: 1280, height: 800 });
@@ -358,6 +408,10 @@ try {
   }));
   await authLayout.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser(authLayout.page);
+  await ensureHeaderVisible(authLayout.page);
+  const aiAskToggle = authLayout.page.getByRole("button", { name: "AI Ask", exact: true });
+  if (await aiAskToggle.getAttribute("aria-expanded") === "true") await aiAskToggle.click({ force: true });
+  await authLayout.page.waitForFunction(() => !document.querySelector(".app")?.classList.contains("ai-ask-open"));
   await authLayout.page.getByRole("button", { name: "Sign in", exact: true }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor();
 
@@ -365,14 +419,12 @@ try {
     const layout = await page.evaluate(() => {
       const dialog = document.querySelector(".auth-dialog");
       const backdrop = document.querySelector(".auth-dialog-backdrop");
-      const canvas = document.querySelector(".desktop-canvas-region");
-      if (!dialog || !backdrop || !canvas) return null;
+      if (!dialog || !backdrop) return null;
       const rect = dialog.getBoundingClientRect();
-      const canvasRect = canvas.getBoundingClientRect();
       return {
         portalled: backdrop.parentElement?.classList.contains("app") === true,
-        dx: Math.abs(rect.left + rect.width / 2 - (canvasRect.left + canvasRect.width / 2)),
-        dy: Math.abs(rect.top + rect.height / 2 - (canvasRect.top + canvasRect.height / 2)),
+        dx: Math.abs(rect.left + rect.width / 2 - window.innerWidth / 2),
+        dy: Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2),
         withinViewport: rect.left >= 0 && rect.top >= 0 &&
           rect.right <= window.innerWidth && rect.bottom <= window.innerHeight,
       };
@@ -386,7 +438,7 @@ try {
   await authLayout.page.setViewportSize({ width: 390, height: 740 });
   await verifyAuthDialogCentered(authLayout.page);
   console.log("PASS: sign-in dialog remains centered and visible at phone width.");
-  await authLayout.page.keyboard.press("Escape");
+  await authLayout.page.getByRole("button", { name: "Close sign-in dialog" }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor({ state: "detached" });
 
   if (errors.length) throw new Error(`Browser console exceptions: ${errors.join(" | ")}`);

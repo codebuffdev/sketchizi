@@ -44,6 +44,13 @@
   box-shadow: 0 16px 42px rgba(0,0,0,.15);
 }
 
+/* Keep the validation panel interactive above the floating header rail. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .architecture-validation-panel {
+    z-index: 1100;
+  }
+}
+
 .architecture-validation-header {
   display: flex;
   align-items: flex-start;

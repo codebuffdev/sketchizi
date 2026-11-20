@@ -1002,3 +1002,114 @@
     height: var(--header-top-control-height, 40px);
   }
 }
+
+
+/* AI Ask is a canvas-level control, paired with the global Appearance control.
+   It is deliberately outside the auto-hiding rail so opening the AI drawer
+   never relocates either canvas control into the drawer. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-global-ai-control {
+    position: fixed;
+    top: var(--header-top, calc(18px + var(--safe-top, 0px)));
+    right: var(--header-rail-right, 18px);
+    z-index: 1303;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--header-top-control-height, 40px);
+    height: var(--header-top-control-height, 40px);
+  }
+  .app.canvas-first-header .desktop-app-global-ai-control .ai-ask-toggle {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 8px;
+  }
+}
+@media (max-width: 1024px) {
+  .app.canvas-first-header .desktop-app-global-ai-control {
+    position: fixed;
+    top: calc(12px + var(--safe-top, 0px));
+    right: calc(12px + var(--safe-right, 0px));
+    z-index: 1303;
+  }
+
+  .app.canvas-first-header .desktop-app-global-theme-control {
+    position: fixed;
+    top: calc(12px + var(--safe-top, 0px));
+    right: calc(58px + var(--safe-right, 0px));
+    z-index: 1302;
+  }
+}
+
+@media (min-width: 521px) and (max-width: 1024px) {
+  .app.canvas-first-header .desktop-app-header-right-rail {
+    top: calc(58px + var(--safe-top, 0px));
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
+    position: relative;
+    inset: auto;
+    pointer-events: auto;
+  }
+
+  .app.canvas-first-header .desktop-app-header-right-rail .auth-account-menu {
+    left: 0;
+    right: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .app.canvas-first-header .desktop-app-global-ai-control {
+    right: calc(56px + var(--safe-right, 0px));
+  }
+
+  .app.canvas-first-header .desktop-app-global-theme-control {
+    right: calc(102px + var(--safe-right, 0px));
+  }
+}
+
+/* Shared rectangular geometry for the canvas shell and its floating controls. */
+.app.canvas-first-header .desktop-app-global-theme-control .theme-toggle,
+.app.canvas-first-header .desktop-app-global-ai-control .ai-ask-toggle,
+.app.canvas-first-header .desktop-app-header-right-rail,
+.app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island,
+.app.canvas-first-header .desktop-app-menu-trigger-floating,
+.app.canvas-first-header .canvas-tab-item,
+.app.canvas-first-header .canvas-tabs-add {
+  border-radius: 4px !important;
+}
+
+/* When AI Ask is open, dock both controls at the top-right edge of the
+   remaining canvas instead of leaving them beyond the drawer. */
+@media (min-width: 1025px) {
+  .app.ai-ask-open .desktop-app-global-theme-control {
+    left: calc(var(--ai-ask-workspace-width) - 88px);
+    right: auto;
+  }
+  .app.ai-ask-open .desktop-app-global-ai-control {
+    left: calc(var(--ai-ask-workspace-width) - 44px);
+    right: auto;
+  }
+}
+
+
+/* Keep the canvas-style chooser fully visible on narrow phone screens. */
+@media (max-width: 520px) {
+  .app .desktop-app-header .sketchizi-header-grid-popover {
+    position: fixed !important;
+    top: calc(64px + var(--safe-top, 0px)) !important;
+    right: 12px !important;
+    bottom: auto !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 76px - var(--safe-top, 0px) - var(--safe-bottom, 0px)) !important;
+    overflow-y: auto;
+    box-sizing: border-box;
+    transform: none !important;
+    z-index: 10060;
+  }
+}

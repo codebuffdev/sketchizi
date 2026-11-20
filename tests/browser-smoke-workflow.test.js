@@ -7,8 +7,8 @@ const script = await readFile(new URL("../scripts/browser-smoke.mjs", import.met
 
 test("production workflow installs Chromium and runs the browser smoke after build", () => {
   assert.match(workflow, /npm run build/);
-  assert.match(workflow, /npm install --no-save --no-package-lock playwright/);
-  assert.match(workflow, /npx playwright install --with-deps chromium/);
+  assert.match(workflow, /npm install --prefix \/tmp\/sketchizi-browser-tools --no-save --no-package-lock playwright/);
+  assert.match(workflow, /\/tmp\/sketchizi-browser-tools\/node_modules\/\.bin\/playwright install --with-deps chromium/);
   assert.match(workflow, /node scripts\/browser-smoke\.mjs/);
 });
 
@@ -26,7 +26,7 @@ test("browser smoke covers blank canvas and narrow viewport overflow", () => {
 });
 
 test("browser smoke follows the current canvas and DevOps entry points", () => {
-  assert.match(script, /getByRole\("button", \{ name: "Grid settings" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "Canvas style" \}\)/);
   assert.match(script, /getByRole\("button", \{ name: "Browse templates" \}\)/);
   assert.match(script, /getByRole\("button", \{ name: "Create new canvas" \}\)/);
   assert.match(script, /getByRole\("button", \{ name: "DevOps" \}\)/);

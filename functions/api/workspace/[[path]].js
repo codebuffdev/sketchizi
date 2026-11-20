@@ -50,6 +50,51 @@ function sameOrigin(request, incoming, env) {
   return true;
 }
 
+function normalizedDiagramName(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+}
+
+function unwrapDiagram(value) { return value?.diagram || value?.data?.diagram || value?.data || value || null; }
+function unwrapDiagrams(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.diagrams)) return value.diagrams;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.data?.diagrams)) return value.data.diagrams;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  return null;
+}
+
+async function rejectDuplicateDiagramName({ method, targetPath, body, backendOrigin, headers, requestId }) {
+  const creates = method === "POST" && targetPath === "/api/workspace/diagrams";
+  const renames = method === "PATCH" && /^\/api\/workspace\/diagrams\/[A-Za-z0-9_-]+$/.test(targetPath) && typeof body?.name === "string";
+  if (!creates && !renames) return null;
+  const name = normalizedDiagramName(body?.name);
+  if (!name) return null;
+  let projectId = typeof body?.projectId === "string" ? body.projectId : "";
+  let currentId = null;
+  try {
+    if (renames) {
+      currentId = targetPath.split("/").pop();
+      const currentResponse = await fetch(new URL(targetPath, backendOrigin), { headers, cache: "no-store", signal: AbortSignal.timeout(10000) });
+      if (!currentResponse.ok) throw new Error("lookup_failed");
+      const current = unwrapDiagram(await currentResponse.json());
+      projectId = projectId || current?.projectId || current?.project_id || current?.project?.id || "";
+    }
+    if (!projectId || !/^[A-Za-z0-9_-]{1,200}$/.test(projectId)) return jsonError(400, "A valid project is required to check diagram names.", "invalid_project", requestId);
+    const listUrl = new URL("/api/workspace/projects/" + encodeURIComponent(projectId) + "/diagrams", backendOrigin);
+    const listResponse = await fetch(listUrl, { headers, cache: "no-store", signal: AbortSignal.timeout(10000) });
+    if (!listResponse.ok) throw new Error("lookup_failed");
+    const diagrams = unwrapDiagrams(await listResponse.json());
+    if (!diagrams) throw new Error("unexpected_diagram_list_shape");
+    const duplicate = diagrams.find((diagram) => diagram && diagram.id !== currentId && normalizedDiagramName(diagram.name) === name);
+    if (duplicate) return jsonError(409, "A diagram with this name already exists in this project. Choose a different name.", "duplicate_diagram_name", requestId);
+    return null;
+  } catch {
+    return jsonError(502, "Could not verify diagram name uniqueness. Please retry.", "diagram_name_check_unavailable", requestId);
+  }
+}
+
 function jsonError(status, message, code, requestId) {
   return Response.json({ error: message, code, requestId }, {
     status,
@@ -76,6 +121,11 @@ export async function onRequest({ request, env }) {
     if (!validCsrf(request)) return fail(403, "The security token is missing or expired. Refresh and try again.", "csrf_rejected");
   }
 
+  let mutationBody = null;
+  if (mutating && request.body !== null && ["POST", "PATCH"].includes(request.method)) {
+    try { mutationBody = await request.clone().json(); }
+    catch { return fail(400, "Workspace request body must be valid JSON.", "invalid_request_body"); }
+  }
   const contentType = request.headers.get("content-type") || "";
   if (mutating && request.body && contentType && !contentType.toLowerCase().startsWith("application/json")) {
     return fail(415, "Workspace requests must use JSON.", "unsupported_media_type");
@@ -92,6 +142,8 @@ export async function onRequest({ request, env }) {
   if (cookieHeader) headers.set("cookie", cookieHeader);
   headers.set("x-request-id", requestId);
 
+  const duplicateResponse = await rejectDuplicateDiagramName({ method: request.method, targetPath, body: mutationBody, backendOrigin, headers, requestId });
+  if (duplicateResponse) return duplicateResponse;
   try {
     const init = { method: request.method, headers, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(15000) };
     if (!["GET", "HEAD"].includes(request.method) && request.body !== null) {

@@ -10,7 +10,9 @@ test("production verification exercises native canvas drawing and persistence", 
   assert.match(script, /mouse\.down\(\)/);
   assert.match(script, /mouse\.move\(x \+ 115, y \+ 75, \{ steps: 12 \}\)/);
   assert.match(script, /indexedDB\.open\("sketchizi-local-state"\)/);
-  assert.match(script, /objectStore\("documents"\)\.get\("main"\)/);
+  assert.match(script, /objectStore\("documents"\)/);
+  assert.match(script, /canvas-tabs-manifest/);
+  assert.match(script, /activeTab\?\.snapshot/);
   assert.match(script, /keyboard\.press\("v"\)/);
   assert.match(script, /keyboard\.press\("ControlOrMeta\+Quote"\)/);
   assert.match(script, /page\.reload\(/);

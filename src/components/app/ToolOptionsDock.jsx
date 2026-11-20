@@ -322,6 +322,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   useEffect(() => {
     const handleEscapeToPrimaryDock = (event) => {
       if (event.key !== "Escape") return;
+      if (document.querySelector('.auth-account-trigger[aria-expanded="true"]')) return;
       const target = event.target;
       // Let Escape close an open dock menu first, and never steal it from
       // editable controls. The Primary Dock palette uses role="dialog", but

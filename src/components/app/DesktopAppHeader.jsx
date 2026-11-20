@@ -728,6 +728,33 @@ const activeTabActions = (
                 <span className="sketchizi-header-grid-switch" aria-hidden="true" />
               </label>
             </div>
+            <div className="sketchizi-header-grid-modes" aria-label="Canvas view">
+              <strong>Canvas view</strong>
+              <div className="sketchizi-header-grid-options" role="group" aria-label="Canvas view">
+                <button
+                  type="button"
+                  aria-label="Infinite canvas Draw"
+                  onClick={() => {
+                    setGridPopoverOpen(false);
+                    window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } }));
+                  }}
+                >
+                  <strong>Infinite canvas</strong>
+                  <small>Draw freely without fixed page boundaries.</small>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Pages Organize"
+                  onClick={() => {
+                    setGridPopoverOpen(false);
+                    window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "pages" } }));
+                  }}
+                >
+                  <strong>Pages</strong>
+                  <small>Organize work on fixed, named pages.</small>
+                </button>
+              </div>
+            </div>
             <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
               <strong>Canvas patterns</strong>
               <div className="sketchizi-header-grid-options" role="group" aria-label="Grid mode">
@@ -779,7 +806,7 @@ const activeTabActions = (
       <div className="desktop-app-header-spacer" />
 
       <div className="desktop-app-header-actions">
-        <div className="desktop-app-header-panel-actions">{children}</div>
+        
         {moreToolsToggle}
         <button
           type="button"
@@ -831,6 +858,7 @@ const activeTabActions = (
       </button>
     </div>
     </header>
+      <div className="desktop-app-global-ai-control">{children}</div>
       <div
         className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${activeCanvasTabName} — ${documentStatusLabel}`}
