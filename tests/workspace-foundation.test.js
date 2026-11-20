@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
+import { hasCloudSceneChange } from "../src/features/workspace/cloudSavePolicy.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -132,7 +133,7 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(app, /workspaceClient\.saveDiagram\(session\.diagramId, revision, document\)/);
   assert.match(app, /if \(!hasCloudSceneChange\(elements\)\) return;/);
   assert.match(app, /cloudSceneReadyRef\.current/);
-  assert.doesNotMatch(app, /allowEmpty: true/);
+  assert.equal((app.match(/allowEmpty: true/g) || []).length, 2, "autosave and tab switching must preserve intentional empty cloud canvases");
   assert.ok(app.includes("error?.status === 409 || error?.status === 412"));
   assert.ok(app.includes('state: conflict ? "conflict" : "error"'));
   assert.ok(app.includes(">Reload latest version</button>"));
@@ -209,6 +210,20 @@ test("cloud document excludes deleted elements and unreferenced cached files", (
   const document = createCloudDocument({ api });
   assert.deepEqual(document.elements.map((element) => element.id), ["visible-image"]);
   assert.deepEqual(Object.keys(document.files), ["used-file"]);
+});
+
+test("empty onChange snapshots are saveable after cloud hydration", () => {
+  assert.equal(hasCloudSceneChange([]), true);
+  assert.equal(hasCloudSceneChange([{ id: "deleted", isDeleted: true }]), true);
+  assert.equal(hasCloudSceneChange(null), false);
+  assert.equal(hasCloudSceneChange(undefined), false);
+});
+
+test("cloud onChange hydration suppression is scoped to the tab being hydrated", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /cloudHydratingTabIdRef = useRef\(cloudDiagramId \? "pending" : ""\)/);
+  assert.match(app, /if \(cloudHydratingTabIdRef\.current === activeCanvasIdRef\.current\) return;/);
+  assert.doesNotMatch(app, /if \(cloudDiagramId && !cloudSceneReadyRef\.current\) return;/);
 });
 
 test("cloud document refuses to save an empty canvas", () => {
