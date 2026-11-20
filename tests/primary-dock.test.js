@@ -26,9 +26,9 @@ test("sidebar matches the left-edge floating toolbar treatment", () => {
   assert.match(sidebarCss, /overflow-y: auto/);
 });
 
-test("canvas mounts the sidebar without hamburger/collapse or selected-only settings", () => {
+test("sidebar hides while the hamburger menu is open to prevent overlap", () => {
   const mount = canvas.match(/<PrimaryDock[\s\S]*?\/>/)?.[0] || "";
   assert.match(mount, /rootRef=\{canvasRootRef\}/);
   assert.match(mount, /apiRef=\{apiRef\}/);
-  assert.doesNotMatch(mount, /menuOpen|selectedElements/);
+  assert.match(mount, /nativeMenuOpen=\{nativeMenuOpen\}/);\n  assert.match(dock, /nativeMenuOpen \? " is-menu-open" : ""/);\n  assert.match(dock, /aria-hidden=\{nativeMenuOpen\}/);\n  assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-menu-open/);\n  assert.match(sidebarCss, /pointer-events: none/);
 });
