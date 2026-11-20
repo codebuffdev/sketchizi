@@ -27,7 +27,7 @@ try {
         await page.keyboard.press('Control+Shift+H');
       }
       if (width >= 521) {
-        await header.getByRole('button', { name: 'Pin application header' }).click();
+        await header.getByRole('button', { name: 'Pin application header' }).press('Enter');
         await header.getByRole('button', { name: 'Unpin application header', pressed: true }).waitFor();
       }
 
