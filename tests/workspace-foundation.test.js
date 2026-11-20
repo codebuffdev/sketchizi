@@ -154,6 +154,16 @@ test("authenticated users keep the editor as the default route; Workspace is opt
   assert.match(source, /const workspaceRoute = window\.location\.pathname === "\/workspace"/);
 });
 
+test("cloud load failures remain visible on the originating tab and can be retried", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /const retryCloudDiagramLoad = useCallback/);
+  assert.match(app, /setCloudLoadAttempt\(\(attempt\) => attempt \+ 1\)/);
+  assert.match(app, /onClick=\{retryCloudDiagramLoad\}>Retry loading/);
+  assert.match(app, /cloudSaveState\.state === "error" && !cloudDetached/);
+  assert.match(app, /cloudSaveState: \{ state: "error", error: message \}/);
+  assert.match(app, /cloudLoadStartedRef\.current = false/);
+});
+
 test("cloud hydration response updates only the tab that initiated the request", async () => {
   const app = await read("../src/App.jsx");
   assert.match(app, /const targetTabId = cloudHydratingTabIdRef\.current/);
