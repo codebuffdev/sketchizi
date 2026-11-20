@@ -56,7 +56,7 @@
 .app.theme-dark .canvas-tabs-overflow-menu { background: #252525; border-color: rgba(255,255,255,.14); }
 
 .desktop-app-document-identity .canvas-tabs-bar { margin-left: 2px; }
-.desktop-app-document-identity .canvas-tabs-list { max-width: min(52vw, 620px); overflow: visible; }
+.desktop-app-document-identity .canvas-tabs-list { max-width: min(90vw, 900px); overflow: visible; }
 .desktop-app-document-identity .canvas-tab { flex: 0 1 auto; }
 .desktop-app-document-identity .canvas-tabs-add { flex: 0 0 28px; }
 @media (max-width: 760px) {
