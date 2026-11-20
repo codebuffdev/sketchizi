@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import GrammarCheck from "./GrammarCheck.jsx";
 
 function normalizeCanvasTitle(value) {
   return String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -48,9 +49,10 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
       <span className="sketchizi-todo-grip" aria-hidden="true">⠿</span>
       <input type="checkbox" checked={!!task.completed} onChange={(event) => patch(task.id, { completed: event.target.checked })} aria-label={`Mark ${task.text} ${task.completed ? "incomplete" : "complete"}`} />
       {editingId === task.id ? (
-        <input className="sketchizi-todo-edit" autoFocus value={editingText} onChange={(event) => setEditingText(event.target.value)}
+        <div className="sketchizi-todo-edit-wrap"><input className="sketchizi-todo-edit" autoFocus value={editingText} onChange={(event) => setEditingText(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); } if (event.key === "Escape") setEditingId(null); }}
-          onBlur={() => { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); }} />
+          onBlur={(event) => { if (event.relatedTarget?.closest?.(".sketchizi-grammar-check")) return; patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); }} />
+        <GrammarCheck text={editingText} isDarkTheme={isDarkTheme} onApply={setEditingText} /></div>
       ) : (
         <button type="button" className={`sketchizi-todo-task-text${matchingCanvas ? " is-canvas-link" : ""}`} title={matchingCanvas ? `Open ${matchingCanvas.name} canvas` : "Edit task"} onClick={() => { if (matchingCanvas) onNavigateToCanvas?.(matchingCanvas.id); else { setEditingId(task.id); setEditingText(task.text); } }} aria-label={matchingCanvas ? `Open canvas ${matchingCanvas.name}` : `Edit task ${task.text}`}>
           {task.text}{matchingCanvas && <span className="sketchizi-todo-canvas-link-icon" aria-hidden="true">↗</span>}
@@ -86,6 +88,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
       <form className="sketchizi-todo-add" onSubmit={addTask}>
         <span aria-hidden="true">＋</span>
         <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Add a task…" aria-label="New task" />
+        <GrammarCheck text={draft} isDarkTheme={isDarkTheme} onApply={setDraft} />
         <button type="submit" disabled={!draft.trim()}>Add task</button>
       </form>
       <div className="sketchizi-todo-section-heading"><strong>Tasks</strong><span>{active.length}</span></div>
