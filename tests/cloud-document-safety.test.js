@@ -20,7 +20,7 @@ test("local autosave resumes once a cloud diagram is detached", () => {
   assert.match(files, /dispatchEvent\(new CustomEvent\("sketchizi:detach-cloud-document"\)\)/);
 });
 
-test("an empty visible cloud diagram saves deletions, but not transient empty callbacks", () => {
+test("an empty scene snapshot is saved after hydration while malformed callbacks are ignored", () => {
   assert.equal(hasCloudSceneChange(null), false);
   assert.equal(hasCloudSceneChange([]), true, "an empty scene after hydration is a real deletion snapshot");
   assert.equal(hasCloudSceneChange([null, undefined]), false);
