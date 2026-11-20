@@ -22,6 +22,9 @@ export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
   pageContext,
   startDate,
+  activity = [],
+  canvasId,
+  onActivityChange,
   onStartDateChange,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
@@ -801,7 +804,7 @@ export default function SketchiziCanvas({
 
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
-      <CanvasStartDate value={startDate} onChange={onStartDateChange} disabled={!canEdit || viewModeEnabled} />
+      <CanvasStartDate key={canvasId} canvasId={canvasId} value={startDate} activity={activity} onActivityChange={onActivityChange} onChange={onStartDateChange} disabled={!canEdit || viewModeEnabled} />
       <PrimaryDock
         menuOpen={nativeMenuOpen}
         rootRef={canvasRootRef}
