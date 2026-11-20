@@ -670,15 +670,33 @@ function App() {
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
   }, [apiRef, setCurrentFile, setSavedSketch]);
 
+  useEffect(() => {
+    if (!apiReady || !apiRef.current) return;
+    const activeTab = canvasTabsRef.current.find((tab) => tab.id === activeCanvasId);
+    if (activeTab?.snapshot) applyCanvasTabSnapshot(activeTab);
+  }, [apiReady, activeCanvasId, applyCanvasTabSnapshot]);
+
   const switchCanvasTab = useCallback((nextId) => {
-    if (!nextId || nextId === activeCanvasIdRef.current || !apiRef.current) return;
+    if (!nextId || nextId === activeCanvasIdRef.current) return;
     const previousId = activeCanvasIdRef.current;
-    const currentSnapshot = captureCanvasTabSnapshot();
+    const currentSnapshot = apiRef.current
+      ? captureCanvasTabSnapshot()
+      : (canvasTabsRef.current.find((tab) => tab.id === previousId)?.snapshot || null);
     const currentTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
-      ? { ...tab, snapshot: currentSnapshot }
+      ? { ...tab, ...(currentSnapshot ? { snapshot: currentSnapshot } : {}) }
       : tab.id === nextId ? { ...tab, todoTabActive: false } : tab);
     const target = currentTabs.find((tab) => tab.id === nextId);
     if (!target) return;
+    // Todo is a separate workspace view. If its hidden canvas has temporarily
+    // released the Excalidraw API, switch the tab state now and restore the
+    // selected snapshot when the newly keyed canvas mounts.
+    if (!apiRef.current) {
+      activeCanvasIdRef.current = nextId;
+      setActiveCanvasId(nextId);
+      setActiveWorkspaceTabId(nextId);
+      persistCanvasTabs(currentTabs);
+      return;
+    }
     if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
       retryLocalSave();
     } else {
@@ -736,17 +754,18 @@ function App() {
   }, [persistCanvasTabs, switchCanvasTab]);
 
   const createCanvasTab = useCallback(() => {
-    if (!apiRef.current) return;
-    const currentSnapshot = captureCanvasTabSnapshot();
+    const currentSnapshot = apiRef.current
+      ? captureCanvasTabSnapshot()
+      : (canvasTabsRef.current.find((tab) => tab.id === activeCanvasIdRef.current)?.snapshot || null);
     const currentTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
-      ? { ...tab, snapshot: currentSnapshot }
+      ? { ...tab, ...(currentSnapshot ? { snapshot: currentSnapshot } : {}) }
       : tab);
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = `canvas-${Date.now()}`;
     const nextTab = {
       id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: {
-        elements: [], appState: { viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor },
+        elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
         file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
         cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
@@ -773,12 +792,36 @@ function App() {
   const performCloseCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
-    if (tabIndex < 0 || currentTabs.length <= 1) return;
+    if (tabIndex < 0) return;
     const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
     const isActive = tabId === activeCanvasIdRef.current;
+
+    if (remainingTabs.length === 0) {
+      // Closing the final tab returns to the workspace welcome screen, where
+      // the user can choose to start a canvas or a task.
+      if (canvasTabsSaveTimerRef.current) {
+        window.clearTimeout(canvasTabsSaveTimerRef.current);
+        canvasTabsSaveTimerRef.current = null;
+      }
+      canvasTabsRef.current = [];
+      activeCanvasIdRef.current = "";
+      setCanvasTabs([]);
+      setActiveCanvasId("");
+      setActiveWorkspaceTabId("");
+      // Return to the editor's welcome chooser in place. Navigating to
+      // /workspace invokes the authentication gate and incorrectly opens
+      // the sign-in dialog for users who are already working in the editor.
+      startupChoiceMadeRef.current = false;
+      setStartupChooserOpen(true);
+      setCloseTabPrompt(null);
+      saveCanvasTabs([]).catch((error) => {
+        logger.warn("The empty canvas workspace could not be saved", { category: "persistence", error });
+      });
+      return;
+    }
+
     if (isActive) {
       const nextActive = currentTabs[tabIndex - 1] || remainingTabs[0];
-      if (!nextActive) return;
       // Switching first captures and persists the live scene before removal.
       switchCanvasTab(nextActive.id);
     }
@@ -789,7 +832,7 @@ function App() {
   const closeCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
     const tab = currentTabs.find((item) => item.id === tabId);
-    if (!tab || currentTabs.length <= 1) return;
+    if (!tab) return;
     const isActive = tabId === activeCanvasIdRef.current;
     // An untouched/cleared canvas has nothing to protect. Check the live
     // Excalidraw scene for the active tab and the persisted snapshot for
@@ -1381,9 +1424,12 @@ function App() {
 
   const chooseStartupCanvas = useCallback((mode) => {
     startupChoiceMadeRef.current = true;
+    // Closing the final tab leaves the workspace empty. Create a fresh canvas
+    // when the user makes their next startup-canvas choice.
+    if (canvasTabsRef.current.length === 0) createCanvasTab();
     setStartupChooserOpen(false);
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
-  }, []);
+  }, [createCanvasTab]);
 
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {

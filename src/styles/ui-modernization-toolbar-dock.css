@@ -4317,3 +4317,18 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
     padding: 28px 22px 48px;
   }
 }
+
+
+/* The app header is absolutely positioned over the workspace. Keep the full-page
+   Todo surface below the header/tab strip instead of letting its first row sit
+   underneath the canvas title and tab controls. */
+.app .sketchizi-todo-workspace {
+  top: calc(82px + var(--safe-top, 0px));
+  bottom: 0;
+  box-sizing: border-box;
+}
+@media (max-width: 760px) {
+  .app .sketchizi-todo-workspace {
+    top: calc(68px + var(--safe-top, 0px));
+  }
+}
