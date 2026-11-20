@@ -28,8 +28,12 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: node --test tests/page-canvas.test.js
       - run: npm run build
-      - run: npm install --no-save --no-package-lock playwright
-      - run: npx playwright install --with-deps chromium
+      - name: Install temporary browser-test tooling
+        run: |
+          npm install --prefix /tmp/sketchizi-browser-tools --no-save --no-package-lock playwright
+          ln -s /tmp/sketchizi-browser-tools/node_modules/playwright node_modules/playwright
+      - name: Install Chromium for browser smoke test
+        run: /tmp/sketchizi-browser-tools/node_modules/.bin/playwright install --with-deps chromium
       - name: Start preview and verify pages
         run: |
           npm run preview -- --host 127.0.0.1 > /tmp/sketchizi-pages-preview.log 2>&1 &
