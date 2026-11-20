@@ -15,7 +15,22 @@ try {
         await route.fulfill({ json: body });
       });
       await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
-      const trigger = page.locator('.auth-account-trigger:visible');
+      const chooser = page.getByRole('dialog').filter({
+        has: page.getByRole('heading', { name: 'Start with' }),
+      });
+      await chooser.getByRole('button', { name: 'Infinity' }).click();
+      await chooser.waitFor({ state: 'detached' });
+
+      const header = page.locator('.desktop-app-header');
+      if (width >= 1025) {
+        await page.keyboard.press('Control+Shift+H');
+      }
+      if (width >= 521) {
+        await header.getByRole('button', { name: 'Pin application header' }).click();
+        await header.getByRole('button', { name: 'Unpin application header', pressed: true }).waitFor();
+      }
+
+      const trigger = header.getByRole('button', { name: 'Open account menu' });
       await trigger.waitFor();
       await page.locator('.app').evaluate((app, theme) => {
         app.classList.remove('theme-light', 'theme-dark');
@@ -29,8 +44,12 @@ try {
       assert.deepEqual(after, before, 'Opening the menu must not move or resize the avatar');
       const bounds = await menu.boundingBox();
       assert(bounds.x >= 0 && bounds.x + bounds.width <= width, 'Menu must fit horizontally');
-      assert(bounds.y >= before.y + before.height && bounds.y + bounds.height <= 900, 'Menu must open below the avatar inside the viewport');
-      assert.equal(await menu.evaluate(el => getComputedStyle(el).position), 'absolute');
+      assert(bounds.y >= 0 && bounds.y + bounds.height <= 900, 'Menu must fit vertically');
+      if (width >= 1025) {
+        assert(bounds.x + bounds.width <= before.x, 'Menu must open to the left of the desktop rail');
+      } else {
+        assert(bounds.y >= before.y + before.height, 'Menu must open below the avatar');
+      }
       await menu.getByRole('menuitem', { name: 'Sign out', exact: true }).waitFor();
       await page.keyboard.press('Escape');
       assert.equal(await menu.count(), 0, 'Escape closes the account menu');
