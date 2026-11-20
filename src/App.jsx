@@ -45,6 +45,7 @@ import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "./features/workspace/cloudLoadRecovery.js";
 import { refreshCloudTabsIndependently } from "./features/workspace/cloudStartupRefresh.js";
+import { markCloudStartupLoadFailure } from "./features/workspace/cloudStartupRecovery.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
@@ -1032,13 +1033,9 @@ function App() {
           });
           const current = canvasTabsRef.current.find((item) => item.id === tab.id);
           if (current?.snapshot?.cloudSession?.diagramId !== session.diagramId) return;
-          const nextTabs = canvasTabsRef.current.map((item) => item.id === tab.id ? {
-            ...item,
-            snapshot: {
-              ...item.snapshot,
-              cloudSaveState: { state: "error", error: "Could not refresh this diagram from Cloud Workspace. Showing the last cached copy." },
-            },
-          } : item);
+          const nextTabs = canvasTabsRef.current.map((item) => item.id === tab.id
+            ? markCloudStartupLoadFailure(item, error)
+            : item);
           canvasTabsRef.current = nextTabs;
           setCanvasTabs(nextTabs);
           saveCanvasTabs(nextTabs).catch(() => {});
@@ -2485,8 +2482,9 @@ function App() {
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {(cloudSessionRef.current.active && !cloudDetached) || shouldShowCloudLoadStatus({ loadFailed: cloudLoadFailed, loadInProgress: cloudSaveState.state === "loading" && Boolean(cloudDiagramId), cloudDetached }) ? <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
-        <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
+        <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "load-error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudLoadFailed && <button type="button" onClick={retryCloudLoad}>Retry load</button>}
+        {cloudSaveState.state === "load-error" && <button type="button" onClick={() => window.location.reload()}>Retry load</button>}
         {cloudSaveState.state === "error" && !cloudLoadFailed && <>
           <button type="button" onClick={() => {
             const api = apiRef.current;
