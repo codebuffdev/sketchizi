@@ -4,32 +4,29 @@ import { readFileSync } from "node:fs";
 
 const dock = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
-const wheelCss = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
+const sidebarCss = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
 
-test("primary dock is a radial iPad-style wheel with the complete tool set", () => {
+test("primary dock renders the complete tool set in a vertical left sidebar", () => {
   for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill", "autoshape", "todo"]) {
-    assert.ok(dock.includes(`id: "${tool}"`), `missing wheel tool: ${tool}`);
+    assert.ok(dock.includes(`id: "${tool}"`), `missing sidebar tool: ${tool}`);
   }
-  assert.match(dock, /sketchizi-radial-wheel/);
-  assert.match(dock, /sketchizi-radial-wheel-hub/);
-  assert.match(dock, /aria-label="Move tool wheel"/);
-  assert.match(dock, /pointermove/);
+  assert.match(dock, /sketchizi-tool-sidebar/);
+  assert.match(dock, /flex-direction: column|separated: true/);
   assert.match(dock, /setActiveTool/);
-  assert.doesNotMatch(dock, /menuOpen|paletteOpen|focusedTool|selection-focus|dock-launcher/);
+  assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|expanded|tuckedOffset/);
 });
 
-test("wheel starts tucked at bottom-left, expands, and supports reliable pointer dragging", () => {
-  assert.match(dock, /left: expanded \? 16 : -tuckedOffset, bottom: 16/);
-  assert.match(dock, /setExpanded\(\(value\) => !value\)/);
-  assert.match(dock, /onPointerMove=\{moveDrag\}/);
-  assert.match(dock, /setPointerCapture/);
-  assert.match(dock, /dragRef\.current\.pointerId/);
-  assert.match(wheelCss, /--wheel-size: 220px/);
-  assert.match(wheelCss, /--wheel-tool-size: 34px/);
-  assert.match(wheelCss, /touch-action: none/);
+test("sidebar matches the left-edge floating toolbar treatment", () => {
+  assert.match(sidebarCss, /left: 26px/);
+  assert.match(sidebarCss, /top: 50%/);
+  assert.match(sidebarCss, /width: 56px/);
+  assert.match(sidebarCss, /border-radius: 22px/);
+  assert.match(sidebarCss, /\.sketchizi-tool-sidebar-button\.is-active/);
+  assert.match(sidebarCss, /backdrop-filter: blur/);
+  assert.match(sidebarCss, /overflow-y: auto/);
 });
 
-test("canvas mounts the wheel without hamburger/collapse or selected-only settings", () => {
+test("canvas mounts the sidebar without hamburger/collapse or selected-only settings", () => {
   const mount = canvas.match(/<PrimaryDock[\s\S]*?\/>/)?.[0] || "";
   assert.match(mount, /rootRef=\{canvasRootRef\}/);
   assert.match(mount, /apiRef=\{apiRef\}/);
