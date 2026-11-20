@@ -332,13 +332,9 @@
   box-sizing: border-box;
   max-width: min(760px, calc(100vw - 220px));
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  overscroll-behavior-x: contain;
-}
-.canvas-tab-item.is-active::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
+  flex-wrap: wrap;
+  align-content: center;
 }
 .canvas-tab-item.is-active > .canvas-tab {
   flex: 0 0 auto;
@@ -354,7 +350,7 @@
 }
 .canvas-tab-item.is-active > .canvas-tab-active-actions {
   flex: 0 0 auto;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   white-space: nowrap;
   gap: 3px;
   padding: 0 4px;
