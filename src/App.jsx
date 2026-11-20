@@ -1162,7 +1162,9 @@ function App() {
     if (hasElements || hasExplicitAppearance) {
       setCanvasAppearance(getCanvasAppearanceFromBackground(background, roughness));
     } else {
-      setCanvasAppearance(isDarkTheme ? "sketch" : "clean");
+      const savedCanvasTheme = savedSketch?.appState?.theme;
+      const savedCanvasIsDark = savedCanvasTheme === "dark" || (savedCanvasTheme !== "light" && isDarkTheme);
+      setCanvasAppearance(savedCanvasIsDark ? "sketch" : "clean");
     }
   }, [isDarkTheme, savedSketch]);
   const handleCanvasAppearanceChange = useCallback((appearance) => {
