@@ -599,6 +599,12 @@ function App() {
       : tab));
   }, [persistCanvasTabs]);
 
+  const updateCanvasTodoItems = useCallback((tabId, todoItems) => {
+    persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === tabId
+      ? { ...tab, todoItems }
+      : tab));
+  }, [persistCanvasTabs]);
+
   const persistActiveCanvasSnapshot = useCallback((elements, appState) => {
     if (!canvasTabsRestoredRef.current) return;
     const snapshot = captureCanvasTabSnapshot(elements, appState);
@@ -708,7 +714,7 @@ function App() {
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = `canvas-${Date.now()}`;
     const nextTab = {
-      id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), dirty: false,
+      id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], dirty: false,
       snapshot: {
         elements: [], appState: { viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
@@ -2403,6 +2409,8 @@ function App() {
             startDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
             activity={canvasTabs.find((tab) => tab.id === activeCanvasId)?.activity || []}
             onActivityChange={updateCanvasActivity}
+            todoItems={canvasTabs.find((tab) => tab.id === activeCanvasId)?.todoItems || []}
+            onTodoItemsChange={updateCanvasTodoItems}
             onStartDateChange={updateActiveCanvasStartDate}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
