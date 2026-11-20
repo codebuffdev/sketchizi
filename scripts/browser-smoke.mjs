@@ -435,7 +435,7 @@ try {
   await authLayout.page.setViewportSize({ width: 390, height: 740 });
   await verifyAuthDialogCentered(authLayout.page);
   console.log("PASS: sign-in dialog remains centered and visible at phone width.");
-  await authLayout.page.keyboard.press("Escape");
+  await authLayout.page.getByRole("button", { name: "Close sign-in dialog" }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor({ state: "detached" });
 
   if (errors.length) throw new Error(`Browser console exceptions: ${errors.join(" | ")}`);
