@@ -107,4 +107,10 @@ test("Kalam is exposed as a custom text font and its web font is loaded", async 
   assert.match(dock, /\[4, "Kalam"\]/);
   assert.match(dock, /document\.fonts\?\.load\('16px "Kalam"'/);
   assert.match(styles, /fonts\.googleapis\.com\/css2\?family=Kalam/);
+  assert.match(dock, /\[11, "Caveat"\]/);
+  assert.match(dock, /\[12, "Architects Daughter"\]/);
+  assert.match(dock, /FONT_FAMILY\.Caveat = 11/);
+  assert.match(dock, /FONT_FAMILY\["Architects Daughter"\] = 12/);
+  assert.match(styles, /fonts\.googleapis\.com\/css2\?family=Caveat/);
+  assert.match(styles, /fonts\.googleapis\.com\/css2\?family=Architects\+Daughter/);
 });
