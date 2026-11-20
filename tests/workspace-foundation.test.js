@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
 import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "../src/features/workspace/cloudLoadRecovery.js";
+import { markCloudStartupLoadFailure } from "../src/features/workspace/cloudStartupRecovery.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -358,4 +359,31 @@ test("startup cloud refresh skips the cloud deep link being hydrated separately"
   await Promise.resolve();
   await Promise.resolve();
   assert.deepEqual(requested, ["diagram-other"]);
+});
+
+
+test("startup cloud refresh failure is a load error and preserves the cached document", () => {
+  const cachedSnapshot = {
+    elements: [{ id: "cached-element", type: "rectangle" }],
+    files: { "cached-file": { id: "cached-file" } },
+    cloudSession: { active: true, diagramId: "diagram-1", revision: 4 },
+    cloudSaveState: { state: "saved", error: "" },
+  };
+  const tab = { id: "tab-1", name: "Cached diagram", dirty: false, snapshot: cachedSnapshot };
+  const failed = markCloudStartupLoadFailure(tab, new Error("network unavailable"));
+
+  assert.equal(failed.snapshot.cloudSaveState.state, "load-error");
+  assert.match(failed.snapshot.cloudSaveState.error, /Showing the last cached copy/);
+  assert.match(failed.snapshot.cloudSaveState.error, /network unavailable/);
+  assert.deepEqual(failed.snapshot.elements, cachedSnapshot.elements);
+  assert.deepEqual(failed.snapshot.files, cachedSnapshot.files);
+  assert.deepEqual(failed.snapshot.cloudSession, cachedSnapshot.cloudSession);
+  assert.equal(tab.snapshot.cloudSaveState.state, "saved", "the original persisted snapshot is not mutated");
+});
+
+test("startup cloud load failures expose Retry load and never the Retry save action", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /state === "load-error" && <button type="button" onClick=\{\(\) => window\.location\.reload\(\)\}>Retry load<\/button>/);
+  assert.match(app, /cloudSaveState\.state === "error" && !cloudLoadFailed/);
+  assert.match(app, /\["error", "load-error", "conflict"\]\.includes\(cloudSaveState\.state\)/);
 });
