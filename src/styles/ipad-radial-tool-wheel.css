@@ -1,53 +1,105 @@
-/* Compact iPad-style radial wheel. */
-.sketchizi-radial-wheel {
-  --wheel-size: 220px;
-  --wheel-radius: 85px;
-  --wheel-tool-size: 34px;
+/* Minimal left-aligned tool rail, based on the supplied sidebar reference. */
+.sketchizi-tool-sidebar {
   position: fixed;
   z-index: 10040;
-  width: var(--wheel-size);
-  height: var(--wheel-size);
-  border-radius: 50%;
-  color: #4d5261;
-  background: rgb(246 248 252 / 94%);
-  border: 1px solid rgb(255 255 255 / 90%);
-  box-shadow: 0 7px 22px rgb(28 35 55 / 16%), inset 0 1px 3px #fff;
-  backdrop-filter: blur(14px) saturate(125%);
-  -webkit-backdrop-filter: blur(14px) saturate(125%);
-  touch-action: none;
+  left: 26px;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 56px;
+  max-height: calc(100vh - 32px);
+  padding: 8px 7px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid rgb(205 210 219 / 82%);
+  border-radius: 22px;
+  background: rgb(248 249 251 / 91%);
+  color: #686d75;
+  box-shadow: 0 5px 18px rgb(25 32 45 / 13%), inset 0 1px 2px rgb(255 255 255 / 96%);
+  backdrop-filter: blur(15px) saturate(125%);
+  -webkit-backdrop-filter: blur(15px) saturate(125%);
+  transform: translateY(-50%);
+  scrollbar-width: none;
   user-select: none;
-  transition: left .18s ease, top .18s ease, bottom .18s ease;
 }
-.sketchizi-radial-wheel-ring { position: absolute; inset: 8px; border: 1px solid rgb(108 116 137 / 14%); border-radius: 50%; pointer-events: none; }
-.sketchizi-radial-wheel-tool {
-  position: absolute; left: 50%; top: 50%; display: grid; place-items: center;
-  width: var(--wheel-tool-size); height: var(--wheel-tool-size); padding: 0;
-  border: 1px solid rgb(112 120 140 / 12%); border-radius: 10px; color: inherit;
-  background: rgb(255 255 255 / 94%); box-shadow: 0 2px 5px rgb(38 45 65 / 9%);
+.sketchizi-tool-sidebar::-webkit-scrollbar { display: none; }
+.sketchizi-tool-sidebar-button {
+  display: grid;
+  flex: 0 0 38px;
+  place-items: center;
+  width: 42px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
-  transform: translate(-50%, -50%) rotate(var(--tool-angle)) translateY(calc(-1 * var(--wheel-radius))) rotate(calc(-1 * var(--tool-angle)));
-  transition: background .12s ease, color .12s ease, box-shadow .12s ease;
+  transition: color .12s ease, background .12s ease, box-shadow .12s ease, transform .12s ease;
 }
-.sketchizi-radial-wheel-tool svg { width: 18px; height: 18px; }
-.sketchizi-radial-wheel-tool:hover { color: #263b56; background: #fff; box-shadow: 0 3px 8px rgb(38 45 65 / 14%); }
-.sketchizi-radial-wheel-tool.is-active { color: #253c56; border-color: rgb(80 111 153 / 40%); background: #e7effa; box-shadow: 0 2px 7px rgb(53 86 130 / 16%); }
-.sketchizi-radial-wheel-tool:disabled { opacity: .42; cursor: not-allowed; }
-.sketchizi-radial-wheel-tool:focus-visible, .sketchizi-radial-wheel-hub:focus-visible { outline: 2px solid #668fc2; outline-offset: 2px; }
-.sketchizi-radial-wheel-hub {
-  position: absolute; left: 50%; top: 50%; display: grid; place-items: center;
-  width: 58px; height: 58px; padding: 0; border: 1px solid rgb(255 255 255 / 95%);
-  border-radius: 50%; color: #535b6d; background: #f9fafc;
-  box-shadow: 0 3px 10px rgb(43 50 70 / 12%); cursor: grab;
-  transform: translate(-50%, -50%); touch-action: none;
+.sketchizi-tool-sidebar-button svg {
+  display: block;
+  width: 22px;
+  height: 22px;
 }
-.sketchizi-radial-wheel-hub svg { width: 20px; height: 20px; }
-.sketchizi-radial-wheel-hub:active { cursor: grabbing; }
-.sketchizi-radial-wheel.is-dark { color: #d9deeb; background: rgb(42 47 60 / 96%); border-color: rgb(255 255 255 / 12%); }
-.sketchizi-radial-wheel.is-dark .sketchizi-radial-wheel-tool { color: #d9deeb; border-color: rgb(255 255 255 / 10%); background: #363d4d; box-shadow: 0 2px 5px rgb(0 0 0 / 22%); }
-.sketchizi-radial-wheel.is-dark .sketchizi-radial-wheel-tool.is-active { color: #fff; background: #435c7c; }
-.sketchizi-radial-wheel.is-dark .sketchizi-radial-wheel-hub { color: #e0e5f0; background: #3a4152; border-color: rgb(255 255 255 / 12%); }
-@media (max-width: 540px) {
-  .sketchizi-radial-wheel { --wheel-size: 208px; --wheel-radius: 80px; --wheel-tool-size: 32px; }
-  .sketchizi-radial-wheel-hub { width: 54px; height: 54px; }
+.sketchizi-tool-sidebar-button:hover:not(:disabled) {
+  background: rgb(226 229 234 / 72%);
+  color: #30343b;
 }
-@media (prefers-reduced-motion: reduce) { .sketchizi-radial-wheel { transition: none; } }
+.sketchizi-tool-sidebar-button.is-active {
+  border-color: #292c31;
+  background: linear-gradient(145deg, #30343a, #17191d);
+  color: #fff;
+  box-shadow: 0 3px 8px rgb(15 18 24 / 28%);
+}
+.sketchizi-tool-sidebar-button:active:not(:disabled) { transform: scale(.96); }
+.sketchizi-tool-sidebar-button:disabled { opacity: .38; cursor: not-allowed; }
+.sketchizi-tool-sidebar-button:focus-visible {
+  outline: 2px solid #777f8b;
+  outline-offset: 2px;
+}
+.sketchizi-tool-sidebar-divider {
+  flex: 0 0 1px;
+  width: 30px;
+  height: 1px;
+  margin: 5px 0 6px;
+  background: rgb(119 125 136 / 25%);
+}
+.sketchizi-tool-sidebar.is-dark {
+  border-color: rgb(255 255 255 / 13%);
+  background: rgb(36 40 47 / 94%);
+  color: #c6cbd3;
+  box-shadow: 0 5px 18px rgb(0 0 0 / 30%), inset 0 1px 2px rgb(255 255 255 / 7%);
+}
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 9%);
+  color: #fff;
+}
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button.is-active {
+  border-color: #0b0d10;
+  background: linear-gradient(145deg, #30343a, #111316);
+  color: #fff;
+}
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-divider { background: rgb(255 255 255 / 17%); }
+@media (max-width: 600px) {
+  .sketchizi-tool-sidebar {
+    left: 10px;
+    width: 50px;
+    padding: 6px 5px;
+    border-radius: 18px;
+  }
+  .sketchizi-tool-sidebar-button {
+    flex-basis: 35px;
+    width: 38px;
+    height: 35px;
+    min-height: 35px;
+    border-radius: 10px;
+  }
+  .sketchizi-tool-sidebar-button svg { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sketchizi-tool-sidebar-button { transition: none; }
+}
