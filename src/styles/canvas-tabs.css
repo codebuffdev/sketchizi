@@ -243,3 +243,85 @@
   background: rgba(220, 70, 70, .13);
   color: #c33;
 }
+
+
+/* Keep document actions inside the active tab only. */
+.canvas-tab-item.is-active {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(760px, 72vw);
+  padding: 0 3px;
+  background: var(--island-bg, #fff);
+  border-color: var(--color-border, rgba(120,120,120,.28));
+}
+.app.theme-dark .canvas-tab-item.is-active {
+  background: rgba(255,255,255,.1);
+  border-color: rgba(255,255,255,.2);
+}
+.canvas-tab-item.is-active .canvas-tab {
+  flex: 0 1 auto;
+  min-width: 72px;
+  max-width: 220px;
+}
+.canvas-tab-active-actions {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 4px;
+  padding-left: 3px;
+}
+.canvas-tab-active-actions .desktop-app-save-status-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.canvas-tab-active-actions .desktop-app-save-status-trigger,
+.canvas-tab-active-actions .desktop-app-document-rename,
+.canvas-tab-active-actions .desktop-app-save-to-cloud-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 7px;
+}
+.canvas-tab-active-actions .desktop-app-document-location {
+  flex: 0 0 auto;
+  margin: 0 2px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.canvas-tab-active-actions .desktop-app-document-identity-dirty-dot {
+  flex: 0 0 6px;
+}
+.canvas-tab-active-actions .desktop-app-document-identity-copy {
+  display: inline-flex;
+  min-width: 0;
+}
+.canvas-tab-active-actions .desktop-app-document-identity-name-input {
+  width: min(150px, 18vw);
+  min-width: 70px;
+}
+.canvas-tab-active-actions .desktop-app-save-status-popover {
+  z-index: 1100;
+}
+.canvas-tab-item.is-active > .canvas-tab-close {
+  flex: 0 0 22px;
+}
+@media (max-width: 760px) {
+  .canvas-tab-item.is-active {
+    max-width: min(88vw, 620px);
+  }
+  .canvas-tab-active-actions .desktop-app-document-location {
+    display: none;
+  }
+}
