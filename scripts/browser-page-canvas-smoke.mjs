@@ -19,16 +19,20 @@ const pages = es => es.filter(e=>e.type==='frame' && e.customData?.sketchiziPage
 const canvasStyle = () => page.getByRole('button',{name:'Canvas style',exact:true});
 async function chooseStartupPages() {
  const title = page.getByRole('heading', { name: 'Start with' });
- if (await title.count()) {
-  const chooser = page.locator('.startup-canvas-chooser');
-  await chooser.locator('.startup-canvas-option').nth(1).click();
-  await chooser.waitFor({ state: 'detached' });
- }
+ // The editor's saved indicator can render before the startup chooser. Wait
+ // for the chooser instead of accidentally proceeding underneath its backdrop.
+ await title.waitFor({ state: 'visible', timeout: 20000 });
+ const chooser = page.locator('.startup-canvas-chooser');
+ await chooser.locator('.startup-canvas-option').nth(1).click();
+ await chooser.waitFor({ state: 'detached', timeout: 15000 });
 }
 async function ensureHeaderVisible() {
- const reveal = page.getByRole('button',{name:'Show application header',exact:true});
- if (await reveal.count() && await reveal.getAttribute('aria-expanded') !== 'true') {
-  await page.keyboard.press('Control+Shift+H');
+ const reveal = page.locator('.desktop-app-header-reveal-handle');
+ await reveal.waitFor({ state: 'attached', timeout: 15000 });
+ if (await reveal.getAttribute('aria-expanded') !== 'true') {
+  // Floating controls may overlap the collapsed handle for pointer input.
+  // DOM click still invokes the component's actual React handler.
+  await reveal.evaluate(button => button.click());
  }
  await page.waitForFunction(() => document.querySelector('.desktop-app-header-reveal-handle')?.getAttribute('aria-expanded') === 'true');
 }
