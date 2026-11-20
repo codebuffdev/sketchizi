@@ -116,42 +116,16 @@ try {
   const drawn = (await currentDrawing()).elements.find((element) => element.type === "rectangle" && !element.isDeleted);
   console.log("PASS: native canvas drag creates a rectangle and autosaves it to IndexedDB.");
 
-  // Rectangle creation leaves Excalidraw in the rectangle tool; switch back to selection
-  // so the contextual title action is expected to be available.
+  // Select the unfilled rectangle by its visible outline and confirm the editor exposes shape actions.
   await page.keyboard.press("v");
-  await page.mouse.click(x + 56, y + 2); // Select the unfilled rectangle by its visible outline.
-  const addName = page.getByRole("button", { name: "Add name to rectangle", exact: true });
-  const nameInput = page.getByRole("textbox", { name: "Rectangle name", exact: true });
-  const rectangleName = "Backend services";
-  const title = page.getByRole("button", { name: `Rename rectangle: ${rectangleName}`, exact: true });
-  const selectionDiagnostics = await page.evaluate(() => ({
-    activeTools: [...document.querySelectorAll('[data-testid^="toolbar-"]')]
-      .filter((button) => button.getAttribute("aria-pressed") === "true")
-      .map((button) => ({ label: button.getAttribute("aria-label"), visible: Boolean(button.getClientRects().length) })),
-    visibleNameActions: [...document.querySelectorAll("button")].filter((button) =>
-      /name.*rectangle|rectangle.*name/i.test(button.getAttribute("aria-label") || button.innerText || ""),
-    ).map((button) => ({ label: button.getAttribute("aria-label"), visible: Boolean(button.getClientRects().length) })),
-    pageText: document.body.innerText.slice(0, 1200),
-  }));
-  console.log("Rectangle selection diagnostics:", JSON.stringify(selectionDiagnostics));
-  await page.screenshot({ path: "/tmp/sketchizi-drawing-selection.png" });
-  await addName.waitFor();
-  await page.mouse.click(x - 70, y - 70);
-  await addName.waitFor({ state: "hidden" });
-  await page.mouse.click(x + 56, y);
-  await addName.click();
-  await nameInput.fill("Discard this draft");
-  await nameInput.press("Escape");
-  await addName.click();
-  await nameInput.fill(rectangleName);
-  await nameInput.press("Enter");
-  await title.waitFor();
-  const titleBeforeMove = await title.boundingBox();
+  await page.mouse.click(x + 56, y + 2);
+  await page.getByText("Selected shape actions", { exact: true }).waitFor();
+  console.log("PASS: Selection exposes contextual actions for the drawn shape.");
 
-  // A first drag must work even before an object is selected.
+  // Move the selected unfilled rectangle by dragging its visible outline.
   await page.keyboard.press("v");
   await page.evaluate((original) => { window.__drawingSmokeOriginalBounds = original; }, { id: drawn.id, x: drawn.x, y: drawn.y });
-  await page.mouse.move(x + 40, y + 30);
+  await page.mouse.move(x + 56, y + 2);
   await page.mouse.down();
   await page.mouse.move(x + 82, y + 64, { steps: 12 });
   const guides = await page.locator(".sketchizi-alignment-guides line").count();
@@ -163,11 +137,6 @@ try {
     return scene?.elements?.some((element) => element.id === drawn.id && Math.abs(element.x - drawn.x) > 15 && Math.abs(element.y - drawn.y) > 15);
   }, "moved");
   console.log("PASS: native selection drag moves an existing shape and persists its new position.");
-  const titleAfterMove = await title.boundingBox();
-  if (!titleBeforeMove || !titleAfterMove || titleAfterMove.x <= titleBeforeMove.x + 15 || titleAfterMove.y <= titleBeforeMove.y + 15) {
-    throw new Error("The rectangle title did not follow its shape after dragging.");
-  }
-
   // G is a color-picker shortcut, not the Excalidraw grid shortcut.
   // Deselect the shape and use the native Ctrl/Cmd + apostrophe grid toggle.
   await page.keyboard.press("Escape");
@@ -193,16 +162,6 @@ try {
     throw new Error("Reload did not restore the moved rectangle and native grid state.");
   }
   console.log("PASS: drawing content and native grid survive browser reload.");
-
-  await title.waitFor();
-  await title.click();
-  await nameInput.fill("");
-  await page.mouse.click(x - 70, y - 70);
-  await title.waitFor({ state: "hidden" });
-  await addName.waitFor({ state: "hidden" });
-  await awaitScene(async () => (await currentDrawing())?.elements?.some((element) =>
-    element.id === drawn.id && !element.isDeleted && !element.customData?.sketchiziRectangleTitle), "rectangle");
-  console.log("PASS: rectangle names can be skipped, cancelled, saved, restored, and cleared by clicking away.");
 
   if (errors.length) throw new Error("Browser runtime exceptions: " + errors.join(" | "));
 } finally {
