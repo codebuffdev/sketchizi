@@ -19,9 +19,13 @@ test("primary dock is a radial iPad-style wheel with the complete tool set", () 
 });
 
 test("wheel starts bottom-left and can be repositioned by dragging its hub", () => {
-  assert.match(dock, /left: 18, bottom: 18/);
+  assert.match(dock, /left: expanded \? 18 : -152, bottom: 18/);
+  assert.match(dock, /setExpanded\(\(value\) => !value\)/);
+  assert.match(dock, /dragRef\.current\.moved/);
+  assert.match(dock, /title="Tap to expand or collapse; drag to move"/);
   assert.match(dock, /Math\.max\(8, Math\.min\(window\.innerWidth/);
   assert.match(wheelCss, /position: fixed/);
+  assert.match(wheelCss, /transition: left \.2s ease/);
   assert.match(wheelCss, /touch-action: none/);
 });
 
