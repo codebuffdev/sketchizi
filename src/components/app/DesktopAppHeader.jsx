@@ -403,8 +403,7 @@ export default function DesktopAppHeader({
     ? new Date(saveStatus.lastSavedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     : "No successful local save yet";
 
-  const activeTabActions = (
-    <>
+  const activeTabLeadingAction = (
         <div className="desktop-app-save-status-wrap">
           <button
             type="button"
@@ -462,6 +461,10 @@ export default function DesktopAppHeader({
             </section>
           )}
         </div>
+  );
+
+const activeTabActions = (
+    <>
       {documentNameEditing ? (
         <span className="desktop-app-document-identity-copy">
           <input
@@ -840,6 +843,7 @@ export default function DesktopAppHeader({
           onCreate={onCreateCanvasTab}
           onReorder={onReorderCanvasTabs}
           onClose={onCloseCanvasTab}
+          leadingAction={activeTabLeadingAction}
           activeActions={activeTabActions}
           hideActiveName={documentNameEditing}
           showAddButton={false}

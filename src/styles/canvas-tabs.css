@@ -273,14 +273,14 @@
   gap: 4px;
   padding-left: 3px;
 }
-.canvas-tab-active-actions .desktop-app-save-status-wrap {
+.canvas-tab-item.is-active > .desktop-app-save-status-wrap {
   position: relative;
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
   margin: 0;
 }
-.canvas-tab-active-actions .desktop-app-save-status-trigger,
+.canvas-tab-item.is-active > .desktop-app-save-status-wrap .desktop-app-save-status-trigger,
 .canvas-tab-active-actions .desktop-app-document-rename,
 .canvas-tab-active-actions .desktop-app-save-to-cloud-button {
   display: inline-flex;
@@ -320,6 +320,73 @@
 @media (max-width: 760px) {
   .canvas-tab-item.is-active {
     max-width: min(88vw, 620px);
+  }
+  .canvas-tab-active-actions .desktop-app-document-location {
+    display: none;
+  }
+}
+
+
+/* Approved layout: keep the canvas title and every active-canvas action
+   together inside one tab row. Never wrap actions onto a second line. */
+.canvas-tab-item.is-active {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  align-content: center;
+  width: max-content;
+  max-width: min(760px, calc(100vw - 220px));
+  min-width: 0;
+  white-space: nowrap;
+}
+.canvas-tab-item.is-active > .canvas-tab {
+  display: inline-flex;
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 220px;
+  white-space: nowrap;
+}
+.canvas-tab-item.is-active > .canvas-tab .canvas-tab-name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.canvas-tab-item.is-active > .canvas-tab-active-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  white-space: nowrap;
+  min-width: max-content;
+  padding: 0 4px 0 2px;
+}
+.canvas-tab-item.is-active > .canvas-tab-active-actions > * {
+  flex: 0 0 auto;
+}
+.canvas-tab-item.is-active > .canvas-tab-close {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 28px;
+  margin: 0 2px;
+}
+@media (max-width: 1100px) {
+  .canvas-tab-item.is-active {
+    max-width: min(680px, calc(100vw - 180px));
+  }
+  .canvas-tab-item.is-active > .canvas-tab {
+    flex-basis: 130px;
+    max-width: 180px;
+  }
+}
+@media (max-width: 760px) {
+  .canvas-tab-item.is-active {
+    max-width: calc(100vw - 112px);
+  }
+  .canvas-tab-item.is-active > .canvas-tab {
+    flex-basis: 90px;
+    max-width: 130px;
   }
   .canvas-tab-active-actions .desktop-app-document-location {
     display: none;
