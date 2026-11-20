@@ -50,7 +50,10 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   const isDarkTheme = themeMode === "dark" || (themeMode === "system" && systemDark);
 
   useEffect(() => {
-    const syncTheme = () => setThemeMode(getInitialThemeMode());
+    const syncTheme = (event) => {
+      if (event?.key && event.key !== THEME_PREFERENCE_KEY) return;
+      setThemeMode(getInitialThemeMode());
+    };
     const media = window.matchMedia?.("(prefers-color-scheme: dark)");
     const syncSystem = () => setSystemDark(Boolean(media?.matches));
     window.addEventListener("storage", syncTheme);
