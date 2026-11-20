@@ -63,8 +63,10 @@ const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { enableCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
+import CanvasGrammarAssistant from "./features/canvas/CanvasGrammarAssistant.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
+import "./styles/canvas-grammar-assistant.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
@@ -2845,6 +2847,7 @@ function App() {
       />
 
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
+      <CanvasGrammarAssistant />
 
       {toast && (
         <div className={`sketchizi-toast ${toast.kind === "error" ? "error" : ""}`} role="status" aria-live="polite" key={toast.id}>
