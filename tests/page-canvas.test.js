@@ -96,3 +96,12 @@ test('page edit bounds reject geometry extending beyond the active sheet, includ
  assert.equal(isElementWithinPage({x:100,y:100,width:500,height:400},page),true);
  assert.equal(isElementWithinPage({x:100,y:100,width:500,height:400,angle:Math.PI/4},page),false);
 });
+
+
+test('Pages component does not register stale popover handlers or dereference a missing page name draft', async () => {
+ const { readFile } = await import('node:fs/promises');
+ const source = await readFile(new URL('../src/features/pages/CanvasPages.jsx', import.meta.url), 'utf8');
+ assert.doesNotMatch(source, /\\bsetOpen\\s*\\(/);
+ assert.doesNotMatch(source, /\\broot\\.current/);
+ assert.match(source, /inlineName && inlineName\\.pageId === active\\?\\.id/);
+});
