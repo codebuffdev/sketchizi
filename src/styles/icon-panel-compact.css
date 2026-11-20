@@ -29,6 +29,9 @@
 
 @media (max-width: 760px) {
   .app > .sk-icon-library-portal-host.mobile-resource-open {
+    /* The floating document title uses z-index 10040 and can cover the
+       category selector when the compact panel is open on a phone. */
+    z-index: 10050 !important;
     inset: calc(var(--sketchizi-desktop-header-height, 54px) + 8px) auto auto 10px !important;
     width: min(320px, calc(100vw - 20px)) !important;
     max-width: calc(100vw - 20px) !important;
