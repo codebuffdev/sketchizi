@@ -56,7 +56,7 @@ export default function GrammarCheck({ text, onApply, isDarkTheme = false, class
       <button type="button" className="sketchizi-grammar-trigger" onClick={runCheck} disabled={loading || !String(text || "").trim()}>
         {loading ? "Checking…" : "Check grammar"}
       </button>
-      <a className="sketchizi-grammar-credit" href="https://languagetool.org" target="_blank" rel="noreferrer">LanguageTool</a>
+      <span className="sketchizi-grammar-disclosure">Text is sent to</span><a className="sketchizi-grammar-credit" href="https://languagetool.org" target="_blank" rel="noreferrer">LanguageTool</a>
       {error && <p className="sketchizi-grammar-error" role="status">{error}</p>}
       {matches && <div className="sketchizi-grammar-results" role="status">
         {matches.length === 0 ? <p>No grammar or punctuation suggestions.</p> : matches.map((match, index) => (
