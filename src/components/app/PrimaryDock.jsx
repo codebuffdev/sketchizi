@@ -62,6 +62,15 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     if (nextTool) setActiveTool(nextTool);
   }, [apiRef, canvasRevision]);
   useEffect(() => {
+    const returnToDock = () => {
+      setActiveTool("selection");
+      setCustomTool(null);
+      setPaletteOpen(false);
+    };
+    window.addEventListener("sketchizi:escape-to-primary-dock", returnToDock);
+    return () => window.removeEventListener("sketchizi:escape-to-primary-dock", returnToDock);
+  }, []);
+  useEffect(() => {
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
       if (["bucketfill", "autoshape"].includes(tool)) setCustomTool(tool);
