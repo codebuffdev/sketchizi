@@ -69,9 +69,10 @@ export default function CanvasGrammarAssistant() {
 
   const dismiss = () => {
     if (!issue) return;
-    setDismissed((current) => new Set(current).add(issue.start + ":" + issue.end + ":" + issue.suggestion));
+    const ignoredKey = issue.start + ":" + issue.end + ":" + issue.suggestion;
+    setDismissed((current) => new Set(current).add(ignoredKey));
     const issues = findGrammarIssues(readField(activeField));
-    setIssue(issues.find((item) => item !== issue) || null);
+    setIssue(issues.find((item) => item.start + ":" + item.end + ":" + item.suggestion !== ignoredKey && !dismissed.has(item.start + ":" + item.end + ":" + item.suggestion)) || null);
   };
 
   const apply = () => {
