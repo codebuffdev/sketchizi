@@ -292,7 +292,7 @@ function OptionGlyph({ kind, value }) {
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
   return <DockChoiceMenu label={label} value={value} onChange={onChange} options={options} kind={kind} />;
 }
-export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasRevision, canEdit = true }) {
+export default function ToolOptionsDock({ apiRef, selectedElements = [], onClearSelection, canvasRevision, canEdit = true }) {
   useEffect(() => {
     // Warm the host-provided font so canvas text measurement uses Kalam immediately.
     document.fonts?.load('16px "Kalam"', "Kalam").catch(() => {});
@@ -320,29 +320,35 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
 
   useEffect(() => {
     const handleEscapeToPrimaryDock = (event) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (event.key !== "Escape") return;
       const target = event.target;
       // Let Escape close an open dock menu first, and never steal it from
-      // editable controls or dialogs.
+      // editable controls. The Primary Dock palette uses role="dialog", but
+      // Escape there must still clear the element selection and restore the
+      // full dock; treating every dialog as protected swallowed that action.
       if (target?.closest?.(
-        "input, textarea, select, [contenteditable='true'], [role='dialog'], .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
+        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
       )) return;
 
       // Capture Escape before Excalidraw consumes it so the Primary Dock returns.
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation?.();
       setCustomTool(null);
+      onClearSelection?.();
+      window.dispatchEvent(new CustomEvent("sketchizi:escape-to-primary-dock"));
       apiRef?.current?.updateScene?.({
         appState: {
           activeTool: { type: "selection" },
           selectedElementIds: {},
           selectedGroupIds: {},
+          selectedLinearElement: null,
         },
       });
     };
     window.addEventListener("keydown", handleEscapeToPrimaryDock, true);
     return () => window.removeEventListener("keydown", handleEscapeToPrimaryDock, true);
-  }, [apiRef]);
+  }, [apiRef, onClearSelection]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
   useEffect(() => {

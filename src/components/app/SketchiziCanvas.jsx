@@ -31,7 +31,7 @@ export default function SketchiziCanvas({
   onStartDateChange,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
-  selectedElements = [], canEdit = true,
+  selectedElements = [], onClearSelection, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
   nativeMenuOpen = false,
@@ -815,6 +815,7 @@ export default function SketchiziCanvas({
         canEdit={canEdit && !viewModeEnabled}
         isDarkTheme={isDarkTheme}
         canvasRevision={canvasRevision}
+        selectedElements={selectedElements}
         onOpenTodoTab={onOpenTodoTab}
       />
       <Excalidraw
@@ -828,7 +829,7 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} />
+      <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <RectangleTitles
