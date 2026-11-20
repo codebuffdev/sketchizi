@@ -4072,3 +4072,7 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 @media (max-width: 760px) {
   .app .sketchizi-todo-popover.is-full-page { width: calc(100% - 28px); margin: 14px auto; padding: 18px; }
 }
+
+.app .desktop-canvas-region { position: relative; }
+.canvas-tab-todo-icon { color: #16a34a; }
+.app.theme-dark .canvas-tab-todo-icon { color: #4ade80; }
