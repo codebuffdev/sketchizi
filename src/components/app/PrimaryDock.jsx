@@ -46,7 +46,13 @@ function activateTool({ id, root, apiRef }) {
   apiRef.current?.setActiveTool?.({ type: id });
 }
 
-export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false, onOpenTodoTab }) {
+const ELEMENT_TOOL_IDS = {
+  rectangle: "rectangle", ellipse: "ellipse", diamond: "diamond",
+  arrow: "arrow", line: "line", freedraw: "freedraw", draw: "freedraw",
+  text: "text", image: "image", frame: "frame",
+};
+
+export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false, onOpenTodoTab, selectedElements = [] }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -110,8 +116,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           </button>
           {paletteOpen && (
             <div className="sketchizi-dock-quick-palette" role="dialog" aria-label="Drawing tools">
-              <div className="sketchizi-dock-radial-hub"><ToolIcon name={activeEntry.id} /><span>{activeEntry.label}</span><small>ACTIVE TOOL</small></div>
-              <div className="sketchizi-dock-radial-tools">{GROUPS.flat().map((tool, index) => renderTool(tool, index, true))}</div>
+              <div className="sketchizi-dock-radial-hub"><ToolIcon name={dockEntry.id} /><span>{dockEntry.label}</span><small>{focusedTool ? "SELECTED ELEMENT" : "ACTIVE TOOL"}</small></div>
+              <div className="sketchizi-dock-radial-tools">{(focusedTool ? [focusedTool] : GROUPS.flat()).map((tool, index) => renderTool(tool, index, true))}</div>
               <button type="button" className="sketchizi-dock-radial-close" aria-label="Close drawing tools" onClick={() => setPaletteOpen(false)}>×</button>
             </div>
           )}
