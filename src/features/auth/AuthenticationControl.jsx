@@ -147,10 +147,10 @@ export default function AuthenticationControl() {
       if (event.key === "Escape") setProfileMenuOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, [profileMenuOpen]);
 
