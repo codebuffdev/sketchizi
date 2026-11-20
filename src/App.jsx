@@ -44,6 +44,7 @@ import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinit
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "./features/workspace/cloudLoadRecovery.js";
+import { refreshCloudTabsIndependently } from "./features/workspace/cloudStartupRefresh.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
@@ -979,19 +980,19 @@ function App() {
   useEffect(() => {
     if (!sketchReady || !apiReady || canvasTabsRestoredRef.current) return;
     let cancelled = false;
+    let cancelCloudRefreshes = () => {};
     loadCanvasTabs().then(async (stored) => {
       if (cancelled) return;
-      // Rehydrate every open cloud canvas, not only the active tab. Local
-      // canvases already have their complete persisted snapshots; cloud
-      // canvases must refresh from the workspace so tabs are current after
-      // a full app reload.
-      const refreshedTabs = await Promise.all((Array.isArray(stored) ? stored : []).map(async (tab) => {
-        const session = tab.snapshot?.cloudSession;
-        if (!session?.active || !session.diagramId) return tab;
-        try {
-          const result = await workspaceClient.getDiagram(session.diagramId);
+      // Restore cached tabs immediately. Refresh cloud tabs independently in
+      // the background so one slow request cannot block workspace startup.
+      const startupTabs = Array.isArray(stored) ? stored : [];
+      cancelCloudRefreshes = refreshCloudTabsIndependently(startupTabs, {
+        getDiagram: (diagramId) => workspaceClient.getDiagram(diagramId),
+        skipDiagramId: cloudDiagramId,
+        onRefreshed: (tab, result) => {
+          const session = tab.snapshot?.cloudSession;
           const { diagram, document, name } = normalizeCloudDiagramResponse(result, session.diagramId, { fallbackName: session.name || tab.name });
-          return {
+          const refreshedTab = {
             ...tab,
             name,
             dirty: false,
@@ -1016,25 +1017,40 @@ function App() {
               cloudDocumentName: name,
             },
           };
-        } catch (error) {
+          const current = canvasTabsRef.current.find((item) => item.id === tab.id);
+          if (current?.snapshot?.cloudSession?.diagramId !== session.diagramId || current.dirty) return;
+          const nextTabs = canvasTabsRef.current.map((item) => item.id === tab.id ? refreshedTab : item);
+          canvasTabsRef.current = nextTabs;
+          setCanvasTabs(nextTabs);
+          if (tab.id === activeCanvasIdRef.current) applyCanvasTabSnapshot(refreshedTab);
+          saveCanvasTabs(nextTabs).catch(() => {});
+        },
+        onFailed: (tab, error) => {
+          const session = tab.snapshot?.cloudSession;
           logger.warn("A cloud canvas could not be refreshed during startup", {
             category: "persistence", diagramId: session.diagramId, error,
           });
-          // Keep the cached copy, but make the failure visible instead of
-          // presenting stale content as if it were current.
-          return {
-            ...tab,
+          const current = canvasTabsRef.current.find((item) => item.id === tab.id);
+          if (current?.snapshot?.cloudSession?.diagramId !== session.diagramId) return;
+          const nextTabs = canvasTabsRef.current.map((item) => item.id === tab.id ? {
+            ...item,
             snapshot: {
-              ...tab.snapshot,
+              ...item.snapshot,
               cloudSaveState: { state: "error", error: "Could not refresh this diagram from Cloud Workspace. Showing the last cached copy." },
             },
-          };
-        }
-      }));
-      if (cancelled) return;
+          } : item);
+          canvasTabsRef.current = nextTabs;
+          setCanvasTabs(nextTabs);
+          saveCanvasTabs(nextTabs).catch(() => {});
+        },
+      });
+      if (cancelled) {
+        cancelCloudRefreshes();
+        return;
+      }
       if (Array.isArray(stored) && stored.length) {
         const today = getLocalDateString();
-        const restoredTabs = (refreshedTabs.length ? refreshedTabs : stored).map((tab) => ({
+        const restoredTabs = startupTabs.map((tab) => ({
           ...tab,
           startDate: isValidCanvasStartDate(tab.startDate) ? tab.startDate : today,
         }));
@@ -1183,7 +1199,7 @@ function App() {
       canvasTabsRestoredRef.current = true;
       setCanvasTabsReady(true);
     });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; cancelCloudRefreshes(); };
   }, [sketchReady, apiReady, cloudDiagramId, applyCanvasTabSnapshot, captureCanvasTabSnapshot, setSavedSketch]);
 
   useEffect(() => {
