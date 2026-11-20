@@ -593,6 +593,12 @@ function App() {
       : tab));
   }, [persistCanvasTabs]);
 
+  const updateCanvasActivity = useCallback((tabId, activity) => {
+    persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === tabId
+      ? { ...tab, activity }
+      : tab));
+  }, [persistCanvasTabs]);
+
   const persistActiveCanvasSnapshot = useCallback((elements, appState) => {
     if (!canvasTabsRestoredRef.current) return;
     const snapshot = captureCanvasTabSnapshot(elements, appState);
@@ -2392,7 +2398,11 @@ function App() {
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
             pageContext={canvasPageContext}
+            key={activeCanvasId}
+            canvasId={activeCanvasId}
             startDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
+            activity={canvasTabs.find((tab) => tab.id === activeCanvasId)?.activity || []}
+            onActivityChange={updateCanvasActivity}
             onStartDateChange={updateActiveCanvasStartDate}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
