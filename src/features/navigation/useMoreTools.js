@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit = true }) {
   const [anchor, setAnchor] = useState({ left: 0, top: 0 });
   const findAnchor = useCallback(() => {
-    const dock = document.querySelector(".sketchizi-primary-dock");
+    const dock = document.querySelector(".sketchizi-radial-wheel");
     return dock instanceof HTMLElement ? dock : null;
   }, []);
   const position = useCallback(() => {
