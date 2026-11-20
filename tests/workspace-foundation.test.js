@@ -166,7 +166,8 @@ test("cloud load failures remain visible on the originating tab and can be retri
   assert.match(app, /onClick=\{retryCloudDiagramLoad\}>Retry loading/);
   assert.match(app, /\["loading", "error"\]\.includes\(cloudSaveState\.state\)\)\) && !cloudDetached/);
   assert.match(app, /cloudSaveState: \{ state: "error", error: message \}/);
-  assert.match(app, /cloudLoadStartedRef\.current = false/);
+  assert.match(app, /let requestSettled = false/);
+  assert.match(app, /if \(!requestSettled\) cloudLoadStartedRef\.current = false/);
 });
 
 test("cloud hydration response updates only the tab that initiated the request", async () => {
