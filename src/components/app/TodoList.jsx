@@ -4,7 +4,7 @@ function createTask(text) {
   return { id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text: text.trim(), completed: false, section: "active" };
 }
 
-export default function TodoList({ items = [], onChange, onClose, isDarkTheme = false }) {
+export default function TodoList({ items = [], onChange, onClose, isDarkTheme = false, fullPage = false }) {
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
@@ -59,7 +59,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
   );
   const progress = tasks.length ? Math.round((checkedCount / tasks.length) * 100) : 0;
   return (
-    <section className={`sketchizi-todo-popover${isDarkTheme ? " is-dark" : ""}`} role="dialog" aria-label="Todo List">
+    <section className={`sketchizi-todo-popover${isDarkTheme ? " is-dark" : ""}${fullPage ? " is-full-page" : ""}`} role={fullPage ? "region" : "dialog"} aria-label="Todo List">
       <header className="sketchizi-todo-header">
         <div className="sketchizi-todo-title">
           <span className="sketchizi-todo-title-icon" aria-hidden="true">
@@ -67,7 +67,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
           </span>
           <span><strong>Todo List</strong><small>{active.length} {active.length === 1 ? "task" : "tasks"} left</small></span>
         </div>
-        <button type="button" className="sketchizi-todo-close" aria-label="Close Todo List" onClick={onClose}>×</button>
+        {!fullPage && <button type="button" className="sketchizi-todo-close" aria-label="Close Todo List" onClick={onClose}>×</button>}
       </header>
       <div className="sketchizi-todo-progress" aria-label={`${progress}% complete`}>
         <div className="sketchizi-todo-progress-meta"><span>Progress</span><strong>{checkedCount}/{tasks.length} completed</strong></div>
