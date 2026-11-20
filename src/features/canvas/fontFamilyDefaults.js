@@ -1,7 +1,7 @@
 // Font-family identifiers supported by the pinned @excalidraw/excalidraw 0.18.0 build.
 // Keep these numeric IDs aligned with Excalidraw's FONT_FAMILY constants.
 export const DEFAULT_FONT_FAMILY_ID = 5; // FONT_FAMILY.Excalifont
-const SUPPORTED_FONT_FAMILY_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+const SUPPORTED_FONT_FAMILY_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]);
 
 export function normalizeFontFamilyId(value) {
   return typeof value === "number" && Number.isInteger(value) && SUPPORTED_FONT_FAMILY_IDS.has(value)
