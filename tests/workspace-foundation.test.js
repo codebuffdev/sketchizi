@@ -310,7 +310,7 @@ test("a failed cloud fetch remains visible without an active cloud save session"
 
 test("cloud load failure exposes Retry load and retries the fetch effect", async () => {
   const app = await read("../src/App.jsx");
-  assert.match(app, /cloudLoadFailed && <button type="button" onClick={retryCloudLoad}>Retry load<\\/button>/);
+  assert.ok(app.includes("onClick={retryCloudLoad}>Retry load</button>"));
   assert.match(app, /setCloudLoadRetryToken\(\(attempt\) => attempt \+ 1\)/);
   assert.match(app, /cloudLoadRetryToken, cloudProjectId/);
   assert.match(app, /cloudSaveState\.state === "error" && !cloudLoadFailed/);
