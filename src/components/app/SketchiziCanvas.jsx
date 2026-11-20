@@ -815,6 +815,7 @@ export default function SketchiziCanvas({
         canEdit={canEdit && !viewModeEnabled}
         isDarkTheme={isDarkTheme}
         canvasRevision={canvasRevision}
+        selectedElements={selectedElements}
         onOpenTodoTab={onOpenTodoTab}
       />
       <Excalidraw
