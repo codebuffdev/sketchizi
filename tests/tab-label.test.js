@@ -2,17 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MAX_TAB_LABEL_CHARACTERS, findDuplicateTabName, getTabDisplayName } from "../src/features/workspace/tabLabel.js";
 
-test("canvas tab labels display at least 70 characters without changing the stored name", () => {
+test("canvas tab labels display at most 20 characters without changing the stored name", () => {
   const name = "03-Requirements Clarification Explained: Functional & Non-Functional";
-  assert.equal(MAX_TAB_LABEL_CHARACTERS, 70);
+  assert.equal(MAX_TAB_LABEL_CHARACTERS, 20);
   assert.equal(name.length, 68);
-  assert.equal(getTabDisplayName(name), name);
-  assert.equal(getTabDisplayName("x".repeat(70)).length, 70);
+  assert.equal(getTabDisplayName(name), name.slice(0, 20));
+  assert.equal(getTabDisplayName("x".repeat(70)).length, 20);
 });
 
 test("longer tab labels truncate only for display and preserve complete source names", () => {
   const name = "A".repeat(90);
-  assert.equal(getTabDisplayName(name).length, 70);
+  assert.equal(getTabDisplayName(name).length, 20);
   assert.equal(name.length, 90);
   assert.equal(getTabDisplayName(name, 120), name);
 });
