@@ -4236,3 +4236,12 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   outline: none;
   box-shadow: none;
 }
+
+
+/* Todo tasks that match an open canvas title navigate to that canvas instead of entering edit mode. */
+.app .sketchizi-todo-task-text.is-canvas-link { color:#0866ff; cursor:pointer; }
+.app .sketchizi-todo-task-text.is-canvas-link:hover { text-decoration:underline; text-underline-offset:3px; }
+.app .sketchizi-todo-canvas-link-icon { display:inline-block; margin-left:6px; color:#7b8794; font-size:12px; text-decoration:none; vertical-align:1px; }
+.app .sketchizi-todo-task.is-completed .sketchizi-todo-task-text.is-canvas-link { color:#6b9bdc; }
+.app.theme-dark .sketchizi-todo-task-text.is-canvas-link { color:#78adff; }
+.app.theme-dark .sketchizi-todo-canvas-link-icon { color:#9aa8b8; }
