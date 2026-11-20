@@ -175,12 +175,12 @@ test("cloud hydration response updates only the tab that initiated the request",
   assert.match(app, /const targetTabId = cloudHydratingTabIdRef\.current/);
   assert.match(app, /tab\.id === targetTabId/);
   assert.match(app, /if \(activeCanvasIdRef\.current !== targetTabId\) \{/);
-  assert.match(app, /update only that tab's cached snapshot/);
+  assert.match(app, /update only that tab's\s+cached snapshot/);
 });
 
 test("cloud-opened diagrams use their saved name in the editor identity", async () => {
   const source = await read("../src/App.jsx");
-  assert.match(source, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
+  assert.match(source, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName/);
   assert.match(source, /setCloudDetached\(true\)/);
   assert.match(source, /setCloudDocumentName\(loadedCloudName\)/);
   assert.match(source, /name: loadedCloudName/);
@@ -194,7 +194,7 @@ test("editor exposes an explicit Save to Cloud action and creates a cloud diagra
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
   assert.match(header, /desktop-app-save-to-cloud-button/);
-  assert.match(header, /Save drawing to Cloud Workspace/);
+  assert.match(header, /Save \$\{activeCanvasTabName\} to Cloud Workspace/);
   assert.match(header, /onSaveToCloud\?\.\(\)/);
   assert.match(app, /workspaceClient\.createDiagram\(/);
   assert.match(app, /createCloudDocument\(/);
