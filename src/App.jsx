@@ -2487,11 +2487,25 @@ function App() {
           />
           </div>
           {activeWorkspaceTabId.startsWith("todo:") && (
-            <div className="sketchizi-todo-workspace">
-              <TodoList items={canvasTabs.find((tab) => tab.id === activeWorkspaceTabId.slice(5))?.todoItems || []}
-                onChange={(items) => updateCanvasTodoItems(activeWorkspaceTabId.slice(5), items)}
-                canvasTabs={canvasTabs} onNavigateToCanvas={selectWorkspaceTab} isDarkTheme={isDarkTheme} fullPage />
-            </div>
+            <>
+              <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Todo workspace dock">
+                <div className="sketchizi-primary-dock-group">
+                  <button type="button" className="sketchizi-primary-dock-tool sketchizi-todo-dock-trigger is-active"
+                    aria-label="Return to canvas" title="Return to canvas"
+                    onClick={() => selectWorkspaceTab(activeWorkspaceTabId.slice(5))}>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="4" y="3.5" width="16" height="17" rx="2" />
+                      <path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" />
+                    </svg>
+                  </button>
+                </div>
+              </nav>
+              <div className="sketchizi-todo-workspace">
+                <TodoList items={canvasTabs.find((tab) => tab.id === activeWorkspaceTabId.slice(5))?.todoItems || []}
+                  onChange={(items) => updateCanvasTodoItems(activeWorkspaceTabId.slice(5), items)}
+                  canvasTabs={canvasTabs} onNavigateToCanvas={selectWorkspaceTab} isDarkTheme={isDarkTheme} fullPage />
+              </div>
+            </>
           )}
 
           {draggingIcon && (
