@@ -44,6 +44,7 @@ import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinit
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "./features/workspace/cloudLoadRecovery.js";
+import { getCloudRecoveryActions } from "./features/workspace/cloudRecoveryActions.js";
 import { refreshCloudTabsIndependently } from "./features/workspace/cloudStartupRefresh.js";
 import { markCloudStartupLoadFailure } from "./features/workspace/cloudStartupRecovery.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
@@ -2435,6 +2436,8 @@ function App() {
     showToast("Compose architecture diagram created. Select any element to edit it.");
   }, [collaborationCanEdit, showToast]);
 
+  const cloudRecoveryActions = getCloudRecoveryActions({ state: cloudSaveState.state, loadFailed: cloudLoadFailed });
+
   const workspaceToggle = (
     <CreateMenu
       onKubernetesStudio={() => setKubernetesStudioOpen(true)}
@@ -2483,9 +2486,9 @@ function App() {
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {(cloudSessionRef.current.active && !cloudDetached) || shouldShowCloudLoadStatus({ loadFailed: cloudLoadFailed, loadInProgress: cloudSaveState.state === "loading" && Boolean(cloudDiagramId), cloudDetached }) ? <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "load-error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
-        {cloudLoadFailed && <button type="button" onClick={retryCloudLoad}>Retry load</button>}
-        {cloudSaveState.state === "load-error" && <button type="button" onClick={() => window.location.reload()}>Retry load</button>}
-        {cloudSaveState.state === "error" && !cloudLoadFailed && <>
+        {cloudRecoveryActions.retryLoad && cloudLoadFailed && <button type="button" onClick={retryCloudLoad}>Retry load</button>}
+        {cloudRecoveryActions.retryLoad && !cloudLoadFailed && <button type="button" onClick={() => window.location.reload()}>Retry load</button>}
+        {cloudRecoveryActions.retrySave && <>
           <button type="button" onClick={() => {
             const api = apiRef.current;
             if (!api) return;
@@ -2493,7 +2496,7 @@ function App() {
           }}>Retry save</button>
           <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
         </>}
-        {cloudSaveState.state === "conflict" && <>
+        {cloudRecoveryActions.reloadLatest && <>
           <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
           <button type="button" onClick={() => window.location.reload()}>Reload latest version</button>
         </>}
