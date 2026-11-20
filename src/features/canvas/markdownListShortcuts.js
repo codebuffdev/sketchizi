@@ -16,7 +16,7 @@ export function getMarkdownListEdit({ value, selectionStart, selectionEnd, key }
     if (afterCursor.length) return null;
 
     // Markdown heading markers: # / ## / ### followed by Space.
-    const heading = beforeCursor.match(/^(\\s*)(#{1,3})$/);
+    const heading = beforeCursor.match(/^(\s*)(#{1,3})$/);
     if (heading) {
       const fontSize = { "#": 36, "##": 28, "###": 24 }[heading[2]];
       return {
