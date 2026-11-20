@@ -14,3 +14,8 @@
 .sketchizi-grammar-check.is-dark { color:#e6e8eb; }
 .sketchizi-grammar-check.is-dark .sketchizi-grammar-trigger,.sketchizi-grammar-check.is-dark .sketchizi-grammar-results { background:#24272c; color:#e6e8eb; border-color:#484d54; }
 .sketchizi-grammar-check.is-dark .sketchizi-grammar-match { border-color:#484d54; }
+
+.sketchizi-todo-edit-wrap { display:flex; flex:1 1 auto; flex-direction:column; min-width:0; gap:5px; }
+.sketchizi-todo-add .sketchizi-grammar-check { flex:0 0 100%; width:100%; }
+.sketchizi-canvas-grammar { padding:7px; border:1px solid var(--ui-border,#d8dce0); border-radius:9px; background:var(--ui-surface-solid,#fff); box-shadow:0 8px 24px rgba(0,0,0,.14); }
+.sketchizi-canvas-grammar .sketchizi-grammar-results { max-height:150px; }
