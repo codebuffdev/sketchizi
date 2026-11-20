@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { fetchAuthProviders, fetchCurrentUser, fetchGitHubRepositoryConnection, invalidateCurrentUserCache, disconnectGitHubRepositoryConnection, signOut, startGitHubRepositoryConnection, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
 
@@ -136,7 +136,7 @@ export default function AuthenticationControl() {
     return () => window.removeEventListener("keydown", close, true);
   }, [dialogOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!profileMenuOpen) return undefined;
     const onPointerDown = (event) => {
       if (!(event.target instanceof Element)) return;
@@ -144,7 +144,10 @@ export default function AuthenticationControl() {
       setProfileMenuOpen(false);
     };
     const onKeyDown = (event) => {
-      if (event.key === "Escape") setProfileMenuOpen(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setProfileMenuOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("keydown", onKeyDown, true);
