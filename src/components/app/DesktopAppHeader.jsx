@@ -180,6 +180,7 @@ export default function DesktopAppHeader({
 
   useEffect(() => {
     document.title = getCanvasBrowserTitle(activeCanvasTabName);
+    setSaveDetailsOpen(false);
   }, [activeCanvasTabName]);
 
   useEffect(() => {
