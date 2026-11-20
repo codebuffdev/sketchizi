@@ -1,7 +1,7 @@
-export const MAX_TAB_LABEL_CHARACTERS = 70;
+export const MAX_TAB_LABEL_CHARACTERS = 20;
 
 /**
- * Display-only truncation for tab labels. The stored tab name is never
+ * Display-only truncation for tab labels (20 visible characters). The stored tab name is never
  * changed; callers keep the full name for state, persistence and tooltips.
  * Counts user-perceived code points so emoji are not split in half.
  */
