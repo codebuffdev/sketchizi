@@ -20,7 +20,12 @@ const dismissStartupChooser = async (page) => {
 
 const ensureHeaderVisible = async (page) => {
   const reveal = page.getByRole("button", { name: "Show application header", exact: true });
-  if (await reveal.count()) await reveal.click();
+  if (await reveal.count() && await reveal.getAttribute("aria-expanded") !== "true") {
+    await page.keyboard.press("Control+Shift+H");
+  }
+  await page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-reveal-handle")?.getAttribute("aria-expanded") === "true",
+  );
 };
 
 const openDevOpsMenu = async (page) => {
