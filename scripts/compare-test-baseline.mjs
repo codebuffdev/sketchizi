@@ -10,7 +10,7 @@ function parseTap(source, label) {
   for (const line of source.split(/\r?\n/)) {
     const match = line.match(/^\s*not ok \d+ - (.+?)(?:\s+#.*)?$/);
     if (match) {
-      const name = match[1].trim().replace(/^.*\\/tests\\//, "tests/");
+      const name = match[1].trim().replace(/^.*\/tests\//, "tests/");
       failures.push(name);
     }
   }
