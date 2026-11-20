@@ -50,9 +50,8 @@
   }
 }
 
-/* Shared bottom row: zoom (left) and canvas date (right) use one row height and
-   one centre line, so they stay horizontally aligned on every canvas model
-   (infinite frameless zoom is 30px tall, the pages capsule is 36px). */
+/* Keep the date control's corner row unchanged and lower the zoom controls
+   slightly so their visible row sits lower alongside the date. */
 .app {
   --canvas-corner-row-height: 36px;
 }
@@ -61,6 +60,7 @@
   height: var(--canvas-corner-row-height) !important;
   min-height: var(--canvas-corner-row-height) !important;
   box-sizing: border-box !important;
+  transform: translateY(8px) !important;
 }
 .canvas-start-date-wrap {
   display: flex;
