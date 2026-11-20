@@ -792,12 +792,33 @@ function App() {
   const performCloseCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
-    if (tabIndex < 0 || currentTabs.length <= 1) return;
+    if (tabIndex < 0) return;
     const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
     const isActive = tabId === activeCanvasIdRef.current;
+
+    if (remainingTabs.length === 0) {
+      // Closing the final tab returns to the workspace welcome screen, where
+      // the user can choose to start a canvas or a task.
+      if (canvasTabsSaveTimerRef.current) {
+        window.clearTimeout(canvasTabsSaveTimerRef.current);
+        canvasTabsSaveTimerRef.current = null;
+      }
+      canvasTabsRef.current = [];
+      activeCanvasIdRef.current = "";
+      setCanvasTabs([]);
+      setActiveCanvasId("");
+      setActiveWorkspaceTabId("");
+      setCloseTabPrompt(null);
+      saveCanvasTabs([]).catch((error) => {
+        logger.warn("The empty canvas workspace could not be saved", { category: "persistence", error });
+      }).finally(() => {
+        window.location.assign("/workspace");
+      });
+      return;
+    }
+
     if (isActive) {
       const nextActive = currentTabs[tabIndex - 1] || remainingTabs[0];
-      if (!nextActive) return;
       // Switching first captures and persists the live scene before removal.
       switchCanvasTab(nextActive.id);
     }
@@ -808,7 +829,7 @@ function App() {
   const closeCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
     const tab = currentTabs.find((item) => item.id === tabId);
-    if (!tab || currentTabs.length <= 1) return;
+    if (!tab) return;
     const isActive = tabId === activeCanvasIdRef.current;
     // An untouched/cleared canvas has nothing to protect. Check the live
     // Excalidraw scene for the active tab and the persisted snapshot for
