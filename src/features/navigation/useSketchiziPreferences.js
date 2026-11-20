@@ -43,8 +43,10 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     let secondFrame = 0;
     firstFrame = window.requestAnimationFrame(() => {
       secondFrame = window.requestAnimationFrame(() => {
-        if (canvasAppearance === "clean") applyCanvasThemeBackground(apiRef.current, isDarkTheme);
-        else applyCanvasAppearance(apiRef.current, canvasAppearance, isDarkTheme, CaptureUpdateAction.NEVER);
+        const storedCanvasTheme = savedSketch?.appState?.theme;
+        const canvasIsDark = storedCanvasTheme === "dark" || (storedCanvasTheme !== "light" && isDarkTheme);
+        if (canvasAppearance === "clean") applyCanvasThemeBackground(apiRef.current, canvasIsDark);
+        else applyCanvasAppearance(apiRef.current, canvasAppearance, canvasIsDark, CaptureUpdateAction.NEVER);
       });
     });
     return () => {
