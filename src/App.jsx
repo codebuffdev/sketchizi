@@ -670,6 +670,12 @@ function App() {
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
   }, [apiRef, setCurrentFile, setSavedSketch]);
 
+  useEffect(() => {
+    if (!apiReady || !apiRef.current) return;
+    const activeTab = canvasTabsRef.current.find((tab) => tab.id === activeCanvasId);
+    if (activeTab?.snapshot) applyCanvasTabSnapshot(activeTab);
+  }, [apiReady, activeCanvasId, applyCanvasTabSnapshot]);
+
   const switchCanvasTab = useCallback((nextId) => {
     if (!nextId || nextId === activeCanvasIdRef.current) return;
     const previousId = activeCanvasIdRef.current;
@@ -752,7 +758,7 @@ function App() {
       ? captureCanvasTabSnapshot()
       : (canvasTabsRef.current.find((tab) => tab.id === activeCanvasIdRef.current)?.snapshot || null);
     const currentTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
-      ? { ...tab, snapshot: currentSnapshot }
+      ? { ...tab, ...(currentSnapshot ? { snapshot: currentSnapshot } : {}) }
       : tab);
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = `canvas-${Date.now()}`;
