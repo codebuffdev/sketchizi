@@ -72,7 +72,7 @@ try {
  await pageNameInput.press('Enter');
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-page-name')?.textContent.trim()==='Cover');
  assert(await page.locator('.canvas-pages-page-surface').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Page interior grid must be visible');
- const dock = await page.locator('.App-toolbar-container').boundingBox();
+ const dock = await page.getByRole('navigation',{name:'Drawing tools'}).boundingBox();
  assert(dock && dock.width>0 && dock.height>0,'Drawing dock must remain visible in Pages mode');
  // Drag the visible southeast page handle and verify the frame and paper resize together.
  const beforeWidth = pages(es)[0].width;
