@@ -1169,7 +1169,11 @@ function App() {
     if (!collaborationCanEdit) return;
     setCanvasAppearance(appearance);
     if (appearance === "clean") preferences.useThemeDefaultBackground();
-    else applyCanvasAppearance(apiRef.current, appearance, isDarkTheme);
+    else {
+      const activeCanvasTheme = apiRef.current?.getAppState?.()?.theme;
+      const canvasIsDark = activeCanvasTheme === "dark" || (activeCanvasTheme !== "light" && isDarkTheme);
+      applyCanvasAppearance(apiRef.current, appearance, canvasIsDark);
+    }
   }, [collaborationCanEdit, isDarkTheme, preferences.useThemeDefaultBackground]);
   const commands = createSketchiziCommandRegistry({
     apiRef,
