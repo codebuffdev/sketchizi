@@ -776,9 +776,6 @@ const activeTabActions = (
       <div className="desktop-app-header-spacer" />
 
       <div className="desktop-app-header-actions">
-        <div className="desktop-app-header-account-zone">
-          <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
-        </div>
         <div className="desktop-app-header-panel-actions">{children}</div>
         {moreToolsToggle}
         <button
@@ -862,6 +859,9 @@ const activeTabActions = (
       </div>
 
 
+      <div className="desktop-app-global-theme-control">
+        <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
+      </div>
       <button
         type="button"
         className={`desktop-app-header-reveal-handle${headerVisible ? " is-expanded" : " is-visible"}`}
