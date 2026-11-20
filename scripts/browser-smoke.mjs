@@ -192,14 +192,14 @@ try {
   await dismissStartupChooser(gridSession.page);
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
-  const canvasLocator = gridSession.page.locator(".desktop-canvas-region > .canvas");
+  const canvasLocator = gridSession.page.locator(".desktop-canvas-region .desktop-canvas-view .canvas");
   const sceneBounds = await canvasLocator.boundingBox();
   if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
   const readGrid = () => focusGrid.evaluate((node) => {
     const base = getComputedStyle(node, "::before");
     const detail = getComputedStyle(node, "::after");
     const style = getComputedStyle(node);
-    const root = document.querySelector(".desktop-canvas-region > .canvas");
+    const root = document.querySelector(".desktop-canvas-region .desktop-canvas-view .canvas");
     const canvas = root?.getBoundingClientRect();
     return {
       active: node.classList.contains("has-focus"),
