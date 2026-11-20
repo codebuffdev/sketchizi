@@ -50,7 +50,7 @@ export default function CanvasGrammarAssistant() {
       setIssue(next || null);
     };
     const clear = (event) => {
-      if (!event.target?.closest?.(EDITABLE_SELECTOR)) {
+      if (!event.target?.closest?.(EDITABLE_SELECTOR) && !event.target?.closest?.(".canvas-grammar-assistant")) {
         setActiveField(null);
         setIssue(null);
       }
