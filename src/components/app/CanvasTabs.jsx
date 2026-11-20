@@ -101,7 +101,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
       </button>
       {activeId === tab.id && activeActions && <div className="canvas-tab-active-actions" aria-label={`Actions for ${tab.name}`}>{activeActions}</div>}
-      {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || tabs.length <= 1}><CloseGlyph /></button>}
+      {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || (!tab.isTodoTab && tabs.filter((item) => !item.isTodoTab).length <= 1)}><CloseGlyph /></button>}
     </div>
   );
 
