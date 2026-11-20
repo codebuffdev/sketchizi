@@ -119,6 +119,7 @@ try {
   // Rectangle creation leaves Excalidraw in the rectangle tool; switch back to selection
   // so the contextual title action is expected to be available.
   await page.keyboard.press("v");
+  await page.mouse.click(x + 56, y + 38);
   const addName = page.getByRole("button", { name: "Add name to rectangle", exact: true });
   const nameInput = page.getByRole("textbox", { name: "Rectangle name", exact: true });
   const rectangleName = "Backend services";
