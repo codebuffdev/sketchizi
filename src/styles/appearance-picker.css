@@ -59,10 +59,10 @@
 .sketchizi-appearance :focus-visible { outline: 2px solid var(--appearance-accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .sketchizi-appearance button { transition: none; } }
 
-.app .desktop-app-header button.desktop-app-theme-toggle { display: inline-flex; }
+.app :is(.desktop-app-header, .desktop-app-global-theme-control) button.desktop-app-theme-toggle { display: inline-flex; }
 
 /* One centered action, replacing the old two-position pill geometry. */
-.app .desktop-app-header button.appearance-trigger {
+.app :is(.desktop-app-header, .desktop-app-global-theme-control) button.appearance-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -77,8 +77,8 @@
   background: transparent;
   color: var(--ui-text-muted);
 }
-.app .desktop-app-header button.appearance-trigger:hover,
-.app .desktop-app-header button.appearance-trigger[aria-expanded="true"] {
+.app :is(.desktop-app-header, .desktop-app-global-theme-control) button.appearance-trigger:hover,
+.app :is(.desktop-app-header, .desktop-app-global-theme-control) button.appearance-trigger[aria-expanded="true"] {
   background: var(--ui-active);
   border-color: var(--ui-border);
   color: var(--ui-text-strong);
