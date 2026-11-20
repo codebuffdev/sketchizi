@@ -120,14 +120,21 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       <div className="sketchizi-primary-dock-group sketchizi-primary-dock-utility-group">
         <button type="button" className={`sketchizi-primary-dock-tool sketchizi-todo-dock-trigger${todoOpen ? " is-active" : ""}`}
           aria-label="Todo List" title="Todo List" aria-expanded={todoOpen} aria-haspopup="dialog"
-          onClick={() => setTodoOpen((open) => !open)}>
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setTodoOpen((open) => !open);
+          }}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="4" y="3.5" width="16" height="17" rx="2" />
             <path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" />
           </svg>
         </button>
       </div>
-      {todoOpen && <TodoList items={todoItems} onChange={onTodoItemsChange} onClose={() => setTodoOpen(false)} isDarkTheme={isDarkTheme} />}
+      {todoOpen && <div onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+        <TodoList items={todoItems} onChange={onTodoItemsChange} onClose={() => setTodoOpen(false)} isDarkTheme={isDarkTheme} />
+      </div>}
     </nav>
   );
 }
