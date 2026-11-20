@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
+import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -462,7 +463,7 @@ export default function ContextualFormattingToolbar({
     const appStatePatch = {};
     if ("strokeColor" in patch) appStatePatch.currentItemStrokeColor = patch.strokeColor;
     if ("backgroundColor" in patch) appStatePatch.currentItemBackgroundColor = patch.backgroundColor === "transparent" ? "transparent" : patch.backgroundColor;
-    if ("strokeWidth" in patch) appStatePatch.currentItemStrokeWidth = patch.strokeWidth;
+    if ("strokeWidth" in patch) Object.assign(appStatePatch, strokeWidthAppStatePatch(patch.strokeWidth));
     if ("fillStyle" in patch) appStatePatch.currentItemFillStyle = patch.fillStyle;
     if ("strokeStyle" in patch) appStatePatch.currentItemStrokeStyle = patch.strokeStyle;
     if ("roughness" in patch) appStatePatch.currentItemRoughness = patch.roughness;

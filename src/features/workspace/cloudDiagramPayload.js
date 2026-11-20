@@ -1,30 +1,21 @@
-const hasDiagramIdentityOrDocument = (value) => Boolean(
-  value && typeof value === "object" && (
-    value.id || value.name || value.title || value.filename ||
-    value.document || value.content || value.documentJson || value.document_json
-  )
-);
+const DIAGRAM_RECORD_KEYS = ["id", "name", "title", "filename", "document", "content", "documentJson", "document_json"];
+
+// A diagram record (or the document itself) must never be unwrapped further:
+// `{ id, name, data: { elements } }` carries the document in `data` and its
+// own display name next to it. Only pure envelopes such as
+// `{ success, data: { diagram } }` are descended into.
+const isDiagramRecord = (value) => DIAGRAM_RECORD_KEYS.some((key) => value?.[key] !== undefined && value?.[key] !== null);
+const isDocumentLike = (value) => Boolean(value) && typeof value === "object" && Array.isArray(value.elements);
 
 const unwrapDiagram = (payload) => {
   let value = payload;
   for (let depth = 0; depth < 3; depth += 1) {
-    if (value?.diagram && typeof value.diagram === "object") {
-      value = value.diagram;
-      continue;
-    }
-    // data can be either an API envelope or the actual document. Preserve the
-    // outer diagram metadata when it already carries identity/name fields.
-    if (
-      value?.data &&
-      typeof value.data === "object" &&
-      !Array.isArray(value.data) &&
-      !Array.isArray(value.data.elements) &&
-      !hasDiagramIdentityOrDocument(value)
-    ) {
-      value = value.data;
-      continue;
-    }
-    break;
+    if (value?.diagram && typeof value.diagram === "object") value = value.diagram;
+    else if (
+      value?.data && typeof value.data === "object" && !Array.isArray(value.data)
+      && !isDiagramRecord(value) && !isDocumentLike(value.data)
+    ) value = value.data;
+    else break;
   }
   return value;
 };

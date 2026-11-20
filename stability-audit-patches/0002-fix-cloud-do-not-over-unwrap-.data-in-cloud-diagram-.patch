@@ -1,0 +1,88 @@
+From 0743573e87dd0334786f2a6e3829f7a6ee75a9c9 Mon Sep 17 00:00:00 2001
+From: Stability Audit <audit@local>
+Date: Fri, 20 Nov 2026 09:04:23 +0000
+Subject: [PATCH 2/9] fix(cloud): do not over-unwrap .data in cloud diagram
+ payloads
+
+unwrapDiagram descended into .data even when the object was itself a diagram
+record or the document, dropping the name/id and the .data document fallback.
+Only pure envelopes are unwrapped now. Tests: stability-cloud-payload-shapes (5;
+3 fail on the original code). Backend response shape remains unverified.
+---
+ src/features/workspace/cloudDiagramPayload.js | 14 ++++++-
+ tests/stability-cloud-payload-shapes.test.js  | 37 +++++++++++++++++++
+ 2 files changed, 50 insertions(+), 1 deletion(-)
+ create mode 100644 tests/stability-cloud-payload-shapes.test.js
+
+diff --git a/src/features/workspace/cloudDiagramPayload.js b/src/features/workspace/cloudDiagramPayload.js
+index 1b206fc..d90f668 100644
+--- a/src/features/workspace/cloudDiagramPayload.js
++++ b/src/features/workspace/cloudDiagramPayload.js
+@@ -1,8 +1,20 @@
++const DIAGRAM_RECORD_KEYS = ["id", "name", "title", "filename", "document", "content", "documentJson", "document_json"];
++
++// A diagram record (or the document itself) must never be unwrapped further:
++// `{ id, name, data: { elements } }` carries the document in `data` and its
++// own display name next to it. Only pure envelopes such as
++// `{ success, data: { diagram } }` are descended into.
++const isDiagramRecord = (value) => DIAGRAM_RECORD_KEYS.some((key) => value?.[key] !== undefined && value?.[key] !== null);
++const isDocumentLike = (value) => Boolean(value) && typeof value === "object" && Array.isArray(value.elements);
++
+ const unwrapDiagram = (payload) => {
+   let value = payload;
+   for (let depth = 0; depth < 3; depth += 1) {
+     if (value?.diagram && typeof value.diagram === "object") value = value.diagram;
+-    else if (value?.data && typeof value.data === "object" && !Array.isArray(value.data)) value = value.data;
++    else if (
++      value?.data && typeof value.data === "object" && !Array.isArray(value.data)
++      && !isDiagramRecord(value) && !isDocumentLike(value.data)
++    ) value = value.data;
+     else break;
+   }
+   return value;
+diff --git a/tests/stability-cloud-payload-shapes.test.js b/tests/stability-cloud-payload-shapes.test.js
+new file mode 100644
+index 0000000..3b182dd
+--- /dev/null
++++ b/tests/stability-cloud-payload-shapes.test.js
+@@ -0,0 +1,37 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { normalizeCloudDiagramResponse } from "../src/features/workspace/cloudDiagramPayload.js";
++
++const document = { elements: [{ id: "shape-1", type: "rectangle" }], appState: {}, files: {} };
++
++test("issue 3: a record that stores its document in `data` keeps its name and id", () => {
++  const result = normalizeCloudDiagramResponse({ id: "d1", name: "Network map", revision: 4, data: document }, "d1");
++  assert.equal(result.name, "Network map");
++  assert.equal(result.diagram.id, "d1");
++  assert.equal(result.diagram.revision, 4);
++  assert.deepEqual(result.document, document);
++});
++
++test("issue 3: an envelope holding a diagram record whose document is in `data` is unwrapped once", () => {
++  const result = normalizeCloudDiagramResponse({ success: true, data: { id: "d2", name: "Cloud design", data: document } }, "d2");
++  assert.equal(result.name, "Cloud design");
++  assert.deepEqual(result.document, document);
++});
++
++test("issue 3: an envelope that carries the document directly still loads, using the fallback name", () => {
++  const result = normalizeCloudDiagramResponse({ data: document }, "d3", { fallbackName: "Saved architecture" });
++  assert.equal(result.name, "Saved architecture");
++  assert.deepEqual(result.document, document);
++});
++
++test("issue 3: existing envelope shapes are unchanged", () => {
++  const a = normalizeCloudDiagramResponse({ data: { diagram: { id: "d4", title: "T", content: JSON.stringify(document) } } }, "d4");
++  assert.equal(a.name, "T");
++  const b = normalizeCloudDiagramResponse({ ok: true, data: { id: "d5", name: "N", document } }, "d5");
++  assert.equal(b.name, "N");
++  assert.deepEqual(b.document, document);
++});
++
++test("issue 3: malformed payloads still raise the actionable error", () => {
++  assert.throws(() => normalizeCloudDiagramResponse({ id: "d6", name: "Broken", data: {} }, "d6"), /valid Sketchizi document/);
++});
+-- 
+2.43.0
+

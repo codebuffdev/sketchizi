@@ -1,0 +1,256 @@
+From 0a516a11e9d8ea956a5522d058b5da1c954f426d Mon Sep 17 00:00:00 2001
+From: Stability Audit <audit@local>
+Date: Fri, 20 Nov 2026 09:07:30 +0000
+Subject: [PATCH 3/9] fix(cloud): bind cloud load to its originating tab and
+ make it retryable
+
+- Loaded document was written to whichever tab was active when the response
+  arrived. Now resolveCloudLoadTarget decides apply/store/drop per tab.
+- cloudLoadStartedRef stayed true after an effect cleanup, so an abandoned
+  fetch was never retried. Cleanup now resets it when nothing was produced.
+- A cleanup between updateScene and the ready frame left cloudSceneReadyRef
+  false forever; cleanup now completes the ready transition.
+- A failed load of a background tab no longer flips the active tab's state.
+
+Tests: stability-cloud-load-binding (4). Verified with real deps (npm ci):
+vite build OK; full suite 1129 tests, 76 failing = identical set to baseline.
+---
+ src/App.jsx                                | 105 +++++++++++++++------
+ src/features/workspace/cloudSavePolicy.js  |  14 +++
+ tests/stability-cloud-load-binding.test.js |  38 ++++++++
+ 3 files changed, 129 insertions(+), 28 deletions(-)
+ create mode 100644 tests/stability-cloud-load-binding.test.js
+
+diff --git a/src/App.jsx b/src/App.jsx
+index ecc7cd8..799a402 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -45,7 +45,7 @@ import { workspaceClient } from "./features/workspace/workspaceClient.js";
+ import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
+ const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
+ import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
+-import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring } from "./features/workspace/cloudSavePolicy.js";
++import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring, resolveCloudLoadTarget } from "./features/workspace/cloudSavePolicy.js";
+ import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
+ import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
+ import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
+@@ -430,31 +430,70 @@ function App() {
+   useEffect(() => {
+     if (!cloudDiagramId || !apiReady || !sketchReady || !canvasTabsReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
+     let cancelled = false;
++    let settled = false;
++    let applied = false;
+     let readyFrame = 0;
++    // Bind the load to the tab that started it. The response may arrive after
++    // the user has switched to (or opened) another tab.
++    const targetTabId = cloudRestoringTabIdRef.current || activeCanvasIdRef.current;
+     cloudLoadStartedRef.current = true;
+     cloudSceneReadyRef.current = false;
+     setCloudSaveState({ state: "loading", error: "" });
++    const updateTargetTab = (patch) => {
++      const nextTabs = canvasTabsRef.current.map((tab) => (tab.id === targetTabId ? patch(tab) : tab));
++      canvasTabsRef.current = nextTabs;
++      setCanvasTabs(nextTabs);
++      saveCanvasTabs(nextTabs).catch(() => {});
++    };
+     workspaceClient.getDiagram(cloudDiagramId).then((result) => {
+       if (cancelled) return;
+       const { diagram, document, name: loadedCloudName } = normalizeCloudDiagramResponse(result, cloudDiagramId);
++      const disposition = resolveCloudLoadTarget({
++        targetTabId,
++        activeTabId: activeCanvasIdRef.current,
++        tabIds: canvasTabsRef.current.map((tab) => tab.id),
++      });
++      if (disposition === "drop") {
++        settled = true;
++        cloudRestoringTabIdRef.current = "";
++        return;
++      }
++      const elements = restoreElements(document.elements, null, { repairBindings: true });
++      const format = document.format || diagram.format || "excalidraw";
++      const session = {
++        active: true,
++        diagramId: diagram.id || cloudDiagramId,
++        projectId: diagram.projectId || cloudProjectId,
++        revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
++        name: diagram.name || "Cloud diagram",
++      };
++      const loadedSnapshot = {
++        elements, appState: document.appState || {}, files: document.files || {},
++        metadata: document.metadata || {}, extensions: document.extensions || {},
++        format, file: null,
++        cloudSession: { ...session }, cloudDetached: false,
++        cloudSaveState: { state: "saved", error: "" }, cloudDocumentName: loadedCloudName,
++      };
++      if (disposition === "store") {
++        // The user is on another tab. Keep the live canvas and cloud flags of
++        // that tab untouched; the loaded document is applied from the tab's
++        // snapshot the next time the cloud tab is activated.
++        updateTargetTab((tab) => ({ ...tab, name: loadedCloudName, snapshot: loadedSnapshot, dirty: false }));
++        settled = true;
++        cloudRestoringTabIdRef.current = "";
++        return;
++      }
+       const api = apiRef.current;
+       if (!api?.updateScene) throw new Error("The editor is not ready to load this cloud diagram.");
+-      const elements = restoreElements(document.elements, null, { repairBindings: true });
+       documentMetadataRef.current = {
+         metadata: document.metadata || {},
+         extensions: document.extensions || {},
+-        format: document.format || diagram.format || "excalidraw",
++        format,
+       };
+       cloudDetachedRef.current = false;
+       setCloudDetached(false);
+       cloudSceneReadyRef.current = false;
+-      cloudSessionRef.current = {
+-        active: true,
+-        diagramId: diagram.id || cloudDiagramId,
+-        projectId: diagram.projectId || cloudProjectId,
+-        revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
+-        name: diagram.name || "Cloud diagram",
+-      };
++      cloudSessionRef.current = session;
+       setCloudDocumentName(loadedCloudName);
+       api.updateScene({
+         elements,
+@@ -465,20 +504,9 @@ function App() {
+       const files = Object.values(document.files || {});
+       if (files.length) api.addFiles?.(files);
+       setCurrentFileRef.current?.(null);
+-      setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format: document.format || diagram.format || "excalidraw" });
+-      const loadedSnapshot = {
+-        elements, appState: document.appState || {}, files: document.files || {},
+-        metadata: document.metadata || {}, extensions: document.extensions || {},
+-        format: document.format || diagram.format || "excalidraw", file: null,
+-        cloudSession: { ...cloudSessionRef.current }, cloudDetached: false,
+-        cloudSaveState: { state: "saved", error: "" }, cloudDocumentName: loadedCloudName,
+-      };
+-      const loadedTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
+-        ? { ...tab, name: loadedCloudName, snapshot: loadedSnapshot, dirty: false }
+-        : tab);
+-      canvasTabsRef.current = loadedTabs;
+-      setCanvasTabs(loadedTabs);
+-      saveCanvasTabs(loadedTabs).catch(() => {});
++      setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format });
++      applied = true;
++      updateTargetTab((tab) => ({ ...tab, name: loadedCloudName, snapshot: { ...loadedSnapshot, cloudSession: { ...cloudSessionRef.current } }, dirty: false }));
+       if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
+ 
+       // Excalidraw can emit onChange callbacks after updateScene returns.
+@@ -486,6 +514,8 @@ function App() {
+       // callbacks cannot start the normal React/persistence pipeline midway
+       // through cloud hydration.
+       readyFrame = window.requestAnimationFrame(() => {
++        readyFrame = 0;
++        settled = true;
+         if (cancelled) return;
+         cloudSceneReadyRef.current = true;
+         cloudRestoringTabIdRef.current = "";
+@@ -493,14 +523,33 @@ function App() {
+       });
+     }).catch((error) => {
+       if (cancelled) return;
+-      cloudSessionRef.current.active = false;
+-      cloudSceneReadyRef.current = true;
++      settled = true;
++      const message = error.message || "Could not load this cloud diagram.";
+       cloudRestoringTabIdRef.current = "";
+-      setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
++      if (activeCanvasIdRef.current === targetTabId) {
++        cloudSessionRef.current.active = false;
++        cloudSceneReadyRef.current = true;
++        setCloudSaveState({ state: "error", error: message });
++      } else {
++        // Do not touch the live state of whichever tab is active now.
++        updateTargetTab((tab) => ({ ...tab, snapshot: { ...tab.snapshot, cloudSaveState: { state: "error", error: message } } }));
++      }
+     });
+     return () => {
+       cancelled = true;
+-      if (readyFrame) window.cancelAnimationFrame(readyFrame);
++      if (readyFrame) {
++        // The scene was already restored; finish the ready transition now so
++        // the tab is not left ignoring every onChange event.
++        window.cancelAnimationFrame(readyFrame);
++        readyFrame = 0;
++        cloudSceneReadyRef.current = true;
++        cloudRestoringTabIdRef.current = "";
++      } else if (!settled && !applied) {
++        // The request was abandoned before it produced anything (dependency
++        // change). Allow the effect to start it again instead of leaving the
++        // tab on its empty placeholder forever.
++        cloudLoadStartedRef.current = false;
++      }
+     };
+   }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
+ 
+diff --git a/src/features/workspace/cloudSavePolicy.js b/src/features/workspace/cloudSavePolicy.js
+index 33450b6..1a590f7 100644
+--- a/src/features/workspace/cloudSavePolicy.js
++++ b/src/features/workspace/cloudSavePolicy.js
+@@ -37,3 +37,17 @@ export function allowsEmptyCloudSave(elements) {
+ export function isCloudSceneRestoring({ restoringTabId, activeTabId, sceneReady }) {
+   return Boolean(restoringTabId) && restoringTabId === activeTabId && !sceneReady;
+ }
++
++/**
++ * Decide where a finished cloud load belongs. The response must go to the tab
++ * that started the load, not to whichever tab happens to be active when the
++ * network request completes.
++ *  - "apply": the originating tab is still active, restore into the live editor.
++ *  - "store": the user moved to another tab; save the loaded document into the
++ *             originating tab's snapshot only and leave the live canvas alone.
++ *  - "drop":  the originating tab was closed; discard the result.
++ */
++export function resolveCloudLoadTarget({ targetTabId, activeTabId, tabIds }) {
++  if (!targetTabId || !Array.isArray(tabIds) || !tabIds.includes(targetTabId)) return "drop";
++  return targetTabId === activeTabId ? "apply" : "store";
++}
+diff --git a/tests/stability-cloud-load-binding.test.js b/tests/stability-cloud-load-binding.test.js
+new file mode 100644
+index 0000000..7a85a32
+--- /dev/null
++++ b/tests/stability-cloud-load-binding.test.js
+@@ -0,0 +1,38 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import { resolveCloudLoadTarget } from "../src/features/workspace/cloudSavePolicy.js";
++
++const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
++const start = app.indexOf("const targetTabId = cloudRestoringTabIdRef.current");
++const effect = app.slice(start - 600, start + 7200);
++
++test("issue 3: a finished cloud load is routed to the tab that started it", () => {
++  const tabIds = ["canvas-1", "cloud-1-1700"];
++  assert.equal(resolveCloudLoadTarget({ targetTabId: "cloud-1-1700", activeTabId: "cloud-1-1700", tabIds }), "apply");
++  assert.equal(resolveCloudLoadTarget({ targetTabId: "cloud-1-1700", activeTabId: "canvas-1", tabIds }), "store");
++  assert.equal(resolveCloudLoadTarget({ targetTabId: "cloud-1-1700", activeTabId: "canvas-1", tabIds: ["canvas-1"] }), "drop");
++  assert.equal(resolveCloudLoadTarget({ targetTabId: "", activeTabId: "canvas-1", tabIds }), "drop");
++  assert.equal(resolveCloudLoadTarget({ targetTabId: "x", activeTabId: "x", tabIds: null }), "drop");
++});
++
++test("issue 3: the load effect binds to its originating tab instead of the active tab at response time", () => {
++  assert.ok(start > 0);
++  assert.match(effect, /const targetTabId = cloudRestoringTabIdRef\.current \|\| activeCanvasIdRef\.current;/);
++  assert.match(effect, /resolveCloudLoadTarget\(\{/);
++  // The old code wrote the loaded snapshot to whatever tab was active.
++  assert.doesNotMatch(effect, /tab\.id === activeCanvasIdRef\.current\s*\?\s*\{ \.\.\.tab, name: loadedCloudName/);
++  assert.match(effect, /tab\.id === targetTabId \? patch\(tab\) : tab/);
++});
++
++test("issue 3: an abandoned load is retried and a cancelled ready-frame cannot leave onChange blocked", () => {
++  const cleanup = effect.slice(effect.indexOf("return () => {\n      cancelled = true;"));
++  assert.match(cleanup, /cloudLoadStartedRef\.current = false;/);
++  assert.match(cleanup, /window\.cancelAnimationFrame\(readyFrame\);[\s\S]*cloudSceneReadyRef\.current = true;[\s\S]*cloudRestoringTabIdRef\.current = "";/);
++});
++
++test("issue 3: a failed load of a background tab does not overwrite the active tab's live state", () => {
++  const catchBlock = effect.slice(effect.indexOf(".catch((error) => {"));
++  assert.match(catchBlock, /if \(activeCanvasIdRef\.current === targetTabId\)/);
++  assert.match(catchBlock, /updateTargetTab\(\(tab\) => \(\{ \.\.\.tab, snapshot: \{ \.\.\.tab\.snapshot, cloudSaveState: \{ state: "error"/);
++});
+-- 
+2.43.0
+

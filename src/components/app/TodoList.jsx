@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { getTodoTaskCompletionPatch } from "../../features/todo/todoTaskState.js";
+import { isTaskCompleted, moveTask, setTaskChecked, summarizeTasks } from "./todoModel.js";
 
 function normalizeCanvasTitle(value) {
   return String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -15,10 +15,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
   const [editingText, setEditingText] = useState("");
   const [completedOpen, setCompletedOpen] = useState(false);
   const [draggedId, setDraggedId] = useState(null);
-  const tasks = Array.isArray(items) ? items : [];
-  const active = useMemo(() => tasks.filter((task) => task.section !== "completed" && !task.completed), [tasks]);
-  const completed = useMemo(() => tasks.filter((task) => task.section === "completed" || task.completed), [tasks]);
-  const checkedCount = completed.length;
+  const { tasks, active, completed, checkedCount, leftCount, progress } = useMemo(() => summarizeTasks(items), [items]);
   const update = (next) => onChange?.(next);
   const addTask = (event) => {
     event.preventDefault();
@@ -27,8 +24,9 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
     setDraft("");
   };
   const patch = (id, changes) => update(tasks.map((task) => task.id === id ? { ...task, ...changes } : task));
+  const transform = (id, fn) => update(tasks.map((task) => task.id === id ? fn(task) : task));
   const remove = (id) => update(tasks.filter((task) => task.id !== id));
-  const move = (id, section) => patch(id, getTodoTaskCompletionPatch(section === "completed"));
+  const move = (id, section) => transform(id, (task) => moveTask(task, section));
   const reorder = (targetId) => {
     if (!draggedId || draggedId === targetId) return;
     const from = tasks.findIndex((task) => task.id === draggedId);
@@ -44,10 +42,10 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
     const matchingCanvases = canvasTabs.filter((tab) => normalizeCanvasTitle(tab.name) === normalizeCanvasTitle(task.text));
     const matchingCanvas = matchingCanvases.length === 1 ? matchingCanvases[0] : null;
     return (
-    <div className={`sketchizi-todo-task${task.completed ? " is-completed" : ""}${draggedId === task.id ? " is-dragging" : ""}`} key={task.id}
+    <div className={`sketchizi-todo-task${isTaskCompleted(task) ? " is-completed" : ""}${draggedId === task.id ? " is-dragging" : ""}`} key={task.id}
       draggable onDragStart={() => setDraggedId(task.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(task.id)} onDragEnd={() => setDraggedId(null)}>
       <span className="sketchizi-todo-grip" aria-hidden="true">⠿</span>
-      <input type="checkbox" checked={task.section === "completed" || !!task.completed} onChange={(event) => patch(task.id, getTodoTaskCompletionPatch(event.target.checked))} aria-label={`Mark ${task.text} ${task.completed ? "incomplete" : "complete"}`} />
+      <input type="checkbox" checked={isTaskCompleted(task)} onChange={(event) => transform(task.id, (current) => setTaskChecked(current, event.target.checked))} aria-label={`Mark ${task.text} ${isTaskCompleted(task) ? "incomplete" : "complete"}`} />
       {editingId === task.id ? (
         <input className="sketchizi-todo-edit" autoFocus value={editingText} onChange={(event) => setEditingText(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); } if (event.key === "Escape") setEditingId(null); }}
@@ -68,7 +66,6 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
     </div>
     );
   };
-  const progress = tasks.length ? Math.round((checkedCount / tasks.length) * 100) : 0;
   return (
     <section className={`sketchizi-todo-popover${isDarkTheme ? " is-dark" : ""}${fullPage ? " is-full-page" : ""}`} role={fullPage ? "region" : "dialog"} aria-label="Tasks">
       <header className="sketchizi-todo-header">
@@ -76,7 +73,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
           <span className="sketchizi-todo-title-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
           </span>
-          <span><strong>Tasks</strong><small>{active.length} {active.length === 1 ? "task" : "tasks"} left</small></span>
+          <span><strong>Tasks</strong><small>{leftCount} {leftCount === 1 ? "task" : "tasks"} left</small></span>
         </div>
         {!fullPage && <button type="button" className="sketchizi-todo-close" aria-label="Close Tasks" onClick={onClose}>×</button>}
       </header>
@@ -113,7 +110,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
         {completedOpen && completed.length > 0 && (
           <div className="sketchizi-todo-completed-content" id="sketchizi-completed-tasks">
             <div className="sketchizi-todo-completed-list">{completed.map(renderTask)}</div>
-            <button type="button" className="sketchizi-todo-clear" onClick={() => update(tasks.filter((task) => task.section !== "completed" && !task.completed))}>Clear completed</button>
+            <button type="button" className="sketchizi-todo-clear" onClick={() => update(tasks.filter((task) => task.section !== "completed"))}>Clear completed</button>
           </div>
         )}
         {completedOpen && completed.length === 0 && (

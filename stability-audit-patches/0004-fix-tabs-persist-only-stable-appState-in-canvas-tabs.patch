@@ -1,0 +1,184 @@
+From 653587f6ea1dcfa629b79c889e0fdc0a66608d4c Mon Sep 17 00:00:00 2001
+From: Stability Audit <audit@local>
+Date: Fri, 20 Nov 2026 09:09:25 +0000
+Subject: [PATCH 4/9] fix(tabs): persist only stable appState in canvas tabs;
+ harden saveCanvasTabs
+
+Tab snapshots embedded Excalidraw's raw appState, which can hold
+non-cloneable runtime values and restored stale tool/menu state on tab switch.
+- sanitizeTabAppState keeps view settings only (capture + apply, so old stored
+  manifests are cleaned on restore too).
+- prepareTabsForPersistence guarantees the manifest is structured-cloneable,
+  degrading per tab (JSON copy, then snapshot-less shell) so one bad tab can no
+  longer reject the whole manifest and lose every tab's Todo items.
+
+Whether Excalidraw really places non-cloneable values in appState is not
+confirmed in a browser. Tests: stability-tab-persistence (4). Build OK; full
+suite: 76 failing = same set as baseline.
+---
+ src/App.jsx                             |  5 ++-
+ src/features/workspace/tabSnapshot.js   | 44 ++++++++++++++++++++++
+ src/persistence.js                      |  3 +-
+ tests/stability-tab-persistence.test.js | 50 +++++++++++++++++++++++++
+ 4 files changed, 99 insertions(+), 3 deletions(-)
+ create mode 100644 src/features/workspace/tabSnapshot.js
+ create mode 100644 tests/stability-tab-persistence.test.js
+
+diff --git a/src/App.jsx b/src/App.jsx
+index 799a402..62eb9c4 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -43,6 +43,7 @@ import { applyKubernetesRelationshipSuggestion } from "./features/architecture/k
+ import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
+ import { workspaceClient } from "./features/workspace/workspaceClient.js";
+ import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
++import { sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
+ const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
+ import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
+ import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring, resolveCloudLoadTarget } from "./features/workspace/cloudSavePolicy.js";
+@@ -628,7 +629,7 @@ function App() {
+     const live = canvasSnapshotStateRef.current;
+     return {
+       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
+-      appState: appState || api?.getAppState?.() || {},
++      appState: sanitizeTabAppState(appState || api?.getAppState?.() || {}),
+       files: api?.getFiles?.() || {},
+       metadata: documentMetadataRef.current?.metadata || {},
+       extensions: documentMetadataRef.current?.extensions || {},
+@@ -727,7 +728,7 @@ function App() {
+     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
+     api.updateScene({
+       elements,
+-      appState: { ...api.getAppState(), ...(snapshot.appState || {}), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
++      appState: { ...api.getAppState(), ...sanitizeTabAppState(snapshot.appState), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+       captureUpdate: CaptureUpdateAction.NEVER,
+     });
+     api.history?.clear?.();
+diff --git a/src/features/workspace/tabSnapshot.js b/src/features/workspace/tabSnapshot.js
+new file mode 100644
+index 0000000..e370b9d
+--- /dev/null
++++ b/src/features/workspace/tabSnapshot.js
+@@ -0,0 +1,44 @@
++import { sanitizeCloudAppState } from "./cloudDocument.js";
++
++/**
++ * Canvas tab snapshots used to embed Excalidraw's raw appState. That object
++ * holds runtime-only values (open menus, context menus, collaborators Map,
++ * active tool, ...) which are not reliably structured-cloneable and which, when
++ * re-applied on a tab switch, restore stale tool/menu state. Tabs now keep the
++ * same stable, JSON-safe view settings that single-sketch saves already use.
++ */
++export function sanitizeTabAppState(appState) {
++  return sanitizeCloudAppState(appState && typeof appState === "object" ? appState : {});
++}
++
++function isStructuredCloneable(value) {
++  try { structuredClone(value); return true; } catch { return false; }
++}
++
++function viaJson(value) {
++  try { return JSON.parse(JSON.stringify(value)); } catch { return undefined; }
++}
++
++/**
++ * Return a copy of `tabs` that is guaranteed to be structured-cloneable so that
++ * one bad tab can never make IndexedDB reject the whole manifest (which also
++ * carries every tab's Todo items). Degradation order per tab:
++ *   1. sanitize snapshot.appState
++ *   2. JSON round-trip the tab (drops functions / non-serialisable values)
++ *   3. keep the tab shell (name, todo fields, ...) without its snapshot and
++ *      mark it with `snapshotDropped: true`
++ */
++export function prepareTabsForPersistence(tabs) {
++  return (Array.isArray(tabs) ? tabs : []).map((tab) => {
++    if (!tab || typeof tab !== "object") return tab;
++    const candidate = tab.snapshot && typeof tab.snapshot === "object"
++      ? { ...tab, snapshot: { ...tab.snapshot, appState: sanitizeTabAppState(tab.snapshot.appState) } }
++      : tab;
++    if (isStructuredCloneable(candidate)) return candidate;
++    const jsonCopy = viaJson(candidate);
++    if (jsonCopy && isStructuredCloneable(jsonCopy)) return jsonCopy;
++    const { snapshot: _dropped, ...shell } = candidate;
++    const shellCopy = isStructuredCloneable(shell) ? shell : viaJson(shell);
++    return { ...(shellCopy || { id: tab.id, name: tab.name }), snapshotDropped: true };
++  });
++}
+diff --git a/src/persistence.js b/src/persistence.js
+index 2be4587..38c9d0e 100644
+--- a/src/persistence.js
++++ b/src/persistence.js
+@@ -1,4 +1,5 @@
+ import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "./features/canvas/fontFamilyDefaults.js";
++import { prepareTabsForPersistence } from "./features/workspace/tabSnapshot.js";
+ 
+ const DB_NAME = "sketchizi-local-state";
+ const DB_VERSION = 4;
+@@ -206,7 +207,7 @@ export async function saveCanvasTabs(tabs) {
+   try {
+     return await new Promise((resolve, reject) => {
+       const transaction = db.transaction(STORE_NAME, "readwrite");
+-      transaction.objectStore(STORE_NAME).put({ tabs: structuredClone(tabs), savedAt: Date.now() }, "canvas-tabs-manifest");
++      transaction.objectStore(STORE_NAME).put({ tabs: structuredClone(prepareTabsForPersistence(tabs)), savedAt: Date.now() }, "canvas-tabs-manifest");
+       transaction.oncomplete = () => resolve(true);
+       transaction.onerror = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));
+       transaction.onabort = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));
+diff --git a/tests/stability-tab-persistence.test.js b/tests/stability-tab-persistence.test.js
+new file mode 100644
+index 0000000..4af49db
+--- /dev/null
++++ b/tests/stability-tab-persistence.test.js
+@@ -0,0 +1,50 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import { prepareTabsForPersistence, sanitizeTabAppState } from "../src/features/workspace/tabSnapshot.js";
++
++const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
++const persistence = readFileSync(new URL("../src/persistence.js", import.meta.url), "utf8");
++
++const todoItems = [{ id: "t1", text: "Ship it", completed: false, section: "todo" }];
++
++test("issue 4: tab appState keeps only stable view settings", () => {
++  const safe = sanitizeTabAppState({
++    viewBackgroundColor: "#fff", scrollX: 10, scrollY: -5, zoom: { value: 1.5 }, gridModeEnabled: true,
++    activeTool: { type: "freedraw" }, openMenu: "canvas", contextMenu: { items: [() => {}] },
++    collaborators: new Map([["u", {}]]), selectedElementIds: { a: true }, currentItemStrokeWidth: 4,
++  });
++  assert.deepEqual(Object.keys(safe).sort(), ["gridModeEnabled", "scrollX", "scrollY", "viewBackgroundColor", "zoom"]);
++  assert.deepEqual(safe.zoom, { value: 1.5 });
++  assert.deepEqual(sanitizeTabAppState(undefined), {});
++  assert.deepEqual(sanitizeTabAppState("bad"), {});
++});
++
++test("issue 4: a non-cloneable appState no longer poisons the manifest or the Todo items", () => {
++  const poisoned = { id: "canvas-1", name: "Canvas 1", todoItems, snapshot: { elements: [{ id: "e" }], appState: { contextMenu: { onClick() {} }, scrollX: 3 } } };
++  // Proves the old behaviour: structuredClone of the raw tabs throws.
++  assert.throws(() => structuredClone([poisoned]));
++  const prepared = prepareTabsForPersistence([poisoned, { id: "canvas-2", name: "Canvas 2", todoItems: [], snapshot: { elements: [], appState: {} } }]);
++  assert.doesNotThrow(() => structuredClone(prepared));
++  assert.deepEqual(prepared[0].todoItems, todoItems);
++  assert.deepEqual(prepared[0].snapshot.appState, { scrollX: 3 });
++  assert.deepEqual(prepared[0].snapshot.elements, [{ id: "e" }]);
++});
++
++test("issue 4: a tab whose snapshot cannot be cloned falls back, keeping Todo items", () => {
++  const circular = { id: "e" }; circular.self = circular;
++  const bad = { id: "canvas-3", name: "Bad", todoItems, snapshot: { elements: [() => {}], appState: {}, files: { f: { fn() {} } } } };
++  const prepared = prepareTabsForPersistence([bad]);
++  assert.doesNotThrow(() => structuredClone(prepared));
++  assert.deepEqual(prepared[0].todoItems, todoItems);
++  const unserialisable = { id: "canvas-4", name: "Cyc", todoItems, snapshot: { elements: [circular, () => {}], appState: {} } };
++  const out = prepareTabsForPersistence([unserialisable]);
++  assert.doesNotThrow(() => structuredClone(out));
++  assert.deepEqual(out[0].todoItems, todoItems);
++});
++
++test("issue 4: saveCanvasTabs and tab capture/apply go through the sanitizer", () => {
++  assert.match(persistence, /structuredClone\(prepareTabsForPersistence\(tabs\)\)/);
++  assert.match(app, /appState: sanitizeTabAppState\(appState \|\| api\?\.getAppState\?\.\(\) \|\| \{\}\)/);
++  assert.match(app, /\.\.\.sanitizeTabAppState\(snapshot\.appState\), theme: globalThemeRef\.current/);
++});
+-- 
+2.43.0
+

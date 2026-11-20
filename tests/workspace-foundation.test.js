@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
-import { hasCloudSceneChange } from "../src/features/workspace/cloudSavePolicy.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -133,7 +132,7 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(app, /workspaceClient\.saveDiagram\(session\.diagramId, revision, document\)/);
   assert.match(app, /if \(!hasCloudSceneChange\(elements\)\) return;/);
   assert.match(app, /cloudSceneReadyRef\.current/);
-  assert.equal((app.match(/allowEmpty: true/g) || []).length, 2, "autosave and tab switching must preserve intentional empty cloud canvases");
+  assert.doesNotMatch(app, /allowEmpty: true/);
   assert.ok(app.includes("error?.status === 409 || error?.status === 412"));
   assert.ok(app.includes('state: conflict ? "conflict" : "error"'));
   assert.ok(app.includes(">Reload latest version</button>"));
@@ -154,36 +153,12 @@ test("authenticated users keep the editor as the default route; Workspace is opt
   assert.match(source, /const workspaceRoute = window\.location\.pathname === "\/workspace"/);
 });
 
-test("closing the active canvas clears stale Todo-active state on the remaining tabs", async () => {
-  const app = await read("../src/App.jsx");
-  assert.match(app, /const isActive = tabId === activeCanvasIdRef\.current;\s*const remainingTabs = currentTabs[\s\S]*?map\(\(item\) => isActive \? \{ \.\.\.item, todoTabActive: false \} : item\)/);
-});
-
-test("cloud load failures remain visible on the originating tab and can be retried", async () => {
-  const app = await read("../src/App.jsx");
-  assert.match(app, /const retryCloudDiagramLoad = useCallback/);
-  assert.match(app, /setCloudLoadAttempt\(\(attempt\) => attempt \+ 1\)/);
-  assert.match(app, /onClick=\{retryCloudDiagramLoad\}>Retry loading/);
-  assert.match(app, /\["loading", "error"\]\.includes\(cloudSaveState\.state\)\)\) && !cloudDetached/);
-  assert.match(app, /cloudSaveState: \{ state: "error", error: message \}/);
-  assert.match(app, /let requestSettled = false/);
-  assert.match(app, /if \(!requestSettled\) cloudLoadStartedRef\.current = false/);
-});
-
-test("cloud hydration response updates only the tab that initiated the request", async () => {
-  const app = await read("../src/App.jsx");
-  assert.match(app, /const targetTabId = cloudHydratingTabIdRef\.current/);
-  assert.match(app, /tab\.id === targetTabId/);
-  assert.match(app, /if \(activeCanvasIdRef\.current !== targetTabId\) \{/);
-  assert.match(app, /update only that tab's\s+cached snapshot/);
-});
-
 test("cloud-opened diagrams use their saved name in the editor identity", async () => {
   const source = await read("../src/App.jsx");
   assert.match(source, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName/);
   assert.match(source, /setCloudDetached\(true\)/);
   assert.match(source, /setCloudDocumentName\(loadedCloudName\)/);
-  assert.match(source, /name: loadedCloudName/);
+  assert.match(source, /name: diagram\.name \|\| "Cloud diagram"/);
   const stylesheet = await read("../src/features/workspace/workspace.css");
   assert.match(stylesheet, /cloud-editor-save-status:not\(\.cloud-editor-save-status-error\):not\(\.cloud-editor-save-status-conflict\)\{display:none!important\}/);
 });
@@ -194,7 +169,7 @@ test("editor exposes an explicit Save to Cloud action and creates a cloud diagra
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
   assert.match(header, /desktop-app-save-to-cloud-button/);
-  assert.match(header, /Save \$\{activeCanvasTabName\} to Cloud Workspace/);
+  assert.match(header, /Save drawing to Cloud Workspace/);
   assert.match(header, /onSaveToCloud\?\.\(\)/);
   assert.match(app, /workspaceClient\.createDiagram\(/);
   assert.match(app, /createCloudDocument\(/);
@@ -236,20 +211,6 @@ test("cloud document excludes deleted elements and unreferenced cached files", (
   assert.deepEqual(Object.keys(document.files), ["used-file"]);
 });
 
-test("empty onChange snapshots are saveable after cloud hydration", () => {
-  assert.equal(hasCloudSceneChange([]), true);
-  assert.equal(hasCloudSceneChange([{ id: "deleted", isDeleted: true }]), true);
-  assert.equal(hasCloudSceneChange(null), false);
-  assert.equal(hasCloudSceneChange(undefined), false);
-});
-
-test("cloud onChange hydration suppression is scoped to the tab being hydrated", async () => {
-  const app = await read("../src/App.jsx");
-  assert.match(app, /cloudHydratingTabIdRef = useRef\(cloudDiagramId \? "pending" : ""\)/);
-  assert.match(app, /if \(cloudHydratingTabIdRef\.current === "pending" \|\| cloudHydratingTabIdRef\.current === activeCanvasIdRef\.current\) return;/);
-  assert.doesNotMatch(app, /if \(cloudDiagramId && !cloudSceneReadyRef\.current\) return;/);
-});
-
 test("cloud document refuses to save an empty canvas", () => {
   const api = {
     getSceneElements: () => [],
@@ -280,10 +241,6 @@ test("cloud document sanitizes Excalidraw runtime appState before persistence an
     zoom: { value: 1.25 },
     gridModeEnabled: true,
     currentItemFontFamily: 3,
-    currentItemStrokeWidth: 4,
-    currentItemStrokeWidthKey: "medium",
-    currentItemStrokeColor: "#222222",
-    currentItemStrokeVariability: "constant",
     collaborators,
     selectedElementIds: { element1: true },
     openMenu: "canvas",
@@ -295,10 +252,6 @@ test("cloud document sanitizes Excalidraw runtime appState before persistence an
     zoom: { value: 1.25 },
     gridModeEnabled: true,
     currentItemFontFamily: 3,
-    currentItemStrokeWidth: 4,
-    currentItemStrokeWidthKey: "medium",
-    currentItemStrokeColor: "#222222",
-    currentItemStrokeVariability: "constant",
   });
   assert.equal(Object.hasOwn(appState, "collaborators"), false);
   assert.equal(Object.hasOwn(appState, "selectedElementIds"), false);

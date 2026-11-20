@@ -1,0 +1,241 @@
+From c0c585e0963d45a7e0fa76f7bc21206004811478 Mon Sep 17 00:00:00 2001
+From: Stability Audit <audit@local>
+Date: Fri, 20 Nov 2026 09:04:01 +0000
+Subject: [PATCH 1/9] fix(cloud): scope onChange restore-guard to the hydrating
+ tab; allow saving emptied cloud diagrams
+
+- onChange was dropped for every tab whenever ?cloudDiagramId= was in the URL
+  and the cloud scene flag was false, which starves local tabs of selection,
+  dock, minimap, autosave and snapshot persistence. Guard now keys off the id
+  of the tab actually being hydrated (cloudRestoringTabIdRef).
+- Deleting all elements of an existing cloud diagram threw 'canvas is empty'
+  in autosave and in switchCanvasTab. Pass allowEmpty via allowsEmptyCloudSave()
+  (tombstones count as a real edit); new-diagram creation still refuses empty.
+- switchCanvasTab skips the cloud flush when the scene has no element records.
+
+Tests: tests/stability-onchange-and-empty-save.test.js (6). Full suite: no new
+failures vs baseline (86 pre-existing failures unchanged).
+---
+ src/App.jsx                                   | 20 ++++--
+ src/features/workspace/cloudSavePolicy.js     | 21 ++++++
+ .../stability-onchange-and-empty-save.test.js | 72 +++++++++++++++++++
+ 3 files changed, 109 insertions(+), 4 deletions(-)
+ create mode 100644 tests/stability-onchange-and-empty-save.test.js
+
+diff --git a/src/App.jsx b/src/App.jsx
+index b760cb6..ecc7cd8 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -45,7 +45,7 @@ import { workspaceClient } from "./features/workspace/workspaceClient.js";
+ import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
+ const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
+ import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
+-import { hasCloudSceneChange, isActiveCloudSession } from "./features/workspace/cloudSavePolicy.js";
++import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring } from "./features/workspace/cloudSavePolicy.js";
+ import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
+ import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
+ import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
+@@ -236,6 +236,8 @@ function App() {
+   const cloudFlushImmediatelyRef = useRef(false);
+   const cloudLoadStartedRef = useRef(false);
+   const cloudHydrationPendingTabIdRef = useRef("");
++  // Id of the canvas tab whose cloud document is still being restored. onChange is ignored only for that tab.
++  const cloudRestoringTabIdRef = useRef("");
+   const cloudDetachedRef = useRef(false);
+   const [cloudDetached, setCloudDetached] = useState(false);
+   const cloudSceneReadyRef = useRef(false);
+@@ -375,6 +377,8 @@ function App() {
+       elements,
+       appState: appState || api.getAppState?.() || {},
+       metadata: documentMetadataRef.current,
++      // Deleting every element of an existing cloud diagram is a real edit.
++      allowEmpty: allowsEmptyCloudSave(elements),
+     });
+     if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+     cloudSaveTimerRef.current = window.setTimeout(() => {
+@@ -484,12 +488,14 @@ function App() {
+       readyFrame = window.requestAnimationFrame(() => {
+         if (cancelled) return;
+         cloudSceneReadyRef.current = true;
++        cloudRestoringTabIdRef.current = "";
+         setCloudSaveState({ state: "saved", error: "" });
+       });
+     }).catch((error) => {
+       if (cancelled) return;
+       cloudSessionRef.current.active = false;
+       cloudSceneReadyRef.current = true;
++      cloudRestoringTabIdRef.current = "";
+       setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
+     });
+     return () => {
+@@ -718,7 +724,9 @@ function App() {
+     }
+     if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
+       retryLocalSave();
+-    } else {
++    } else if (hasCloudSceneChange(currentSnapshot?.elements)) {
++      // With no element records at all there is nothing to flush; never let an
++      // empty-canvas error abort the tab switch before any state is updated.
+       const session = cloudSessionRef.current;
+       const api = apiRef.current;
+       const cloudDocument = createCloudDocument({
+@@ -726,6 +734,7 @@ function App() {
+         elements: currentSnapshot.elements,
+         appState: currentSnapshot.appState,
+         metadata: { metadata: currentSnapshot.metadata, extensions: currentSnapshot.extensions, format: currentSnapshot.format },
++        allowEmpty: allowsEmptyCloudSave(currentSnapshot.elements),
+       });
+       if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
+       cloudSaveTimerRef.current = null;
+@@ -984,6 +993,7 @@ function App() {
+             cloudHydrationPendingTabIdRef.current = existingCloudTab.id;
+           }
+           activeCanvasIdRef.current = existingCloudTab.id;
++          cloudRestoringTabIdRef.current = existingCloudTab.id;
+           setActiveCanvasId(existingCloudTab.id);
+           setActiveWorkspaceTabId(existingCloudTab.id);
+           // Reopening a cloud URL must always hydrate from the server. The
+@@ -1022,6 +1032,7 @@ function App() {
+         canvasTabsRef.current = nextTabs;
+         setCanvasTabs(nextTabs);
+         activeCanvasIdRef.current = nextCloudTab.id;
++        cloudRestoringTabIdRef.current = nextCloudTab.id;
+         setActiveCanvasId(nextCloudTab.id);
+         setActiveWorkspaceTabId(nextCloudTab.id);
+ 
+@@ -1065,6 +1076,7 @@ function App() {
+       setCanvasTabs(nextTabs);
+       if (cloudDiagramId) {
+         activeCanvasIdRef.current = nextTabs[1].id;
++        cloudRestoringTabIdRef.current = nextTabs[1].id;
+         setActiveCanvasId(nextTabs[1].id);
+         setActiveWorkspaceTabId(nextTabs[1].id);
+         cloudSceneReadyRef.current = false;
+@@ -1439,7 +1451,7 @@ function App() {
+     // running the normal scene/state pipeline against an intermediate scene
+     // can feed React updates back into Excalidraw and trigger update-depth
+     // error #185. Normal edits resume as soon as the cloud scene is ready.
+-    if (cloudDiagramId && !cloudSceneReadyRef.current) return;
++    if (isCloudSceneRestoring({ restoringTabId: cloudRestoringTabIdRef.current, activeTabId: activeCanvasIdRef.current, sceneReady: cloudSceneReadyRef.current })) return;
+ 
+     // Excalidraw emits intermediate onChange snapshots for every freehand
+     // pointer sample. Defer scene analysis, collaboration broadcasts, minimap
+@@ -1450,7 +1462,7 @@ function App() {
+     handleExcalidrawChange(elements, appState);
+     persistActiveCanvasSnapshot(elements, appState);
+     if (cloudSessionRef.current.active && !cloudDetachedRef.current) queueSketchSave(elements, appState);
+-  }, [cloudDiagramId, handleExcalidrawChange, persistActiveCanvasSnapshot, queueSketchSave, syncStartupChooser]);
++  }, [handleExcalidrawChange, persistActiveCanvasSnapshot, queueSketchSave, syncStartupChooser]);
+ 
+   const chooseStartupCanvas = useCallback((mode) => {
+     startupChoiceMadeRef.current = true;
+diff --git a/src/features/workspace/cloudSavePolicy.js b/src/features/workspace/cloudSavePolicy.js
+index 3d1c7e0..33450b6 100644
+--- a/src/features/workspace/cloudSavePolicy.js
++++ b/src/features/workspace/cloudSavePolicy.js
+@@ -16,3 +16,24 @@ export function usesLocalAutosave(cloudDiagramId, detached) {
+ export function isActiveCloudSession(expected, current) {
+   return Boolean(expected?.active && current === expected);
+ }
++
++/**
++ * An existing cloud diagram may legitimately become empty on screen: Excalidraw
++ * keeps tombstones (isDeleted) for removed elements, so a scene that contains
++ * at least one element record is a real edit, even if nothing is visible.
++ * A scene with no records at all is treated as a transient restore callback and
++ * is never saved. Creating a *new* cloud diagram still refuses an empty canvas.
++ */
++export function allowsEmptyCloudSave(elements) {
++  return hasCloudSceneChange(elements);
++}
++
++/**
++ * onChange callbacks must be ignored only while the tab that is being
++ * hydrated from the cloud is the active tab. The previous guard keyed off the
++ * `cloudDiagramId` URL parameter, which never clears, so every other (local)
++ * tab opened in the same page silently lost all of its onChange events.
++ */
++export function isCloudSceneRestoring({ restoringTabId, activeTabId, sceneReady }) {
++  return Boolean(restoringTabId) && restoringTabId === activeTabId && !sceneReady;
++}
+diff --git a/tests/stability-onchange-and-empty-save.test.js b/tests/stability-onchange-and-empty-save.test.js
+new file mode 100644
+index 0000000..dafe724
+--- /dev/null
++++ b/tests/stability-onchange-and-empty-save.test.js
+@@ -0,0 +1,72 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import {
++  allowsEmptyCloudSave,
++  isCloudSceneRestoring,
++} from "../src/features/workspace/cloudSavePolicy.js";
++import { createCloudDocument } from "../src/features/workspace/cloudDocument.js";
++
++const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
++
++// Extract the body of one `useCallback`/function by its declaration line.
++function sliceFrom(source, marker, length = 2600) {
++  const index = source.indexOf(marker);
++  assert.notEqual(index, -1, `marker not found: ${marker}`);
++  return source.slice(index, index + length);
++}
++
++test("issue 1: onChange is dropped only for the tab being hydrated from the cloud", () => {
++  // Cloud tab still restoring and active: ignore callbacks.
++  assert.equal(isCloudSceneRestoring({ restoringTabId: "cloud-1", activeTabId: "cloud-1", sceneReady: false }), true);
++  // User opened a local tab while the cloud tab is still restoring: keep processing.
++  assert.equal(isCloudSceneRestoring({ restoringTabId: "cloud-1", activeTabId: "canvas-2", sceneReady: false }), false);
++  // Restoration finished.
++  assert.equal(isCloudSceneRestoring({ restoringTabId: "cloud-1", activeTabId: "cloud-1", sceneReady: true }), false);
++  // No cloud load in progress at all (the URL still has cloudDiagramId but nothing is restoring).
++  assert.equal(isCloudSceneRestoring({ restoringTabId: "", activeTabId: "canvas-2", sceneReady: false }), false);
++});
++
++test("issue 1: the master onChange handler no longer gates on the URL cloudDiagramId", () => {
++  const handler = sliceFrom(app, "const handleThemeAwareExcalidrawChange = useCallback(", 2200);
++  assert.doesNotMatch(handler, /if \(cloudDiagramId && !cloudSceneReadyRef\.current\) return;/);
++  assert.match(handler, /isCloudSceneRestoring\(\{[^}]*restoringTabId: cloudRestoringTabIdRef\.current[^}]*activeTabId: activeCanvasIdRef\.current/);
++  assert.doesNotMatch(handler.split("], [")[0] ?? handler, /\[cloudDiagramId,/);
++});
++
++test("issue 1: the restoring marker is set for each cloud-tab bootstrap path and cleared on ready/error", () => {
++  const sets = app.match(/cloudRestoringTabIdRef\.current = (existingCloudTab\.id|nextCloudTab\.id|nextTabs\[1\]\.id);/g) || [];
++  assert.equal(sets.length, 3);
++  const clears = app.match(/cloudRestoringTabIdRef\.current = "";/g) || [];
++  assert.ok(clears.length >= 2, "marker must be cleared when hydration completes or fails");
++});
++
++test("issue 2: tombstone-only scenes are a real edit, empty record lists are not", () => {
++  assert.equal(allowsEmptyCloudSave([{ id: "a", isDeleted: true }]), true);
++  assert.equal(allowsEmptyCloudSave([{ id: "a", isDeleted: true }, { id: "b", isDeleted: true }]), true);
++  assert.equal(allowsEmptyCloudSave([]), false);
++  assert.equal(allowsEmptyCloudSave(null), false);
++});
++
++test("issue 2: deleting every element of a cloud diagram produces a saveable empty document", () => {
++  const api = { getSceneElements: () => [], getAppState: () => ({}), getFiles: () => ({}) };
++  const tombstones = [{ id: "a", isDeleted: true }, { id: "b", isDeleted: true, fileId: "f" }];
++  // Before the fix every caller omitted allowEmpty and this threw "canvas is empty".
++  const doc = createCloudDocument({ api, elements: tombstones, allowEmpty: allowsEmptyCloudSave(tombstones) });
++  assert.deepEqual(doc.elements, []);
++  assert.deepEqual(doc.files, {});
++  // Saving a brand new, empty drawing to the cloud must still be refused.
++  assert.throws(() => createCloudDocument({ api, elements: [] }), /canvas is empty/i);
++  assert.throws(() => createCloudDocument({ api }), /canvas is empty/i);
++});
++
++test("issue 2: cloud autosave and tab-switch save both pass the empty-save policy", () => {
++  const queue = sliceFrom(app, "const queueSketchSave = useCallback(", 3200);
++  assert.match(queue, /allowEmpty: allowsEmptyCloudSave\(elements\)/);
++  const switcher = sliceFrom(app, "const switchCanvasTab = useCallback(", 4200);
++  assert.match(switcher, /allowEmpty: allowsEmptyCloudSave\(currentSnapshot\.elements\)/);
++  // A scene with no element records must not abort the tab switch.
++  assert.match(switcher, /else if \(hasCloudSceneChange\(currentSnapshot\?\.elements\)\)/);
++  // The literal guard in workspace-foundation.test.js stays valid.
++  assert.doesNotMatch(app, /allowEmpty: true/);
++});
+-- 
+2.43.0
+

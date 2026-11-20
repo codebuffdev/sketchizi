@@ -1,6 +1,7 @@
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
+import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
 // Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
@@ -430,7 +431,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         roundness: "currentItemRoundness",
       };
       Object.entries(patch).forEach(([key, value]) => {
-        if (mapping[key]) appStatePatch[mapping[key]] = value;
+        if (key === "strokeWidth") Object.assign(appStatePatch, strokeWidthAppStatePatch(value));
+        else if (mapping[key]) appStatePatch[mapping[key]] = value;
       });
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
       return;

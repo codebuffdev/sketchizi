@@ -5,18 +5,6 @@ const EMPTY_CANVAS_MESSAGE = "This canvas is empty. Add at least one element bef
 export function sanitizeCloudAppState(appState = {}) {
   const safe = {};
   if (typeof appState.viewBackgroundColor === "string") safe.viewBackgroundColor = appState.viewBackgroundColor;
-  for (const key of ["currentItemStrokeColor", "currentItemBackgroundColor", "currentItemFillStyle", "currentItemStrokeStyle", "currentItemTextAlign"]) {
-    if (typeof appState[key] === "string") safe[key] = appState[key];
-  }
-  if (["thin", "medium", "bold"].includes(appState.currentItemStrokeWidthKey)) safe.currentItemStrokeWidthKey = appState.currentItemStrokeWidthKey;
-  if (Number.isFinite(appState.currentItemStrokeWidth)) safe.currentItemStrokeWidth = appState.currentItemStrokeWidth;
-  if (["constant", "variable"].includes(appState.currentItemStrokeVariability)) safe.currentItemStrokeVariability = appState.currentItemStrokeVariability;
-  if (Number.isFinite(appState.currentItemOpacity)) safe.currentItemOpacity = appState.currentItemOpacity;
-  if (Number.isFinite(appState.currentItemRoughness)) safe.currentItemRoughness = appState.currentItemRoughness;
-  if (Number.isFinite(appState.currentItemFontSize)) safe.currentItemFontSize = appState.currentItemFontSize;
-  if (["arrow", "bar", "dot"].includes(appState.currentItemStartArrowhead) || appState.currentItemStartArrowhead === null) safe.currentItemStartArrowhead = appState.currentItemStartArrowhead;
-  if (["arrow", "bar", "dot"].includes(appState.currentItemEndArrowhead) || appState.currentItemEndArrowhead === null) safe.currentItemEndArrowhead = appState.currentItemEndArrowhead;
-  if (["round", "sharp"].includes(appState.currentItemRoundness)) safe.currentItemRoundness = appState.currentItemRoundness;
   if (Number.isFinite(appState.scrollX)) safe.scrollX = appState.scrollX;
   if (Number.isFinite(appState.scrollY)) safe.scrollY = appState.scrollY;
   const zoom = Number(appState.zoom?.value ?? appState.zoom);

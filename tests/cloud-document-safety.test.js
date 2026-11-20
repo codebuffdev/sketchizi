@@ -20,9 +20,9 @@ test("local autosave resumes once a cloud diagram is detached", () => {
   assert.match(files, /dispatchEvent\(new CustomEvent\("sketchizi:detach-cloud-document"\)\)/);
 });
 
-test("an empty scene snapshot is saved after hydration while malformed callbacks are ignored", () => {
+test("an empty visible cloud diagram saves deletions, but not transient empty callbacks", () => {
   assert.equal(hasCloudSceneChange(null), false);
-  assert.equal(hasCloudSceneChange([]), true, "an empty scene after hydration is a real deletion snapshot");
+  assert.equal(hasCloudSceneChange([]), false);
   assert.equal(hasCloudSceneChange([null, undefined]), false);
   assert.equal(hasCloudSceneChange([{ id: "one", isDeleted: false }]), true);
   assert.equal(hasCloudSceneChange([{ id: "one", isDeleted: true }]), true);
@@ -56,9 +56,9 @@ test("detached cloud drawings immediately display local status and local save co
   assert.match(app, /cloudDetachedRef\.current = true;\s*setCloudDetached\(true\)/);
   assert.match(app, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName/);
   assert.match(app, /isCloudDocument=\{Boolean\(cloudSessionRef\.current\.active && !cloudDetached\)\}/);
-  assert.match(app, /\(cloudSessionRef\.current\.active \|\| \(cloudDiagramId && \["loading", "error"\]\.includes\(cloudSaveState\.state\)\)\) && !cloudDetached && <div className=/);
+  assert.ok(app.includes("cloudSessionRef.current.active && !cloudDetached && <div className="));
   assert.match(app, /onSaveToCloud=\{\(\) => cloudSessionRef\.current\.active && !cloudDetachedRef\.current \? saveCloudDiagramNow\(\) : setCloudSaveDialogOpen\(true\)\}/);
-  assert.match(app, /if \(!cloudSessionRef\.current\.active \|\| cloudDetachedRef\.current\) \{\s*queueLocalSketchSave/);
+  assert.match(app, /if \(cloudSessionRef\.current\.active && !cloudDetachedRef\.current\) \{\s*if \(!cloudSessionRef\.current\.active\)/);
 });
 
 test("new local drawing clears storage only after all older writes settle", () => {

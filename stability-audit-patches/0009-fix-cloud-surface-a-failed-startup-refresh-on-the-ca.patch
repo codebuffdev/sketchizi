@@ -1,0 +1,51 @@
+From c2041826e0323ab64236603cb9630079a3c07076 Mon Sep 17 00:00:00 2001
+From: Stability Audit <audit@local>
+Date: Fri, 20 Nov 2026 09:15:02 +0000
+Subject: [PATCH 9/9] fix(cloud): surface a failed startup refresh on the
+ cached cloud tab
+
+The startup refresh already logged failures but left the cached tab looking
+current. It now carries a visible error state. Test added to
+stability-cloud-load-binding (5 pass).
+---
+ src/App.jsx                                | 10 +++++++++-
+ tests/stability-cloud-load-binding.test.js |  5 +++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/src/App.jsx b/src/App.jsx
+index 6b76455..476033d 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -1002,7 +1002,15 @@ function App() {
+           logger.warn("A cloud canvas could not be refreshed during startup", {
+             category: "persistence", diagramId: session.diagramId, error,
+           });
+-          return tab;
++          // Keep the cached copy, but make the failure visible instead of
++          // presenting stale content as if it were current.
++          return {
++            ...tab,
++            snapshot: {
++              ...tab.snapshot,
++              cloudSaveState: { state: "error", error: "Could not refresh this diagram from Cloud Workspace. Showing the last cached copy." },
++            },
++          };
+         }
+       }));
+       if (cancelled) return;
+diff --git a/tests/stability-cloud-load-binding.test.js b/tests/stability-cloud-load-binding.test.js
+index 7a85a32..7720258 100644
+--- a/tests/stability-cloud-load-binding.test.js
++++ b/tests/stability-cloud-load-binding.test.js
+@@ -36,3 +36,8 @@ test("issue 3: a failed load of a background tab does not overwrite the active t
+   assert.match(catchBlock, /if \(activeCanvasIdRef\.current === targetTabId\)/);
+   assert.match(catchBlock, /updateTargetTab\(\(tab\) => \(\{ \.\.\.tab, snapshot: \{ \.\.\.tab\.snapshot, cloudSaveState: \{ state: "error"/);
+ });
++
++test("issue 3: a failed startup refresh marks the cached cloud tab with a visible error", () => {
++  const block = app.slice(app.indexOf("A cloud canvas could not be refreshed during startup"));
++  assert.match(block.slice(0, 900), /cloudSaveState: \{ state: "error", error: "Could not refresh this diagram from Cloud Workspace/);
++});
+-- 
+2.43.0
+

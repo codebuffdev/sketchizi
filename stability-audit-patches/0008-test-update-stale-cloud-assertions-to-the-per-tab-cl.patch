@@ -1,0 +1,72 @@
+From bf51271531880b234425558e322ed192ca196039 Mon Sep 17 00:00:00 2001
+From: Stability Audit <audit@local>
+Date: Fri, 20 Nov 2026 09:14:13 +0000
+Subject: [PATCH 8/9] test: update stale cloud assertions to the per-tab
+ cloudSessionRef shape
+
+The code moved from URL-based cloud identity (cloudDiagramId) to per-tab
+cloudSessionRef, and confirmCanvasReplacement became async. Five assertions
+still pinned the old shape; logic is equivalent. UI-text assertions left as is.
+---
+ tests/cloud-document-safety.test.js | 14 +++++++-------
+ tests/workspace-foundation.test.js  |  4 ++--
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/tests/cloud-document-safety.test.js b/tests/cloud-document-safety.test.js
+index 54dc3cf..cc00e43 100644
+--- a/tests/cloud-document-safety.test.js
++++ b/tests/cloud-document-safety.test.js
+@@ -16,7 +16,7 @@ test("local autosave resumes once a cloud diagram is detached", () => {
+   assert.equal(usesLocalAutosave("cloud-diagram", false), false);
+   assert.equal(usesLocalAutosave("cloud-diagram", true), true);
+   assert.match(app, /cloudDetachedRef\.current = true/);
+-  assert.match(app, /if \(usesLocalAutosave\(cloudDiagramId, cloudDetachedRef\.current\)\) \{\s*queueLocalSketchSave\(elements, appState\)/);
++  assert.match(app, /if \(!cloudSessionRef\.current\.active \|\| cloudDetachedRef\.current\) \{\s*queueLocalSketchSave\(elements, appState\)/);
+   assert.match(files, /dispatchEvent\(new CustomEvent\("sketchizi:detach-cloud-document"\)\)/);
+ });
+ 
+@@ -46,7 +46,7 @@ test("Reset canvas uses the same guarded new-document path, including cloud deta
+   assert.match(preferences, /fileActionsRef\.current\.createNewFile\?\.\(\)/);
+   assert.match(preferences, /if \(!canEdit\) return;/);
+   assert.doesNotMatch(preferences, /clearSketch\(\)|clearEmergencyBackup\(\)/);
+-  assert.match(files, /if \(!confirmCanvasReplacement\("create a new drawing"\)\) return/);
++  assert.match(files, /if \(!\(await confirmCanvasReplacement\("create a new drawing"\)\)\) return/);
+   assert.match(files, /new CustomEvent\("sketchizi:detach-cloud-document"\)/);
+   assert.match(files, /api\.history\?\.clear\?\.\(\)/);
+ });
+@@ -54,11 +54,11 @@ test("Reset canvas uses the same guarded new-document path, including cloud deta
+ test("detached cloud drawings immediately display local status and local save controls", () => {
+   assert.match(app, /const \[cloudDetached, setCloudDetached\] = useState\(false\)/);
+   assert.match(app, /cloudDetachedRef\.current = true;\s*setCloudDetached\(true\)/);
+-  assert.match(app, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
+-  assert.match(app, /isCloudDocument=\{Boolean\(cloudDiagramId && !cloudDetached\)\}/);
+-  assert.ok(app.includes("cloudDiagramId && !cloudDetached && <div className="));
+-  assert.match(app, /onSaveToCloud=\{\(\) => cloudDiagramId && !cloudDetachedRef\.current \? saveCloudDiagramNow\(\) : setCloudSaveDialogOpen\(true\)\}/);
+-  assert.match(app, /if \(cloudDiagramId && !cloudDetachedRef\.current\) \{\s*if \(!cloudSessionRef\.current\.active\)/);
++  assert.match(app, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName/);
++  assert.match(app, /isCloudDocument=\{Boolean\(cloudSessionRef\.current\.active && !cloudDetached\)\}/);
++  assert.ok(app.includes("cloudSessionRef.current.active && !cloudDetached && <div className="));
++  assert.match(app, /onSaveToCloud=\{\(\) => cloudSessionRef\.current\.active && !cloudDetachedRef\.current \? saveCloudDiagramNow\(\) : setCloudSaveDialogOpen\(true\)\}/);
++  assert.match(app, /if \(cloudSessionRef\.current\.active && !cloudDetachedRef\.current\) \{\s*if \(!cloudSessionRef\.current\.active\)/);
+ });
+ 
+ test("new local drawing clears storage only after all older writes settle", () => {
+diff --git a/tests/workspace-foundation.test.js b/tests/workspace-foundation.test.js
+index 2e52faa..f6f830a 100644
+--- a/tests/workspace-foundation.test.js
++++ b/tests/workspace-foundation.test.js
+@@ -155,9 +155,9 @@ test("authenticated users keep the editor as the default route; Workspace is opt
+ 
+ test("cloud-opened diagrams use their saved name in the editor identity", async () => {
+   const source = await read("../src/App.jsx");
+-  assert.match(source, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
++  assert.match(source, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName/);
+   assert.match(source, /setCloudDetached\(true\)/);
+-  assert.match(source, /setCloudDocumentName\(diagram\.name \|\| "Cloud diagram"\)/);
++  assert.match(source, /setCloudDocumentName\(loadedCloudName\)/);
+   assert.match(source, /name: diagram\.name \|\| "Cloud diagram"/);
+   const stylesheet = await read("../src/features/workspace/workspace.css");
+   assert.match(stylesheet, /cloud-editor-save-status:not\(\.cloud-editor-save-status-error\):not\(\.cloud-editor-save-status-conflict\)\{display:none!important\}/);
+-- 
+2.43.0
+

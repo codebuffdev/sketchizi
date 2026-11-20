@@ -1,0 +1,179 @@
+From 14921fd0f57da323d4a8daad1ed37d18c389aad3 Mon Sep 17 00:00:00 2001
+From: Stability Audit <audit@local>
+Date: Fri, 20 Nov 2026 09:10:41 +0000
+Subject: [PATCH 6/9] fix(todo): keep section and completed in sync; repair
+ legacy completed tasks
+
+'Move to completed' changed only section, so tasks in Completed rendered
+unchecked and were excluded from progress. Add todoModel (moveTask,
+setTaskChecked, summarizeTasks); items already stored as section=completed are
+treated as completed. 'N tasks left' now ignores checked tasks.
+Tests: stability-todo-model (5). No component/browser test was run.
+---
+ src/components/app/TodoList.jsx    | 16 +++++------
+ src/components/app/todoModel.js    | 36 +++++++++++++++++++++++
+ tests/stability-todo-model.test.js | 46 ++++++++++++++++++++++++++++++
+ 3 files changed, 89 insertions(+), 9 deletions(-)
+ create mode 100644 src/components/app/todoModel.js
+ create mode 100644 tests/stability-todo-model.test.js
+
+diff --git a/src/components/app/TodoList.jsx b/src/components/app/TodoList.jsx
+index 06f8648..b64d49d 100644
+--- a/src/components/app/TodoList.jsx
++++ b/src/components/app/TodoList.jsx
+@@ -1,4 +1,5 @@
+ import React, { useMemo, useState } from "react";
++import { isTaskCompleted, moveTask, setTaskChecked, summarizeTasks } from "./todoModel.js";
+ 
+ function normalizeCanvasTitle(value) {
+   return String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+@@ -14,10 +15,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme =
+   const [editingText, setEditingText] = useState("");
+   const [completedOpen, setCompletedOpen] = useState(false);
+   const [draggedId, setDraggedId] = useState(null);
+-  const tasks = Array.isArray(items) ? items : [];
+-  const active = useMemo(() => tasks.filter((task) => task.section !== "completed"), [tasks]);
+-  const completed = useMemo(() => tasks.filter((task) => task.section === "completed"), [tasks]);
+-  const checkedCount = active.filter((task) => task.completed).length + completed.filter((task) => task.completed).length;
++  const { tasks, active, completed, checkedCount, leftCount, progress } = useMemo(() => summarizeTasks(items), [items]);
+   const update = (next) => onChange?.(next);
+   const addTask = (event) => {
+     event.preventDefault();
+@@ -26,8 +24,9 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme =
+     setDraft("");
+   };
+   const patch = (id, changes) => update(tasks.map((task) => task.id === id ? { ...task, ...changes } : task));
++  const transform = (id, fn) => update(tasks.map((task) => task.id === id ? fn(task) : task));
+   const remove = (id) => update(tasks.filter((task) => task.id !== id));
+-  const move = (id, section) => patch(id, { section });
++  const move = (id, section) => transform(id, (task) => moveTask(task, section));
+   const reorder = (targetId) => {
+     if (!draggedId || draggedId === targetId) return;
+     const from = tasks.findIndex((task) => task.id === draggedId);
+@@ -43,10 +42,10 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme =
+     const matchingCanvases = canvasTabs.filter((tab) => normalizeCanvasTitle(tab.name) === normalizeCanvasTitle(task.text));
+     const matchingCanvas = matchingCanvases.length === 1 ? matchingCanvases[0] : null;
+     return (
+-    <div className={`sketchizi-todo-task${task.completed ? " is-completed" : ""}${draggedId === task.id ? " is-dragging" : ""}`} key={task.id}
++    <div className={`sketchizi-todo-task${isTaskCompleted(task) ? " is-completed" : ""}${draggedId === task.id ? " is-dragging" : ""}`} key={task.id}
+       draggable onDragStart={() => setDraggedId(task.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(task.id)} onDragEnd={() => setDraggedId(null)}>
+       <span className="sketchizi-todo-grip" aria-hidden="true">⠿</span>
+-      <input type="checkbox" checked={!!task.completed} onChange={(event) => patch(task.id, { completed: event.target.checked })} aria-label={`Mark ${task.text} ${task.completed ? "incomplete" : "complete"}`} />
++      <input type="checkbox" checked={isTaskCompleted(task)} onChange={(event) => transform(task.id, (current) => setTaskChecked(current, event.target.checked))} aria-label={`Mark ${task.text} ${isTaskCompleted(task) ? "incomplete" : "complete"}`} />
+       {editingId === task.id ? (
+         <input className="sketchizi-todo-edit" autoFocus value={editingText} onChange={(event) => setEditingText(event.target.value)}
+           onKeyDown={(event) => { if (event.key === "Enter") { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); } if (event.key === "Escape") setEditingId(null); }}
+@@ -67,7 +66,6 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme =
+     </div>
+     );
+   };
+-  const progress = tasks.length ? Math.round((checkedCount / tasks.length) * 100) : 0;
+   return (
+     <section className={`sketchizi-todo-popover${isDarkTheme ? " is-dark" : ""}${fullPage ? " is-full-page" : ""}`} role={fullPage ? "region" : "dialog"} aria-label="Tasks">
+       <header className="sketchizi-todo-header">
+@@ -75,7 +73,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme =
+           <span className="sketchizi-todo-title-icon" aria-hidden="true">
+             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
+           </span>
+-          <span><strong>Tasks</strong><small>{active.length} {active.length === 1 ? "task" : "tasks"} left</small></span>
++          <span><strong>Tasks</strong><small>{leftCount} {leftCount === 1 ? "task" : "tasks"} left</small></span>
+         </div>
+         {!fullPage && <button type="button" className="sketchizi-todo-close" aria-label="Close Tasks" onClick={onClose}>×</button>}
+       </header>
+diff --git a/src/components/app/todoModel.js b/src/components/app/todoModel.js
+new file mode 100644
+index 0000000..40c9e5d
+--- /dev/null
++++ b/src/components/app/todoModel.js
+@@ -0,0 +1,36 @@
++/**
++ * Task state has two fields: `section` ("active" | "completed") says which list
++ * a task is shown in, `completed` is the checkbox. They must never disagree for
++ * a task in the Completed list. "Move to completed" used to change only
++ * `section`, so such tasks rendered unchecked and were left out of progress.
++ * Items already stored in that state are treated as completed when read.
++ */
++export const isTaskCompleted = (task) => Boolean(task?.completed) || task?.section === "completed";
++
++export function moveTask(task, section) {
++  return section === "completed"
++    ? { ...task, section: "completed", completed: true }
++    : { ...task, section: "active", completed: false };
++}
++
++/** Checking keeps the task where it is; unchecking a Completed task returns it to Tasks. */
++export function setTaskChecked(task, checked) {
++  return checked
++    ? { ...task, completed: true }
++    : { ...task, completed: false, section: "active" };
++}
++
++export function summarizeTasks(items) {
++  const tasks = Array.isArray(items) ? items : [];
++  const active = tasks.filter((task) => task.section !== "completed");
++  const completed = tasks.filter((task) => task.section === "completed");
++  const checkedCount = tasks.filter(isTaskCompleted).length;
++  return {
++    tasks,
++    active,
++    completed,
++    checkedCount,
++    leftCount: active.filter((task) => !isTaskCompleted(task)).length,
++    progress: tasks.length ? Math.round((checkedCount / tasks.length) * 100) : 0,
++  };
++}
+diff --git a/tests/stability-todo-model.test.js b/tests/stability-todo-model.test.js
+new file mode 100644
+index 0000000..059af6e
+--- /dev/null
++++ b/tests/stability-todo-model.test.js
+@@ -0,0 +1,46 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import { isTaskCompleted, moveTask, setTaskChecked, summarizeTasks } from "../src/components/app/todoModel.js";
++
++const component = readFileSync(new URL("../src/components/app/TodoList.jsx", import.meta.url), "utf8");
++const task = (id, extra = {}) => ({ id, text: id, completed: false, section: "active", ...extra });
++
++test("issue 6: moving a task to Completed marks it completed, moving it back clears it", () => {
++  const done = moveTask(task("a"), "completed");
++  assert.deepEqual([done.section, done.completed], ["completed", true]);
++  const back = moveTask(done, "active");
++  assert.deepEqual([back.section, back.completed], ["active", false]);
++});
++
++test("issue 6: tasks already stored as section=completed, completed=false count as completed", () => {
++  const legacy = task("legacy", { section: "completed", completed: false });
++  assert.equal(isTaskCompleted(legacy), true);
++  const summary = summarizeTasks([legacy, task("open")]);
++  assert.equal(summary.checkedCount, 1);
++  assert.equal(summary.progress, 50);
++  assert.equal(summary.leftCount, 1);
++});
++
++test("issue 6: checking keeps a task in place; unchecking a Completed task returns it to Tasks", () => {
++  const checked = setTaskChecked(task("a"), true);
++  assert.deepEqual([checked.section, checked.completed], ["active", true]);
++  const unchecked = setTaskChecked(task("b", { section: "completed", completed: true }), false);
++  assert.deepEqual([unchecked.section, unchecked.completed], ["active", false]);
++});
++
++test("issue 6: summary handles empty / invalid input and the 'left' count ignores checked tasks", () => {
++  assert.deepEqual(summarizeTasks(undefined).tasks, []);
++  assert.equal(summarizeTasks(null).progress, 0);
++  const s = summarizeTasks([task("a", { completed: true }), task("b"), task("c", { section: "completed", completed: true })]);
++  assert.equal(s.active.length, 2);
++  assert.equal(s.leftCount, 1);
++  assert.equal(s.progress, 67);
++});
++
++test("issue 6: the component uses the model for move, checkbox and progress", () => {
++  assert.match(component, /moveTask\(task, section\)/);
++  assert.match(component, /setTaskChecked\(current, event\.target\.checked\)/);
++  assert.match(component, /checked=\{isTaskCompleted\(task\)\}/);
++  assert.doesNotMatch(component, /const move = \(id, section\) => patch\(id, \{ section \}\);/);
++});
+-- 
+2.43.0
+
