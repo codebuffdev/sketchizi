@@ -2489,7 +2489,8 @@ function App() {
           {activeWorkspaceTabId.startsWith("todo:") && (
             <div className="sketchizi-todo-workspace">
               <TodoList items={canvasTabs.find((tab) => tab.id === activeWorkspaceTabId.slice(5))?.todoItems || []}
-                onChange={(items) => updateCanvasTodoItems(activeWorkspaceTabId.slice(5), items)} isDarkTheme={isDarkTheme} fullPage />
+                onChange={(items) => updateCanvasTodoItems(activeWorkspaceTabId.slice(5), items)}
+                canvasTabs={canvasTabs} onNavigateToCanvas={selectWorkspaceTab} isDarkTheme={isDarkTheme} fullPage />
             </div>
           )}
 
