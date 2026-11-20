@@ -53,8 +53,7 @@ try {
       } else {
         assert(bounds.y >= before.y + before.height, 'Menu must open below the avatar');
       }
-      await menu.getByRole('menuitem', { name: 'Sign out', exact: true }).waitFor();
-      await page.keyboard.press('Escape');
+      await menu.getByRole('menuitem', { name: 'Sign out', exact: true }).press('Escape');
       await menu.waitFor({ state: 'detached' });
       await trigger.click();
       await page.mouse.click(20, 450);
