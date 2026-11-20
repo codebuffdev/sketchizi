@@ -3,6 +3,7 @@
 .sketchizi-grammar-trigger { border:1px solid var(--ui-border,#d8dce0); border-radius:7px; padding:5px 9px; background:var(--ui-surface-solid,#fff); color:var(--ui-text,#292d32); font:inherit; cursor:pointer; }
 .sketchizi-grammar-trigger:hover:not(:disabled) { background:var(--ui-surface-hover,#f1f3f4); }
 .sketchizi-grammar-trigger:disabled { opacity:.55; cursor:default; }
+.sketchizi-grammar-disclosure { color:var(--ui-text-muted,#72777d); }
 .sketchizi-grammar-credit { color:var(--ui-text-muted,#72777d); text-decoration:underline; }
 .sketchizi-grammar-results { flex-basis:100%; display:grid; gap:7px; max-height:180px; overflow:auto; padding:8px; border:1px solid var(--ui-border,#d8dce0); border-radius:8px; background:var(--ui-surface-solid,#fff); }
 .sketchizi-grammar-results p,.sketchizi-grammar-match { margin:0; }
