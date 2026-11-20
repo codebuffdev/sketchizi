@@ -3906,3 +3906,43 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 @keyframes sketchizi-dock-palette-in { from { opacity:0; transform:translate(-5px,-50%) scale(.94); } to { opacity:1; transform:translate(0,-50%) scale(1); } }
 @media (max-width:760px) { .app .sketchizi-dock-quick-palette { left:0; top:auto; bottom:calc(100% + 9px); transform:scale(.86); transform-origin:bottom left; } }
 @media (prefers-reduced-motion:reduce) { .app .sketchizi-dock-radial-tools .sketchizi-primary-dock-tool { transition:none; } }
+
+/* Canvas Todo List companion */
+.app .sketchizi-primary-dock-utility-group { margin-top: 5px; padding-top: 6px; border-top: 1px solid #e4e8ed; }
+.app .sketchizi-primary-dock-tool.sketchizi-todo-dock-trigger.is-active { border-color:#1877f2; background:#e7f0ff; color:#0866ff; box-shadow:none; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-utility-group { border-color:#3b4652; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-todo-dock-trigger.is-active { border-color:#477fc7; background:#263b58; color:#8ab4f8; }
+.app .sketchizi-todo-popover { position:fixed; z-index:10050; left:64px; top:50%; transform:translateY(-50%); width:min(390px,calc(100vw - 88px)); max-height:min(620px,calc(100dvh - 32px)); overflow:auto; box-sizing:border-box; padding:18px; border:1px solid #e1e5eb; border-radius:18px; background:#fff; color:#202833; box-shadow:0 18px 52px rgb(24 36 52 / 18%),0 3px 10px rgb(24 36 52 / 8%); }
+.app .sketchizi-todo-header,.app .sketchizi-todo-title,.app .sketchizi-todo-footer { display:flex; align-items:center; justify-content:space-between; }
+.app .sketchizi-todo-title { justify-content:flex-start; gap:11px; font:650 19px/1.2 system-ui,sans-serif; }
+.app .sketchizi-todo-title-icon { display:grid; width:34px; height:34px; place-items:center; border:2px solid #1877f2; border-radius:10px; color:#0866ff; font-size:21px; }
+.app .sketchizi-todo-close,.app .sketchizi-todo-action { border:0; background:transparent; color:#687483; cursor:pointer; }
+.app .sketchizi-todo-close { width:30px; height:30px; border-radius:8px; font-size:24px; }
+.app .sketchizi-todo-add { display:flex; gap:8px; margin:18px 0 12px; padding:7px; border:1px solid #dce3ed; border-radius:13px; background:#f7f9fc; }
+.app .sketchizi-todo-add input,.app .sketchizi-todo-edit { min-width:0; flex:1; border:0; outline:0; background:transparent; color:inherit; font:14px system-ui,sans-serif; }
+.app .sketchizi-todo-add button { width:40px; height:40px; border:0; border-radius:10px; background:#0866ff; color:white; font-size:25px; cursor:pointer; }
+.app .sketchizi-todo-add button:disabled { opacity:.45; cursor:default; }
+.app .sketchizi-todo-list { display:flex; flex-direction:column; gap:3px; }
+.app .sketchizi-todo-task { display:flex; min-height:42px; align-items:center; gap:9px; padding:3px 2px; border-radius:8px; }
+.app .sketchizi-todo-task:hover { background:#f6f8fa; }
+.app .sketchizi-todo-grip { color:#9aa4af; cursor:grab; font-size:18px; user-select:none; }
+.app .sketchizi-todo-task input[type=checkbox] { width:18px; height:18px; flex:0 0 18px; margin:0; accent-color:#16a34a; cursor:pointer; }
+.app .sketchizi-todo-task-text { min-width:0; flex:1; overflow-wrap:anywhere; border:0; padding:5px 0; background:transparent; color:#202833; text-align:left; font:14px/1.35 system-ui,sans-serif; cursor:text; }
+.app .sketchizi-todo-task.is-completed .sketchizi-todo-task-text { color:#7b8794; text-decoration:line-through; }
+.app .sketchizi-todo-action { width:25px; height:27px; border-radius:6px; font-size:17px; }
+.app .sketchizi-todo-action:hover { background:#eaf1fb; color:#0866ff; }
+.app .sketchizi-todo-action.is-delete:hover { background:#fff0f0; color:#dc2626; }
+.app .sketchizi-todo-edit { border-bottom:1px solid #1877f2; padding:5px 0; }
+.app .sketchizi-todo-empty { margin:12px 0; color:#8a95a2; font:13px system-ui,sans-serif; text-align:center; }
+.app .sketchizi-todo-footer { margin-top:12px; padding-top:12px; border-top:1px solid #e5e9ef; }
+.app .sketchizi-todo-completed-toggle,.app .sketchizi-todo-clear { border:0; background:transparent; cursor:pointer; font:600 13px system-ui,sans-serif; }
+.app .sketchizi-todo-completed-toggle { display:flex; align-items:center; gap:8px; color:#15803d; }
+.app .sketchizi-todo-completed-toggle span { color:#4b5563; font-size:19px; }
+.app .sketchizi-todo-clear { color:#0866ff; }
+.app .sketchizi-todo-popover.is-dark { border-color:#3b4652; background:#202832; color:#edf2f7; box-shadow:0 18px 52px rgb(0 0 0 / 38%); }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-add { border-color:#3b4652; background:#293440; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task-text { color:#e5ebf2; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task.is-completed .sketchizi-todo-task-text { color:#99a5b3; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task:hover { background:#293440; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-footer { border-color:#3b4652; }
+@media(max-width:520px) { .app .sketchizi-todo-popover { left:54px; width:calc(100vw - 64px); padding:14px; } }
