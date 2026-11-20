@@ -1506,7 +1506,7 @@ function App() {
     // running the normal scene/state pipeline against an intermediate scene
     // can feed React updates back into Excalidraw and trigger update-depth
     // error #185. Normal edits resume as soon as the cloud scene is ready.
-    if (cloudHydratingTabIdRef.current === activeCanvasIdRef.current) return;
+    if (cloudHydratingTabIdRef.current === "pending" || cloudHydratingTabIdRef.current === activeCanvasIdRef.current) return;
 
     // Excalidraw emits intermediate onChange snapshots for every freehand
     // pointer sample. Defer scene analysis, collaboration broadcasts, minimap
