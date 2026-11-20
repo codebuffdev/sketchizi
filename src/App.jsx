@@ -63,6 +63,7 @@ import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
 import { loadCanvasTabs, saveCanvasTabs } from "./persistence.js";
+import { getLocalDateString, isValidCanvasStartDate } from "./features/canvas/canvasStartDate.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 
@@ -107,7 +108,7 @@ function App() {
   const globalThemeRef = useRef(getInitialThemeMode() === "dark" ? "dark" : "light");
   const setCurrentFileRef = useRef(null);
   const [apiReady, setApiReady] = useState(false);
-  const [canvasTabs, setCanvasTabs] = useState([{ id: "canvas-1", name: "Canvas 1", snapshot: null, dirty: false }]);
+  const [canvasTabs, setCanvasTabs] = useState(() => [{ id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), snapshot: null, dirty: false }]);
   const [closeTabPrompt, setCloseTabPrompt] = useState(null);
   const [activeCanvasId, setActiveCanvasId] = useState("canvas-1");
   const [canvasTabsReady, setCanvasTabsReady] = useState(false);
@@ -585,6 +586,13 @@ function App() {
     }, 450);
   }, []);
 
+  const updateActiveCanvasStartDate = useCallback((startDate) => {
+    if (!isValidCanvasStartDate(startDate)) return;
+    persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
+      ? { ...tab, startDate }
+      : tab));
+  }, [persistCanvasTabs]);
+
   const persistActiveCanvasSnapshot = useCallback((elements, appState) => {
     if (!canvasTabsRestoredRef.current) return;
     const snapshot = captureCanvasTabSnapshot(elements, appState);
@@ -694,7 +702,7 @@ function App() {
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = `canvas-${Date.now()}`;
     const nextTab = {
-      id, name: `Canvas ${nextNumber}`, dirty: false,
+      id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), dirty: false,
       snapshot: {
         elements: [], appState: { viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
@@ -834,7 +842,11 @@ function App() {
       }));
       if (cancelled) return;
       if (Array.isArray(stored) && stored.length) {
-        const restoredTabs = refreshedTabs.length ? refreshedTabs : stored;
+        const today = getLocalDateString();
+        const restoredTabs = (refreshedTabs.length ? refreshedTabs : stored).map((tab) => ({
+          ...tab,
+          startDate: isValidCanvasStartDate(tab.startDate) ? tab.startDate : today,
+        }));
         const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
         canvasTabsRef.current = restoredTabs;
@@ -844,7 +856,7 @@ function App() {
         if (activeTab.snapshot) applyCanvasTabSnapshot(activeTab);
       } else {
         const initial = {
-          id: "canvas-1", name: "Canvas 1", dirty: false,
+          id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), dirty: false,
           snapshot: captureCanvasTabSnapshot(),
         };
         canvasTabsRef.current = [initial];
@@ -2378,6 +2390,8 @@ function App() {
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
             pageContext={canvasPageContext}
+            startDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
+            onStartDateChange={updateActiveCanvasStartDate}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
             handleDrop={handleDrop}
