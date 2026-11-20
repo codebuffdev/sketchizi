@@ -851,6 +851,7 @@ function App() {
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
         canvasTabsRef.current = restoredTabs;
         setCanvasTabs(restoredTabs);
+        saveCanvasTabs(restoredTabs).catch(() => {});
         activeCanvasIdRef.current = activeId;
         setActiveCanvasId(activeId);
         if (activeTab.snapshot) applyCanvasTabSnapshot(activeTab);
