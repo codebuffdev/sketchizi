@@ -11,6 +11,9 @@ export function sanitizeCloudAppState(appState = {}) {
   if (Number.isFinite(zoom) && zoom > 0) safe.zoom = { value: zoom };
   if (typeof appState.gridModeEnabled === "boolean") safe.gridModeEnabled = appState.gridModeEnabled;
   if (Number.isFinite(appState.currentItemFontFamily)) safe.currentItemFontFamily = appState.currentItemFontFamily;
+  if (["thin", "medium", "bold"].includes(appState.currentItemStrokeWidthKey)) safe.currentItemStrokeWidthKey = appState.currentItemStrokeWidthKey;
+  if (Number.isFinite(appState.currentItemStrokeWidth)) safe.currentItemStrokeWidth = appState.currentItemStrokeWidth;
+  if (["constant", "variable"].includes(appState.currentItemStrokeVariability)) safe.currentItemStrokeVariability = appState.currentItemStrokeVariability;
   if (Number.isFinite(appState.gridSize)) safe.gridSize = appState.gridSize;
   if (Number.isFinite(appState.gridStep)) safe.gridStep = appState.gridStep;
   return safe;
