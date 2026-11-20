@@ -993,6 +993,7 @@ function App() {
       if (cloudDiagramId) {
         activeCanvasIdRef.current = nextTabs[1].id;
         setActiveCanvasId(nextTabs[1].id);
+        setActiveWorkspaceTabId(nextTabs[1].id);
         cloudSceneReadyRef.current = false;
         cloudDetachedRef.current = true;
         cloudSessionRef.current = { active: false, diagramId: "", projectId: "", revision: null, name: "" };
