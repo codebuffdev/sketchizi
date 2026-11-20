@@ -2,17 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../navigation/themePreference.js";
 import { workspaceClient } from "./workspaceClient.js";
 import { findDuplicateDiagramName } from "./diagramNames.js";
+import { formatWorkspaceDate as dateLabel, sortWorkspaceRecentlyUsed } from "./workspacePresentation.js";
 import "./workspace.css";
 
-const dateLabel = (value) => value ? new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }) : "Recently";
-const activityTime = (item = {}) => {
-  for (const candidate of [item.lastOpenedAt, item.lastUsedAt, item.updatedAt, item.createdAt]) {
-    const value = typeof candidate === "number" ? candidate : Date.parse(candidate || "");
-    if (Number.isFinite(value) && value > 0) return value;
-  }
-  return 0;
-};
-const sortRecentlyUsed = (items = []) => [...items].sort((a, b) => activityTime(b) - activityTime(a));
+
 
 const DiagramThumbnail = ({ diagram }) => {
   const document = diagram?.document && typeof diagram.document === "object" ? diagram.document : {};
@@ -101,7 +94,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     try {
       const result = await workspaceClient.listProjects();
       const rows = Array.isArray(result) ? result : result?.projects || [];
-      setProjects(sortRecentlyUsed(rows));
+      setProjects(sortWorkspaceRecentlyUsed(rows));
       setActiveId((current) => rows.some((p) => p.id === preferred) ? preferred : rows.some((p) => p.id === current) ? current : rows[0]?.id || "");
     } catch (e) { setError(e.message || "Could not load cloud projects."); }
     finally { setLoading(false); }
@@ -115,7 +108,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     if (!activeId) { setDiagrams([]); return undefined; }
     let cancelled = false;
     setDiagramLoading(true);
-    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) setDiagrams(sortRecentlyUsed(Array.isArray(r) ? r : r?.diagrams || [])); })
+    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) setDiagrams(sortWorkspaceRecentlyUsed(Array.isArray(r) ? r : r?.diagrams || [])); })
       .catch((e) => { if (!cancelled) setError(e.message || "Could not load diagrams."); })
       .finally(() => { if (!cancelled) setDiagramLoading(false); });
     return () => { cancelled = true; };
@@ -151,7 +144,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
         window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(created.id)}&cloudProjectId=${encodeURIComponent(active.id)}`);
         return;
       }
-      const rows = await workspaceClient.listDiagrams(active.id); setDiagrams(sortRecentlyUsed(Array.isArray(rows) ? rows : rows?.diagrams || []));
+      const rows = await workspaceClient.listDiagrams(active.id); setDiagrams(sortWorkspaceRecentlyUsed(Array.isArray(rows) ? rows : rows?.diagrams || []));
       await reloadProjects(active.id); setNotice("Diagram created. Open it to begin editing.");
     } catch (e) { setError(e.message || "Could not create diagram."); } finally { setBusy(false); }
   };
