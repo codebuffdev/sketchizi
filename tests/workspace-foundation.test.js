@@ -154,6 +154,11 @@ test("authenticated users keep the editor as the default route; Workspace is opt
   assert.match(source, /const workspaceRoute = window\.location\.pathname === "\/workspace"/);
 });
 
+test("closing the active canvas clears stale Todo-active state on the remaining tabs", async () => {
+  const app = await read("../src/App.jsx");
+  assert.match(app, /const isActive = tabId === activeCanvasIdRef\.current;\s*const remainingTabs = currentTabs[\s\S]*?map\(\(item\) => isActive \? \{ \.\.\.item, todoTabActive: false \} : item\)/);
+});
+
 test("cloud load failures remain visible on the originating tab and can be retried", async () => {
   const app = await read("../src/App.jsx");
   assert.match(app, /const retryCloudDiagramLoad = useCallback/);
