@@ -316,3 +316,46 @@ test("cloud load failure exposes Retry load and retries the fetch effect", async
   assert.match(app, /cloudLoadRetryToken, cloudProjectId/);
   assert.match(app, /cloudSaveState\.state === "error" && !cloudLoadFailed/);
 });
+
+
+test("startup restores tabs without waiting for independent cloud refresh requests", async () => {
+  const { refreshCloudTabsIndependently } = await import("../src/features/workspace/cloudStartupRefresh.js");
+  const pending = new Map();
+  const refreshed = [];
+  const failed = [];
+  const makeTab = (id) => ({
+    id,
+    snapshot: { cloudSession: { active: true, diagramId: id } },
+  });
+  refreshCloudTabsIndependently([makeTab("slow"), makeTab("fast")], {
+    getDiagram: (id) => new Promise((resolve, reject) => pending.set(id, { resolve, reject })),
+    onRefreshed: (tab, result) => refreshed.push([tab.id, result]),
+    onFailed: (tab, error) => failed.push([tab.id, error.message]),
+  });
+  await Promise.resolve();
+  assert.equal(pending.size, 2, "both cloud refreshes start independently");
+  pending.get("fast").resolve({ name: "Fast diagram" });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(refreshed, [["fast", { name: "Fast diagram" }]]);
+  assert.equal(failed.length, 0);
+  pending.get("slow").reject(new Error("request timed out"));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(failed, [["slow", "request timed out"]]);
+});
+
+test("startup cloud refresh skips the cloud deep link being hydrated separately", async () => {
+  const { refreshCloudTabsIndependently } = await import("../src/features/workspace/cloudStartupRefresh.js");
+  const requested = [];
+  refreshCloudTabsIndependently([
+    { id: "current", snapshot: { cloudSession: { active: true, diagramId: "diagram-current" } } },
+    { id: "other", snapshot: { cloudSession: { active: true, diagramId: "diagram-other" } } },
+  ], {
+    skipDiagramId: "diagram-current",
+    getDiagram: async (id) => { requested.push(id); return {}; },
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(requested, ["diagram-other"]);
+});
