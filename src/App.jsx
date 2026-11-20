@@ -97,6 +97,9 @@ function App() {
     try { window.localStorage.setItem("sketchizi-grid-enabled", String(gridEnabled)); } catch { /* Private browsing. */ }
   }, [gridEnabled]);
   const [canvasAppearance, setCanvasAppearance] = useState(() => getInitialThemeMode() === "dark" ? "sketch" : "clean");
+  const canvasAppearanceRef = useRef(canvasAppearance);
+  const [canvasTheme, setCanvasTheme] = useState(() => getInitialThemeMode() === "dark" ? "dark" : "light");
+  const canvasThemeRef = useRef(canvasTheme);
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
@@ -116,6 +119,8 @@ function App() {
   const canvasTabsSaveTimerRef = useRef(null);
   canvasTabsRef.current = canvasTabs;
   activeCanvasIdRef.current = activeCanvasId;
+  canvasAppearanceRef.current = canvasAppearance;
+  canvasThemeRef.current = canvasTheme;
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
   const [minimapOpen, setMinimapOpen] = useState(false);
@@ -550,13 +555,15 @@ function App() {
   // identity. A changing onChange prop makes Excalidraw re-run componentDidUpdate
   // and call onChange again, which is what turned a status update into a loop.
   const canvasSnapshotStateRef = useRef(null);
-  canvasSnapshotStateRef.current = { documentDirty, cloudSaveState, cloudDocumentName };
+  canvasSnapshotStateRef.current = { documentDirty, cloudSaveState, cloudDocumentName, canvasAppearance: canvasAppearanceRef.current };
   const captureCanvasTabSnapshot = useCallback((elements, appState) => {
     const api = apiRef.current;
     const live = canvasSnapshotStateRef.current;
     return {
       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
       appState: appState || api?.getAppState?.() || {},
+      appearance: canvasAppearanceRef.current,
+      appTheme: appState?.theme || api?.getAppState?.()?.theme || canvasThemeRef.current,
       files: api?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {},
       extensions: documentMetadataRef.current?.extensions || {},
@@ -621,6 +628,16 @@ function App() {
     cloudSessionRef.current = snapshot.cloudSession || { active: false, diagramId: "", projectId: "", revision: null, name: "" };
     setCloudSaveState(snapshot.cloudSaveState || { state: "inactive", error: "" });
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
+    const restoredAppState = snapshot.appState || {};
+    const restoredAppearance = snapshot.appearance || getCanvasAppearanceFromBackground(
+      restoredAppState.viewBackgroundColor,
+      restoredAppState.currentItemRoughness,
+    );
+    canvasAppearanceRef.current = restoredAppearance;
+    setCanvasAppearance(restoredAppearance);
+    const restoredTheme = snapshot.appTheme || restoredAppState.theme || "light";
+    canvasThemeRef.current = restoredTheme;
+    setCanvasTheme(restoredTheme);
     api.updateScene({
       elements,
       appState: { ...api.getAppState(), ...(snapshot.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
@@ -632,7 +649,7 @@ function App() {
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
-  }, [apiRef, setCurrentFile, setSavedSketch]);
+  }, [apiRef, setCurrentFile, setSavedSketch, setCanvasAppearance]);
 
   const switchCanvasTab = useCallback((nextId) => {
     if (!nextId || nextId === activeCanvasIdRef.current || !apiRef.current) return;
@@ -695,7 +712,14 @@ function App() {
     const nextTab = {
       id, name: `Canvas ${nextNumber}`, dirty: false,
       snapshot: {
-        elements: [], appState: { viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor },
+        elements: [],
+        appearance: canvasAppearanceRef.current || "clean",
+        appTheme: apiRef.current.getAppState?.().theme || canvasThemeRef.current,
+        appState: {
+          theme: apiRef.current.getAppState?.().theme,
+          viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor,
+          currentItemRoughness: apiRef.current.getAppState?.().currentItemRoughness,
+        },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
         file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
         cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
@@ -804,7 +828,13 @@ function App() {
           dirty: false,
           snapshot: {
             elements: [],
-            appState: { viewBackgroundColor: api?.getAppState?.().viewBackgroundColor },
+            appearance: "clean",
+            appTheme: "light",
+            appState: {
+              theme: "light",
+              viewBackgroundColor: "#ffffff",
+              currentItemRoughness: 0,
+            },
             files: {}, metadata: {}, extensions: {}, format: "excalidraw",
             file: null,
             cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
@@ -1152,24 +1182,16 @@ function App() {
     canvasAppearance, setCanvasAppearance,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
-  useEffect(() => {
-    if (!savedSketch) return;
-    const hasElements = (savedSketch.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
-    const roughness = savedSketch.appState?.currentItemRoughness;
-    const background = String(savedSketch.appState?.viewBackgroundColor || "").trim();
-    const hasExplicitAppearance = background.toLowerCase() === "#1b382f" ||
-      (typeof roughness === "number" && (roughness === 0 || roughness >= 2));
-    if (hasElements || hasExplicitAppearance) {
-      setCanvasAppearance(getCanvasAppearanceFromBackground(background, roughness));
-    } else {
-      setCanvasAppearance(isDarkTheme ? "sketch" : "clean");
-    }
-  }, [isDarkTheme, savedSketch]);
   const handleCanvasAppearanceChange = useCallback((appearance) => {
     if (!collaborationCanEdit) return;
+    canvasAppearanceRef.current = appearance;
     setCanvasAppearance(appearance);
     if (appearance === "clean") preferences.useThemeDefaultBackground();
-    else applyCanvasAppearance(apiRef.current, appearance, isDarkTheme);
+    else {
+      const activeCanvasTheme = apiRef.current?.getAppState?.()?.theme;
+      const canvasIsDark = activeCanvasTheme === "dark" || (activeCanvasTheme !== "light" && isDarkTheme);
+      applyCanvasAppearance(apiRef.current, appearance, canvasIsDark);
+    }
   }, [collaborationCanEdit, isDarkTheme, preferences.useThemeDefaultBackground]);
   const commands = createSketchiziCommandRegistry({
     apiRef,
@@ -1237,6 +1259,10 @@ function App() {
     // updates and persistence until the completed stroke callback arrives.
     // Keeping that work out of the pointer stream reduces pen latency.
     if (appState?.newElement?.type === "freedraw") return;
+    if (appState?.theme && appState.theme !== canvasThemeRef.current) {
+      canvasThemeRef.current = appState.theme;
+      setCanvasTheme(appState.theme);
+    }
     syncStartupChooser(elements, false, appState);
     handleExcalidrawChange(elements, appState);
     persistActiveCanvasSnapshot(elements, appState);
@@ -2300,6 +2326,7 @@ function App() {
           <SketchiziCanvas
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
+            canvasTheme={canvasTheme}
             isDarkTheme={isDarkTheme}
             pageContext={canvasPageContext}
             handleExcalidrawAPI={handleExcalidrawAPI}
