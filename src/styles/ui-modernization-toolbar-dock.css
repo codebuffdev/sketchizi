@@ -3906,3 +3906,367 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 @keyframes sketchizi-dock-palette-in { from { opacity:0; transform:translate(-5px,-50%) scale(.94); } to { opacity:1; transform:translate(0,-50%) scale(1); } }
 @media (max-width:760px) { .app .sketchizi-dock-quick-palette { left:0; top:auto; bottom:calc(100% + 9px); transform:scale(.86); transform-origin:bottom left; } }
 @media (prefers-reduced-motion:reduce) { .app .sketchizi-dock-radial-tools .sketchizi-primary-dock-tool { transition:none; } }
+
+/* Canvas Todo List companion */
+.app .sketchizi-primary-dock-utility-group { margin-top: 5px; padding-top: 6px; border-top: 1px solid #e4e8ed; }
+.app .sketchizi-primary-dock-tool.sketchizi-todo-dock-trigger.is-active { border-color:#1877f2; background:#e7f0ff; color:#0866ff; box-shadow:none; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-primary-dock-utility-group { border-color:#3b4652; }
+.app .sketchizi-primary-dock.is-dark .sketchizi-todo-dock-trigger.is-active { border-color:#477fc7; background:#263b58; color:#8ab4f8; }
+.app .sketchizi-todo-popover { position:fixed; z-index:10050; left:64px; top:50%; transform:translateY(-50%); width:min(390px,calc(100vw - 88px)); max-height:min(620px,calc(100dvh - 32px)); overflow:auto; box-sizing:border-box; padding:18px; border:1px solid #e1e5eb; border-radius:18px; background:#fff; color:#202833; box-shadow:0 18px 52px rgb(24 36 52 / 18%),0 3px 10px rgb(24 36 52 / 8%); }
+.app .sketchizi-todo-header,.app .sketchizi-todo-title,.app .sketchizi-todo-footer { display:flex; align-items:center; justify-content:space-between; }
+.app .sketchizi-todo-title { justify-content:flex-start; gap:11px; font:650 19px/1.2 system-ui,sans-serif; }
+.app .sketchizi-todo-title-icon { display:grid; width:34px; height:34px; place-items:center; border:2px solid #1877f2; border-radius:10px; color:#0866ff; font-size:21px; }
+.app .sketchizi-todo-close,.app .sketchizi-todo-action { border:0; background:transparent; color:#687483; cursor:pointer; }
+.app .sketchizi-todo-close { width:30px; height:30px; border-radius:8px; font-size:24px; }
+.app .sketchizi-todo-add { display:flex; gap:8px; margin:18px 0 12px; padding:7px; border:1px solid #dce3ed; border-radius:13px; background:#f7f9fc; }
+.app .sketchizi-todo-add input,.app .sketchizi-todo-edit { min-width:0; flex:1; border:0; outline:0; background:transparent; color:inherit; font:14px system-ui,sans-serif; }
+.app .sketchizi-todo-add button { width:40px; height:40px; border:0; border-radius:10px; background:#0866ff; color:white; font-size:25px; cursor:pointer; }
+.app .sketchizi-todo-add button:disabled { opacity:.45; cursor:default; }
+.app .sketchizi-todo-list { display:flex; flex-direction:column; gap:3px; }
+.app .sketchizi-todo-task { display:flex; min-height:42px; align-items:center; gap:9px; padding:3px 2px; border-radius:8px; }
+.app .sketchizi-todo-task:hover { background:#f6f8fa; }
+.app .sketchizi-todo-grip { color:#9aa4af; cursor:grab; font-size:18px; user-select:none; }
+.app .sketchizi-todo-task input[type=checkbox] { width:18px; height:18px; flex:0 0 18px; margin:0; accent-color:#16a34a; cursor:pointer; }
+.app .sketchizi-todo-task-text { min-width:0; flex:1; overflow-wrap:anywhere; border:0; padding:5px 0; background:transparent; color:#202833; text-align:left; font:14px/1.35 system-ui,sans-serif; cursor:text; }
+.app .sketchizi-todo-task.is-completed .sketchizi-todo-task-text { color:#7b8794; text-decoration:line-through; }
+.app .sketchizi-todo-action { width:25px; height:27px; border-radius:6px; font-size:17px; }
+.app .sketchizi-todo-action:hover { background:#eaf1fb; color:#0866ff; }
+.app .sketchizi-todo-action.is-delete:hover { background:#fff0f0; color:#dc2626; }
+.app .sketchizi-todo-edit { border-bottom:1px solid #1877f2; padding:5px 0; }
+.app .sketchizi-todo-empty { margin:12px 0; color:#8a95a2; font:13px system-ui,sans-serif; text-align:center; }
+.app .sketchizi-todo-footer { margin-top:12px; padding-top:12px; border-top:1px solid #e5e9ef; }
+.app .sketchizi-todo-completed-toggle,.app .sketchizi-todo-clear { border:0; background:transparent; cursor:pointer; font:600 13px system-ui,sans-serif; }
+.app .sketchizi-todo-completed-toggle { display:flex; align-items:center; gap:8px; color:#15803d; }
+.app .sketchizi-todo-completed-toggle span { color:#4b5563; font-size:19px; }
+.app .sketchizi-todo-clear { color:#0866ff; }
+.app .sketchizi-todo-popover.is-dark { border-color:#3b4652; background:#202832; color:#edf2f7; box-shadow:0 18px 52px rgb(0 0 0 / 38%); }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-add { border-color:#3b4652; background:#293440; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task-text { color:#e5ebf2; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task.is-completed .sketchizi-todo-task-text { color:#99a5b3; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task:hover { background:#293440; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-footer { border-color:#3b4652; }
+@media(max-width:520px) { .app .sketchizi-todo-popover { left:54px; width:calc(100vw - 64px); padding:14px; } }
+
+.app .sketchizi-primary-dock-tool.sketchizi-todo-menu-trigger { position:fixed; z-index:10035; left:12px; top:calc(50% + 48px); width:38px; min-width:38px; height:38px; min-height:38px; border:1px solid #e5e8eb; border-radius:11px; background:rgb(255 255 255 / 97%); box-shadow:0 5px 18px rgb(25 33 42 / 9%); }
+.app .sketchizi-primary-dock-tool.sketchizi-todo-menu-trigger.is-active { border-color:#1877f2; background:#e7f0ff; color:#0866ff; }
+.app.theme-dark .sketchizi-primary-dock-tool.sketchizi-todo-menu-trigger { border-color:#3b4652; background:#202832; color:#b0bac3; }
+
+
+/* Todo List — refined to the approved compact companion-panel design. */
+.app .sketchizi-todo-popover {
+  width: min(336px, calc(100vw - 84px));
+  max-height: min(560px, calc(100dvh - 32px));
+  padding: 17px;
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  background: #fff;
+  color: #1c2733;
+  box-shadow: 0 14px 38px rgb(18 35 55 / 16%), 0 2px 7px rgb(18 35 55 / 6%);
+}
+.app .sketchizi-todo-header { margin-bottom: 15px; }
+.app .sketchizi-todo-title { gap: 10px; font-size: 15px; }
+.app .sketchizi-todo-title > span:last-child { display:flex; flex-direction:column; gap:3px; }
+.app .sketchizi-todo-title strong { font-size:15px; font-weight:700; letter-spacing:-.02em; }
+.app .sketchizi-todo-title small { color:#84909d; font-size:11px; font-weight:500; }
+.app .sketchizi-todo-title-icon { width:32px; height:32px; border:0; border-radius:10px; background:#eaf2ff; color:#0866ff; }
+.app .sketchizi-todo-close { display:grid; place-items:center; width:28px; height:28px; border-radius:8px; color:#8b96a3; font-size:21px; }
+.app .sketchizi-todo-close:hover { background:#f0f3f7; color:#344252; }
+.app .sketchizi-todo-progress { margin:0 0 15px; }
+.app .sketchizi-todo-progress-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; color:#8793a0; font:500 10px/1.2 system-ui,sans-serif; }
+.app .sketchizi-todo-progress-meta strong { color:#536171; font-weight:650; }
+.app .sketchizi-todo-progress-track { height:5px; overflow:hidden; border-radius:99px; background:#edf1f5; }
+.app .sketchizi-todo-progress-track span { display:block; height:100%; border-radius:inherit; background:#16a34a; transition:width 160ms ease; }
+.app .sketchizi-todo-add { align-items:center; gap:8px; margin:0 0 17px; padding:5px 6px 5px 11px; border:1px solid #e3e9f0; border-radius:11px; background:#f8fafc; }
+.app .sketchizi-todo-add > span { color:#0866ff; font-size:19px; line-height:1; }
+.app .sketchizi-todo-add input { font-size:12px; }
+.app .sketchizi-todo-add input::placeholder { color:#9aa5b1; }
+.app .sketchizi-todo-add button { width:auto; height:31px; padding:0 11px; border-radius:8px; background:#0866ff; font-size:11px; font-weight:650; }
+.app .sketchizi-todo-section-heading { display:flex; align-items:center; gap:7px; margin:0 0 7px; color:#344252; font:650 11px/1.2 system-ui,sans-serif; }
+.app .sketchizi-todo-section-heading span,.app .sketchizi-todo-completed-toggle em { display:inline-flex; min-width:18px; height:18px; align-items:center; justify-content:center; padding:0 5px; border-radius:99px; background:#f0f3f6; color:#778493; font:650 10px/1 system-ui,sans-serif; font-style:normal; }
+.app .sketchizi-todo-list { gap:2px; }
+.app .sketchizi-todo-task { min-height:38px; gap:8px; padding:3px 5px; border-radius:8px; }
+.app .sketchizi-todo-task:hover { background:#f6f8fb; }
+.app .sketchizi-todo-task.is-dragging { opacity:.45; }
+.app .sketchizi-todo-grip { color:#b4bec8; font-size:15px; opacity:0; transition:opacity 120ms ease; }
+.app .sketchizi-todo-task:hover .sketchizi-todo-grip,.app .sketchizi-todo-task:focus-within .sketchizi-todo-grip { opacity:1; }
+.app .sketchizi-todo-task input[type=checkbox] { width:16px; height:16px; flex-basis:16px; accent-color:#16a34a; }
+.app .sketchizi-todo-task-text { color:#354252; font-size:12px; line-height:1.4; }
+.app .sketchizi-todo-task.is-completed .sketchizi-todo-task-text { color:#9aa5af; }
+.app .sketchizi-todo-row-actions { display:flex; align-items:center; gap:2px; opacity:0; transition:opacity 120ms ease; }
+.app .sketchizi-todo-task:hover .sketchizi-todo-row-actions,.app .sketchizi-todo-task:focus-within .sketchizi-todo-row-actions { opacity:1; }
+.app .sketchizi-todo-action { width:23px; height:23px; font-size:14px; }
+.app .sketchizi-todo-action.is-done { color:#16a34a; }
+.app .sketchizi-todo-action.is-done:hover { background:#e8f7ed; color:#15803d; }
+.app .sketchizi-todo-action.is-delete:hover { background:#fff0f0; color:#dc2626; }
+.app .sketchizi-todo-empty { padding:13px 8px; color:#98a3af; font-size:11px; }
+.app .sketchizi-todo-footer { margin-top:13px; padding-top:11px; border-top:1px solid #edf0f4; }
+.app .sketchizi-todo-completed-toggle { gap:8px; color:#536171; font-size:11px; font-weight:650; }
+.app .sketchizi-todo-completed-toggle > span { display:inline-block; color:#8995a2; font-size:19px; line-height:10px; transform:rotate(0); transition:transform 120ms ease; }
+.app .sketchizi-todo-completed-toggle > span.is-open { transform:rotate(90deg); }
+.app .sketchizi-todo-completed-toggle em { background:#eaf7ee; color:#16803d; }
+.app .sketchizi-todo-clear { color:#8b96a3; font-size:10px; font-weight:600; }
+.app .sketchizi-todo-clear:hover { color:#0866ff; }
+.app .sketchizi-todo-popover.is-dark { border-color:#354252; background:#202832; color:#e8edf3; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-title small,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-progress-meta { color:#98a5b4; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-progress-meta strong { color:#d0d8e1; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-title-icon { background:#263b58; color:#8ab4f8; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-close:hover,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task:hover { background:#2a3542; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-add { border-color:#3b4652; background:#293440; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-add input,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task-text { color:#e5ebf2; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-section-heading { color:#d5dde6; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-section-heading span,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle em { background:#34414e; color:#b5c0cc; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-footer { border-color:#354252; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle { color:#c3ced9; }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-progress-track { background:#354252; }
+@media (hover:none) {
+  .app .sketchizi-todo-grip,.app .sketchizi-todo-row-actions { opacity:1; }
+}
+
+
+/* Dedicated Todo workspace tab */
+.desktop-canvas-view { display: contents; }
+.desktop-canvas-view-hidden { display: none !important; }
+.app .sketchizi-todo-workspace {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: var(--color-surface, #f7f9fc);
+}
+.app .sketchizi-todo-popover.is-full-page {
+  position: relative;
+  inset: auto;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: min(920px, calc(100% - 64px));
+  max-height: none;
+  overflow: visible;
+  box-sizing: border-box;
+  margin: 38px auto;
+  padding: 30px;
+  border: 1px solid #e5eaf0;
+  border-radius: 18px;
+  background: #fff;
+  color: #1c2733;
+  box-shadow: 0 8px 28px rgb(18 35 55 / 7%);
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-header { margin-bottom: 24px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-title strong { font-size: 22px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-title small { font-size: 12px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-title-icon { width: 42px; height: 42px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-progress { margin-bottom: 24px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-progress-track { height: 7px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-add { margin-bottom: 25px; padding: 8px 9px 8px 14px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-add input { font-size: 14px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-add button { height: 38px; padding: 0 16px; font-size: 12px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-section-heading { margin-bottom: 12px; font-size: 13px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-task { min-height: 46px; padding: 5px 8px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-task-text { font-size: 14px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-footer { margin-top: 22px; padding-top: 17px; }
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-completed-toggle { font-size: 13px; }
+.app .sketchizi-todo-popover.is-full-page.is-dark { border-color: #354252; background: #202832; color: #e8edf3; box-shadow: 0 8px 28px rgb(0 0 0 / 18%); }
+@media (max-width: 760px) {
+  .app .sketchizi-todo-popover.is-full-page { width: calc(100% - 28px); margin: 14px auto; padding: 18px; }
+}
+
+.app .desktop-canvas-region { position: relative; }
+.canvas-tab-todo-icon { color: #16a34a; }
+.app.theme-dark .canvas-tab-todo-icon { color: #4ade80; }
+
+ 
+/* Completed tasks — compact summary row with a calm, expandable history. */
+.app .sketchizi-todo-completed-section {
+  margin-top: 14px;
+  border-top: 1px solid #e8edf2;
+}
+.app .sketchizi-todo-completed-toggle {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 2px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #344252;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+.app .sketchizi-todo-completed-toggle:hover {
+  background: #f7f9fb;
+}
+.app .sketchizi-todo-completed-mark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: #eaf7ee;
+  color: #16803d;
+}
+.app .sketchizi-todo-completed-toggle strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+.app .sketchizi-todo-completed-toggle em {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: #eaf7ee;
+  color: #16803d;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+.app .sketchizi-todo-completed-hint {
+  margin-left: auto;
+  color: #8995a2;
+  font-size: 10px;
+  font-weight: 550;
+}
+.app .sketchizi-todo-completed-chevron {
+  display: inline-block;
+  color: #8995a2;
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+.app .sketchizi-todo-completed-section.is-open .sketchizi-todo-completed-chevron {
+  transform: rotate(90deg);
+}
+.app .sketchizi-todo-completed-content {
+  padding: 5px 0 2px 4px;
+  animation: sketchizi-completed-reveal 160ms ease both;
+}
+.app .sketchizi-todo-completed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-task {
+  padding-left: 7px;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-task-text {
+  color: #8995a2;
+  text-decoration: line-through;
+  text-decoration-color: #b8c1ca;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-row-actions {
+  opacity: 0;
+}
+.app .sketchizi-todo-completed-list .sketchizi-todo-task:hover .sketchizi-todo-row-actions,
+.app .sketchizi-todo-completed-list .sketchizi-todo-task:focus-within .sketchizi-todo-row-actions {
+  opacity: 1;
+}
+.app .sketchizi-todo-completed-empty {
+  padding: 12px 8px 10px 40px;
+  color: #98a3af;
+  font-size: 11px;
+}
+.app .sketchizi-todo-completed-content .sketchizi-todo-clear {
+  margin: 5px 0 0 35px;
+  padding: 4px 0;
+  color: #8995a2;
+  font-size: 10px;
+}
+.app .sketchizi-todo-completed-content .sketchizi-todo-clear:hover {
+  color: #0866ff;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-section {
+  border-color: #354252;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle {
+  color: #d5dde6;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle:hover {
+  background: #2a3542;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-mark,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-toggle em {
+  background: #203d2d;
+  color: #72d69a;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-hint,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-chevron,
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-empty {
+  color: #9aa7b5;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-completed-list .sketchizi-todo-task-text {
+  color: #9aa7b5;
+  text-decoration-color: #657180;
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-completed-toggle {
+  min-height: 54px;
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-completed-toggle strong {
+  font-size: 13px;
+}
+@keyframes sketchizi-completed-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-todo-completed-chevron,
+  .app .sketchizi-todo-completed-content { transition: none; animation: none; }
+}
+
+
+/* Todo quick-add: keep the input caret, but never draw a focus highlight around the field. */
+.app .sketchizi-todo-add:focus-within {
+  border-color: #e3e9f0;
+  outline: none;
+  box-shadow: none;
+}
+.app .sketchizi-todo-add input:focus,
+.app .sketchizi-todo-add input:focus-visible {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-add:focus-within {
+  border-color: #3b4652;
+  outline: none;
+  box-shadow: none;
+}
+
+
+/* Todo tasks that match an open canvas title navigate to that canvas instead of entering edit mode. */
+.app .sketchizi-todo-task-text.is-canvas-link { color:#0866ff; cursor:pointer; }
+.app .sketchizi-todo-task-text.is-canvas-link:hover { text-decoration:underline; text-underline-offset:3px; }
+.app .sketchizi-todo-canvas-link-icon { display:inline-block; margin-left:6px; color:#7b8794; font-size:12px; text-decoration:none; vertical-align:1px; }
+.app .sketchizi-todo-task.is-completed .sketchizi-todo-task-text.is-canvas-link { color:#6b9bdc; }
+.app.theme-dark .sketchizi-todo-task-text.is-canvas-link { color:#78adff; }
+.app.theme-dark .sketchizi-todo-canvas-link-icon { color:#9aa8b8; }
+
+/* Keep the Todo quick-add field visually quiet while preserving its text caret.
+   The app-wide input focus rules are more specific, so explicitly override them here. */
+.app form.sketchizi-todo-add:focus,
+.app form.sketchizi-todo-add:focus-within,
+.app .sketchizi-todo-popover form.sketchizi-todo-add:focus-within,
+.app .sketchizi-todo-workspace form.sketchizi-todo-add:focus-within {
+  border-color: #e3e9f0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.app form.sketchizi-todo-add input,
+.app form.sketchizi-todo-add input:focus,
+.app form.sketchizi-todo-add input:focus-visible,
+.app .sketchizi-todo-popover form.sketchizi-todo-add input:focus,
+.app .sketchizi-todo-workspace form.sketchizi-todo-add input:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.app .sketchizi-todo-popover.is-dark form.sketchizi-todo-add:focus-within,
+.app .sketchizi-todo-workspace:has(.sketchizi-todo-popover.is-dark) form.sketchizi-todo-add:focus-within {
+  border-color: #3b4652 !important;
+}
+

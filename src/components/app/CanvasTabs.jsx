@@ -10,6 +10,15 @@ function CanvasGlyph() {
   );
 }
 
+function TodoGlyph() {
+  return (
+    <svg className="canvas-tab-icon canvas-tab-todo-icon" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="2.5" width="14" height="15" rx="2" />
+      <path d="m5.5 7 1.2 1.2L9 5.8M11 7h3.5M5.5 13l1.2 1.2L9 11.8M11 13h3.5" />
+    </svg>
+  );
+}
+
 function NewCanvasGlyph() {
   return (
     <svg className="canvas-tabs-add-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -74,8 +83,9 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         className={`canvas-tab${activeId === tab.id ? " is-active" : ""}`}
         aria-selected={activeId === tab.id}
         title={tab.name}
-        draggable={!disabled}
+        draggable={!disabled && !tab.isTodoTab}
         onDragStart={(event) => {
+          if (tab.isTodoTab) { event.preventDefault(); return; }
           dragId.current = tab.id;
           event.dataTransfer.effectAllowed = "move";
           event.dataTransfer.setData("text/plain", tab.id);
@@ -86,17 +96,17 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         onClick={() => { setOverflowOpen(false); onSelect?.(tab.id); }}
         disabled={disabled}
       >
-        <CanvasGlyph />
+        {tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}
         {!(hideActiveName && activeId === tab.id) && <span className="canvas-tab-name">{tab.name}</span>}
         {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
       </button>
       {activeId === tab.id && activeActions && <div className="canvas-tab-active-actions" aria-label={`Actions for ${tab.name}`}>{activeActions}</div>}
-      {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || tabs.length <= 1}><CloseGlyph /></button>}
+      {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || (!tab.isTodoTab && tabs.filter((item) => !item.isTodoTab).length <= 1)}><CloseGlyph /></button>}
     </div>
   );
 
   return (
-    <div className="canvas-tabs-bar" role="tablist" aria-label="Open canvases" ref={rootRef}>
+    <div className="canvas-tabs-bar" role="tablist" aria-label="Workspace tabs" ref={rootRef}>
       <div className="canvas-tabs-list">
         {visibleTabs.map(renderTab)}
         {hiddenCount > 0 && (
@@ -107,10 +117,10 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                 {hiddenTabs.map((tab) => (
                   <div className="canvas-tabs-overflow-item" role="none" key={tab.id}>
                     <button type="button" role="menuitem" className={activeId === tab.id ? "is-active" : ""} onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}>
-                      <span className="canvas-tabs-overflow-name"><CanvasGlyph />{tab.name}</span>
+                      <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}{tab.name}</span>
                       {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
                     </button>
-                    {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || tabs.length <= 1}><CloseGlyph /></button>}
+                    {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || (!tab.isTodoTab && tabs.filter((item) => !item.isTodoTab).length <= 1)}><CloseGlyph /></button>}
                   </div>
                 ))}
               </div>

@@ -106,6 +106,7 @@ export default function DesktopAppHeader({
   onCreateCanvasTab,
   onReorderCanvasTabs,
   onCloseCanvasTab,
+  onCloseTodoTab,
   onRenameDocument,
   currentDocumentFileBacked = false,
   onSaveNow,
@@ -167,7 +168,9 @@ export default function DesktopAppHeader({
   useEffect(() => () => clearHeaderCollapseTimer(), []);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
-  const activeCanvasTabName = canvasTabs.find((tab) => tab.id === activeCanvasId)?.name || currentDocumentName;
+  const activeWorkspaceTab = canvasTabs.find((tab) => tab.id === activeCanvasId);
+  const activeIsTodoTab = Boolean(activeWorkspaceTab?.isTodoTab);
+  const activeCanvasTabName = activeWorkspaceTab?.name || currentDocumentName;
   const [documentNameDraft, setDocumentNameDraft] = useState(activeCanvasTabName);
   const cancelDocumentRenameRef = useRef(false);
 
@@ -839,9 +842,13 @@ const activeTabActions = (
           onSelect={onSelectCanvasTab}
           onCreate={onCreateCanvasTab}
           onReorder={onReorderCanvasTabs}
-          onClose={onCloseCanvasTab}
-          leadingAction={activeTabLeadingAction}
-          activeActions={activeTabActions}
+          onClose={(tabId) => {
+            const closingTab = canvasTabs.find((tab) => tab.id === tabId);
+            if (closingTab?.isTodoTab) onCloseTodoTab?.(closingTab.canvasId);
+            else onCloseCanvasTab?.(tabId);
+          }}
+          leadingAction={activeIsTodoTab ? null : activeTabLeadingAction}
+          activeActions={activeIsTodoTab ? null : activeTabActions}
           hideActiveName={documentNameEditing}
           showAddButton={false}
         />

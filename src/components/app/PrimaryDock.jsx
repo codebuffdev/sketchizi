@@ -46,7 +46,7 @@ function activateTool({ id, root, apiRef }) {
   apiRef.current?.setActiveTool?.({ type: id });
 }
 
-export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false }) {
+export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, menuOpen = false, onOpenTodoTab }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -89,23 +89,35 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       </button>
     );
   };
+  const todoControl = (
+    <button type="button" className="sketchizi-primary-dock-tool sketchizi-todo-dock-trigger"
+      aria-label="Open Todo List tab" title="Todo List" onClick={onOpenTodoTab}>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="4" y="3.5" width="16" height="17" rx="2" />
+        <path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" />
+      </svg>
+    </button>
+  );
   if (menuOpen) {
     return (
-      <div className={`sketchizi-dock-launcher-wrap${isDarkTheme ? " is-dark" : ""}`} data-canvas-revision={canvasRevision}>
-        <button type="button" className="sketchizi-dock-launcher" aria-label="Open drawing tools"
-          aria-expanded={paletteOpen} aria-haspopup="dialog" onClick={() => setPaletteOpen((open) => !open)}>
-          <ToolIcon name={activeEntry.id} />
-          <span>{activeEntry.label}</span>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
-        </button>
-        {paletteOpen && (
-          <div className="sketchizi-dock-quick-palette" role="dialog" aria-label="Drawing tools">
-            <div className="sketchizi-dock-radial-hub"><ToolIcon name={activeEntry.id} /><span>{activeEntry.label}</span><small>ACTIVE TOOL</small></div>
-            <div className="sketchizi-dock-radial-tools">{GROUPS.flat().map((tool, index) => renderTool(tool, index, true))}</div>
-            <button type="button" className="sketchizi-dock-radial-close" aria-label="Close drawing tools" onClick={() => setPaletteOpen(false)}>×</button>
-          </div>
-        )}
-      </div>
+      <>
+        <div className={`sketchizi-dock-launcher-wrap${isDarkTheme ? " is-dark" : ""}`} data-canvas-revision={canvasRevision}>
+          <button type="button" className="sketchizi-dock-launcher" aria-label="Open drawing tools"
+            aria-expanded={paletteOpen} aria-haspopup="dialog" onClick={() => setPaletteOpen((open) => !open)}>
+            <ToolIcon name={activeEntry.id} />
+            <span>{activeEntry.label}</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+          </button>
+          {paletteOpen && (
+            <div className="sketchizi-dock-quick-palette" role="dialog" aria-label="Drawing tools">
+              <div className="sketchizi-dock-radial-hub"><ToolIcon name={activeEntry.id} /><span>{activeEntry.label}</span><small>ACTIVE TOOL</small></div>
+              <div className="sketchizi-dock-radial-tools">{GROUPS.flat().map((tool, index) => renderTool(tool, index, true))}</div>
+              <button type="button" className="sketchizi-dock-radial-close" aria-label="Close drawing tools" onClick={() => setPaletteOpen(false)}>×</button>
+            </div>
+          )}
+        </div>
+        {todoControl}
+      </>
     );
   }
   return (
@@ -115,6 +127,9 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           {group.map(renderTool)}
         </div>
       ))}
+      <div className="sketchizi-primary-dock-group sketchizi-primary-dock-utility-group">
+        {todoControl}
+      </div>
     </nav>
   );
 }
