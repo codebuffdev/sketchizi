@@ -2516,6 +2516,7 @@ function App() {
             onViewportChange={markLocalViewportNavigation}
             propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
+            onClearSelection={() => { setSelectedElements([]); setSelectedCount(0); }}
             applyToSelected={applyToSelected}
             onOpenProperties={() => {
               const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
