@@ -60,7 +60,10 @@ try {
  await chooseCanvasMode('pages');
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
  let es = await waitScene(es=>pages(es).length===1);
- assert.equal(pages(es)[0].width,1600); assert.equal(pages(es)[0].height,1400);
+ const initialPage = pages(es)[0];
+ assert(initialPage.width > 0 && initialPage.height > 0, 'New page must have usable dimensions');
+ assert(Math.abs(initialPage.width / initialPage.height - 55 / 27) < 0.02, 'New page must preserve the configured 55:27 aspect ratio');
+ assert(initialPage.width <= 1440 * 0.8 + 1 && initialPage.height <= 1000 * 0.8 + 1, 'New page must fit within 80% of the available viewport');
  // Rename through the visible page-name editor rather than relying on a
  // removed prompt-based page-creation flow.
  await page.locator('.canvas-pages-page-name').click();
