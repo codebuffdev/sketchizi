@@ -671,14 +671,26 @@ function App() {
   }, [apiRef, setCurrentFile, setSavedSketch]);
 
   const switchCanvasTab = useCallback((nextId) => {
-    if (!nextId || nextId === activeCanvasIdRef.current || !apiRef.current) return;
+    if (!nextId || nextId === activeCanvasIdRef.current) return;
     const previousId = activeCanvasIdRef.current;
-    const currentSnapshot = captureCanvasTabSnapshot();
+    const currentSnapshot = apiRef.current
+      ? captureCanvasTabSnapshot()
+      : (canvasTabsRef.current.find((tab) => tab.id === previousId)?.snapshot || null);
     const currentTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
-      ? { ...tab, snapshot: currentSnapshot }
+      ? { ...tab, ...(currentSnapshot ? { snapshot: currentSnapshot } : {}) }
       : tab.id === nextId ? { ...tab, todoTabActive: false } : tab);
     const target = currentTabs.find((tab) => tab.id === nextId);
     if (!target) return;
+    // Todo is a separate workspace view. If its hidden canvas has temporarily
+    // released the Excalidraw API, switch the tab state now and restore the
+    // selected snapshot when the newly keyed canvas mounts.
+    if (!apiRef.current) {
+      activeCanvasIdRef.current = nextId;
+      setActiveCanvasId(nextId);
+      setActiveWorkspaceTabId(nextId);
+      persistCanvasTabs(currentTabs);
+      return;
+    }
     if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
       retryLocalSave();
     } else {
@@ -736,8 +748,9 @@ function App() {
   }, [persistCanvasTabs, switchCanvasTab]);
 
   const createCanvasTab = useCallback(() => {
-    if (!apiRef.current) return;
-    const currentSnapshot = captureCanvasTabSnapshot();
+    const currentSnapshot = apiRef.current
+      ? captureCanvasTabSnapshot()
+      : (canvasTabsRef.current.find((tab) => tab.id === activeCanvasIdRef.current)?.snapshot || null);
     const currentTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
       ? { ...tab, snapshot: currentSnapshot }
       : tab);
@@ -746,7 +759,7 @@ function App() {
     const nextTab = {
       id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: {
-        elements: [], appState: { viewBackgroundColor: apiRef.current.getAppState?.().viewBackgroundColor },
+        elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
         file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
         cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
