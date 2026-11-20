@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../navigation/themePreference.js";
 import { workspaceClient } from "./workspaceClient.js";
-import { findDuplicateDiagramName } from "./diagramNames.js";
+import { findDuplicateDiagramName, readDiagramRows } from "./diagramNames.js";
 import { formatWorkspaceDate as dateLabel, mergeWorkspaceActivity, recordWorkspaceItemOpened, sortWorkspaceRecentlyUsed } from "./workspacePresentation.js";
 import "./workspace.css";
 
@@ -108,7 +108,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     if (!activeId) { setDiagrams([]); return undefined; }
     let cancelled = false;
     setDiagramLoading(true);
-    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) setDiagrams(sortWorkspaceRecentlyUsed(mergeWorkspaceActivity(Array.isArray(r) ? r : r?.diagrams || []))); })
+    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) setDiagrams(sortWorkspaceRecentlyUsed(mergeWorkspaceActivity(readDiagramRows(r)))); })
       .catch((e) => { if (!cancelled) setError(e.message || "Could not load diagrams."); })
       .finally(() => { if (!cancelled) setDiagramLoading(false); });
     return () => { cancelled = true; };
@@ -125,7 +125,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     setBusy(true); setError(""); setNotice("");
     try {
       const currentDiagramsResult = await workspaceClient.listDiagrams(active.id);
-      const currentDiagrams = Array.isArray(currentDiagramsResult) ? currentDiagramsResult : currentDiagramsResult?.diagrams || [];
+      const currentDiagrams = readDiagramRows(currentDiagramsResult);
       if (findDuplicateDiagramName(currentDiagrams, diagramName.trim())) {
         setError("A diagram with this name already exists in this project. Choose a different name.");
         return;
@@ -144,7 +144,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
         window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(created.id)}&cloudProjectId=${encodeURIComponent(active.id)}`);
         return;
       }
-      const rows = await workspaceClient.listDiagrams(active.id); setDiagrams(sortWorkspaceRecentlyUsed(mergeWorkspaceActivity(Array.isArray(rows) ? rows : rows?.diagrams || [])));
+      const rows = await workspaceClient.listDiagrams(active.id); setDiagrams(sortWorkspaceRecentlyUsed(mergeWorkspaceActivity(readDiagramRows(rows))));
       await reloadProjects(active.id); setNotice("Diagram created. Open it to begin editing.");
     } catch (e) { setError(e.message || "Could not create diagram."); } finally { setBusy(false); }
   };
@@ -176,7 +176,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
       }
       if (action === "duplicate") await workspaceClient.duplicateDiagram(d.id);
       if (action === "delete") await workspaceClient.deleteDiagram(d.id);
-      const rows = await workspaceClient.listDiagrams(activeId); setDiagrams(Array.isArray(rows) ? rows : rows?.diagrams || []);
+      const rows = await workspaceClient.listDiagrams(activeId); setDiagrams(readDiagramRows(rows));
       await reloadProjects(activeId); setNotice(action === "duplicate" ? "Diagram duplicated." : action === "delete" ? "Diagram deleted." : "Diagram renamed.");
     } catch (e) { setError(e.message || `Could not ${action} diagram.`); } finally { setBusy(false); }
   };
