@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { getTabDisplayName, MAX_TAB_LABEL_CHARACTERS } from "../src/features/workspace/tabLabel.js";
 
-test("limit is 70 characters", () => assert.equal(MAX_TAB_LABEL_CHARACTERS, 20));
+test("limit is 70 characters", () => assert.equal(MAX_TAB_LABEL_CHARACTERS, 70));
 
 test("names shorter than 70 characters are unchanged", () => {
   assert.equal(getTabDisplayName("Canvas 1"), "Canvas 1");
@@ -12,12 +12,12 @@ test("names shorter than 70 characters are unchanged", () => {
 
 test("names of exactly 70 characters are unchanged", () => {
   const name = "1234567890123456789012345678901234567890123456789012345678901234567890";
-  assert.equal(name.length, 20);
+  assert.equal(name.length, 70);
   assert.equal(getTabDisplayName(name), name);
 });
 
 test("names longer than 70 characters are cut to 70", () => {
-  const name = "Quarterly architecture review canvas";
+  const name = "Quarterly architecture review canvas ".repeat(3);
   const shown = getTabDisplayName(name);
   assert.equal(Array.from(shown).length, 70);
   assert.equal(shown, name.slice(0, 70));
@@ -29,15 +29,15 @@ test("emoji are not split in half", () => {
 });
 
 test("truncation never mutates or shortens the stored name", () => {
-  const tab = Object.freeze({ id: "t", name: "A very long canvas name that keeps going" });
+  const longName = "A very long canvas name that keeps going ".repeat(3);\n  const tab = Object.freeze({ id: "t", name: longName });
   const shown = getTabDisplayName(tab.name);
   assert.notEqual(shown, tab.name);
-  assert.equal(tab.name, "A very long canvas name that keeps going");
+  assert.equal(tab.name, longName);
 });
 
 test("renaming a long tab keeps the full new name in state", () => {
   let tabs = [{ id: "t", name: "Canvas 1" }];
-  const renamed = "Renamed to something far longer than seventy";
+  const renamed = "Renamed to something far longer than seventy ".repeat(3);
   tabs = tabs.map((t) => (t.id === "t" ? { ...t, name: renamed } : t));
   assert.equal(tabs[0].name, renamed);
   assert.equal(Array.from(getTabDisplayName(tabs[0].name)).length, 70);
@@ -49,5 +49,5 @@ test("CanvasTabs shows truncated text but keeps full name in tooltip and aria la
   assert.match(src, /title=\{tab\.name\}/);
   assert.match(src, /aria-label=\{`Close \$\{tab\.name\}`\}/);
   const header = readFileSync(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
-  assert.match(header, /setDocumentNameDraft\(activeCanvasTabName\)/, "rename starts from the full stored name");
+  assert.match(header, /setDocumentNameDraft\(activeCanvasTabName\)/, "rename starts from the full stored name");\n  const styles = readFileSync(new URL("../src/styles/canvas-tabs.css", import.meta.url), "utf8");\n  assert.match(styles, /desktop-app-document-identity \\.canvas-tab-item\\.is-active > \\.canvas-tab[\\s\\S]*?max-width: 520px/);\n  assert.match(styles, /desktop-app-document-identity \\.canvas-tabs-list[\\s\\S]*?overflow-x: auto/);
 });
