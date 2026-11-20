@@ -104,6 +104,7 @@ function App() {
   const architectureValidationSignatureRef = useRef("");
   const lastSelectionSignature = useRef("");
   const apiRef = useRef(null);
+  const globalThemeRef = useRef(getInitialThemeMode() === "dark" ? "dark" : "light");
   const setCurrentFileRef = useRef(null);
   const [apiReady, setApiReady] = useState(false);
   const [canvasTabs, setCanvasTabs] = useState([{ id: "canvas-1", name: "Canvas 1", snapshot: null, dirty: false }]);
@@ -623,7 +624,7 @@ function App() {
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
     api.updateScene({
       elements,
-      appState: { ...api.getAppState(), ...(snapshot.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+      appState: { ...api.getAppState(), ...(snapshot.appState || {}), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
     api.history?.clear?.();
@@ -1152,6 +1153,7 @@ function App() {
     canvasAppearance, setCanvasAppearance,
   });
   const { themeMode, setThemeMode, isDarkTheme } = preferences;
+  globalThemeRef.current = isDarkTheme ? "dark" : "light";
   useEffect(() => {
     if (!savedSketch) return;
     const hasElements = (savedSketch.elements || []).some((element) => element && !element.isDeleted && !element.deleted);
