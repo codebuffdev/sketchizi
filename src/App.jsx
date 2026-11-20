@@ -44,6 +44,8 @@ import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinit
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
+import { hasMountableCanvas } from "./features/workspace/tabClose.js";
+import { getTabDisplayName } from "./features/workspace/tabLabel.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring, resolveCloudLoadTarget } from "./features/workspace/cloudSavePolicy.js";
@@ -69,6 +71,8 @@ import { loadCanvasTabs, saveCanvasTabs } from "./persistence.js";
 import { getLocalDateString, isValidCanvasStartDate } from "./features/canvas/canvasStartDate.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
+import "./styles/contextual-dock-polish.css";
+import "./styles/todo-canvas-polish.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
@@ -869,6 +873,49 @@ function App() {
     return () => window.removeEventListener("keydown", createCanvasFromShortcut, true);
   }, [createCanvasTab]);
 
+  // Closing the final tab returns to the welcome screen. The live scene, cloud
+  // binding and active id are all cleared so nothing from the closed canvas
+  // stays visible or keeps saving in the background.
+  const returnToWelcomeScreen = useCallback(() => {
+    if (canvasTabsSaveTimerRef.current) {
+      window.clearTimeout(canvasTabsSaveTimerRef.current);
+      canvasTabsSaveTimerRef.current = null;
+    }
+    // Detach first so clearing the scene below cannot queue an empty save.
+    cloudDetachedRef.current = true;
+    setCloudDetached(true);
+    cloudSceneReadyRef.current = false;
+    cloudSessionRef.current = { active: false, diagramId: "", projectId: "", revision: null, name: "" };
+    setCloudSaveState({ state: "inactive", error: "" });
+    documentMetadataRef.current = { metadata: {}, extensions: {}, format: "excalidraw" };
+    const liveApi = apiRef.current;
+    liveApi?.updateScene?.({
+      elements: [],
+      appState: { ...liveApi.getAppState?.(), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+    liveApi?.history?.clear?.();
+    setSavedSketch(null);
+    setCurrentFile(null);
+    canvasTabsRef.current = [];
+    activeCanvasIdRef.current = "";
+    setCanvasTabs([]);
+    setActiveCanvasId("");
+    setActiveWorkspaceTabId("");
+    // The canvas unmounts with no active tab; release the API handle so no
+    // effect keeps talking to the discarded editor instance.
+    handleExcalidrawAPI(null);
+    // Return to the editor's welcome chooser in place. Navigating to
+    // /workspace invokes the authentication gate and incorrectly opens
+    // the sign-in dialog for users who are already working in the editor.
+    startupChoiceMadeRef.current = false;
+    setStartupChooserOpen(true);
+    setCloseTabPrompt(null);
+    saveCanvasTabs([]).catch((error) => {
+      logger.warn("The empty canvas workspace could not be saved", { category: "persistence", error });
+    });
+  }, [handleExcalidrawAPI, setCurrentFile, setSavedSketch]);
+
   const performCloseCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
@@ -877,26 +924,7 @@ function App() {
     const isActive = tabId === activeCanvasIdRef.current;
 
     if (remainingTabs.length === 0) {
-      // Closing the final tab returns to the workspace welcome screen, where
-      // the user can choose to start a canvas or a task.
-      if (canvasTabsSaveTimerRef.current) {
-        window.clearTimeout(canvasTabsSaveTimerRef.current);
-        canvasTabsSaveTimerRef.current = null;
-      }
-      canvasTabsRef.current = [];
-      activeCanvasIdRef.current = "";
-      setCanvasTabs([]);
-      setActiveCanvasId("");
-      setActiveWorkspaceTabId("");
-      // Return to the editor's welcome chooser in place. Navigating to
-      // /workspace invokes the authentication gate and incorrectly opens
-      // the sign-in dialog for users who are already working in the editor.
-      startupChoiceMadeRef.current = false;
-      setStartupChooserOpen(true);
-      setCloseTabPrompt(null);
-      saveCanvasTabs([]).catch((error) => {
-        logger.warn("The empty canvas workspace could not be saved", { category: "persistence", error });
-      });
+      returnToWelcomeScreen();
       return;
     }
 
@@ -910,7 +938,7 @@ function App() {
     // instead of persisting the copy taken before the switch.
     persistCanvasTabs(isActive ? canvasTabsRef.current.filter((item) => item.id !== tabId) : remainingTabs);
     setCloseTabPrompt(null);
-  }, [persistCanvasTabs, switchCanvasTab]);
+  }, [persistCanvasTabs, returnToWelcomeScreen, switchCanvasTab]);
 
   const closeCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
@@ -2448,6 +2476,10 @@ function App() {
   // stacking context so header controls cannot intercept its menu or rows.
   const libraryOverlayHost = typeof document === "undefined" ? null : document.querySelector(".app");
 
+  // No open tab means no canvas: the welcome chooser owns the screen.
+  const canvasMounted = hasMountableCanvas({ tabs: canvasTabs, activeCanvasId });
+  const noOpenCanvas = canvasTabsReady && canvasTabs.length === 0;
+
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
@@ -2590,6 +2622,7 @@ function App() {
 
         <section className="desktop-canvas-region" aria-label="Canvas workspace">
           <div className={activeWorkspaceTabId.startsWith("todo:") ? "desktop-canvas-view-hidden" : "desktop-canvas-view"}>
+          {canvasMounted && (
           <SketchiziCanvas
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
@@ -2641,6 +2674,7 @@ function App() {
              onGridVisibilityChange={setGridEnabled}
              gridEnabled={gridEnabled}
           />
+          )}
           </div>
           {activeWorkspaceTabId.startsWith("todo:") && (
             <>
@@ -2734,7 +2768,7 @@ function App() {
         </aside>
       </div>
 
-      {startupChooserOpen && sketchReady && apiReady && !cloudDiagramId && collaborationCanEdit && (
+      {startupChooserOpen && sketchReady && (apiReady || noOpenCanvas) && (!cloudDiagramId || noOpenCanvas) && collaborationCanEdit && (
         <div className="startup-canvas-backdrop" role="presentation">
           <section className="startup-canvas-chooser" role="dialog" aria-modal="true" aria-labelledby="startup-canvas-title">
             <h2 id="startup-canvas-title">Start with</h2>

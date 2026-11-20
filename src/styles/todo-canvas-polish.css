@@ -1,0 +1,157 @@
+/* Todo canvas polish: clear hierarchy, readable rows, and safe wrapping for long
+   names. Loaded after the base Todo rules; selectors and class names are the
+   ones TodoList.jsx already renders. */
+.app .sketchizi-todo-popover {
+  --todo-ink: #1c2733;
+  --todo-muted: #6b7785;
+  --todo-faint: #94a0ad;
+  --todo-line: #e5eaf0;
+  --todo-surface: #fff;
+  --todo-hover: rgb(38 53 69 / 5%);
+  --todo-accent: #5b55c7;
+  --todo-accent-soft: #efedff;
+  --todo-accent-line: #d9d3ff;
+  --todo-danger: #c0392b;
+}
+.app .sketchizi-todo-popover.is-dark {
+  --todo-ink: #e8edf3;
+  --todo-muted: #a3afbd;
+  --todo-faint: #78869a;
+  --todo-line: #354252;
+  --todo-surface: #1f2833;
+  --todo-hover: rgb(255 255 255 / 6%);
+  --todo-accent: #b9b2ff;
+  --todo-accent-soft: #34304f;
+  --todo-accent-line: #514b86;
+  --todo-danger: #ff8f84;
+}
+
+/* Page rhythm */
+.app .sketchizi-todo-popover.is-full-page {
+  max-width: 760px;
+  padding: 40px clamp(16px, 4vw, 48px) 72px;
+  box-sizing: border-box;
+}
+.app .sketchizi-todo-popover.is-full-page .sketchizi-todo-header { padding-bottom: 18px; margin-bottom: 4px; }
+.app .sketchizi-todo-title strong { font-size: 24px; letter-spacing: -.02em; line-height: 1.15; }
+.app .sketchizi-todo-title small { display: block; margin-top: 3px; font-size: 13px; color: var(--todo-muted); }
+
+/* Progress */
+.app .sketchizi-todo-progress { margin: 16px 0 20px; }
+.app .sketchizi-todo-progress-meta { font-size: 12px; color: var(--todo-muted); }
+.app .sketchizi-todo-progress-meta strong { font-weight: 600; color: var(--todo-ink); font-variant-numeric: tabular-nums; }
+.app .sketchizi-todo-progress-track { height: 6px; border-radius: 999px; overflow: hidden; background: var(--todo-line); }
+.app .sketchizi-todo-progress-track > span { display: block; height: 100%; border-radius: inherit; background: var(--todo-accent); transition: width 220ms ease; }
+
+/* Add task */
+.app .sketchizi-todo-add {
+  display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 14px;
+  border: 1px solid var(--todo-line); border-radius: 12px; background: var(--todo-surface);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.app .sketchizi-todo-add:focus-within { border-color: var(--todo-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--todo-accent) 18%, transparent); }
+.app .sketchizi-todo-add > span { color: var(--todo-faint); font-size: 18px; line-height: 1; }
+.app .sketchizi-todo-add input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--todo-ink); font: inherit; font-size: 15px; }
+.app .sketchizi-todo-add input::placeholder { color: var(--todo-faint); }
+.app .sketchizi-todo-add button {
+  flex: 0 0 auto; min-height: 34px; padding: 0 14px; border: 1px solid var(--todo-accent-line); border-radius: 9px;
+  background: var(--todo-accent-soft); color: var(--todo-accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.app .sketchizi-todo-add button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Section headings */
+.app .sketchizi-todo-section-heading {
+  display: flex; align-items: center; gap: 8px; margin: 26px 2px 8px;
+  font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--todo-muted);
+}
+.app .sketchizi-todo-section-heading span {
+  min-width: 20px; padding: 1px 7px; border-radius: 999px; background: var(--todo-line); text-align: center;
+  font-size: 11px; font-variant-numeric: tabular-nums; color: var(--todo-muted);
+}
+
+/* Rows */
+.app .sketchizi-todo-list, .app .sketchizi-todo-completed-list { display: flex; flex-direction: column; gap: 4px; }
+.app .sketchizi-todo-task {
+  display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding: 8px 8px 8px 4px;
+  border: 1px solid transparent; border-radius: 10px; background: transparent; box-sizing: border-box;
+  transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+}
+.app .sketchizi-todo-task:hover, .app .sketchizi-todo-task:focus-within { background: var(--todo-hover); border-color: var(--todo-line); }
+.app .sketchizi-todo-task.is-dragging { opacity: .45; }
+.app .sketchizi-todo-grip { flex: 0 0 auto; margin-top: 2px; color: var(--todo-faint); cursor: grab; opacity: 0; transition: opacity 120ms ease; }
+.app .sketchizi-todo-task:hover .sketchizi-todo-grip, .app .sketchizi-todo-task:focus-within .sketchizi-todo-grip { opacity: 1; }
+
+/* Custom checkbox */
+.app .sketchizi-todo-task input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; flex: 0 0 auto; width: 20px; height: 20px; margin: 2px 0 0; cursor: pointer;
+  border: 1.6px solid var(--todo-faint); border-radius: 6px; background: transparent; display: grid; place-content: center;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.app .sketchizi-todo-task input[type="checkbox"]::after {
+  content: ""; width: 10px; height: 6px; margin-top: -2px; border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) scale(0); transition: transform 120ms ease;
+}
+.app .sketchizi-todo-task input[type="checkbox"]:checked { background: var(--todo-accent); border-color: var(--todo-accent); }
+.app .sketchizi-todo-popover.is-dark .sketchizi-todo-task input[type="checkbox"]:checked::after { border-color: #1b1a2e; }
+.app .sketchizi-todo-task input[type="checkbox"]:checked::after { transform: rotate(-45deg) scale(1); }
+.app .sketchizi-todo-task input[type="checkbox"]:focus-visible { outline: 2px solid var(--todo-accent); outline-offset: 2px; }
+
+/* Text: long names wrap instead of overflowing or stretching the row */
+.app .sketchizi-todo-task-text {
+  flex: 1 1 auto; min-width: 0; padding: 1px 0; border: 0; background: transparent; text-align: left; cursor: text;
+  color: var(--todo-ink); font: inherit; font-size: 15px; line-height: 1.45;
+  white-space: normal; overflow-wrap: anywhere; word-break: break-word;
+}
+.app .sketchizi-todo-task-text.is-canvas-link { cursor: pointer; }
+.app .sketchizi-todo-task-text.is-canvas-link:hover { color: var(--todo-accent); }
+.app .sketchizi-todo-canvas-link-icon { margin-left: 5px; font-size: 12px; opacity: .7; }
+.app .sketchizi-todo-edit {
+  flex: 1 1 auto; min-width: 0; padding: 5px 9px; border: 1px solid var(--todo-accent); border-radius: 8px; outline: 0;
+  background: var(--todo-surface); color: var(--todo-ink); font: inherit; font-size: 15px; line-height: 1.4;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--todo-accent) 16%, transparent);
+}
+
+/* Completed vs pending */
+.app .sketchizi-todo-task.is-completed .sketchizi-todo-task-text { color: var(--todo-faint); text-decoration: line-through; text-decoration-thickness: 1px; }
+.app .sketchizi-todo-task.is-completed .sketchizi-todo-grip { opacity: 0; }
+
+/* Row actions: icon buttons with a real hit area */
+.app .sketchizi-todo-row-actions { display: inline-flex; flex: 0 0 auto; gap: 2px; margin-left: 2px; opacity: 0; transition: opacity 120ms ease; }
+.app .sketchizi-todo-task:hover .sketchizi-todo-row-actions, .app .sketchizi-todo-task:focus-within .sketchizi-todo-row-actions { opacity: 1; }
+.app .sketchizi-todo-action {
+  display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: var(--todo-muted); cursor: pointer; transition: background-color 120ms ease, color 120ms ease;
+}
+.app .sketchizi-todo-action:hover, .app .sketchizi-todo-action:focus-visible { background: var(--todo-hover); color: var(--todo-ink); }
+.app .sketchizi-todo-action.is-done:hover { color: var(--todo-accent); background: var(--todo-accent-soft); }
+.app .sketchizi-todo-action.is-delete:hover { color: var(--todo-danger); background: color-mix(in srgb, var(--todo-danger) 12%, transparent); }
+.app .sketchizi-todo-action:focus-visible { outline: 2px solid var(--todo-accent); outline-offset: 1px; }
+
+/* Empty state */
+.app .sketchizi-todo-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 4px 0 0; padding: 32px 16px;
+  border: 1px dashed var(--todo-line); border-radius: 14px; text-align: center; color: var(--todo-muted); font-size: 13px;
+}
+.app .sketchizi-todo-empty strong { font-size: 15px; color: var(--todo-ink); }
+.app .sketchizi-todo-empty-icon {
+  display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 4px; border-radius: 50%;
+  background: var(--todo-accent-soft); color: var(--todo-accent);
+}
+
+/* Touch and small screens: actions must be reachable without hover */
+@media (hover: none), (max-width: 760px) {
+  .app .sketchizi-todo-row-actions { opacity: 1; }
+  .app .sketchizi-todo-grip { display: none; }
+  .app .sketchizi-todo-action { width: 36px; height: 36px; }
+}
+@media (max-width: 520px) {
+  .app .sketchizi-todo-popover.is-full-page { padding: 24px 14px 56px; }
+  .app .sketchizi-todo-title strong { font-size: 21px; }
+  .app .sketchizi-todo-add { min-height: 46px; padding-left: 12px; }
+  .app .sketchizi-todo-add button { padding: 0 11px; }
+  .app .sketchizi-todo-task { gap: 8px; padding-right: 2px; }
+  .app .sketchizi-todo-action { width: 32px; height: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-todo-popover * { transition: none !important; }
+}

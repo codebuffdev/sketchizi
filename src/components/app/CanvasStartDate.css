@@ -49,3 +49,37 @@
     bottom: 12px !important;
   }
 }
+
+/* Shared bottom row: zoom (left) and canvas date (right) use one row height and
+   one centre line, so they stay horizontally aligned on every canvas model
+   (infinite frameless zoom is 30px tall, the pages capsule is 36px). */
+.app {
+  --canvas-corner-row-height: 36px;
+}
+.app .excalidraw .zoom-actions.zoom-actions {
+  height: var(--canvas-corner-row-height) !important;
+  min-height: var(--canvas-corner-row-height) !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+.canvas-start-date-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  height: var(--canvas-corner-row-height);
+  /* Never run into the zoom control on narrow screens. */
+  max-width: calc(100% - 170px);
+}
+.canvas-start-date {
+  max-width: 100%;
+}
+.canvas-start-date > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .canvas-start-date-wrap { max-width: calc(100% - 140px); }
+}

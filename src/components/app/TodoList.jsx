@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from "react";
-import { isTaskCompleted, moveTask, setTaskChecked, summarizeTasks } from "./todoModel.js";
+import React, { useMemo, useRef, useState } from "react";
+import { MAX_TASK_TEXT_LENGTH, addTaskToList, applyTaskEdit, clearCompletedTasks, getEmptyTaskState, isTaskCompleted, moveTask, removeTaskById, setTaskChecked, summarizeTasks } from "./todoModel.js";
 
 function normalizeCanvasTitle(value) {
   return String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 }
 
-function createTask(text) {
-  return { id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, text: text.trim(), completed: false, section: "active" };
-}
+const ICON_PROPS = { viewBox: "0 0 24 24", width: 15, height: 15, fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" };
+const EditIcon = () => <svg {...ICON_PROPS}><path d="M4 20h4L19 9l-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></svg>;
+const DoneIcon = () => <svg {...ICON_PROPS}><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>;
+const UndoIcon = () => <svg {...ICON_PROPS}><path d="M9 14 4 9l5-5" /><path d="M4 9h9a6 6 0 0 1 0 12h-3" /></svg>;
+const TrashIcon = () => <svg {...ICON_PROPS}><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" /></svg>;
 
 export default function TodoList({ items = [], onChange, onClose, isDarkTheme = false, fullPage = false, canvasTabs = [], onNavigateToCanvas }) {
   const [draft, setDraft] = useState("");
@@ -16,16 +18,26 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
   const [completedOpen, setCompletedOpen] = useState(false);
   const [draggedId, setDraggedId] = useState(null);
   const { tasks, active, completed, checkedCount, leftCount, progress } = useMemo(() => summarizeTasks(items), [items]);
+  const emptyState = getEmptyTaskState(items);
   const update = (next) => onChange?.(next);
+  const addInputRef = useRef(null);
+  const cancelEditRef = useRef(false);
   const addTask = (event) => {
     event.preventDefault();
     if (!draft.trim()) return;
-    update([...tasks, createTask(draft)]);
+    update(addTaskToList(tasks, draft));
     setDraft("");
+    // Keep typing: the next task can be entered straight away.
+    addInputRef.current?.focus();
   };
+  const commitEdit = (task) => {
+    patch(task.id, { text: applyTaskEdit(task, editingText).text });
+    setEditingId(null);
+  };
+  const startEdit = (task) => { cancelEditRef.current = false; setEditingId(task.id); setEditingText(task.text); };
   const patch = (id, changes) => update(tasks.map((task) => task.id === id ? { ...task, ...changes } : task));
   const transform = (id, fn) => update(tasks.map((task) => task.id === id ? fn(task) : task));
-  const remove = (id) => update(tasks.filter((task) => task.id !== id));
+  const remove = (id) => update(removeTaskById(tasks, id));
   const move = (id, section) => transform(id, (task) => moveTask(task, section));
   const reorder = (targetId) => {
     if (!draggedId || draggedId === targetId) return;
@@ -47,21 +59,22 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
       <span className="sketchizi-todo-grip" aria-hidden="true">⠿</span>
       <input type="checkbox" checked={isTaskCompleted(task)} onChange={(event) => transform(task.id, (current) => setTaskChecked(current, event.target.checked))} aria-label={`Mark ${task.text} ${isTaskCompleted(task) ? "incomplete" : "complete"}`} />
       {editingId === task.id ? (
-        <input className="sketchizi-todo-edit" autoFocus value={editingText} onChange={(event) => setEditingText(event.target.value)}
-          onKeyDown={(event) => { if (event.key === "Enter") { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); } if (event.key === "Escape") setEditingId(null); }}
-          onBlur={() => { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); }} />
+        <input className="sketchizi-todo-edit" autoFocus value={editingText} maxLength={MAX_TASK_TEXT_LENGTH} aria-label={`Edit task ${task.text}`} onChange={(event) => setEditingText(event.target.value)}
+          onKeyDown={(event) => { if (event.key === "Enter") commitEdit(task); if (event.key === "Escape") { cancelEditRef.current = true; setEditingId(null); } }}
+          onBlur={() => { if (cancelEditRef.current) { cancelEditRef.current = false; return; } commitEdit(task); }} />
       ) : (
-        <button type="button" className={`sketchizi-todo-task-text${matchingCanvas ? " is-canvas-link" : ""}`} title={matchingCanvas ? `Open ${matchingCanvas.name} canvas` : "Edit task"} onClick={() => { if (matchingCanvas) onNavigateToCanvas?.(matchingCanvas.id); else { setEditingId(task.id); setEditingText(task.text); } }} aria-label={matchingCanvas ? `Open canvas ${matchingCanvas.name}` : `Edit task ${task.text}`}>
+        <button type="button" className={`sketchizi-todo-task-text${matchingCanvas ? " is-canvas-link" : ""}`} title={matchingCanvas ? `Open ${matchingCanvas.name} canvas` : task.text} onClick={() => { if (matchingCanvas) onNavigateToCanvas?.(matchingCanvas.id); else startEdit(task); }} aria-label={matchingCanvas ? `Open canvas ${matchingCanvas.name}` : `Edit task ${task.text}`}>
           {task.text}{matchingCanvas && <span className="sketchizi-todo-canvas-link-icon" aria-hidden="true">↗</span>}
         </button>
       )}
       <span className="sketchizi-todo-row-actions">
+        {editingId !== task.id && <button type="button" className="sketchizi-todo-action is-edit" title="Edit task" aria-label={`Rename ${task.text}`} onClick={() => startEdit(task)}><EditIcon /></button>}
         {task.section === "completed" ? (
-          <button type="button" className="sketchizi-todo-action" title="Move back to tasks" aria-label="Move back to tasks" onClick={() => move(task.id, "active")}>↶</button>
+          <button type="button" className="sketchizi-todo-action" title="Move back to tasks" aria-label="Move back to tasks" onClick={() => move(task.id, "active")}><UndoIcon /></button>
         ) : (
-          <button type="button" className="sketchizi-todo-action is-done" title="Move to completed" aria-label="Move to completed" onClick={() => move(task.id, "completed")}>✓</button>
+          <button type="button" className="sketchizi-todo-action is-done" title="Move to completed" aria-label="Move to completed" onClick={() => move(task.id, "completed")}><DoneIcon /></button>
         )}
-        <button type="button" className="sketchizi-todo-action is-delete" title="Delete task" aria-label={`Delete ${task.text}`} onClick={() => remove(task.id)}>×</button>
+        <button type="button" className="sketchizi-todo-action is-delete" title="Delete task" aria-label={`Delete ${task.text}`} onClick={() => remove(task.id)}><TrashIcon /></button>
       </span>
     </div>
     );
@@ -83,12 +96,22 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
       </div>
       <form className="sketchizi-todo-add" onSubmit={addTask}>
         <span aria-hidden="true">＋</span>
-        <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Add a task…" aria-label="New task" />
+        <input ref={addInputRef} value={draft} maxLength={MAX_TASK_TEXT_LENGTH} onChange={(event) => setDraft(event.target.value)} placeholder="Add a task…" aria-label="New task" enterKeyHint="done" />
         <button type="submit" disabled={!draft.trim()}>Add task</button>
       </form>
       <div className="sketchizi-todo-section-heading"><strong>Tasks</strong><span>{active.length}</span></div>
       <div className="sketchizi-todo-list">
-        {active.length ? active.map(renderTask) : <p className="sketchizi-todo-empty">You're all caught up. Add a task to get started.</p>}
+        {active.length ? active.map(renderTask) : (
+          <div className={`sketchizi-todo-empty is-${emptyState}`} role="status">
+            <span className="sketchizi-todo-empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                {emptyState === "all-done" ? <><circle cx="12" cy="12" r="9" /><path d="m8 12.5 3 3 5-6" /></> : <><rect x="4.5" y="3.5" width="15" height="17" rx="2.5" /><path d="M8.5 9h7M8.5 13h7M8.5 17h4" /></>}
+              </svg>
+            </span>
+            <strong>{emptyState === "all-done" ? "You're all caught up" : "No tasks yet"}</strong>
+            <span>{emptyState === "all-done" ? "Every task is done. Add another when you're ready." : "Type a task above and press Enter to add it."}</span>
+          </div>
+        )}
       </div>
       <div className={`sketchizi-todo-completed-section${completedOpen ? " is-open" : ""}`}>
         <button
@@ -110,7 +133,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
         {completedOpen && completed.length > 0 && (
           <div className="sketchizi-todo-completed-content" id="sketchizi-completed-tasks">
             <div className="sketchizi-todo-completed-list">{completed.map(renderTask)}</div>
-            <button type="button" className="sketchizi-todo-clear" onClick={() => update(tasks.filter((task) => task.section !== "completed"))}>Clear completed</button>
+            <button type="button" className="sketchizi-todo-clear" onClick={() => update(clearCompletedTasks(tasks))}>Clear completed</button>
           </div>
         )}
         {completedOpen && completed.length === 0 && (

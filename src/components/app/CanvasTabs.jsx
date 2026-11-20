@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getTabDisplayName } from "../../features/workspace/tabLabel.js";
 
 function CanvasGlyph() {
   return (
@@ -97,7 +98,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         disabled={disabled}
       >
         {tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}
-        {!(hideActiveName && activeId === tab.id) && <span className="canvas-tab-name">{tab.name}</span>}
+        {!(hideActiveName && activeId === tab.id) && <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>}
         {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
       </button>
       {activeId === tab.id && activeActions && <div className="canvas-tab-active-actions" aria-label={`Actions for ${tab.name}`}>{activeActions}</div>}
@@ -117,7 +118,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                 {hiddenTabs.map((tab) => (
                   <div className="canvas-tabs-overflow-item" role="none" key={tab.id}>
                     <button type="button" role="menuitem" className={activeId === tab.id ? "is-active" : ""} onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}>
-                      <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}{tab.name}</span>
+                      <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}<span className="canvas-tabs-overflow-label" title={tab.name}>{getTabDisplayName(tab.name)}</span></span>
                       {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
                     </button>
                     {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}

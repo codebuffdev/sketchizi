@@ -1,0 +1,147 @@
+/* Contextual dock polish: one calm, compact bar that matches the primary dock.
+   Loaded last so it refines the earlier layered rules without removing any
+   control. Sizing follows the primary dock: 32px controls, 9px control radius. */
+.app .sketchizi-tool-options-dock {
+  --sk-ctx-control: 32px;
+  --sk-ctx-radius: 9px;
+  --sk-ctx-gap: 4px;
+  --sk-ctx-accent-bg: #34304f;
+  --sk-ctx-accent-border: #514b86;
+  --sk-ctx-accent-ink: #d7d0ff;
+  --sk-ctx-divider: rgb(255 255 255 / 10%);
+  --sk-ctx-corner-clear: 170px;
+  gap: 2px !important;
+  min-height: 44px !important;
+  padding: 5px 8px !important;
+  border-radius: 14px !important;
+  /* Stay clear of the zoom control (left) and canvas date (right). */
+  max-width: calc(100% - (var(--sk-ctx-corner-clear) * 2)) !important;
+}
+.app.theme-light .sketchizi-tool-options-dock {
+  --sk-ctx-accent-bg: #efedff;
+  --sk-ctx-accent-border: #d9d3ff;
+  --sk-ctx-accent-ink: #5140c8;
+  --sk-ctx-divider: rgb(25 33 42 / 10%);
+  border-color: #e5e8eb !important;
+  background: rgb(255 255 255 / 97%) !important;
+  box-shadow: 0 5px 18px rgb(25 33 42 / 9%), 0 1px 3px rgb(25 33 42 / 5%) !important;
+}
+
+/* Context chip: quiet label, never competes with the controls. */
+.app .sketchizi-tool-options-dock .sk-tool-dock-context {
+  min-height: var(--sk-ctx-control);
+  padding-inline: 8px !important;
+  margin-right: 2px;
+  border-radius: var(--sk-ctx-radius);
+  opacity: .9;
+}
+
+/* Groups are separated by a hairline divider instead of heavy borders. */
+.app .sketchizi-tool-options-dock .sk-tool-dock-group {
+  position: relative;
+  align-items: center;
+  min-height: var(--sk-ctx-control);
+  gap: var(--sk-ctx-gap) !important;
+  padding-left: 9px !important;
+  margin-left: 4px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 1px;
+  background: var(--sk-ctx-divider);
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-context + .sk-tool-dock-group { margin-left: 2px; }
+.app .sketchizi-tool-options-dock .sk-tool-dock-context + .sk-tool-dock-group::before { display: none; }
+
+/* Consistent control box for every button-like control. */
+.app .sketchizi-tool-options-dock .sk-tool-option-button,
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger,
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger,
+.app .sketchizi-tool-options-dock .sk-tool-text-size-step {
+  box-sizing: border-box;
+  min-width: var(--sk-ctx-control) !important;
+  height: var(--sk-ctx-control) !important;
+  min-height: var(--sk-ctx-control);
+  padding-inline: 6px;
+  border-radius: var(--sk-ctx-radius) !important;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-option-button svg,
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger-glyph svg { width: 18px; height: 18px; }
+
+/* Selected / active: same accent treatment as the primary dock quick palette. */
+.app .sketchizi-tool-options-dock .sk-tool-option-button.is-active,
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger[aria-expanded="true"],
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger.is-active {
+  border-color: var(--sk-ctx-accent-border) !important;
+  background: var(--sk-ctx-accent-bg) !important;
+  color: var(--sk-ctx-accent-ink) !important;
+  box-shadow: none !important;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-option-button.is-active,
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-choice-trigger[aria-expanded="true"] {
+  color: var(--sk-ctx-accent-ink) !important;
+}
+
+/* Disabled: visibly inert, no hover feedback, no press animation. */
+.app .sketchizi-tool-options-dock button:disabled,
+.app .sketchizi-tool-options-dock button[aria-disabled="true"],
+.app .sketchizi-tool-options-dock input:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  background: transparent !important;
+}
+
+/* Colour dots keep their small look but get a comfortable hit target. */
+.app .sketchizi-tool-options-dock .sk-tool-color-dot {
+  position: relative;
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px !important;
+  margin-inline: 2px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-color-dot::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+}
+
+/* Font size stepper and opacity read as one tidy control each. */
+.app .sketchizi-tool-options-dock .sk-tool-text-size { gap: 2px; align-items: center; }
+.app .sketchizi-tool-options-dock .sk-tool-dock-opacity-value {
+  min-width: 34px;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tablet and phone: lift the bar above the zoom/date row so nothing overlaps. */
+@media (max-width: 900px) {
+  .app .sketchizi-tool-options-dock {
+    --sk-ctx-corner-clear: 0px;
+    bottom: calc(18px + var(--canvas-corner-row-height, 36px) + 8px) !important;
+    max-width: calc(100% - 24px) !important;
+  }
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock {
+    --sk-ctx-control: 32px;
+    min-height: 42px !important;
+    padding: 4px 6px !important;
+    border-radius: 12px !important;
+    bottom: calc(12px + var(--canvas-corner-row-height, 36px) + 8px) !important;
+    max-width: calc(100% - 20px) !important;
+  }
+  .app .sketchizi-tool-options-dock .sk-tool-dock-group { padding-left: 6px !important; margin-left: 2px; }
+  .app .sketchizi-tool-options-dock .sk-tool-dock-group::before { top: 8px; bottom: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-tool-options-dock * { transition: none !important; }
+}
