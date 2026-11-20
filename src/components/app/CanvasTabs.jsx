@@ -120,7 +120,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                       <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}{tab.name}</span>
                       {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
                     </button>
-                    {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || tabs.length <= 1}><CloseGlyph /></button>}
+                    {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled || (!tab.isTodoTab && tabs.filter((item) => !item.isTodoTab).length <= 1)}><CloseGlyph /></button>}
                   </div>
                 ))}
               </div>
