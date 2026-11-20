@@ -335,16 +335,21 @@ try {
       position,
       top: rect.top,
       bottom: rect.bottom,
-      dockTop: dockRect.top,
-      viewportWidth: window.innerWidth,
       left: rect.left,
       right: rect.right,
+      dockTop: dockRect.top,
+      dockBottom: dockRect.bottom,
+      dockLeft: dockRect.left,
+      dockRight: dockRect.right,
+      overlapsDock: rect.left < dockRect.right && rect.right > dockRect.left &&
+        rect.top < dockRect.bottom && rect.bottom > dockRect.top,
+      viewportWidth: window.innerWidth,
     };
     toast.remove();
     return layout;
   });
   if (!toastLayout || toastLayout.position !== "fixed" ||
-    toastLayout.bottom + 12 >= toastLayout.dockTop ||
+    toastLayout.overlapsDock ||
     toastLayout.left < 0 || toastLayout.right > toastLayout.viewportWidth) {
     throw new Error(`Clipboard notification overlaps the drawing toolbar: ${JSON.stringify(toastLayout)}`);
   }
