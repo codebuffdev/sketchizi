@@ -887,6 +887,7 @@ function App() {
           const nextCloudTab = {
           id: `cloud-${cloudDiagramId}-${Date.now()}`,
           name: "Cloud diagram",
+          startDate: getLocalDateString(),
           dirty: false,
           snapshot: {
             elements: [],
@@ -934,9 +935,9 @@ function App() {
       canvasTabsRestoredRef.current = true;
       setCanvasTabsReady(true);
     }).catch(() => {
-      const initial = { id: "canvas-1", name: "Canvas 1", dirty: false, snapshot: captureCanvasTabSnapshot() };
+      const initial = { id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), dirty: false, snapshot: captureCanvasTabSnapshot() };
       const nextTabs = cloudDiagramId ? [initial, {
-        id: `cloud-${cloudDiagramId}-${Date.now()}`, name: "Cloud diagram", dirty: false,
+        id: `cloud-${cloudDiagramId}-${Date.now()}`, name: "Cloud diagram", startDate: getLocalDateString(), dirty: false,
         snapshot: { elements: [], appState: {}, files: {}, metadata: {}, extensions: {}, format: "excalidraw", file: null,
           cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" }, cloudDetached: true,
           cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram" },
