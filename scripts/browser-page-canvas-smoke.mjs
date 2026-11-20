@@ -29,12 +29,11 @@ async function chooseStartupPages() {
 async function ensureHeaderVisible() {
  const reveal = page.locator('.desktop-app-header-reveal-handle');
  await reveal.waitFor({ state: 'attached', timeout: 15000 });
- if (await reveal.getAttribute('aria-expanded') !== 'true') {
-  // Floating controls may overlap the collapsed handle for pointer input.
-  // DOM click still invokes the component's actual React handler.
-  await reveal.evaluate(button => button.click());
- }
- await page.waitForFunction(() => document.querySelector('.desktop-app-header-reveal-handle')?.getAttribute('aria-expanded') === 'true');
+ if (await reveal.getAttribute('aria-expanded') !== 'true') await reveal.click({ force: true });
+ await page.waitForFunction(() => document.querySelector('.desktop-app-header')?.getAttribute('aria-hidden') === 'false');
+ const pin = page.locator('.desktop-app-header-pin-button');
+ if (await pin.getAttribute('aria-pressed') !== 'true') await pin.click({ force: true });
+ await page.waitForFunction(() => document.querySelector('.desktop-app-header-pin-button')?.getAttribute('aria-pressed') === 'true');
 }
 try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
