@@ -105,6 +105,22 @@ function App() {
   const [architectureValidation, setArchitectureValidation] = useState({ errors: [], warnings: [], info: [] });
   const architectureValidationSignatureRef = useRef("");
   const lastSelectionSignature = useRef("");
+  const clearCanvasSelection = useCallback(() => {
+    // Keep the scene callback's de-duplication key in sync with the explicit
+    // clear, otherwise a stale signature can leave React's dock selection stuck.
+    lastSelectionSignature.current = "";
+    setSelectedElements([]);
+    setSelectedCount(0);
+    apiRef.current?.updateScene?.({
+      appState: {
+        selectedElementIds: {},
+        selectedGroupIds: {},
+        selectedLinearElement: null,
+        activeTool: { type: "selection" },
+      },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+  }, []);
   const apiRef = useRef(null);
   const globalThemeRef = useRef(getInitialThemeMode() === "dark" ? "dark" : "light");
   const setCurrentFileRef = useRef(null);
@@ -2516,7 +2532,7 @@ function App() {
             onViewportChange={markLocalViewportNavigation}
             propertiesOpen={propertiesOpen}
             selectedElements={selectedElements}
-            onClearSelection={() => { setSelectedElements([]); setSelectedCount(0); }}
+            onClearSelection={clearCanvasSelection}
             applyToSelected={applyToSelected}
             onOpenProperties={() => {
               const selectedIds = selectedElements.filter((element) => element && !element.isDeleted).map((element) => element.id);
