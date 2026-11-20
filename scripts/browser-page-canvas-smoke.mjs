@@ -128,7 +128,8 @@ try {
  await canvasStyle().click();
  const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
  assert(menu.x>=0 && menu.x+menu.width<=390);
- await canvasStyle().click();
+ await page.keyboard.press('Escape');
+ await page.getByRole('dialog',{name:'Canvas style'}).waitFor({state:'detached'});
  await chooseCanvasMode('infinite');
  await page.screenshot({path:'/tmp/sketchizi-page-mobile.png'});
  await page.setViewportSize({width:1440,height:1000});
