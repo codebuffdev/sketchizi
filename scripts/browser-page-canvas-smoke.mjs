@@ -76,7 +76,7 @@ try {
  assert(dock && dock.width>0 && dock.height>0,'Drawing dock must remain visible in Pages mode');
  // Drag the visible southeast page handle and verify the frame and paper resize together.
  const beforeWidth = pages(es)[0].width;
- const handle = await page.locator('.canvas-pages-resize-handle.is-se').boundingBox();
+ const handle = await page.locator('.canvas-pages-resize-hit.is-se').boundingBox();
  assert(handle,'Page resize handle must be visible');
  await page.mouse.move(handle.x+handle.width/2,handle.y+handle.height/2);
  await page.mouse.down();
