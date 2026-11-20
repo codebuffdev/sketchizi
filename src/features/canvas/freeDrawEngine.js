@@ -4,6 +4,7 @@ import {
   getStrokeWidthByKey,
 } from "@excalidraw/common";
 import { getFreedrawOutlinePoints, newFreeDrawElement } from "@excalidraw/element";
+import { getFreeDrawStrokeWidthKey } from "./freeDrawStrokeWidth.js";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -11,9 +12,10 @@ const getAdjustedFreeDrawStreamline = (pointerType) => (pointerType !== "mouse"
   ? DEFAULT_STROKE_STREAMLINE_PRECISE
   : DEFAULT_STROKE_STREAMLINE) * 0.95;
 
-const getAdjustedFreeDrawStrokeWidth = (strokeWidthKey) => {
-  const width = getStrokeWidthByKey("freedraw", strokeWidthKey || "medium");
-  return strokeWidthKey === "medium" || !strokeWidthKey ? width * 0.8 * 0.9 * 0.85 : width;
+const getAdjustedFreeDrawStrokeWidth = (appState) => {
+  const strokeWidthKey = getFreeDrawStrokeWidthKey(appState);
+  const width = getStrokeWidthByKey("freedraw", strokeWidthKey);
+  return strokeWidthKey === "medium" ? width * 0.8 * 0.9 * 0.85 : width;
 };
 
 export function getPointerEventSamples(event) {
@@ -80,7 +82,7 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
   // pressure, streamline, easing, and end-cap geometry.
   const variability = appState?.currentItemStrokeVariability || "variable";
   const streamline = getAdjustedFreeDrawStreamline(session.pointerType);
-  const strokeWidth = getAdjustedFreeDrawStrokeWidth(appState?.currentItemStrokeWidthKey);
+  const strokeWidth = getAdjustedFreeDrawStrokeWidth(appState);
   const previewElement = {
     type: "freedraw",
     strokeWidth: strokeWidth * Math.max(0.0001, appState?.zoom?.value || 1),
@@ -165,7 +167,7 @@ export function createFreeDrawElementFromSamples(samples, appState) {
     strokeColor: appState.currentItemStrokeColor,
     backgroundColor: appState.currentItemBackgroundColor,
     fillStyle: appState.currentItemFillStyle,
-    strokeWidth: getAdjustedFreeDrawStrokeWidth(appState.currentItemStrokeWidthKey),
+    strokeWidth: getAdjustedFreeDrawStrokeWidth(appState),
     strokeStyle: appState.currentItemStrokeStyle,
     roughness: appState.currentItemRoughness,
     opacity: appState.currentItemOpacity,
