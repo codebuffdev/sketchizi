@@ -151,9 +151,12 @@ export default function AuthenticationControl() {
     };
     document.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("keydown", onKeyDown, true);
+    // Editor shortcuts can consume keydown before this listener is reached.
+    window.addEventListener("keyup", onKeyDown, true);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keyup", onKeyDown, true);
     };
   }, [profileMenuOpen]);
 
