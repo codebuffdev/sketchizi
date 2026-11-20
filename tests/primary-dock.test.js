@@ -19,8 +19,9 @@ test("primary dock is a radial iPad-style wheel with the complete tool set", () 
 });
 
 test("wheel starts bottom-left and can be repositioned by dragging its hub", () => {
-  assert.match(dock, /left: expanded \? 18 : -152, bottom: 18/);
-  assert.match(dock, /position\.left \+ \(expanded \? 0 : -152\)/);
+  assert.match(dock, /left: expanded \? 18 : 0, bottom: 18/);
+  assert.match(dock, /is-expanded.*is-tucked/);
+  assert.match(wheelCss, /\.sketchizi-radial-wheel\.is-tucked \{ transform: translateX\(-50%\)/);
   assert.match(dock, /setExpanded\(\(value\) => !value\)/);
   assert.match(dock, /dragRef\.current\.moved/);
   assert.match(dock, /title="Tap to expand or collapse; drag to move"/);
