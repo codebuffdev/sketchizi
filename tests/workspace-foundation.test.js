@@ -240,7 +240,7 @@ test("empty onChange snapshots are saveable after cloud hydration", () => {
 test("cloud onChange hydration suppression is scoped to the tab being hydrated", async () => {
   const app = await read("../src/App.jsx");
   assert.match(app, /cloudHydratingTabIdRef = useRef\(cloudDiagramId \? "pending" : ""\)/);
-  assert.match(app, /if \(cloudHydratingTabIdRef\.current === activeCanvasIdRef\.current\) return;/);
+  assert.match(app, /if \(cloudHydratingTabIdRef\.current === "pending" \|\| cloudHydratingTabIdRef\.current === activeCanvasIdRef\.current\) return;/);
   assert.doesNotMatch(app, /if \(cloudDiagramId && !cloudSceneReadyRef\.current\) return;/);
 });
 
