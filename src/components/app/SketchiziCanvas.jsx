@@ -18,7 +18,7 @@ import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } 
 import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
 
 export default function SketchiziCanvas({
-  savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
+  savedSketch, canvasTheme, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
   pageContext,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
@@ -769,7 +769,7 @@ export default function SketchiziCanvas({
         initialData={excalidrawInitialData}
         excalidrawAPI={registerExcalidrawAPI}
         onExcalidrawAPI={registerExcalidrawAPI}
-        theme={savedSketch?.appState?.theme || getCanvasAppearanceTheme(activeAppearance, isDarkTheme)}
+        theme={canvasTheme || getCanvasAppearanceTheme(activeAppearance, isDarkTheme)}
         viewModeEnabled={viewModeEnabled}
         aiEnabled={true}
         onChange={handleSceneChange}
