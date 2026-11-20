@@ -19,9 +19,12 @@ const dismissStartupChooser = async (page) => {
 };
 
 const ensureHeaderVisible = async (page) => {
-  const reveal = page.getByRole("button", { name: "Show application header", exact: true });
-  if (await reveal.count() && await reveal.getAttribute("aria-expanded") !== "true") {
-    await page.keyboard.press("Control+Shift+H");
+  const reveal = page.locator(".desktop-app-header-reveal-handle");
+  await reveal.waitFor({ state: "attached", timeout: 15000 });
+  if (await reveal.getAttribute("aria-expanded") !== "true") {
+    // The collapsed header handle can be visually overlapped by floating
+    // controls. Trigger its real React click handler without a pointer hit-test.
+    await reveal.evaluate((button) => button.click());
   }
   await page.waitForFunction(() =>
     document.querySelector(".desktop-app-header-reveal-handle")?.getAttribute("aria-expanded") === "true",
