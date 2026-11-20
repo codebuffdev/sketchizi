@@ -751,6 +751,19 @@ function App() {
     performCloseCanvasTab(tabId);
   }, [performCloseCanvasTab]);
 
+  useEffect(() => {
+    if (!closeTabPrompt) return undefined;
+    const dismissOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      setCloseTabPrompt(null);
+    };
+    window.addEventListener("keydown", dismissOnEscape, true);
+    return () => window.removeEventListener("keydown", dismissOnEscape, true);
+  }, [closeTabPrompt]);
+
   const reorderCanvasTabs = useCallback((sourceId, targetId) => {
     const current = [...canvasTabsRef.current];
     const from = current.findIndex((tab) => tab.id === sourceId);
