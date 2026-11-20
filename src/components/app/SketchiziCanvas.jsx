@@ -769,7 +769,6 @@ export default function SketchiziCanvas({
         initialData={excalidrawInitialData}
         excalidrawAPI={registerExcalidrawAPI}
         onExcalidrawAPI={registerExcalidrawAPI}
-        theme={getCanvasAppearanceTheme(activeAppearance, isDarkTheme)}
         viewModeEnabled={viewModeEnabled}
         aiEnabled={true}
         onChange={handleSceneChange}
