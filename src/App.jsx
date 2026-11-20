@@ -798,8 +798,27 @@ function App() {
         saveCanvasTabs([initial]).catch(() => {});
       }
       if (cloudDiagramId) {
-        const api = apiRef.current;
-        const nextCloudTab = {
+        // Reopening a cloud URL should focus the tab already holding that
+        // cloud document instead of creating another tab for the same file.
+        const existingCloudTab = canvasTabsRef.current.find(
+          (tab) => tab.snapshot?.cloudSession?.active
+            && tab.snapshot.cloudSession.diagramId === cloudDiagramId,
+        );
+        if (existingCloudTab) {
+          const focusedTabs = canvasTabsRef.current.map((tab) => ({
+            ...tab,
+            active: tab.id === existingCloudTab.id,
+          }));
+          canvasTabsRef.current = focusedTabs;
+          setCanvasTabs(focusedTabs);
+          activeCanvasIdRef.current = existingCloudTab.id;
+          setActiveCanvasId(existingCloudTab.id);
+          cloudLoadStartedRef.current = true;
+          applyCanvasTabSnapshot(existingCloudTab);
+          saveCanvasTabs(focusedTabs).catch(() => {});
+        } else {
+          const api = apiRef.current;
+          const nextCloudTab = {
           id: `cloud-${cloudDiagramId}-${Date.now()}`,
           name: "Cloud diagram",
           dirty: false,
@@ -844,6 +863,7 @@ function App() {
         });
         api?.history?.clear?.();
         saveCanvasTabs(nextTabs).catch(() => {});
+        }
       }
       canvasTabsRestoredRef.current = true;
       setCanvasTabsReady(true);
