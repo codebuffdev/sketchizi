@@ -4245,3 +4245,28 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
 .app .sketchizi-todo-task.is-completed .sketchizi-todo-task-text.is-canvas-link { color:#6b9bdc; }
 .app.theme-dark .sketchizi-todo-task-text.is-canvas-link { color:#78adff; }
 .app.theme-dark .sketchizi-todo-canvas-link-icon { color:#9aa8b8; }
+
+/* Keep the Todo quick-add field visually quiet while preserving its text caret.
+   The app-wide input focus rules are more specific, so explicitly override them here. */
+.app form.sketchizi-todo-add:focus,
+.app form.sketchizi-todo-add:focus-within,
+.app .sketchizi-todo-popover form.sketchizi-todo-add:focus-within,
+.app .sketchizi-todo-workspace form.sketchizi-todo-add:focus-within {
+  border-color: #e3e9f0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.app form.sketchizi-todo-add input,
+.app form.sketchizi-todo-add input:focus,
+.app form.sketchizi-todo-add input:focus-visible,
+.app .sketchizi-todo-popover form.sketchizi-todo-add input:focus,
+.app .sketchizi-todo-workspace form.sketchizi-todo-add input:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.app .sketchizi-todo-popover.is-dark form.sketchizi-todo-add:focus-within,
+.app .sketchizi-todo-workspace:has(.sketchizi-todo-popover.is-dark) form.sketchizi-todo-add:focus-within {
+  border-color: #3b4652 !important;
+}
+
