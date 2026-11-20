@@ -686,23 +686,27 @@ export default function SketchiziCanvas({
     return () => root.removeEventListener("keydown", handleMarkdownListKeyDown, true);
   }, [canEdit, viewModeEnabled]);
 
-  // Excalidraw maps the "S" key to the selection tool. While the free-draw
-  // tool is active, ignore that shortcut so an accidental S does not interrupt
-  // a pen workflow. Leave text editing and modified shortcuts untouched.
+  // Excalidraw maps the "S" key to the selection tool. While a shape/drawing
+  // tool from the Primary Dock is active, ignore that shortcut so an accidental
+  // S does not interrupt the current tool workflow. Leave text editing and
+  // modified shortcuts untouched.
   useEffect(() => {
-    const preventSelectionShortcutWhileDrawing = (event) => {
+    const primaryDockShapeTools = new Set([
+      "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "frame",
+    ]);
+    const preventSelectionShortcutForPrimaryDockShapes = (event) => {
       if (!apiRef?.current || !canEdit || viewModeEnabled) return;
       if (event.key.toLowerCase() !== "s" || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.target instanceof Element &&
         event.target.closest("input, textarea, select, [contenteditable='true']")) return;
       const activeTool = apiRef.current.getAppState?.()?.activeTool;
-      if (activeTool?.type !== "freedraw") return;
+      if (!primaryDockShapeTools.has(activeTool?.type)) return;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation?.();
     };
-    window.addEventListener("keydown", preventSelectionShortcutWhileDrawing, true);
-    return () => window.removeEventListener("keydown", preventSelectionShortcutWhileDrawing, true);
+    window.addEventListener("keydown", preventSelectionShortcutForPrimaryDockShapes, true);
+    return () => window.removeEventListener("keydown", preventSelectionShortcutForPrimaryDockShapes, true);
   }, [apiRef, canEdit, viewModeEnabled]);
 
   useEffect(() => {
