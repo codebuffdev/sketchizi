@@ -89,54 +89,36 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     };
   }, []);
 
-  useEffect(() => {
-    const move = (event) => {
-      if (!dragRef.current) return;
-      const drag = dragRef.current;
-      if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 5) {
-        drag.moved = true;
-        setExpanded(true);
-      }
-      if (!drag.moved) return;
-      const width = wheelRef.current?.offsetWidth || 304;
-      const height = wheelRef.current?.offsetHeight || 304;
-      setPosition({
-        left: Math.max(8, Math.min(window.innerWidth - width - 8, event.clientX - drag.offsetX)),
-        top: Math.max(8, Math.min(window.innerHeight - height - 8, event.clientY - drag.offsetY)),
-      });
-    };
-    const stop = () => {
-      if (!dragRef.current) return;
-      if (dragRef.current.moved) setExpanded(true);
-      else setExpanded((value) => !value);
-      dragRef.current = null;
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop);
-    window.addEventListener("pointercancel", stop);
-    return () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-      window.removeEventListener("pointercancel", stop);
-    };
-  }, []);
+
 
   const activeId = customTool || activeTool;
+  const tuckedOffset = 110;
   const style = position
-    ? { left: position.left, top: position.top }
-    : { left: expanded ? 18 : 0, bottom: 18 };
+    ? { left: position.left - (expanded ? 0 : tuckedOffset), top: position.top }
+    : { left: expanded ? 16 : -tuckedOffset, bottom: 16 };
   const startDrag = (event) => {
     if (event.button !== 0) return;
     const rect = wheelRef.current?.getBoundingClientRect();
     if (!rect) return;
-    dragRef.current = {
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
-      startX: event.clientX,
-      startY: event.clientY,
-      moved: false,
-    };
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originLeft: rect.left + (expanded ? 0 : tuckedOffset), originTop: rect.top, moved: false };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     event.preventDefault();
+  };
+  const moveDrag = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) > 4) { drag.moved = true; setExpanded(true); }
+    if (!drag.moved) return;
+    const width = wheelRef.current?.offsetWidth || 220;
+    const height = wheelRef.current?.offsetHeight || 220;
+    setPosition({ left: Math.max(8, Math.min(window.innerWidth - width - 8, drag.originLeft + dx)), top: Math.max(8, Math.min(window.innerHeight - height - 8, drag.originTop + dy)) });
+  };
+  const endDrag = (event) => {
+    if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+    if (!dragRef.current.moved) setExpanded((value) => !value);
+    dragRef.current = null;
   };
 
   return (
@@ -174,6 +156,9 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
         title="Tap to expand or collapse; drag to move"
         aria-expanded={expanded}
         onPointerDown={startDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
       >
         <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 2v20M2 12h20M12 2l-3 3m3-3 3 3M22 12l-3-3m3 3-3 3M12 22l-3-3m3 3 3-3M2 12l3-3m-3 3 3 3" />
