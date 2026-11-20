@@ -159,7 +159,7 @@ test("cloud load failures remain visible on the originating tab and can be retri
   assert.match(app, /const retryCloudDiagramLoad = useCallback/);
   assert.match(app, /setCloudLoadAttempt\(\(attempt\) => attempt \+ 1\)/);
   assert.match(app, /onClick=\{retryCloudDiagramLoad\}>Retry loading/);
-  assert.match(app, /cloudSaveState\.state === "error" && !cloudDetached/);
+  assert.match(app, /\["loading", "error"\]\.includes\(cloudSaveState\.state\)\)\) && !cloudDetached/);
   assert.match(app, /cloudSaveState: \{ state: "error", error: message \}/);
   assert.match(app, /cloudLoadStartedRef\.current = false/);
 });
