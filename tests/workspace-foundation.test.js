@@ -267,3 +267,18 @@ test("admin cloud-save path bypasses the standard 2 MiB frontend document limit"
   assert.match(dialog, /Administrator accounts are exempt from the standard 2 MiB application limit/);
   assert.doesNotMatch(dialog, /MAX_DOCUMENT_BYTES/);
 });
+
+
+test("reopening an existing cloud tab always fetches the authoritative cloud document", async () => {
+  const app = await read("../src/App.jsx");
+  const existingTabBranch = app.slice(
+    app.indexOf("if (existingCloudTab) {"),
+    app.indexOf("} else {", app.indexOf("if (existingCloudTab) {")),
+  );
+  assert.match(existingTabBranch, /applyCanvasTabSnapshot\(existingCloudTab\)/);
+  assert.match(existingTabBranch, /cloudLoadStartedRef\.current = false/);
+  assert.match(existingTabBranch, /cloudSessionRef\.current = \{ active: false/);
+  assert.match(existingTabBranch, /cloudDetachedRef\.current = true/);
+  assert.match(existingTabBranch, /setCloudSaveState\(\{ state: "loading", error: "" \}\)/);
+  assert.doesNotMatch(existingTabBranch, /cloudLoadStartedRef\.current = true/);
+});
