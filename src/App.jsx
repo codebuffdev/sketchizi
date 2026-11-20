@@ -244,6 +244,7 @@ function App() {
   const [cloudDetached, setCloudDetached] = useState(false);
   const cloudSceneReadyRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+  const [cloudLoadAttempt, setCloudLoadAttempt] = useState(0);
   const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
@@ -430,6 +431,17 @@ function App() {
     cloudFlushImmediatelyRef.current = false;
   }, [apiRef, cloudDiagramId, queueSketchSave]);
 
+  const retryCloudDiagramLoad = useCallback(() => {
+    if (!cloudDiagramId) return;
+    cloudLoadStartedRef.current = false;
+    cloudHydratingTabIdRef.current = activeCanvasIdRef.current;
+    cloudSceneReadyRef.current = false;
+    cloudDetachedRef.current = false;
+    setCloudDetached(false);
+    setCloudSaveState({ state: "loading", error: "" });
+    setCloudLoadAttempt((attempt) => attempt + 1);
+  }, [cloudDiagramId]);
+
   useEffect(() => {
     if (!cloudDiagramId || !apiReady || !sketchReady || !canvasTabsReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
     let cancelled = false;
@@ -439,6 +451,8 @@ function App() {
       : activeCanvasIdRef.current;
     cloudLoadStartedRef.current = true;
     cloudSceneReadyRef.current = false;
+    cloudDetachedRef.current = false;
+    setCloudDetached(false);
     setCloudSaveState({ state: "loading", error: "" });
     workspaceClient.getDiagram(cloudDiagramId).then((result) => {
       if (cancelled) return;
@@ -515,7 +529,10 @@ function App() {
       if (cancelled) return;
       if (activeCanvasIdRef.current === targetTabId) {
         cloudSessionRef.current.active = false;
+        cloudDetachedRef.current = false;
+        setCloudDetached(false);
         cloudSceneReadyRef.current = true;
+        cloudLoadStartedRef.current = false;
         setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
       }
       if (cloudHydratingTabIdRef.current === targetTabId) cloudHydratingTabIdRef.current = "";
@@ -527,7 +544,7 @@ function App() {
       // allow the next effect instance to retry instead of leaving the tab stuck.
       if (!cloudSceneReadyRef.current) cloudLoadStartedRef.current = false;
     };
-  }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
+  }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, cloudLoadAttempt, documentMetadataRef, setSavedSketch, sketchReady]);
 
   useEffect(() => {
     const flushPendingCloudSave = () => {
@@ -2410,14 +2427,16 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+      {(cloudSessionRef.current.active || (cloudDiagramId && ["loading", "error"].includes(cloudSaveState.state))) && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
-          <button type="button" onClick={() => {
-            const api = apiRef.current;
-            if (!api) return;
-            queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
-          }}>Retry save</button>
+          {cloudSessionRef.current.active
+            ? <button type="button" onClick={() => {
+              const api = apiRef.current;
+              if (!api) return;
+              queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+            }}>Retry save</button>
+            : <button type="button" onClick={retryCloudDiagramLoad}>Retry loading</button>}
           <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
         </>}
         {cloudSaveState.state === "conflict" && <>
