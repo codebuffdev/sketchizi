@@ -20,8 +20,8 @@ const canvasStyle = () => page.getByRole('button',{name:'Canvas style',exact:tru
 async function chooseStartupPages() {
  const title = page.getByRole('heading', { name: 'Start with' });
  if (await title.count()) {
-  const chooser = page.getByRole('dialog').filter({ has: title });
-  await chooser.getByRole('button', { name: 'Pages', exact: true }).click();
+  const chooser = page.locator('.startup-canvas-chooser');
+  await chooser.locator('.startup-canvas-option').nth(1).click();
   await chooser.waitFor({ state: 'detached' });
  }
 }
