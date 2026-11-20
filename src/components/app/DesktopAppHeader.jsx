@@ -779,7 +779,7 @@ const activeTabActions = (
       <div className="desktop-app-header-spacer" />
 
       <div className="desktop-app-header-actions">
-        <div className="desktop-app-header-panel-actions">{children}</div>
+        
         {moreToolsToggle}
         <button
           type="button"
@@ -831,6 +831,7 @@ const activeTabActions = (
       </button>
     </div>
     </header>
+      <div className="desktop-app-global-ai-control">{children}</div>
       <div
         className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
         title={`${activeCanvasTabName} — ${documentStatusLabel}`}
