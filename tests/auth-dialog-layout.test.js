@@ -12,7 +12,7 @@ test('sign-in dialog is portalled outside the header while its trigger remains i
   assert.match(auth, /<div className="auth-dialog-backdrop" role="presentation"/);
   assert.match(auth, /<section className="auth-dialog" role="dialog" aria-modal="true"/);
   assert.match(auth, /dialogHost\s*\)\}/);
-  assert.match(auth, /className="auth-header-button" type="button"/);
+  assert.match(auth, /className="auth-header-button[^\"]*" type="button"/);
 });
 
 test('auth backdrop centers the dialog with viewport positioning and mobile-safe overflow', () => {
