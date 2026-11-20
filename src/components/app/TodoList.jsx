@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { getTodoTaskCompletionPatch } from "../../features/todo/todoTaskState.js";
 
 function normalizeCanvasTitle(value) {
   return String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -27,7 +28,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
   };
   const patch = (id, changes) => update(tasks.map((task) => task.id === id ? { ...task, ...changes } : task));
   const remove = (id) => update(tasks.filter((task) => task.id !== id));
-  const move = (id, section) => patch(id, { section });
+  const move = (id, section) => patch(id, getTodoTaskCompletionPatch(section === "completed"));
   const reorder = (targetId) => {
     if (!draggedId || draggedId === targetId) return;
     const from = tasks.findIndex((task) => task.id === draggedId);
@@ -46,7 +47,7 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
     <div className={`sketchizi-todo-task${task.completed ? " is-completed" : ""}${draggedId === task.id ? " is-dragging" : ""}`} key={task.id}
       draggable onDragStart={() => setDraggedId(task.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(task.id)} onDragEnd={() => setDraggedId(null)}>
       <span className="sketchizi-todo-grip" aria-hidden="true">⠿</span>
-      <input type="checkbox" checked={!!task.completed} onChange={(event) => patch(task.id, { completed: event.target.checked })} aria-label={`Mark ${task.text} ${task.completed ? "incomplete" : "complete"}`} />
+      <input type="checkbox" checked={!!task.completed} onChange={(event) => patch(task.id, getTodoTaskCompletionPatch(event.target.checked))} aria-label={`Mark ${task.text} ${task.completed ? "incomplete" : "complete"}`} />
       {editingId === task.id ? (
         <input className="sketchizi-todo-edit" autoFocus value={editingText} onChange={(event) => setEditingText(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") { patch(task.id, { text: editingText.trim() || task.text }); setEditingId(null); } if (event.key === "Escape") setEditingId(null); }}
