@@ -483,6 +483,21 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], canvasR
         : element),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
+
+    // The active WYSIWYG textarea owns an inline font style of its own.
+    // Updating the scene element alone does not refresh that editor style.
+    const editor = document.querySelector(".excalidraw-wysiwyg");
+    if (editor instanceof HTMLTextAreaElement) {
+      const fontFamilies = {
+        3: '"Cascadia Code", monospace',
+        4: '"Kalam", cursive',
+        5: '"Excalifont", cursive',
+        7: '"Lilita One", cursive',
+        8: '"Comic Shanns", cursive',
+      };
+      editor.style.fontFamily = fontFamilies[Number(value)] || "Arial, sans-serif";
+      document.fonts?.load(`16px ${editor.style.fontFamily}`).catch(() => {});
+    }
   };
 
   const updateLineGeometry = (value) => {
