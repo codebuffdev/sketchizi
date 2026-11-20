@@ -43,7 +43,7 @@ import { applyKubernetesRelationshipSuggestion } from "./features/architecture/k
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
-import { resetCloudLoadAttempt, shouldShowCloudLoadFailure } from "./features/workspace/cloudLoadRecovery.js";
+import { resetCloudLoadAttempt, shouldShowCloudLoadStatus } from "./features/workspace/cloudLoadRecovery.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
@@ -2468,7 +2468,7 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {(cloudSessionRef.current.active && !cloudDetached) || shouldShowCloudLoadFailure({ loadFailed: cloudLoadFailed, cloudDetached }) ? <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+      {(cloudSessionRef.current.active && !cloudDetached) || shouldShowCloudLoadStatus({ loadFailed: cloudLoadFailed, loadInProgress: cloudSaveState.state === "loading" && Boolean(cloudDiagramId), cloudDetached }) ? <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudLoadFailed && <button type="button" onClick={retryCloudLoad}>Retry load</button>}
         {cloudSaveState.state === "error" && !cloudLoadFailed && <>
