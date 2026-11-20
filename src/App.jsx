@@ -42,6 +42,7 @@ import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinit
 import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
+import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 import { hasCloudSceneChange, isActiveCloudSession } from "./features/workspace/cloudSavePolicy.js";
@@ -431,11 +432,7 @@ function App() {
     setCloudSaveState({ state: "loading", error: "" });
     workspaceClient.getDiagram(cloudDiagramId).then((result) => {
       if (cancelled) return;
-      const diagram = result?.diagram || result;
-      const document = diagram?.document || diagram?.content;
-      if (!document || !Array.isArray(document.elements)) {
-        throw new Error("The cloud diagram did not contain a valid Sketchizi document.");
-      }
+      const { diagram, document, name: loadedCloudName } = normalizeCloudDiagramResponse(result, cloudDiagramId);
       const api = apiRef.current;
       if (!api?.updateScene) throw new Error("The editor is not ready to load this cloud diagram.");
       const elements = restoreElements(document.elements, null, { repairBindings: true });
@@ -454,7 +451,6 @@ function App() {
         revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
         name: diagram.name || "Cloud diagram",
       };
-      const loadedCloudName = diagram.name || "Cloud diagram";
       setCloudDocumentName(loadedCloudName);
       api.updateScene({
         elements,
@@ -912,10 +908,7 @@ function App() {
         if (!session?.active || !session.diagramId) return tab;
         try {
           const result = await workspaceClient.getDiagram(session.diagramId);
-          const diagram = result?.diagram || result;
-          const document = diagram?.document || diagram?.content;
-          if (!document || !Array.isArray(document.elements)) return tab;
-          const name = diagram.name || session.name || tab.name;
+          const { diagram, document, name } = normalizeCloudDiagramResponse(result, session.diagramId, { fallbackName: session.name || tab.name });
           return {
             ...tab,
             name,
