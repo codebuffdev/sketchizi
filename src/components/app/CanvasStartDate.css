@@ -1,4 +1,4 @@
-.canvas-start-date-wrap { position: absolute; right: 18px; bottom: 18px; z-index: 12; }
+.canvas-start-date-wrap { position: absolute; right: 18px; bottom: 0 !important; z-index: 12; }
 .canvas-start-date {
   display: inline-flex; align-items: center; gap: 6px; min-height: 27px; padding: 0 9px;
   border: 1px solid var(--color-border, rgba(120, 130, 150, .2)); border-radius: 7px;
@@ -31,7 +31,7 @@
 .canvas-activity-entry strong { font-size:11px; font-weight:600; }
 .canvas-activity-empty { margin:0; line-height:1.5; }
 .app.theme-dark .canvas-start-date, .app.theme-dark .canvas-activity-popover { background:rgba(31,38,50,.96); border-color:rgba(150,162,184,.2); color:#dce3ed; }
-@media (max-width:520px) { .canvas-start-date-wrap { right:10px; bottom:12px; } .canvas-start-date { min-height:25px; font-size:10px; } }
+@media (max-width:520px) { .canvas-start-date-wrap { right:10px; bottom:0 !important; } .canvas-start-date { min-height:25px; font-size:10px; } }
 
 
 /* Keep the canvas zoom percentage in the bottom-left corner, clear of the centered tool rail. */
@@ -39,27 +39,26 @@
   position: absolute !important;
   left: 22px !important;
   right: auto !important;
-  bottom: 18px !important;
+  bottom: 0 !important;
+  transform: translateY(9px) !important;
   z-index: 12 !important;
 }
 
 @media (max-width: 520px) {
   .app .excalidraw .zoom-actions {
     left: 10px !important;
-    bottom: 12px !important;
+    bottom: 0 !important;
+    transform: translateY(9px) !important;
   }
 }
 
-/* Shared bottom row: zoom (left) and canvas date (right) use one row height and
-   one centre line, so they stay horizontally aligned on every canvas model
-   (infinite frameless zoom is 30px tall, the pages capsule is 36px). */
+/* Keep the date control's corner row unchanged and lower the zoom controls
+   slightly so their visible row sits lower alongside the date. */
 .app {
   --canvas-corner-row-height: 36px;
 }
 .app .excalidraw .zoom-actions.zoom-actions {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
+  align-content: center !important;
   height: var(--canvas-corner-row-height) !important;
   min-height: var(--canvas-corner-row-height) !important;
   box-sizing: border-box !important;
