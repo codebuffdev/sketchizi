@@ -64,6 +64,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
   const [position, setPosition] = useState(null);
+  const [expanded, setExpanded] = useState(false);
   const dragRef = useRef(null);
   const wheelRef = useRef(null);
 
@@ -91,15 +92,22 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   useEffect(() => {
     const move = (event) => {
       if (!dragRef.current) return;
-      const { offsetX, offsetY } = dragRef.current;
-      const width = wheelRef.current?.offsetWidth || 300;
-      const height = wheelRef.current?.offsetHeight || 300;
+      const drag = dragRef.current;
+      if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 5) drag.moved = true;
+      if (!drag.moved) return;
+      const width = wheelRef.current?.offsetWidth || 304;
+      const height = wheelRef.current?.offsetHeight || 304;
       setPosition({
-        left: Math.max(8, Math.min(window.innerWidth - width - 8, event.clientX - offsetX)),
-        top: Math.max(8, Math.min(window.innerHeight - height - 8, event.clientY - offsetY)),
+        left: Math.max(8, Math.min(window.innerWidth - width - 8, event.clientX - drag.offsetX)),
+        top: Math.max(8, Math.min(window.innerHeight - height - 8, event.clientY - drag.offsetY)),
       });
     };
-    const stop = () => { dragRef.current = null; };
+    const stop = () => {
+      if (!dragRef.current) return;
+      if (dragRef.current.moved) setExpanded(true);
+      else setExpanded((value) => !value);
+      dragRef.current = null;
+    };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", stop);
     window.addEventListener("pointercancel", stop);
@@ -113,12 +121,18 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   const activeId = customTool || activeTool;
   const style = position
     ? { left: position.left, top: position.top }
-    : { left: 18, bottom: 18 };
+    : { left: expanded ? 18 : -152, bottom: 18 };
   const startDrag = (event) => {
     if (event.button !== 0) return;
     const rect = wheelRef.current?.getBoundingClientRect();
     if (!rect) return;
-    dragRef.current = { offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+    dragRef.current = {
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+    };
     event.preventDefault();
   };
 
@@ -154,7 +168,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
         type="button"
         className="sketchizi-radial-wheel-hub"
         aria-label="Move tool wheel"
-        title="Drag to move tool wheel"
+        title="Tap to expand or collapse; drag to move"
+        aria-expanded={expanded}
         onPointerDown={startDrag}
       >
         <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
