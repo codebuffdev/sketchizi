@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createCanvasTabId } from "../src/features/canvas/canvasTabIdentity.js";
 
 test("canvas tab IDs remain unique when tabs are created in the same millisecond", () => {
@@ -10,4 +11,9 @@ test("canvas tab IDs remain unique when tabs are created in the same millisecond
   assert.notEqual(second, first);
   assert.notEqual(third, first);
   assert.notEqual(third, second);
+});
+
+test("Ctrl+N ignores key-repeat events", () => {
+  const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+  assert.match(app, /if \(event\.repeat \|\| !\(event\.ctrlKey \|\| event\.metaKey\)/);
 });
