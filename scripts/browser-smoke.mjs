@@ -22,12 +22,19 @@ const ensureHeaderVisible = async (page) => {
   const reveal = page.locator(".desktop-app-header-reveal-handle");
   await reveal.waitFor({ state: "attached", timeout: 15000 });
   if (await reveal.getAttribute("aria-expanded") !== "true") {
-    // The collapsed header handle can be visually overlapped by floating
-    // controls. Trigger its real React click handler without a pointer hit-test.
-    await reveal.evaluate((button) => button.click());
+    // Floating controls can overlap the collapsed handle; force the actual
+    // button click so its React handler runs without a pointer hit-test.
+    await reveal.click({ force: true });
   }
   await page.waitForFunction(() =>
-    document.querySelector(".desktop-app-header-reveal-handle")?.getAttribute("aria-expanded") === "true",
+    document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "false",
+  );
+  // Keep the header open for the whole smoke journey instead of racing its
+  // five-second auto-hide timer between separate browser assertions.
+  const pin = page.locator(".desktop-app-header-pin-button");
+  if (await pin.getAttribute("aria-pressed") !== "true") await pin.click({ force: true });
+  await page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-pin-button")?.getAttribute("aria-pressed") === "true",
   );
 };
 
