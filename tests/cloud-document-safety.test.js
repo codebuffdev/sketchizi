@@ -16,13 +16,13 @@ test("local autosave resumes once a cloud diagram is detached", () => {
   assert.equal(usesLocalAutosave("cloud-diagram", false), false);
   assert.equal(usesLocalAutosave("cloud-diagram", true), true);
   assert.match(app, /cloudDetachedRef\.current = true/);
-  assert.match(app, /if \(usesLocalAutosave\(cloudDiagramId, cloudDetachedRef\.current\)\) \{\s*queueLocalSketchSave\(elements, appState\)/);
+  assert.match(app, /if \(!cloudSessionRef\.current\.active \|\| cloudDetachedRef\.current\) \{\s*queueLocalSketchSave\(elements, appState\)/);
   assert.match(files, /dispatchEvent\(new CustomEvent\("sketchizi:detach-cloud-document"\)\)/);
 });
 
-test("an empty visible cloud diagram saves deletions, but not transient empty callbacks", () => {
+test("an empty scene snapshot is saved after hydration while malformed callbacks are ignored", () => {
   assert.equal(hasCloudSceneChange(null), false);
-  assert.equal(hasCloudSceneChange([]), false);
+  assert.equal(hasCloudSceneChange([]), true, "an empty scene after hydration is a real deletion snapshot");
   assert.equal(hasCloudSceneChange([null, undefined]), false);
   assert.equal(hasCloudSceneChange([{ id: "one", isDeleted: false }]), true);
   assert.equal(hasCloudSceneChange([{ id: "one", isDeleted: true }]), true);
@@ -46,7 +46,7 @@ test("Reset canvas uses the same guarded new-document path, including cloud deta
   assert.match(preferences, /fileActionsRef\.current\.createNewFile\?\.\(\)/);
   assert.match(preferences, /if \(!canEdit\) return;/);
   assert.doesNotMatch(preferences, /clearSketch\(\)|clearEmergencyBackup\(\)/);
-  assert.match(files, /if \(!confirmCanvasReplacement\("create a new drawing"\)\) return/);
+  assert.match(files, /if \(!\(await confirmCanvasReplacement\("create a new drawing"\)\)\) return/);
   assert.match(files, /new CustomEvent\("sketchizi:detach-cloud-document"\)/);
   assert.match(files, /api\.history\?\.clear\?\.\(\)/);
 });
@@ -54,11 +54,11 @@ test("Reset canvas uses the same guarded new-document path, including cloud deta
 test("detached cloud drawings immediately display local status and local save controls", () => {
   assert.match(app, /const \[cloudDetached, setCloudDetached\] = useState\(false\)/);
   assert.match(app, /cloudDetachedRef\.current = true;\s*setCloudDetached\(true\)/);
-  assert.match(app, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName/);
-  assert.match(app, /isCloudDocument=\{Boolean\(cloudDiagramId && !cloudDetached\)\}/);
-  assert.ok(app.includes("cloudDiagramId && !cloudDetached && <div className="));
-  assert.match(app, /onSaveToCloud=\{\(\) => cloudDiagramId && !cloudDetachedRef\.current \? saveCloudDiagramNow\(\) : setCloudSaveDialogOpen\(true\)\}/);
-  assert.match(app, /if \(cloudDiagramId && !cloudDetachedRef\.current\) \{\s*if \(!cloudSessionRef\.current\.active\)/);
+  assert.match(app, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName/);
+  assert.match(app, /isCloudDocument=\{Boolean\(cloudSessionRef\.current\.active && !cloudDetached\)\}/);
+  assert.match(app, /\(cloudSessionRef\.current\.active \|\| \(cloudDiagramId && \["loading", "error"\]\.includes\(cloudSaveState\.state\)\)\) && !cloudDetached && <div className=/);
+  assert.match(app, /onSaveToCloud=\{\(\) => cloudSessionRef\.current\.active && !cloudDetachedRef\.current \? saveCloudDiagramNow\(\) : setCloudSaveDialogOpen\(true\)\}/);
+  assert.match(app, /if \(!cloudSessionRef\.current\.active \|\| cloudDetachedRef\.current\) \{\s*queueLocalSketchSave/);
 });
 
 test("new local drawing clears storage only after all older writes settle", () => {

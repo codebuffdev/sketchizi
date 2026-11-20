@@ -1,4 +1,5 @@
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "./features/canvas/fontFamilyDefaults.js";
+import { sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 
 const DB_NAME = "sketchizi-local-state";
 const DB_VERSION = 4;
@@ -201,12 +202,25 @@ export async function loadCanvasTabs() {
   } finally { try { db.close(); } catch {} }
 }
 
+export function sanitizeCanvasTabSnapshots(tabs) {
+  return (Array.isArray(tabs) ? tabs : []).map((tab) => {
+    if (!tab?.snapshot || typeof tab.snapshot !== "object") return tab;
+    return {
+      ...tab,
+      snapshot: {
+        ...tab.snapshot,
+        appState: sanitizeCloudAppState(tab.snapshot.appState || {}),
+      },
+    };
+  });
+}
+
 export async function saveCanvasTabs(tabs) {
   const db = await openDatabase();
   try {
     return await new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
-      transaction.objectStore(STORE_NAME).put({ tabs: structuredClone(tabs), savedAt: Date.now() }, "canvas-tabs-manifest");
+      transaction.objectStore(STORE_NAME).put({ tabs: structuredClone(sanitizeCanvasTabSnapshots(tabs)), savedAt: Date.now() }, "canvas-tabs-manifest");
       transaction.oncomplete = () => resolve(true);
       transaction.onerror = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));
       transaction.onabort = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));

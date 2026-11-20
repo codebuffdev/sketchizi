@@ -1,9 +1,30 @@
+const hasDiagramIdentityOrDocument = (value) => Boolean(
+  value && typeof value === "object" && (
+    value.id || value.name || value.title || value.filename ||
+    value.document || value.content || value.documentJson || value.document_json
+  )
+);
+
 const unwrapDiagram = (payload) => {
   let value = payload;
   for (let depth = 0; depth < 3; depth += 1) {
-    if (value?.diagram && typeof value.diagram === "object") value = value.diagram;
-    else if (value?.data && typeof value.data === "object" && !Array.isArray(value.data)) value = value.data;
-    else break;
+    if (value?.diagram && typeof value.diagram === "object") {
+      value = value.diagram;
+      continue;
+    }
+    // data can be either an API envelope or the actual document. Preserve the
+    // outer diagram metadata when it already carries identity/name fields.
+    if (
+      value?.data &&
+      typeof value.data === "object" &&
+      !Array.isArray(value.data) &&
+      !Array.isArray(value.data.elements) &&
+      !hasDiagramIdentityOrDocument(value)
+    ) {
+      value = value.data;
+      continue;
+    }
+    break;
   }
   return value;
 };

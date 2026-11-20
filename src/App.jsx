@@ -66,6 +66,7 @@ import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
 import { loadCanvasTabs, saveCanvasTabs } from "./persistence.js";
 import { getLocalDateString, isValidCanvasStartDate } from "./features/canvas/canvasStartDate.js";
+import { createCanvasTabId } from "./features/canvas/canvasTabIdentity.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 
@@ -236,10 +237,14 @@ function App() {
   const cloudFlushImmediatelyRef = useRef(false);
   const cloudLoadStartedRef = useRef(false);
   const cloudHydrationPendingTabIdRef = useRef("");
+  // Track hydration by tab, not by the cloudDiagramId URL parameter: the URL
+  // remains present after switching to a local tab or detaching the document.
+  const cloudHydratingTabIdRef = useRef(cloudDiagramId ? "pending" : "");
   const cloudDetachedRef = useRef(false);
   const [cloudDetached, setCloudDetached] = useState(false);
   const cloudSceneReadyRef = useRef(false);
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
+  const [cloudLoadAttempt, setCloudLoadAttempt] = useState(0);
   const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
@@ -278,6 +283,7 @@ function App() {
   useEffect(() => {
     const detachCloudDocument = () => {
       cloudDetachedRef.current = true;
+      cloudHydratingTabIdRef.current = "";
       cloudManualSaveRequestedRef.current = false;
       setCloudDetached(true);
       cloudSceneReadyRef.current = false;
@@ -323,6 +329,7 @@ function App() {
     setCloudSaveDialogOpen(false);
     showToast("Saved to Cloud Workspace", "success");
     cloudSessionRef.current = { active: true, diagramId: diagram.id, projectId, revision: diagram.revision ?? result?.revision ?? 0, name: diagram.name || name.trim() };
+    cloudHydratingTabIdRef.current = "";
     cloudSceneReadyRef.current = true;
     cloudDetachedRef.current = false;
     setCloudDetached(false);
@@ -375,6 +382,7 @@ function App() {
       elements,
       appState: appState || api.getAppState?.() || {},
       metadata: documentMetadataRef.current,
+      allowEmpty: true,
     });
     if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
     cloudSaveTimerRef.current = window.setTimeout(() => {
@@ -423,19 +431,72 @@ function App() {
     cloudFlushImmediatelyRef.current = false;
   }, [apiRef, cloudDiagramId, queueSketchSave]);
 
+  const retryCloudDiagramLoad = useCallback(() => {
+    if (!cloudDiagramId) return;
+    cloudLoadStartedRef.current = false;
+    cloudHydratingTabIdRef.current = activeCanvasIdRef.current;
+    cloudSceneReadyRef.current = false;
+    cloudDetachedRef.current = false;
+    setCloudDetached(false);
+    setCloudSaveState({ state: "loading", error: "" });
+    setCloudLoadAttempt((attempt) => attempt + 1);
+  }, [cloudDiagramId]);
+
   useEffect(() => {
     if (!cloudDiagramId || !apiReady || !sketchReady || !canvasTabsReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
     let cancelled = false;
+    let requestSettled = false;
     let readyFrame = 0;
+    const targetTabId = cloudHydratingTabIdRef.current && cloudHydratingTabIdRef.current !== "pending"
+      ? cloudHydratingTabIdRef.current
+      : activeCanvasIdRef.current;
     cloudLoadStartedRef.current = true;
     cloudSceneReadyRef.current = false;
+    cloudDetachedRef.current = false;
+    setCloudDetached(false);
     setCloudSaveState({ state: "loading", error: "" });
     workspaceClient.getDiagram(cloudDiagramId).then((result) => {
+      requestSettled = true;
       if (cancelled) return;
       const { diagram, document, name: loadedCloudName } = normalizeCloudDiagramResponse(result, cloudDiagramId);
       const api = apiRef.current;
       if (!api?.updateScene) throw new Error("The editor is not ready to load this cloud diagram.");
       const elements = restoreElements(document.elements, null, { repairBindings: true });
+      const loadedSession = {
+        active: true,
+        diagramId: diagram.id || cloudDiagramId,
+        projectId: diagram.projectId || cloudProjectId,
+        revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
+        name: loadedCloudName,
+      };
+      const loadedSnapshot = {
+        elements,
+        appState: document.appState || {},
+        files: document.files || {},
+        metadata: document.metadata || {},
+        extensions: document.extensions || {},
+        format: document.format || diagram.format || "excalidraw",
+        file: null,
+        cloudSession: loadedSession,
+        cloudDetached: false,
+        cloudSaveState: { state: "saved", error: "" },
+        cloudDocumentName: loadedCloudName,
+      };
+      const loadedTabs = canvasTabsRef.current.map((tab) => tab.id === targetTabId
+        ? { ...tab, name: loadedCloudName, snapshot: loadedSnapshot, dirty: false }
+        : tab);
+      canvasTabsRef.current = loadedTabs;
+      setCanvasTabs(loadedTabs);
+      saveCanvasTabs(loadedTabs).catch(() => {});
+
+      // The request belongs to the tab that initiated it. If the user switched
+      // away while the network request was pending, update only that tab's
+      // cached snapshot; never paint its cloud document into the newly active tab.
+      if (activeCanvasIdRef.current !== targetTabId) {
+        if (cloudHydratingTabIdRef.current === targetTabId) cloudHydratingTabIdRef.current = "";
+        return;
+      }
+
       documentMetadataRef.current = {
         metadata: document.metadata || {},
         extensions: document.extensions || {},
@@ -444,13 +505,7 @@ function App() {
       cloudDetachedRef.current = false;
       setCloudDetached(false);
       cloudSceneReadyRef.current = false;
-      cloudSessionRef.current = {
-        active: true,
-        diagramId: diagram.id || cloudDiagramId,
-        projectId: diagram.projectId || cloudProjectId,
-        revision: diagram.revision ?? result?.revision ?? result?.version ?? 0,
-        name: diagram.name || "Cloud diagram",
-      };
+      cloudSessionRef.current = loadedSession;
       setCloudDocumentName(loadedCloudName);
       api.updateScene({
         elements,
@@ -462,41 +517,51 @@ function App() {
       if (files.length) api.addFiles?.(files);
       setCurrentFileRef.current?.(null);
       setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format: document.format || diagram.format || "excalidraw" });
-      const loadedSnapshot = {
-        elements, appState: document.appState || {}, files: document.files || {},
-        metadata: document.metadata || {}, extensions: document.extensions || {},
-        format: document.format || diagram.format || "excalidraw", file: null,
-        cloudSession: { ...cloudSessionRef.current }, cloudDetached: false,
-        cloudSaveState: { state: "saved", error: "" }, cloudDocumentName: loadedCloudName,
-      };
-      const loadedTabs = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
-        ? { ...tab, name: loadedCloudName, snapshot: loadedSnapshot, dirty: false }
-        : tab);
-      canvasTabsRef.current = loadedTabs;
-      setCanvasTabs(loadedTabs);
-      saveCanvasTabs(loadedTabs).catch(() => {});
       if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
 
       // Excalidraw can emit onChange callbacks after updateScene returns.
-      // Keep the restoration guard active through the next paint so those
-      // callbacks cannot start the normal React/persistence pipeline midway
-      // through cloud hydration.
+      // Keep the restoration guard active through the next paint.
       readyFrame = window.requestAnimationFrame(() => {
         if (cancelled) return;
+        if (cloudHydratingTabIdRef.current === targetTabId) cloudHydratingTabIdRef.current = "";
         cloudSceneReadyRef.current = true;
         setCloudSaveState({ state: "saved", error: "" });
       });
     }).catch((error) => {
+      requestSettled = true;
       if (cancelled) return;
-      cloudSessionRef.current.active = false;
-      cloudSceneReadyRef.current = true;
-      setCloudSaveState({ state: "error", error: error.message || "Could not load this cloud diagram." });
+      const message = error.message || "Could not load this cloud diagram.";
+      const failedTabs = canvasTabsRef.current.map((tab) => tab.id === targetTabId
+        ? {
+          ...tab,
+          snapshot: {
+            ...(tab.snapshot || {}),
+            cloudSession: { ...(tab.snapshot?.cloudSession || {}), active: false },
+            cloudDetached: false,
+            cloudSaveState: { state: "error", error: message },
+          },
+        }
+        : tab);
+      canvasTabsRef.current = failedTabs;
+      setCanvasTabs(failedTabs);
+      saveCanvasTabs(failedTabs).catch(() => {});
+      if (activeCanvasIdRef.current === targetTabId) {
+        cloudSessionRef.current.active = false;
+        cloudDetachedRef.current = false;
+        setCloudDetached(false);
+        cloudSceneReadyRef.current = true;
+        setCloudSaveState({ state: "error", error: message });
+      }
+      if (cloudHydratingTabIdRef.current === targetTabId) cloudHydratingTabIdRef.current = "";
     });
     return () => {
       cancelled = true;
       if (readyFrame) window.cancelAnimationFrame(readyFrame);
+      // If React tears down an in-flight request (including StrictMode replay),
+      // allow the next effect instance to retry instead of leaving the tab stuck.
+      if (!requestSettled) cloudLoadStartedRef.current = false;
     };
-  }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, documentMetadataRef, setSavedSketch, sketchReady]);
+  }, [apiReady, canvasTabsReady, cloudDiagramId, cloudProjectId, cloudLoadAttempt, documentMetadataRef, setSavedSketch, sketchReady]);
 
   useEffect(() => {
     const flushPendingCloudSave = () => {
@@ -573,7 +638,7 @@ function App() {
     const live = canvasSnapshotStateRef.current;
     return {
       elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
-      appState: appState || api?.getAppState?.() || {},
+      appState: sanitizeCloudAppState(appState || api?.getAppState?.() || {}),
       files: api?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {},
       extensions: documentMetadataRef.current?.extensions || {},
@@ -672,7 +737,7 @@ function App() {
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
     api.updateScene({
       elements,
-      appState: { ...api.getAppState(), ...(snapshot.appState || {}), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
+      appState: { ...api.getAppState(), ...sanitizeCloudAppState(snapshot.appState || {}), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
     api.history?.clear?.();
@@ -726,6 +791,7 @@ function App() {
         elements: currentSnapshot.elements,
         appState: currentSnapshot.appState,
         metadata: { metadata: currentSnapshot.metadata, extensions: currentSnapshot.extensions, format: currentSnapshot.format },
+        allowEmpty: true,
       });
       if (cloudSaveTimerRef.current) window.clearTimeout(cloudSaveTimerRef.current);
       cloudSaveTimerRef.current = null;
@@ -780,7 +846,7 @@ function App() {
       ? { ...tab, ...(currentSnapshot ? { snapshot: currentSnapshot } : {}) }
       : tab);
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
-    const id = `canvas-${Date.now()}`;
+    const id = createCanvasTabId(currentTabs);
     const nextTab = {
       id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: {
@@ -797,7 +863,7 @@ function App() {
 
   useEffect(() => {
     const createCanvasFromShortcut = (event) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "n") return;
+      if (event.repeat || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "n") return;
       const target = event.target;
       if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], .monaco-editor, .cm-editor")) return;
       event.preventDefault();
@@ -812,8 +878,10 @@ function App() {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
     if (tabIndex < 0) return;
-    const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
     const isActive = tabId === activeCanvasIdRef.current;
+    const remainingTabs = currentTabs
+      .filter((item) => item.id !== tabId)
+      .map((item) => isActive ? { ...item, todoTabActive: false } : item);
 
     if (remainingTabs.length === 0) {
       // Closing the final tab returns to the workspace welcome screen, where
@@ -993,6 +1061,7 @@ function App() {
           // detach its session so the cloud-load effect fetches the requested
           // diagram and replaces it with the authoritative document.
           applyCanvasTabSnapshot(existingCloudTab);
+          cloudHydratingTabIdRef.current = existingCloudTab.id;
           cloudLoadStartedRef.current = false;
           cloudSceneReadyRef.current = false;
           cloudSessionRef.current = { active: false, diagramId: "", projectId: "", revision: null, name: "" };
@@ -1022,6 +1091,7 @@ function App() {
         canvasTabsRef.current = nextTabs;
         setCanvasTabs(nextTabs);
         activeCanvasIdRef.current = nextCloudTab.id;
+        cloudHydratingTabIdRef.current = nextCloudTab.id;
         setActiveCanvasId(nextCloudTab.id);
         setActiveWorkspaceTabId(nextCloudTab.id);
 
@@ -1065,6 +1135,7 @@ function App() {
       setCanvasTabs(nextTabs);
       if (cloudDiagramId) {
         activeCanvasIdRef.current = nextTabs[1].id;
+        cloudHydratingTabIdRef.current = nextTabs[1].id;
         setActiveCanvasId(nextTabs[1].id);
         setActiveWorkspaceTabId(nextTabs[1].id);
         cloudSceneReadyRef.current = false;
@@ -1439,7 +1510,7 @@ function App() {
     // running the normal scene/state pipeline against an intermediate scene
     // can feed React updates back into Excalidraw and trigger update-depth
     // error #185. Normal edits resume as soon as the cloud scene is ready.
-    if (cloudDiagramId && !cloudSceneReadyRef.current) return;
+    if (cloudHydratingTabIdRef.current === "pending" || cloudHydratingTabIdRef.current === activeCanvasIdRef.current) return;
 
     // Excalidraw emits intermediate onChange snapshots for every freehand
     // pointer sample. Defer scene analysis, collaboration broadcasts, minimap
@@ -2375,14 +2446,16 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
-      {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+      {(cloudSessionRef.current.active || (cloudDiagramId && ["loading", "error"].includes(cloudSaveState.state))) && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
-          <button type="button" onClick={() => {
-            const api = apiRef.current;
-            if (!api) return;
-            queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
-          }}>Retry save</button>
+          {cloudSessionRef.current.active
+            ? <button type="button" onClick={() => {
+              const api = apiRef.current;
+              if (!api) return;
+              queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+            }}>Retry save</button>
+            : <button type="button" onClick={retryCloudDiagramLoad}>Retry loading</button>}
           <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
         </>}
         {cloudSaveState.state === "conflict" && <>
