@@ -44,12 +44,17 @@ try {
  await ensureHeaderVisible();
  assert.equal(await canvasStyle().count(),1,'Pages controller must render only one canvas selector');
  await canvasStyle().click();
- page.once('dialog',dialog=>dialog.accept('Cover'));
  await page.getByRole('button',{name:/Pages Organize/}).click();
  await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
  let es = await waitScene(es=>pages(es).length===1);
  assert.equal(pages(es)[0].width,1600); assert.equal(pages(es)[0].height,1400);
- assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Cover');
+ // Rename through the visible page-name editor rather than relying on a
+ // removed prompt-based page-creation flow.
+ await page.locator('.canvas-pages-page-name').click();
+ const pageNameInput = page.getByRole('textbox',{name:'Edit page name'});
+ await pageNameInput.fill('Cover');
+ await pageNameInput.press('Enter');
+ await page.waitForFunction(()=>document.querySelector('.canvas-pages-page-name')?.textContent.trim()==='Cover');
  assert(await page.locator('.canvas-pages-page-grid').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Page interior grid must be visible');
  const dock = await page.locator('.App-toolbar-container').boundingBox();
  assert(dock && dock.width>0 && dock.height>0,'Drawing dock must remain visible in Pages mode');
