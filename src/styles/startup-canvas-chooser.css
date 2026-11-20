@@ -107,3 +107,14 @@
 .app.theme-light .startup-canvas-option span::after {
   color: #707780;
 }
+
+/* Keep the canvas tool dock out of the welcome state while the user chooses
+   how to start. The chooser backdrop sits above the canvas, but the dock has
+   its own high stacking order, so hide it explicitly until a mode is selected. */
+.app.startup-chooser-active .sketchizi-tool-options-dock,
+.app.startup-chooser-active .sketchizi-primary-dock {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  filter: blur(5px);
+}
