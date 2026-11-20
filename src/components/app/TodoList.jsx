@@ -82,13 +82,34 @@ export default function TodoList({ items = [], onChange, onClose, isDarkTheme = 
       <div className="sketchizi-todo-list">
         {active.length ? active.map(renderTask) : <p className="sketchizi-todo-empty">You're all caught up. Add a task to get started.</p>}
       </div>
-      <div className="sketchizi-todo-footer">
-        <button type="button" className="sketchizi-todo-completed-toggle" aria-expanded={completedOpen} onClick={() => setCompletedOpen((open) => !open)}>
-          <span className={completedOpen ? "is-open" : ""}>›</span><strong>Completed</strong><em>{completed.length}</em>
+      <div className={`sketchizi-todo-completed-section${completedOpen ? " is-open" : ""}`}>
+        <button
+          type="button"
+          className="sketchizi-todo-completed-toggle"
+          aria-expanded={completedOpen}
+          aria-controls="sketchizi-completed-tasks"
+          onClick={() => setCompletedOpen((open) => !open)}
+        >
+          <span className="sketchizi-todo-completed-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m3 12 3 3 6-6" /><path d="m9 12 3 3 9-9" /><path d="M3 5h4M3 19h4" />
+            </svg>
+          </span>
+          <strong>Completed</strong>
+          <em>{completed.length}</em>
+          <span className="sketchizi-todo-completed-hint">{completedOpen ? "Hide completed" : "Show completed"}</span>
+          <span className="sketchizi-todo-completed-chevron" aria-hidden="true">›</span>
         </button>
-        {completed.length > 0 && completedOpen && <button type="button" className="sketchizi-todo-clear" onClick={() => update(tasks.filter((task) => task.section !== "completed"))}>Clear</button>}
+        {completedOpen && completed.length > 0 && (
+          <div className="sketchizi-todo-completed-content" id="sketchizi-completed-tasks">
+            <div className="sketchizi-todo-completed-list">{completed.map(renderTask)}</div>
+            <button type="button" className="sketchizi-todo-clear" onClick={() => update(tasks.filter((task) => task.section !== "completed"))}>Clear completed</button>
+          </div>
+        )}
+        {completedOpen && completed.length === 0 && (
+          <div className="sketchizi-todo-completed-empty" id="sketchizi-completed-tasks">Completed tasks will appear here</div>
+        )}
       </div>
-      {completedOpen && completed.length > 0 && <div className="sketchizi-todo-list is-completed-list">{completed.map(renderTask)}</div>}
     </section>
   );
 }
