@@ -48,3 +48,9 @@
   .sketchizi-radial-wheel-hub { width: 76px; height: 76px; }
 }
 @media (prefers-reduced-motion: reduce) { .sketchizi-radial-wheel-tool { transition: none; } }
+
+
+/* Start with half of the wheel tucked beyond the left canvas edge. */
+.sketchizi-radial-wheel { transition: left .2s ease, bottom .2s ease, top .2s ease; }
+.sketchizi-radial-wheel-hub { touch-action: none; -webkit-tap-highlight-color: transparent; }
+@media (prefers-reduced-motion: reduce) { .sketchizi-radial-wheel { transition: none; } }
