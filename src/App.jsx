@@ -808,11 +808,14 @@ function App() {
       setCanvasTabs([]);
       setActiveCanvasId("");
       setActiveWorkspaceTabId("");
+      // Return to the editor's welcome chooser in place. Navigating to
+      // /workspace invokes the authentication gate and incorrectly opens
+      // the sign-in dialog for users who are already working in the editor.
+      startupChoiceMadeRef.current = false;
+      setStartupChooserOpen(true);
       setCloseTabPrompt(null);
       saveCanvasTabs([]).catch((error) => {
         logger.warn("The empty canvas workspace could not be saved", { category: "persistence", error });
-      }).finally(() => {
-        window.location.assign("/workspace");
       });
       return;
     }
