@@ -78,6 +78,14 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   }, []);
   const activeId = customTool || activeTool;
   const activeEntry = GROUPS.flat().find((tool) => tool.id === activeId) || GROUPS[0][0];
+  const liveSelection = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const selectedToolIds = [...new Set(liveSelection.map((element) => ELEMENT_TOOL_IDS[String(element.type || "").toLowerCase()] || "selection"))];
+  const focusedTool = selectedToolIds.length
+    ? (selectedToolIds.length === 1
+      ? GROUPS.flat().find((tool) => tool.id === selectedToolIds[0]) || GROUPS[0][0]
+      : GROUPS[0][0])
+    : null;
+  const dockEntry = focusedTool || activeEntry;
   const renderTool = ({ id, label }, index = 0, radial = false) => {
     const selected = customTool ? customTool === id : activeTool === id;
     return (
@@ -110,8 +118,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
         <div className={`sketchizi-dock-launcher-wrap${isDarkTheme ? " is-dark" : ""}`} data-canvas-revision={canvasRevision}>
           <button type="button" className="sketchizi-dock-launcher" aria-label="Open drawing tools"
             aria-expanded={paletteOpen} aria-haspopup="dialog" onClick={() => setPaletteOpen((open) => !open)}>
-            <ToolIcon name={activeEntry.id} />
-            <span>{activeEntry.label}</span>
+            <ToolIcon name={dockEntry.id} />
+            <span>{dockEntry.label}</span>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
           </button>
           {paletteOpen && (
@@ -122,20 +130,28 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
             </div>
           )}
         </div>
-        {todoControl}
+        {!focusedTool && todoControl}
       </>
     );
   }
   return (
     <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Primary drawing tools" data-canvas-revision={canvasRevision}>
-      {GROUPS.map((group, groupIndex) => (
-        <div className="sketchizi-primary-dock-group" key={groupIndex}>
-          {group.map(renderTool)}
+      {focusedTool ? (
+        <div className="sketchizi-primary-dock-group sketchizi-primary-dock-selection-focus">
+          {renderTool(focusedTool)}
         </div>
-      ))}
-      <div className="sketchizi-primary-dock-group sketchizi-primary-dock-utility-group">
-        {todoControl}
-      </div>
+      ) : (
+        <>
+          {GROUPS.map((group, groupIndex) => (
+            <div className="sketchizi-primary-dock-group" key={groupIndex}>
+              {group.map(renderTool)}
+            </div>
+          ))}
+          <div className="sketchizi-primary-dock-group sketchizi-primary-dock-utility-group">
+            {todoControl}
+          </div>
+        </>
+      )}
     </nav>
   );
 }
