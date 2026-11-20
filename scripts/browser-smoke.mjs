@@ -190,6 +190,8 @@ try {
   const gridSession = await makePage({ width: 1280, height: 800 });
   await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser(gridSession.page);
+  await gridSession.page.getByRole("button", { name: "Create new canvas" }).click();
+  await gridSession.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
   // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
