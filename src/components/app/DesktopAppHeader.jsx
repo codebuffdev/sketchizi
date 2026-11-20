@@ -403,6 +403,10 @@ export default function DesktopAppHeader({
     ? new Date(saveStatus.lastSavedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     : "No successful local save yet";
 
+
+
+
+
   const activeTabActions = (
     <>
         <div className="desktop-app-save-status-wrap">
@@ -525,8 +529,6 @@ export default function DesktopAppHeader({
         </button>
     </>
   );
-
-
   return (
     <>
       <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} />
