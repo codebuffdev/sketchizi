@@ -120,7 +120,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sketchizi-production-verification-logs
-          path: /tmp/sketchizi-preview.log
+          path: |
+            /tmp/sketchizi-preview.log
+            /tmp/sketchizi-drawing-selection.png
           if-no-files-found: ignore
           retention-days: 7
 
