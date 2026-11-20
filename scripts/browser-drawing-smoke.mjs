@@ -40,9 +40,21 @@ async function currentDrawing() {
     try {
       return await new Promise((resolve, reject) => {
         const transaction = db.transaction("documents", "readonly");
-        const request = transaction.objectStore("documents").get("main");
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => reject(request.error);
+        const store = transaction.objectStore("documents");
+        const mainRequest = store.get("main");
+        const tabsRequest = store.get("canvas-tabs-manifest");
+        transaction.oncomplete = () => {
+          const tabs = tabsRequest.result?.tabs;
+          const activeTab = Array.isArray(tabs) && (tabs.find((tab) => tab.active) || tabs[0]);
+          // Open canvases now persist their authoritative scene in the tab
+          // manifest. The legacy "main" record can be empty after a reload
+          // while the active canvas snapshot remains intact.
+          resolve(activeTab?.snapshot
+            ? { ...activeTab.snapshot, savedAt: tabsRequest.result.savedAt, source: "canvas-tab" }
+            : mainRequest.result || null);
+        };
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
       });
     } finally {
       db.close();
