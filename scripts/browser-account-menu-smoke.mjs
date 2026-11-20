@@ -6,6 +6,7 @@ try {
   for (const width of [1440, 768, 390]) {
     for (const theme of ['light', 'dark']) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
+      console.log(`Checking account dropdown at ${width}px in ${theme} theme`);
       await page.route('**/api/**', async (route) => {
         const path = new URL(route.request().url()).pathname;
         const body = path === '/api/auth/me'
@@ -36,6 +37,8 @@ try {
         app.classList.remove('theme-light', 'theme-dark');
         app.classList.add(`theme-${theme}`);
       }, theme);
+      // Let the header finish moving and scroll the trigger into view before measuring.
+      await trigger.click({ trial: true });
       const before = await trigger.boundingBox();
       await trigger.click();
       const menu = page.getByRole('menu', { name: 'Account menu' });
