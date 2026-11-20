@@ -408,6 +408,7 @@ try {
   }));
   await authLayout.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser(authLayout.page);
+  await ensureHeaderVisible(authLayout.page);
   await authLayout.page.getByRole("button", { name: "Sign in", exact: true }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor();
 
