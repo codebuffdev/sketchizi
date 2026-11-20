@@ -51,7 +51,7 @@ function sameOrigin(request, incoming, env) {
 }
 
 function normalizedDiagramName(value) {
-  return String(value ?? "").trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 }
 
 function unwrapDiagram(value) { return value?.diagram || value || null; }
@@ -59,7 +59,7 @@ function unwrapDiagrams(value) { return Array.isArray(value) ? value : Array.isA
 
 async function rejectDuplicateDiagramName({ method, targetPath, body, backendOrigin, headers, requestId }) {
   const creates = method === "POST" && targetPath === "/api/workspace/diagrams";
-  const renames = method === "PATCH" && /^\\/api\\/workspace\\/diagrams\\/[A-Za-z0-9_-]+$/.test(targetPath) && typeof body?.name === "string";
+  const renames = method === "PATCH" && /^\/api\/workspace\/diagrams\/[A-Za-z0-9_-]+$/.test(targetPath) && typeof body?.name === "string";
   if (!creates && !renames) return null;
   const name = normalizedDiagramName(body?.name);
   if (!name) return null;
