@@ -16,6 +16,12 @@ test("normalizes nested envelopes and JSON-encoded document payloads", () => {
   assert.deepEqual(result.document, document);
 });
 
+test("unwraps an API data envelope whose value is the document", () => {
+  const result = normalizeCloudDiagramResponse({ data: document }, "d-envelope");
+  assert.equal(result.diagram.id, "d-envelope");
+  assert.deepEqual(result.document, document);
+});
+
 test("preserves diagram metadata when data contains the document itself", () => {
   const result = normalizeCloudDiagramResponse({
     id: "d-data",
