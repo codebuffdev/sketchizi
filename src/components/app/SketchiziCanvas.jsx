@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
+import "../../styles/canvas-workspace-hud.css";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
@@ -34,6 +35,27 @@ export default function SketchiziCanvas({
   const collaborationCursorFrameRef = useRef(0);
   const pendingCollaborationCursorRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
+  const [isZenMode, setIsZenMode] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("sketchizi-zen-mode", isZenMode);
+    return () => root.classList.remove("sketchizi-zen-mode");
+  }, [isZenMode]);
+
+  useEffect(() => {
+    const handleZenShortcut = (event) => {
+      if (event.altKey && event.key?.toLowerCase() === "z") {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsZenMode((active) => !active);
+      } else if (event.key === "Escape" && isZenMode) {
+        setIsZenMode(false);
+      }
+    };
+    window.addEventListener("keydown", handleZenShortcut, true);
+    return () => window.removeEventListener("keydown", handleZenShortcut, true);
+  }, [isZenMode]);
   const canvasRevisionFrameRef = useRef(0);
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
@@ -811,6 +833,16 @@ export default function SketchiziCanvas({
         nativeMenuOpen={nativeMenuOpen}
         onOpenTodoTab={onOpenTodoTab}
       />
+      <div className="sketchizi-zen-controls" aria-label="Zen mode controls">
+        <button type="button" className="sketchizi-zen-pill" onClick={() => setIsZenMode((active) => !active)}
+          aria-pressed={isZenMode} aria-label={isZenMode ? "Exit Zen mode" : "Enter Zen mode"}
+          title={isZenMode ? "Exit Zen mode (Alt+Z or Esc)" : "Enter Zen mode (Alt+Z)"}>
+          {isZenMode ? "Exit Zen" : "Zen"}
+        </button>
+        {isZenMode && <button type="button" className="sketchizi-zen-ai-pill"
+          onClick={() => window.dispatchEvent(new CustomEvent("sketchizi:open-ai-assistant"))}
+          aria-label="Open AI assistant">✦ AI</button>}
+      </div>
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
         initialData={excalidrawInitialData}
