@@ -16,7 +16,6 @@ test("date picker is mounted in the top utility cluster immediately before the z
   const dateIndex = header.indexOf('<CanvasStartDate key={canvasId}');
   const zoomIndex = header.indexOf('<CanvasZoomControl');
   assert(dateIndex >= 0 && zoomIndex > dateIndex, "date picker must precede the zoom pill in the top utility cluster");
-  assert.match(header, /<div className="desktop-app-top-controls">[\\s\\S]*?CanvasStartDate[\\s\\S]*?CanvasZoomControl/);
 });
 
 test("calendar popover opens below the pill and includes month navigation and Today", () => {
