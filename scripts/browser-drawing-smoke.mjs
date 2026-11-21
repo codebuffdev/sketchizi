@@ -114,7 +114,7 @@ try {
   await viewport.waitFor({ state: "visible" });
   // Do not draw while IndexedDB restoration is still replacing the scene.
   await ensureHeaderVisible();
-  await page.locator(".desktop-app-document-identity-dirty-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
+  await page.locator(".canvas-tab-status-dot.is-ready, .canvas-tab-status-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
   const bounds = await viewport.boundingBox();
   if (!bounds) throw new Error("Excalidraw viewport has no visible bounds.");
 
@@ -171,7 +171,7 @@ try {
   if (previousBuild) await page.unroute(appRequests, usePreviousBuild);
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
-  await page.locator(".desktop-app-document-identity-dirty-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
+  await page.locator(".canvas-tab-status-dot.is-ready, .canvas-tab-status-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
   await page.evaluate((original) => { window.__drawingSmokeOriginalBounds = original; }, { id: drawn.id, x: drawn.x, y: drawn.y });
   await awaitScene(async () => {
     const scene = await currentDrawing();
@@ -210,7 +210,7 @@ try {
     console.log("PASS: a rectangle survives immediate reload and remains selectable.");
 
     await page.getByRole("button", { name: "Create new canvas" }).click();
-    const secondTab = page.getByRole("tab", { name: "Canvas 2", exact: true });
+    const secondTab = page.locator('.canvas-tab[title="Canvas 2"]');
     await secondTab.waitFor();
     const secondX = Math.round(bounds.x + bounds.width * 0.42);
     const secondY = Math.round(bounds.y + bounds.height * 0.64);
@@ -264,7 +264,7 @@ try {
         await failingPage.mouse.down();
         await failingPage.mouse.move(failureX + 120, failureY + 90, { steps: 6 });
         await failingPage.mouse.up();
-        await failingPage.getByLabel("Local save failed", { exact: true }).waitFor({ timeout: 25000 });
+        await failingPage.locator(".canvas-tab-status-dot.is-error").waitFor({ state: "visible", timeout: 25000 });
         console.log(`PASS: a failed ${failedKey} write shows a local save error.`);
       } finally {
         await failingContext.close();

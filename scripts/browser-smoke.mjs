@@ -403,7 +403,7 @@ try {
   console.log("PASS: native Excalidraw clipboard notification clears the drawing toolbar.");
 
   // Advanced work remains accessible without crowding the main drawing UI.
-  await blank.page.getByRole("button", { name: /Download and save options/ }).click();
+  await blank.page.getByRole("button", { name: "Canvas options" }).click();
   await blank.page.getByRole("button", { name: /Export studio/ }).click();
   await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("button", { name: "Close export studio" }).click();
@@ -520,13 +520,13 @@ try {
     .getByRole("button", { name: "Open", exact: true }).click();
   await secondCloudTab.waitFor();
   await firstCloudTab.click();
-  await cloudTabs.page.getByRole("button", { name: `Saved ${diagrams[0].name} to Cloud Workspace` }).waitFor();
+  await firstCloudTab.getByRole("status", { name: "Saved to Cloud Workspace" }).waitFor();
   if (await firstCloudTab.getAttribute("aria-selected") !== "true" ||
       await cloudTabs.page.getByRole("tab").count() !== 2) {
     throw new Error("Opening a second Workspace drawing must keep both cloud tabs without an empty local canvas.");
   }
   await secondCloudTab.click();
-  await cloudTabs.page.getByRole("button", { name: `Saved ${diagrams[1].name} to Cloud Workspace` }).waitFor();
+  await secondCloudTab.getByRole("status", { name: "Saved to Cloud Workspace" }).waitFor();
   if (await secondCloudTab.getAttribute("aria-selected") !== "true") {
     throw new Error("The second drawing must remain selectable as a cloud tab.");
   }

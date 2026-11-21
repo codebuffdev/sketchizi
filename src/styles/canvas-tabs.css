@@ -680,3 +680,263 @@
 .app .desktop-app-document-title-float .canvas-tabs-overflow-menu {
   z-index: 10050;
 }
+
+
+/* Canvas tab redesign: independent tab buttons and a separate controls group. */
+.canvas-tabs-bar {
+  display: inline-flex; align-items: center; min-width: 0; padding: 0;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.canvas-tabs-list {
+  display: flex; align-items: center; gap: 6px; height: 40px;
+  min-width: 0; max-width: 100%; overflow: visible;
+}
+.canvas-tab-item {
+  display: inline-flex; align-items: center; gap: 2px; min-width: 0;
+  min-height: 38px; padding: 0 3px 0 0; border: 1px solid transparent;
+  border-radius: 10px; background: transparent;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.canvas-tab-item:not(.is-active):hover {
+  border-color: var(--ui-border, #dfe3eb); background: var(--ui-hover, #f3f4f6);
+}
+.canvas-tab-item .canvas-tab, .canvas-tab-item .canvas-tab.is-active {
+  display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;
+  min-width: 0; max-width: 190px; height: 36px; padding: 0 11px;
+  border: 1px solid transparent; border-radius: 9px; background: transparent;
+  box-shadow: none; color: var(--ui-text-muted, #687386); font-size: 12.5px; font-weight: 500;
+}
+.canvas-tab-item .canvas-tab:hover { background: transparent; }
+.canvas-tab-item.is-active {
+  border-color: var(--ui-border, #d5dce7); background: var(--ui-surface-solid, #fff);
+  box-shadow: 0 2px 7px rgb(15 23 42 / 9%);
+}
+.canvas-tab-item.is-active .canvas-tab, .canvas-tab-item.is-active .canvas-tab.is-active {
+  color: var(--ui-text-strong, #202a3a); font-weight: 650;
+}
+.canvas-tab-controls-group {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; margin-left: 4px;
+}
+.canvas-tabs-overflow-trigger, .canvas-tabs-add {
+  display: inline-flex; align-items: center; justify-content: center; height: 30px;
+  min-width: 30px; padding: 0 9px; border: 1px solid var(--ui-border, #dfe3eb);
+  border-radius: 8px; background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-muted, #737b8c); font-size: 12px; font-weight: 650;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 6%);
+}
+.canvas-tabs-add { width: 30px; padding: 0; }
+.canvas-tabs-overflow-trigger:hover, .canvas-tabs-add:hover {
+  border-color: var(--ui-border-strong, #b8bfcc); background: var(--ui-hover, #f3f4f6);
+  color: var(--ui-text-strong, #252631);
+}
+.canvas-tab-close { opacity: .55; }
+.canvas-tab-item:hover .canvas-tab-close, .canvas-tab-item.is-active .canvas-tab-close,
+.canvas-tab-close:focus-visible { opacity: 1; }
+.app.theme-dark .canvas-tab-item:not(.is-active):hover {
+  border-color: var(--ui-border, #3b4352); background: var(--ui-hover, #272d38);
+}
+.app.theme-dark .canvas-tab-item.is-active {
+  border-color: #515c70; background: #242a35; box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+}
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab,
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-name { color: #f4f6fb; }
+.app.theme-dark .canvas-tabs-overflow-trigger, .app.theme-dark .canvas-tabs-add {
+  border-color: var(--ui-border, #3b4352); background: var(--ui-surface-solid, #202733);
+  color: var(--ui-text-muted, #aeb6c5);
+}
+@media (max-width: 760px) {
+  .canvas-tabs-list { gap: 4px; }
+  .canvas-tab-item .canvas-tab { max-width: 112px; padding-inline: 8px; }
+  .canvas-tab-close { flex-basis: 20px; width: 20px; }
+}
+
+
+/* Option 2: keep document actions on-demand in a compact active-tab popover. */
+.canvas-tabs-bar { position: relative; overflow: visible; }
+.canvas-tab-item { position: relative; }
+.canvas-tab-status-dot {
+  display: inline-block; width: 8px; height: 8px; flex: 0 0 8px;
+  border-radius: 50%; background: #16a36a; box-shadow: 0 0 0 2px rgb(22 163 106 / 12%);
+}
+.canvas-tab-status-dot.is-pending, .canvas-tab-status-dot.is-saving,
+.canvas-tab-status-dot.is-ready, .canvas-tab-status-dot.is-restoring,
+.canvas-tab-status-dot.is-loading { background: #d69a32; box-shadow: 0 0 0 2px rgb(214 154 50 / 13%); }
+.canvas-tab-status-dot.is-error, .canvas-tab-status-dot.is-conflict { background: #d34b4b; box-shadow: 0 0 0 2px rgb(211 75 75 / 13%); }
+.canvas-tab-menu-trigger {
+  display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 26px;
+  margin-right: 4px; padding: 0; border: 0; border-radius: 6px; background: transparent;
+  color: var(--ct-text, #647084); cursor: pointer;
+}
+.canvas-tab-menu-trigger:hover, .canvas-tab-menu-trigger.is-open { background: var(--ct-hover, #e9edf3); color: var(--ct-strong, #202a3a); }
+.canvas-tab-menu-trigger svg { transition: transform .16s ease; }
+.canvas-tab-menu-trigger.is-open svg { transform: rotate(180deg); }
+.canvas-tabs-active-menu {
+  position: absolute; z-index: 10060; top: calc(100% + 8px); left: 0;
+  width: min(310px, calc(100vw - 24px)); padding: 12px;
+  border: 1px solid var(--ct-active-border, #d5dce7); border-radius: 13px;
+  background: var(--ct-active, #fff); color: var(--ct-strong, #202a3a);
+  box-shadow: 0 12px 34px rgb(15 23 42 / 16%);
+}
+.canvas-tabs-active-menu-content { display: flex; flex-direction: column; gap: 10px; }
+.canvas-tabs-active-menu-heading { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.canvas-tabs-active-menu-heading strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 650; }
+.canvas-tabs-active-menu-heading > span { color: var(--ct-text, #647084); font-size: 10.5px; }
+.canvas-tabs-active-menu-status {
+  display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 9px;
+  border: 1px solid var(--ct-strip-border, #dfe4ec); border-radius: 9px;
+  background: var(--ct-strip, #f7f8fa); font-size: 11px;
+}
+.canvas-tabs-active-menu-status-detail { margin-left: auto; overflow: hidden; color: var(--ct-text, #647084); text-overflow: ellipsis; white-space: nowrap; }
+.canvas-tabs-active-menu-actions { display: flex; flex-direction: column; gap: 4px; }
+.canvas-tabs-active-menu-action { display: flex; align-items: center; min-height: 34px; }
+.canvas-tabs-active-menu-action .desktop-app-save-status-wrap { position: relative; display: inline-flex; }
+.canvas-tabs-active-menu-action .desktop-app-save-status-trigger,
+.canvas-tabs-active-menu-action .desktop-app-document-rename,
+.canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button {
+  display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 32px;
+  min-width: 34px; padding: 0; border: 1px solid var(--ct-strip-border, #dfe4ec);
+  border-radius: 8px; background: var(--ct-active, #fff); color: var(--ct-text, #647084);
+}
+.canvas-tabs-active-menu-action .desktop-app-save-status-trigger:hover,
+.canvas-tabs-active-menu-action .desktop-app-document-rename:hover,
+.canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button:hover { background: var(--ct-hover, #e9edf3); color: var(--ct-strong, #202a3a); }
+.canvas-tabs-active-menu-action .desktop-app-save-status-popover { top: 38px; left: 0; right: auto; z-index: 10070; }
+.canvas-tabs-active-menu-action .desktop-app-document-identity-name-input { max-width: 190px; }
+.canvas-tabs-active-menu-export {
+  display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 0 9px;
+  border: 1px solid var(--ct-strip-border, #dfe4ec); border-radius: 8px;
+  background: var(--ct-active, #fff); color: var(--ct-strong, #202a3a);
+  font: inherit; font-size: 11px; text-align: left; cursor: pointer;
+}
+.canvas-tabs-active-menu-export:hover { background: var(--ct-hover, #e9edf3); }
+.app.theme-dark .canvas-tabs-active-menu {
+  border-color: #46546a; background: #202834; color: #f3f5fa; box-shadow: 0 12px 34px rgb(0 0 0 / 42%);
+}
+.app.theme-dark .canvas-tabs-active-menu-status { border-color: #354154; background: #252e3c; }
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-status-trigger,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-document-rename,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button,
+.app.theme-dark .canvas-tabs-active-menu-export { border-color: #354154; background: #202834; color: #c3ccda; }
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-status-trigger:hover,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-document-rename:hover,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button:hover,
+.app.theme-dark .canvas-tabs-active-menu-export:hover { background: #303a4b; color: #fff; }
+
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot { width: 7px; height: 7px; flex: 0 0 7px; }
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-saved { background: #22a06b; box-shadow: 0 0 0 3px rgba(34,160,107,.14); animation: none; }
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-pending,
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-saving { background: #d97706; }
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-error { background: #d34b4b; box-shadow: 0 0 0 3px rgba(211,75,75,.14); animation: none; }
+.canvas-tabs-active-menu .desktop-app-document-location { color: var(--ct-text, #647084); font-size: 10px; font-weight: 650; }
+
+/* Keep rename visible beside the active tab title. */
+.canvas-tab-inline-rename { display:inline-flex; align-items:center; flex:0 0 auto; }
+.canvas-tab-inline-rename .desktop-app-document-rename { display:inline-flex; align-items:center; justify-content:center; width:22px; height:24px; padding:0; border:0; border-radius:6px; background:transparent; color:var(--ui-text-muted,#687386); cursor:pointer; }
+.canvas-tab-inline-rename .desktop-app-document-rename:hover { background:var(--ui-hover,#f3f4f6); color:var(--ui-text-strong,#202a3a); }
+.canvas-tab-inline-rename .desktop-app-document-identity-name-input { width:min(180px,30vw); min-width:72px; height:26px; padding:0 6px; border:1px solid var(--ui-border-strong,#9ba8bc); border-radius:6px; background:var(--ui-surface-solid,#fff); color:var(--ui-text-strong,#202a3a); font:inherit; font-size:12px; }
+.canvas-tabs-active-menu-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.canvas-tabs-active-menu-action-button { display:flex; align-items:center; justify-content:flex-start; gap:8px; min-width:0; min-height:38px; padding:0 9px; border:1px solid var(--ct-strip-border,#dfe4ec); border-radius:9px; background:var(--ct-active,#fff); color:var(--ct-strong,#202a3a); font:inherit; font-size:11px; text-align:left; cursor:pointer; }
+.canvas-tabs-active-menu-action-button:hover { background:var(--ct-hover,#e9edf3); }
+.canvas-tabs-active-menu-action-button:disabled { opacity:.55; cursor:not-allowed; }
+.app.theme-dark .canvas-tabs-active-menu-action-button { border-color:#354154; background:#202834; color:#e2e7f0; }
+.app.theme-dark .canvas-tabs-active-menu-action-button:hover { background:#303a4b; }
+@media (max-width:520px) { .canvas-tabs-active-menu-actions { grid-template-columns:1fr; } }
+
+/* Refined document menu: grouped actions with labels, descriptions and state. */
+.canvas-tabs-active-menu {
+  width: min(368px, calc(100vw - 24px));
+  padding: 14px;
+  border-radius: 15px;
+}
+.canvas-tabs-active-menu-content { gap: 13px; }
+.canvas-tabs-active-menu-heading { gap: 4px; }
+.canvas-tabs-active-menu-heading strong { font-size: 13px; }
+.canvas-tabs-active-menu-heading > span { font-size: 11px; }
+.canvas-tabs-active-menu-status { min-height: 34px; padding: 7px 10px; }
+.canvas-tabs-menu-section { display: flex; flex-direction: column; gap: 7px; }
+.canvas-tabs-menu-section h3 {
+  margin: 0; color: var(--ct-text, #647084); font-size: 9.5px;
+  font-weight: 750; letter-spacing: .075em; line-height: 1.2; text-transform: uppercase;
+}
+.canvas-tabs-menu-section + .canvas-tabs-menu-section {
+  padding-top: 11px; border-top: 1px solid var(--ct-strip-border, #e1e6ee);
+}
+.canvas-tabs-active-menu-actions { display: flex; flex-direction: column; gap: 6px; }
+.canvas-tabs-active-menu-action-button {
+  display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+  width: 100%; min-width: 0; min-height: 55px; padding: 8px 10px;
+  border: 1px solid var(--ct-strip-border, #e0e5ed); border-radius: 10px;
+  background: var(--ct-active, #fff); color: var(--ct-strong, #202a3a);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
+}
+.canvas-tabs-active-menu-action-button:hover {
+  border-color: var(--ui-border-strong, #b8bfcc);
+  background: var(--ct-hover, #f5f7fa);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+.canvas-tabs-active-menu-action-button:focus-visible {
+  outline: 2px solid var(--ui-accent, #64748b); outline-offset: 2px;
+}
+.canvas-tabs-active-menu-action-button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+.canvas-action-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 34px;
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--ct-strip, #f2f5f9); color: var(--ct-text, #536176);
+}
+.canvas-action-icon svg { width: 17px; height: 17px; }
+.canvas-tabs-active-menu-action-copy {
+  display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0;
+}
+.canvas-tabs-active-menu-action-copy strong {
+  overflow: hidden; color: var(--ct-strong, #202a3a); font-size: 11.5px;
+  font-weight: 650; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap;
+}
+.canvas-tabs-active-menu-action-copy small {
+  overflow: hidden; color: var(--ct-text, #647084); font-size: 10px;
+  font-weight: 400; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap;
+}
+.canvas-tabs-action-state {
+  flex: 0 1 auto; max-width: 88px; overflow: hidden; padding: 3px 6px;
+  border-radius: 6px; background: var(--ct-strip, #f2f5f9);
+  color: var(--ct-text, #647084); font-size: 9px; font-weight: 650;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.canvas-tabs-action-state.is-saved { background: rgb(22 163 106 / 10%); color: #16845a; }
+.canvas-tabs-action-state.is-error, .canvas-tabs-action-state.is-conflict { background: rgb(211 75 75 / 10%); color: #bd3d3d; }
+.canvas-tabs-action-state.is-pending, .canvas-tabs-action-state.is-saving,
+.canvas-tabs-action-state.is-loading { background: rgb(214 154 50 / 12%); color: #a56b12; }
+.app.theme-dark .canvas-tabs-menu-section + .canvas-tabs-menu-section { border-color: #354154; }
+.app.theme-dark .canvas-tabs-active-menu-action-button {
+  border-color: #354154; background: #202834; color: #e2e7f0;
+}
+.app.theme-dark .canvas-tabs-active-menu-action-button:hover { border-color: #526078; background: #2a3443; }
+.app.theme-dark .canvas-action-icon, .app.theme-dark .canvas-tabs-action-state {
+  background: #2b3544; color: #c2ccda;
+}
+.app.theme-dark .canvas-tabs-active-menu-action-copy strong { color: #f1f4fa; }
+.app.theme-dark .canvas-tabs-active-menu-action-copy small { color: #aab5c5; }
+.app.theme-dark .canvas-tabs-action-state.is-saved { background: rgb(34 160 107 / 15%); color: #70d3a8; }
+.app.theme-dark .canvas-tabs-action-state.is-error,
+.app.theme-dark .canvas-tabs-action-state.is-conflict { background: rgb(211 75 75 / 16%); color: #ff9a9a; }
+.app.theme-dark .canvas-tabs-action-state.is-pending,
+.app.theme-dark .canvas-tabs-action-state.is-saving,
+.app.theme-dark .canvas-tabs-action-state.is-loading { background: rgb(214 154 50 / 16%); color: #f0c477; }
+@media (max-width: 520px) {
+  .canvas-tabs-active-menu {
+    position: fixed; top: calc(60px + var(--safe-top, 0px)); left: 10px; right: 10px;
+    width: auto; max-height: calc(100dvh - 74px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    overflow-y: auto;
+  }
+  .canvas-tabs-active-menu-action-copy small { white-space: normal; }
+}
+
+.canvas-tabs-recovery-note {
+  display: flex; flex-direction: column; gap: 3px; padding: 8px 10px;
+  border-radius: 9px; background: var(--ct-strip, #f4f6f9);
+}
+.canvas-tabs-recovery-note strong { color: var(--ct-strong, #202a3a); font-size: 10px; font-weight: 650; }
+.canvas-tabs-recovery-note span { color: var(--ct-text, #647084); font-size: 9.5px; line-height: 1.35; }
+.app.theme-dark .canvas-tabs-recovery-note { background: #252e3c; }
+.app.theme-dark .canvas-tabs-recovery-note strong { color: #e9eef6; }
+.app.theme-dark .canvas-tabs-recovery-note span { color: #aab5c5; }

@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 
 const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 const header = readFileSync(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
+const tabs = readFileSync(new URL("../src/components/app/CanvasTabs.jsx", import.meta.url), "utf8");
+const tabStyles = readFileSync(new URL("../src/styles/canvas-tabs.css", import.meta.url), "utf8");
 const persistence = readFileSync(new URL("../src/features/persistence/useSketchPersistence.js", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/styles/document-save-status.css", import.meta.url), "utf8");
 const stylesheetEntry = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
@@ -54,18 +56,42 @@ test("save status stylesheet is imported with the other stylesheets before CSS r
 });
 
 
-test("download option stays neutral when local autosave succeeds", () => {
-  assert.match(header, /className="desktop-app-save-status-trigger"/);
-  assert.doesNotMatch(styles, /\.desktop-app-save-status-trigger\.is-saved\s*\{/);
-  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
+test("document identity distinguishes cloud-backed drawings from local files in the active-tab menu", () => {
+  assert.match(header, /const storageLocation = isCloudDocument \? "Cloud" : currentDocumentFileBacked \? "File" : "Local"/);
+  assert.match(header, /className="desktop-app-document-location"[^>]*>\{storageLocation\}/);
+  assert.match(header, /isCloudDocument \? "Cloud Workspace" : currentDocumentFileBacked \? "Linked file" : "Local draft"/);
+  assert.match(header, /currentDocumentFileBacked \? \(currentDocumentDirty \? "Unsaved file changes" : "Linked file saved"\)/);
 });
 
-test("document identity dot follows local autosave state, not file dirty state", () => {
+test("active-tab status dot follows local autosave state, not file dirty state", () => {
   assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "saved", "error"\]\.includes\(saveState\)/);
   assert.match(header, /desktop-app-document-identity-dirty-dot is-\$\{saveState\}/);
   assert.match(header, /Saved locally on this device/);
+  assert.match(header, /canvas-tab-status-dot is-\$\{cloudSaveState\}/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-pending/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-error/);
   assert.match(styles, /background: #22a06b/);
+});
+
+
+test("canvas menu groups save, cloud, download, backup and export actions with clear descriptions", () => {
+  assert.match(header, /<h3>Save &amp; sync<\/h3>/);
+  assert.match(header, /<h3>Download &amp; export<\/h3>/);
+  assert.match(header, /aria-label="Save locally"/);
+  assert.match(header, /aria-label="Save to Cloud Workspace"/);
+  assert.ok(header.includes('aria-label={currentDocumentFileBacked ? "Save" : "Save to file…"}'));
+  assert.match(header, /aria-label="Download recovery backup"/);
+  assert.match(header, /aria-label="Export studio"/);
+  assert.match(header, /Keep a copy on this device/);
+  assert.match(header, /Sync with your Cloud Workspace/);
+  assert.match(header, /Choose PNG, SVG, clipboard and export settings/);
+  assert.match(tabStyles, /\.canvas-tabs-active-menu-action-copy/);
+  assert.match(tabStyles, /\.canvas-tabs-action-state\.is-saved/);
+});
+
+test("canvas rename control is rendered beside the active tab name, outside its options menu", () => {
+  assert.match(tabs, /activeId === tab\.id && activeRenameAction && <span className="canvas-tab-inline-rename">/);
+  assert.match(header, /className="desktop-app-document-rename"/);
+  assert.match(tabStyles, /\.canvas-tab-inline-rename/);
 });
