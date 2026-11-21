@@ -14,7 +14,7 @@ import { resolveLiveSketchSnapshot } from "./resolveLiveSketchSnapshot.js";
 
 export const LOCAL_AUTOSAVE_INTERVAL_MS = 10_000;
 
-export function useSketchPersistence({ apiRef, documentMetadataRef }) {
+export function useSketchPersistence({ apiRef, documentMetadataRef, commitCanvasTabs }) {
   const [savedSketch, setSavedSketch] = useState(null);
   const [sketchReady, setSketchReady] = useState(false);
   const [storageError, setStorageError] = useState(null);
@@ -73,6 +73,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
     saveRequestRef.current = saveRequestRef.current
       .catch(() => {})
       .then(() => saveSketch(durablePayload))
+      .then(() => commitCanvasTabs?.())
       .then(() => {
         logger.debug("Local sketch saved", { category: "persistence" });
         clearEmergencyBackup();
@@ -102,7 +103,7 @@ export function useSketchPersistence({ apiRef, documentMetadataRef }) {
         return false;
       });
     return saveRequestRef.current;
-  }, [documentMetadataRef]);
+  }, [documentMetadataRef, commitCanvasTabs]);
 
   const queueSketchSave = useCallback((elements, appState) => {
     if (!sketchReady || !apiRef.current) return;
