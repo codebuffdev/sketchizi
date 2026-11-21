@@ -328,13 +328,16 @@ try {
   await zoomControl.waitFor();
   const zoom = await zoomControl.boundingBox();
   const date = await dateControl.boundingBox();
-  const view = gridSession.page.viewportSize();
+  const view = await canvasLocator.boundingBox();
   const centerY = (box) => box.y + box.height / 2;
-  if (!zoom || !date || zoom.x < 0 || zoom.x > view.width / 4 ||
-      date.x < view.width * 0.75 || date.x + date.width > view.width ||
-      zoom.y + zoom.height > view.height + 1 || date.y + date.height > view.height + 1 ||
+  const right = view.x + view.width;
+  const bottom = view.y + view.height;
+  if (!zoom || !date || zoom.x < view.x || zoom.x - view.x > 48 ||
+      date.x + date.width > right + 1 || right - (date.x + date.width) > 48 ||
+      zoom.x + zoom.width >= date.x ||
+      zoom.y + zoom.height > bottom + 1 || date.y + date.height > bottom + 1 ||
       Math.abs(centerY(zoom) - centerY(date)) > 12 ||
-      view.height - centerY(date) > 40) {
+      bottom - centerY(date) > 40) {
     throw new Error(`Zoom and canvas date must share the bottom row: ${JSON.stringify({ zoom, date, view })}`);
   }
   await dateControl.click();
