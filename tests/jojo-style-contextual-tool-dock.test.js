@@ -18,7 +18,7 @@ test("the bottom dock exposes compact tool-specific controls, not a properties i
   assert.match(dock, /<DockGroup label=\{isHighlighter \? "Fill style" : isText \? "Text color" : isShape \|\| isLaser \? "Color & fill" : "Stroke color"\}>/);
   assert.doesNotMatch(dock, /<span className="sk-tool-dock-context">\{title\}<\/span>/);
   assert.match(dock, /Stroke color/);
-  assert.match(dock, /isHighlighter \\? "Fill style"/);
+  assert.match(dock, /isHighlighter \? "Fill style"/);
   assert.match(dock, /Arrowheads/);
   assert.doesNotMatch(dock, /PropertiesPanel|properties-panel/);
 });
