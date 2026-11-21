@@ -821,3 +821,10 @@
 .app.theme-dark .canvas-tabs-active-menu-action .desktop-app-document-rename:hover,
 .app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button:hover,
 .app.theme-dark .canvas-tabs-active-menu-export:hover { background: #303a4b; color: #fff; }
+
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot { width: 7px; height: 7px; flex: 0 0 7px; }
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-saved { background: #22a06b; box-shadow: 0 0 0 3px rgba(34,160,107,.14); animation: none; }
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-pending,
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-saving { background: #d97706; }
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-error { background: #d34b4b; box-shadow: 0 0 0 3px rgba(211,75,75,.14); animation: none; }
+.canvas-tabs-active-menu .desktop-app-document-location { color: var(--ct-text, #647084); font-size: 10px; font-weight: 650; }
