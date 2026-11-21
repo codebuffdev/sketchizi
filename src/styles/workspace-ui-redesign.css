@@ -180,7 +180,7 @@
   .app.canvas-first-header .desktop-app-top-controls {
     position: fixed !important;
     top: 12px !important;
-    right: 12px !important;
+    right: var(--header-rail-right, 12px) !important;
     display: flex !important;
     flex-flow: row nowrap !important;
     align-items: center !important;
