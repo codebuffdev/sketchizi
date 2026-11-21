@@ -27,7 +27,8 @@ test("sidebar is a slim bottom-left rail with a clean 46px anchor", () => {
   assert.match(rail, /width:\s*46px/);
   assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-expanded \.sketchizi-tool-sidebar-list/);
   assert.match(sidebarCss, /overflow:\s*visible/);
-  assert.match(sidebarCss, /backdrop-filter:\s*blur/);
+  assert.match(sidebarCss, /box-shadow:/);
+  assert.match(sidebarCss, /sketchizi-tool-sidebar-tooltip/);
   assert.match(sidebarCss, /\.sketchizi-tool-sidebar-button\.is-active/);
 });
 
