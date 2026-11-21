@@ -341,3 +341,137 @@
 @media (prefers-reduced-motion: reduce) {
   .app .sketchizi-tool-options-dock .sk-tool-dock-group { animation: none !important; }
 }
+
+
+/* Text-only editable size field and quick presets. */
+.app .sketchizi-tool-options-dock .sk-tool-text-size-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.app .sketchizi-tool-options-dock .sk-tool-text-size-input input {
+  width: 32px !important;
+  min-width: 32px !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-size-presets {
+  position: absolute;
+  z-index: 125;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  display: grid;
+  gap: 2px;
+  min-width: 52px;
+  padding: 4px;
+  border: 1px solid var(--ui-border, rgba(255,255,255,.12));
+  border-radius: 10px;
+  background: var(--ui-surface-solid, #20232c);
+  color: var(--ui-text, #eef1f8);
+  box-shadow: 0 10px 26px rgba(0,0,0,.28);
+  transform: translateX(-50%);
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-size-presets button {
+  height: 25px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-font-size-presets button:hover,
+.app .sketchizi-tool-options-dock .sk-tool-font-size-presets button[aria-selected="true"] {
+  background: rgba(165,196,250,.16);
+  color: #a5c4fa;
+}
+
+/* One shared opacity pill: live fill sits behind the droplet, value and chevron. */
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 84px;
+  min-width: 84px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  gap: 6px;
+  border-radius: 9999px;
+  box-sizing: border-box;
+  cursor: ew-resize;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-fill {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: rgba(165,196,250,.16);
+  pointer-events: none;
+  transition: width 80ms linear;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-fill {
+  background: rgba(59,130,246,.14);
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > svg,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > span,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > button {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > svg { width: 15px; height: 15px; }
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber .sk-tool-dock-opacity-value {
+  min-width: 29px;
+  font-size: 11px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber .sk-tool-opacity-precision {
+  width: 12px !important;
+  min-width: 12px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-popover {
+  right: 0;
+  bottom: calc(100% + 8px);
+  flex-wrap: wrap;
+  width: 184px;
+  gap: 8px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-presets {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-presets button {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 25px;
+  padding: 0 4px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-presets button[aria-pressed="true"] {
+  border-color: #a5c4fa;
+  background: rgba(165,196,250,.16);
+  color: #a5c4fa;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-presets button {
+  border-color: rgba(31,41,55,.14);
+}
