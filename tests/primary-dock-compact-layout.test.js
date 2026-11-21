@@ -77,11 +77,15 @@ test("rail width is derived from the button size and is much narrower than befor
   assert.ok(m.width <= BEFORE.width - 10);
 });
 
-test("rail height for the full tool set is reduced without shrinking below usable sizes", () => {
+test("expanded dock stays within the viewport while the collapsed dock remains compact", () => {
+  const expanded = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar-expanded-list"));
+  assert.match(expanded["max-height"], /min\(68dvh, 680px\)/);
+  assert.equal(expanded["overflow-y"], "auto");
+  const collapsed = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar.is-collapsed"));
+  assert.equal(collapsed.width, "48px !important");
+  assert.equal(collapsed.height, "54px !important");
   const m = metrics();
-  const beforeHeight = TOOL_COUNT * BEFORE.buttonH + BEFORE.dividerBox + TOOL_COUNT * BEFORE.gap + 2 * BEFORE.padY + 2 * BEFORE.border;
-  assert.ok(m.height < beforeHeight * 0.85, `expected >=15% shorter than ${beforeHeight}px, got ${m.height}px`);
-  assert.ok(m.buttonH >= 30 && m.buttonW >= 32, "buttons must stay clickable");
+  assert.ok(m.buttonH >= 30 && m.buttonW >= 32, "expanded tool buttons must stay clickable");
   assert.ok(m.icon >= 18 && m.icon <= m.buttonH - 8, "icons must stay legible and fit inside the button with room");
   assert.ok(m.gap <= 2);
 });
