@@ -75,6 +75,7 @@ import { getLocalDateString, isValidCanvasStartDate } from "./features/canvas/ca
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 import "./styles/contextual-dock-polish.css";
+import "./styles/canvas-workspace-hud.css";
 import "./styles/todo-canvas-polish.css";
 import "./styles/canvas-top-controls.css";
 
@@ -83,6 +84,11 @@ function App() {
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
+  useEffect(() => {
+    const openAssistant = () => setAiAskOpen(true);
+    window.addEventListener("sketchizi:open-ai-assistant", openAssistant);
+    return () => window.removeEventListener("sketchizi:open-ai-assistant", openAssistant);
+  }, []);
   useEffect(() => {
     if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
     enableCanvasSpellcheck(document);
