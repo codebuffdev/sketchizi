@@ -765,3 +765,9 @@
   min-height: 28px !important;
   height: 28px !important;
 }
+
+.app .sketchizi-tool-options-dock .sk-tool-arrowhead-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
