@@ -69,6 +69,19 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
+  // Architecture validation is exposed by the scene-aware Smart Studio menu,
+  // not the command palette. The configured AWS template above supplies the
+  // infrastructure context required to render that contextual launcher.
+  const smartStudio = page.locator(".smart-studio-pill");
+  await smartStudio.waitFor({ state: "visible", timeout: 15000 });
+  await smartStudio.click();
+  const studioMenu = page.getByRole("menu", { name: "Studio quick launch" });
+  await studioMenu.getByRole("menuitem", { name: /Run Architecture Validation/ }).click();
+  await page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
+  await page.getByRole("button", { name: "Close architecture validation" }).click();
+  console.log("PASS: Architecture Validation launches from the contextual Smart Studio menu.");
+
+
   // A populated canvas stays intact while the plus action opens a new canvas tab.
   await page.getByRole("button", { name: "Create new canvas" }).click();
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
@@ -435,15 +448,6 @@ try {
   await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("button", { name: "Close export studio" }).click();
   console.log("PASS: Export Studio remains reachable from the save menu.");
-
-  // The command palette is opened by its documented keyboard shortcut; it is not a persistent header button.
-  await blank.page.keyboard.press("Control+Shift+P");
-  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor({ timeout: 10000 });
-  await blank.page.getByRole("searchbox", { name: "Search commands" }).fill("Architecture Validation");
-  await blank.page.getByRole("option", { name: /Architecture Validation/ }).click();
-  await blank.page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
-  await blank.page.getByRole("button", { name: "Close architecture validation" }).click();
-  console.log("PASS: Architecture Validation remains available in the command palette.");
 
   // Optional studios should download on first use, open, and return to the same editor.
   await openDevOpsMenu(blank.page);
