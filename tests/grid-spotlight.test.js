@@ -65,11 +65,11 @@ test('rectangle scales down on mobile without overflowing the screen', () => {
 });
 
 test('coarse and fine grid patterns preserve world origin while panning and zooming', () => {
-  assert.deepEqual(spotlightGridPattern({ gridSize: 20, zoom: 1, scrollX: -5, scrollY: 8 }), { spacing: 8, offsetX: 3, offsetY: 0 });
-  assert.deepEqual(workspaceCoarseGridPattern({ gridSize: 20, zoom: 1, scrollX: -5, scrollY: 8 }), { spacing: 80, offsetX: 75, offsetY: 8 });
-  assert.deepEqual(workspaceCoarseGridPattern({ gridSize: 20, zoom: 2, scrollX: 10, scrollY: -10 }), { spacing: 160, offsetX: 20, offsetY: 140 });
+  assert.deepEqual(spotlightGridPattern({ gridSize: 20, zoom: 1, scrollX: -5, scrollY: 8 }), { spacing: 40, offsetX: 35, offsetY: 8 });
+  assert.deepEqual(workspaceCoarseGridPattern({ gridSize: 20, zoom: 1, scrollX: -5, scrollY: 8 }), { spacing: 160, offsetX: 155, offsetY: 8 });
+  assert.deepEqual(workspaceCoarseGridPattern({ gridSize: 20, zoom: 2, scrollX: 10, scrollY: -10 }), { spacing: 320, offsetX: 20, offsetY: 300 });
   assert.equal(spotlightGridPattern({ gridSize: 20, zoom: 0.1 }).spacing, 4);
-  assert.equal(spotlightGridPattern({ gridSize: 20, zoom: 10 }).spacing, 32);
+  assert.equal(spotlightGridPattern({ gridSize: 20, zoom: 10 }).spacing, 96);
 });
 
 test('visual layers are rectangular, softly faded, and never intercept input', () => {
