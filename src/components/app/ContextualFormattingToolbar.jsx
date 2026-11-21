@@ -41,7 +41,7 @@ const FILL_COLORS = [
 ];
 const SHAPE_TYPES = new Set(["rectangle", "diamond", "ellipse"]);
 const LINE_TYPES = new Set(["line", "arrow", "rectangle", "diamond", "ellipse"]);
-const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]];
+const FILL_STYLES = [["solid", "Solid", "■"], ["hachure", "Hachure", "///"], ["cross-hatch", "Cross-Hatch", "###"]];
 const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— —"], ["dotted", "Dotted", "· · ·"]];
 const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
 const FONT_FAMILIES = [[1, "Hand-drawn", "✎"], [2, "Sans", "A"], [3, "Code", "</>"], [5, "Excalifont", "E"], [6, "Nunito", "N"], [7, "Lilita", "L"], [8, "Comic", "C"], [9, "Liberation", "L"]];
@@ -351,7 +351,7 @@ export default function ContextualFormattingToolbar({
   const onlyTextSelection = liveSelection.length > 0 && liveSelection.every((element) => element.type === "text" || isNoteSelectionElement(element));
   // Selected notes must edit their actual scene elements; tool defaults are
   // used only while creating new text/draw/fill/shape content.
-  const toolMode = (drawingTool || textTool || bucketFillTool || drawToShapeTool) && !noteSelection && !onlyTextSelection;
+  const toolMode = (drawingTool || textTool || bucketFillTool || drawToShapeTool || nativeShapeTool) && !noteSelection && !onlyTextSelection;
   const noteContainerIds = new Set(liveSelection.filter((element) => isNoteSelectionElement(element) && element.type !== "text").map((element) => element.id));
   const noteTextIds = new Set(liveSelection.filter((element) => element.type === "text").map((element) => element.id));
   for (const element of liveSelection) {
@@ -597,7 +597,7 @@ export default function ContextualFormattingToolbar({
                 </button>
               </div>
               <div className="format-option-row">
-                {(colorTarget === "fill" ? backgroundPalette.filter(([color]) => color !== "transparent") : strokePalette).map(([color, label]) => (
+                {(colorTarget === "fill" ? [["transparent", "Transparent"], ...backgroundPalette.filter(([color]) => color !== "transparent")] : strokePalette).map(([color, label]) => (
                   <Swatch key={color} color={color} label={label} selected={(colorTarget === "fill" ? currentFill : currentStroke) === color} fill={colorTarget === "fill"} onClick={() => applyFormatting(colorTarget === "fill" ? { backgroundColor: color } : { strokeColor: color })} />
                 ))}
                 {colorTarget === "fill" && <Swatch color="transparent" label="Transparent" selected={currentFill === "transparent"} fill onClick={() => applyFormatting({ backgroundColor: "transparent" })} />}
