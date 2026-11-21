@@ -54,16 +54,18 @@ test("save status stylesheet is imported with the other stylesheets before CSS r
 });
 
 
-test("download option stays neutral when local autosave succeeds", () => {
-  assert.match(header, /className="desktop-app-save-status-trigger"/);
-  assert.doesNotMatch(styles, /\.desktop-app-save-status-trigger\.is-saved\s*\{/);
-  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
+test("document identity distinguishes cloud-backed drawings from local files in the active-tab menu", () => {
+  assert.match(header, /const storageLocation = isCloudDocument \? "Cloud" : currentDocumentFileBacked \? "File" : "Local"/);
+  assert.match(header, /className="desktop-app-document-location"[^>]*>\{storageLocation\}/);
+  assert.match(header, /isCloudDocument \? "Cloud Workspace" : currentDocumentFileBacked \? "Linked file" : "Local draft"/);
+  assert.match(header, /currentDocumentFileBacked \? \(currentDocumentDirty \? "Unsaved file changes" : "Linked file saved"\)/);
 });
 
-test("document identity dot follows local autosave state, not file dirty state", () => {
+test("active-tab status dot follows local autosave state, not file dirty state", () => {
   assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "saved", "error"\]\.includes\(saveState\)/);
   assert.match(header, /desktop-app-document-identity-dirty-dot is-\$\{saveState\}/);
   assert.match(header, /Saved locally on this device/);
+  assert.match(header, /canvas-tab-status-dot is-\$\{isCloudDocument \? cloudSaveState/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-pending/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-error/);
