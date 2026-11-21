@@ -139,3 +139,74 @@
 @media (prefers-reduced-motion: reduce) {
   .app .sketchizi-tool-options-dock * { transition: none !important; }
 }
+
+
+/* Final viewport-frame alignment: all three workspace controls share 12px. */
+.app .sketchizi-tool-options-dock {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 12px !important;
+  transform: translateX(-50%) !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 10px !important;
+  gap: 6px !important;
+  border-radius: 11px !important;
+  max-width: calc(100% - 24px) !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group {
+  min-height: 26px !important;
+  gap: 6px !important;
+  padding-left: 7px !important;
+  margin-left: 4px !important;
+}
+.app .sketchizi-tool-options-dock > .sk-tool-dock-group:first-of-type {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-option-button,
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger,
+.app .sketchizi-tool-options-dock .sk-tool-layer-trigger,
+.app .sketchizi-tool-options-dock .sk-tool-text-size-step {
+  box-sizing: border-box !important;
+  width: 26px !important;
+  min-width: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 !important;
+  border-radius: 7px !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-color-control {
+  width: 26px !important;
+  height: 26px !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group input[type="range"] {
+  width: 54px !important;
+  min-width: 54px !important;
+  max-width: 54px !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-opacity-value {
+  min-width: 30px !important;
+}
+@media (max-width: 900px) {
+  .app .sketchizi-tool-options-dock {
+    bottom: 12px !important;
+    max-width: calc(100% - 24px) !important;
+  }
+}
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 10px !important;
+    border-radius: 11px !important;
+    bottom: 12px !important;
+    max-width: calc(100% - 24px) !important;
+  }
+  .app .sketchizi-tool-options-dock .sk-tool-dock-group {
+    padding-left: 7px !important;
+    margin-left: 4px !important;
+  }
+}
