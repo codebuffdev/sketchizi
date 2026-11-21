@@ -93,20 +93,19 @@ try {
   await aiToggle.click();
   await aiDrawer.waitFor();
   await blank.page.waitForFunction(() => {
-    const sliders = document.querySelector(".desktop-app-header-reveal-handle")?.getBoundingClientRect();
     const tools = document.querySelector(".desktop-app-header-right-rail")?.getBoundingClientRect();
-    return sliders && tools && tools.top >= sliders.bottom - 1;
+    const drawer = document.querySelector(".ai-ask-panel")?.getBoundingClientRect();
+    return tools && drawer && tools.bottom <= drawer.top + 1;
   });
   const [ai, sliders, tools, drawer] = await Promise.all(
     [aiToggle, railToggle, rail, aiDrawer].map((control) => control.boundingBox()),
   );
   if (!ai || !sliders || !tools || !drawer ||
-      ai.y + ai.height > sliders.y || sliders.y + sliders.height > tools.y + 1 ||
+      ai.y + ai.height > drawer.y || tools.y + tools.height > drawer.y + 1 ||
       Math.abs(ai.x + ai.width / 2 - sliders.x - sliders.width / 2) > 2 ||
-      Math.abs(sliders.x + sliders.width / 2 - tools.x - tools.width / 2) > 2 ||
-      tools.x + tools.width > drawer.x || sliders.x + sliders.width > drawer.x ||
-      ai.x + ai.width > drawer.x) {
-    throw new Error(`AI, sliders and tool rail must stack on the canvas beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
+      sliders.x + sliders.width > drawer.x || ai.x + ai.width > drawer.x ||
+      tools.width <= tools.height) {
+    throw new Error(`AI and the horizontal utility bar must remain visible above the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
   }
   await railToggle.click();
   await rail.waitFor({ state: "hidden" });
