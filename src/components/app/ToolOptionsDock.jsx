@@ -3,11 +3,18 @@ import { createPortal } from "react-dom";
 import usePresence from "../../features/hud/usePresence.js";
 import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
+import { applyDarkModeFilter } from "@excalidraw/common";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
 // Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
 if (FONT_FAMILY.Kalam === undefined) FONT_FAMILY.Kalam = 4;
 
+// Swatches show the color as Excalidraw will actually render it: in dark mode the
+// stored #1e1e1e stroke is drawn light, so the swatch must match.
+const displayColorForTheme = (color, theme) => {
+  if (theme !== "dark") return color;
+  try { return applyDarkModeFilter(color); } catch { return color; }
+};
 const COLORS = ["#1e1e1e", "#7c828d", "#e05252", "#d9820b", "#3a9663", "#2b79c2", "#ffffff"];
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
@@ -791,7 +798,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       }}
     >
       {<DockGroup label={isText ? "Text color" : isShape || isHighlighter ? "Color & fill" : "Stroke color"}>
-        {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+        {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {(!isFill || isHighlighter) && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
         {showClosedShapeFill && <>
           <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>

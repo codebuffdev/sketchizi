@@ -1,15 +1,68 @@
 import {
-  DEFAULT_STROKE_STREAMLINE,
-  DEFAULT_STROKE_STREAMLINE_PRECISE,
+  applyDarkModeFilter,
   getStrokeWidthByKey,
 } from "@excalidraw/common";
 import { getFreedrawOutlinePoints, newFreeDrawElement } from "@excalidraw/element";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-const getAdjustedFreeDrawStreamline = (pointerType) => (pointerType !== "mouse"
-  ? DEFAULT_STROKE_STREAMLINE_PRECISE
-  : DEFAULT_STROKE_STREAMLINE) * 0.95;
+// Shared smoothing profile. The live preview (pointermove) and the committed
+// element (pointerup) both read these values, so releasing the mouse never
+// changes the shape of the stroke.
+//  - streamline: Excalidraw/perfect-freehand centerline lag. Higher = smoother.
+//  - smoothing: input-point relaxation applied before the outline is built.
+//    Excalidraw hardcodes perfect-freehand's own `smoothing` (0.5) and only
+//    exposes `streamline` on elements, so this extra pass is what lifts the
+//    effective smoothing into the 0.7-0.85 range for rough mouse input.
+// Stylus/touch keep a lighter profile because their input is already clean.
+export const FREE_DRAW_SMOOTHING_PROFILE = Object.freeze({
+  mouse: Object.freeze({ streamline: 0.72, smoothing: 0.78 }),
+  precise: Object.freeze({ streamline: 0.45, smoothing: 0.4 }),
+});
+
+export const getFreeDrawSmoothingProfile = (pointerType) =>
+  pointerType === "mouse" || !pointerType
+    ? FREE_DRAW_SMOOTHING_PROFILE.mouse
+    : FREE_DRAW_SMOOTHING_PROFILE.precise;
+
+const getAdjustedFreeDrawStreamline = (pointerType) => getFreeDrawSmoothingProfile(pointerType).streamline;
+
+// Relax every interior point toward the midpoint of its neighbours. Endpoints
+// stay fixed so the stroke still starts and ends exactly under the cursor
+// (no input lag at the tip). The operation is affine-invariant, so running it
+// on screen-space preview points and scene-space committed points yields the
+// same shape.
+export function smoothFreeDrawPoints(points, smoothing = 0.78, passes = 2) {
+  if (!Array.isArray(points) || points.length < 3) return points;
+  const strength = clamp(smoothing, 0, 1) * 0.5;
+  let current = points;
+  for (let pass = 0; pass < passes; pass += 1) {
+    const next = current.map((point) => ({ ...point }));
+    for (let i = 1; i < current.length - 1; i += 1) {
+      const prev = current[i - 1];
+      const point = current[i];
+      const following = current[i + 1];
+      next[i].x = point.x + ((prev.x + following.x) / 2 - point.x) * strength * 2;
+      next[i].y = point.y + ((prev.y + following.y) / 2 - point.y) * strength * 2;
+    }
+    current = next;
+  }
+  return current;
+}
+
+// Excalidraw stores strokeColor untouched (e.g. #1e1e1e) and draws elements
+// through a dark-mode colour filter. The preview overlay is a separate canvas,
+// so it must apply that same mapping or default dark strokes are invisible
+// while dragging.
+export function resolveFreeDrawPreviewColor(color, theme) {
+  const base = color || "#1e1e1e";
+  if (theme !== "dark" || base === "transparent") return base;
+  try {
+    return applyDarkModeFilter(base);
+  } catch {
+    return base;
+  }
+}
 
 const getAdjustedFreeDrawStrokeWidth = (strokeWidthKey) => {
   const width = getStrokeWidthByKey("freedraw", strokeWidthKey || "medium");
@@ -81,14 +134,16 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
   const variability = appState?.currentItemStrokeVariability || "variable";
   const streamline = getAdjustedFreeDrawStreamline(session.pointerType);
   const strokeWidth = getAdjustedFreeDrawStrokeWidth(appState?.currentItemStrokeWidthKey);
+  const { smoothing } = getFreeDrawSmoothingProfile(session.pointerType);
+  const smoothedPoints = smoothFreeDrawPoints(session.previewPoints, smoothing);
   const previewElement = {
     type: "freedraw",
     strokeWidth: strokeWidth * Math.max(0.0001, appState?.zoom?.value || 1),
     simulatePressure: session.simulatePressure,
-    points: session.previewPoints.map(({ x, y }) => [x, y]),
+    points: smoothedPoints.map(({ x, y }) => [x, y]),
     pressures: session.simulatePressure
       ? []
-      : session.previewPoints.map(({ pressure }) => pressure),
+      : smoothedPoints.map(({ pressure }) => pressure),
     strokeOptions: { variability, streamline },
   };
   const outline = getFreedrawOutlinePoints(previewElement);
@@ -97,7 +152,7 @@ export function drawFreeDrawPreviewSample(context, session, sample, appState, wr
 
   context.save();
   context.globalAlpha = clamp((appState?.currentItemOpacity ?? 100) / 100, 0, 1);
-  context.fillStyle = appState?.currentItemStrokeColor || "#1e1e1e";
+  context.fillStyle = resolveFreeDrawPreviewColor(appState?.currentItemStrokeColor, appState?.theme);
   context.beginPath();
   context.moveTo(outline[0][0], outline[0][1]);
   for (let i = 1; i < outline.length; i += 1) {
@@ -142,20 +197,22 @@ export function createFreeDrawElementFromSamples(samples, appState) {
     last.y += 0.0001;
   }
 
+  const firstSample = samples[0];
+  const simulatePressure = firstSample.pressure === 0.5;
+  const pointerType = firstSample.pointerType || "mouse";
+  // Same smoothing as the live preview, so pointerup does not visibly snap.
+  const smoothScenePoints = smoothFreeDrawPoints(scenePoints, getFreeDrawSmoothingProfile(pointerType).smoothing);
+
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (const point of scenePoints) {
+  for (const point of smoothScenePoints) {
     minX = Math.min(minX, point.x);
     minY = Math.min(minY, point.y);
     maxX = Math.max(maxX, point.x);
     maxY = Math.max(maxY, point.y);
   }
-  const firstSample = samples[0];
-  const simulatePressure = firstSample.pressure === 0.5;
-  const pointerType = firstSample.pointerType || "mouse";
-
   return newFreeDrawElement({
     type: "freedraw",
     x: minX,
@@ -177,7 +234,7 @@ export function createFreeDrawElementFromSamples(samples, appState) {
     },
     locked: false,
     frameId: appState.frameToHighlight?.id || null,
-    points: scenePoints.map((point) => [point.x - minX, point.y - minY]),
-    pressures: simulatePressure ? [] : scenePoints.map((point) => point.pressure),
+    points: smoothScenePoints.map((point) => [point.x - minX, point.y - minY]),
+    pressures: simulatePressure ? [] : smoothScenePoints.map((point) => point.pressure),
   });
 }
