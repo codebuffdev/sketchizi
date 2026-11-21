@@ -140,6 +140,7 @@
 }
 .sketchizi-tool-sidebar-collapsed {
   display: flex;
+  max-height: 48px;
   flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
