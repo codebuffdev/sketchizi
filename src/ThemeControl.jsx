@@ -103,7 +103,7 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, can
   };
   return <>
     <button ref={trigger} type="button" className={`theme-toggle desktop-app-theme-toggle appearance-trigger ${isDarkTheme ? "dark" : "light"}`} aria-label={isDarkTheme ? "Switch to light theme" : "Switch to dark theme"} title={isDarkTheme ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setThemeMode(isDarkTheme ? "light" : "dark")} onContextMenu={(event) => { event.preventDefault(); setOpen(true); }}>
-      <AppearanceIcon mode={themeMode === "system" ? "system" : isDarkTheme ? "dark" : "light"} />
+      <AppearanceIcon mode={isDarkTheme ? "dark" : "light"} />
     </button>
     {open && createPortal(<div ref={panel} id="sketchizi-appearance" className="sketchizi-appearance" tabIndex={-1} data-dark={isDarkTheme} role="dialog" aria-label="Appearance and canvas background" style={position} onKeyDown={event => { if (event.key !== "Escape") event.stopPropagation(); }}>
       <div className="appearance-heading appearance-title"><span>Appearance</span><button className="appearance-close" type="button" aria-label="Close appearance settings" onClick={() => { setOpen(false); trigger.current?.focus(); }}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div>
