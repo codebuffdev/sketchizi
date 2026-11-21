@@ -36,14 +36,14 @@ test("choice selection applies the actual option value and restores trigger focu
 test("sloppiness remains available for shapes, lines, arrows, and draw-to-shape", () => {
   assert.ok(dock.includes('const isShape = ["rectangle", "diamond", "ellipse"].includes(type)'));
   assert.ok(dock.includes('const isLine = ["line", "arrow"].includes(type)'));
-  assert.ok(dock.includes('<DockGroup label="Sloppiness">'));
-  assert.ok(dock.includes('<VisualOptionSelect label="Sloppiness"'));
+  assert.ok(dock.includes('<DockGroup label="Roughness">'));
+  assert.ok(dock.includes('<VisualOptionSelect label="Roughness"'));
   for (const label of ["Architect", "Artist", "Cartoonist"]) assert.ok(dock.includes(`label: "${label}"`));
   assert.ok(dock.includes("onChange={(value) => update({ roughness: Number(value) })}"));
 });
 
 test("stroke, fill, corner, arrowhead, font, and pressure controls use the shared menu", () => {
-  for (const label of ["Stroke width", "Fill style", "Corners", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
+  for (const label of ["Stroke width", "Fill style", "Corner radius", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
     assert.ok(dock.includes(`label="${label}"`), `missing choice control: ${label}`);
   }
   assert.ok(!dock.includes("function VisualOptionSelect({ label, value, onChange, kind, options }) {\n  const [open"));
