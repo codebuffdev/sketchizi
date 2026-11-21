@@ -43,7 +43,9 @@ async function chooseStartupPages() {
 async function ensureHeaderVisible() {
  const reveal = page.locator('.desktop-app-header-reveal-handle');
  await reveal.waitFor({ state: 'attached', timeout: 15000 });
- if (await reveal.getAttribute('aria-expanded') !== 'true') await reveal.click({ force: true });
+ if (await page.locator('.desktop-app-header').getAttribute('aria-hidden') !== 'false') {
+  await reveal.click({ force: true });
+ }
  await page.waitForFunction(() => document.querySelector('.desktop-app-header')?.getAttribute('aria-hidden') === 'false');
  const pin = page.locator('.desktop-app-header-pin-button');
  if (await pin.getAttribute('aria-pressed') !== 'true') await pin.click({ force: true });
