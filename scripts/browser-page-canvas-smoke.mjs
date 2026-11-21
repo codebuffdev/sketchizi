@@ -66,7 +66,7 @@ try {
  await page.getByRole('button',{name:'Canvas options'}).click();
  const documentMenu = page.getByRole('dialog',{name:'Canvas options'});
  await documentMenu.waitFor({state:'visible'});
- for (const action of ['Save locally','Save to Cloud Workspace','Download file','Download recovery backup','Export canvas']) {
+ for (const action of ['Save locally','Save to Cloud Workspace','Save to file','Download recovery backup','Export canvas']) {
   assert.equal(await documentMenu.getByRole('button',{name:new RegExp(action,'i')}).count(),1,action+' must be discoverable in the canvas menu');
  }
  assert(await documentMenu.getByText('Save & sync',{exact:true}).count()===1,'Save actions must have a clear section heading');
