@@ -24,19 +24,20 @@ test("canvas HUD uses the shared dark and light glass tokens", () => {
 test("Zen mode supports Alt+Z, Escape, and the standalone AI entry point", () => {
   const canvas = read("../src/components/app/SketchiziCanvas.jsx");
   const app = read("../src/App.jsx");
-  assert.match(canvas, /event\.altKey && event\.key\?\.toLowerCase\(\) === "z"/);
-  assert.match(canvas, /event\.key === "Escape" && isZenMode/);
-  assert.match(canvas, /sketchizi-zen-mode/);
-  assert.match(canvas, /sketchizi:open-ai-assistant/);
-  assert.match(app, /window\.addEventListener\("sketchizi:open-ai-assistant", openAssistant\)/);
+  assert.ok(canvas.includes('event.altKey && event.key?.toLowerCase() === "z"'));
+  assert.ok(canvas.includes('event.key === "Escape" && isZenMode'));
+  assert.ok(canvas.includes("event.stopPropagation();") && canvas.includes("setIsZenMode(false)"));
+  assert.ok(canvas.includes("sketchizi-zen-mode"));
+  assert.ok(canvas.includes("sketchizi:open-ai-assistant"));
+  assert.ok(app.includes('window.addEventListener("sketchizi:open-ai-assistant", openAssistant)'));
 });
 
-test("existing contextual dock retains typography and radial opacity controls", () => {
+test("contextual dock retains typography and radial opacity controls", () => {
   const dock = read("../src/components/app/ToolOptionsDock.jsx");
-  assert.match(dock, /\{isText && <DockGroup label="Typography">/);
-  assert.match(dock, /inputMode="numeric"/);
-  assert.match(dock, /strokeDashoffset=\{50\.265 \* \(1 - opacityValue \/ 100\)\}/);
-  assert.match(dock, /\[25, 50, 75, 100\]/);
+  assert.ok(dock.includes('{isText && <DockGroup label="Typography">'));
+  assert.ok(dock.includes('inputMode="numeric"'));
+  assert.ok(dock.includes("strokeDashoffset={50.265 * (1 - opacityValue / 100)}"));
+  assert.ok(dock.includes("[25, 50, 75, 100]"));
 });
 
 test("floating tool tray prioritizes the requested drawing tools", () => {
@@ -52,9 +53,7 @@ test("floating tool tray prioritizes the requested drawing tools", () => {
 
 test("fill patterns and corner-radius controls are scoped to supported elements", () => {
   const dock = read("../src/components/app/ToolOptionsDock.jsx");
-  assert.match(dock, /label="Fill style"/);
-  assert.match(dock, /const showCornerRadius = type === "rectangle" \\|\\| type === "diamond";/);
-  assert.match(dock, /\\(isShape \\|\\| isHighlighter\\) && <VisualOptionSelect label="Fill style"/);
-  const canvas = read("../src/components/app/SketchiziCanvas.jsx");
-  assert.match(canvas, /event.stopPropagation\\(\\);[\\s\\S]*?setIsZenMode\\(false\\)/);
+  assert.ok(dock.includes('label="Fill style"'));
+  assert.ok(dock.includes('const showCornerRadius = type === "rectangle" || type === "diamond";'));
+  assert.ok(dock.includes('(isShape || isHighlighter) && <VisualOptionSelect label="Fill style"'));
 });
