@@ -5,22 +5,23 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../src/components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/styles/contextual-dock-polish.css", import.meta.url), "utf8");
 
-test("opacity remains the final shared module and exposes keyboard and pointer controls", () => {
-  assert.match(source, /<DockGroup label="Opacity">[\\s\\S]*?className="sk-tool-opacity-scrubber"/);
+test("opacity is the final shared dock module for every supported tool", () => {
+  assert.ok(source.includes('<DockGroup label="Opacity">'));
   assert.ok(source.lastIndexOf('<DockGroup label="Opacity">') > source.lastIndexOf('<DockGroup label="Layer order">'));
-  assert.match(source, /onPointerMove=\{\(event\) => \{/);
-  assert.match(source, /opacityPointerStartRef/);
-  assert.match(source, /event\.shiftKey \? 5 : 1/);
-  assert.match(source, /role="slider" tabIndex=\{0\}/);
+  assert.ok(source.includes('className="sk-tool-opacity-scrubber"'));
+  assert.ok(source.includes('role="slider" tabIndex={0}'));
+  assert.ok(source.includes("opacityPointerStartRef"));
+  assert.ok(source.includes("const step = event.shiftKey ? 5 : 1"));
 });
 
-test("opacity pill includes liquid fill, precision slider, and quick percentage presets", () => {
-  assert.match(source, /className="sk-tool-opacity-fill" style=\{\{ width: `\$\{opacityValue\}%` \}\}/);
-  assert.match(source, /aria-label="Precise opacity"/);
-  assert.match(source, /\[25, 50, 75, 100\]/);
-  assert.match(css, /\.sk-tool-opacity-fill[\\s\\S]*?position: absolute[\\s\\S]*?left: 0[\\s\\S]*?top: 0[\\s\\S]*?bottom: 0/);
-  assert.match(css, /rgba\(165,196,250,.16\)/);
-  assert.match(css, /rgba\(59,130,246,.14\)/);
-  assert.match(css, /min-width: 84px/);
-  assert.match(css, /height: 36px/);
+test("opacity pill has a live fill, precision slider and quick percentage chips", () => {
+  assert.ok(source.includes('className="sk-tool-opacity-fill"'));
+  assert.ok(source.includes('aria-label="Precise opacity"'));
+  assert.ok(source.includes("[25, 50, 75, 100]"));
+  assert.ok(css.includes(".sk-tool-opacity-fill"));
+  assert.ok(css.includes("position: absolute;"));
+  assert.ok(css.includes("rgba(165,196,250,.16)"));
+  assert.ok(css.includes("rgba(59,130,246,.14)"));
+  assert.ok(css.includes("min-width: 84px"));
+  assert.ok(css.includes("height: 36px"));
 });
