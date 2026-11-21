@@ -1263,3 +1263,133 @@
     max-width: min(820px, calc(100vw - 180px - var(--safe-left, 0px) - var(--safe-right, 0px)));
   }
 }
+
+
+/* Reference layout: one compact horizontal utility bar in the top-right corner.
+   Keep the existing controls and handlers; this is a layout-only rearrangement. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    position: fixed !important;
+    top: calc(12px + var(--safe-top, 0px)) !important;
+    right: calc(12px + var(--safe-right, 0px)) !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    width: auto !important;
+    max-width: calc(100vw - 320px - var(--safe-left, 0px) - var(--safe-right, 0px)) !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 6px !important;
+    overflow: visible !important;
+    border: 1px solid var(--ui-border, #2a303c) !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--ui-surface-solid, #181c24) 94%, transparent) !important;
+    color: var(--ui-text, #e6eaf2) !important;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 22%) !important;
+    backdrop-filter: blur(18px) saturate(130%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+    transform: none !important;
+    transition: opacity .16s ease, visibility .18s linear !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-actions,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-account-zone,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-panel-actions,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-nav-item {
+    display: contents !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-spacer {
+    display: none !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail :is(
+    .desktop-app-menu-trigger,
+    .desktop-app-library-toggle,
+    .desktop-app-nav-button,
+    .desktop-app-header-icon-button,
+    .desktop-app-header-visibility-button,
+    .desktop-app-start-collaboration-button,
+    .sketchizi-header-grid-trigger,
+    .desktop-app-workspace-toggle,
+    .auth-control-root > button
+  ) {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 9px !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-start-collaboration-label,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-search-label,
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-search-shortcut {
+    display: none !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-action-divider {
+    width: 1px !important;
+    height: 22px !important;
+    margin: 0 2px !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-visibility-button {
+    display: none !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-8px) !important;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail :is(
+    .desktop-app-dropdown, .devops-studio-dropdown, .desktop-app-save-status-popover,
+    .sketchizi-header-grid-popover, .sketchizi-more-tools-menu, .auth-account-menu,
+    .collaboration-header-status
+  ) {
+    position: fixed;
+    top: calc(58px + var(--safe-top, 0px));
+    right: calc(12px + var(--safe-right, 0px));
+    left: auto;
+    bottom: auto;
+    max-width: min(360px, calc(100vw - 24px));
+    max-height: calc(100dvh - 76px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    overflow-y: auto;
+    transform: none;
+    z-index: 1000;
+  }
+  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid-popover {
+    top: calc(58px + var(--safe-top, 0px));
+    right: calc(12px + var(--safe-right, 0px));
+  }
+  .app.canvas-first-header .desktop-app-document-title-float {
+    top: calc(12px + var(--safe-top, 0px)) !important;
+    left: calc(12px + var(--safe-left, 0px)) !important;
+    justify-content: flex-start !important;
+    transform: none !important;
+    max-width: min(620px, calc(100vw - 340px)) !important;
+  }
+}
+@media (min-width: 1025px) and (max-width: 1180px) {
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    gap: 3px !important;
+    padding: 4px !important;
+    max-width: calc(100vw - 280px) !important;
+  }
+  .app.canvas-first-header .desktop-app-document-title-float {
+    max-width: calc(100vw - 300px) !important;
+  }
+}
+@media (min-width: 1025px) {
+  .app.theme-light.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    border-color: #dce1ea !important;
+    background: rgb(255 255 255 / 94%) !important;
+    color: #141923 !important;
+    box-shadow: 0 8px 24px rgb(15 23 42 / 12%) !important;
+  }
+}
