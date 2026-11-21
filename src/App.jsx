@@ -2592,17 +2592,49 @@ function App() {
       "r", "v", "p", "o", "d", "t", "a", "l", "h", "i", "f", "e", "k",
       "1", "2", "3", "4", "5", "6", "7", "8", "9",
     ]);
+    const getWelcomeSurface = () => document.querySelector(".startup-canvas-chooser, .design-studio-screen");
+    const focusableSelector = "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
     const handleWelcomeKeyDown = (event) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return;
       const target = event.target;
-      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], [role='textbox'], .monaco-editor, .cm-editor")) return;
+      const isEditingText = target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], [role='textbox'], .monaco-editor, .cm-editor");
+
+      if (event.key === "Tab") {
+        const surface = getWelcomeSurface();
+        if (!surface) return;
+        const focusable = Array.from(surface.querySelectorAll(focusableSelector))
+          .filter((element) => element.getClientRects().length > 0 && !element.hasAttribute("inert"));
+        if (!focusable.length) {
+          event.preventDefault();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+        if (event.shiftKey && (!surface.contains(active) || active === first)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (!surface.contains(active) || active === last)) {
+          event.preventDefault();
+          first.focus();
+        }
+        return;
+      }
+
+      if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing || isEditingText) return;
       if (!toolShortcuts.has(String(event.key || "").toLowerCase())) return;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation?.();
     };
+    const focusFrame = window.requestAnimationFrame(() => {
+      const surface = getWelcomeSurface();
+      surface?.querySelector(focusableSelector)?.focus({ preventScroll: true });
+    });
     window.addEventListener("keydown", handleWelcomeKeyDown, true);
-    return () => window.removeEventListener("keydown", handleWelcomeKeyDown, true);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      window.removeEventListener("keydown", handleWelcomeKeyDown, true);
+    };
   }, [isWelcomeOrDashboardOpen]);
 
   useEffect(() => {
