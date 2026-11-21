@@ -930,3 +930,13 @@
   }
   .canvas-tabs-active-menu-action-copy small { white-space: normal; }
 }
+
+.canvas-tabs-recovery-note {
+  display: flex; flex-direction: column; gap: 3px; padding: 8px 10px;
+  border-radius: 9px; background: var(--ct-strip, #f4f6f9);
+}
+.canvas-tabs-recovery-note strong { color: var(--ct-strong, #202a3a); font-size: 10px; font-weight: 650; }
+.canvas-tabs-recovery-note span { color: var(--ct-text, #647084); font-size: 9.5px; line-height: 1.35; }
+.app.theme-dark .canvas-tabs-recovery-note { background: #252e3c; }
+.app.theme-dark .canvas-tabs-recovery-note strong { color: #e9eef6; }
+.app.theme-dark .canvas-tabs-recovery-note span { color: #aab5c5; }
