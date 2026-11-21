@@ -42,8 +42,8 @@ test("sidebar hides while the hamburger menu is open to prevent overlap", () => 
   assert.match(sidebarCss, /pointer-events: none/);
 });
 
-test("dock waits 180ms after pointer leaves and cancels collapse on re-entry", () => {
-  assert.match(dock, /const COLLAPSE_GRACE_MS = 180;/);
+test("dock waits 3000ms after pointer leaves and cancels collapse on re-entry", () => {
+  assert.match(dock, /const COLLAPSE_GRACE_MS = 3000;/);
   assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, COLLAPSE_GRACE_MS\)/);
   assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)/);
 });

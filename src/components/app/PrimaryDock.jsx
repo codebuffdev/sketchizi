@@ -20,7 +20,7 @@ const ICONS = {
 };
 
 // Grace period before the dock collapses after the pointer leaves it.
-const COLLAPSE_GRACE_MS = 180;
+const COLLAPSE_GRACE_MS = 3000;
 
 // Hints are only shown for shortcuts already handled by Excalidraw.
 const TOOLS = [
@@ -199,7 +199,8 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
                 className={`sketchizi-tool-sidebar-button${isDisplayed ? " is-active" : ""}`}
                 aria-label={tool.label}
                 aria-pressed={isDisplayed}
-                title={tool.keyHint ? `${tool.label} (${tool.keyHint})` : tool.label}
+                title={tool.label}
+                data-shortcut={tool.keyHint || undefined}
                 disabled={!canEdit && tool.id !== "todo"}
                 onClick={() => chooseTool(tool)}
               >

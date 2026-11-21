@@ -423,3 +423,96 @@
   .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button,
   .sketchizi-tool-sidebar .sketchizi-tool-sidebar-indicator { transition: none !important; }
 }
+
+
+/* Compact PrimaryDock footprint, with the same 12px perimeter as the header. */
+.sketchizi-tool-sidebar.sketchizi-tool-sidebar {
+  left: 12px !important;
+  bottom: 12px !important;
+  box-sizing: border-box !important;
+}
+@media (min-width: 601px) {
+  .sketchizi-tool-sidebar.sketchizi-tool-sidebar:not(.is-expanded) {
+    width: 40px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    border-radius: 11px !important;
+  }
+  .sketchizi-tool-sidebar:not(.is-expanded) .sketchizi-tool-sidebar-collapsed {
+    width: 38px !important;
+    height: 40px !important;
+    max-height: 40px !important;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed .sketchizi-tool-sidebar-active {
+    inset: 0 0 6px 0 !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed .sketchizi-tool-sidebar-active svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed .sketchizi-tool-sidebar-key,
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-key {
+    display: none !important;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-indicator {
+    bottom: 5px !important;
+    width: 12px !important;
+    height: 2px !important;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-expand span.sketchizi-tool-sidebar-indicator {
+    height: 2px !important;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-chevron {
+    right: 5px !important;
+    bottom: 4px !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+  .sketchizi-tool-sidebar.is-expanded {
+    width: 46px !important;
+    padding: 5px !important;
+    border-radius: 12px !important;
+  }
+  .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
+    align-items: center;
+    gap: 2px !important;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
+    position: relative;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button[data-shortcut]:hover::after,
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button[data-shortcut]:focus-visible::after {
+    content: attr(data-shortcut);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 6px;
+    background: #1e2433;
+    color: #e2e8f0;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    transform: translateY(-50%);
+    pointer-events: none;
+    box-shadow: 0 3px 9px rgb(0 0 0 / 22%);
+  }
+}
+
+@media (min-width: 601px) {
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active {
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+}
