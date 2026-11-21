@@ -84,3 +84,38 @@
 @media (max-width: 520px) {
   .canvas-start-date-wrap { max-width: calc(100% - 140px); }
 }
+
+
+/* Unified 12px viewport frame and top-row-matched date/history pill. */
+.canvas-start-date-wrap {
+  right: 12px !important;
+  bottom: 12px !important;
+  height: 34px !important;
+  max-width: calc(100% - 170px);
+}
+.canvas-start-date {
+  box-sizing: border-box;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 9px !important;
+  border: 1px solid rgba(148, 163, 184, .22) !important;
+  background: #ffffff !important;
+  color: #344054 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+.app.theme-dark .canvas-start-date {
+  border-color: rgba(148, 163, 184, .18) !important;
+  background: #1e2433 !important;
+  color: #dce3ed !important;
+}
+@media (max-width: 520px) {
+  .canvas-start-date-wrap {
+    right: 12px !important;
+    bottom: 12px !important;
+    height: 34px !important;
+  }
+  .canvas-start-date { min-height: 34px !important; font-size: 12px !important; }
+}
