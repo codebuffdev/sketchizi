@@ -192,83 +192,85 @@ try {
   if (previousBuild) {
     console.log("PASS: a drawing saved by the base build opens and is selectable on the candidate build.");
   } else {
-  // Draw again and reload before the debounced write can finish. The same
-  // browser tab must reopen the pending drawing as well as its saved scene.
-  const quickX = Math.round(bounds.x + bounds.width * 0.57);
-  const quickY = Math.round(bounds.y + bounds.height * 0.50);
-  await page.keyboard.press("Escape");
-  await page.keyboard.press("r");
-  await page.mouse.move(quickX, quickY);
-  await page.mouse.down();
-  await page.mouse.move(quickX + 100, quickY + 60, { steps: 6 });
-  await page.mouse.up();
-  await page.reload({ waitUntil: "networkidle", timeout: 60000 });
-  await viewport.waitFor({ state: "visible" });
-  await page.keyboard.press("v");
-  await page.mouse.click(quickX + 50, quickY + 2);
-  await page.getByText("Selected shape actions", { exact: true }).waitFor();
-  console.log("PASS: a rectangle survives immediate reload and remains selectable.");
+    // Draw again and reload before the debounced write can finish. The same
+    // browser tab must reopen the pending drawing as well as its saved scene.
+    const quickX = Math.round(bounds.x + bounds.width * 0.57);
+    const quickY = Math.round(bounds.y + bounds.height * 0.50);
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("r");
+    await page.mouse.move(quickX, quickY);
+    await page.mouse.down();
+    await page.mouse.move(quickX + 100, quickY + 60, { steps: 6 });
+    await page.mouse.up();
+    await page.reload({ waitUntil: "networkidle", timeout: 60000 });
+    await viewport.waitFor({ state: "visible" });
+    await page.keyboard.press("v");
+    await page.mouse.click(quickX + 50, quickY + 2);
+    await page.getByText("Selected shape actions", { exact: true }).waitFor();
+    console.log("PASS: a rectangle survives immediate reload and remains selectable.");
 
-  await page.getByRole("button", { name: "Create new canvas" }).click();
-  const secondTab = page.getByRole("tab", { name: "Canvas 2", exact: true });
-  await secondTab.waitFor();
-  const secondX = Math.round(bounds.x + bounds.width * 0.42);
-  const secondY = Math.round(bounds.y + bounds.height * 0.64);
-  await page.mouse.click(secondX - 20, secondY - 20);
-  await page.keyboard.press("r");
-  await page.mouse.move(secondX, secondY);
-  await page.mouse.down();
-  await page.mouse.move(secondX + 130, secondY + 85, { steps: 8 });
-  await page.mouse.up();
-  await awaitScene(async () => {
-    const active = await currentDrawing();
-    return active?.elements?.some((element) => element.type === "rectangle" && element.id !== drawn.id)
-      && !active?.elements?.some((element) => element.id === drawn.id);
-  }, "rectangle");
-  await page.reload({ waitUntil: "networkidle", timeout: 60000 });
-  await secondTab.waitFor();
-  if (await secondTab.getAttribute("aria-selected") !== "true") throw new Error("Reload did not activate Canvas 2.");
-  await page.keyboard.press("v");
-  await page.mouse.click(secondX + 65, secondY + 2);
-  await page.getByText("Selected shape actions", { exact: true }).waitFor();
-  await page.getByRole("tab").and(page.getByTitle("Canvas 1", { exact: true })).click();
-  await page.keyboard.press("v");
-  await page.mouse.click(quickX + 50, quickY + 2);
-  await page.getByText("Selected shape actions", { exact: true }).waitFor();
-  console.log("PASS: both canvas tabs restore their own selectable drawings.");
+    await page.getByRole("button", { name: "Create new canvas" }).click();
+    const secondTab = page.getByRole("tab", { name: "Canvas 2", exact: true });
+    await secondTab.waitFor();
+    const secondX = Math.round(bounds.x + bounds.width * 0.42);
+    const secondY = Math.round(bounds.y + bounds.height * 0.64);
+    await page.mouse.click(secondX - 20, secondY - 20);
+    await page.keyboard.press("r");
+    await page.mouse.move(secondX, secondY);
+    await page.mouse.down();
+    await page.mouse.move(secondX + 130, secondY + 85, { steps: 8 });
+    await page.mouse.up();
+    await awaitScene(async () => {
+      const active = await currentDrawing();
+      return active?.elements?.some((element) => element.type === "rectangle" && element.id !== drawn.id)
+        && !active?.elements?.some((element) => element.id === drawn.id);
+    }, "rectangle");
+    await page.reload({ waitUntil: "networkidle", timeout: 60000 });
+    await secondTab.waitFor();
+    if (await secondTab.getAttribute("aria-selected") !== "true") throw new Error("Reload did not activate Canvas 2.");
+    await page.keyboard.press("v");
+    await page.mouse.click(secondX + 65, secondY + 2);
+    await page.getByText("Selected shape actions", { exact: true }).waitFor();
+    await page.getByRole("tab").and(page.getByTitle("Canvas 1", { exact: true })).click();
+    await page.keyboard.press("v");
+    await page.mouse.click(quickX + 50, quickY + 2);
+    await page.getByText("Selected shape actions", { exact: true }).waitFor();
+    console.log("PASS: both canvas tabs restore their own selectable drawings.");
 
-  for (const failedKey of ["main", "canvas-tabs-manifest"]) {
-    const failingContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-    try {
-      const failingPage = await failingContext.newPage();
-      await failingPage.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
-      await dismissStartupChooser(failingPage);
-      const failureViewport = failingPage.locator(".excalidraw");
-      await failureViewport.waitFor({ state: "visible" });
-      const failureBounds = await failureViewport.boundingBox();
-      if (!failureBounds) throw new Error("Failure test has no visible drawing viewport.");
-      await failingPage.evaluate((keyToFail) => {
-        const originalPut = IDBObjectStore.prototype.put;
-        IDBObjectStore.prototype.put = function (value, key) {
-          if (this.name === "documents" && key === keyToFail) {
-            throw new DOMException("Simulated full storage", "QuotaExceededError");
-          }
-          return originalPut.apply(this, arguments);
-        };
-      }, failedKey);
-      const failureX = Math.round(failureBounds.x + failureBounds.width * 0.35);
-      const failureY = Math.round(failureBounds.y + failureBounds.height * 0.4);
-      await failingPage.mouse.click(failureX - 20, failureY - 20);
-      await failingPage.keyboard.press("r");
-      await failingPage.mouse.move(failureX, failureY);
-      await failingPage.mouse.down();
-      await failingPage.mouse.move(failureX + 120, failureY + 90, { steps: 6 });
-      await failingPage.mouse.up();
-      await failingPage.getByLabel("Local save failed", { exact: true }).waitFor({ timeout: 25000 });
-      console.log(`PASS: a failed ${failedKey} write shows a local save error.`);
-    } finally {
-      await failingContext.close();
+    for (const failedKey of ["main", "canvas-tabs-manifest"]) {
+      const failingContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      try {
+        const failingPage = await failingContext.newPage();
+        await failingPage.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
+        await dismissStartupChooser(failingPage);
+        const failureViewport = failingPage.locator(".excalidraw");
+        await failureViewport.waitFor({ state: "visible" });
+        const failureBounds = await failureViewport.boundingBox();
+        if (!failureBounds) throw new Error("Failure test has no visible drawing viewport.");
+        await failingPage.evaluate((keyToFail) => {
+          const originalPut = IDBObjectStore.prototype.put;
+          IDBObjectStore.prototype.put = function (value, key) {
+            if (this.name === "documents" && key === keyToFail) {
+              throw new DOMException("Simulated full storage", "QuotaExceededError");
+            }
+            return originalPut.apply(this, arguments);
+          };
+        }, failedKey);
+        const failureX = Math.round(failureBounds.x + failureBounds.width * 0.35);
+        const failureY = Math.round(failureBounds.y + failureBounds.height * 0.4);
+        await failingPage.mouse.click(failureX - 20, failureY - 20);
+        await failingPage.keyboard.press("r");
+        await failingPage.mouse.move(failureX, failureY);
+        await failingPage.mouse.down();
+        await failingPage.mouse.move(failureX + 120, failureY + 90, { steps: 6 });
+        await failingPage.mouse.up();
+        await failingPage.getByLabel("Local save failed", { exact: true }).waitFor({ timeout: 25000 });
+        console.log(`PASS: a failed ${failedKey} write shows a local save error.`);
+      } finally {
+        await failingContext.close();
+      }
     }
+
   }
 
   if (errors.length) throw new Error("Browser runtime exceptions: " + errors.join(" | "));
