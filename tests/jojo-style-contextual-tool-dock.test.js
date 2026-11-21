@@ -15,7 +15,7 @@ test("the bottom dock exposes compact tool-specific controls, not a properties i
   assert.match(dock, /sketchizi-tool-options-dock/);
   assert.doesNotMatch(dock, /function ContextShapeIcon|<ContextShapeIcon/);
   assert.doesNotMatch(dock, /sk-tool-dock-context/);
-  assert.match(dock, /<DockGroup label=\{isText \? "Text color" : "Stroke color"\}>/);
+  assert.match(dock, /<DockGroup label=\{isHighlighter \? "Fill style" : isShape \|\| isLaser \? "Color & fill" : "Color"\}>/);
   assert.doesNotMatch(dock, /<span className="sk-tool-dock-context">\{title\}<\/span>/);
   assert.match(dock, /Stroke color/);
   assert.match(dock, /Fill style/);
