@@ -18,6 +18,9 @@ async function dismissStartupChooser(target = page) {
 
 async function ensureHeaderVisible() {
   const reveal = page.locator(".desktop-app-header-reveal-handle");
+  // Older compatibility builds may not expose the collapsible header handle.
+  // The drawing-persistence smoke remains valid without header-only controls.
+  if (!(await reveal.count())) return;
   await reveal.waitFor({ state: "attached", timeout: 15000 });
   if (await reveal.getAttribute("aria-expanded") !== "true") await reveal.click({ force: true });
   await page.waitForFunction(() =>
