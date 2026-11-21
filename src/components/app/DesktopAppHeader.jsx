@@ -879,7 +879,15 @@ const activeTabActions = (
                 <span>{documentStatusLabel}</span>
               </div>
               <div className="canvas-tabs-active-menu-status">
-                <span className={`canvas-tab-status-dot is-${isCloudDocument ? cloudSaveState : saveState}`} />
+                {isCloudDocument && <span className={`canvas-tab-status-dot is-${cloudSaveState}`} aria-label={cloudStatusLabels[cloudSaveState] || "Cloud Workspace"} />}
+                {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
+                  <span
+                    className={`desktop-app-document-identity-dirty-dot is-${saveState}`}
+                    aria-label={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+                    title={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+                  />
+                )}
+                <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
                 <span>{isCloudDocument ? "Cloud Workspace" : currentDocumentFileBacked ? "Linked file" : "Local draft"}</span>
                 <span className="canvas-tabs-active-menu-status-detail">{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Unsaved file changes" : "Linked file saved") : saveStateLabel}</span>
               </div>
