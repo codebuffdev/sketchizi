@@ -33,6 +33,8 @@ import { useIconInsertion } from "./features/icon-library/useIconInsertion";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
 import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
+import { useDetectedArchitectureContext } from "./features/architecture/useDetectedArchitectureContext";
+import { insertArchitecturePack as insertArchitecturePackIntoScene } from "./features/templates/architecturePackInsertion";
 const CreateDesignScreen = lazy(() => import("./features/design/ui/CreateDesignScreen.jsx"));
 const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
 const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
@@ -82,6 +84,7 @@ import "./styles/todo-canvas-polish.css";
 import "./styles/canvas-top-controls.css";
 import "./styles/hud-capsules.css";
 import "./styles/edge-drawer-motion.css";
+import "./styles/smart-studio.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
@@ -1369,14 +1372,17 @@ function App() {
     const providers = new Set(endpoints.map(providerOf).filter(Boolean));
     return (providers.size > 1 || providers.has("networking")) ? { relationshipId: `architecture:${connector.id}`, relationshipType: "traffic-flow", elementId: connector.id } : null;
   })();
+  // Scene-aware Smart Studio context (debounced 250ms; renders nothing for plain sketches).
+  const { context: architectureContext, notifySceneChange: notifyArchitectureContext } = useDetectedArchitectureContext();
   const updateArchitectureValidation = useCallback((elements) => {
+    notifyArchitectureContext(elements);
     const graph = analyzeArchitectureGraph(elements);
     const result = validateArchitectureWithAwsRules(graph);
     const signature = JSON.stringify(result);
     if (signature === architectureValidationSignatureRef.current) return;
     architectureValidationSignatureRef.current = signature;
     setArchitectureValidation(result);
-  }, []);
+  }, [notifyArchitectureContext]);
   const applyKubernetesSuggestion = useCallback((diagnostic, relationshipType) => {
     if (!collaborationCanEdit) {
       showToast("You do not have permission to modify this diagram.", "error");
@@ -1535,6 +1541,20 @@ function App() {
     if (appearance === "clean") preferences.useThemeDefaultBackground();
     else applyCanvasAppearance(apiRef.current, appearance, isDarkTheme);
   }, [collaborationCanEdit, isDarkTheme, preferences.useThemeDefaultBackground]);
+  const insertCatalogIconAtViewportCenter = (icon) => {
+    const canvas = document.querySelector(".excalidraw");
+    if (!canvas || !icon) return;
+    const rect = canvas.getBoundingClientRect();
+    iconInsertion.addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
+  };
+  const openSystemDesignReview = () => {
+    openPanel("architecture-validation");
+    // The review dashboard is the first section of the validation panel; wait
+    // for the drawer to mount, then bring it into view.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.querySelector(".system-design-review")?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    }));
+  };
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -1555,6 +1575,14 @@ function App() {
     currentFolder,
     fileActionsRef,
     openExportStudio: () => setExportStudioOpen(true),
+    architectureContext,
+    insertCatalogIcon: insertCatalogIconAtViewportCenter,
+    openKubernetesStudio: () => setKubernetesStudioOpen(true),
+    openDockerComposeStudio: () => setDockerStudioOpen(true),
+    openSystemDesignReview,
+    insertArchitecturePack: (pack) => insertArchitecturePackIntoScene(apiRef.current, pack, { captureUpdate: CaptureUpdateAction.IMMEDIATELY }),
+    openArchitectureTemplates: () => setTemplatesModalOpen(true),
+    openDesignTemplates: () => setDesignStudioOpen(true),
   });
   useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
@@ -2491,6 +2519,10 @@ function App() {
         element.backgroundColor = invertHex(element.backgroundColor);
       });
     }
+    // Tag generated cards so the Smart Studio pill can recognise a Compose board.
+    skeleton.forEach((element) => {
+      element.customData = { ...(element.customData || {}), composeDiagram: true };
+    });
     const elements = convertToExcalidrawElements(skeleton);
     api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     api.scrollToContent?.(elements, { fitToContent: true, animate: true });
@@ -2630,6 +2662,13 @@ function App() {
         onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
+        isZenMode={isZenMode}
+        architectureContext={architectureContext}
+        architectureValidation={architectureValidation}
+        onRunArchitectureValidation={() => openPanel("architecture-validation")}
+        onOpenKubernetesStudio={() => setKubernetesStudioOpen(true)}
+        onOpenDockerComposeStudio={() => setDockerStudioOpen(true)}
+        onOpenSystemDesignReview={openSystemDesignReview}
         canvasTabs={canvasTabs.map((tab) => ({ ...tab, syncMeta: getTabCloudMeta(tab, tab.id === activeCanvasId ? { dirty: documentDirty, cloudSaveState } : null) })).flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id }] : [tab])}
         activeCanvasId={activeWorkspaceTabId}
         canvasId={activeCanvasId}

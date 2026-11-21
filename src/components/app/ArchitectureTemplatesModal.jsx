@@ -1,47 +1,13 @@
 import React from "react";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { ARCHITECTURE_PACKS } from "../../features/templates/architecturePacks.js";
+import { insertArchitecturePack } from "../../features/templates/architecturePackInsertion.js";
 
 export default function ArchitectureTemplatesModal({ isOpen, onClose, apiRef }) {
   if (!isOpen) return null;
 
   const handleInsertTemplate = (pack) => {
-    const api = apiRef?.current;
-    if (!api) return;
-
-    const existingElements = (api.getSceneElements?.() || []).filter((el) => !el.isDeleted && !el.deleted);
-
-    // Compute bounding offset so template does not collide with existing work
-    let offsetX = 100;
-    let offsetY = 100;
-
-    if (existingElements.length > 0) {
-      let maxX = -Infinity;
-      let minY = Infinity;
-      for (const el of existingElements) {
-        maxX = Math.max(maxX, (Number(el.x) || 0) + (Number(el.width) || 0));
-        minY = Math.min(minY, Number(el.y) || 0);
-      }
-      offsetX = maxX + 80;
-      offsetY = Math.max(100, minY);
-    }
-
-    const timestamp = Date.now();
-    const newElements = pack.elements.map((el, idx) => ({
-      ...el,
-      id: `tpl-${pack.id}-${timestamp}-${idx}`,
-      x: el.x + (offsetX - 100),
-      y: el.y + (offsetY - 100),
-      seed: Math.floor(Math.random() * 100000),
-      version: 1,
-      versionNonce: 1,
-      isDeleted: false,
-    }));
-
-    api.updateScene?.({
-      elements: [...existingElements, ...newElements],
-      commitToHistory: true,
-    });
-
+    if (!insertArchitecturePack(apiRef?.current, pack, { captureUpdate: CaptureUpdateAction.IMMEDIATELY })) return;
     onClose();
   };
 

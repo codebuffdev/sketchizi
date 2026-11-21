@@ -11,6 +11,7 @@ const canvasSource = readFileSync(new URL("../src/components/app/SketchiziCanvas
 const toolbarSource = readFileSync(new URL("../src/components/app/ContextualFormattingToolbar.jsx", import.meta.url), "utf8");
 const exportModalSource = readFileSync(new URL("../src/components/app/ExportStudioModal.jsx", import.meta.url), "utf8");
 const templatesModalSource = readFileSync(new URL("../src/components/app/ArchitectureTemplatesModal.jsx", import.meta.url), "utf8");
+const packInsertionSource = readFileSync(new URL("../src/features/templates/architecturePackInsertion.js", import.meta.url), "utf8");
 const advancedCss = readFileSync(new URL("../src/styles/advanced-canvas-suite.css", import.meta.url), "utf8");
 
 test("Capability 1: Canvas Mini-Map Navigator is integrated with header toggle and dark mode styles", () => {
@@ -50,8 +51,10 @@ test("Capability 3: Architecture Starter Packs contain production cloud and inte
   assert.ok(ids.includes("k8s-cluster"), "Includes Kubernetes cluster pack");
   assert.ok(ids.includes("interview-framework"), "Includes System Design interview pack");
 
-  assert.ok(templatesModalSource.includes("offsetX = maxX + 80"), "Computes non-overlapping insertion offset");
-  assert.ok(templatesModalSource.includes("api.updateScene"), "Inserts template into canvas scene");
+  // Placement logic is shared with the command palette via architecturePackInsertion.js.
+  assert.ok(templatesModalSource.includes("insertArchitecturePack("), "Modal delegates to the shared insertion service");
+  assert.ok(packInsertionSource.includes("offsetX = maxX + 80"), "Computes non-overlapping insertion offset");
+  assert.ok(packInsertionSource.includes("api.updateScene"), "Inserts template into canvas scene");
 });
 
 test("Capability 4: Smart Theme Palettes provide 1-click aesthetic beautifier", () => {

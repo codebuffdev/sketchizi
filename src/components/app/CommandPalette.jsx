@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { rankCommands } from "../../features/commands/commandPaletteSearch.js";
+import { getCommandPaletteShortcut } from "../../features/commands/platformShortcut.js";
+import { useDrawerPresence } from "../../features/navigation/useDrawerPresence.js";
+
+// Palette motion: 200ms scale-blur enter, 130ms exit (see styles/smart-studio.css).
+export const COMMAND_PALETTE_ENTER_MS = 200;
+export const COMMAND_PALETTE_EXIT_MS = 130;
 
 const CATEGORY_ORDER = [
   "Collaboration",
@@ -8,6 +14,9 @@ const CATEGORY_ORDER = [
   "View",
   "Layout",
   "Tools",
+  "Studios & Validation",
+  "Insert Cloud & Infra",
+  "Templates & Packs",
   "Export",
   "Application",
 ];
@@ -44,6 +53,9 @@ function groupByCategory(commands) {
 
 function CommandPalette({ open, onClose, commands, onExecute }) {
   const inputRef = useRef(null);
+  const resultsRef = useRef(null);
+  const shortcut = useMemo(() => getCommandPaletteShortcut(), []);
+  const { present, phase } = useDrawerPresence(open, COMMAND_PALETTE_EXIT_MS);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentCommandIds, setRecentCommandIds] = useState([]);
@@ -101,7 +113,13 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
     setSelectedIndex((current) => Math.min(current, Math.max(displayedCommands.length - 1, 0)));
   }, [displayedCommands.length]);
 
-  if (!open || typeof document === "undefined") return null;
+  // Keep the keyboard-selected row visible while arrowing through long lists.
+  useEffect(() => {
+    if (!open) return;
+    resultsRef.current?.querySelector(".sketchizi-command-item.selected")?.scrollIntoView?.({ block: "nearest" });
+  }, [open, selectedIndex, sections]);
+
+  if (!present || typeof document === "undefined") return null;
 
   const executeSelected = (command) => {
     if (!command) return;
@@ -119,7 +137,7 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
 
   let flattenedIndex = 0;
   const palette = (
-    <div className="sketchizi-command-palette-overlay" role="presentation" onPointerDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div className="sketchizi-command-palette-overlay" role="presentation" data-motion={open ? phase : "exit"} onPointerDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section
         className="sketchizi-command-palette"
         role="dialog"
@@ -156,6 +174,10 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
               } else if (event.key === "Enter") {
                 event.preventDefault();
                 executeSelected(displayedCommands[selectedIndex]);
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                onClose();
               }
             }}
             type="search"
@@ -165,7 +187,7 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
             spellCheck="false"
           />
           <span className="sketchizi-command-search-hints" aria-hidden="true">
-            <kbd>Ctrl+Shift+P</kbd>
+            <kbd className="sk-kbd">{shortcut.label}</kbd>
             <kbd>Esc</kbd>
           </span>
         </label>
@@ -174,7 +196,7 @@ function CommandPalette({ open, onClose, commands, onExecute }) {
           <span>{query.trim() ? "Matching commands" : "Explore commands"}</span>
           <span>{visibleCommands.length} available</span>
         </div>
-        <div className="sketchizi-command-results" role="listbox" aria-label="Commands">
+        <div className="sketchizi-command-results" role="listbox" aria-label="Commands" ref={resultsRef}>
           {visibleCommands.length === 0 ? (
             <div className="sketchizi-command-empty">
               <strong>No matching commands</strong>

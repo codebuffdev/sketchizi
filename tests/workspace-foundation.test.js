@@ -43,7 +43,7 @@ test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validat
   assert.match(createMenu, /M12 5v14M5 12h14/);
   assert.match(app, /aria-label="AI Ask"\s+aria-expanded=\{aiAskOpen\}\s*>\s*<AiAskIcon className="ai-ask-toggle-icon"\s*\/>/);
   const registry = await read("../src/features/commands/commandRegistry.js");
-  assert.match(registry, /label: "Architecture Validation"/);
+  assert.match(registry, /label: "Validate Architecture"/);
   assert.match(registry, /openPanel\("architecture-validation"\)/);
   assert.doesNotMatch(app, /<span className="ai-ask-toggle-icon" aria-hidden="true">✳<\/span>/);
   assert.doesNotMatch(app, /<span className="architecture-validation-toggle-icon">✓<\/span>/);

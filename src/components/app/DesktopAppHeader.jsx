@@ -5,7 +5,9 @@ import CanvasStartDate from "./CanvasStartDate.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
 import CanvasZoomControl from "./CanvasZoomControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
+import SmartStudioPill from "./SmartStudioPill.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
+import { getCommandPaletteShortcut } from "../../features/commands/platformShortcut.js";
 
 const MENU_DEFINITIONS = [
   {
@@ -140,8 +142,16 @@ export default function DesktopAppHeader({
   onOpenTemplates,
   onToggleMinimap,
   minimapOpen = false,
+  isZenMode = false,
+  architectureContext = null,
+  architectureValidation = null,
+  onRunArchitectureValidation,
+  onOpenKubernetesStudio,
+  onOpenDockerComposeStudio,
+  onOpenSystemDesignReview,
   children,
 }) {
+  const paletteShortcut = useMemo(() => getCommandPaletteShortcut(), []);
   const [openMenu, setOpenMenu] = useState(null);
   const [gridPopoverOpen, setGridPopoverOpen] = useState(false);
   const gridPopoverRef = useRef(null);
@@ -536,7 +546,7 @@ export default function DesktopAppHeader({
                     >
                       <ViewCommandIcon name="search" />
                       <span className="desktop-app-dropdown-label">Search Commands</span>
-                      <kbd>Ctrl+Shift+P</kbd>
+                      <kbd>{paletteShortcut.secondaryLabel}</kbd>
                     </button>
                   )}
                   {commandsForMenu.map((command) => (
@@ -745,14 +755,14 @@ export default function DesktopAppHeader({
           className="desktop-app-header-icon-button desktop-app-search-button"
           onClick={() => { setOpenMenu(null); openCommandPalette?.(); }}
           aria-label="Search commands"
-          title="Search commands (Ctrl+Shift+P or Ctrl+K)"
+          title={`Search commands (${paletteShortcut.label} or ${paletteShortcut.secondaryLabel})`}
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="10.8" cy="10.8" r="6.3" />
             <path d="m16 16 4.2 4.2" />
           </svg>
           <span className="desktop-app-search-label">Search…</span>
-          <kbd className="desktop-app-search-shortcut">Ctrl+K</kbd>
+          <kbd className="desktop-app-search-shortcut">{paletteShortcut.label}</kbd>
         </button>
 
       </div>
@@ -870,6 +880,31 @@ export default function DesktopAppHeader({
       <div className="desktop-app-global-theme-control">
         <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
       </div>
+      <button
+        type="button"
+        className="desktop-app-command-trigger"
+        onClick={() => { setOpenMenu(null); onBeforeOpenPanel?.(); openCommandPalette?.(); }}
+        aria-label="Open command palette"
+        aria-keyshortcuts={paletteShortcut.mac ? "Meta+K" : "Control+K"}
+        title={`Command palette (${paletteShortcut.label})`}
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="10.8" cy="10.8" r="6.3" />
+          <path d="m16 16 4.2 4.2" />
+        </svg>
+        <span className="desktop-app-command-trigger-label">Search</span>
+        <kbd className="sk-kbd" aria-label={paletteShortcut.ariaLabel}>{paletteShortcut.label}</kbd>
+      </button>
+      <SmartStudioPill
+        context={architectureContext}
+        validation={architectureValidation}
+        isZenMode={isZenMode}
+        onBeforeOpen={onBeforeOpenPanel}
+        onRunValidation={onRunArchitectureValidation}
+        onOpenKubernetesStudio={onOpenKubernetesStudio}
+        onOpenDockerComposeStudio={onOpenDockerComposeStudio}
+        onOpenSystemDesignReview={onOpenSystemDesignReview}
+      />
       <div className="desktop-app-global-ai-control">{children}</div>
       <div className="desktop-app-settings-wrap">
         <button
