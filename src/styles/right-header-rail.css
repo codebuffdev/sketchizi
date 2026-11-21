@@ -1073,15 +1073,25 @@
   }
 }
 
-/* Shared rectangular geometry for the canvas shell and its floating controls. */
-.app.canvas-first-header .desktop-app-global-theme-control .theme-toggle,
-.app.canvas-first-header .desktop-app-global-ai-control .ai-ask-toggle,
+/* Soft utility controls frame the connected canvas tabs. */
 .app.canvas-first-header .desktop-app-header-right-rail,
-.app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island,
-.app.canvas-first-header .desktop-app-menu-trigger-floating,
-.app.canvas-first-header .canvas-tab-item,
-.app.canvas-first-header .canvas-tabs-add {
+.app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island {
   border-radius: 4px !important;
+}
+
+.app.canvas-first-header .desktop-app-menu-trigger-floating,
+.app.canvas-first-header .desktop-app-global-theme-control .theme-toggle,
+.app.canvas-first-header .desktop-app-global-ai-control .ai-ask-toggle {
+  border-radius: 999px !important;
+}
+
+.app.canvas-first-header .desktop-app-global-ai-control .ai-ask-toggle {
+  background: color-mix(in srgb, var(--ui-accent, #7168d8) 8%, var(--ui-surface-solid, #fff));
+  border-color: transparent;
+}
+
+.app.canvas-first-header .desktop-app-global-ai-control .ai-ask-toggle[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--ui-accent, #7168d8) 19%, var(--ui-surface-solid, #fff));
 }
 
 /* The canvas rail follows the drawer edge as the drawer is resized. */

@@ -81,6 +81,20 @@ try {
   await blank.page.getByRole("button", { name: "Create new canvas" }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: the canvas-tab add action opens an editable canvas.");
+  const headerStyles = await blank.page.getByRole("tablist", { name: "Workspace tabs" }).evaluate((strip) => ({
+    stripRadius: parseFloat(getComputedStyle(strip).borderTopLeftRadius),
+    activeRadius: parseFloat(getComputedStyle(strip.querySelector(".canvas-tab-item.is-active")).borderTopLeftRadius),
+    count: strip.querySelectorAll('[role="tab"]').length,
+  }));
+  const addStyles = await blank.page.getByRole("button", { name: "Create new canvas" }).evaluate((button) => {
+    const style = getComputedStyle(button);
+    return { radius: parseFloat(style.borderTopLeftRadius), border: style.borderTopStyle };
+  });
+  if (headerStyles.count < 2 || headerStyles.stripRadius < 18 || headerStyles.activeRadius < 17 ||
+      addStyles.radius < 18 || addStyles.border === "dashed") {
+    throw new Error(`Canvas header must use a connected rounded strip and a circular add action: ${JSON.stringify({ headerStyles, addStyles })}`);
+  }
+  console.log("PASS: the canvas header uses soft tab and utility shapes.");
 
   // The floating header may collapse after canvas interaction; reveal it with
   // the same keyboard shortcut users have before opening header-only actions.
