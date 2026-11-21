@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CanvasPages from "../../features/pages/CanvasPages.jsx";
 import CanvasTabs from "./CanvasTabs.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
+import CanvasZoomControl from "./CanvasZoomControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
 
@@ -156,9 +157,48 @@ export default function DesktopAppHeader({
     };
   }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
+  // The legacy header rail is no longer the default top-right UI; it stays
+  // hidden (but mounted) on desktop and tablet and opens from the settings popover.
   const [headerVisible, setHeaderVisible] = useState(() =>
-    typeof window === "undefined" || !window.matchMedia("(min-width: 1025px)").matches
+    typeof window === "undefined" || !window.matchMedia("(min-width: 521px)").matches
   );
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(() => Boolean(canvasApi?.getAppState?.()?.gridModeEnabled));
+  const settingsRef = useRef(null);
+  useEffect(() => {
+    setSnapEnabled(Boolean(canvasApi?.getAppState?.()?.gridModeEnabled));
+    if (!canvasApi?.onChange) return undefined;
+    const unsubscribe = canvasApi.onChange((_elements, appState) => {
+      const next = Boolean(appState?.gridModeEnabled);
+      setSnapEnabled((current) => (current === next ? current : next));
+    });
+    return () => { if (typeof unsubscribe === "function") unsubscribe(); };
+  }, [canvasApi]);
+  useEffect(() => {
+    if (!settingsOpen) return undefined;
+    const close = (event) => {
+      if (!settingsRef.current?.contains(event.target)) setSettingsOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      setSettingsOpen(false);
+    };
+    document.addEventListener("pointerdown", close, true);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      window.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [settingsOpen]);
+  const toggleSnapToGrid = () => {
+    if (!canEditCanvas || !canvasApi?.updateScene) return;
+    const next = !snapEnabled;
+    canvasApi.updateScene({ appState: { gridModeEnabled: next } });
+    setSnapEnabled(next);
+  };
   const [headerPinned, setHeaderPinned] = useState(false);
   const headerRef = useRef(null);
   const headerCollapseTimerRef = useRef(null);
@@ -230,12 +270,8 @@ export default function DesktopAppHeader({
     // control rail = right edge. Tablet retains the previous top-edge reveal.
     // Canvas wheel gestures remain dedicated to zooming and navigation.
     const revealFromEdge = (event) => {
-      const rightRail = window.matchMedia("(min-width: 1025px)").matches;
-      const nearTop = event.clientY <= 24;
-
-      // Desktop rail is revealed by its dedicated top-right dropdown handle.
-      // Keep the existing top-edge reveal behaviour on tablet layouts.
-      if (!rightRail && nearTop) setHeaderVisible(true);
+      // The rail opens only from the settings popover (or Ctrl+Shift+H).
+      void event;
     };
 
     const toggleHeaderShortcut = (event) => {
@@ -754,7 +790,6 @@ export default function DesktopAppHeader({
       </button>
     </div>
     </header>
-      <div className="desktop-app-global-ai-control">{children}</div>
       <div
         className={`desktop-app-document-identity desktop-app-document-title-float desktop-app-canvas-tabs-topbar${currentDocumentDirty ? " is-dirty" : ""}`}
         aria-label="Canvas tabs"
@@ -850,49 +885,84 @@ export default function DesktopAppHeader({
         />
       </div>
 
+      <div className="desktop-app-top-controls">
+        {!activeIsTodoTab && canvasApi && (
+          <CanvasZoomControl
+            api={canvasApi}
+            onBeforeOpen={() => { setSettingsOpen(false); onBeforeOpenPanel?.(); }}
+            onZoomIn={() => executeCommand(commandMap.get("view.zoom-in"))}
+            onZoomOut={() => executeCommand(commandMap.get("view.zoom-out"))}
+            onReset={() => executeCommand(commandMap.get("view.reset-zoom"))}
+            onFit={() => executeCommand(commandMap.get("view.fit-canvas"))}
+          />
+        )}
       <div className="desktop-app-global-theme-control">
         <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
       </div>
-      <button
-        type="button"
-        className={`desktop-app-header-reveal-handle${headerVisible ? " is-expanded" : " is-visible"}`}
-        onClick={() => {
-          clearHeaderCollapseTimer();
-          if (revealPointerEnteredFromCollapsedRef.current) {
-            // Pointer hover already revealed a collapsed rail; let this first
-            // click keep it open. Subsequent clicks toggle it normally.
-            revealPointerEnteredFromCollapsedRef.current = false;
-            setHeaderVisible(true);
-            return;
-          }
-          setHeaderVisible((visible) => !visible);
-        }}
-        onPointerEnter={() => {
-          revealPointerEnteredFromCollapsedRef.current = !headerVisible;
-          clearHeaderCollapseTimer();
-          setHeaderVisible(true);
-        }}
-        onPointerLeave={() => {
-          revealPointerEnteredFromCollapsedRef.current = false;
-          if (!headerPinned) scheduleHeaderCollapse();
-        }}
-        onFocus={() => { clearHeaderCollapseTimer(); setHeaderVisible(true); }}
-        onBlur={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
-        aria-controls="desktop-app-header"
-        aria-label="Show application header"
-        title="Show header (Ctrl+Shift+H)"
-        aria-expanded={headerVisible}
-        tabIndex={0}
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 6h16M4 12h16M4 18h16" />
-          <path d="M8 4v4M15 10v4M11 16v4" />
-          <circle cx="8" cy="6" r="1.5" fill="currentColor" stroke="none" />
-          <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none" />
-          <circle cx="11" cy="18" r="1.5" fill="currentColor" stroke="none" />
-        </svg>
-        <span className="sr-only">Show application header</span>
-      </button>
+      <div className="desktop-app-global-ai-control">{children}</div>
+      <div className="desktop-app-settings-wrap" ref={settingsRef}>
+        <button
+          type="button"
+          className={`desktop-app-header-reveal-handle desktop-app-settings-toggle${settingsOpen ? " is-expanded" : ""}`}
+          onClick={() => {
+            if (!settingsOpen) onBeforeOpenPanel?.();
+            setSettingsOpen((open) => !open);
+          }}
+          aria-haspopup="dialog"
+          aria-expanded={settingsOpen}
+          aria-label="Canvas settings"
+          title="Canvas settings"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M6 4v5M6 13v7M12 4v9M12 17v3M18 4v3M18 11v9" />
+            <path d="M4 9h4M10 13h4M16 7h4" />
+          </svg>
+          <span className="sr-only">Canvas settings</span>
+        </button>
+        {settingsOpen && (
+          <section className="desktop-app-top-popover desktop-app-settings-popover" role="dialog" aria-label="Canvas settings">
+            <label className="desktop-app-settings-row">
+              <span>Show Grid</span>
+              <input type="checkbox" checked={gridEnabled} onChange={() => onToggleGrid?.()} />
+              <span className="desktop-app-settings-switch" aria-hidden="true" />
+            </label>
+            <label className="desktop-app-settings-row">
+              <span>Snap to Grid</span>
+              <input type="checkbox" checked={snapEnabled} disabled={!canEditCanvas} onChange={toggleSnapToGrid} />
+              <span className="desktop-app-settings-switch" aria-hidden="true" />
+            </label>
+            <div className="desktop-app-settings-group" role="group" aria-label="Grid style">
+              <strong>Grid style</strong>
+              <div className="desktop-app-settings-chips">
+                {[["normal", "Grid"], ["focus", "Focus"], ["local", "Local"], ["dots", "Dots"], ["ruled", "Ruled"]].map(([value, label]) => (
+                  <button key={value} type="button" aria-pressed={gridStyle === value}
+                    onClick={() => { onGridStyleChange?.(value); if (!gridEnabled) onToggleGrid?.(); }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="desktop-app-settings-group" role="group" aria-label="Canvas view">
+              <strong>Canvas view</strong>
+              <div className="desktop-app-settings-chips">
+                <button type="button" onClick={() => { setSettingsOpen(false); window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } })); }}>Infinite</button>
+                <button type="button" onClick={() => { setSettingsOpen(false); window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "pages" } })); }}>Pages</button>
+              </div>
+            </div>
+            <div className="desktop-app-settings-links">
+              <button type="button" onClick={() => { setSettingsOpen(false); onOpenTemplates?.(); }}>Browse templates</button>
+              <button type="button" onClick={() => { setSettingsOpen(false); openCommandPalette?.(); }}>Search commands <kbd>Ctrl+K</kbd></button>
+              {!collaborationActive && (
+                <button type="button" disabled={collaborationCreationState === "creating"} onClick={() => { setSettingsOpen(false); startCollaboration?.(); }}>
+                  {collaborationCreationState === "creating" ? "Creating collaboration…" : "Start collaboration"}
+                </button>
+              )}
+              <button type="button" onClick={() => { setSettingsOpen(false); clearHeaderCollapseTimer(); setHeaderVisible(true); }}>Library, workspace &amp; account…</button>
+            </div>
+          </section>
+        )}
+      </div>
+      </div>
     </>
   );
 }

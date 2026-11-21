@@ -76,6 +76,7 @@ import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 import "./styles/contextual-dock-polish.css";
 import "./styles/todo-canvas-polish.css";
+import "./styles/canvas-top-controls.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
@@ -2642,6 +2643,7 @@ function App() {
           aria-label="AI Ask"
           aria-expanded={aiAskOpen}
         >
+          <svg className="ai-ask-toggle-sparkle" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.3l-1.9-5.5-5.6-1.9L10.1 9 12 3.5Z" /></svg>
           <span className="ai-ask-toggle-label">AI</span>
         </button>
 

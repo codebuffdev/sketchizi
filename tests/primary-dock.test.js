@@ -42,8 +42,9 @@ test("sidebar hides while the hamburger menu is open to prevent overlap", () => 
   assert.match(sidebarCss, /pointer-events: none/);
 });
 
-test("dock waits three seconds after pointer leaves and cancels collapse on re-entry", () => {
-  assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, 3000\)/);
+test("dock waits 180ms after pointer leaves and cancels collapse on re-entry", () => {
+  assert.match(dock, /const COLLAPSE_GRACE_MS = 180;/);
+  assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, COLLAPSE_GRACE_MS\)/);
   assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)/);
 });
 
@@ -52,4 +53,8 @@ test("selecting a tool collapses the dock immediately and clears the pending hov
   assert.match(dock, /const collapseDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)[\s\S]*?setExpanded\(false\)/);
   assert.match(dock, /const chooseTool = \(tool\) => \{[\s\S]*?collapseDock\(\);/);
   assert.doesNotMatch(dock, /if \(window\.matchMedia\?\.\("\(hover: none\)"\)\.matches\) collapseDock\(\)/);
+});
+
+test("changing the active tool (e.g. via keyboard shortcut) collapses the dock without stealing focus", () => {
+  assert.match(dock, /useEffect\(\(\) => \{\s*if \(previousActiveIdRef\.current === activeId\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId\]\)/);
 });

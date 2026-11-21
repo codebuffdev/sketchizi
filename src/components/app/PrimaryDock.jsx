@@ -19,6 +19,9 @@ const ICONS = {
   todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
 };
 
+// Grace period before the dock collapses after the pointer leaves it.
+const COLLAPSE_GRACE_MS = 180;
+
 // Hints are only shown for shortcuts already handled by Excalidraw.
 const TOOLS = [
   { id: "selection", label: "Select", keyHint: "V" },
@@ -95,6 +98,18 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   }, []);
 
   const activeId = customTool || activeTool;
+
+  // Any change of the active tool (click or keyboard shortcut) collapses the
+  // dock. Focus is deliberately left alone so typing shortcuts keep working.
+  const previousActiveIdRef = useRef(activeId);
+  useEffect(() => {
+    if (previousActiveIdRef.current === activeId) return;
+    previousActiveIdRef.current = activeId;
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
+    setExpanded(false);
+  }, [activeId]);
+
   const activeToolMeta = TOOLS.find((tool) => tool.id === activeId) || TOOLS[0];
 
   const expandDock = () => {
@@ -117,7 +132,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     collapseTimerRef.current = window.setTimeout(() => {
       setExpanded(false);
       collapseTimerRef.current = null;
-    }, 3000);
+    }, COLLAPSE_GRACE_MS);
   };
   const chooseTool = (tool) => {
     activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
@@ -186,9 +201,12 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           className="sketchizi-tool-sidebar-expand"
           aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
           aria-expanded={expanded}
+          tabIndex={-1}
+          onMouseEnter={expandDock}
           onClick={handleExpandClick}
         >
-          <span aria-hidden="true" />
+          <span className="sketchizi-tool-sidebar-indicator" aria-hidden="true" />
+          <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
         </button>
       </div>
     </nav>

@@ -1,0 +1,425 @@
+/* Canvas top bar + bottom-left dock layout.
+   Top-right: zoom, appearance, AI and settings are four separate pills in one
+   flex row (single fixed container, children in normal flow). Top-left tabs and
+   the menu button share the same 12px top offset. Loaded last so it supersedes
+   the earlier per-control fixed positioning. */
+
+.app.canvas-first-header {
+  --top-control-size: 34px;   /* pill height / icon-button size */
+  --top-row-height: 42px;     /* height of the tab bar the pills centre against */
+  --top-control-gap: 8px;
+  --top-control-radius: 10px;
+}
+
+@media (min-width: 521px) {
+  .app.canvas-first-header {
+    --header-top: calc(12px + var(--safe-top, 0px));
+    --header-rail-right: calc(12px + var(--safe-right, 0px));
+    --ease-dock: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Top-left: same 12px offset as the utility bar. */
+  .app.canvas-first-header .desktop-app-canvas-tabs-topbar {
+    top: var(--header-top);
+    height: var(--top-row-height);
+    max-width: min(820px, calc(100vw - 14px - 50px - 300px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+  .app.canvas-first-header .desktop-app-menu-trigger-floating {
+    top: calc(var(--header-top) + (var(--top-row-height) - 38px) / 2) !important;
+  }
+
+  .app.canvas-first-header .desktop-app-top-controls {
+    position: fixed;
+    z-index: 1303;
+    top: var(--header-top);
+    right: var(--header-rail-right);
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--top-control-gap);
+    height: var(--top-row-height);
+    pointer-events: none;
+  }
+
+  .app.canvas-first-header .desktop-app-top-controls > * {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    flex: 0 0 auto;
+    margin: 0 !important;
+    pointer-events: auto;
+  }
+  .app.canvas-first-header .desktop-app-top-controls > .desktop-app-zoom-wrap,
+  .app.canvas-first-header .desktop-app-top-controls > .desktop-app-settings-wrap {
+    position: relative !important;
+    display: flex;
+    align-items: center;
+  }
+
+  /* One shared pill style for every control in the row. */
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-zoom-control,
+  .app.canvas-first-header .desktop-app-top-controls .theme-toggle,
+  .app.canvas-first-header .desktop-app-top-controls .ai-ask-toggle,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    box-sizing: border-box;
+    height: var(--top-control-size) !important;
+    min-height: var(--top-control-size) !important;
+    border: 1px solid var(--ui-border, #d8dce5) !important;
+    border-radius: var(--top-control-radius) !important;
+    background: var(--ui-surface-solid, #fff) !important;
+    color: var(--ui-text, #252631) !important;
+    box-shadow: none !important;
+  }
+
+  .app.theme-dark.canvas-first-header .desktop-app-top-controls .desktop-app-zoom-control,
+  .app.theme-dark.canvas-first-header .desktop-app-top-controls .theme-toggle,
+  .app.theme-dark.canvas-first-header .desktop-app-top-controls .ai-ask-toggle,
+  .app.theme-dark.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle {
+    border-color: rgb(148 163 184 / 18%) !important;
+    background: #161a22 !important;
+    color: #e6e9ef !important;
+  }
+
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-global-theme-control,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-global-ai-control {
+    display: flex;
+    align-items: center;
+    width: auto;
+    height: var(--top-control-size);
+  }
+
+  .app.canvas-first-header .desktop-app-top-controls .theme-toggle,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: var(--top-control-size) !important;
+    min-width: var(--top-control-size) !important;
+    padding: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  .app.canvas-first-header .desktop-app-top-controls .theme-toggle svg,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .app.canvas-first-header .desktop-app-top-controls .ai-ask-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 12px !important;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .app.canvas-first-header .desktop-app-top-controls .ai-ask-toggle-sparkle {
+    flex: 0 0 auto;
+    color: #818cf8;
+  }
+
+  .app.canvas-first-header .desktop-app-top-controls .ai-ask-toggle.active,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle.is-expanded,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-zoom-control[aria-expanded="true"],
+  .app.canvas-first-header .desktop-app-top-controls .theme-toggle:hover,
+  .app.canvas-first-header .desktop-app-top-controls .ai-ask-toggle:hover,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-zoom-control:hover,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle:hover {
+    border-color: var(--ui-accent, #6366f1) !important;
+  }
+
+  /* Zoom pill: percentage text only. */
+  .app.canvas-first-header .desktop-app-zoom-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+  .app.canvas-first-header .desktop-app-top-controls button:focus-visible {
+    outline: 2px solid var(--ui-accent, #6366f1);
+    outline-offset: 2px;
+  }
+
+  /* Shared dropdown surface (zoom menu + settings popover). */
+  .app.canvas-first-header .desktop-app-top-popover {
+    position: absolute;
+    z-index: 1304;
+    top: calc(100% + 6px);
+    right: 0;
+    box-sizing: border-box;
+    padding: 6px;
+    border: 1px solid var(--ui-border, #d8dce5);
+    border-radius: 12px;
+    background: var(--ui-surface-solid, #fff);
+    color: var(--ui-text, #252631);
+    box-shadow: 0 10px 28px rgb(15 23 42 / 16%);
+    font-size: 13px;
+  }
+  .app.theme-dark.canvas-first-header .desktop-app-top-popover {
+    border-color: rgb(148 163 184 / 20%);
+    background: #161a22;
+    color: #e6e9ef;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+  }
+  .app.canvas-first-header .desktop-app-zoom-menu { width: 188px; }
+  .app.canvas-first-header .desktop-app-settings-popover { width: min(272px, calc(100vw - 24px)); }
+  .app.canvas-first-header .desktop-app-top-popover button:not(.is-chip),
+  .app.canvas-first-header .desktop-app-settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .app.canvas-first-header .desktop-app-top-popover button:hover:not(:disabled),
+  .app.canvas-first-header .desktop-app-settings-row:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  .app.canvas-first-header .desktop-app-top-popover button:disabled { opacity: .5; cursor: not-allowed; }
+  .app.canvas-first-header .desktop-app-top-popover kbd {
+    color: var(--ui-text-muted, #8a90a0);
+    font: inherit;
+    font-size: 11px;
+  }
+
+  /* Settings switches. */
+  .app.canvas-first-header .desktop-app-settings-row input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .app.canvas-first-header .desktop-app-settings-row { position: relative; }
+  .app.canvas-first-header .desktop-app-settings-switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 18px;
+    border-radius: 99px;
+    background: rgb(148 163 184 / 40%);
+    transition: background .16s ease;
+  }
+  .app.canvas-first-header .desktop-app-settings-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+    transition: transform .16s ease;
+  }
+  .app.canvas-first-header .desktop-app-settings-row input:checked + .desktop-app-settings-switch {
+    background: var(--ui-accent, #6366f1);
+  }
+  .app.canvas-first-header .desktop-app-settings-row input:checked + .desktop-app-settings-switch::after {
+    transform: translateX(12px);
+  }
+  .app.canvas-first-header .desktop-app-settings-row input:focus-visible + .desktop-app-settings-switch {
+    outline: 2px solid var(--ui-accent, #6366f1);
+    outline-offset: 2px;
+  }
+
+  .app.canvas-first-header .desktop-app-settings-group {
+    display: grid;
+    gap: 6px;
+    padding: 8px 10px;
+    border-top: 1px solid var(--ui-border, #e3e6ee);
+  }
+  .app.canvas-first-header .desktop-app-settings-group > strong {
+    color: var(--ui-text-muted, #7c8294);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .app.canvas-first-header .desktop-app-settings-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .app.canvas-first-header .desktop-app-settings-chips button {
+    width: auto;
+    min-height: 26px;
+    padding: 0 9px;
+    border: 1px solid var(--ui-border, #d8dce5);
+    border-radius: 7px;
+    font-size: 12px;
+  }
+  .app.canvas-first-header .desktop-app-settings-chips button[aria-pressed="true"] {
+    border-color: var(--ui-accent, #6366f1);
+    background: color-mix(in srgb, var(--ui-accent, #6366f1) 14%, transparent);
+  }
+  .app.canvas-first-header .desktop-app-settings-links {
+    display: grid;
+    padding-top: 4px;
+    border-top: 1px solid var(--ui-border, #e3e6ee);
+  }
+
+  /* Matching radius for the left-hand controls so both rows read as one set. */
+  .app.canvas-first-header.canvas-first-header .desktop-app-menu-trigger-floating,
+  .app.canvas-first-header.canvas-first-header .canvas-tab-item,
+  .app.canvas-first-header.canvas-first-header .canvas-tabs-add {
+    border-radius: var(--top-control-radius) !important;
+  }
+
+  /* The header zoom pill replaces the native bottom-left zoom row. The native
+     element stays in the DOM, so Excalidraw internals are untouched. */
+  .app.canvas-first-header:has(.desktop-app-zoom-control) .excalidraw .zoom-actions.zoom-actions,
+  .app.canvas-first-header:has(.desktop-app-zoom-control)[data-canvas-view] .excalidraw .zoom-actions.zoom-actions {
+    display: none !important;
+  }
+}
+
+/* Legacy rail (library, workspace, account, ...) only opens on demand, below the single row. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail:not(.is-hidden) {
+    top: calc(var(--header-top) + var(--top-row-height) + var(--top-control-gap)) !important;
+  }
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    max-height: calc(100dvh - var(--header-top) - var(--top-row-height) - var(--top-control-gap) - 12px - var(--safe-bottom, 0px));
+  }
+  .app.canvas-first-header:has(.desktop-app-header:not(.is-hidden), .desktop-app-header.is-hidden)
+    .desktop-context-region .desktop-validation-host {
+    padding-top: calc(var(--header-top) + var(--top-row-height) + var(--top-control-gap));
+  }
+}
+
+/* Phones keep their existing compact layout: the row dissolves so each
+   control uses its original phone positioning, and the native zoom stays. */
+@media (max-width: 520px) {
+  .app.canvas-first-header .desktop-app-top-controls { display: contents; }
+  .app.canvas-first-header .desktop-app-zoom-wrap,
+  .app.canvas-first-header .desktop-app-settings-wrap { display: none; }
+  .app.canvas-first-header .ai-ask-toggle-sparkle { display: none; }
+}
+
+/* ---------- Bottom-left collapsible tool dock ---------- */
+@media (min-width: 601px) {
+  .sketchizi-tool-sidebar.sketchizi-tool-sidebar {
+    --sk-dock-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --sk-dock-btn-w: 34px;
+    --sk-dock-btn-h: 34px;
+    left: calc(12px + var(--safe-left, 0px));
+    bottom: calc(12px + var(--safe-bottom, 0px));
+    max-height: calc(100dvh - 24px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    transition: width .26s var(--sk-dock-ease), padding .2s var(--sk-dock-ease), border-radius .2s var(--sk-dock-ease), box-shadow .2s ease, background-color .2s ease;
+  }
+
+  /* Collapsed: one 48 x 54 tactile button. */
+  .sketchizi-tool-sidebar.sketchizi-tool-sidebar:not(.is-expanded) {
+    width: 48px;
+    padding: 0;
+    gap: 0;
+    border-radius: 14px;
+  }
+  .sketchizi-tool-sidebar:not(.is-expanded) .sketchizi-tool-sidebar-collapsed {
+    position: relative;
+    width: 46px;   /* + 1px border each side = 48 x 54 outer */
+    height: 52px;
+    max-height: 52px;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed .sketchizi-tool-sidebar-active {
+    position: absolute;
+    inset: 0 0 8px 0;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    border: 0;
+    border-radius: 14px 14px 0 0;
+    background: transparent;
+    color: inherit;
+    box-shadow: none;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed .sketchizi-tool-sidebar-key { display: none; }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed .sketchizi-tool-sidebar-expand {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    background: transparent;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-indicator {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    width: 16px;
+    height: 3px;
+    border-radius: 99px;
+    background: currentColor;
+    opacity: .55;
+    transform: translateX(-50%);
+    transition: width .18s var(--sk-dock-ease), opacity .14s ease;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-expand:hover .sketchizi-tool-sidebar-indicator { width: 22px; opacity: .85; }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-expand span.sketchizi-tool-sidebar-indicator { height: 3px; }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-chevron {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    opacity: .6;
+  }
+
+  /* Expanded: 34px tools; the selected tool is enlarged to 44px. */
+  .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list { align-items: center; }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    border-radius: 9px;
+    transition: width .22s var(--sk-dock-ease), height .22s var(--sk-dock-ease), flex-basis .22s var(--sk-dock-ease), border-radius .22s var(--sk-dock-ease), background .18s var(--sk-dock-ease), box-shadow .22s var(--sk-dock-ease), border-color .18s var(--sk-dock-ease), color .14s ease, transform .14s ease;
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border: 1px solid var(--ui-accent, #6366f1);
+    border-radius: 11px;
+    background: #fff;
+    color: var(--ui-accent, #6366f1);
+    box-shadow: 0 4px 12px rgb(99 102 241 / 28%), 0 1px 2px rgb(15 23 42 / 12%);
+  }
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active .sketchizi-tool-sidebar-key {
+    color: currentColor;
+    opacity: .6;
+  }
+  .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active {
+    border-color: #818cf8;
+    background: #2a3040;
+    color: #c7cbff;
+    box-shadow: 0 4px 14px rgb(99 102 241 / 34%), 0 1px 2px rgb(0 0 0 / 40%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button,
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-indicator { transition: none !important; }
+}
