@@ -130,7 +130,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
         if (!event.currentTarget.contains(event.relatedTarget)) scheduleCollapse();
       }}
     >
-      <div className="sketchizi-tool-sidebar-list" aria-label="All drawing tools">
+      <div className="sketchizi-tool-sidebar-list" id="sketchizi-tool-sidebar-list" aria-label="All drawing tools" inert={!expanded}>
         {TOOLS.map((tool) => {
           const selected = activeId === tool.id;
           return (
@@ -147,17 +147,17 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
               >
                 <ToolIcon name={tool.id} />
                 {tool.keyHint && <span className="sketchizi-tool-sidebar-key">{tool.keyHint}</span>}
-                <span className="sketchizi-tool-sidebar-tooltip" role="tooltip">
-                  <span>{tool.label}</span>
-                  {tool.keyHint && <kbd>{tool.keyHint}</kbd>}
-                </span>
               </button>
             </React.Fragment>
           );
         })}
+        <button type="button" className="sketchizi-tool-sidebar-collapse" onClick={() => setExpanded(false)} aria-label="Collapse drawing tools">
+          <span aria-hidden="true">⌄</span>
+          <span>Collapse</span>
+        </button>
       </div>
 
-      <div className="sketchizi-tool-sidebar-collapsed">
+      <div className="sketchizi-tool-sidebar-collapsed" inert={expanded}>
         <button
           type="button"
           className="sketchizi-tool-sidebar-active"
@@ -166,7 +166,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           aria-controls="sketchizi-tool-sidebar-list"
           title={` ${activeToolMeta.label} — hover or focus to expand tools`}
           disabled={!canEdit && activeToolMeta.id !== "todo"}
-          onClick={() => setExpanded((value) => !value)}
+          onClick={expandDock}
         >
           <ToolIcon name={activeToolMeta.id} />
           {activeToolMeta.keyHint && <span className="sketchizi-tool-sidebar-key">{activeToolMeta.keyHint}</span>}
