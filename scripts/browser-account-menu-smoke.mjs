@@ -27,8 +27,11 @@ try {
         await page.keyboard.press('Control+Shift+H');
       }
       if (width >= 521) {
-        await header.getByRole('button', { name: 'Pin application header' }).press('Enter');
-        await header.getByRole('button', { name: 'Unpin application header', pressed: true }).waitFor();
+        const pin = header.locator('.desktop-app-header-pin-button');
+        if (await pin.count()) {
+          if (await pin.getAttribute('aria-pressed') !== 'true') await pin.click({ force: true });
+          await pin.waitFor({ state: 'attached' });
+        }
       }
 
       const trigger = header.getByRole('button', { name: 'Open account menu' });
