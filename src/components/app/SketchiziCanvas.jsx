@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
-import "../../styles/canvas-workspace-hud.css";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
