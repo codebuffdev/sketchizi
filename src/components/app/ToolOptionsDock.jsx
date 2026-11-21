@@ -663,7 +663,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
   return (
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
-      {(isShape || isLaser || isText || (!isFill && !isHighlighter)) && <DockGroup label={isShape || isLaser ? "Color & fill" : "Color"}>
+      {(isShape || isLaser || isText || !isHighlighter) && <DockGroup label={isShape || isLaser ? "Color & fill" : "Color"}>
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {!isFill && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
         {(isShape || isLaser || isHighlighter) && <>
@@ -747,13 +747,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         {showRoughness && <VisualOptionSelect label="Roughness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />}
         {!isText && layerOrderControl}
       </DockGroup>)}
-
-      {isDraw && <DockGroup label="Stroke width preset">
-        <DockSelect label="Stroke width / thinning preset" value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })}>
-          {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth}px</option>}
-          {WIDTHS.map((width) => <option key={width} value={width}>{width}px</option>)}
-        </DockSelect>
-      </DockGroup>}
 
       <DockGroup label="Opacity">
         <div ref={opacityRef} className={`sk-tool-opacity-scrubber${opacityDragging ? " is-dragging" : ""}${opacityPopoverOpen ? " is-open" : ""}`} role="slider" tabIndex={0} aria-label="Opacity — drag to adjust or click for presets" aria-valuemin={0} aria-valuemax={100} aria-valuenow={opacityValue} aria-haspopup="dialog" aria-expanded={opacityPopoverOpen} data-tooltip="Drag to adjust · Click for presets"
