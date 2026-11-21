@@ -58,7 +58,7 @@ try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
  await page.locator('.excalidraw').waitFor();
- await page.locator('.desktop-app-document-identity-dirty-dot.is-saved').waitFor({state:'attached',timeout:20000});
+ await page.locator('.canvas-tab-status-dot.is-saved').waitFor({state:'attached',timeout:20000});
  await chooseStartupPages();
  await ensureHeaderVisible();
  assert.equal(await canvasStyle().count(),1,'Header must render one Canvas style control');
