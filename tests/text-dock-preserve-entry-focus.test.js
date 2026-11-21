@@ -43,7 +43,7 @@ test("font family changes resolve live selected text and update only text elemen
   assert.match(source, /const propTextIds = selectedFromProps[\s\S]*?element\.type === "text"/);
   assert.match(source, /targetIds\.has\(element\.id\) && element\.type === "text"/);
   assert.match(source, /fontFamily: Number\(value\)/);
-  assert.match(source, /onChange=\{updateTextFontFamily\} preserveFocus icon=/);
+  assert.match(source, /onChange=\{updateTextFontFamily\} preserveFocus>/);
 });
 
 
