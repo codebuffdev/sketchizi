@@ -296,6 +296,12 @@ export default function DesktopAppHeader({
   const activeCanvasTabName = activeWorkspaceTab?.name || currentDocumentName;
   const [documentNameDraft, setDocumentNameDraft] = useState(activeCanvasTabName);
   const cancelDocumentRenameRef = useRef(false);
+  const documentNameInputRef = useRef(null);
+  useEffect(() => {
+    if (!documentNameEditing) return;
+    documentNameInputRef.current?.focus();
+    documentNameInputRef.current?.select();
+  }, [documentNameEditing]);
 
   useEffect(() => {
     if (!aiAskOpen) return;
@@ -525,7 +531,7 @@ export default function DesktopAppHeader({
     : "No successful local save yet";
 
   const activeTabRenameAction = documentNameEditing ? (
-    <input className="desktop-app-document-identity-name-input" aria-label="Canvas name" autoFocus maxLength={120} value={documentNameDraft} onChange={(event) => setDocumentNameDraft(event.target.value)} onBlur={commitDocumentRename} onKeyDown={(event) => {
+    <input ref={documentNameInputRef} className="desktop-app-document-identity-name-input canvas-tab-rename-input" aria-label="Canvas name" maxLength={120} value={documentNameDraft} onChange={(event) => setDocumentNameDraft(event.target.value)} onBlur={commitDocumentRename} onKeyDown={(event) => {
       if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
       else if (event.key === "Escape") { event.preventDefault(); cancelDocumentRenameRef.current = true; setDocumentNameDraft(activeCanvasTabName); setDocumentNameEditing(false); }
     }} />

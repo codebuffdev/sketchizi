@@ -272,3 +272,54 @@
   .canvas-tabs-dock .canvas-tab { max-width: 84px; }
   .canvas-tabs-dock .canvas-tab.is-active { max-width: 110px; }
 }
+
+
+/* Canvas tab rename input: keep typed text, caret and selection readable
+   regardless of inherited tab/dock opacity or global input theme rules. */
+.app .canvas-tab-rename-input {
+  box-sizing: border-box;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background-color: #ffffff !important;
+  caret-color: #4f46e5 !important;
+  border: 1.5px solid #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
+  outline: none;
+}
+.app .canvas-tab-rename-input::placeholder {
+  color: rgba(15, 23, 42, 0.45) !important;
+  -webkit-text-fill-color: rgba(15, 23, 42, 0.45) !important;
+}
+.app .canvas-tab-rename-input::selection {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+}
+.app.theme-dark .canvas-tab-rename-input,
+html[data-theme="dark"] .app .canvas-tab-rename-input,
+html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input,
+.app.dark-theme .canvas-tab-rename-input {
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  background-color: #181c24 !important;
+  caret-color: #a5b4fc !important;
+  border: 1.5px solid #818cf8 !important;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
+}
+.app.theme-dark .canvas-tab-rename-input::placeholder,
+html[data-theme="dark"] .app .canvas-tab-rename-input::placeholder,
+html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::placeholder,
+.app.dark-theme .canvas-tab-rename-input::placeholder {
+  color: rgba(248, 250, 252, 0.45) !important;
+  -webkit-text-fill-color: rgba(248, 250, 252, 0.45) !important;
+}
+.app.theme-dark .canvas-tab-rename-input::selection,
+html[data-theme="dark"] .app .canvas-tab-rename-input::selection,
+html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
+.app.dark-theme .canvas-tab-rename-input::selection {
+  background-color: rgba(129, 140, 248, 0.35);
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}

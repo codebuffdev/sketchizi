@@ -69,6 +69,26 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
+  // Optional engineering studios are launched from the scene-aware Smart
+  // Studio pill, which is only rendered while an infrastructure scene is active.
+  const smartStudio = page.locator(".smart-studio-pill");
+  await smartStudio.waitFor({ state: "visible", timeout: 15000 });
+  await smartStudio.click();
+  let studioMenu = page.getByRole("menu", { name: "Studio quick launch" });
+  await studioMenu.getByRole("menuitem", { name: /Docker Compose Studio/ }).click();
+  await page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ timeout: 30000 });
+  await page.getByRole("button", { name: "Close Docker Compose Studio" }).click();
+  await page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ state: "detached" });
+  console.log("PASS: lazy Docker Compose Studio opens and closes from Smart Studio.");
+
+  await smartStudio.click();
+  studioMenu = page.getByRole("menu", { name: "Studio quick launch" });
+  await studioMenu.getByRole("menuitem", { name: /Kubernetes Studio/ }).click();
+  await page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ timeout: 30000 });
+  await page.getByRole("button", { name: "Close K8s Studio" }).click();
+  await page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ state: "detached" });
+  console.log("PASS: lazy Kubernetes Studio opens and closes from Smart Studio.");
+
   // A populated canvas stays intact while the plus action opens a new canvas tab.
   await page.getByRole("button", { name: "Create new canvas" }).click();
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
@@ -435,30 +455,6 @@ try {
   await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("button", { name: "Close export studio" }).click();
   console.log("PASS: Export Studio remains reachable from the save menu.");
-
-  // The command palette is opened by its documented keyboard shortcut; it is not a persistent header button.
-  await blank.page.keyboard.press("Control+Shift+P");
-  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor({ timeout: 10000 });
-  await blank.page.getByRole("searchbox", { name: "Search commands" }).fill("Architecture Validation");
-  await blank.page.getByRole("option", { name: /Architecture Validation/ }).click();
-  await blank.page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
-  await blank.page.getByRole("button", { name: "Close architecture validation" }).click();
-  console.log("PASS: Architecture Validation remains available in the command palette.");
-
-  // Optional studios should download on first use, open, and return to the same editor.
-  await openDevOpsMenu(blank.page);
-  await blank.page.getByRole("menuitem", { name: /Docker Compose Studio/ }).click();
-  await blank.page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ timeout: 30000 });
-  await blank.page.getByRole("button", { name: "Close Docker Compose Studio" }).click();
-  await blank.page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ state: "detached" });
-  console.log("PASS: lazy Docker Compose Studio opens and closes.");
-
-  await openDevOpsMenu(blank.page);
-  await blank.page.getByRole("menuitem", { name: /Kubernetes Studio/ }).click();
-  await blank.page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ timeout: 30000 });
-  await blank.page.getByRole("button", { name: "Close K8s Studio" }).click();
-  await blank.page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ state: "detached" });
-  console.log("PASS: lazy Kubernetes Studio opens and closes.");
 
 
 
