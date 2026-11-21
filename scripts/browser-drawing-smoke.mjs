@@ -100,6 +100,14 @@ async function awaitScene(check, description) {
 }
 
 try {
+  const previousBuild = process.env.SKETCHIZI_PREVIOUS_BUILD_URL;
+  const usePreviousBuild = async (route) => {
+    const requestURL = new URL(route.request().url());
+    const upstream = new URL(requestURL.pathname + requestURL.search, previousBuild);
+    await route.fulfill({ response: await route.fetch({ url: upstream.href }) });
+  };
+  const appRequests = (url) => url.origin === new URL(baseURL).origin;
+  if (previousBuild) await page.route(appRequests, usePreviousBuild);
   await page.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser();
   const viewport = page.locator(".excalidraw");
@@ -160,6 +168,7 @@ try {
 
   const beforeReload = await currentDrawing();
   console.log("Before reload:", JSON.stringify({ gridModeEnabled: beforeReload?.appState?.gridModeEnabled, gridSize: beforeReload?.appState?.gridSize, rectangle: beforeReload?.elements?.find((element) => element.id === drawn.id) && { x: beforeReload.elements.find((element) => element.id === drawn.id).x, y: beforeReload.elements.find((element) => element.id === drawn.id).y } }));
+  if (previousBuild) await page.unroute(appRequests, usePreviousBuild);
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
   await page.locator(".desktop-app-document-identity-dirty-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
@@ -180,6 +189,9 @@ try {
   await page.getByText("Selected shape actions", { exact: true }).waitFor();
   console.log("PASS: the restored rectangle is selectable and native grid survives browser reload.");
 
+  if (previousBuild) {
+    console.log("PASS: a drawing saved by the base build opens and is selectable on the candidate build.");
+  } else {
   // Draw again and reload before the debounced write can finish. The same
   // browser tab must reopen the pending drawing as well as its saved scene.
   const quickX = Math.round(bounds.x + bounds.width * 0.57);
