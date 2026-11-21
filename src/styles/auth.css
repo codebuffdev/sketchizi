@@ -178,3 +178,10 @@
   position: relative;
   z-index: 1;
 }
+
+
+/* Background canvas chrome must not intercept modal controls while sign-in is open. */
+.app:has(.auth-dialog-backdrop) .desktop-app-document-identity,
+.app:has(.auth-dialog-backdrop) .sketchizi-tool-sidebar {
+  pointer-events: none !important;
+}
