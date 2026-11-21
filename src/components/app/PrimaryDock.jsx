@@ -139,6 +139,23 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     : (selectionToolByElementType[selectedType] || "selection"));
   const activeId = customTool || activeTool;
 
+  // Supported canvas tool shortcuts collapse immediately, including when
+  // the shortcut re-selects the already-active tool.
+  useEffect(() => {
+    const shortcuts = new Set(TOOLS.map((tool) => tool.keyHint).filter(Boolean));
+    const onToolShortcut = (event) => {
+      if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true']")) return;
+      if (!shortcuts.has(String(event.key || "").toUpperCase())) return;
+      if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+      collapseTimerRef.current = null;
+      setExpanded(false);
+    };
+    window.addEventListener("keydown", onToolShortcut, true);
+    return () => window.removeEventListener("keydown", onToolShortcut, true);
+  }, []);
+
   // Any change of the active tool (click or keyboard shortcut) collapses the
   // dock. Focus is deliberately left alone so typing shortcuts keep working.
   const previousActiveIdRef = useRef(activeId);
