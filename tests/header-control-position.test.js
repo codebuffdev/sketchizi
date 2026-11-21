@@ -34,21 +34,20 @@ test("desktop right header rail uses the same frameless shell as the canvas dock
 });
 
 
-test("desktop right header rail aligns controls on one vertical axis", async () => {
+test("desktop utility controls form a horizontal top-right bar", async () => {
   const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
-  assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*\{[\s\S]*?flex-direction:\s*column\s*!important/);
-  assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*>\s*\*\s*\{[\s\S]*?align-self:\s*center/);
-  assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-save-status-trigger[\s\S]*?width:\s*36px/);
-  assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
+  const redesign = styles.slice(styles.lastIndexOf("Reference layout: one compact horizontal utility bar"));
+  assert.match(redesign, /desktop-app-header-right-rail\\s*\\{[\\s\\S]*?top:\\s*calc\\(12px/);
+  assert.match(redesign, /desktop-app-header-right-rail\\s*\\{[\\s\\S]*?flex-direction:\\s*row\\s*!important/);
+  assert.match(redesign, /desktop-app-header-right-rail\\s*\\{[\\s\\S]*?justify-content:\\s*flex-end\\s*!important/);
+  assert.match(redesign, /desktop-app-header-spacer\\s*\\{[\\s\\S]*?display:\\s*none\\s*!important/);
 });
 
-
-test("all desktop right-rail controls share a 36px slot and one vertical axis", async () => {
+test("top bar preserves existing utility controls and keeps canvas tabs at the top-left", async () => {
   const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
-  const alignment = styles.slice(styles.lastIndexOf("Flatten the header's legacy horizontal groups"));
-  assert.match(alignment, /desktop-app-header-right-rail\s*\{[\s\S]*?flex-direction:\s*column\s*!important/);
-  assert.match(alignment, /desktop-app-header-island,[\s\S]*?desktop-app-header-actions,[\s\S]*?display:\s*contents\s*!important/);
-  assert.match(alignment, /desktop-app-header-right-rail\s+:is\([\s\S]*?sketchizi-more-tools-header[\s\S]*?width:\s*36px\s*!important[\s\S]*?height:\s*36px\s*!important/);
-  assert.match(alignment, /sketchizi-more-tools-trigger[\s\S]*?width:\s*36px\s*!important[\s\S]*?height:\s*36px\s*!important/);
-  assert.match(alignment, /desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
+  const redesign = styles.slice(styles.lastIndexOf("Reference layout: one compact horizontal utility bar"));
+  assert.match(redesign, /desktop-app-header-actions/);
+  assert.match(redesign, /sketchizi-header-grid-trigger/);
+  assert.match(redesign, /desktop-app-start-collaboration-button/);
+  assert.match(redesign, /desktop-app-document-title-float[\\s\\S]*?left:\\s*calc\\(12px/);
 });
