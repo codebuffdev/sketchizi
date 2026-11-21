@@ -1113,7 +1113,7 @@
 }
 
 @media (min-width: 1025px) {
-  .app.canvas-first-header:has(.desktop-app-header)
+  .app.canvas-first-header:has(.desktop-app-header:not(.is-hidden), .desktop-app-header.is-hidden)
     .desktop-context-region .desktop-validation-host {
     padding-top: calc(var(--header-top) + 2 * (var(--header-top-control-height) + var(--header-control-gap)));
   }
