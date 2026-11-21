@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const component = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
-const styles = await readFile(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
+const styles = await readFile(new URL("../src/styles/workspace-ui-redesign.css", import.meta.url), "utf8");
 
-test("primary tool dock is anchored at the bottom-left and expands upward", () => {
+test("primary tool dock is anchored 12px from the bottom-left and expands upward", () => {
   assert.match(styles, /\.sketchizi-tool-sidebar\s*\{[^}]*left:\s*16px;[^}]*bottom:\s*58px;/s);
   assert.match(styles, /\.sketchizi-tool-sidebar\.is-expanded \.sketchizi-tool-sidebar-list/);
   assert.match(styles, /max-height:\s*calc\(100dvh - 132px\)/);
@@ -28,11 +28,11 @@ test("primary dock preserves native, custom, image, and Todo tool activation", (
   assert.match(component, /toolbar-image/);
 });
 
-test("primary dock exposes keyboard hints only for supported shortcuts", () => {
+test("primary dock exposes shortcut badges only inside hover tooltips", () => {
   for (const hint of ["V", "H", "R", "O", "D", "A", "L", "P", "T", "I", "F", "E", "K"]) {
     assert.ok(component.includes(`keyHint: "${hint}"`), `missing shortcut hint ${hint}`);
   }
-  assert.match(component, /sketchizi-tool-sidebar-key/);
+  assert.match(component, /sketchizi-tool-sidebar-tooltip/);
 });
 
 test("expanded dock collapses automatically without a redundant text control", () => {
