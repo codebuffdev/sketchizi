@@ -931,34 +931,7 @@ export default function DesktopAppHeader({
               <input type="checkbox" checked={snapEnabled} disabled={!canEditCanvas} onChange={toggleSnapToGrid} />
               <span className="desktop-app-settings-switch" aria-hidden="true" />
             </label>
-            <div className="desktop-app-settings-group" role="group" aria-label="Grid style">
-              <strong>Grid style</strong>
-              <div className="desktop-app-settings-chips">
-                {[["normal", "Grid"], ["focus", "Focus"], ["local", "Local"], ["dots", "Dots"], ["ruled", "Ruled"]].map(([value, label]) => (
-                  <button key={value} type="button" aria-pressed={gridStyle === value}
-                    onClick={() => { onGridStyleChange?.(value); if (!gridEnabled) onToggleGrid?.(); }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="desktop-app-settings-group" role="group" aria-label="Canvas view">
-              <strong>Canvas view</strong>
-              <div className="desktop-app-settings-chips">
-                <button type="button" onClick={() => { setSettingsOpen(false); window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } })); }}>Infinite</button>
-                <button type="button" onClick={() => { setSettingsOpen(false); window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "pages" } })); }}>Pages</button>
-              </div>
-            </div>
-            <div className="desktop-app-settings-links">
-              <button type="button" onClick={() => { setSettingsOpen(false); onOpenTemplates?.(); }}>Browse templates</button>
-              <button type="button" onClick={() => { setSettingsOpen(false); openCommandPalette?.(); }}>Search commands <kbd>Ctrl+K</kbd></button>
-              {!collaborationActive && (
-                <button type="button" disabled={collaborationCreationState === "creating"} onClick={() => { setSettingsOpen(false); startCollaboration?.(); }}>
-                  {collaborationCreationState === "creating" ? "Creating collaboration…" : "Start collaboration"}
-                </button>
-              )}
-              <button type="button" onClick={() => { setSettingsOpen(false); clearHeaderCollapseTimer(); setHeaderVisible(true); }}>Library, workspace &amp; account…</button>
-            </div>
+
           </section>
         )}
       </div>
