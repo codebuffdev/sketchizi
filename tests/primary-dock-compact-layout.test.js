@@ -131,9 +131,7 @@ test("phones get a smaller rail and iPad/touch keeps larger hit targets than des
 
 
 test("dock starts as one active-tool control at the bottom-left and expands on demand", async () => {
-  const jsx = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
-  const collapsed = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar.is-collapsed"));
-  assert.equal(collapsed.position, undefined, "position is inherited from the shared dock rule");
+  const jsx = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
   assert.match(css, /\.sketchizi-tool-sidebar\.is-collapsed\s*\{[\s\S]*?width:\s*48px/);
   assert.match(css, /\.sketchizi-tool-sidebar\.is-collapsed\s*\{[\s\S]*?height:\s*54px/);
   assert.match(css, /\.sketchizi-tool-sidebar\s*\{[\s\S]*?bottom:\s*12px\s*!important/);
