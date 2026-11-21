@@ -5,7 +5,6 @@ import { readFileSync } from "node:fs";
 const dateStyles = readFileSync(new URL("../src/components/app/CanvasStartDate.css", import.meta.url), "utf8");
 const dateComponent = readFileSync(new URL("../src/components/app/CanvasStartDate.jsx", import.meta.url), "utf8");
 const header = readFileSync(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
-const tabs = readFileSync(new URL("../src/components/app/CanvasTabs.jsx", import.meta.url), "utf8");
 
 test("date picker is a fixed-width 36px header control with theme-aware surfaces", () => {
   assert.match(dateStyles, /\.canvas-start-date-wrap\s*\{[^}]*flex:\s*0 0 auto[^}]*height:\s*36px/s);
