@@ -225,7 +225,7 @@ try {
 
   if (previousBuild) {
     console.log("PASS: a drawing saved by the base build opens and is selectable on the candidate build.");
-  } else {
+  } else if (process.env.SKETCHIZI_VERIFY_FILE_ROUND_TRIP !== "1") {
     // Draw again and reload before the debounced write can finish. The same
     // browser tab must reopen the pending drawing as well as its saved scene.
     const quickX = Math.round(bounds.x + bounds.width * 0.57);

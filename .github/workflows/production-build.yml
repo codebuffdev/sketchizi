@@ -119,6 +119,9 @@ jobs:
           cat /tmp/sketchizi-base-preview.log
           exit 1
 
+      - name: Verify drawing interactions and local persistence
+        run: node scripts/browser-drawing-smoke.mjs
+
       - name: Verify drawing persistence and file round trip
         env:
           SKETCHIZI_VERIFY_FILE_ROUND_TRIP: "1"
