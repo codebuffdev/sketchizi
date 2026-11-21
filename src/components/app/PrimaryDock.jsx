@@ -107,6 +107,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     window.requestAnimationFrame(() => firstToolButtonRef.current?.focus());
   };
   const collapseDock = () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
     setExpanded(false);
     window.requestAnimationFrame(() => activeButtonRef.current?.focus());
   };
@@ -115,7 +117,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     collapseTimerRef.current = window.setTimeout(() => {
       setExpanded(false);
       collapseTimerRef.current = null;
-    }, 160);
+    }, 3000);
   };
   const chooseTool = (tool) => {
     activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
@@ -123,7 +125,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       setActiveTool(tool.id);
       setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
     }
-    if (window.matchMedia?.("(hover: none)").matches) collapseDock();
+    collapseDock();
   };
 
   return (
@@ -173,6 +175,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           aria-controls="sketchizi-tool-sidebar-list"
           title={` ${activeToolMeta.label} — hover or focus to expand tools`}
           disabled={!canEdit && activeToolMeta.id !== "todo"}
+          onMouseEnter={expandDock}
           onClick={handleExpandClick}
         >
           <ToolIcon name={activeToolMeta.id} />

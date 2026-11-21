@@ -227,13 +227,18 @@ try {
   // The redesigned dock intentionally keeps its full tool list collapsed.
   // Hover the active-tool pill first, just as a user does, then exercise the
   // expanded tool buttons instead of clicking through the collapsed surface.
-  await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
-  await gridSession.page.waitForFunction(() =>
-    document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
-  );
   for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
+    // Selecting a tool now collapses the dock immediately. Re-open it before
+    // choosing the next tool, matching the interaction a user performs.
+    await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
+    await gridSession.page.waitForFunction(() =>
+      document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
+    );
     await drawingTools.getByRole("button", { name, exact: true }).click();
     await drawingTools.getByRole("button", { name, exact: true, pressed: true }).waitFor();
+    await gridSession.page.waitForFunction(() =>
+      !document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
+    );
   }
   console.log("PASS: dock expands on hover and quick tools activate, returning to Select.");
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");

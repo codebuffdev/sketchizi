@@ -14,6 +14,7 @@ test("primary dock renders the complete tool set in a vertical left sidebar", ()
   assert.match(dock, /separated: true/);
   assert.match(dock, /setActiveTool/);
   assert.match(dock, /onMouseEnter=\{expandDock\}/);
+  assert.match(dock, /className="sketchizi-tool-sidebar-active"[\s\S]*?onMouseEnter=\{expandDock\}/);
   assert.match(dock, /onMouseLeave=\{scheduleCollapse\}/);
   assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|tuckedOffset/);
 });
@@ -39,4 +40,16 @@ test("sidebar hides while the hamburger menu is open to prevent overlap", () => 
   assert.match(dock, /aria-hidden=\{nativeMenuOpen\}/);
   assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-menu-open/);
   assert.match(sidebarCss, /pointer-events: none/);
+});
+
+test("dock waits three seconds after pointer leaves and cancels collapse on re-entry", () => {
+  assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, 3000\)/);
+  assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)/);
+});
+
+
+test("selecting a tool collapses the dock immediately and clears the pending hover timer", () => {
+  assert.match(dock, /const collapseDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)[\s\S]*?setExpanded\(false\)/);
+  assert.match(dock, /const chooseTool = \(tool\) => \{[\s\S]*?collapseDock\(\);/);
+  assert.doesNotMatch(dock, /if \(window\.matchMedia\?\.\("\(hover: none\)"\)\.matches\) collapseDock\(\)/);
 });
