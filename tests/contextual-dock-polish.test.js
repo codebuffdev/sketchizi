@@ -46,3 +46,14 @@ test("polish is visual only: no controls hidden or removed", () => {
   }
   assert.doesNotMatch(css, /radial/i, "must not reintroduce the old radial dock");
 });
+
+
+test("bottom properties bar uses the shared 12px frame and compact 38px controls", () => {
+  assert.match(css, /left:\s*50% !important/);
+  assert.match(css, /bottom:\s*12px !important/);
+  assert.match(css, /height:\s*38px !important/);
+  assert.match(css, /padding:\s*0 10px !important/);
+  assert.match(css, /border-radius:\s*11px !important/);
+  assert.match(css, /width:\s*26px !important/);
+  assert.match(css, /width:\s*54px !important/);
+});
