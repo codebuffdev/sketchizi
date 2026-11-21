@@ -503,6 +503,7 @@ try {
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor({ state: "detached" });
 
   const cloudTabs = await makePage({ width: 1280, height: 800 });
+  await cloudTabs.page.addInitScript(() => localStorage.setItem("diagram-app-theme", "dark"));
   const diagrams = ["First cloud drawing", "Second cloud drawing"].map((name, index) => ({
     id: `cloud-${index + 1}`,
     name,
@@ -528,6 +529,16 @@ try {
   const firstCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[0].name, { exact: true }));
   const secondCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[1].name, { exact: true }));
   await firstCloudTab.waitFor();
+  const darkTab = await firstCloudTab.evaluate((tab) => ({
+    dark: !!tab.closest(".app.theme-dark"),
+    titleSurface: getComputedStyle(tab).backgroundColor,
+    segmentSurface: getComputedStyle(tab.parentElement).backgroundColor,
+    stripSurface: getComputedStyle(tab.closest(".canvas-tabs-bar")).backgroundColor,
+  }));
+  if (!darkTab.dark || darkTab.titleSurface !== "rgba(0, 0, 0, 0)" ||
+      darkTab.segmentSurface === darkTab.stripSurface) {
+    throw new Error(`The active dark tab must use one visible surface: ${JSON.stringify(darkTab)}`);
+  }
   await cloudTabs.page.getByRole("button", { name: "Open application menu" }).click();
   await cloudTabs.page.getByRole("button", { name: "Cloud Files", exact: true }).click();
   await cloudTabs.page.getByRole("article").filter({ hasText: diagrams[1].name })

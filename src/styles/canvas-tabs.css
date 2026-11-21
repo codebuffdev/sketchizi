@@ -489,7 +489,7 @@
   box-shadow:0 1px 2px rgb(22 34 54 / 5%);
 }
 .app.theme-dark .canvas-tabs-bar {
-  --ct-strip:#171d27;--ct-strip-border:#303a4a;--ct-active:#303a4b;--ct-active-border:#59677e;
+  --ct-strip:#171d27;--ct-strip-border:#303a4a;--ct-active:#222b38;--ct-active-border:#45516a;
   --ct-hover:#252e3d;--ct-text:#aab5c6;--ct-strong:#f4f6fb;--ct-muted:#bdc6d5;
   --ct-separator:#536075;--ct-control-hover:#3a4659;--ct-accent:#b5afff;
   box-shadow:0 1px 3px rgb(0 0 0 / 24%);
@@ -579,7 +579,27 @@
   box-shadow: 0 1px 3px rgb(22 34 54 / 10%);
 }
 .app.theme-dark .canvas-tab-item.is-active {
+  border-color: var(--ct-active-border);
+  box-shadow: none;
+}
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab.is-active {
+  background: transparent;
   border-color: transparent;
+  box-shadow: none;
+}
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab-close,
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab-active-actions {
+  border-left-color: transparent;
+}
+.app.theme-dark .canvas-tab-active-actions .desktop-app-document-location {
+  background: transparent;
+  border-radius: 999px;
+}
+.app.theme-dark .canvas-tabs-overflow-trigger:not(:hover):not(.is-open) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  border-radius: 999px;
 }
 .canvas-tab-item .canvas-tab {
   border-radius: 999px;
