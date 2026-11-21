@@ -475,3 +475,168 @@
 .app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-presets button {
   border-color: rgba(31,41,55,.14);
 }
+
+
+/* Opacity affordance: a persistent scrub track, visible thumb edge, and
+   an always-available click target for the precision popover. */
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 96px;
+  min-width: 96px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 9999px;
+  background: rgba(0,0,0,.25);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+  color: inherit;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-scrubber {
+  border-color: rgba(31,41,55,.14);
+  background: rgba(0,0,0,.06);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber:hover,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber.is-dragging,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber.is-open {
+  border-color: rgba(165,196,250,.72);
+  box-shadow: inset 0 0 0 1px rgba(165,196,250,.18), 0 0 0 2px rgba(165,196,250,.08);
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-scrubber:hover,
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-scrubber.is-dragging,
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-scrubber.is-open {
+  border-color: rgba(59,130,246,.68);
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,.14), 0 0 0 2px rgba(59,130,246,.07);
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-track,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-track {
+  z-index: 0;
+  right: 0;
+  background: rgba(0,0,0,.25);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-track {
+  background: rgba(0,0,0,.06);
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-fill {
+  z-index: 1;
+  max-width: 100%;
+  background: rgba(165,196,250,.24);
+  transition: width 65ms linear;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-fill {
+  background: rgba(59,130,246,.18);
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-fill::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: -1px;
+  width: 2px;
+  height: calc(100% - 10px);
+  border-radius: 2px;
+  background: #A5C4FA;
+  box-shadow: 0 0 5px rgba(165,196,250,.9), 0 0 10px rgba(165,196,250,.45);
+  transition: width 120ms ease, box-shadow 120ms ease;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-fill::after {
+  background: #3B82F6;
+  box-shadow: 0 0 5px rgba(59,130,246,.65), 0 0 9px rgba(59,130,246,.3);
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber:hover .sk-tool-opacity-fill::after,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber.is-dragging .sk-tool-opacity-fill::after {
+  width: 3px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > svg,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > .sk-tool-dock-opacity-value,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > .sk-tool-opacity-chevron {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber > svg {
+  width: 15px;
+  height: 15px;
+  margin-left: 0;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber .sk-tool-dock-opacity-value {
+  min-width: 34px;
+  text-align: left;
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-chevron {
+  margin-left: auto;
+  font-size: 13px;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 180ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber.is-open .sk-tool-opacity-chevron {
+  transform: rotate(180deg);
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  z-index: 140;
+  padding: 6px 9px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px;
+  background: #171a22;
+  color: #f4f6fb;
+  box-shadow: 0 5px 16px rgba(0,0,0,.24);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 3px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber:hover::after,
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-opacity-scrubber::after {
+  border-color: rgba(31,41,55,.12);
+  background: #252a35;
+  color: #fff;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber:focus-visible {
+  outline: 2px solid #A5C4FA;
+  outline-offset: 2px;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-popover {
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 145;
+}
