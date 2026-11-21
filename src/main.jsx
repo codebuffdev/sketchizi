@@ -65,6 +65,9 @@ function RootApp() {
   // Anonymous visitors to Cloud Workspace should see the existing Sketchizi
   // sign-in dialog over the app shell, not a plain error page or the dashboard.
   // AuthenticationControl opens the shared dialog and returns OAuth to /workspace.
+  if (workspaceRoute && !editorRoute && auth.status === "checking") {
+    return <main className="cw-startup" role="status">Loading Sketchizi…</main>;
+  }
   if (workspaceRoute && auth.status !== "authenticated") {
     return <PhoneAccessGate><App /></PhoneAccessGate>;
   }
