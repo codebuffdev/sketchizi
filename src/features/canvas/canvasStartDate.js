@@ -17,3 +17,16 @@ export function formatCanvasStartDate(value, locale) {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(year, month - 1, day, 12).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 }
+
+/** Fresh per-tab date metadata: a new board starts (and was created) today. */
+export function createTabDates(date = new Date()) {
+  const today = getLocalDateString(date);
+  return { startDate: today, createdDate: today };
+}
+
+/** Repairs persisted tabs: valid startDate, plus the original date Reset restores. */
+export function normalizeTabDates(tab, today = getLocalDateString()) {
+  const startDate = isValidCanvasStartDate(tab?.startDate) ? tab.startDate : today;
+  const createdDate = isValidCanvasStartDate(tab?.createdDate) ? tab.createdDate : startDate;
+  return { startDate, createdDate };
+}

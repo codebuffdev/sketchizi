@@ -117,6 +117,7 @@ export default function DesktopAppHeader({
   activeCanvasId,
   canvasId,
   canvasStartDate,
+  canvasOriginalDate,
   canvasActivity = [],
   onCanvasActivityChange,
   onCanvasStartDateChange,
@@ -855,7 +856,7 @@ export default function DesktopAppHeader({
       </div>
 
       <div className="desktop-app-top-controls">
-        {!activeIsTodoTab && canvasId && <CanvasStartDate key={canvasId} canvasId={canvasId} value={canvasStartDate} activity={canvasActivity} onActivityChange={onCanvasActivityChange} onChange={onCanvasStartDateChange} disabled={canvasDateDisabled} />}
+        {!activeIsTodoTab && canvasId && <CanvasStartDate key={canvasId} canvasId={canvasId} value={canvasStartDate} originalValue={canvasOriginalDate} activity={canvasActivity} onActivityChange={onCanvasActivityChange} onChange={onCanvasStartDateChange} disabled={canvasDateDisabled} />}
         {!activeIsTodoTab && canvasApi && (
           <CanvasZoomControl
             api={canvasApi}

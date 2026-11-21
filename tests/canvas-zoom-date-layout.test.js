@@ -6,10 +6,10 @@ const dateStyles = readFileSync(new URL("../src/components/app/CanvasStartDate.c
 const dateComponent = readFileSync(new URL("../src/components/app/CanvasStartDate.jsx", import.meta.url), "utf8");
 const header = readFileSync(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
 
-test("date picker is a fixed-width 36px header control with theme-aware surfaces", () => {
-  assert.match(dateStyles, /\.canvas-start-date-wrap\s*\{[^}]*flex:\s*0 0 auto[^}]*height:\s*36px/s);
-  assert.match(dateStyles, /background:\s*rgba\(255, 255, 255, \.95\)/);
-  assert.match(dateStyles, /\.app\.theme-dark \.canvas-start-date-wrap\s*\{[^}]*background:\s*rgba\(22,24,31,\.9\)/s);
+test("date pill is a quiet, non-shrinking 36px metadata control with theme-aware surfaces", () => {
+  assert.match(dateStyles, /\.canvas-start-date-wrap\s*\{[^}]*flex-shrink:\s*0[^}]*height:\s*36px/s);
+  assert.match(dateStyles, /\.canvas-start-date\s*\{[^}]*padding:\s*0 10px[^}]*border-radius:\s*10px[^}]*opacity:\s*\.82/s);
+  assert.match(dateStyles, /\.app\.theme-dark \.canvas-start-date\s*\{/);
 });
 
 test("date picker is mounted in the top utility cluster immediately before the zoom control", () => {
@@ -18,17 +18,19 @@ test("date picker is mounted in the top utility cluster immediately before the z
   assert(dateIndex >= 0 && zoomIndex > dateIndex, "date picker must precede the zoom pill in the top utility cluster");
 });
 
-test("calendar popover opens below the pill and includes month navigation and Today", () => {
+test("start date popover is right-aligned below the pill with Reset and month navigation", () => {
   assert.match(dateStyles, /top:\s*calc\(100% \+ 8px\)/);
+  assert.match(dateStyles, /right:\s*0/);
+  assert.match(dateStyles, /width:\s*248px/);
+  assert.match(dateComponent, /Document Start Date/);
+  assert.match(dateComponent, />Reset<\/button>/);
   assert.match(dateComponent, /aria-label="Previous month"/);
   assert.match(dateComponent, /aria-label="Next month"/);
-  assert.match(dateComponent, />Today<\/button>/);
   assert.match(dateStyles, /grid-template-columns/);
 });
 
-test("date pill supports day stepping and the formatted month-day-year label", () => {
-  assert.match(dateComponent, /aria-label="Previous day"/);
-  assert.match(dateComponent, /aria-label="Next day"/);
+test("date pill has no day steppers and keeps the month-day-year label", () => {
+  assert.doesNotMatch(dateComponent, /Previous day|Next day|canvas-start-date-stepper/);
   assert.match(dateComponent, /month:\s*"short", day:\s*"numeric", year:\s*"numeric"/);
 });
 

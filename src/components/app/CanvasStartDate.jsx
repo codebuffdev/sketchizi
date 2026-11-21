@@ -24,14 +24,9 @@ const toDateKey = (date) => {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
-const addDays = (value, amount) => {
-  const date = toLocalDate(value);
-  date.setDate(date.getDate() + amount);
-  return toDateKey(date);
-};
 const monthLabel = (date) => date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-export default function CanvasStartDate({ canvasId, value, activity = [], onActivityChange, onChange, disabled = false }) {
+export default function CanvasStartDate({ canvasId, value, originalValue, activity = [], onActivityChange, onChange, disabled = false }) {
   const dateValue = isValidCanvasStartDate(value) ? value : getLocalDateString();
   const selectedDate = toLocalDate(dateValue);
   const [open, setOpen] = useState(false);
@@ -119,22 +114,19 @@ export default function CanvasStartDate({ canvasId, value, activity = [], onActi
 
   return (
     <div className="canvas-start-date-wrap" ref={rootRef}>
-      <button type="button" className="canvas-start-date-stepper" aria-label="Previous day" title="Previous day" disabled={disabled} onClick={() => selectDate(addDays(dateValue, -1))}>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5" /></svg>
-      </button>
-      <button type="button" className="canvas-start-date" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} title="Choose canvas start date">
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <button type="button" className="canvas-start-date" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} title="Document start date" aria-label={`Document start date: ${label}`}>
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="2.25" y="3.5" width="11.5" height="10" rx="1.7" />
           <path d="M5 2v3M11 2v3M2.5 6.5h11" />
         </svg>
         <span>{label}</span>
-        <svg className={open ? "canvas-start-date-chevron is-open" : "canvas-start-date-chevron"} viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
-      </button>
-      <button type="button" className="canvas-start-date-stepper" aria-label="Next day" title="Next day" disabled={disabled} onClick={() => selectDate(addDays(dateValue, 1))}>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
       </button>
       {popoverPresence.mounted && (
-        <section className={`canvas-start-date-popover${popoverPresence.closing ? " is-closing" : ""}`} role="dialog" aria-label="Choose canvas start date">
+        <section className={`canvas-start-date-popover${popoverPresence.closing ? " is-closing" : ""}`} role="dialog" aria-label="Document Start Date">
+          <div className="canvas-start-date-title-row">
+            <strong>Document Start Date</strong>
+            <button type="button" className="canvas-start-date-reset" disabled={disabled || !originalValue || originalValue === dateValue} onClick={() => selectDate(originalValue)} title="Restore this board's original creation date">Reset</button>
+          </div>
           <header className="canvas-start-date-calendar-header">
             <strong>{monthLabel(visibleMonth)}</strong>
             <div>
@@ -159,7 +151,6 @@ export default function CanvasStartDate({ canvasId, value, activity = [], onActi
             ))}
           </div>
           <div className="canvas-start-date-footer">
-            <button type="button" onClick={() => selectDate(getLocalDateString())} disabled={disabled}>Today</button>
             <span>{label}</span>
           </div>
           {grouped.length > 0 && (

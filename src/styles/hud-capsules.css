@@ -28,8 +28,7 @@
 .app .sk-zen-pill,
 .app .sk-zen-ai-capsule,
 .app .sketchizi-tool-sidebar-collapsed,
-.app .sketchizi-tool-sidebar-list,
-.app .canvas-start-date-wrap {
+.app .sketchizi-tool-sidebar-list {
   background: var(--hud-bg) !important;
   border: var(--hud-border) !important;
   box-shadow: var(--hud-shadow) !important;
@@ -288,7 +287,7 @@
 .sk-tool-choice-menu { transform-origin: 50% 0; }
 .sk-tool-layer-menu { transform-origin: 0 100%; }
 .app .sk-tool-font-size-presets { transform-origin: 50% 100%; }
-.app .canvas-start-date-popover { transform-origin: 0 0; }
+
 .app .sk-tool-opacity-popover.is-closing,
 .sk-tool-choice-menu.is-closing,
 .sk-tool-layer-menu.is-closing,
@@ -309,7 +308,7 @@
 .app .sketchizi-tool-options-dock .sk-tool-font-size-presets { transform: none; left: 50%; translate: -50% 0; }
 
 /* ---------- Date stepper ---------- */
-.app .canvas-start-date-wrap { height: 36px; border-radius: 10px; }
+.app .canvas-start-date-popover { transform-origin: 100% 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .app .sketchizi-tool-options-dock,

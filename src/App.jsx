@@ -72,7 +72,7 @@ import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
 import { loadCanvasTabs, saveCanvasTabs, saveCanvasTabsPagehideBackup } from "./persistence.js";
-import { getLocalDateString, isValidCanvasStartDate } from "./features/canvas/canvasStartDate.js";
+import { createTabDates, getLocalDateString, isValidCanvasStartDate, normalizeTabDates } from "./features/canvas/canvasStartDate.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 import "./styles/contextual-dock-polish.css";
@@ -147,7 +147,7 @@ function App() {
   const globalThemeRef = useRef(getInitialThemeMode() === "dark" ? "dark" : "light");
   const setCurrentFileRef = useRef(null);
   const [apiReady, setApiReady] = useState(false);
-  const [canvasTabs, setCanvasTabs] = useState(() => [{ id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), snapshot: null, dirty: false }]);
+  const [canvasTabs, setCanvasTabs] = useState(() => [{ id: "canvas-1", name: "Canvas 1", ...createTabDates(), snapshot: null, dirty: false }]);
   const [closeTabPrompt, setCloseTabPrompt] = useState(null);
   const [activeCanvasId, setActiveCanvasId] = useState("canvas-1");
   const [activeWorkspaceTabId, setActiveWorkspaceTabId] = useState("canvas-1");
@@ -864,7 +864,7 @@ function App() {
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = createCanvasTabId(currentTabs.map((tab) => tab.id));
     const nextTab = {
-      id, name: `Canvas ${nextNumber}`, startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
+      id, name: `Canvas ${nextNumber}`, ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: {
         elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
@@ -1066,7 +1066,7 @@ function App() {
         const today = getLocalDateString();
         const restoredTabs = (refreshedTabs.length ? refreshedTabs : stored).map((tab) => ({
           ...tab,
-          startDate: isValidCanvasStartDate(tab.startDate) ? tab.startDate : today,
+          ...normalizeTabDates(tab, today),
         }));
         const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
@@ -1079,7 +1079,7 @@ function App() {
         if (activeTab.snapshot) applyCanvasTabSnapshot(activeTab);
       } else {
         const initial = {
-          id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
+          id: "canvas-1", name: "Canvas 1", ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
           snapshot: captureCanvasTabSnapshot(),
         };
         // A direct cloud open needs no empty local placeholder. Preserve a
@@ -1131,7 +1131,7 @@ function App() {
           const nextCloudTab = {
           id: `cloud-${cloudDiagramId}-${Date.now()}`,
           name: "Cloud diagram",
-          startDate: getLocalDateString(),
+          ...createTabDates(),
           dirty: false,
           snapshot: {
             elements: [],
@@ -1182,9 +1182,9 @@ function App() {
       canvasTabsRestoredRef.current = true;
       setCanvasTabsReady(true);
     }).catch(() => {
-      const initial = { id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), dirty: false, snapshot: captureCanvasTabSnapshot() };
+      const initial = { id: "canvas-1", name: "Canvas 1", ...createTabDates(), dirty: false, snapshot: captureCanvasTabSnapshot() };
       const nextTabs = cloudDiagramId ? [initial, {
-        id: `cloud-${cloudDiagramId}-${Date.now()}`, name: "Cloud diagram", startDate: getLocalDateString(), dirty: false,
+        id: `cloud-${cloudDiagramId}-${Date.now()}`, name: "Cloud diagram", ...createTabDates(), dirty: false,
         snapshot: { elements: [], appState: {}, files: {}, metadata: {}, extensions: {}, format: "excalidraw", file: null,
           cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" }, cloudDetached: true,
           cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram" },
@@ -2637,6 +2637,7 @@ function App() {
         activeCanvasId={activeWorkspaceTabId}
         canvasId={activeCanvasId}
         canvasStartDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
+        canvasOriginalDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.createdDate}
         canvasActivity={canvasTabs.find((tab) => tab.id === activeCanvasId)?.activity || []}
         onCanvasActivityChange={updateCanvasActivity}
         onCanvasStartDateChange={updateActiveCanvasStartDate}

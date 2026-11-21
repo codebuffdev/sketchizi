@@ -3,62 +3,59 @@
   z-index: 10060;
   display: inline-flex;
   flex: 0 0 auto;
+  flex-shrink: 0;
   align-items: center;
-  gap: 4px;
   height: 36px;
-  box-sizing: border-box;
-  padding: 0 8px;
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, .95);
-  color: #526071;
   white-space: nowrap;
 }
-.canvas-start-date-wrap:hover { background: rgba(15, 23, 42, .04); }
-.canvas-start-date, .canvas-start-date-stepper {
+.canvas-start-date {
   display: inline-flex;
   flex: 0 0 auto;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-.canvas-start-date {
   gap: 6px;
-  min-width: 0;
-  height: 30px;
-  padding: 0 6px;
-  border-radius: 7px;
+  height: 36px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .72);
+  color: #667085;
   font-size: 12px;
   line-height: 1;
-  font-weight: 550;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  transition: background-color .14s ease;
+  opacity: .82;
+  cursor: pointer;
+  transition: opacity .14s ease, background-color .14s ease, color .14s ease;
 }
-.canvas-start-date:hover { background: rgba(15, 23, 42, .04); }
+.canvas-start-date:hover, .canvas-start-date[aria-expanded="true"] { opacity: 1; color: #263244; background: rgba(255, 255, 255, .96); }
 .canvas-start-date > span { white-space: nowrap; }
-.canvas-start-date > svg:first-child { flex: 0 0 auto; }
-.canvas-start-date-chevron { opacity: .65; transition: transform .16s ease; }
-.canvas-start-date-chevron.is-open { transform: rotate(180deg); }
-.canvas-start-date-stepper {
+.canvas-start-date > svg:first-child { flex: 0 0 auto; color: inherit; }
+.canvas-start-date:focus-visible { outline: 2px solid #4F46E5; outline-offset: 2px; opacity: 1; }
+.canvas-start-date-calendar-header button svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.canvas-start-date-title-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.canvas-start-date-title-row strong { font-size:12px; font-weight:650; }
+.canvas-start-date-reset { border:0; border-radius:7px; padding:4px 8px; background:rgba(79,70,229,.09); color:#4F46E5; font-size:11px; font-weight:650; cursor:pointer; }
+.canvas-start-date-reset:disabled { opacity:.4; cursor:default; }
+.app.theme-dark .canvas-start-date-reset { background:rgba(165,196,250,.13); color:#A5C4FA; }
+.app.theme-dark .canvas-start-date { border-color:rgba(255,255,255,.08); background:rgba(22,24,31,.72); color:#9aa6b7; }
+.app.theme-dark .canvas-start-date:hover, .app.theme-dark .canvas-start-date[aria-expanded="true"] { color:#eef3fa; background:rgba(22,24,31,.94); }
   width: 22px;
   height: 22px;
   border-radius: 6px;
   color: #7d8795;
   transition: background-color .14s ease, color .14s ease;
 }
-.canvas-start-date-stepper:hover:not(:disabled) { background: rgba(15, 23, 42, .07); color: #334155; }
-.canvas-start-date-stepper:disabled { opacity: .35; cursor: default; }
-.canvas-start-date-stepper svg,
 .canvas-start-date-calendar-header button svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .canvas-start-date-popover {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 10070;
-  width: 268px;
+  width: 248px;
   padding: 12px;
   border: 1px solid rgba(15, 23, 42, .1);
   border-radius: 13px;
@@ -94,11 +91,7 @@
 .canvas-activity-entry div { display:flex; flex-direction:column; gap:2px; }
 .canvas-activity-entry strong { font-size:10px; font-weight:600; }
 .canvas-activity-entry span { color:#8993a2; font-size:10px; }
-.app.theme-dark .canvas-start-date-wrap { border-color:rgba(255,255,255,.08); background:rgba(22,24,31,.9); color:#c7cfdb; }
-.app.theme-dark .canvas-start-date-wrap:hover { background:rgba(255,255,255,.06); }
-.app.theme-dark .canvas-start-date-stepper { color:#aab4c2; }
-.app.theme-dark .canvas-start-date-stepper:hover:not(:disabled),
-.app.theme-dark .canvas-start-date-calendar-header button:hover { background:rgba(255,255,255,.08); color:#eef3fa; }
+.app.theme-dark .app.theme-dark .app.theme-dark .canvas-start-date-calendar-header button:hover { background:rgba(255,255,255,.08); color:#eef3fa; }
 .app.theme-dark .canvas-start-date-popover { border-color:rgba(255,255,255,.1); background:rgba(25,29,38,.98); color:#e4eaf2; box-shadow:0 16px 42px rgba(0,0,0,.42); }
 .app.theme-dark .canvas-start-date-day.is-selected { background:#A5C4FA; color:#172033; }
 .app.theme-dark .canvas-start-date-day:hover:not(:disabled) { background:rgba(165,196,250,.14); }
@@ -112,9 +105,7 @@
 .app.theme-dark .canvas-start-date-activity,
 .app.theme-dark .canvas-activity-day + .canvas-activity-day { border-color:rgba(255,255,255,.1); }
 @media (max-width: 760px) {
-  .canvas-start-date-wrap { padding:0 5px; gap:2px; }
-  .canvas-start-date { gap:4px; padding:0 4px; font-size:11px; }
-  .canvas-start-date-popover { left:auto; right:0; }
+  .canvas-start-date { gap:4px; padding:0 8px; font-size:11px; }
 }
 
 /* Zoom is available in the top workspace utility cluster; keep the viewport's bottom HUD clear. */
