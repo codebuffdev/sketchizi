@@ -511,7 +511,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         else if (mapping[key]) appStatePatch[mapping[key]] = value;
       });
       if ("backgroundColor" in patch && patch.backgroundColor !== "transparent" && isShape && fillColor === "transparent") {
-        appStatePatch.currentItemFillStyle = fillStyle && fillStyle !== "transparent" ? fillStyle : "solid";
+        appStatePatch.currentItemFillStyle = "solid";
       }
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
       return;
@@ -531,7 +531,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     const now = Date.now();
     const effectivePatch = { ...patch };
     if ("backgroundColor" in effectivePatch && effectivePatch.backgroundColor !== "transparent" && isShape && fillColor === "transparent") {
-      effectivePatch.fillStyle = fillStyle && fillStyle !== "transparent" ? fillStyle : "solid";
+      effectivePatch.fillStyle = "solid";
     }
     const elements = api.getSceneElements?.() || [];
     const next = elements.map((element) => ids.has(element.id)
