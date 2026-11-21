@@ -64,7 +64,7 @@ function activateTool({ id, root, apiRef, onOpenTodoTab }) {
   apiRef.current?.setActiveTool?.({ type: id });
 }
 
-export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab, nativeMenuOpen = false }) {
+export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab, nativeMenuOpen = false }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
   const [expanded, setExpanded] = useState(false);
@@ -97,6 +97,35 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
   }, []);
 
+  const appState = apiRef.current?.getAppState?.() || {};
+  const selectedIds = Object.entries(appState.selectedElementIds || {})
+    .filter(([, isSelected]) => isSelected)
+    .map(([id]) => id);
+  const liveSelectedElements = (apiRef.current?.getSceneElements?.() || []).filter((element) =>
+    selectedIds.includes(element.id) && element && !element.isDeleted && !element.deleted,
+  );
+  const selected = liveSelectedElements.length
+    ? liveSelectedElements
+    : selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
+  const selectedType = selected.length > 0 && selected.every((element) => element.type === selected[0].type)
+    ? selected[0].type
+    : null;
+  const selectionToolByElementType = {
+    text: "text",
+    arrow: "arrow",
+    line: "line",
+    rectangle: "rectangle",
+    diamond: "diamond",
+    ellipse: "ellipse",
+    freedraw: "freedraw",
+    frame: "frame",
+    image: "image",
+  };
+  // Selection only changes the dock's presentation. Excalidraw's activeTool
+  // remains "selection", preserving normal move/resize/text-edit behavior.
+  const displayedTool = customTool || (activeTool !== "selection"
+    ? activeTool
+    : (selectionToolByElementType[selectedType] || "selection"));
   const activeId = customTool || activeTool;
 
   // Any change of the active tool (click or keyboard shortcut) collapses the
@@ -110,7 +139,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     setExpanded(false);
   }, [activeId]);
 
-  const activeToolMeta = TOOLS.find((tool) => tool.id === activeId) || TOOLS[0];
+  const activeToolMeta = TOOLS.find((tool) => tool.id === displayedTool) || TOOLS[0];
 
   const expandDock = () => {
     if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
@@ -158,16 +187,16 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     >
       <div className="sketchizi-tool-sidebar-list" id="sketchizi-tool-sidebar-list" aria-label="All drawing tools" inert={!expanded}>
         {TOOLS.map((tool) => {
-          const selected = activeId === tool.id;
+          const isDisplayed = displayedTool === tool.id;
           return (
             <React.Fragment key={tool.id}>
               {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
               <button
                 type="button"
                 ref={tool.id === TOOLS[0].id ? firstToolButtonRef : undefined}
-                className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
+                className={`sketchizi-tool-sidebar-button${isDisplayed ? " is-active" : ""}`}
                 aria-label={tool.label}
-                aria-pressed={selected}
+                aria-pressed={isDisplayed}
                 title={tool.keyHint ? `${tool.label} (${tool.keyHint})` : tool.label}
                 disabled={!canEdit && tool.id !== "todo"}
                 onClick={() => chooseTool(tool)}
