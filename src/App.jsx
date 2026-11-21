@@ -67,11 +67,9 @@ const ArchitectureTemplatesModal = lazy(() => import("./components/app/Architect
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
 import ZenHud from "./components/app/ZenHud.jsx";
-import { enableCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
-import CanvasGrammarAssistant from "./features/canvas/CanvasGrammarAssistant.jsx";
+import { applyCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
-import "./styles/canvas-grammar-assistant.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
@@ -93,13 +91,6 @@ function App() {
   const [isZenMode, setIsZenMode] = useState(false);
   const isZenModeRef = useRef(false);
   const exitZenMode = useCallback(() => setIsZenMode(false), []);
-  useEffect(() => {
-    if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
-    enableCanvasSpellcheck(document);
-    const observer = new MutationObserver(() => enableCanvasSpellcheck(document));
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
   const [canvasPageContext, setCanvasPageContext] = useState({ mode: "infinite", page: null, pageCount: 0 });
   const [startupChooserOpen, setStartupChooserOpen] = useState(false);
   const startupChoiceMadeRef = useRef(false);
@@ -1520,7 +1511,14 @@ function App() {
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
     canvasAppearance, setCanvasAppearance,
   });
-  const { themeMode, setThemeMode, isDarkTheme } = preferences;
+  const { themeMode, setThemeMode, isDarkTheme, spellcheckEnabled, toggleSpellcheck } = preferences;
+  useEffect(() => {
+    if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
+    applyCanvasSpellcheck(document, spellcheckEnabled);
+    const observer = new MutationObserver(() => applyCanvasSpellcheck(document, spellcheckEnabled));
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [spellcheckEnabled]);
   globalThemeRef.current = isDarkTheme ? "dark" : "light";
   useEffect(() => {
     if (!savedSketch) return;
@@ -1563,6 +1561,8 @@ function App() {
     setThemeMode,
     gridEnabled,
     toggleGrid,
+    spellcheckEnabled,
+    toggleSpellcheck,
     setMinimapOpen,
     fitDiagram: preferences.fitDiagram,
     activateMoreTool,
@@ -2628,6 +2628,9 @@ function App() {
         canvasAppearance={canvasAppearance}
         onCanvasAppearanceChange={handleCanvasAppearanceChange}
         onToggleGrid={toggleGrid}
+        canvasMode={canvasPageContext.mode}
+        spellcheckEnabled={spellcheckEnabled}
+        onToggleSpellcheck={toggleSpellcheck}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
         onBeforeOpenPanel={closeNativeMenu}
@@ -2992,7 +2995,6 @@ function App() {
         onToggleAi={toggleAiAsk}
       />
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
-      <CanvasGrammarAssistant />
 
       {toast && (
         <div className={`sketchizi-toast ${toast.kind === "error" ? "error" : ""}`} role="status" aria-live="polite" key={toast.id}>

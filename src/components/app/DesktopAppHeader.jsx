@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import CanvasPages from "../../features/pages/CanvasPages.jsx";
 import CanvasTabs from "./CanvasTabs.jsx";
 import CanvasStartDate from "./CanvasStartDate.jsx";
@@ -58,6 +59,68 @@ function CanvasActionIcon({ name }) {
   return <span className="canvas-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.save}</svg></span>;
 }
 
+const CANVAS_VIEW_OPTIONS = [
+  ["infinite", "Infinite canvas", "Freeform boundless space"],
+  ["pages", "Pages", "Fixed, named page frames"],
+];
+const CANVAS_PATTERN_OPTIONS = [
+  ["normal", "Grid", "Uniform grid"],
+  ["focus", "Focus Grid", "Dense center"],
+  ["local", "Local Focus", "Around content"],
+  ["dots", "Dot Grid", "Dotted drafting"],
+  ["ruled", "Ruled Paper", "Writing guides"],
+];
+
+function PatternThumb({ kind }) {
+  const lines = (step, from = 0, to = 54) => {
+    const out = [];
+    for (let p = from; p <= to; p += step) out.push(p);
+    return out;
+  };
+  let body = null;
+  if (kind === "normal") {
+    body = lines(9).map((p) => <path key={p} d={`M${p} 0V54M0 ${p}H54`} />);
+  } else if (kind === "focus") {
+    body = (
+      <>
+        <g opacity=".35">{lines(9).map((p) => <path key={p} d={`M${p} 0V54M0 ${p}H54`} />)}</g>
+        <g>{lines(6, 12, 42).map((p) => <path key={p} d={`M${p} 12V42M12 ${p}H42`} />)}</g>
+      </>
+    );
+  } else if (kind === "local") {
+    body = (
+      <>
+        <g opacity=".3">{lines(9).map((p) => <path key={p} d={`M${p} 0V54M0 ${p}H54`} />)}</g>
+        <rect x="16" y="19" width="22" height="16" rx="3" className="csp-thumb-accent" />
+        <g>{lines(4, 12, 42).map((p) => <path key={p} d={`M${p} 14V40M10 ${p + 4}H44`} />)}</g>
+      </>
+    );
+  } else if (kind === "dots") {
+    body = lines(9, 4.5, 49.5).flatMap((x) => lines(9, 4.5, 49.5).map((y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1" className="csp-thumb-dot" />));
+  } else {
+    body = (
+      <>
+        {lines(9, 11, 47).map((p) => <path key={p} d={`M0 ${p}H54`} />)}
+        <path d="M10 0V54" className="csp-thumb-margin" />
+      </>
+    );
+  }
+  return (
+    <svg className="csp-thumb" viewBox="0 0 54 54" width="54" height="54" aria-hidden="true" focusable="false">
+      <rect width="54" height="54" className="csp-thumb-bg" />
+      <g className="csp-thumb-lines" fill="none" strokeWidth="1">{body}</g>
+    </svg>
+  );
+}
+
+function CheckBadge({ size }) {
+  return (
+    <span className="csp-check" style={{ width: size, height: size }} aria-hidden="true">
+      <svg viewBox="0 0 12 12" width={size - 5} height={size - 5} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2.6 6.4 2.2 2.2 4.6-5" /></svg>
+    </span>
+  );
+}
+
 function canRun(command) {
   if (!command) return false;
   try {
@@ -91,6 +154,9 @@ export default function DesktopAppHeader({
   canvasAppearance = "clean",
   onCanvasAppearanceChange,
   onToggleGrid,
+  canvasMode = "infinite",
+  spellcheckEnabled = false,
+  onToggleSpellcheck,
   onGridStyleChange,
   openCommandPalette,
   onBeforeOpenPanel,
@@ -174,6 +240,31 @@ export default function DesktopAppHeader({
       window.removeEventListener("keydown", closeEscape, true);
     };
   }, [gridPopoverOpen]);
+  // Keep the popover mounted briefly after closing so the asymmetric exit can play.
+  const [gridPopoverMounted, setGridPopoverMounted] = useState(false);
+  const [gridPopoverClosing, setGridPopoverClosing] = useState(false);
+  useEffect(() => {
+    if (gridPopoverOpen) {
+      setGridPopoverMounted(true);
+      setGridPopoverClosing(false);
+      return undefined;
+    }
+    if (!gridPopoverMounted) return undefined;
+    setGridPopoverClosing(true);
+    const timer = window.setTimeout(() => { setGridPopoverMounted(false); setGridPopoverClosing(false); }, 140);
+    return () => window.clearTimeout(timer);
+  }, [gridPopoverOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  // "Snap to grid" is Excalidraw's native grid mode; read it when the popover opens.
+  const [snapToGrid, setSnapToGrid] = useState(false);
+  useEffect(() => {
+    if (!gridPopoverOpen) return;
+    try { setSnapToGrid(Boolean(canvasApi?.getAppState?.()?.gridModeEnabled)); } catch { /* Canvas not ready. */ }
+  }, [gridPopoverOpen, canvasApi]);
+  const toggleSnapToGrid = () => {
+    const next = !snapToGrid;
+    setSnapToGrid(next);
+    try { canvasApi?.updateScene?.({ appState: { gridModeEnabled: next }, captureUpdate: CaptureUpdateAction.NEVER }); } catch { /* Canvas not ready. */ }
+  };
   const [availableWidth, setAvailableWidth] = useState(0);
   // The legacy header rail is no longer the default top-right UI; it stays
   // hidden (but mounted) on desktop and tablet and opens from the settings popover.
@@ -657,93 +748,110 @@ export default function DesktopAppHeader({
             <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
           </svg>
         </button>
-        {gridPopoverOpen && (
-          <section className="sketchizi-header-grid-popover" role="dialog" aria-label="Canvas style">
-            <div className="sketchizi-header-grid-top">
-              <div className="sketchizi-header-grid-heading">
-                <ViewCommandIcon name="grid" />
-                <div><strong>Canvas Style</strong><small>Choose how your canvas looks.</small></div>
+        {gridPopoverMounted && (
+          <section className="sketchizi-header-grid-popover csp" data-state={gridPopoverClosing ? "closing" : "open"} role="dialog" aria-label="Canvas style">
+            <div className="csp-header">
+              <div className="csp-heading">
+                <span className="csp-heading-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg>
+                </span>
+                <div className="csp-heading-copy"><strong>Canvas Style</strong><small>Choose how your canvas looks.</small></div>
               </div>
-              <label className="sketchizi-header-grid-toggle">
-                <span>Show pattern</span>
-                <input type="checkbox" checked={gridEnabled} onChange={() => onToggleGrid?.()} />
-                <span className="sketchizi-header-grid-switch" aria-hidden="true" />
-              </label>
+              <div className="csp-show">
+                <span id="csp-show-label">Show pattern</span>
+                <button type="button" role="switch" aria-checked={gridEnabled} aria-labelledby="csp-show-label" className={`csp-switch${gridEnabled ? " is-on" : ""}`} onClick={() => onToggleGrid?.()}><span /></button>
+              </div>
             </div>
-            <div className="sketchizi-header-grid-modes" aria-label="Canvas view">
-              <strong>Canvas view</strong>
-              <div className="sketchizi-header-grid-options" role="group" aria-label="Canvas view">
-                <button
-                  type="button"
-                  aria-label="Infinite canvas Draw"
-                  onClick={() => {
-                    setGridPopoverOpen(false);
-                    window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } }));
-                  }}
-                >
-                  <strong>Infinite canvas</strong>
-                  <small>Draw freely without fixed page boundaries.</small>
+
+            <div className="csp-section" role="group" aria-label="Canvas view">
+              <h4 className="csp-section-title">Canvas view</h4>
+              <div className="csp-view-grid">
+                {CANVAS_VIEW_OPTIONS.map(([value, label, description]) => {
+                  const active = canvasMode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`csp-card csp-view-card${active ? " is-active" : ""}`}
+                      aria-pressed={active}
+                      aria-label={`${label}. ${description}`}
+                      onClick={() => {
+                        setGridPopoverOpen(false);
+                        window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: value } }));
+                      }}
+                    >
+                      {active && <CheckBadge size={14} />}
+                      <strong>{label}</strong>
+                      <small>{description}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="csp-section" role="group" aria-label="Canvas patterns">
+              <div className="csp-section-head">
+                <h4 className="csp-section-title">Canvas patterns</h4>
+                <button type="button" role="switch" aria-checked={snapToGrid} className={`csp-snap${snapToGrid ? " is-on" : ""}`} onClick={toggleSnapToGrid} title="Snap objects to the grid while drawing">
+                  <span>Snap to grid</span><span className="csp-snap-dot" aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  aria-label="Pages Organize"
-                  onClick={() => {
-                    setGridPopoverOpen(false);
-                    window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "pages" } }));
-                  }}
-                >
-                  <strong>Pages</strong>
-                  <small>Organize work on fixed, named pages.</small>
-                </button>
+              </div>
+              <div className={`csp-pattern-grid${gridEnabled ? "" : " is-dimmed"}`}>
+                {CANVAS_PATTERN_OPTIONS.map(([value, label, description]) => {
+                  const active = gridStyle === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`csp-card csp-pattern-card${active ? " is-active" : ""}`}
+                      aria-pressed={active}
+                      aria-label={`${label}. ${description}`}
+                      onClick={() => {
+                        onGridStyleChange?.(value);
+                        if (!gridEnabled) onToggleGrid?.();
+                      }}
+                    >
+                      {active && <CheckBadge size={15} />}
+                      <PatternThumb kind={value} />
+                      <strong>{label}</strong>
+                      <small>{description}</small>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <div className="sketchizi-header-grid-modes" aria-label="Grid mode">
-              <strong>Canvas patterns</strong>
-              <div className="sketchizi-header-grid-options" role="group" aria-label="Grid mode">
-                {[["normal", "Grid", "Uniform grid across the canvas."],
-                  ["focus", "Focus Grid", "Dense central grid with soft edges."],
-                  ["local", "Local Focus Grid", "Dense grid around drawing content."],
-                  ["dots", "Dot Grid", "Subtle dotted drafting surface."],
-                  ["ruled", "Ruled Paper", "Evenly spaced horizontal writing guides."]].map(([value, label, description]) => (
-                  <button key={value} type="button" aria-pressed={gridStyle === value}
-                    onClick={() => {
-                      onGridStyleChange?.(value);
-                      if (!gridEnabled) onToggleGrid?.();
-                    }}>
-                    <span className={`sketchizi-grid-preview is-${value}`} aria-hidden="true"><span /></span>
-                    <strong>{label}</strong>
-                    <small>{description}</small>
-                    {gridStyle === value && <span className="sketchizi-grid-selected-check" aria-hidden="true">✓</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <p className="sketchizi-header-grid-description">
-              <span aria-hidden="true">ⓘ</span>
-              {!gridEnabled ? "Choose a canvas style, then turn on Show pattern whenever you want it visible." :
-                gridStyle === "dots" ? "Dot Grid uses a subtle, non-selectable dot pattern." :
-                gridStyle === "ruled" ? "Ruled Paper adds evenly spaced horizontal guides." :
-                gridStyle === "local" ? "Local Focus Grid concentrates detail around drawing content." :
-                gridStyle === "focus" ? "Focus Grid emphasizes the central canvas area." :
-                "Grid displays a uniform pattern across the canvas."}
-            </p>
+
             <button
               type="button"
-              className="sketchizi-header-grid-template-action"
+              className="csp-template-btn"
               onClick={() => {
                 setGridPopoverOpen(false);
                 setOpenMenu(null);
                 onOpenTemplates?.();
               }}
             >
-              <span aria-hidden="true">◇</span>
-              <span>Browse templates</span>
-              <span aria-hidden="true">→</span>
+              <span className="csp-template-icon" aria-hidden="true">◇</span>
+              <span className="csp-template-label">Browse templates</span>
+              <span className="csp-template-arrow" aria-hidden="true">→</span>
             </button>
           </section>
         )}
       </div>
 
+
+      <button
+        type="button"
+        role="switch"
+        aria-checked={spellcheckEnabled}
+        className={`desktop-app-spellcheck-toggle${spellcheckEnabled ? " is-on" : ""}`}
+        onClick={() => onToggleSpellcheck?.()}
+        aria-label={`Spellcheck ${spellcheckEnabled ? "On" : "Off"}`}
+        title={`Native spellcheck: ${spellcheckEnabled ? "On" : "Off"} (click to toggle)`}
+      >
+        <span className="desktop-app-spellcheck-label">Spellcheck</span>
+        <span className="desktop-app-spellcheck-state">{spellcheckEnabled ? "On" : "Off"}</span>
+        <span className="desktop-app-spellcheck-switch" aria-hidden="true" />
+      </button>
 
       <div className="desktop-app-header-spacer" />
 

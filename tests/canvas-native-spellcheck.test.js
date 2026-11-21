@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { enableCanvasSpellcheck } from "../src/features/canvas/nativeSpellcheck.js";
+import { applyCanvasSpellcheck, readSpellcheckPreference } from "../src/features/canvas/nativeSpellcheck.js";
 
-test("canvas text fields opt into native spellcheck without changing their text", () => {
+function makeRoot() {
   const attributes = new Map();
   const field = {
-    textContent: "Ths is a test",
+    textContent: "k8s vpc postgres",
     getAttribute: (name) => attributes.get(name) ?? null,
     setAttribute: (name, value) => attributes.set(name, value),
   };
@@ -14,7 +14,21 @@ test("canvas text fields opt into native spellcheck without changing their text"
     assert.match(selector, /textarea/);
     return [field];
   } };
-  assert.equal(enableCanvasSpellcheck(root), 1);
+  return { attributes, field, root };
+}
+
+test("spellcheck is off by default and for new sessions", () => {
+  assert.equal(readSpellcheckPreference({ getItem: () => null }), false);
+  assert.equal(readSpellcheckPreference(null), false);
+});
+
+test("canvas text fields get spellcheck=false unless opted in", () => {
+  const { attributes, field, root } = makeRoot();
+  assert.equal(applyCanvasSpellcheck(root), 1);
+  assert.equal(attributes.get("spellcheck"), "false");
+  assert.equal(applyCanvasSpellcheck(root, true), 1);
   assert.equal(attributes.get("spellcheck"), "true");
-  assert.equal(field.textContent, "Ths is a test");
+  assert.equal(applyCanvasSpellcheck(root, false), 1);
+  assert.equal(attributes.get("spellcheck"), "false");
+  assert.equal(field.textContent, "k8s vpc postgres");
 });

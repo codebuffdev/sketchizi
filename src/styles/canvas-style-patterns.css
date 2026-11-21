@@ -261,3 +261,168 @@
 .app.theme-dark .sketchizi-header-grid-popover input {
   color-scheme: dark;
 }
+
+/* ==========================================================================
+   Canvas Style popover (compact redesign, 348px)
+   ========================================================================== */
+.app .sketchizi-header-grid-popover.csp {
+  --csp-text: #eceef4;
+  --csp-muted: rgba(236, 238, 244, 0.56);
+  --csp-hairline: rgba(255, 255, 255, 0.1);
+  --csp-card: rgba(255, 255, 255, 0.03);
+  --csp-card-hover: rgba(255, 255, 255, 0.06);
+  --csp-accent: #818cf8;
+  --csp-accent-border: rgba(129, 140, 248, 0.65);
+  --csp-accent-fill: rgba(129, 140, 248, 0.12);
+  --csp-switch-off: rgba(255, 255, 255, 0.16);
+  --csp-thumb-bg: rgba(255, 255, 255, 0.04);
+  --csp-thumb-line: rgba(170, 182, 210, 0.5);
+  --csp-thumb-accent: #818cf8;
+  --csp-thumb-margin: rgba(235, 115, 115, 0.75);
+  width: min(348px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  background: rgba(22, 24, 31, 0.96);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55);
+  color: var(--csp-text);
+  color-scheme: dark;
+  transform-origin: top right;
+  animation: csp-enter 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.app.theme-light .sketchizi-header-grid-popover.csp {
+  --csp-text: #1e2230;
+  --csp-muted: rgba(30, 34, 48, 0.58);
+  --csp-hairline: rgba(15, 23, 42, 0.1);
+  --csp-card: rgba(15, 23, 42, 0.025);
+  --csp-card-hover: rgba(15, 23, 42, 0.05);
+  --csp-accent: #4f46e5;
+  --csp-accent-border: rgba(79, 70, 229, 0.55);
+  --csp-accent-fill: rgba(79, 70, 229, 0.06);
+  --csp-switch-off: rgba(15, 23, 42, 0.18);
+  --csp-thumb-bg: rgba(15, 23, 42, 0.03);
+  --csp-thumb-line: rgba(71, 85, 105, 0.45);
+  --csp-thumb-accent: #4f46e5;
+  --csp-thumb-margin: rgba(220, 80, 80, 0.7);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+  color-scheme: light;
+}
+.app .sketchizi-header-grid-popover.csp[data-state="closing"] {
+  animation: csp-exit 140ms cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+@keyframes csp-enter {
+  from { opacity: 0; transform: scale(0.94) translateY(-6px); filter: blur(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes csp-exit {
+  from { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+  to { opacity: 0; transform: scale(0.94) translateY(-6px); filter: blur(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-header-grid-popover.csp,
+  .app .sketchizi-header-grid-popover.csp[data-state="closing"] { animation-duration: 1ms; }
+}
+
+.csp button { font: inherit; color: inherit; cursor: pointer; }
+.csp button:focus-visible { outline: 2px solid var(--csp-accent); outline-offset: 2px; }
+.csp strong, .csp small, .csp h4 { margin: 0; }
+
+/* Header */
+.csp-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--csp-hairline); }
+.csp-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.csp-heading-icon { display: grid; place-items: center; flex: 0 0 auto; color: var(--csp-accent); }
+.csp-heading-copy { display: grid; gap: 2px; min-width: 0; }
+.csp-heading-copy strong { font-size: 13.5px; font-weight: 600; line-height: 1.2; color: var(--csp-text); }
+.csp-heading-copy small { font-size: 11.5px; line-height: 1.25; color: var(--csp-muted); }
+.csp-show { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; font-size: 11.5px; color: var(--csp-text); }
+
+.csp-switch {
+  position: relative; flex: 0 0 auto; width: 36px; height: 20px; padding: 0;
+  border: 0; border-radius: 999px; background: var(--csp-switch-off);
+  transition: background 160ms ease;
+}
+.csp-switch > span {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.csp-switch.is-on { background: var(--csp-accent); }
+.csp-switch.is-on > span { transform: translateX(16px); }
+
+/* Sections */
+.csp-section { margin-top: 14px; }
+.csp-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.csp-section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--csp-muted); margin-bottom: 8px; }
+.csp-section-head .csp-section-title { margin-bottom: 0; }
+.csp-section-head { margin-bottom: 8px; }
+
+/* Cards (shared) */
+.csp-card {
+  position: relative; display: grid; gap: 2px; min-width: 0;
+  border: 1px solid var(--csp-hairline); border-radius: 12px;
+  background: var(--csp-card);
+  transition: all 160ms ease;
+}
+.csp-card:hover { background: var(--csp-card-hover); }
+.csp-card.is-active {
+  border: 1.5px solid var(--csp-accent-border);
+  background: var(--csp-accent-fill);
+}
+.csp-card strong { color: var(--csp-text); font-weight: 600; }
+.csp-card small { color: var(--csp-muted); }
+.csp-check {
+  position: absolute; display: grid; place-items: center; border-radius: 50%;
+  background: var(--csp-accent); color: #fff;
+}
+
+/* Canvas view cards */
+.csp-view-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.csp-view-card { padding: 10px 12px; text-align: left; align-content: start; }
+.csp-view-card strong { font-size: 12.5px; line-height: 1.25; padding-right: 16px; }
+.csp-view-card small { font-size: 11px; line-height: 1.3; }
+.csp-view-card .csp-check { top: 8px; right: 8px; }
+
+/* Snap to grid pill */
+.csp-snap {
+  display: inline-flex; align-items: center; gap: 7px; height: 22px; padding: 0 8px 0 10px;
+  border: 1px solid var(--csp-hairline); border-radius: 999px; background: var(--csp-card);
+  font-size: 11px; color: var(--csp-muted); transition: all 160ms ease;
+}
+.csp-snap:hover { background: var(--csp-card-hover); }
+.csp-snap.is-on { border-color: var(--csp-accent-border); background: var(--csp-accent-fill); color: var(--csp-text); }
+.csp-snap-dot { position: relative; width: 20px; height: 12px; border-radius: 999px; background: var(--csp-switch-off); transition: background 160ms ease; }
+.csp-snap-dot::after { content: ""; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: #fff; transition: transform 160ms ease; }
+.csp-snap.is-on .csp-snap-dot { background: var(--csp-accent); }
+.csp-snap.is-on .csp-snap-dot::after { transform: translateX(8px); }
+
+/* Pattern cards */
+.csp-pattern-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; transition: opacity 200ms ease; }
+.csp-pattern-grid.is-dimmed { opacity: 0.42; }
+.csp-pattern-card { padding: 10px 8px; justify-items: center; text-align: center; gap: 0; }
+.csp-pattern-card strong { margin-top: 8px; font-size: 11.5px; line-height: 1.2; }
+.csp-pattern-card small { margin-top: 2px; font-size: 10px; line-height: 1.2; }
+.csp-pattern-card .csp-check { top: 6px; right: 6px; }
+.csp-thumb { display: block; border-radius: 9px; overflow: hidden; }
+.csp-thumb-bg { fill: var(--csp-thumb-bg); }
+.csp-thumb-lines { stroke: var(--csp-thumb-line); }
+.csp-thumb-lines .csp-thumb-accent { stroke: var(--csp-thumb-accent); stroke-width: 1.4; fill: none; }
+.csp-thumb-lines .csp-thumb-dot { fill: var(--csp-thumb-line); stroke: none; }
+.csp-thumb-lines .csp-thumb-margin { stroke: var(--csp-thumb-margin); }
+
+/* Browse templates */
+.csp-template-btn {
+  display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; margin-top: 14px; padding: 0 12px;
+  border: 1px solid var(--csp-hairline); border-radius: 10px; background: transparent;
+  font-size: 12px; font-weight: 600; color: var(--csp-text); transition: background 160ms ease, border-color 160ms ease;
+}
+.csp-template-btn:hover { background: var(--csp-card-hover); border-color: var(--csp-accent-border); }
+.csp-template-icon { color: var(--csp-accent); font-size: 13px; line-height: 1; }
+.csp-template-label { flex: 1; text-align: left; }
+.csp-template-arrow { display: inline-block; transition: transform 160ms ease; }
+.csp-template-btn:hover .csp-template-arrow { transform: translateX(2px); }

@@ -3,6 +3,7 @@ import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js"
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { applyCanvasThemeBackground } from "./canvasTheme.js";
 import { applyCanvasAppearance } from "./canvasAppearance.js";
+import { readSpellcheckPreference, SPELLCHECK_PREFERENCE_KEY } from "../canvas/nativeSpellcheck.js";
 
 export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true, canvasAppearance = "clean", setCanvasAppearance = () => {} }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
@@ -22,6 +23,9 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
       return ["light", "dark", "system"].includes(resolved) ? resolved : "dark";
     });
   }, []);
+  const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckPreference());
+  const toggleSpellcheck = useCallback(() => setSpellcheckEnabled((enabled) => !enabled), []);
+  useEffect(() => { try { localStorage.setItem(SPELLCHECK_PREFERENCE_KEY, spellcheckEnabled ? "true" : "false"); } catch {} }, [spellcheckEnabled]);
   const markCanvasBackgroundCustom = useCallback(() => {}, []);
   const useThemeDefaultBackground = useCallback(() => {
     setCanvasAppearance("clean");
@@ -103,5 +107,5 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     return () => document.removeEventListener("click", handleResetCanvas, true);
   }, [canEdit, fileActionsRef]);
 
-  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground };
+  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground, spellcheckEnabled, setSpellcheckEnabled, toggleSpellcheck };
 }

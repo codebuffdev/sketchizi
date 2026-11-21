@@ -90,15 +90,33 @@ test("Properties and Validation controls remain clear of the floating header", a
 test("Canvas patterns menu contains only grid patterns, not appearance presets", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const styles = await read("../src/styles/canvas-style-patterns.css");
-  const patternsStart = header.indexOf('aria-label="Grid mode"');
+  const patternsStart = header.indexOf('aria-label="Canvas patterns"');
   assert.notEqual(patternsStart, -1);
   const menuContent = header.slice(Math.max(0, patternsStart - 500), patternsStart + 2200);
   assert.match(menuContent, /Canvas patterns/);
-  assert.match(menuContent, /Focus Grid/);
-  assert.match(menuContent, /Dot Grid/);
-  assert.doesNotMatch(menuContent, /Appearance preset|Chalkboard|Hand-drawn, expressive strokes/);
+  assert.match(menuContent, /CANVAS_PATTERN_OPTIONS/);
+  assert.match(header, /"Focus Grid"/);
+  assert.match(header, /"Dot Grid"/);
+  assert.match(header, /"Local Focus"/);
+  assert.doesNotMatch(header + menuContent, /Appearance preset|Chalkboard|Hand-drawn, expressive strokes/);
   assert.match(styles, /\.app\.theme-light \.sketchizi-header-grid-popover/);
   assert.match(styles, /\.app\.theme-dark \.sketchizi-header-grid-popover/);
   assert.match(styles, /color-scheme: light/);
   assert.match(styles, /color-scheme: dark/);
+});
+
+test("Canvas Style popover shows selectable view cards, inline snap toggle and no footer info line", async () => {
+  const header = await read("../src/components/app/DesktopAppHeader.jsx");
+  const styles = await read("../src/styles/canvas-style-patterns.css");
+  assert.match(header, /Freeform boundless space/);
+  assert.match(header, /Fixed, named page frames/);
+  assert.match(header, /canvasMode === value/);
+  assert.match(header, /Snap to grid/);
+  assert.match(header, /Browse templates/);
+  assert.doesNotMatch(header, /Grid displays a uniform pattern across the canvas/);
+  assert.match(styles, /width: min\(348px/);
+  assert.match(styles, /grid-template-columns: repeat\(3, 1fr\)/);
+  assert.match(styles, /transform-origin: top right/);
+  assert.match(styles, /cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
+  assert.match(styles, /cubic-bezier\(0\.4, 0, 1, 1\)/);
 });
