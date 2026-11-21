@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import CanvasStartDate from "./CanvasStartDate.jsx";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
@@ -21,14 +20,9 @@ import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointer
 export default function SketchiziCanvas({
   savedSketch, isDarkTheme, handleExcalidrawAPI, handleChange, handleDrop,
   pageContext,
-  startDate,
-  activity = [],
-  canvasId,
-  onActivityChange,
   todoItems = [],
   onTodoItemsChange,
   onOpenTodoTab,
-  onStartDateChange,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], onClearSelection, canEdit = true,
@@ -807,7 +801,6 @@ export default function SketchiziCanvas({
 
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
-      <CanvasStartDate key={canvasId} canvasId={canvasId} value={startDate} activity={activity} onActivityChange={onActivityChange} onChange={onStartDateChange} disabled={!canEdit || viewModeEnabled} />
       <PrimaryDock
         rootRef={canvasRootRef}
         apiRef={apiRef}
