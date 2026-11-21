@@ -663,54 +663,35 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
   return (
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
-      {!isHighlighter && <DockGroup label={isText ? "Text color" : "Stroke color"}>
+      {(isShape || isLaser || isText || (!isFill && !isHighlighter)) && <DockGroup label={isShape || isLaser ? "Color & fill" : "Color"}>
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
-        {!isFill && <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
-        {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
-        {(isShape || isLaser) && <>
-          <ToolButton active={fillColor === "transparent"} title="Transparent fill" onClick={() => update({ backgroundColor: "transparent" })}>
+        {!isFill && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
+        {(isShape || isLaser || isHighlighter) && <>
+          <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
           </ToolButton>
-          <ToolButton active={fillColor !== "transparent"} title="Choose solid fill" onClick={() => update({ backgroundColor: fillColor === "transparent" ? "#ffffff" : fillColor })}>
+          <ToolButton active={fillColor !== "transparent"} title="Solid / hachure fill" onClick={() => update({ backgroundColor: fillColor === "transparent" ? "#ffffff" : fillColor })}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
           </ToolButton>
         </>}
+        {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
       </DockGroup>}
 
-      {(isHighlighter || (isFill && !isHighlighter)) && <DockGroup label="Fill style">
-        {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>
-          <DockOptionGlyph label="Fill style" value={value} optionLabel={label} />
-        </ToolButton>)}
-      </DockGroup>}
-
-      {showStrokeWidth && <DockGroup label="Stroke width">
-        <DockSelect label={isDraw ? "Stroke width / thinning preset" : "Stroke width"} value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })}>
+      {(showStrokeWidth || showStrokeStyle || isLine || type === "arrow") && <DockGroup label="Stroke & connector">
+        {showStrokeWidth && <DockSelect label={isDraw ? "Stroke width / thinning preset" : "Stroke width"} value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })}>
           {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth}px</option>}
           {WIDTHS.map((width) => <option key={width} value={width}>{width}px</option>)}
-        </DockSelect>
-      </DockGroup>}
-
-      {isLine && <DockGroup label="Line routing">
-        <VisualOptionSelect label="Line routing" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry" options={LINE_GEOMETRIES.map(([value, label]) => ({ value, label }))} />
-      </DockGroup>}
-
-      {showStrokeStyle && <DockGroup label="Stroke style">
-        <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />
-      </DockGroup>}
-
-      {isShape && <DockGroup label="Fill style">
-        {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>
-          <DockOptionGlyph label="Fill style" value={value} optionLabel={label} />
-        </ToolButton>)}
-      </DockGroup>}
-
-      {type === "arrow" && <DockGroup label="Arrowheads">
-        <DockSelect label="Start arrowhead" value={current("startArrowhead", "currentItemStartArrowhead", null) || "none"} onChange={(value) => update({ startArrowhead: value === "none" ? null : value })}>
-          <option value="none">Start: None</option><option value="arrow">Start: Arrow</option><option value="bar">Start: Bar</option><option value="dot">Start: Dot</option>
-        </DockSelect>
-        <DockSelect label="End arrowhead" value={current("endArrowhead", "currentItemEndArrowhead", "arrow") || "none"} onChange={(value) => update({ endArrowhead: value === "none" ? null : value })}>
-          <option value="none">End: None</option><option value="arrow">End: Arrow</option><option value="bar">End: Bar</option><option value="dot">End: Dot</option>
-        </DockSelect>
+        </DockSelect>}
+        {isLine && <VisualOptionSelect label="Line routing" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry" options={LINE_GEOMETRIES.map(([value, label]) => ({ value, label }))} />}
+        {showStrokeStyle && <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />}
+        {type === "arrow" && <>
+          <DockSelect label="Start arrowhead" value={current("startArrowhead", "currentItemStartArrowhead", null) || "none"} onChange={(value) => update({ startArrowhead: value === "none" ? null : value })}>
+            <option value="none">Start: None</option><option value="arrow">Start: Arrow</option><option value="bar">Start: Bar</option><option value="dot">Start: Dot</option>
+          </DockSelect>
+          <DockSelect label="End arrowhead" value={current("endArrowhead", "currentItemEndArrowhead", "arrow") || "none"} onChange={(value) => update({ endArrowhead: value === "none" ? null : value })}>
+            <option value="none">End: None</option><option value="arrow">End: Arrow</option><option value="bar">End: Bar</option><option value="dot">End: Dot</option>
+          </DockSelect>
+        </>}
       </DockGroup>}
 
       {isText && <DockGroup label="Typography">
@@ -756,45 +737,22 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           </div>
           <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Increase font size" disabled={fontSize >= 200} onClick={() => update({ fontSize: Math.min(200, fontSize + 1) })}>+</button>
         </div>
+        {layerOrderControl}
       </DockGroup>}
 
-      {showCornerRadius && <DockGroup label="Corner radius">
-        <DockSelect label="Corner radius" value={activeRoundness ? "rounded" : "sharp"} onChange={(value) => update({ roundness: value === "rounded" ? { type: 3 } : null })}>
+      {((showCornerRadius || showRoughness || (!noLayerForTool && !isText)) && <DockGroup label="Shape modifiers & layers">
+        {showCornerRadius && <DockSelect label="Corner radius" value={activeRoundness ? "rounded" : "sharp"} onChange={(value) => update({ roundness: value === "rounded" ? { type: 3 } : null })}>
           <option value="sharp">Sharp corners</option><option value="rounded">Rounded corners</option>
+        </DockSelect>}
+        {showRoughness && <VisualOptionSelect label="Roughness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />}
+        {!isText && layerOrderControl}
+      </DockGroup>)}
+
+      {isDraw && <DockGroup label="Stroke width preset">
+        <DockSelect label="Stroke width / thinning preset" value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })}>
+          {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth}px</option>}
+          {WIDTHS.map((width) => <option key={width} value={width}>{width}px</option>)}
         </DockSelect>
-      </DockGroup>}
-
-      {isDraw && <DockGroup label="Pen pressure">
-        <DockSelect label="Pen pressure" value={pressure ? "on" : "off"} onChange={(value) => update({ pressure: value === "on" })}>
-          <option value="on">Pressure enabled</option>
-          <option value="off">Pressure disabled</option>
-        </DockSelect>
-      </DockGroup>}
-
-      {showRoughness && <DockGroup label="Roughness">
-        <VisualOptionSelect label="Roughness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />
-      </DockGroup>}
-
-      {!noLayerForTool && <DockGroup label="Layer order">
-        <div className="sk-tool-layer-control">
-          <button type="button" className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`} aria-label="Layer order" aria-haspopup="menu" aria-expanded={layerMenuOpen}
-            disabled={layerDisabled} title={layerDisabled ? "Select an element to change layer order" : "Layer order"} ref={layerTriggerRef}
-            onClick={() => {
-              if (layerMenuOpen) { setLayerMenuOpen(false); return; }
-              const rect = layerTriggerRef.current?.getBoundingClientRect();
-              if (rect) setLayerMenuPosition({ left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)), bottom: Math.max(8, window.innerHeight - rect.top + 9) });
-              setLayerMenuOpen(true);
-            }}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Z" /><path d="m4 12 8 4 8-4M4 17l8 4 8-4" /></svg>
-          </button>
-          {layerMenuOpen && layerMenuPosition && createPortal(
-            <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
-              <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span className="sk-tool-layer-action-icon">⇧</span><span className="sk-tool-layer-action-label">Bring to front</span></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span className="sk-tool-layer-action-icon">↑</span><span className="sk-tool-layer-action-label">Bring forward</span></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span className="sk-tool-layer-action-icon">↓</span><span className="sk-tool-layer-action-label">Send backward</span></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span className="sk-tool-layer-action-icon">⇩</span><span className="sk-tool-layer-action-label">Send to back</span></button>
-            </div>, document.querySelector(".app") || document.body)}
-        </div>
       </DockGroup>}
 
       <DockGroup label="Opacity">
@@ -844,4 +802,28 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       </DockGroup>
     </div>
   );
+  const layerOrderControl = (
+      {!noLayerForTool && (<>
+        <div className="sk-tool-layer-control">
+          <button type="button" className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`} aria-label="Layer order" aria-haspopup="menu" aria-expanded={layerMenuOpen}
+            disabled={layerDisabled} title={layerDisabled ? "Select an element to change layer order" : "Layer order"} ref={layerTriggerRef}
+            onClick={() => {
+              if (layerMenuOpen) { setLayerMenuOpen(false); return; }
+              const rect = layerTriggerRef.current?.getBoundingClientRect();
+              if (rect) setLayerMenuPosition({ left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)), bottom: Math.max(8, window.innerHeight - rect.top + 9) });
+              setLayerMenuOpen(true);
+            }}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Z" /><path d="m4 12 8 4 8-4M4 17l8 4 8-4" /></svg>
+          </button>
+          {layerMenuOpen && layerMenuPosition && createPortal(
+            <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
+              <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span className="sk-tool-layer-action-icon">⇧</span><span className="sk-tool-layer-action-label">Bring to front</span></button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span className="sk-tool-layer-action-icon">↑</span><span className="sk-tool-layer-action-label">Bring forward</span></button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span className="sk-tool-layer-action-icon">↓</span><span className="sk-tool-layer-action-label">Send backward</span></button>
+              <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span className="sk-tool-layer-action-icon">⇩</span><span className="sk-tool-layer-action-label">Send to back</span></button>
+            </div>, document.querySelector(".app") || document.body)}
+        </div>
+      </>)}}
+  );
+
 }
