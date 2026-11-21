@@ -4,14 +4,14 @@ import { readFileSync } from "node:fs";
 
 const dock = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
-const sidebarCss = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
+const sidebarCss = readFileSync(new URL("../src/styles/workspace-ui-redesign.css", import.meta.url), "utf8");
 
 test("primary dock renders the complete tool set in a vertical left sidebar", () => {
   for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill", "autoshape", "todo"]) {
     assert.ok(dock.includes('id: "' + tool + '"'), "missing sidebar tool: " + tool);
   }
   assert.match(dock, /sketchizi-tool-sidebar/);
-  assert.match(dock, /separated: true/);
+  assert.match(dock, /groupStart: true/);
   assert.match(dock, /setActiveTool/);
   assert.match(dock, /onMouseEnter=\{expandDock\}/);
   assert.match(dock, /className="sketchizi-tool-sidebar-active"[\s\S]*?onMouseEnter=\{expandDock\}/);
@@ -19,14 +19,14 @@ test("primary dock renders the complete tool set in a vertical left sidebar", ()
   assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|tuckedOffset/);
 });
 
-test("sidebar stays a left-edge, vertically centred, scrollable floating rail", () => {
+test("sidebar is a slim bottom-left rail with a clean 46px anchor", () => {
   const rail = sidebarCss.match(/\.sketchizi-tool-sidebar\s*\{([^}]*)\}/)?.[1] || "";
   assert.match(rail, /position:\s*fixed/);
-  assert.match(rail, /left:\s*16px/);
-  assert.match(rail, /bottom:\s*58px/);
-  assert.match(rail, /max-height:\s*calc\(100dvh - 112px\)/);
+  assert.match(rail, /left:\s*12px/);
+  assert.match(rail, /bottom:\s*12px/);
+  assert.match(rail, /width:\s*46px/);
   assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-expanded \.sketchizi-tool-sidebar-list/);
-  assert.match(sidebarCss, /overflow-y:\s*auto/);
+  assert.match(sidebarCss, /overflow:\s*visible/);
   assert.match(sidebarCss, /backdrop-filter:\s*blur/);
   assert.match(sidebarCss, /\.sketchizi-tool-sidebar-button\.is-active/);
 });
@@ -42,8 +42,8 @@ test("sidebar hides while the hamburger menu is open to prevent overlap", () => 
   assert.match(sidebarCss, /pointer-events: none/);
 });
 
-test("dock waits 180ms after pointer leaves and cancels collapse on re-entry", () => {
-  assert.match(dock, /const COLLAPSE_GRACE_MS = 180;/);
+test("dock waits 3000ms after pointer leaves and cancels collapse on re-entry", () => {
+  assert.match(dock, /const COLLAPSE_GRACE_MS = 3000;/);
   assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, COLLAPSE_GRACE_MS\)/);
   assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)/);
 });
