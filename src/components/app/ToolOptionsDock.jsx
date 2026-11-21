@@ -217,6 +217,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
         aria-label={`${label}: ${selected.label || ""}`}
         aria-haspopup="menu" aria-expanded={open} onClick={toggle}>
         <span className="sk-tool-choice-trigger-glyph" aria-hidden="true">{renderGlyph(selected)}</span>
+        {String(label).toLowerCase().includes("width") && <span className="sk-tool-choice-value">{selected.value}px</span>}
         <svg className={`sk-tool-choice-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && position && createPortal(
