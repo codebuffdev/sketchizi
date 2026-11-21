@@ -734,6 +734,13 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         </DockSelect>
       </DockGroup>}
 
+      {isDraw && <DockGroup label="Pen pressure">
+        <DockSelect label="Pen pressure" value={pressure ? "on" : "off"} onChange={(value) => update({ pressure: value === "on" })}>
+          <option value="on">Pressure enabled</option>
+          <option value="off">Pressure disabled</option>
+        </DockSelect>
+      </DockGroup>}
+
       {showRoughness && <DockGroup label="Roughness">
         <VisualOptionSelect label="Roughness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />
       </DockGroup>}
