@@ -105,43 +105,32 @@
 .sketchizi-tool-sidebar-button:not(.is-active) .sketchizi-tool-sidebar-key {
   color: #9aa0aa;
 }
-.sketchizi-tool-sidebar-tooltip {
-  position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  z-index: 10060;
+
+.sketchizi-tool-sidebar-collapse {
   display: inline-flex;
+  flex: 0 0 28px;
   align-items: center;
-  gap: 10px;
-  padding: 6px 9px;
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 8px;
-  background: #20232a;
-  color: #fff;
-  box-shadow: 0 5px 16px rgb(0 0 0 / 18%);
-  font-size: 11px;
-  font-weight: 550;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translate(-4px, -50%);
-  pointer-events: none;
-  transition: opacity .14s ease, transform .14s ease;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 28px;
+  margin-top: 3px;
+  border: 0;
+  border-top: 1px solid rgb(119 125 136 / 20%);
+  border-radius: 0 0 8px 8px;
+  background: transparent;
+  color: #858c98;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
 }
-.sketchizi-tool-sidebar-button:hover .sketchizi-tool-sidebar-tooltip,
-.sketchizi-tool-sidebar-button:focus-visible .sketchizi-tool-sidebar-tooltip {
-  opacity: 1;
-  transform: translate(0, -50%);
+.sketchizi-tool-sidebar-collapse:hover { color: #30343b; }
+.sketchizi-tool-sidebar-collapse span:first-child { font-size: 14px; line-height: 1; }
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-collapse {
+  border-top-color: rgb(255 255 255 / 15%);
+  color: #9ca3af;
 }
-.sketchizi-tool-sidebar-tooltip kbd {
-  min-width: 17px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  background: rgb(255 255 255 / 15%);
-  color: #f4f4f5;
-  font: inherit;
-  text-align: center;
-}
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-collapse:hover { color: #fff; }
 .sketchizi-tool-sidebar-divider {
   flex: 0 0 1px;
   width: 20px;
@@ -218,7 +207,7 @@
   .sketchizi-tool-sidebar-active { --sk-dock-button: 30px; }
   .sketchizi-tool-sidebar-button svg,
   .sketchizi-tool-sidebar-active svg { width: 18px; height: 18px; }
-  .sketchizi-tool-sidebar-tooltip { display: none; }
+
 }
 @media (pointer: coarse) and (min-width: 601px) {
   .sketchizi-tool-sidebar-button,
