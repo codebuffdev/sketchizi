@@ -175,6 +175,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           aria-controls="sketchizi-tool-sidebar-list"
           title={` ${activeToolMeta.label} — hover or focus to expand tools`}
           disabled={!canEdit && activeToolMeta.id !== "todo"}
+          onMouseEnter={expandDock}
           onClick={handleExpandClick}
         >
           <ToolIcon name={activeToolMeta.id} />
