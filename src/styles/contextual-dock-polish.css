@@ -771,3 +771,27 @@
   align-items: center;
   gap: 3px;
 }
+
+
+/* Smart auto-collapse: keep the contextual dock interactive only while open. */
+.app .sketchizi-tool-options-dock {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: opacity 180ms ease, transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.app .sketchizi-tool-options-dock.is-collapsed {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+.app .sketchizi-tool-options-dock.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-tool-options-dock {
+    transition: none;
+  }
+}
