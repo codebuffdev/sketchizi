@@ -264,7 +264,7 @@ try {
         await failingPage.mouse.down();
         await failingPage.mouse.move(failureX + 120, failureY + 90, { steps: 6 });
         await failingPage.mouse.up();
-        await failingPage.getByLabel("Local save failed", { exact: true }).waitFor({ timeout: 25000 });
+        await failingPage.locator(".canvas-tab-status-dot.is-error").waitFor({ state: "visible", timeout: 25000 });
         console.log(`PASS: a failed ${failedKey} write shows a local save error.`);
       } finally {
         await failingContext.close();
