@@ -5,6 +5,7 @@ import { getRecentFolderActivityLabel, getRecentFolderAvailability, getRecentFol
 export function useNativeSketchiziMenu({
   apiRef,
   fileActionsRef,
+  openCloudWorkspace,
   currentFolder,
   currentFolderFiles,
   recentFiles,
@@ -300,7 +301,7 @@ export function useNativeSketchiziMenu({
         node.dataset[key] = "true"; node.addEventListener("click", handler);
       };
       bind(recentMenu?.querySelector("[data-sketchizi-open-folder]"), "bound", () => fileActionsRef.current.openFolderFromDisk?.());
-      bind(recentMenu?.querySelector("[data-sketchizi-open-workspace]"), "bound", () => window.location.assign("/workspace"));
+      bind(recentMenu?.querySelector("[data-sketchizi-open-workspace]"), "bound", openCloudWorkspace);
       const currentFolderNode = recentMenu?.querySelector("[data-current-folder]");
       if (currentFolderNode) {
         currentFolderNode.textContent = currentFolder?.name ? `Folder: ${currentFolder.name}` : "No folder selected";
@@ -514,5 +515,5 @@ export function useNativeSketchiziMenu({
       window.visualViewport?.removeEventListener("resize", scheduleCleanup);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, recentFiles, recentFolders, refreshCurrentFolderFiles, useThemeDefaultBackground]);
+  }, [currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, openCloudWorkspace, recentFiles, recentFolders, refreshCurrentFolderFiles, useThemeDefaultBackground]);
 }

@@ -1011,6 +1011,7 @@ function App() {
       const refreshedTabs = await Promise.all((Array.isArray(stored) ? stored : []).map(async (tab) => {
         const session = tab.snapshot?.cloudSession;
         if (!session?.active || !session.diagramId) return tab;
+        if (["pending", "saving", "conflict"].includes(tab.snapshot.cloudSaveState?.state)) return tab;
         try {
           const result = await workspaceClient.getDiagram(session.diagramId);
           const { diagram, document, name } = normalizeCloudDiagramResponse(result, session.diagramId, { fallbackName: session.name || tab.name });
@@ -1075,9 +1076,14 @@ function App() {
           id: "canvas-1", name: "Canvas 1", startDate: getLocalDateString(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
           snapshot: captureCanvasTabSnapshot(),
         };
-        canvasTabsRef.current = [initial];
-        setCanvasTabs([initial]);
-        saveCanvasTabs([initial]).catch(() => {});
+        // A direct cloud open needs no empty local placeholder. Preserve a
+        // legacy local drawing when there is real content to restore.
+        const initialTabs = cloudDiagramId && !initial.snapshot.elements.some((element) => !element.isDeleted)
+          ? []
+          : [initial];
+        canvasTabsRef.current = initialTabs;
+        setCanvasTabs(initialTabs);
+        if (initialTabs.length) saveCanvasTabs(initialTabs).catch(() => {});
       }
       if (cloudDiagramId) {
         // Reopening a cloud URL should focus the tab already holding that
@@ -1137,6 +1143,7 @@ function App() {
         setCanvasTabs(nextTabs);
         activeCanvasIdRef.current = nextCloudTab.id;
         cloudRestoringTabIdRef.current = nextCloudTab.id;
+        cloudHydrationPendingTabIdRef.current = nextCloudTab.id;
         setActiveCanvasId(nextCloudTab.id);
         setActiveWorkspaceTabId(nextCloudTab.id);
 
@@ -1209,16 +1216,38 @@ function App() {
     return () => { cancelled = true; };
   }, [sketchReady, apiReady, cloudDiagramId, applyCanvasTabSnapshot, captureCanvasTabSnapshot, setSavedSketch]);
 
+  const captureOpenCanvasTabs = useCallback(() => {
+    const activeId = activeCanvasIdRef.current;
+    if (!apiRef.current || cloudRestoringTabIdRef.current === activeId) {
+      return canvasTabsRef.current;
+    }
+    const snapshot = captureCanvasTabSnapshot();
+    return canvasTabsRef.current.map((tab) => tab.id === activeId
+      ? { ...tab, snapshot }
+      : tab);
+  }, [captureCanvasTabSnapshot]);
+
+  const openCloudWorkspace = useCallback(async () => {
+    if (canvasTabsRestoredRef.current) {
+      const latest = captureOpenCanvasTabs();
+      canvasTabsRef.current = latest;
+      try {
+        await saveCanvasTabs(latest);
+      } catch (error) {
+        showToast(error.message || "Unable to preserve open canvases. Try opening Cloud Files again.", "error");
+        return;
+      }
+    }
+    window.location.assign("/workspace");
+  }, [captureOpenCanvasTabs, showToast]);
+
   useEffect(() => {
     const flushCanvasTabs = () => {
       if (!canvasTabsRestoredRef.current) return;
       const pending = canvasTabsSaveTimerRef.current !== null;
-      const snapshot = captureCanvasTabSnapshot();
-      const latest = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
-        ? { ...tab, snapshot }
-        : tab);
+      const latest = captureOpenCanvasTabs();
       canvasTabsRef.current = latest;
-      if (pending) saveCanvasTabsPagehideBackup(latest);
+      if (pending || cloudSessionRef.current.active) saveCanvasTabsPagehideBackup(latest);
       saveCanvasTabs(latest).catch(() => {});
     };
     window.addEventListener("pagehide", flushCanvasTabs);
@@ -1226,7 +1255,7 @@ function App() {
       window.removeEventListener("pagehide", flushCanvasTabs);
       if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
     };
-  }, [captureCanvasTabSnapshot]);
+  }, [captureOpenCanvasTabs]);
 
   useEffect(() => {
     if (!canvasTabsRestoredRef.current) return;
@@ -1526,7 +1555,7 @@ function App() {
     fileActionsRef,
     openExportStudio: () => setExportStudioOpen(true),
   });
-  useNativeSketchiziMenu({ apiRef, fileActionsRef, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
+  useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
@@ -2518,7 +2547,7 @@ function App() {
           <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
           <button type="button" onClick={() => window.location.reload()}>Reload latest version</button>
         </>}
-        <button type="button" onClick={() => window.location.assign("/workspace")} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
+        <button type="button" onClick={openCloudWorkspace} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
       </div>}
       <DesktopAppHeader
         commands={commands}
