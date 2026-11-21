@@ -14,6 +14,7 @@ test("primary dock renders the complete tool set in a vertical left sidebar", ()
   assert.match(dock, /separated: true/);
   assert.match(dock, /setActiveTool/);
   assert.match(dock, /onMouseEnter=\{expandDock\}/);
+  assert.match(dock, /className="sketchizi-tool-sidebar-active"[\s\S]*?onMouseEnter=\{expandDock\}/);
   assert.match(dock, /onMouseLeave=\{scheduleCollapse\}/);
   assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|tuckedOffset/);
 });
