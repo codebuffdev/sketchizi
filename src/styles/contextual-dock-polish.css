@@ -12,7 +12,7 @@
   --sk-ctx-corner-clear: 170px;
   gap: 2px !important;
   min-height: 44px !important;
-  padding: 5px 8px !important;
+  padding: 5px 12px !important;
   border-radius: 14px !important;
   /* Stay clear of the zoom control (left) and canvas date (right). */
   max-width: calc(100% - (var(--sk-ctx-corner-clear) * 2)) !important;
@@ -25,15 +25,6 @@
   border-color: #e5e8eb !important;
   background: rgb(255 255 255 / 97%) !important;
   box-shadow: 0 5px 18px rgb(25 33 42 / 9%), 0 1px 3px rgb(25 33 42 / 5%) !important;
-}
-
-/* Context chip: quiet label, never competes with the controls. */
-.app .sketchizi-tool-options-dock .sk-tool-dock-context {
-  min-height: var(--sk-ctx-control);
-  padding-inline: 8px !important;
-  margin-right: 2px;
-  border-radius: var(--sk-ctx-radius);
-  opacity: .9;
 }
 
 /* Groups are separated by a hairline divider instead of heavy borders. */
@@ -54,8 +45,11 @@
   width: 1px;
   background: var(--sk-ctx-divider);
 }
-.app .sketchizi-tool-options-dock .sk-tool-dock-context + .sk-tool-dock-group { margin-left: 2px; }
-.app .sketchizi-tool-options-dock .sk-tool-dock-context + .sk-tool-dock-group::before { display: none; }
+.app .sketchizi-tool-options-dock > .sk-tool-dock-group:first-of-type {
+  margin-left: 0;
+  padding-left: 0 !important;
+}
+.app .sketchizi-tool-options-dock > .sk-tool-dock-group:first-of-type::before { display: none; }
 
 /* Consistent control box for every button-like control. */
 .app .sketchizi-tool-options-dock .sk-tool-option-button,
