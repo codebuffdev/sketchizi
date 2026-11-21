@@ -818,7 +818,7 @@ export default function SketchiziCanvas({
         excalidrawAPI={registerExcalidrawAPI}
         onExcalidrawAPI={registerExcalidrawAPI}
         theme={getCanvasAppearanceTheme(activeAppearance, isDarkTheme)}
-        viewModeEnabled={viewModeEnabled}
+        viewModeEnabled={viewModeEnabled || hudSuppressed}
         aiEnabled={true}
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}

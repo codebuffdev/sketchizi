@@ -2556,6 +2556,87 @@ function App() {
 
   isZenModeRef.current = isZenMode;
   const toggleZenMode = useCallback(() => setIsZenMode((value) => !value), []);
+
+  // The startup chooser and full-screen design catalog are canvas-free
+  // surfaces even while an existing canvas remains mounted underneath them.
+  const isWelcomeOrDashboardOpen = Boolean(
+    startupChooserOpen ||
+    designStudioOpen ||
+    (canvasTabsReady && canvasTabs.length === 0) ||
+    !hasMountableCanvas({ tabs: canvasTabs, activeCanvasId })
+  );
+
+  useEffect(() => {
+    if (!isWelcomeOrDashboardOpen) return undefined;
+
+    // Tear down transient canvas UI before the welcome surface takes focus.
+    closeNativeMenu();
+    closeCommandPalette();
+    closeLeftPanel();
+    closePanel("properties");
+    closePanel("architecture-validation");
+    closePanel("shortcuts");
+    setMinimapOpen(false);
+    apiRef.current?.setActiveTool?.({ type: "selection" });
+    window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
+    return undefined;
+  }, [isWelcomeOrDashboardOpen, closeNativeMenu, closeCommandPalette, closeLeftPanel, closePanel]);
+
+  useEffect(() => {
+    if (!isWelcomeOrDashboardOpen) return undefined;
+
+    // Excalidraw listens globally for single-key tool shortcuts. Stop those
+    // shortcuts at the window capture phase while the welcome UI is active,
+    // without interfering with typing or Tab navigation inside the UI.
+    const toolShortcuts = new Set([
+      "r", "v", "p", "o", "d", "t", "a", "l", "h", "i", "f", "e", "k",
+      "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    ]);
+    const getWelcomeSurface = () => document.querySelector(".startup-canvas-chooser, .design-studio-screen");
+    const focusableSelector = "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+    const handleWelcomeKeyDown = (event) => {
+      const target = event.target;
+      const isEditingText = target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], [role='textbox'], .monaco-editor, .cm-editor");
+
+      if (event.key === "Tab") {
+        const surface = getWelcomeSurface();
+        if (!surface) return;
+        const focusable = Array.from(surface.querySelectorAll(focusableSelector))
+          .filter((element) => element.getClientRects().length > 0 && !element.hasAttribute("inert"));
+        if (!focusable.length) {
+          event.preventDefault();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+        if (event.shiftKey && (!surface.contains(active) || active === first)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (!surface.contains(active) || active === last)) {
+          event.preventDefault();
+          first.focus();
+        }
+        return;
+      }
+
+      if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing || isEditingText) return;
+      if (!toolShortcuts.has(String(event.key || "").toLowerCase())) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+    };
+    const focusFrame = window.requestAnimationFrame(() => {
+      const surface = getWelcomeSurface();
+      surface?.querySelector(focusableSelector)?.focus({ preventScroll: true });
+    });
+    window.addEventListener("keydown", handleWelcomeKeyDown, true);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      window.removeEventListener("keydown", handleWelcomeKeyDown, true);
+    };
+  }, [isWelcomeOrDashboardOpen]);
+
   useEffect(() => {
     const onKeyDown = (event) => {
       const isZenShortcut = event.altKey && !event.ctrlKey && !event.metaKey && (event.code === "KeyZ" || String(event.key).toLowerCase() === "z");
@@ -2604,7 +2685,7 @@ function App() {
   const noOpenCanvas = canvasTabsReady && canvasTabs.length === 0;
 
   return (
-    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${legacyPanelClasses.join(" ")} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activeLeftPanel === "iconLibrary" ? "icon-library" : activeRightPanel === "properties" ? "properties" : activeRightPanel === "rightRail" ? "architecture-validation" : activeTransientPanel || "none"} data-left-panel={activeLeftPanel || "none"} data-right-panel={activeRightPanel || "none"}>
+    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${legacyPanelClasses.join(" ")} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-welcome-open={isWelcomeOrDashboardOpen ? "true" : "false"} data-open-panel={activeLeftPanel === "iconLibrary" ? "icon-library" : activeRightPanel === "properties" ? "properties" : activeRightPanel === "rightRail" ? "architecture-validation" : activeTransientPanel || "none"} data-left-panel={activeLeftPanel || "none"} data-right-panel={activeRightPanel || "none"}>
       {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
@@ -2767,7 +2848,7 @@ function App() {
           <div className={activeWorkspaceTabId.startsWith("todo:") ? "desktop-canvas-view-hidden" : "desktop-canvas-view"}>
           {canvasMounted && (
           <SketchiziCanvas
-            hudSuppressed={startupChooserOpen}
+            hudSuppressed={isWelcomeOrDashboardOpen}
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
@@ -2987,13 +3068,14 @@ function App() {
         sendChatMessage={sendChatMessage}
       />
 
-      <ZenHud
-        hidden={startupChooserOpen || noOpenCanvas}
-        isZenMode={isZenMode}
-        onToggleZen={toggleZenMode}
-        aiOpen={aiAskOpen}
-        onToggleAi={toggleAiAsk}
-      />
+      {!isWelcomeOrDashboardOpen && (
+        <ZenHud
+          isZenMode={isZenMode}
+          onToggleZen={toggleZenMode}
+          aiOpen={aiAskOpen}
+          onToggleAi={toggleAiAsk}
+        />
+      )}
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
 
       {toast && (
