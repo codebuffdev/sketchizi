@@ -207,3 +207,254 @@
   .sketchizi-tool-sidebar,
   .sketchizi-tool-sidebar * { transition: none !important; }
 }
+
+
+/* Infinite canvas dock — compact bottom-left trigger and slim grouped rail. */
+.app .sketchizi-tool-sidebar {
+  --sk-dock-btn-w: 36px;
+  --sk-dock-btn-h: 36px;
+  --sk-dock-icon: 19px;
+  position: fixed;
+  z-index: 10040;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: 46px;
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  gap: 0;
+  overflow: visible;
+  border: 1px solid rgb(148 163 184 / 20%);
+  border-radius: 14px;
+  background: #fff;
+  color: #475569;
+  box-shadow: 0 6px 22px rgb(15 23 42 / 13%);
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.app .sketchizi-tool-sidebar.is-expanded {
+  padding: 5px;
+  overflow: visible;
+  background: #fff;
+  border-color: rgb(148 163 184 / 26%);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 16%);
+}
+.app .sketchizi-tool-sidebar-list {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  scrollbar-width: none;
+  transition: max-height .34s cubic-bezier(.22, 1, .36, 1), opacity .18s ease, margin .22s ease;
+}
+.app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
+  max-height: calc(100dvh - 100px);
+  margin-bottom: 0;
+  opacity: 1;
+  pointer-events: auto;
+}
+.app .sketchizi-tool-sidebar-button,
+.app .sketchizi-tool-sidebar-active {
+  position: relative;
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  box-sizing: border-box;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: color .14s ease, background .14s ease, border-color .14s ease, transform .14s ease;
+}
+.app .sketchizi-tool-sidebar-button svg,
+.app .sketchizi-tool-sidebar-active svg {
+  display: block;
+  width: var(--sk-dock-icon);
+  height: var(--sk-dock-icon);
+}
+.app .sketchizi-tool-sidebar-button:hover:not(:disabled) {
+  background: rgb(148 163 184 / 12%);
+  color: #273449;
+}
+.app .sketchizi-tool-sidebar-button.is-active,
+.app .sketchizi-tool-sidebar-active {
+  border-color: rgb(99 102 241 / 30%);
+  background: #eef2ff;
+  color: #3730a3;
+  box-shadow: none;
+}
+.app .sketchizi-tool-sidebar-button:active:not(:disabled),
+.app .sketchizi-tool-sidebar-active:active:not(:disabled) { transform: scale(.96); }
+.app .sketchizi-tool-sidebar-button:disabled,
+.app .sketchizi-tool-sidebar-active:disabled { opacity: .38; cursor: not-allowed; }
+.app .sketchizi-tool-sidebar-button:focus-visible,
+.app .sketchizi-tool-sidebar-active:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+.app .sketchizi-tool-sidebar-divider {
+  flex: 0 0 1px;
+  width: 18px;
+  height: 1px;
+  margin: 4px 0;
+  background: currentColor;
+  opacity: .1;
+}
+.app .sketchizi-tool-sidebar-tooltip {
+  position: absolute;
+  z-index: 10060;
+  left: calc(100% + 10px);
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: max-content;
+  max-width: 220px;
+  padding: 7px 9px;
+  border: 1px solid rgb(148 163 184 / 24%);
+  border-radius: 8px;
+  background: #fff;
+  color: #273449;
+  box-shadow: 0 5px 16px rgb(15 23 42 / 14%);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(3px, -50%);
+  transition: opacity .12s ease, transform .12s ease;
+}
+.app .sketchizi-tool-sidebar-tooltip kbd {
+  padding: 3px 5px;
+  border: 1px solid rgb(148 163 184 / 28%);
+  border-radius: 5px;
+  background: rgb(148 163 184 / 10%);
+  color: #64748b;
+  font: inherit;
+  font-size: 10px;
+}
+.app .sketchizi-tool-sidebar-button:hover .sketchizi-tool-sidebar-tooltip,
+.app .sketchizi-tool-sidebar-button:focus-visible .sketchizi-tool-sidebar-tooltip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+.app .sketchizi-tool-sidebar-collapsed {
+  display: flex;
+  flex: 0 0 52px;
+  width: 46px;
+  height: 52px;
+  max-height: 52px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  opacity: 1;
+  transition: max-height .2s ease, opacity .14s ease;
+}
+.app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-collapsed {
+  max-height: 0;
+  height: 0;
+  flex-basis: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.app .sketchizi-tool-sidebar-active {
+  position: relative;
+  flex: 0 0 52px;
+  width: 46px;
+  height: 52px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+.app .sketchizi-tool-sidebar-active svg {
+  width: 20px;
+  height: 20px;
+  transform: translateY(-2px);
+}
+.app .sketchizi-tool-sidebar-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 14px;
+  height: 2.5px;
+  border-radius: 99px;
+  background: currentColor;
+  opacity: .24;
+  transform: translateX(-50%);
+}
+.app .sketchizi-tool-sidebar-chevron {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 9px;
+  height: 9px;
+  opacity: .48;
+}
+.app .sketchizi-tool-sidebar-active:hover {
+  background: rgb(148 163 184 / 10%);
+}
+.app .sketchizi-tool-sidebar.is-dark {
+  border-color: rgb(148 163 184 / 20%);
+  background: #191e2a;
+  color: #cbd5e1;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 34%);
+}
+.app .sketchizi-tool-sidebar.is-dark.is-expanded {
+  background: #191e2a;
+  border-color: rgb(148 163 184 / 24%);
+}
+.app .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 7%);
+  color: #f8fafc;
+}
+.app .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button.is-active,
+.app .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-active {
+  border-color: rgb(129 140 248 / 45%);
+  background: #262e40;
+  color: #e8ecf4;
+}
+.app .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-tooltip {
+  border-color: rgb(148 163 184 / 22%);
+  background: #232938;
+  color: #e8ecf4;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 34%);
+}
+.app .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-tooltip kbd {
+  border-color: rgb(148 163 184 / 24%);
+  background: rgb(148 163 184 / 10%);
+  color: #aeb9cc;
+}
+.app .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-divider { background: #fff; opacity: .1; }
+.app .sketchizi-tool-sidebar.is-menu-open {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+@media (max-width: 600px) {
+  .app .sketchizi-tool-sidebar { left: 12px; bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-tool-sidebar,
+  .app .sketchizi-tool-sidebar * { transition: none !important; }
+}
