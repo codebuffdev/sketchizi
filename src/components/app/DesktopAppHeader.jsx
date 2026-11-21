@@ -838,9 +838,9 @@ export default function DesktopAppHeader({
                     <CanvasActionIcon name="backup" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Recovery backup</strong><small>Download a portable backup of this canvas</small></span>
                   </button>
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }} aria-label="Export canvas">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }} aria-label="Export studio">
                     <CanvasActionIcon name="export" />
-                    <span className="canvas-tabs-active-menu-action-copy"><strong>Export canvas</strong><small>Choose an export format and settings</small></span>
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>Export studio…</strong><small>Choose PNG, SVG, clipboard and export settings</small></span>
                   </button>
                 </div>
               </section>
