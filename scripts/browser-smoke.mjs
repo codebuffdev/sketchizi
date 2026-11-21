@@ -457,6 +457,51 @@ try {
   await authLayout.page.getByRole("button", { name: "Close sign-in dialog" }).click();
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor({ state: "detached" });
 
+  const cloudTabs = await makePage({ width: 1280, height: 800 });
+  const diagrams = ["First cloud drawing", "Second cloud drawing"].map((name, index) => ({
+    id: `cloud-${index + 1}`,
+    name,
+    projectId: "test-project",
+    revision: 1,
+    format: "excalidraw",
+    document: { elements: [], appState: {}, files: {} },
+  }));
+  await cloudTabs.page.route("**/api/**", async (route) => {
+    const { pathname } = new URL(route.request().url());
+    const diagram = diagrams.find(({ id }) => pathname === `/api/workspace/diagrams/${id}`);
+    if (diagram) return route.fulfill({ json: diagram });
+    const responses = {
+      "/api/auth/me": { authenticated: true, user: { name: "Workspace smoke" } },
+      "/api/auth/csrf": { token: "test-token", headerName: "X-CSRF-Token" },
+      "/api/workspace/limits": { diagramCount: 2, diagramLimit: 3 },
+      "/api/workspace/projects": [{ id: "test-project", name: "Smoke project" }],
+      "/api/workspace/projects/test-project/diagrams": diagrams,
+    };
+    await route.fulfill({ json: responses[pathname] ?? {} });
+  });
+  await cloudTabs.page.goto(`${baseURL}/?editor=1&cloudDiagramId=cloud-1&cloudProjectId=test-project`);
+  const firstCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[0].name, { exact: true }));
+  const secondCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[1].name, { exact: true }));
+  await firstCloudTab.waitFor();
+  await cloudTabs.page.getByRole("button", { name: "Open application menu" }).click();
+  await cloudTabs.page.getByRole("button", { name: "Cloud Files", exact: true }).click();
+  await cloudTabs.page.getByRole("article").filter({ hasText: diagrams[1].name })
+    .getByRole("button", { name: "Open", exact: true }).click();
+  await secondCloudTab.waitFor();
+  await firstCloudTab.click();
+  await cloudTabs.page.getByRole("button", { name: `Saved ${diagrams[0].name} to Cloud Workspace` }).waitFor();
+  if (await firstCloudTab.getAttribute("aria-selected") !== "true" ||
+      await cloudTabs.page.getByRole("tab").count() !== 2) {
+    throw new Error("Opening a second Workspace drawing must keep both cloud tabs without an empty local canvas.");
+  }
+  await secondCloudTab.click();
+  await cloudTabs.page.getByRole("button", { name: `Saved ${diagrams[1].name} to Cloud Workspace` }).waitFor();
+  if (await secondCloudTab.getAttribute("aria-selected") !== "true") {
+    throw new Error("The second drawing must remain selectable as a cloud tab.");
+  }
+  await cloudTabs.context.close();
+  console.log("PASS: opening a second Workspace drawing preserves both cloud tabs.");
+
   if (errors.length) throw new Error(`Browser console exceptions: ${errors.join(" | ")}`);
 } finally {
   await browser.close();
