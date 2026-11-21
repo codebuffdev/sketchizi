@@ -33,7 +33,7 @@ test("dock keeps clear of the zoom/date row on every width", () => {
 
 test("properties dock starts directly with styling controls and has uniform horizontal padding", () => {
   assert.doesNotMatch(dockSource, /sk-tool-dock-context|ContextShapeIcon/);
-  assert.match(dockSource, /data-tool=\{type\}[\s\S]*?\{<DockGroup label=\{isHighlighter \? "Fill style" : isText \? "Text color" : isShape \|\| isLaser \? "Color & fill" : "Stroke color"\}>/);
+  assert.match(dockSource, /data-tool=\{type\}[\s\S]*?\{<DockGroup label=\{isHighlighter \? "Fill style" : isText \? "Text color" : isShape \|\| isHighlighter \? "Color & fill" : "Stroke color"\}>/);
   assert.ok(css.includes("padding: 5px !important;"));
   assert.ok(css.includes("height: 46px !important;"));
   assert.ok(css.includes("border-radius: 9999px !important;"));
