@@ -37,7 +37,6 @@
   color: #252a35 !important;
   box-shadow: var(--sk-hud-light-shadow) !important;
 }
-.app .sketchizi-tool-sidebar.is-expanded { height: auto !important; }
 .app .sketchizi-tool-sidebar-collapsed {
   position: relative;
   width: 46px;
@@ -75,13 +74,35 @@
   color: inherit;
 }
 .app .sketchizi-tool-sidebar-list {
+  position: absolute !important;
+  left: -1px !important;
+  bottom: calc(100% + 8px) !important;
+  z-index: 4;
+  width: 46px !important;
+  max-height: calc(100dvh - 112px) !important;
   gap: 4px !important;
   padding: 6px !important;
-  margin: 0 0 4px !important;
+  margin: 0 !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--sk-hud-dark-border);
+  border-radius: 16px;
+  background: var(--sk-hud-dark-bg);
+  color: inherit;
+  box-shadow: var(--sk-hud-dark-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   transform-origin: bottom center;
-  transition: opacity 240ms var(--sk-hud-enter), transform 240ms var(--sk-hud-enter), filter 240ms var(--sk-hud-enter), max-height 240ms var(--sk-hud-enter);
+  transition: opacity 240ms var(--sk-hud-enter), transform 240ms var(--sk-hud-enter), filter 240ms var(--sk-hud-enter);
+}
+.app.theme-light .sketchizi-tool-sidebar-list {
+  border-color: var(--sk-hud-light-border);
+  background: var(--sk-hud-light-bg);
+  box-shadow: var(--sk-hud-light-shadow);
 }
 .app .sketchizi-tool-sidebar:not(.is-expanded) .sketchizi-tool-sidebar-list {
+  transition-duration: 140ms;
+  transition-timing-function: var(--sk-hud-exit);
   opacity: 0;
   transform: translateY(10px) scale(.95);
   filter: blur(4px);
@@ -89,6 +110,8 @@
 }
 .app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
   opacity: 1;
+  transition-duration: 240ms;
+  transition-timing-function: var(--sk-hud-enter);
   transform: translateY(0) scale(1);
   filter: blur(0);
   pointer-events: auto;
@@ -171,6 +194,13 @@
   width: 30px !important;
   min-width: 30px !important;
   text-align: right !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group {
+  animation: sk-hud-module-in 180ms var(--sk-hud-enter) both !important;
+}
+@keyframes sk-hud-module-in {
+  from { opacity: 0; transform: scale(.92); }
+  to { opacity: 1; transform: scale(1); }
 }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber {
   width: auto !important;
