@@ -129,3 +129,145 @@
   pointer-events: none;
   transform: translate(-8px, -50%);
 }
+
+
+/* New compact bottom-left dock: one active tool at rest, full toolset on demand. */
+.sketchizi-tool-sidebar {
+  top: auto !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  transform: none !important;
+  width: auto !important;
+  max-height: min(72dvh, 720px) !important;
+  overflow: visible !important;
+  gap: 4px !important;
+  padding: 6px !important;
+  border: 1px solid var(--ui-border, #2a303c) !important;
+  border-radius: 15px !important;
+  background: var(--ui-surface-solid, #181c24) !important;
+  color: var(--ui-text, #e6eaf2) !important;
+  box-shadow: 0 12px 32px -4px rgb(0 0 0 / 48%), 0 0 0 1px rgb(255 255 255 / 4%) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  transition: width .2s ease, height .2s ease, opacity .18s ease, transform .2s ease !important;
+}
+.sketchizi-tool-sidebar.is-collapsed {
+  width: 48px !important;
+  height: 54px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+}
+.sketchizi-tool-sidebar-collapsed-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ui-surface-elevated, #1f242e);
+  color: inherit;
+  cursor: pointer;
+}
+.sketchizi-tool-sidebar-collapsed-button svg {
+  width: 20px;
+  height: 20px;
+}
+.sketchizi-tool-sidebar-collapsed-button::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  width: 10px;
+  height: 2px;
+  border-radius: 99px;
+  background: currentColor;
+  opacity: .42;
+}
+.sketchizi-tool-sidebar-collapsed-chevron {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  font-size: 12px;
+  line-height: 1;
+  opacity: .65;
+}
+.sketchizi-tool-sidebar-expanded-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-height: min(68dvh, 680px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.sketchizi-tool-sidebar-expanded-list::-webkit-scrollbar { display: none; }
+.sketchizi-tool-sidebar-collapse-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .65;
+}
+.sketchizi-tool-sidebar-collapse-button:hover { background: var(--ui-hover, #262c38); opacity: 1; }
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-button {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border-radius: 9px;
+}
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-button.is-active {
+  flex-basis: 45px;
+  width: 45px;
+  height: 45px;
+  min-height: 45px;
+  border-radius: 12px;
+  border-color: #5556b9;
+  background: #292b49;
+  color: #fff;
+  box-shadow: 0 6px 18px -2px rgb(99 102 241 / 35%);
+}
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-divider {
+  width: 24px;
+  margin: 2px 0;
+}
+.sketchizi-tool-sidebar.is-dark {
+  border-color: #2a303c !important;
+  background: #181c24 !important;
+  color: #e6eaf2 !important;
+}
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-collapsed-button {
+  background: #1f242e;
+}
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button.is-active {
+  border-color: #5556b9;
+  background: #292b49;
+}
+.app.theme-light .sketchizi-tool-sidebar {
+  border-color: #dce1ea !important;
+  background: rgb(255 255 255 / 94%) !important;
+  color: #141923 !important;
+  box-shadow: 0 10px 28px -4px rgb(15 23 42 / 14%), 0 0 0 1px rgb(15 23 42 / 5%) !important;
+}
+.app.theme-light .sketchizi-tool-sidebar-collapsed-button { background: #f1f4f9; }
+.app.theme-light .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-button.is-active {
+  border-color: #6366f1;
+  background: #e8eaff;
+  color: #3437a4;
+}
+@media (max-width: 600px) {
+  .sketchizi-tool-sidebar { left: 8px !important; bottom: 8px !important; }
+}
+@media (pointer: coarse) {
+  .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-button { min-height: 38px; height: 38px; }
+}
