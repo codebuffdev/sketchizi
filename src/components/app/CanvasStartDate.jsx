@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatCanvasStartDate, getLocalDateString, isValidCanvasStartDate } from "../../features/canvas/canvasStartDate.js";
+import { getLocalDateString, isValidCanvasStartDate } from "../../features/canvas/canvasStartDate.js";
 import "./CanvasStartDate.css";
 
 const CHECKPOINT_MS = 5 * 60 * 1000;
