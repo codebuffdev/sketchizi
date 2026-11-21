@@ -116,3 +116,6 @@
   .canvas-start-date { gap:4px; padding:0 4px; font-size:11px; }
   .canvas-start-date-popover { left:auto; right:0; }
 }
+
+/* Zoom is available in the top workspace utility cluster; keep the viewport's bottom HUD clear. */
+.app .excalidraw .zoom-actions { display: none !important; }
