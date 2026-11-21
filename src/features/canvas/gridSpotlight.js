@@ -28,8 +28,8 @@ export function spotlightElementCenter(element, state) {
 export function spotlightGridPattern(state) {
   const zoom = Math.max(0.01, finite(state?.zoom?.value ?? state?.zoom, 1));
   const size = clamp(finite(state?.gridSize, 20), 5, 100);
-  // Four times as many fine cells as the original 20px pattern at 100% zoom.
-  const spacing = clamp(size * zoom / 2.5, 4, 32);
+  // Match the reference workspace: 40px minor cells at 100% zoom.
+  const spacing = clamp(size * zoom * 2, 4, 96);
   return {
     spacing,
     offsetX: modulo(finite(state?.scrollX) * zoom, spacing),
@@ -40,7 +40,7 @@ export function spotlightGridPattern(state) {
 export function workspaceCoarseGridPattern(state) {
   const fine = spotlightGridPattern(state);
   const zoom = Math.max(0.01, finite(state?.zoom?.value ?? state?.zoom, 1));
-  const spacing = fine.spacing * 10;
+  const spacing = fine.spacing * 4;
   return {
     spacing,
     offsetX: modulo(finite(state?.scrollX) * zoom, spacing),
