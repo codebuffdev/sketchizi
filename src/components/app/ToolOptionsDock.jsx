@@ -407,6 +407,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       : ["note", "sticky-note", "stickynote", "notes"].includes(customTool) ? "text"
         : ["highlighter", "area-mask", "areamask"].includes(customTool) ? customTool
           : activeTool;
+  const previousToolRef = useRef(tool);
+  useEffect(() => {
+    if (previousToolRef.current === tool) return;
+    previousToolRef.current = tool;
+    collapseDockImmediately();
+  }, [tool]);
   const type = selectionType || tool;
   const isShape = ["rectangle", "diamond", "ellipse"].includes(type);
   const isLine = ["line", "arrow"].includes(type);
@@ -742,9 +748,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       onClickCapture={(event) => {
         const button = event.target?.closest?.("button");
         if (button && !button.matches('[aria-haspopup="menu"], [aria-haspopup="dialog"]') &&
-          !button.closest(".sk-tool-opacity-scrubber") && !button.closest(".sk-tool-font-size-presets")) {
+          !button.closest(".sk-tool-opacity-scrubber")) {
           collapseDockImmediately();
         }
+      }}
+      onChangeCapture={(event) => {
+        if (event.target?.matches?.("select")) collapseDockImmediately();
       }}
     >
       {<DockGroup label={isHighlighter ? "Fill style" : isText ? "Text color" : isShape || isLaser ? "Color & fill" : "Stroke color"}>
