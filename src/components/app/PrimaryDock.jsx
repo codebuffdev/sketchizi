@@ -104,7 +104,9 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
   const liveSelectedElements = (apiRef.current?.getSceneElements?.() || []).filter((element) =>
     selectedIds.includes(element.id) && element && !element.isDeleted && !element.deleted,
   );
-  const selected = liveSelectedElements.length
+  const hasLiveSelectionState = appState.selectedElementIds &&
+    typeof appState.selectedElementIds === "object";
+  const selected = hasLiveSelectionState
     ? liveSelectedElements
     : selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const selectedType = selected.length > 0 && selected.every((element) => element.type === selected[0].type)
