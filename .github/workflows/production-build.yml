@@ -92,6 +92,33 @@ jobs:
       - name: Run template creation browser smoke test
         run: node scripts/browser-smoke.mjs
 
+      - name: Build the base editor for persistence compatibility
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          git worktree add --detach /tmp/sketchizi-base-editor "$BASE_SHA"
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/sketchizi-base-editor/node_modules
+          cd /tmp/sketchizi-base-editor
+          npm run build
+          npm run preview -- --host 127.0.0.1 --port 4174 --strictPort >/tmp/sketchizi-base-preview.log 2>&1 &
+
+      - name: Verify a base-build drawing opens on the candidate
+        if: github.event_name == 'pull_request'
+        env:
+          SKETCHIZI_PREVIOUS_BUILD_URL: http://127.0.0.1:4174
+        run: |
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent "$SKETCHIZI_PREVIOUS_BUILD_URL/" >/dev/null; then
+              node scripts/browser-drawing-smoke.mjs
+              exit
+            fi
+            sleep 1
+          done
+          cat /tmp/sketchizi-base-preview.log
+          exit 1
+
       - name: Verify drawing persistence and file round trip
         env:
           SKETCHIZI_VERIFY_FILE_ROUND_TRIP: "1"
