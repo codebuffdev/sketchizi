@@ -318,7 +318,7 @@ try {
   // Legacy content-bound assertions require Focus (Local), not the new default.
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const gridSettings = gridSession.page.getByRole("dialog", { name: "Canvas style" });
-  await gridSettings.getByRole("button", { name: /Local Focus Grid/ }).click();
+  await gridSettings.getByRole("button", { name: /Local Focus/ }).click();
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-local-style"),
