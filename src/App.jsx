@@ -2593,6 +2593,12 @@ function App() {
         minimapOpen={minimapOpen}
         canvasTabs={canvasTabs.flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id }] : [tab])}
         activeCanvasId={activeWorkspaceTabId}
+        canvasId={activeCanvasId}
+        canvasStartDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
+        canvasActivity={canvasTabs.find((tab) => tab.id === activeCanvasId)?.activity || []}
+        onCanvasActivityChange={updateCanvasActivity}
+        onCanvasStartDateChange={updateActiveCanvasStartDate}
+        canvasDateDisabled={!collaborationCanEdit}
         onSelectCanvasTab={selectWorkspaceTab}
         onCloseTodoTab={closeTodoTab}
         onCreateCanvasTab={createCanvasTab}
@@ -2686,13 +2692,9 @@ function App() {
             pageContext={canvasPageContext}
             key={activeCanvasId}
             canvasId={activeCanvasId}
-            startDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
-            activity={canvasTabs.find((tab) => tab.id === activeCanvasId)?.activity || []}
-            onActivityChange={updateCanvasActivity}
             todoItems={canvasTabs.find((tab) => tab.id === activeCanvasId)?.todoItems || []}
             onTodoItemsChange={updateCanvasTodoItems}
             onOpenTodoTab={openTodoTab}
-            onStartDateChange={updateActiveCanvasStartDate}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
             handleDrop={handleDrop}
