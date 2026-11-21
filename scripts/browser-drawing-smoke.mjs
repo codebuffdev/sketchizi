@@ -114,7 +114,7 @@ try {
   await viewport.waitFor({ state: "visible" });
   // Do not draw while IndexedDB restoration is still replacing the scene.
   await ensureHeaderVisible();
-  await page.locator(".desktop-app-document-identity-dirty-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
+  await page.locator(".canvas-tab-status-dot.is-ready, .canvas-tab-status-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
   const bounds = await viewport.boundingBox();
   if (!bounds) throw new Error("Excalidraw viewport has no visible bounds.");
 
@@ -171,7 +171,7 @@ try {
   if (previousBuild) await page.unroute(appRequests, usePreviousBuild);
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
-  await page.locator(".desktop-app-document-identity-dirty-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
+  await page.locator(".canvas-tab-status-dot.is-ready, .canvas-tab-status-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
   await page.evaluate((original) => { window.__drawingSmokeOriginalBounds = original; }, { id: drawn.id, x: drawn.x, y: drawn.y });
   await awaitScene(async () => {
     const scene = await currentDrawing();
