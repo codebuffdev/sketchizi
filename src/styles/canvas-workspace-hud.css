@@ -17,6 +17,8 @@
   bottom: 20px !important;
   width: 46px !important;
   min-width: 46px !important;
+  height: 46px !important;
+  min-height: 46px !important;
   padding: 0 !important;
   gap: 0 !important;
   border: 1px solid var(--sk-hud-dark-border) !important;
@@ -36,26 +38,41 @@
   box-shadow: var(--sk-hud-light-shadow) !important;
 }
 .app .sketchizi-tool-sidebar-collapsed {
-  width: 44px;
-  height: 44px;
+  position: relative;
+  width: 46px;
+  height: 46px;
   max-height: 46px;
   align-items: center;
   justify-content: center;
   overflow: visible;
 }
 .app .sketchizi-tool-sidebar-active {
-  width: 44px !important;
-  min-width: 44px !important;
-  height: 44px !important;
-  min-height: 44px !important;
-  flex-basis: 44px !important;
+  position: absolute !important;
+  inset: -1px !important;
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  flex-basis: 46px !important;
   border: 0 !important;
   border-radius: 15px !important;
   background: transparent !important;
   color: inherit !important;
   box-shadow: none !important;
 }
-.app .sketchizi-tool-sidebar-expand { display: none !important; }
+.app .sketchizi-tool-sidebar-expand {
+  position: absolute !important;
+  right: 2px !important;
+  bottom: 2px !important;
+  z-index: 3;
+  display: grid !important;
+  width: 12px !important;
+  height: 12px !important;
+  min-height: 12px !important;
+  border-radius: 5px !important;
+  background: rgba(255,255,255,.12) !important;
+  color: inherit;
+}
 .app .sketchizi-tool-sidebar-list {
   gap: 4px !important;
   padding: 6px !important;
@@ -164,6 +181,7 @@
 }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-fill { display: none !important; }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-ring { width: 20px !important; height: 20px !important; flex: 0 0 20px; }
+.app .sketchizi-tool-options-dock .sk-tool-opacity-popover { bottom: calc(100% + 10px) !important; }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-ring-drop { fill: currentColor; stroke: none; transform: scale(.52); transform-origin: center; }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-chevron { font-size: 13px; line-height: 1; }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-popover,
