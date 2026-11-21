@@ -14,6 +14,7 @@ const ICONS = {
   frame: <><rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 2" /><path d="M8 4v3M16 4v3M8 17v3M16 17v3M4 8h3M4 16h3M17 8h3M17 16h3" /></>,
   eraser: <><path d="m7 16 8-10a2 2 0 0 1 3 0l2 2a2 2 0 0 1 0 3l-8 9H9l-5-5a2 2 0 0 1 0-3l3-4" /><path d="m11 20 8 0" /></>,
   laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
+  highlighter: <><path d="m4 15 9-9 6 6-9 9H4v-6Z" /><path d="m11 8 6 6M4 20h16" /></>,
   bucketfill: <><path d="M4 13.5 13.5 4 20 10.5 10.5 20 4 13.5Z" /><path d="m9 8.5 6.5 6.5M17 16c0 2 1 3 2 3s2-1 2-3" /></>,
   autoshape: <><path d="M3 16c2-7 5-9 7-6" /><path d="M11 12h3m-2-2 2 2-2 2" /><rect x="16" y="6" width="5" height="12" rx="1" /></>,
   todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
@@ -31,8 +32,9 @@ const TOOLS = [
   { id: "diamond", label: "Diamond", keyHint: "D" },
   { id: "arrow", label: "Arrow", keyHint: "A" },
   { id: "line", label: "Line", keyHint: "L" },
-  { id: "freedraw", label: "Draw", keyHint: "P" },
+  { id: "freedraw", label: "Freehand", keyHint: "P" },
   { id: "text", label: "Text", keyHint: "T" },
+  { id: "highlighter", label: "Highlighter" },
   { id: "image", label: "Insert Image", keyHint: "I" },
   { id: "frame", label: "Frame", keyHint: "F" },
   { id: "eraser", label: "Eraser", keyHint: "E" },
@@ -57,7 +59,7 @@ function activateTool({ id, root, apiRef, onOpenTodoTab }) {
     else apiRef.current?.setActiveTool?.({ type: "image" });
     return;
   }
-  if (id === "bucketfill" || id === "autoshape") {
+  if (id === "bucketfill" || id === "autoshape" || id === "highlighter") {
     window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
     return;
   }
@@ -80,7 +82,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
   useEffect(() => {
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
-      if (["bucketfill", "autoshape"].includes(tool)) setCustomTool(tool);
+      if (["bucketfill", "autoshape", "highlighter"].includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
       if (!event.target?.closest?.(".sketchizi-tool-sidebar button")) setCustomTool(null);
@@ -178,7 +180,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
     if (tool.id !== "todo") {
       setActiveTool(tool.id);
-      setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
+      setCustomTool(["bucketfill", "autoshape", "highlighter"].includes(tool.id) ? tool.id : null);
     }
     collapseDock();
   };
