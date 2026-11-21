@@ -207,3 +207,18 @@
   .sketchizi-tool-sidebar,
   .sketchizi-tool-sidebar * { transition: none !important; }
 }
+
+
+/* Keep the active-tool trigger independent from the centered properties pill. */
+.sketchizi-tool-sidebar {
+  position: fixed !important;
+  left: 20px !important;
+  right: auto !important;
+  bottom: 20px !important;
+}
+@media (max-width: 600px) {
+  .sketchizi-tool-sidebar {
+    left: 20px !important;
+    bottom: 20px !important;
+  }
+}

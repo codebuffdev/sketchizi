@@ -423,3 +423,25 @@
   .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button,
   .sketchizi-tool-sidebar .sketchizi-tool-sidebar-indicator { transition: none !important; }
 }
+
+
+/* Keep the active-tool trigger independent from the centered properties pill. */
+.app .sketchizi-tool-sidebar {
+  position: fixed !important;
+  left: calc(20px + var(--safe-left, 0px)) !important;
+  right: auto !important;
+  bottom: calc(20px + var(--safe-bottom, 0px)) !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+
+/* Active tool trigger stays independently pinned to the lower-left corner. */
+.app .sketchizi-tool-sidebar {
+  position: fixed !important;
+  left: calc(20px + var(--safe-left, 0px)) !important;
+  right: auto !important;
+  bottom: calc(20px + var(--safe-bottom, 0px)) !important;
+  top: auto !important;
+  transform: none !important;
+}

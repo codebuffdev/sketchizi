@@ -33,10 +33,10 @@ test("dock keeps clear of the zoom/date row on every width", () => {
 
 test("properties dock starts directly with styling controls and has uniform horizontal padding", () => {
   assert.doesNotMatch(dockSource, /sk-tool-dock-context|ContextShapeIcon/);
-  assert.ok(dockSource.includes('data-tool={type}>\n      <DockGroup label="Stroke color">'));
-  assert.ok(css.includes("padding: 5px 12px !important;"));
-  assert.ok(css.includes(".sketchizi-tool-options-dock > .sk-tool-dock-group:first-of-type {\n  margin-left: 0;\n  padding-left: 0 !important;"));
-  assert.ok(css.includes(".sketchizi-tool-options-dock > .sk-tool-dock-group:first-of-type::before { display: none; }"));
+  assert.ok(dockSource.includes('data-tool={type}>\n      {<DockGroup label={isHighlighter ? "Fill style" : isText ? "Text color" : isShape || isLaser ? "Color & fill" : "Stroke color"}>'));
+  assert.ok(css.includes("padding: 5px !important;"));
+  assert.ok(css.includes("height: 46px !important;"));
+  assert.ok(css.includes("border-radius: 9999px !important;"));
 });
 
 test("polish is visual only: no controls hidden or removed", () => {
@@ -44,5 +44,5 @@ test("polish is visual only: no controls hidden or removed", () => {
   for (const name of ["sk-tool-layer-control", "sk-tool-text-size", "sk-tool-color-dot", "sk-tool-choice", "sk-tool-dock-opacity-value"]) {
     assert.ok(dockSource.includes(name), `${name} must still exist in the dock`);
   }
-  assert.doesNotMatch(css, /radial/i, "must not reintroduce the old radial dock");
+  assert.ok(css.includes(".sk-tool-opacity-ring-progress"), "opacity is represented by a compact radial ring inside the pill");
 });

@@ -1144,3 +1144,15 @@
     max-width: 170px;
   }
 }
+
+
+/* On phone widths the tab identity wrapper can span the account control's
+   hit area; keep its empty surface transparent while preserving tab actions. */
+@media (max-width: 520px) {
+  .app .desktop-app-document-title-float {
+    pointer-events: none;
+  }
+  .app .desktop-app-document-title-float > * {
+    pointer-events: auto;
+  }
+}

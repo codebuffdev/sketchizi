@@ -168,3 +168,20 @@
 .auth-github-repository-section { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-top: 1px solid var(--ui-border, #dedee5); border-bottom: 1px solid var(--ui-border, #dedee5); color: var(--ui-text-strong, #222); font-size: 12px; }
 .auth-github-repository-section > strong { font-size: 12px; font-weight: 700; }
 .auth-github-repository-status { color: var(--ui-text-muted, #777); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+
+
+/* The sign-in modal must sit above floating canvas tabs and tool docks. */
+.app .auth-dialog-backdrop {
+  z-index: 12000 !important;
+}
+.app .auth-dialog {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* Background canvas chrome must not intercept modal controls while sign-in is open. */
+.app:has(.auth-dialog-backdrop) .desktop-app-document-identity,
+.app:has(.auth-dialog-backdrop) .sketchizi-tool-sidebar {
+  pointer-events: none !important;
+}
