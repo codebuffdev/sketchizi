@@ -1338,8 +1338,9 @@
     height: 22px !important;
     margin: 0 2px !important;
   }
-  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-visibility-button {
-    display: none !important;
+  /* Keep the header pin control available; it also drives the existing auto-hide behavior. */
+  .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-header-pin-button {
+    display: inline-flex !important;
   }
   .app.canvas-first-header .desktop-app-header-right-rail.is-hidden {
     opacity: 0;
