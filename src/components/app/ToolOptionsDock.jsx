@@ -661,6 +661,28 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const layerDisabled = !selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean);
   const opacityValue = Math.max(0, Math.min(100, Number.isFinite(opacity) ? opacity : 100));
 
+  const layerOrderControl = !noLayerForTool ? (
+    <div className="sk-tool-layer-control">
+      <button type="button" className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`} aria-label="Layer order" aria-haspopup="menu" aria-expanded={layerMenuOpen}
+        disabled={layerDisabled} title={layerDisabled ? "Select an element to change layer order" : "Layer order"} ref={layerTriggerRef}
+        onClick={() => {
+          if (layerMenuOpen) { setLayerMenuOpen(false); return; }
+          const rect = layerTriggerRef.current?.getBoundingClientRect();
+          if (rect) setLayerMenuPosition({ left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)), bottom: Math.max(8, window.innerHeight - rect.top + 9) });
+          setLayerMenuOpen(true);
+        }}>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Z" /><path d="m4 12 8 4 8-4M4 17l8 4 8-4" /></svg>
+      </button>
+      {layerMenuOpen && layerMenuPosition && createPortal(
+        <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
+          <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span className="sk-tool-layer-action-icon">⇧</span><span className="sk-tool-layer-action-label">Bring to front</span></button>
+          <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span className="sk-tool-layer-action-icon">↑</span><span className="sk-tool-layer-action-label">Bring forward</span></button>
+          <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span className="sk-tool-layer-action-icon">↓</span><span className="sk-tool-layer-action-label">Send backward</span></button>
+          <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span className="sk-tool-layer-action-icon">⇩</span><span className="sk-tool-layer-action-label">Send to back</span></button>
+        </div>, document.querySelector(".app") || document.body)}
+    </div>
+  ) : null;
+
   return (
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
       {(isShape || isLaser || isText || !isHighlighter) && <DockGroup label={isShape || isLaser ? "Color & fill" : "Color"}>
@@ -795,28 +817,4 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       </DockGroup>
     </div>
   );
-  const layerOrderControl = (
-      {!noLayerForTool && (<>
-        <div className="sk-tool-layer-control">
-          <button type="button" className={`sk-tool-layer-trigger${layerMenuOpen ? " is-active" : ""}`} aria-label="Layer order" aria-haspopup="menu" aria-expanded={layerMenuOpen}
-            disabled={layerDisabled} title={layerDisabled ? "Select an element to change layer order" : "Layer order"} ref={layerTriggerRef}
-            onClick={() => {
-              if (layerMenuOpen) { setLayerMenuOpen(false); return; }
-              const rect = layerTriggerRef.current?.getBoundingClientRect();
-              if (rect) setLayerMenuPosition({ left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)), bottom: Math.max(8, window.innerHeight - rect.top + 9) });
-              setLayerMenuOpen(true);
-            }}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Z" /><path d="m4 12 8 4 8-4M4 17l8 4 8-4" /></svg>
-          </button>
-          {layerMenuOpen && layerMenuPosition && createPortal(
-            <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
-              <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span className="sk-tool-layer-action-icon">⇧</span><span className="sk-tool-layer-action-label">Bring to front</span></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span className="sk-tool-layer-action-icon">↑</span><span className="sk-tool-layer-action-label">Bring forward</span></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span className="sk-tool-layer-action-icon">↓</span><span className="sk-tool-layer-action-label">Send backward</span></button>
-              <button type="button" role="menuitem" onClick={() => moveLayers("back")}><span className="sk-tool-layer-action-icon">⇩</span><span className="sk-tool-layer-action-label">Send to back</span></button>
-            </div>, document.querySelector(".app") || document.body)}
-        </div>
-      </>)}}
-  );
-
 }
