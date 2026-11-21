@@ -824,7 +824,7 @@ export default function DesktopAppHeader({
               <section className="canvas-tabs-menu-section" aria-label="Download and export">
                 <h3>Download &amp; export</h3>
                 <div className="canvas-tabs-active-menu-actions">
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { if (currentDocumentFileBacked) onSaveToFile?.(); else onSaveAs?.(); setSaveDetailsOpen(false); }} aria-label={currentDocumentFileBacked ? "Save" : "Save to file"}>
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { if (currentDocumentFileBacked) onSaveToFile?.(); else onSaveAs?.(); setSaveDetailsOpen(false); }} aria-label={currentDocumentFileBacked ? "Save" : "Save to file…"}>
                     <CanvasActionIcon name="save" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>{currentDocumentFileBacked ? "Save" : "Save to file…"}</strong><small>{currentDocumentFileBacked ? "Save changes to this file" : "Choose where to save this canvas"}</small></span>
                   </button>
