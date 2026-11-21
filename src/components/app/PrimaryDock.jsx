@@ -66,6 +66,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   const [customTool, setCustomTool] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const collapseTimerRef = useRef(null);
+  const firstToolButtonRef = useRef(null);
+  const activeButtonRef = useRef(null);
 
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
@@ -100,6 +102,14 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     collapseTimerRef.current = null;
     setExpanded(true);
   };
+  const handleExpandClick = () => {
+    expandDock();
+    window.requestAnimationFrame(() => firstToolButtonRef.current?.focus());
+  };
+  const collapseDock = () => {
+    setExpanded(false);
+    window.requestAnimationFrame(() => activeButtonRef.current?.focus());
+  };
   const scheduleCollapse = () => {
     if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
     collapseTimerRef.current = window.setTimeout(() => {
@@ -113,7 +123,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       setActiveTool(tool.id);
       setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
     }
-    if (window.matchMedia?.("(hover: none)").matches) setExpanded(false);
+    if (window.matchMedia?.("(hover: none)").matches) collapseDock();
   };
 
   return (
@@ -125,7 +135,6 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       data-canvas-revision={canvasRevision}
       onMouseEnter={expandDock}
       onMouseLeave={scheduleCollapse}
-      onFocusCapture={expandDock}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) scheduleCollapse();
       }}
@@ -138,6 +147,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
               {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
               <button
                 type="button"
+                ref={tool.id === TOOLS[0].id ? firstToolButtonRef : undefined}
                 className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
                 aria-label={tool.label}
                 aria-pressed={selected}
@@ -151,7 +161,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
             </React.Fragment>
           );
         })}
-        <button type="button" className="sketchizi-tool-sidebar-collapse" onClick={() => setExpanded(false)} aria-label="Collapse drawing tools">
+        <button type="button" className="sketchizi-tool-sidebar-collapse" onClick={collapseDock} aria-label="Collapse drawing tools">
           <span aria-hidden="true">⌄</span>
           <span>Collapse</span>
         </button>
@@ -160,13 +170,14 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       <div className="sketchizi-tool-sidebar-collapsed" inert={expanded}>
         <button
           type="button"
+          ref={activeButtonRef}
           className="sketchizi-tool-sidebar-active"
           aria-label={`Active tool: ${activeToolMeta.label}. Expand drawing tools`}
           aria-expanded={expanded}
           aria-controls="sketchizi-tool-sidebar-list"
           title={` ${activeToolMeta.label} — hover or focus to expand tools`}
           disabled={!canEdit && activeToolMeta.id !== "todo"}
-          onClick={expandDock}
+          onClick={handleExpandClick}
         >
           <ToolIcon name={activeToolMeta.id} />
           {activeToolMeta.keyHint && <span className="sketchizi-tool-sidebar-key">{activeToolMeta.keyHint}</span>}
@@ -176,7 +187,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           className="sketchizi-tool-sidebar-expand"
           aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
           aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
+          onClick={handleExpandClick}
         >
           <span aria-hidden="true" />
         </button>
