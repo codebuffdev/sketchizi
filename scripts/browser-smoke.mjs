@@ -224,11 +224,18 @@ try {
   await gridSession.page.getByRole("button", { name: "Create new canvas" }).click();
   await gridSession.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   const drawingTools = gridSession.page.getByRole("navigation", { name: "Drawing tools" });
+  // The redesigned dock intentionally keeps its full tool list collapsed.
+  // Hover the active-tool pill first, just as a user does, then exercise the
+  // expanded tool buttons instead of clicking through the collapsed surface.
+  await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
+  );
   for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
     await drawingTools.getByRole("button", { name, exact: true }).click();
     await drawingTools.getByRole("button", { name, exact: true, pressed: true }).waitFor();
   }
-  console.log("PASS: sidebar quick tools activate directly and return to Select.");
+  console.log("PASS: dock expands on hover and quick tools activate, returning to Select.");
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
   // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
