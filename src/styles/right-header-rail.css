@@ -1254,3 +1254,12 @@
     border-color: var(--ui-border, #384252); background: var(--ui-surface-solid, #202733); color: var(--ui-text, #f2f2f4);
   }
 }
+
+
+/* Option 2 removes the persistent second toolbar; actions live in the active-tab popover. */
+.app.canvas-first-header .desktop-app-canvas-context-toolbar { display: none !important; }
+@media (min-width: 521px) {
+  .app.canvas-first-header .desktop-app-canvas-tabs-topbar {
+    max-width: min(820px, calc(100vw - 180px - var(--safe-left, 0px) - var(--safe-right, 0px)));
+  }
+}
