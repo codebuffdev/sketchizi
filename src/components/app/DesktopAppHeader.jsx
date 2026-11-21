@@ -805,12 +805,12 @@ export default function DesktopAppHeader({
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveNow?.()} aria-label="Save locally">
                     <CanvasActionIcon name="save" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save locally</strong><small>Keep a copy on this device</small></span>
-                    <span className={`canvas-tabs-action-state is-${saveState}`}>{saveStateLabels[saveState] || "Autosave"}</span>
+                    <span className={`canvas-tabs-action-state is-${saveState}`}>{saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving…" : saveState === "pending" ? "Unsaved" : saveState === "error" ? "Issue" : "Auto-save"}</span>
                   </button>
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud Workspace">
                     <CanvasActionIcon name="cloud" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save to cloud</strong><small>Sync with your Cloud Workspace</small></span>
-                    <span className={`canvas-tabs-action-state is-${cloudSaveState}`}>{cloudStatusLabels[cloudSaveState] || "Cloud Workspace"}</span>
+                    <span className={`canvas-tabs-action-state is-${cloudSaveState}`}>{cloudSaveState === "saved" ? "Saved" : cloudSaveState === "saving" ? "Saving…" : cloudSaveState === "pending" ? "Pending" : cloudSaveState === "error" ? "Issue" : cloudSaveState === "conflict" ? "Conflict" : "Cloud"}</span>
                   </button>
                 </div>
               </section>
