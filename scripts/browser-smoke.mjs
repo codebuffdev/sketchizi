@@ -192,6 +192,30 @@ try {
   await dismissStartupChooser(gridSession.page);
   await gridSession.page.getByRole("button", { name: "Create new canvas" }).click();
   await gridSession.page.locator(".excalidraw").waitFor({ timeout: 30000 });
+  const canvasLocator = gridSession.page.locator(".desktop-canvas-region .desktop-canvas-view .canvas");
+  const dateControl = gridSession.page.getByTitle("View canvas activity history");
+  const zoomControl = gridSession.page.getByRole("button", { name: "Reset zoom" });
+  await dateControl.waitFor();
+  await zoomControl.waitFor();
+  const zoom = await zoomControl.boundingBox();
+  const date = await dateControl.boundingBox();
+  const view = await canvasLocator.boundingBox();
+  const centerY = (box) => box.y + box.height / 2;
+  const right = view.x + view.width;
+  const bottom = view.y + view.height;
+  if (!zoom || !date || zoom.x < view.x || zoom.x - view.x > 48 ||
+      date.x + date.width > right + 1 || right - (date.x + date.width) > 48 ||
+      zoom.x + zoom.width >= date.x ||
+      zoom.y + zoom.height > bottom + 1 || date.y + date.height > bottom + 1 ||
+      Math.abs(centerY(zoom) - centerY(date)) > 12 ||
+      bottom - centerY(date) > 40) {
+    throw new Error(`Zoom and canvas date must share the bottom row: ${JSON.stringify({ zoom, date, view })}`);
+  }
+  await dateControl.click();
+  await gridSession.page.getByRole("region", { name: "Canvas activity history" }).waitFor();
+  await dateControl.click();
+  await gridSession.page.getByRole("region", { name: "Canvas activity history" }).waitFor({ state: "hidden" });
+
   const drawingTools = gridSession.page.getByRole("navigation", { name: "Drawing tools" });
   for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
     await drawingTools.getByRole("button", { name, exact: true }).click();
@@ -206,7 +230,6 @@ try {
   await gridSession.page.getByRole("dialog", { name: "Canvas style" })
     .getByRole("checkbox", { name: "Show pattern" }).uncheck();
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
-  const canvasLocator = gridSession.page.locator(".desktop-canvas-region .desktop-canvas-view .canvas");
   const sceneBounds = await canvasLocator.boundingBox();
   if (!sceneBounds?.width || !sceneBounds?.height) throw new Error("Editor canvas has no viewport");
   const readGrid = () => focusGrid.evaluate((node) => {
@@ -331,6 +354,12 @@ try {
       !twoLines(phoneGrid.baseImage)) {
     throw new Error(`Responsive rectangular grid overflows phone canvas: ${JSON.stringify(phoneGrid)}`);
   }
+  const phoneDate = await dateControl.boundingBox();
+  if (!phoneDate || phoneDate.x < 0 || phoneDate.x + phoneDate.width > 391 ||
+      phoneDate.y < 700 || phoneDate.y + phoneDate.height > 741) {
+    throw new Error(`The canvas date must fit in the phone's bottom corner: ${JSON.stringify(phoneDate)}`);
+  }
+  console.log("PASS: desktop zoom and date share a bottom row, and the date fits on phone.");
   await gridSession.context.close();
   console.log("PASS: always-on coarse square grid with persistent, content-bound rectangular fine detail.");
 
