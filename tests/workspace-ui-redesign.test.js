@@ -32,7 +32,7 @@ test("utility controls are ordered zoom, theme, AI, settings in a 34px row", () 
   const settings = header.indexOf("desktop-app-settings-wrap");
   assert.ok(zoom >= 0 && zoom < themeControl && themeControl < ai && ai < settings);
   assert.match(styles, /top:\s*12px\s*!important/);
-  assert.match(styles, /right:\s*12px\s*!important/);
+  assert.match(styles, /right:\s*var\(--header-rail-right,\s*12px\)\s*!important/);
   assert.match(styles, /gap:\s*8px\s*!important/);
   assert.match(styles, /height:\s*34px\s*!important/);
   assert.equal((header.match(/desktop-app-settings-row/g) || []).length, 2);
