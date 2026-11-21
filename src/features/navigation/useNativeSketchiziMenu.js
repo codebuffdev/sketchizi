@@ -20,6 +20,9 @@ export function useNativeSketchiziMenu({
     // switch controls both application chrome and Excalidraw's canvas.
     const applyCanvasSwatch = () => {};
     const onClick = (event) => {
+      // The hamburger trigger owns its own menu toggle. Do not let this
+      // document-level menu-action delegate interpret that interaction.
+      if (event.target?.closest?.("[data-hamburger-trigger]")) return;
       applyCanvasSwatch(event);
       const target = event.target?.closest?.('button, [role="button"], [role="menuitem"], a, [data-testid]');
       if (!target) return;
