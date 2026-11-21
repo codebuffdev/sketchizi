@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTabDisplayName } from "../../features/workspace/tabLabel.js";
+import { describeTabSync } from "../../features/workspace/tabCloudState.js";
 
 function CanvasGlyph() {
   return (
@@ -17,6 +18,22 @@ function TodoGlyph() {
       <rect x="3" y="2.5" width="14" height="15" rx="2" />
       <path d="m5.5 7 1.2 1.2L9 5.8M11 7h3.5M5.5 13l1.2 1.2L9 11.8M11 13h3.5" />
     </svg>
+  );
+}
+
+function TabSyncBadge({ meta }) {
+  if (!meta || meta.sourceType !== "cloud") return null;
+  const status = meta.syncStatus;
+  const label = describeTabSync(meta);
+  return (
+    <span className={`canvas-tab-sync is-${status}`} role="status" aria-label={label} title={label}>
+      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4.6 12.2h6.2a2.6 2.6 0 0 0 .4-5.2 3.7 3.7 0 0 0-7.2.9 2.2 2.2 0 0 0 .6 4.3Z" />
+        {status === "synced" && <path d="m6.2 9.2 1.3 1.3 2.3-2.5" />}
+      </svg>
+      {status === "dirty" && <i className="canvas-tab-sync-dot is-dirty" />}
+      {status === "error" && <i className="canvas-tab-sync-dot is-error" />}
+    </span>
   );
 }
 
@@ -117,7 +134,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
       >
         {tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}
         <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
-        {activeId === tab.id ? <span className={`canvas-tab-status-dot ${activeStatusClass}`} role="status" aria-label={activeStatusLabel} title={activeStatusLabel} /> : tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
+        {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : activeId === tab.id ? <span className={`canvas-tab-status-dot ${activeStatusClass}`} role="status" aria-label={activeStatusLabel} title={activeStatusLabel} /> : tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
       </button>
       {activeId === tab.id && activeRenameAction && <span className="canvas-tab-inline-rename">{activeRenameAction}</span>}
       {activeId === tab.id && activeMenu && <button type="button" className={`canvas-tab-menu-trigger${activeMenuOpen ? " is-open" : ""}`} aria-label="Canvas options" aria-haspopup="dialog" aria-expanded={activeMenuOpen} title="Canvas options" onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); setActiveMenuOpen((open) => !open); }} disabled={disabled}><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg></button>}
@@ -139,7 +156,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                   <div className="canvas-tabs-overflow-item" role="none" key={tab.id}>
                     <button type="button" role="menuitem" className={activeId === tab.id ? "is-active" : ""} onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}>
                       <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}<span className="canvas-tabs-overflow-label" title={tab.name}>{getTabDisplayName(tab.name)}</span></span>
-                      {tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
+                      {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
                     </button>
                     {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
                   </div>

@@ -4,7 +4,8 @@ import React from "react";
  * Bottom-right Zen pill (always present) and the standalone top-right AI
  * capsule that replaces the header's AI pill while Zen Mode hides the header.
  */
-export default function ZenHud({ isZenMode, onToggleZen, aiOpen, onToggleAi }) {
+export default function ZenHud({ hidden = false, isZenMode, onToggleZen, aiOpen, onToggleAi }) {
+  if (hidden) return null;
   return (
     <>
       <button

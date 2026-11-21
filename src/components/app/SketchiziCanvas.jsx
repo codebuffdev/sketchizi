@@ -29,6 +29,7 @@ export default function SketchiziCanvas({
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
   nativeMenuOpen = false,
+  hudSuppressed = false,
 }) {
   const canvasRootRef = useRef(null);
   const collaborationCursorFrameRef = useRef(0);
@@ -801,7 +802,7 @@ export default function SketchiziCanvas({
 
   return (
     <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
-      <PrimaryDock
+      {!hudSuppressed && <PrimaryDock
         rootRef={canvasRootRef}
         apiRef={apiRef}
         selectedElements={selectedElements}
@@ -810,7 +811,7 @@ export default function SketchiziCanvas({
         canvasRevision={canvasRevision}
         nativeMenuOpen={nativeMenuOpen}
         onOpenTodoTab={onOpenTodoTab}
-      />
+      />}
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
         initialData={excalidrawInitialData}
@@ -822,7 +823,7 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} />
+      {!hudSuppressed && <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} />}
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <RectangleTitles

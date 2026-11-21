@@ -62,6 +62,7 @@ import CreateMenu from "./components/app/CreateMenu";
 const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
+import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
 import ZenHud from "./components/app/ZenHud.jsx";
 import { enableCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
 import CanvasGrammarAssistant from "./features/canvas/CanvasGrammarAssistant.jsx";
@@ -1625,6 +1626,20 @@ function App() {
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
   }, [createCanvasTab, openTodoTab]);
 
+  // "Open Local File" from the welcome screen: make sure a canvas exists, then
+  // hand off to the normal file-open flow once its editor is mounted.
+  const openLocalFileFromStartup = useCallback(() => {
+    startupChoiceMadeRef.current = true;
+    if (canvasTabsRef.current.length === 0) createCanvasTab();
+    setStartupChooserOpen(false);
+    const startedAt = Date.now();
+    const attempt = () => {
+      if (apiRef.current) { fileActionsRef.current.openDrawingFromDisk?.(); return; }
+      if (Date.now() - startedAt < 3000) window.requestAnimationFrame(attempt);
+    };
+    window.requestAnimationFrame(attempt);
+  }, [createCanvasTab, fileActionsRef]);
+
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {
       const mode = event.detail?.mode;
@@ -2633,7 +2648,7 @@ function App() {
         onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
-        canvasTabs={canvasTabs.flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id }] : [tab])}
+        canvasTabs={canvasTabs.map((tab) => ({ ...tab, syncMeta: getTabCloudMeta(tab, tab.id === activeCanvasId ? { dirty: documentDirty, cloudSaveState } : null) })).flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id }] : [tab])}
         activeCanvasId={activeWorkspaceTabId}
         canvasId={activeCanvasId}
         canvasStartDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
@@ -2729,6 +2744,7 @@ function App() {
           <div className={activeWorkspaceTabId.startsWith("todo:") ? "desktop-canvas-view-hidden" : "desktop-canvas-view"}>
           {canvasMounted && (
           <SketchiziCanvas
+            hudSuppressed={startupChooserOpen}
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
@@ -2887,6 +2903,17 @@ function App() {
                 <span>Todo</span>
               </button>
             </div>
+            <h3 className="startup-canvas-subtitle">Or open an existing file</h3>
+            <div className="startup-canvas-options startup-canvas-options-open">
+              <button type="button" className="startup-canvas-option startup-canvas-option-wide" onClick={openLocalFileFromStartup}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2.5h6a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"/></svg>
+                <span>Open Local File</span>
+              </button>
+              <button type="button" className="startup-canvas-option startup-canvas-option-wide" onClick={openCloudWorkspace}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h9.5a3.5 3.5 0 0 0 .6-6.95A5.5 5.5 0 0 0 6.4 9.6 4.2 4.2 0 0 0 7 18Z"/></svg>
+                <span>Open Cloud File</span>
+              </button>
+            </div>
           </section>
         </div>
       )}
@@ -2938,6 +2965,7 @@ function App() {
       />
 
       <ZenHud
+        hidden={startupChooserOpen || noOpenCanvas}
         isZenMode={isZenMode}
         onToggleZen={toggleZenMode}
         aiOpen={aiAskOpen}
