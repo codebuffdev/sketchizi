@@ -179,6 +179,9 @@
 .app[data-welcome-open="true"] .sk-zen-pill,
 .app[data-welcome-open="true"] .sk-zen-ai-capsule,
 .app[data-welcome-open="true"] .canvas-zoom-control,
+.app[data-welcome-open="true"] .desktop-app-zoom-wrap,
+.app[data-welcome-open="true"] .desktop-app-zoom-control,
+.app[data-welcome-open="true"] .desktop-app-zoom-menu,
 .app[data-welcome-open="true"] .excalidraw .App-toolbar-container,
 .app[data-welcome-open="true"] .excalidraw .zoom-actions {
   display: none !important;
