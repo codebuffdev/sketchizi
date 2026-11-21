@@ -86,6 +86,37 @@ try {
   // the same keyboard shortcut users have before opening header-only actions.
   await ensureHeaderVisible(blank.page);
 
+  const aiToggle = blank.page.getByRole("button", { name: "AI Ask", exact: true });
+  const railToggle = blank.page.getByRole("button", { name: "Show application header" });
+  const aiDrawer = blank.page.locator(".ai-ask-panel");
+  const rail = blank.page.locator(".desktop-app-header-right-rail");
+  await aiToggle.click();
+  await aiDrawer.waitFor();
+  await blank.page.waitForFunction(() => {
+    const sliders = document.querySelector(".desktop-app-header-reveal-handle")?.getBoundingClientRect();
+    const tools = document.querySelector(".desktop-app-header-right-rail")?.getBoundingClientRect();
+    return sliders && tools && tools.top >= sliders.bottom - 1;
+  });
+  const [ai, sliders, tools, drawer] = await Promise.all(
+    [aiToggle, railToggle, rail, aiDrawer].map((control) => control.boundingBox()),
+  );
+  if (!ai || !sliders || !tools || !drawer ||
+      ai.y + ai.height > sliders.y || sliders.y + sliders.height > tools.y + 1 ||
+      Math.abs(ai.x + ai.width / 2 - sliders.x - sliders.width / 2) > 2 ||
+      Math.abs(sliders.x + sliders.width / 2 - tools.x - tools.width / 2) > 2 ||
+      tools.x + tools.width > drawer.x || sliders.x + sliders.width > drawer.x ||
+      ai.x + ai.width > drawer.x) {
+    throw new Error(`AI, sliders and tool rail must stack on the canvas beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
+  }
+  await railToggle.click();
+  await rail.waitFor({ state: "hidden" });
+  await aiDrawer.waitFor();
+  await railToggle.click();
+  await rail.waitFor({ state: "visible" });
+  await aiToggle.click();
+  await aiDrawer.waitFor({ state: "detached" });
+  console.log("PASS: AI and header controls remain independently clickable beside the open drawer.");
+
   // Unified selector replaces the old category menu and AWS/K8s shortcuts.
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
   await blank.page.locator(".ai-ask-panel").waitFor({ state: "detached" });
