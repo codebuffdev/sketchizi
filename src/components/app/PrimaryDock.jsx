@@ -115,7 +115,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     collapseTimerRef.current = window.setTimeout(() => {
       setExpanded(false);
       collapseTimerRef.current = null;
-    }, 160);
+    }, 3000);
   };
   const chooseTool = (tool) => {
     activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
