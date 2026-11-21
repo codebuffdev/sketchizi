@@ -2514,25 +2514,6 @@ function App() {
     />
   ) : null;
 
-  if (!sketchReady) {
-    return (
-      <div className={isDarkTheme ? "app theme-dark" : "app theme-light"}>
-        <div className="sketch-restore-screen" aria-live="polite">
-          <div className="sketch-restore-card">
-            <div className="sketch-restore-mark"><img src="/sketchizi-logo.svg" alt="Sketchizi" /></div>
-            <div className="sketch-restore-title">Sketchizi</div>
-            <div className="sketch-restore-text">Restoring your sketch…</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-
-  // The floating icon drawer must escape the mobile workspace's z-index: 0
-  // stacking context so header controls cannot intercept its menu or rows.
-  const libraryOverlayHost = typeof document === "undefined" ? null : document.querySelector(".app");
-
   aiAskOpenRef.current = aiAskOpen;
   isZenModeRef.current = isZenMode;
   const toggleZenMode = useCallback(() => setIsZenMode((value) => !value), []);
@@ -2569,6 +2550,25 @@ function App() {
     // Keep Excalidraw's own chrome in step with the HUD Zen state.
     apiRef.current?.updateScene?.({ appState: { zenModeEnabled: isZenMode } });
   }, [isZenMode, activeCanvasId]);
+
+  if (!sketchReady) {
+    return (
+      <div className={isDarkTheme ? "app theme-dark" : "app theme-light"}>
+        <div className="sketch-restore-screen" aria-live="polite">
+          <div className="sketch-restore-card">
+            <div className="sketch-restore-mark"><img src="/sketchizi-logo.svg" alt="Sketchizi" /></div>
+            <div className="sketch-restore-title">Sketchizi</div>
+            <div className="sketch-restore-text">Restoring your sketch…</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+  // The floating icon drawer must escape the mobile workspace's z-index: 0
+  // stacking context so header controls cannot intercept its menu or rows.
+  const libraryOverlayHost = typeof document === "undefined" ? null : document.querySelector(".app");
 
   // No open tab means no canvas: the welcome chooser owns the screen.
   const canvasMounted = hasMountableCanvas({ tabs: canvasTabs, activeCanvasId });
