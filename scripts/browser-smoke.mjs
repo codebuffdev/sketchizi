@@ -436,8 +436,9 @@ try {
   await blank.page.getByRole("button", { name: "Close export studio" }).click();
   console.log("PASS: Export Studio remains reachable from the save menu.");
 
-  await blank.page.getByRole("button", { name: "Search commands" }).click();
-  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor();
+  // The command palette is opened by its documented keyboard shortcut; it is not a persistent header button.
+  await blank.page.keyboard.press("Control+Shift+P");
+  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("searchbox", { name: "Search commands" }).fill("Architecture Validation");
   await blank.page.getByRole("option", { name: /Architecture Validation/ }).click();
   await blank.page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
