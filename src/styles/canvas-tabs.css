@@ -828,3 +828,16 @@
 .canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-saving { background: #d97706; }
 .canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-error { background: #d34b4b; box-shadow: 0 0 0 3px rgba(211,75,75,.14); animation: none; }
 .canvas-tabs-active-menu .desktop-app-document-location { color: var(--ct-text, #647084); font-size: 10px; font-weight: 650; }
+
+/* Keep rename visible beside the active tab title. */
+.canvas-tab-inline-rename { display:inline-flex; align-items:center; flex:0 0 auto; }
+.canvas-tab-inline-rename .desktop-app-document-rename { display:inline-flex; align-items:center; justify-content:center; width:22px; height:24px; padding:0; border:0; border-radius:6px; background:transparent; color:var(--ui-text-muted,#687386); cursor:pointer; }
+.canvas-tab-inline-rename .desktop-app-document-rename:hover { background:var(--ui-hover,#f3f4f6); color:var(--ui-text-strong,#202a3a); }
+.canvas-tab-inline-rename .desktop-app-document-identity-name-input { width:min(180px,30vw); min-width:72px; height:26px; padding:0 6px; border:1px solid var(--ui-border-strong,#9ba8bc); border-radius:6px; background:var(--ui-surface-solid,#fff); color:var(--ui-text-strong,#202a3a); font:inherit; font-size:12px; }
+.canvas-tabs-active-menu-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.canvas-tabs-active-menu-action-button { display:flex; align-items:center; justify-content:flex-start; gap:8px; min-width:0; min-height:38px; padding:0 9px; border:1px solid var(--ct-strip-border,#dfe4ec); border-radius:9px; background:var(--ct-active,#fff); color:var(--ct-strong,#202a3a); font:inherit; font-size:11px; text-align:left; cursor:pointer; }
+.canvas-tabs-active-menu-action-button:hover { background:var(--ct-hover,#e9edf3); }
+.canvas-tabs-active-menu-action-button:disabled { opacity:.55; cursor:not-allowed; }
+.app.theme-dark .canvas-tabs-active-menu-action-button { border-color:#354154; background:#202834; color:#e2e7f0; }
+.app.theme-dark .canvas-tabs-active-menu-action-button:hover { background:#303a4b; }
+@media (max-width:520px) { .canvas-tabs-active-menu-actions { grid-template-columns:1fr; } }
