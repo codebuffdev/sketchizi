@@ -305,7 +305,8 @@ export default function DesktopAppHeader({
 
   useEffect(() => {
     if (!aiAskOpen) return;
-    setOpenMenu(null);
+    // AI Ask is an independent right-side drawer. Opening it must not
+    // implicitly dismiss the left-side hamburger/navigation menu.
     setGridPopoverOpen(false);
     setSaveDetailsOpen(false);
   }, [aiAskOpen]);
@@ -550,6 +551,7 @@ export default function DesktopAppHeader({
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger desktop-app-menu-trigger-floating active" : "desktop-app-menu-trigger desktop-app-menu-trigger-floating"}
+        data-hamburger-trigger
         onClick={() => {
           const wasOpen = menuWasOpenOnPointerDownRef.current;
           menuWasOpenOnPointerDownRef.current = null;
