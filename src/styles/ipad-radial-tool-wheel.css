@@ -106,31 +106,6 @@
   color: #9aa0aa;
 }
 
-.sketchizi-tool-sidebar-collapse {
-  display: inline-flex;
-  flex: 0 0 28px;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100%;
-  min-height: 28px;
-  margin-top: 3px;
-  border: 0;
-  border-top: 1px solid rgb(119 125 136 / 20%);
-  border-radius: 0 0 8px 8px;
-  background: transparent;
-  color: #858c98;
-  font-size: 9px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.sketchizi-tool-sidebar-collapse:hover { color: #30343b; }
-.sketchizi-tool-sidebar-collapse span:first-child { font-size: 14px; line-height: 1; }
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-collapse {
-  border-top-color: rgb(255 255 255 / 15%);
-  color: #9ca3af;
-}
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-collapse:hover { color: #fff; }
 .sketchizi-tool-sidebar-divider {
   flex: 0 0 1px;
   width: 20px;
