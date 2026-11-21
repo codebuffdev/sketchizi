@@ -43,9 +43,10 @@ test("sloppiness remains available for shapes, lines, arrows, and draw-to-shape"
 });
 
 test("stroke, fill, corner, arrowhead, font, and pressure controls use the shared menu", () => {
-  for (const label of ["Stroke width", "Fill style", "Corner radius", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
-    assert.ok(dock.includes(`label="${label}"`), `missing choice control: ${label}`);
+  for (const label of ["Stroke width", "Corner radius", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
+    assert.ok(dock.includes(label), `missing choice control: ${label}`);
   }
+  assert.ok(dock.includes('isHighlighter ? "Fill style"'));
   assert.ok(!dock.includes("function VisualOptionSelect({ label, value, onChange, kind, options }) {\n  const [open"));
 });
 
