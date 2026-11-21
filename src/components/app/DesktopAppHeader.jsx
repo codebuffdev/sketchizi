@@ -913,9 +913,16 @@ export default function DesktopAppHeader({
           className={`desktop-app-header-reveal-handle desktop-app-settings-toggle${settingsOpen ? " is-expanded" : ""}`}
           onClick={() => {
             clearHeaderCollapseTimer();
-            setHeaderPinned(true);
-            setHeaderVisible(true);
-            if (!settingsOpen) onBeforeOpenPanel?.();
+            if (!headerVisible) {
+              setHeaderPinned(true);
+              setHeaderVisible(true);
+              setSettingsOpen(false);
+              return;
+            }
+            if (!settingsOpen) {
+              setHeaderPinned(true);
+              onBeforeOpenPanel?.();
+            }
             setSettingsOpen((open) => !open);
           }}
           aria-haspopup="dialog"
