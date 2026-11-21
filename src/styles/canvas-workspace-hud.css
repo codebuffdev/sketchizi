@@ -37,6 +37,7 @@
   color: #252a35 !important;
   box-shadow: var(--sk-hud-light-shadow) !important;
 }
+.app .sketchizi-tool-sidebar.is-expanded { height: auto !important; }
 .app .sketchizi-tool-sidebar-collapsed {
   position: relative;
   width: 46px;
