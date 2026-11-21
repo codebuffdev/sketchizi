@@ -282,7 +282,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
   const [opacityPopoverOpen, setOpacityPopoverOpen] = useState(false);
   const [opacityDragging, setOpacityDragging] = useState(false);
+  const opacityPointerStartRef = useRef(null);
   const opacityRef = useRef(null);
+  const [fontSizePopoverOpen, setFontSizePopoverOpen] = useState(false);
+  const fontSizeInputRef = useRef(null);
   const layerTriggerRef = useRef(null);
   const knownLineElementIdsRef = useRef(null);
   useEffect(() => {
@@ -578,8 +581,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const setOpacityFromPointer = (event) => {
     const rect = opacityRef.current?.getBoundingClientRect();
     if (!rect?.width) return;
-    const next = Math.round(Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) * 100);
-    update({ opacity: next });
+    const step = event.shiftKey ? 5 : 1;
+    const raw = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+    update({ opacity: Math.max(0, Math.min(100, Math.round(raw / step) * step)) });
   };
 
   const title = useMemo(() => {
@@ -715,15 +719,41 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         </DockSelect>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
           <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
-          <label className="sk-tool-text-size-input">
-            <input type="number" aria-label="Font size in pixels" readOnly={preserveTextEditorFocus} min="1" max="999" value={fontSizeDraft}
-              onChange={(event) => setFontSizeDraft(event.target.value)}
-              onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") event.currentTarget.blur(); }}
-              onKeyUp={(event) => event.stopPropagation()} onKeyPress={(event) => event.stopPropagation()}
-              onPointerDown={(event) => { event.stopPropagation(); if (preserveTextEditorFocus) event.preventDefault(); }}
-              onBlur={() => { const parsed = Number(fontSizeDraft); const next = Number.isFinite(parsed) && fontSizeDraft.trim() !== "" ? Math.max(1, Math.min(999, parsed)) : fontSize; setFontSizeDraft(String(next)); if (next !== fontSize) update({ fontSize: next }); }} />
-            <span>px</span>
-          </label>
+          <div className="sk-tool-text-size-input-wrap">
+            <label className="sk-tool-text-size-input">
+              <input ref={fontSizeInputRef} type="text" inputMode="numeric" aria-label="Font size in pixels"
+                value={fontSizeDraft} onFocus={(event) => { event.target.select(); setFontSizePopoverOpen(true); }}
+                onClick={(event) => { event.target.select(); setFontSizePopoverOpen(true); }}
+                onChange={(event) => setFontSizeDraft(event.target.value.replace(/[^0-9]/g, ""))}
+                onKeyDown={(event) => {
+                  event.stopPropagation();
+                  if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
+                  else if (event.key === "Escape") { event.preventDefault(); setFontSizeDraft(String(fontSize)); setFontSizePopoverOpen(false); event.currentTarget.blur(); }
+                  else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                    event.preventDefault();
+                    const step = event.shiftKey ? 10 : 1;
+                    const nextSize = Math.max(8, Math.min(200, fontSize + (event.key === "ArrowUp" ? step : -step)));
+                    setFontSizeDraft(String(nextSize)); update({ fontSize: nextSize });
+                  }
+                }}
+                onKeyUp={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                onBlur={() => {
+                  const parsed = Number(fontSizeDraft);
+                  const nextSize = Number.isFinite(parsed) && fontSizeDraft.trim() !== "" ? Math.max(8, Math.min(200, parsed)) : fontSize;
+                  setFontSizeDraft(String(nextSize)); setFontSizePopoverOpen(false);
+                  if (nextSize !== fontSize) update({ fontSize: nextSize });
+                }} />
+              <span>px</span>
+            </label>
+            {fontSizePopoverOpen && <div className="sk-tool-font-size-presets" role="listbox" aria-label="Font size presets">
+              {[12, 16, 20, 28, 36, 48, 64].map((size) => <button key={size} type="button" role="option"
+                aria-selected={fontSize === size} onMouseDown={(event) => event.preventDefault()}
+                onClick={() => { setFontSizeDraft(String(size)); update({ fontSize: size }); setFontSizePopoverOpen(false); fontSizeInputRef.current?.focus(); }}>
+                {size}
+              </button>)}
+            </div>}
+          </div>
           <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Increase font size" disabled={fontSize >= 999} onClick={() => update({ fontSize: Math.min(999, fontSize + 1) })}>+</button>
         </div>
       </DockGroup>}
@@ -769,10 +799,30 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
       <DockGroup label="Opacity">
         <div ref={opacityRef} className="sk-tool-opacity-scrubber" role="slider" tabIndex={0} aria-label="Opacity" aria-valuemin={0} aria-valuemax={100} aria-valuenow={opacityValue}
-          onPointerDown={(event) => { if (event.button !== 0) return; event.currentTarget.setPointerCapture?.(event.pointerId); setOpacityDragging(true); setOpacityFromPointer(event); }}
-          onPointerMove={(event) => { if (opacityDragging) setOpacityFromPointer(event); }}
-          onPointerUp={() => setOpacityDragging(false)} onPointerCancel={() => setOpacityDragging(false)}
-          onKeyDown={(event) => { if (event.key === "ArrowLeft" || event.key === "ArrowDown") { event.preventDefault(); update({ opacity: Math.max(0, opacityValue - 1) }); } if (event.key === "ArrowRight" || event.key === "ArrowUp") { event.preventDefault(); update({ opacity: Math.min(100, opacityValue + 1) }); } }}>
+          onPointerDown={(event) => {
+            if (event.button !== 0) return;
+            opacityPointerStartRef.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+            setOpacityDragging(false);
+          }}
+          onPointerMove={(event) => {
+            const start = opacityPointerStartRef.current;
+            if (!start || start.pointerId !== event.pointerId) return;
+            if (!opacityDragging && Math.abs(event.clientX - start.x) < 3) return;
+            if (!opacityDragging) setOpacityDragging(true);
+            setOpacityFromPointer(event);
+          }}
+          onPointerUp={(event) => {
+            const start = opacityPointerStartRef.current;
+            if (start && start.pointerId === event.pointerId && !opacityDragging && Math.abs(event.clientX - start.x) < 3) {
+              setOpacityPopoverOpen((open) => !open);
+            }
+            opacityPointerStartRef.current = null;
+            setOpacityDragging(false);
+          }}
+          onPointerCancel={() => { opacityPointerStartRef.current = null; setOpacityDragging(false); }}
+          onKeyDown={(event) => { if (event.key === "ArrowLeft" || event.key === "ArrowDown") { event.preventDefault(); update({ opacity: Math.max(0, opacityValue - (event.shiftKey ? 5 : 1)) }); } if (event.key === "ArrowRight" || event.key === "ArrowUp") { event.preventDefault(); update({ opacity: Math.min(100, opacityValue + (event.shiftKey ? 5 : 1)) }); } }}>
+          <span className="sk-tool-opacity-fill" style={{ width: `${opacityValue}%` }} aria-hidden="true" />
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3c-3 4-7 8-7 12a7 7 0 0 0 14 0c0-4-4-8-7-12Z" /><path d="M8 16a4 4 0 0 0 4 3" /></svg>
           <span className="sk-tool-dock-opacity-value">{opacityValue}%</span>
         </div>
