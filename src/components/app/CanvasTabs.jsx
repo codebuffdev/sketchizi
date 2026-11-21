@@ -55,6 +55,22 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   }, [activeId]);
 
   useEffect(() => {
+    if (!activeMenuOpen) return undefined;
+    const closeOnOutsideInteraction = (event) => {
+      if (!rootRef.current?.contains(event.target)) setActiveMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setActiveMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideInteraction, true);
+    document.addEventListener("keydown", closeOnEscape, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideInteraction, true);
+      document.removeEventListener("keydown", closeOnEscape, true);
+    };
+  }, [activeMenuOpen]);
+
+  useEffect(() => {
     if (!overflowOpen) return undefined;
     const closeOnOutsideInteraction = (event) => {
       if (!rootRef.current?.contains(event.target)) setOverflowOpen(false);
