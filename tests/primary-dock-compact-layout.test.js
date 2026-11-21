@@ -10,7 +10,7 @@ function declarations(block) {
 function rulesFor(selector, source = css) {
   const re = /([^{}]+)\{([^}]*)\}/g;
   return [...source.matchAll(re)]
-    .filter((m) => m[1].split(",").some((part) => part.trim() === selector))
+    .filter((m) => m[1].replace(/\/\*[\s\S]*?\*\//g, "").split(",").some((part) => part.trim() === selector))
     .map((m) => declarations(m[2]));
 }
 function mediaBlock(query) {
