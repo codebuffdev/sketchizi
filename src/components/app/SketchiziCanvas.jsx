@@ -811,6 +811,7 @@ export default function SketchiziCanvas({
       <PrimaryDock
         rootRef={canvasRootRef}
         apiRef={apiRef}
+        selectedElements={selectedElements}
         canEdit={canEdit && !viewModeEnabled}
         isDarkTheme={isDarkTheme}
         canvasRevision={canvasRevision}

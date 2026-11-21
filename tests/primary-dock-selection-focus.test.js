@@ -6,12 +6,12 @@ const dock = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", impor
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const options = readFileSync(new URL("../src/components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
 
-test("the complete sidebar remains available independently of canvas element selection", () => {
+test("the complete sidebar remains available while its active highlight follows canvas selection", () => {
   const mount = canvas.match(/<PrimaryDock[\s\S]*?\/>/)?.[0] || "";
   assert.match(mount, /<PrimaryDock/);
-  assert.doesNotMatch(mount, /selectedElements/);
+  assert.match(mount, /selectedElements=\{selectedElements\}/);
   assert.match(dock, /TOOLS\.map\(\(tool\)/);
-  assert.match(dock, /aria-pressed=\{selected\}/);
+  assert.match(dock, /aria-pressed=\{isDisplayed\}/);
   assert.doesNotMatch(dock, /focusedTool|selectedToolIds|selection-focus|sketchizi-radial-wheel/);
 });
 
