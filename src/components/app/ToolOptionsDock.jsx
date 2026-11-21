@@ -685,7 +685,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
   return (
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
-      {(isShape || isLaser || isText || !isHighlighter) && <DockGroup label={isShape || isLaser ? "Color & fill" : "Color"}>
+      {<DockGroup label={isHighlighter ? "Fill style" : isShape || isLaser ? "Color & fill" : "Color"}>
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {!isFill && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
         {(isShape || isLaser || isHighlighter) && <>
@@ -706,6 +706,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         </DockSelect>}
         {isLine && <VisualOptionSelect label="Line routing" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry" options={LINE_GEOMETRIES.map(([value, label]) => ({ value, label }))} />}
         {showStrokeStyle && <VisualOptionSelect label="Stroke style" value={strokeStyle} onChange={(value) => update({ strokeStyle: value })} kind="line-style" options={LINE_STYLES.map(([value, label]) => ({ value, label }))} />}
+        {isDraw && <DockSelect label="Pen pressure" value={pressure ? "on" : "off"} onChange={(value) => update({ pressure: value === "on" })}>
+          <option value="on">Pressure enabled</option><option value="off">Pressure disabled</option>
+        </DockSelect>}
         {type === "arrow" && <>
           <DockSelect label="Start arrowhead" value={current("startArrowhead", "currentItemStartArrowhead", null) || "none"} onChange={(value) => update({ startArrowhead: value === "none" ? null : value })}>
             <option value="none">Start: None</option><option value="arrow">Start: Arrow</option><option value="bar">Start: Bar</option><option value="dot">Start: Dot</option>
