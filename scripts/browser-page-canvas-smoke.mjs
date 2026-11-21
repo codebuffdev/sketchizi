@@ -41,12 +41,13 @@ async function chooseStartupPages() {
  await chooser.waitFor({ state: 'detached', timeout: 15000 });
 }
 async function ensureHeaderVisible() {
- const reveal = page.locator('.desktop-app-header-reveal-handle');
- await reveal.waitFor({ state: 'attached', timeout: 15000 });
- if (await reveal.getAttribute('aria-expanded') !== 'true') await reveal.click({ force: true });
- await page.waitForFunction(() => document.querySelector('.desktop-app-header')?.getAttribute('aria-hidden') === 'false');
  const pin = page.locator('.desktop-app-header-pin-button');
- if (await pin.getAttribute('aria-pressed') !== 'true') await pin.click({ force: true });
+ await pin.waitFor({ state: 'attached', timeout: 15000 });
+ if (await pin.getAttribute('aria-pressed') !== 'true' ||
+     await page.locator('.desktop-app-header').getAttribute('aria-hidden') !== 'false') {
+  await pin.click({ force: true });
+ }
+ await page.waitForFunction(() => document.querySelector('.desktop-app-header')?.getAttribute('aria-hidden') === 'false');
  await page.waitForFunction(() => document.querySelector('.desktop-app-header-pin-button')?.getAttribute('aria-pressed') === 'true');
 }
 async function closeAiAskIfOpen() {
@@ -102,13 +103,12 @@ try {
  es = await waitScene(es=>pages(es)[0]?.width>beforeWidth);
  assert(es.find(e=>e.customData?.sketchiziPagePaper===pages(es)[0].id)?.width===pages(es)[0].width,'Page paper must track the resized frame');
  // Verify both themes update the Pages workspace without leaving the mode.
- await page.getByRole('button',{name:'Appearance and canvas background'}).click();
- await page.getByRole('button',{name:'Light',exact:true}).click();
+ const themeToggle = page.locator('.desktop-app-theme-toggle');
+ if (!(await page.locator('.app.theme-light').count())) await themeToggle.click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-light'));
  assert(await page.locator('.canvas-pages-mask-panel').first().evaluate(el=>getComputedStyle(el).backgroundColor!=='rgb(17, 24, 32)'));
- await page.getByRole('button',{name:'Dark',exact:true}).click();
+ await themeToggle.click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
- await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  // Draw through the actual canvas, then ensure the new shape belongs to this page.
  await page.mouse.click(500,400); // Focus the canvas before using its tool shortcut.
  await page.keyboard.press('r');
