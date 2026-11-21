@@ -141,34 +141,34 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
             title="Collapse tool dock"
             onClick={() => setExpanded(false)}
           >⌄</button>
+          {TOOLS.map((tool) => {
+            const selected = activeId === tool.id;
+            return (
+              <React.Fragment key={tool.id}>
+                {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
+                <button
+                  type="button"
+                  className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
+                  aria-label={tool.label}
+                  aria-pressed={selected}
+                  title={tool.label}
+                  disabled={!canEdit && tool.id !== "todo"}
+                  onClick={() => {
+                    activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
+                    if (tool.id !== "todo") {
+                      setActiveTool(tool.id);
+                      setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
+                    }
+                    setExpanded(false);
+                  }}
+                >
+                  <ToolIcon name={tool.id} />
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
       )}
-      {expanded && TOOLS.map((tool) => {
-        const selected = activeId === tool.id;
-        return (
-          <React.Fragment key={tool.id}>
-            {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
-            <button
-              type="button"
-              className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
-              aria-label={tool.label}
-              aria-pressed={selected}
-              title={tool.label}
-              disabled={!canEdit && tool.id !== "todo"}
-              onClick={() => {
-                activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
-                if (tool.id !== "todo") {
-                  setActiveTool(tool.id);
-                  setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
-                }
-                setExpanded(false);
-              }}
-            >
-              <ToolIcon name={tool.id} />
-            </button>
-          </React.Fragment>
-        );
-      })}
-      {expanded ? </div> : null}
     </nav>
   );
 }
