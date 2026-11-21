@@ -161,10 +161,6 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
             </React.Fragment>
           );
         })}
-        <button type="button" className="sketchizi-tool-sidebar-collapse" onClick={collapseDock} aria-label="Collapse drawing tools">
-          <span aria-hidden="true">⌄</span>
-          <span>Collapse</span>
-        </button>
       </div>
 
       <div className="sketchizi-tool-sidebar-collapsed" inert={expanded}>
