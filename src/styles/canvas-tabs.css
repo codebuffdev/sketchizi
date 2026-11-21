@@ -680,3 +680,72 @@
 .app .desktop-app-document-title-float .canvas-tabs-overflow-menu {
   z-index: 10050;
 }
+
+
+/* Canvas tab redesign: independent tab buttons and a separate controls group. */
+.canvas-tabs-bar {
+  display: inline-flex; align-items: center; min-width: 0; padding: 0;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.canvas-tabs-list {
+  display: flex; align-items: center; gap: 6px; height: 40px;
+  min-width: 0; max-width: 100%; overflow: visible;
+}
+.canvas-tab-item {
+  display: inline-flex; align-items: center; gap: 2px; min-width: 0;
+  min-height: 38px; padding: 0 3px 0 0; border: 1px solid transparent;
+  border-radius: 10px; background: transparent;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.canvas-tab-item:not(.is-active):hover {
+  border-color: var(--ui-border, #dfe3eb); background: var(--ui-hover, #f3f4f6);
+}
+.canvas-tab-item .canvas-tab, .canvas-tab-item .canvas-tab.is-active {
+  display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;
+  min-width: 0; max-width: 190px; height: 36px; padding: 0 11px;
+  border: 1px solid transparent; border-radius: 9px; background: transparent;
+  box-shadow: none; color: var(--ui-text-muted, #687386); font-size: 12.5px; font-weight: 500;
+}
+.canvas-tab-item .canvas-tab:hover { background: transparent; }
+.canvas-tab-item.is-active {
+  border-color: var(--ui-border, #d5dce7); background: var(--ui-surface-solid, #fff);
+  box-shadow: 0 2px 7px rgb(15 23 42 / 9%);
+}
+.canvas-tab-item.is-active .canvas-tab, .canvas-tab-item.is-active .canvas-tab.is-active {
+  color: var(--ui-text-strong, #202a3a); font-weight: 650;
+}
+.canvas-tab-controls-group {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; margin-left: 4px;
+}
+.canvas-tabs-overflow-trigger, .canvas-tabs-add {
+  display: inline-flex; align-items: center; justify-content: center; height: 30px;
+  min-width: 30px; padding: 0 9px; border: 1px solid var(--ui-border, #dfe3eb);
+  border-radius: 8px; background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-muted, #737b8c); font-size: 12px; font-weight: 650;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 6%);
+}
+.canvas-tabs-add { width: 30px; padding: 0; }
+.canvas-tabs-overflow-trigger:hover, .canvas-tabs-add:hover {
+  border-color: var(--ui-border-strong, #b8bfcc); background: var(--ui-hover, #f3f4f6);
+  color: var(--ui-text-strong, #252631);
+}
+.canvas-tab-close { opacity: .55; }
+.canvas-tab-item:hover .canvas-tab-close, .canvas-tab-item.is-active .canvas-tab-close,
+.canvas-tab-close:focus-visible { opacity: 1; }
+.app.theme-dark .canvas-tab-item:not(.is-active):hover {
+  border-color: var(--ui-border, #3b4352); background: var(--ui-hover, #272d38);
+}
+.app.theme-dark .canvas-tab-item.is-active {
+  border-color: #515c70; background: #242a35; box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+}
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab,
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-name { color: #f4f6fb; }
+.app.theme-dark .canvas-tabs-overflow-trigger, .app.theme-dark .canvas-tabs-add {
+  border-color: var(--ui-border, #3b4352); background: var(--ui-surface-solid, #202733);
+  color: var(--ui-text-muted, #aeb6c5);
+}
+@media (max-width: 760px) {
+  .canvas-tabs-list { gap: 4px; }
+  .canvas-tab-item .canvas-tab { max-width: 112px; padding-inline: 8px; }
+  .canvas-tab-close { flex-basis: 20px; width: 20px; }
+}

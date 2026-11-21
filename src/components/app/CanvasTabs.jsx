@@ -34,7 +34,7 @@ function CloseGlyph() {
   return <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>;
 }
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, activeActions = null, leadingAction = null, hideActiveName = false, disabled = false, showAddButton = true }) {
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, disabled = false, showAddButton = true }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const rootRef = useRef(null);
   const visibleTabs = useMemo(() => {
@@ -77,7 +77,6 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
 
   const renderTab = (tab) => (
     <div className={`canvas-tab-item${activeId === tab.id ? " is-active" : ""}`} key={tab.id}>
-      {activeId === tab.id && leadingAction}
       <button
         type="button"
         role="tab"
@@ -95,13 +94,13 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         onDrop={(event) => handleDrop(event, tab.id)}
         onDragEnd={() => { dragId.current = null; }}
         onClick={() => { setOverflowOpen(false); onSelect?.(tab.id); }}
+        onDoubleClick={() => { if (!tab.isTodoTab) { setOverflowOpen(false); onRename?.(tab.id); } }}
         disabled={disabled}
       >
         {tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}
-        {!(hideActiveName && activeId === tab.id) && <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>}
+        <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
         {tab.dirty && activeId !== tab.id && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
       </button>
-      {activeId === tab.id && activeActions && <div className="canvas-tab-active-actions" aria-label={`Actions for ${tab.name}`}>{activeActions}</div>}
       {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
     </div>
   );
@@ -110,6 +109,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
     <div className="canvas-tabs-bar" role="tablist" aria-label="Workspace tabs" ref={rootRef}>
       <div className="canvas-tabs-list">
         {visibleTabs.map(renderTab)}
+        <div className="canvas-tab-controls-group">
         {hiddenCount > 0 && (
           <div className="canvas-tabs-overflow">
             <button type="button" className={`canvas-tabs-overflow-trigger${overflowOpen ? " is-open" : ""}`} aria-haspopup="menu" aria-expanded={overflowOpen} onClick={() => setOverflowOpen((open) => !open)}>+{hiddenCount}</button>
@@ -129,6 +129,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
           </div>
         )}
         {showAddButton && <button type="button" className="canvas-tabs-add" aria-label="Create new canvas" title="Create new canvas" onClick={() => { setOverflowOpen(false); onCreate?.(); }} disabled={disabled}><NewCanvasGlyph /></button>}
+        </div>
       </div>
     </div>
   );

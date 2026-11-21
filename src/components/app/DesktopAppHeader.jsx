@@ -505,15 +505,6 @@ const activeTabActions = (
                     </svg>
                   </button>
       )}
-        <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-        {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
-          <span
-            className={`desktop-app-document-identity-dirty-dot is-${saveState}`}
-            role="status"
-            aria-label={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
-            title={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
-          />
-        )}
         <button
           type="button"
           className={`desktop-app-save-to-cloud-button is-icon-only${isCloudDocument ? ` is-cloud-${cloudSaveState}` : ""}`}
@@ -860,9 +851,8 @@ const activeTabActions = (
     </header>
       <div className="desktop-app-global-ai-control">{children}</div>
       <div
-        className={`desktop-app-document-identity desktop-app-document-title-float${currentDocumentDirty ? " is-dirty" : ""}`}
-        title={`${activeCanvasTabName} — ${documentStatusLabel}`}
-        aria-label={`Current document: ${activeCanvasTabName}. ${documentStatusLabel}.`}
+        className={`desktop-app-document-identity desktop-app-document-title-float desktop-app-canvas-tabs-topbar${currentDocumentDirty ? " is-dirty" : ""}`}
+        aria-label="Canvas tabs"
       >
         <CanvasTabs
           tabs={canvasTabs}
@@ -875,22 +865,33 @@ const activeTabActions = (
             if (closingTab?.isTodoTab) onCloseTodoTab?.(closingTab.canvasId);
             else onCloseCanvasTab?.(tabId);
           }}
-          leadingAction={activeIsTodoTab ? null : activeTabLeadingAction}
-          activeActions={activeIsTodoTab ? null : activeTabActions}
-          hideActiveName={documentNameEditing}
-          showAddButton={false}
+          onRename={() => {
+            cancelDocumentRenameRef.current = false;
+            setDocumentNameDraft(activeCanvasTabName);
+            setDocumentNameEditing(true);
+          }}
+          showAddButton
         />
-        <button
-          type="button"
-          className="canvas-tabs-add desktop-app-canvas-add"
-          aria-label="Create new canvas"
-          title="Create new canvas"
-          onClick={onCreateCanvasTab}
-        >
-          <svg className="canvas-tabs-add-icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
+      </div>
+      <div className="desktop-app-canvas-context-toolbar" aria-label={`Canvas actions for ${activeCanvasTabName}`}>
+        <div className="desktop-app-canvas-context-meta">
+          {!activeIsTodoTab && activeTabLeadingAction}
+          {!documentNameEditing && <strong className="desktop-app-canvas-context-name">{activeCanvasTabName}</strong>}
+          <span className="desktop-app-canvas-context-status" role="status">
+            <span className={`desktop-app-canvas-context-status-dot is-${isCloudDocument ? cloudSaveState : saveState}`} />
+            <span>{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file") : `Local Draft • ${saveStateLabel}`}</span>
+          </span>
+          {!activeIsTodoTab && activeTabActions}
+        </div>
+        <div className="desktop-app-canvas-context-actions">
+          <button type="button" className="desktop-app-canvas-export-button" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="m7 10 5 5 5-5M12 15V3" />
+            </svg>
+            Export
+          </button>
+        </div>
       </div>
 
 
