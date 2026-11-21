@@ -140,7 +140,7 @@ test("dock starts as one active-tool control at the bottom-left and expands on d
 });
 
 test("tool selection keeps all existing actions and immediately collapses the expanded dock", async () => {
-  const jsx = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
+  const jsx = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
   assert.equal((jsx.match(/\{ id: "/g) || []).length, TOOL_COUNT);
   assert.match(jsx, /activateTool\(\{ id: tool\.id, root: rootRef\.current, apiRef, onOpenTodoTab \}\)/);
   assert.match(jsx, /setExpanded\(false\)/);
