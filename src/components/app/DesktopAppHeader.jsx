@@ -889,11 +889,11 @@ export default function DesktopAppHeader({
             </div>
           }
           showAddButton
-          trailingControl={!activeIsTodoTab && canvasId ? <CanvasStartDate key={canvasId} canvasId={canvasId} value={canvasStartDate} activity={canvasActivity} onActivityChange={onCanvasActivityChange} onChange={onCanvasStartDateChange} disabled={canvasDateDisabled} /> : null}
         />
       </div>
 
       <div className="desktop-app-top-controls">
+        {!activeIsTodoTab && canvasId && <CanvasStartDate key={canvasId} canvasId={canvasId} value={canvasStartDate} activity={canvasActivity} onActivityChange={onCanvasActivityChange} onChange={onCanvasStartDateChange} disabled={canvasDateDisabled} />}
         {!activeIsTodoTab && canvasApi && (
           <CanvasZoomControl
             api={canvasApi}
