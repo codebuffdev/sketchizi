@@ -34,7 +34,7 @@ function CloseGlyph() {
   return <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>;
 }
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true, trailingControl = null }) {
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
   const rootRef = useRef(null);
@@ -148,7 +148,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
             )}
           </div>
         )}
-        {showAddButton && <button type="button" className="canvas-tabs-add" aria-label="Create new canvas" title="Create new canvas" onClick={() => { setOverflowOpen(false); onCreate?.(); }} disabled={disabled}><NewCanvasGlyph /></button>}{trailingControl}
+        {showAddButton && <button type="button" className="canvas-tabs-add" aria-label="Create new canvas" title="Create new canvas" onClick={() => { setOverflowOpen(false); onCreate?.(); }} disabled={disabled}><NewCanvasGlyph /></button>}
         </div>
       </div>
       {activeMenuOpen && activeMenu && <div className="canvas-tabs-active-menu" role="dialog" aria-label="Canvas options">{activeMenu}</div>}
