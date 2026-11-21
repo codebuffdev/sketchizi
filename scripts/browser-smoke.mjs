@@ -101,12 +101,12 @@ try {
     [aiToggle, railToggle, rail, aiDrawer].map((control) => control.boundingBox()),
   );
   if (!ai || !sliders || !tools || !drawer ||
-      ai.y + ai.height > sliders.y || sliders.y + sliders.height > tools.y + 1 ||
-      Math.abs(ai.x + ai.width / 2 - sliders.x - sliders.width / 2) > 2 ||
+      Math.abs(ai.y + ai.height / 2 - sliders.y - sliders.height / 2) > 2 ||
+      sliders.y + sliders.height > tools.y + 1 ||
       Math.abs(sliders.x + sliders.width / 2 - tools.x - tools.width / 2) > 2 ||
       tools.x + tools.width > drawer.x || sliders.x + sliders.width > drawer.x ||
       ai.x + ai.width > drawer.x) {
-    throw new Error(`AI, sliders and tool rail must stack on the canvas beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
+    throw new Error(`AI and sliders must share the top control row, with the tool rail below and all controls beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
   }
   await railToggle.click();
   await rail.waitFor({ state: "hidden" });
