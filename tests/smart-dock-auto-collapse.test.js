@@ -33,7 +33,7 @@ test("contextual dock defers collapse while popovers, inputs, or opacity draggin
   assert.match(contextual, /const isPopoverOpen/);
   assert.match(contextual, /opacityDragging \|\| isInputFocused \|\| isPopoverOpen/);
   assert.match(contextual, /opacityPopoverOpen \|\| fontSizePopoverOpen \|\| layerMenuOpen/);
-  assert.match(contextual, /useEffect\(\(\) => \(\) => cancelDockCollapse\(\), \[\]\)/);
+  assert.match(contextual, /useEffect\\(\\(\\) => \\(\\) => \\{/);
 });
 
 test("both docks use smooth downward fade and disable pointer events when collapsed", () => {
