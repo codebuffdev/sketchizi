@@ -19,20 +19,20 @@ const dismissStartupChooser = async (page) => {
 };
 
 const ensureHeaderVisible = async (page) => {
-  const reveal = page.locator(".desktop-app-header-reveal-handle");
-  await reveal.waitFor({ state: "attached", timeout: 15000 });
-  if (await reveal.getAttribute("aria-expanded") !== "true") {
-    // Floating controls can overlap the collapsed handle; force the actual
-    // button click so its React handler runs without a pointer hit-test.
-    await reveal.click({ force: true });
+  // The old reveal-handle selector now belongs to Canvas Settings. The
+  // application-header visibility control is the pin button: clicking it
+  // both reveals the auto-hidden header and pins it open for this journey.
+  const pin = page.locator(".desktop-app-header-pin-button");
+  await pin.waitFor({ state: "attached", timeout: 15000 });
+  if (await pin.getAttribute("aria-pressed") !== "true" ||
+      await page.locator(".desktop-app-header").getAttribute("aria-hidden") !== "false") {
+    // It can be visually hidden with the header, so invoke its real handler
+    // without relying on pointer hit-testing.
+    await pin.click({ force: true });
   }
   await page.waitForFunction(() =>
     document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "false",
   );
-  // Keep the header open for the whole smoke journey instead of racing its
-  // five-second auto-hide timer between separate browser assertions.
-  const pin = page.locator(".desktop-app-header-pin-button");
-  if (await pin.getAttribute("aria-pressed") !== "true") await pin.click({ force: true });
   await page.waitForFunction(() =>
     document.querySelector(".desktop-app-header-pin-button")?.getAttribute("aria-pressed") === "true",
   );
