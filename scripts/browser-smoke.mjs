@@ -256,8 +256,11 @@ try {
   // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
   await ensureHeaderVisible(gridSession.page);
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
-  await gridSession.page.getByRole("dialog", { name: "Canvas style" })
-    .getByRole("checkbox", { name: "Show pattern" }).uncheck();
+  const initialPatternSwitch = gridSession.page.getByRole("dialog", { name: "Canvas style" })
+    .getByRole("switch", { name: "Show pattern" });
+  if (await initialPatternSwitch.getAttribute("aria-checked") === "true") {
+    await initialPatternSwitch.click();
+  }
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const canvasLocator = gridSession.page.locator(".desktop-canvas-region .desktop-canvas-view .canvas");
   const sceneBounds = await canvasLocator.boundingBox();
@@ -304,8 +307,10 @@ try {
   await ensureHeaderVisible(gridSession.page);
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const gridToggle = gridSession.page.getByRole("dialog", { name: "Canvas style" })
-    .getByRole("checkbox", { name: "Show pattern" });
-  await gridToggle.check();
+    .getByRole("switch", { name: "Show pattern" });
+  if (await gridToggle.getAttribute("aria-checked") !== "true") {
+    await gridToggle.click();
+  }
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-grid-enabled"),
