@@ -685,7 +685,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
   return (
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
-      {<DockGroup label={isHighlighter ? "Fill style" : isShape || isLaser ? "Color & fill" : "Color"}>
+      {<DockGroup label={isHighlighter ? "Fill style" : isText ? "Text color" : isShape || isLaser ? "Color & fill" : "Stroke color"}>
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {!isFill && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
         {(isShape || isLaser || isHighlighter) && <>
