@@ -23,7 +23,7 @@ test("calendar popover opens below the pill and includes month navigation and To
   assert.match(dateComponent, /aria-label="Previous month"/);
   assert.match(dateComponent, /aria-label="Next month"/);
   assert.match(dateComponent, />Today<\/button>/);
-  assert.match(dateComponent, /grid-template-columns/);
+  assert.match(dateStyles, /grid-template-columns/);
 });
 
 test("date pill supports day stepping and the formatted month-day-year label", () => {
