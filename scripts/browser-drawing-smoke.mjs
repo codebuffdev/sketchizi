@@ -219,7 +219,7 @@ try {
   await page.keyboard.press("v");
   await page.mouse.click(secondX + 65, secondY + 2);
   await page.getByText("Selected shape actions", { exact: true }).waitFor();
-  await page.getByRole("tab", { name: "Canvas 1", exact: true }).click();
+  await page.getByRole("tab").and(page.getByTitle("Canvas 1", { exact: true })).click();
   await page.keyboard.press("v");
   await page.mouse.click(quickX + 50, quickY + 2);
   await page.getByText("Selected shape actions", { exact: true }).waitFor();
