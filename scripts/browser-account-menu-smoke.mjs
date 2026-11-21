@@ -23,7 +23,7 @@ try {
       await chooser.waitFor({ state: 'detached' });
 
       const header = page.locator('.desktop-app-header');
-      if (width >= 1025) {
+      if (width >= 1025 || (width >= 521 && width < 1025)) {
         await page.keyboard.press('Control+Shift+H');
       }
       if (width >= 521) {
