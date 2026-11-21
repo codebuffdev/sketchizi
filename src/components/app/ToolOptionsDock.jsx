@@ -825,11 +825,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           <span className="sk-tool-opacity-fill" style={{ width: `${opacityValue}%` }} aria-hidden="true" />
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3c-3 4-7 8-7 12a7 7 0 0 0 14 0c0-4-4-8-7-12Z" /><path d="M8 16a4 4 0 0 0 4 3" /></svg>
           <span className="sk-tool-dock-opacity-value">{opacityValue}%</span>
+          <button type="button" className={`sk-tool-opacity-precision${opacityPopoverOpen ? " is-active" : ""}`} aria-label="Open precise opacity slider" aria-expanded={opacityPopoverOpen} onPointerDown={(event) => event.stopPropagation()} onClick={() => setOpacityPopoverOpen((open) => !open)}>⌃</button>
         </div>
-        <button type="button" className={`sk-tool-opacity-precision${opacityPopoverOpen ? " is-active" : ""}`} aria-label="Open precise opacity slider" aria-expanded={opacityPopoverOpen} onClick={() => setOpacityPopoverOpen((open) => !open)}>⌃</button>
         {opacityPopoverOpen && <div className="sk-tool-opacity-popover" role="dialog" aria-label="Precise opacity">
           <input type="range" aria-label="Precise opacity" min="0" max="100" step="1" value={opacityValue} onChange={(event) => update({ opacity: Number(event.target.value) })} />
           <span>{opacityValue}%</span>
+          <div className="sk-tool-opacity-presets">{[25, 50, 75, 100].map((value) => <button key={value} type="button" aria-pressed={opacityValue === value} onClick={() => update({ opacity: value })}>{value}%</button>)}</div>
         </div>}
       </DockGroup>
     </div>
