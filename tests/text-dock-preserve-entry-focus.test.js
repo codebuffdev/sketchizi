@@ -12,11 +12,17 @@ test("text font-family menu preserves the active text editor focus", () => {
   assert.match(source, /if \(!preserveFocus\) triggerRef\.current\?\.focus\(\)/);
 });
 
-test("pending text size can be adjusted without moving focus away from the text editor", () => {
-  assert.match(source, /readOnly=\{preserveTextEditorFocus\}/);
-  assert.match(source, /onPointerDown=\{preserveTextEditorFocus \? \(event\) => event\.preventDefault\(\) : undefined\}[\s\S]*?aria-label="Decrease font size"/);
-  assert.match(source, /onPointerDown=\{preserveTextEditorFocus \? \(event\) => event\.preventDefault\(\) : undefined\}[\s\S]*?aria-label="Increase font size"/);
-  assert.match(source, /if \(preserveTextEditorFocus\) event\.preventDefault\(\)/);
+test("text size is directly editable and preserves keyboard focus semantics", () => {
+  assert.match(source, /type="text" inputMode="numeric"/);
+  assert.doesNotMatch(source, /readOnly=\{preserveTextEditorFocus\}/);
+  assert.match(source, /onFocus=\{\(event\) => \{ event\.target\.select\(\); setFontSizePopoverOpen\(true\); \}\}/);
+  assert.match(source, /event\.key === "Enter"/);
+  assert.match(source, /event\.key === "Escape"/);
+  assert.match(source, /event\.key === "ArrowUp" \|\| event\.key === "ArrowDown"/);
+  assert.match(source, /Math\.max\(8, Math\.min\(200, parsed\)\)/);
+  assert.match(source, /\[12, 16, 20, 28, 36, 48, 64\]/);
+  assert.match(source, /aria-label="Decrease font size"/);
+  assert.match(source, /aria-label="Increase font size"/);
 });
 
 test("font family controls use Excalidraw's text-property interaction hook while editing", () => {
