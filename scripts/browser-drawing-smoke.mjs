@@ -218,6 +218,8 @@ try {
     await importedPage.keyboard.press("v");
     await importedPage.mouse.click(x + 82, y + 64);
     await importedPage.getByText("Selected shape actions", { exact: true }).waitFor();
+    await importedContext.close();
+    await page.bringToFront();
     console.log("PASS: the exported drawing imports into a fresh editor and is selectable.");
   }
 
