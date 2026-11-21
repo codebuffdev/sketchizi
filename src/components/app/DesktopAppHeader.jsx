@@ -43,6 +43,17 @@ function ViewCommandIcon({ name }) {
   return <span className="desktop-app-dropdown-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.fit}</svg></span>;
 }
 
+function CanvasActionIcon({ name }) {
+  const paths = {
+    save: <><path d="M5 3h12l4 4v14H3V3h2Z" /><path d="M7 3v6h10V3M7 21v-7h10v7" /></>,
+    cloud: <><path d="M7 18H6a4 4 0 1 1 .8-7.9A6 6 0 0 1 18.5 9 4.5 4.5 0 0 1 18 18h-1" /><path d="m9 14 3-3 3 3M12 11v9" /></>,
+    download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5M12 15V3" /></>,
+    backup: <><path d="M12 3v12M7 10l5 5 5-5" /><path d="M4 19h16" /><path d="M5 6a9 9 0 0 1 14 0" /></>,
+    export: <><path d="M14 3h7v7M10 14 21 3" /><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" /></>,
+  };
+  return <span className="canvas-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.save}</svg></span>;
+}
+
 function canRun(command) {
   if (!command) return false;
   try {
@@ -787,13 +798,40 @@ export default function DesktopAppHeader({
                 <span>{isCloudDocument ? "Cloud Workspace" : currentDocumentFileBacked ? "Linked file" : "Local draft"}</span>
                 <span className="canvas-tabs-active-menu-status-detail">{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Unsaved file changes" : "Linked file saved") : saveStateLabel}</span>
               </div>
-              <div className="canvas-tabs-active-menu-actions">
-                <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveNow?.()} aria-label="Save locally"><span aria-hidden="true">↓</span>Save locally</button>
-                <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud Workspace">☁ Save to cloud</button>
-                <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }}>{currentDocumentFileBacked ? "Save / download file" : "Download file…"}</button>
-                <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onDownloadRecoveryBackup?.()}>↓ Download recovery backup</button>
-                <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }}>↗ Export canvas…</button>
-              </div>
+
+              <section className="canvas-tabs-menu-section" aria-label="Save and sync">
+                <h3>Save &amp; sync</h3>
+                <div className="canvas-tabs-active-menu-actions">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveNow?.()} aria-label="Save locally">
+                    <CanvasActionIcon name="save" />
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>Save locally</strong><small>Keep a copy on this device</small></span>
+                    <span className={`canvas-tabs-action-state is-${saveState}`}>{saveStateLabels[saveState] || "Autosave"}</span>
+                  </button>
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud Workspace">
+                    <CanvasActionIcon name="cloud" />
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>Save to cloud</strong><small>Sync with your Cloud Workspace</small></span>
+                    <span className={`canvas-tabs-action-state is-${cloudSaveState}`}>{cloudStatusLabels[cloudSaveState] || "Cloud Workspace"}</span>
+                  </button>
+                </div>
+              </section>
+
+              <section className="canvas-tabs-menu-section" aria-label="Download and export">
+                <h3>Download &amp; export</h3>
+                <div className="canvas-tabs-active-menu-actions">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }} aria-label={currentDocumentFileBacked ? "Save or download file" : "Download file"}>
+                    <CanvasActionIcon name="download" />
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>{currentDocumentFileBacked ? "Save / download file" : "Download file"}</strong><small>Save a copy to your computer</small></span>
+                  </button>
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onDownloadRecoveryBackup?.()} aria-label="Download recovery backup">
+                    <CanvasActionIcon name="backup" />
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>Recovery backup</strong><small>Download a portable backup of this canvas</small></span>
+                  </button>
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }} aria-label="Export canvas">
+                    <CanvasActionIcon name="export" />
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>Export canvas</strong><small>Choose an export format and settings</small></span>
+                  </button>
+                </div>
+              </section>
             </div>
           }
           showAddButton
