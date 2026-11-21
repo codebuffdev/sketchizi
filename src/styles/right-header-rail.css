@@ -1112,6 +1112,13 @@
   }
 }
 
+@media (min-width: 1025px) {
+  .app.canvas-first-header:has(.desktop-app-header)
+    .desktop-context-region .desktop-validation-host {
+    padding-top: calc(var(--header-top) + 2 * (var(--header-top-control-height) + var(--header-control-gap)));
+  }
+}
+
 /* Keep the canvas-style chooser fully visible on narrow phone screens. */
 @media (max-width: 520px) {
   .app .desktop-app-header .sketchizi-header-grid-popover {
