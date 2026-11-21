@@ -80,7 +80,7 @@ test("canvas menu groups save, cloud, download, backup and export actions with c
   assert.match(header, /<h3>Download &amp; export<\/h3>/);
   assert.match(header, /aria-label="Save locally"/);
   assert.match(header, /aria-label="Save to Cloud Workspace"/);
-  assert.match(header, /aria-label=\{currentDocumentFileBacked \? "Save" : "Save to file…"/\});
+  assert.ok(header.includes('aria-label={currentDocumentFileBacked ? "Save" : "Save to file…"}'));
   assert.match(header, /aria-label="Download recovery backup"/);
   assert.match(header, /aria-label="Export canvas"/);
   assert.match(header, /Keep a copy on this device/);
