@@ -749,3 +749,75 @@
   .canvas-tab-item .canvas-tab { max-width: 112px; padding-inline: 8px; }
   .canvas-tab-close { flex-basis: 20px; width: 20px; }
 }
+
+
+/* Option 2: keep document actions on-demand in a compact active-tab popover. */
+.canvas-tabs-bar { position: relative; overflow: visible; }
+.canvas-tab-item { position: relative; }
+.canvas-tab-status-dot {
+  display: inline-block; width: 8px; height: 8px; flex: 0 0 8px;
+  border-radius: 50%; background: #16a36a; box-shadow: 0 0 0 2px rgb(22 163 106 / 12%);
+}
+.canvas-tab-status-dot.is-pending, .canvas-tab-status-dot.is-saving,
+.canvas-tab-status-dot.is-ready, .canvas-tab-status-dot.is-restoring,
+.canvas-tab-status-dot.is-loading { background: #d69a32; box-shadow: 0 0 0 2px rgb(214 154 50 / 13%); }
+.canvas-tab-status-dot.is-error, .canvas-tab-status-dot.is-conflict { background: #d34b4b; box-shadow: 0 0 0 2px rgb(211 75 75 / 13%); }
+.canvas-tab-menu-trigger {
+  display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 26px;
+  margin-right: 4px; padding: 0; border: 0; border-radius: 6px; background: transparent;
+  color: var(--ct-text, #647084); cursor: pointer;
+}
+.canvas-tab-menu-trigger:hover, .canvas-tab-menu-trigger.is-open { background: var(--ct-hover, #e9edf3); color: var(--ct-strong, #202a3a); }
+.canvas-tab-menu-trigger svg { transition: transform .16s ease; }
+.canvas-tab-menu-trigger.is-open svg { transform: rotate(180deg); }
+.canvas-tabs-active-menu {
+  position: absolute; z-index: 10060; top: calc(100% + 8px); left: 0;
+  width: min(310px, calc(100vw - 24px)); padding: 12px;
+  border: 1px solid var(--ct-active-border, #d5dce7); border-radius: 13px;
+  background: var(--ct-active, #fff); color: var(--ct-strong, #202a3a);
+  box-shadow: 0 12px 34px rgb(15 23 42 / 16%);
+}
+.canvas-tabs-active-menu-content { display: flex; flex-direction: column; gap: 10px; }
+.canvas-tabs-active-menu-heading { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.canvas-tabs-active-menu-heading strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 650; }
+.canvas-tabs-active-menu-heading > span { color: var(--ct-text, #647084); font-size: 10.5px; }
+.canvas-tabs-active-menu-status {
+  display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 9px;
+  border: 1px solid var(--ct-strip-border, #dfe4ec); border-radius: 9px;
+  background: var(--ct-strip, #f7f8fa); font-size: 11px;
+}
+.canvas-tabs-active-menu-status-detail { margin-left: auto; overflow: hidden; color: var(--ct-text, #647084); text-overflow: ellipsis; white-space: nowrap; }
+.canvas-tabs-active-menu-actions { display: flex; flex-direction: column; gap: 4px; }
+.canvas-tabs-active-menu-action { display: flex; align-items: center; min-height: 34px; }
+.canvas-tabs-active-menu-action .desktop-app-save-status-wrap { position: relative; display: inline-flex; }
+.canvas-tabs-active-menu-action .desktop-app-save-status-trigger,
+.canvas-tabs-active-menu-action .desktop-app-document-rename,
+.canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button {
+  display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 32px;
+  min-width: 34px; padding: 0; border: 1px solid var(--ct-strip-border, #dfe4ec);
+  border-radius: 8px; background: var(--ct-active, #fff); color: var(--ct-text, #647084);
+}
+.canvas-tabs-active-menu-action .desktop-app-save-status-trigger:hover,
+.canvas-tabs-active-menu-action .desktop-app-document-rename:hover,
+.canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button:hover { background: var(--ct-hover, #e9edf3); color: var(--ct-strong, #202a3a); }
+.canvas-tabs-active-menu-action .desktop-app-save-status-popover { top: 38px; left: 0; right: auto; z-index: 10070; }
+.canvas-tabs-active-menu-action .desktop-app-document-identity-name-input { max-width: 190px; }
+.canvas-tabs-active-menu-export {
+  display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 0 9px;
+  border: 1px solid var(--ct-strip-border, #dfe4ec); border-radius: 8px;
+  background: var(--ct-active, #fff); color: var(--ct-strong, #202a3a);
+  font: inherit; font-size: 11px; text-align: left; cursor: pointer;
+}
+.canvas-tabs-active-menu-export:hover { background: var(--ct-hover, #e9edf3); }
+.app.theme-dark .canvas-tabs-active-menu {
+  border-color: #46546a; background: #202834; color: #f3f5fa; box-shadow: 0 12px 34px rgb(0 0 0 / 42%);
+}
+.app.theme-dark .canvas-tabs-active-menu-status { border-color: #354154; background: #252e3c; }
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-status-trigger,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-document-rename,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button,
+.app.theme-dark .canvas-tabs-active-menu-export { border-color: #354154; background: #202834; color: #c3ccda; }
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-status-trigger:hover,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-document-rename:hover,
+.app.theme-dark .canvas-tabs-active-menu-action .desktop-app-save-to-cloud-button:hover,
+.app.theme-dark .canvas-tabs-active-menu-export:hover { background: #303a4b; color: #fff; }
