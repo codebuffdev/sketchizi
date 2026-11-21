@@ -31,6 +31,14 @@ test("dock keeps clear of the zoom/date row on every width", () => {
   assert.match(css, /@media \(max-width:\s*760px\)[\s\S]*bottom:\s*calc\(12px \+ var\(--canvas-corner-row-height, 36px\) \+ 8px\)/);
 });
 
+test("properties dock starts directly with styling controls and has uniform horizontal padding", () => {
+  assert.doesNotMatch(dockSource, /sk-tool-dock-context|ContextShapeIcon/);
+  assert.match(dockSource, /className="sketchizi-tool-options-dock"[^>]*>[\\s\\S]*?<DockGroup label="Stroke color">/);
+  assert.match(css, /padding:\\s*5px 12px !important/);
+  assert.match(css, /first-of-type\\) \\{[\\s\\S]*?margin-left:\\s*0;[\\s\\S]*?padding-left:\\s*0 !important/);
+  assert.match(css, /first-of-type::before \\{ display:\\s*none; \\}/);
+});
+
 test("polish is visual only: no controls hidden or removed", () => {
   assert.doesNotMatch(css, /display:\s*none\s*!?i?m?p?o?r?t?a?n?t?;?[^}]*sk-tool-option-button/);
   for (const name of ["sk-tool-layer-control", "sk-tool-text-size", "sk-tool-color-dot", "sk-tool-choice", "sk-tool-dock-opacity-value"]) {
