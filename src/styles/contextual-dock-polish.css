@@ -773,3 +773,22 @@
 
 
 /* Enter/exit animation lives in hud-capsules.css. */
+
+
+/* Shape stroke/fill targeting in the floating formatting dock. */
+.app .format-shape-color-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.app .format-fill-target-toggle { display:inline-flex; flex:0 0 auto; align-items:center; gap:2px; padding:3px; border:1px solid var(--dock-border, rgb(128 128 128 / 22%)); border-radius:999px; background:var(--dock-control-bg, rgb(128 128 128 / 9%)); }
+.app .format-fill-target { display:inline-flex; min-height:28px; align-items:center; gap:5px; padding:0 9px; border:0; border-radius:999px; background:transparent; color:inherit; font-size:11px; font-weight:600; cursor:pointer; }
+.app .format-fill-target.is-active { background:#6965db; color:#fff; }
+.app .format-color-preview { width:10px; height:10px; flex:0 0 10px; border:1px solid rgb(0 0 0 / 22%); border-radius:50%; background:var(--preview-color, transparent); }
+.app .format-color-preview.is-transparent { background:transparent; background-image:linear-gradient(135deg, transparent 43%, #e05252 45%, #e05252 55%, transparent 57%); }
+.app .format-fill-style-group { display:flex; align-items:center; gap:4px; margin-top:7px; }
+.app .format-fill-style-button { display:grid; width:28px; height:28px; place-items:center; padding:0; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-primary, currentColor); cursor:pointer; }
+.app .format-fill-style-button:hover { background:rgb(128 128 128 / 12%); }
+.app .format-fill-style-button.is-selected { border-color:#6965db; background:rgb(105 101 219 / 14%); }
+.app .format-fill-style-button svg { width:15px; height:15px; overflow:visible; }
+.app .format-fill-preview-solid { fill:currentColor; }
+.app .format-fill-preview-lines line { stroke:currentColor; stroke-width:1.15; }
+.app .format-fill-preview-outline { fill:none; stroke:currentColor; stroke-width:1; }
+.app .format-option-swatch.is-transparent { position:relative; }
+.app .format-option-swatch.is-transparent::after { content:""; position:absolute; width:20px; height:2px; background:#e05252; transform:rotate(-45deg); }
