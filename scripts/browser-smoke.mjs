@@ -87,7 +87,7 @@ try {
   await ensureHeaderVisible(blank.page);
 
   const aiToggle = blank.page.getByRole("button", { name: "AI Ask", exact: true });
-  const railToggle = blank.page.getByRole("button", { name: "Canvas settings" });
+  const railToggle = blank.page.locator(".desktop-app-header-reveal-handle");
   const aiDrawer = blank.page.locator(".ai-ask-panel");
   const rail = blank.page.locator(".desktop-app-header-right-rail");
   await aiToggle.click();
@@ -109,13 +109,19 @@ try {
       ai.x + ai.width > drawer.x) {
     throw new Error(`AI and sliders must share the top control row, with the tool rail below and all controls beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
   }
-  // Canvas settings is a popover toggle, not a control for hiding the
-  // legacy header rail. Verify the settings dialog opens and closes while
-  // the pinned header remains visible beside the AI drawer.
+  // The utility-rail reveal handle toggles the legacy header rail. Verify
+  // both states directly instead of looking for the retired Canvas settings
+  // popover that no longer exists in the current header implementation.
   await railToggle.click();
-  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor();
+  await blank.page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-reveal-handle")?.getAttribute("aria-expanded") === "false" &&
+    document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "true",
+  );
   await railToggle.click();
-  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor({ state: "detached" });
+  await blank.page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-reveal-handle")?.getAttribute("aria-expanded") === "true" &&
+    document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "false",
+  );
   await rail.waitFor({ state: "visible" });
   await aiToggle.click();
   await aiDrawer.waitFor({ state: "detached" });
