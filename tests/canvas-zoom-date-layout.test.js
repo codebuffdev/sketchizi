@@ -34,5 +34,6 @@ test("date pill supports day stepping and the formatted month-day-year label", (
 
 test("native Excalidraw zoom controls are removed from the bottom viewport HUD", () => {
   assert.match(dateStyles, /\.app \.excalidraw \.zoom-actions\s*\{\s*display:\s*none !important;/);
+  assert.match(dateStyles, /@media \(max-width: 520px\)[\\s\\S]*?canvas-start-date-wrap[\\s\\S]*?display: none !important;/);
   assert.doesNotMatch(dateStyles, /canvas-start-date-wrap\s*\{[^}]*position:\s*absolute[^}]*bottom:/s);
 });
