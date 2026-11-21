@@ -36,7 +36,7 @@ test("choice selection applies the actual option value and restores trigger focu
 test("sloppiness remains available for shapes, lines, arrows, and draw-to-shape", () => {
   assert.ok(dock.includes('const isShape = ["rectangle", "diamond", "ellipse"].includes(type)'));
   assert.ok(dock.includes('const isLine = ["line", "arrow"].includes(type)'));
-  assert.ok(dock.includes('<DockGroup label="Roughness">'));
+  assert.ok(dock.includes('<DockGroup label="Shape modifiers & layers">'));
   assert.ok(dock.includes('<VisualOptionSelect label="Roughness"'));
   for (const label of ["Architect", "Artist", "Cartoonist"]) assert.ok(dock.includes(`label: "${label}"`));
   assert.ok(dock.includes("onChange={(value) => update({ roughness: Number(value) })}"));
