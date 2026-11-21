@@ -20,26 +20,26 @@ const ICONS = {
 };
 
 // Grace period before the dock collapses after the pointer leaves it.
-const COLLAPSE_GRACE_MS = 180;
+const COLLAPSE_GRACE_MS = 3000;
 
 // Hints are only shown for shortcuts already handled by Excalidraw.
 const TOOLS = [
-  { id: "selection", label: "Select", keyHint: "V" },
-  { id: "hand", label: "Pan Canvas", keyHint: "H" },
-  { id: "rectangle", label: "Rectangle", keyHint: "R" },
-  { id: "ellipse", label: "Ellipse", keyHint: "O" },
-  { id: "diamond", label: "Diamond", keyHint: "D" },
-  { id: "arrow", label: "Arrow", keyHint: "A" },
-  { id: "line", label: "Line", keyHint: "L" },
-  { id: "freedraw", label: "Draw", keyHint: "P" },
-  { id: "text", label: "Text", keyHint: "T" },
-  { id: "image", label: "Insert Image", keyHint: "I" },
-  { id: "frame", label: "Frame", keyHint: "F" },
-  { id: "eraser", label: "Eraser", keyHint: "E" },
-  { id: "laser", label: "Laser Pointer", keyHint: "K" },
-  { id: "bucketfill", label: "Bucket Fill" },
-  { id: "autoshape", label: "Draw to Shape" },
-  { id: "todo", label: "Todo List", separated: true },
+  { id: "selection", label: "Select", keyHint: "V", group: "navigation" },
+  { id: "hand", label: "Hand", keyHint: "H", group: "navigation" },
+  { id: "rectangle", label: "Rectangle", keyHint: "R", group: "shapes", groupStart: true },
+  { id: "ellipse", label: "Ellipse", keyHint: "O", group: "shapes" },
+  { id: "diamond", label: "Diamond", keyHint: "D", group: "shapes" },
+  { id: "arrow", label: "Arrow", keyHint: "A", group: "creation", groupStart: true },
+  { id: "line", label: "Line", keyHint: "L", group: "creation" },
+  { id: "freedraw", label: "Draw", keyHint: "P", group: "creation" },
+  { id: "text", label: "Text", keyHint: "T", group: "creation" },
+  { id: "image", label: "Image", keyHint: "I", group: "creation" },
+  { id: "frame", label: "Frame", keyHint: "F", group: "creation" },
+  { id: "bucketfill", label: "Bucket Fill", group: "creation" },
+  { id: "autoshape", label: "Draw to Shape", group: "creation" },
+  { id: "eraser", label: "Eraser", keyHint: "E", group: "utilities", groupStart: true },
+  { id: "laser", label: "Laser", keyHint: "K", group: "utilities" },
+  { id: "todo", label: "Checklist", group: "utilities" },
 ];
 
 function ToolIcon({ name }) {
@@ -85,11 +85,20 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     const clearCustomTool = (event) => {
       if (!event.target?.closest?.(".sketchizi-tool-sidebar button")) setCustomTool(null);
     };
+    const collapseOutside = (event) => {
+      if (!event.target?.closest?.(".sketchizi-tool-sidebar")) {
+        if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+        collapseTimerRef.current = null;
+        setExpanded(false);
+      }
+    };
     window.addEventListener("sketchizi:activate-tool", syncCustomTool);
     window.addEventListener("click", clearCustomTool, true);
+    document.addEventListener("pointerdown", collapseOutside, true);
     return () => {
       window.removeEventListener("sketchizi:activate-tool", syncCustomTool);
       window.removeEventListener("click", clearCustomTool, true);
+      document.removeEventListener("pointerdown", collapseOutside, true);
     };
   }, []);
 
@@ -192,19 +201,21 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
           const isDisplayed = displayedTool === tool.id;
           return (
             <React.Fragment key={tool.id}>
-              {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
+              {tool.groupStart && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
               <button
                 type="button"
                 ref={tool.id === TOOLS[0].id ? firstToolButtonRef : undefined}
                 className={`sketchizi-tool-sidebar-button${isDisplayed ? " is-active" : ""}`}
                 aria-label={tool.label}
                 aria-pressed={isDisplayed}
-                title={tool.keyHint ? `${tool.label} (${tool.keyHint})` : tool.label}
                 disabled={!canEdit && tool.id !== "todo"}
                 onClick={() => chooseTool(tool)}
               >
                 <ToolIcon name={tool.id} />
-                {tool.keyHint && <span className="sketchizi-tool-sidebar-key">{tool.keyHint}</span>}
+                <span className="sketchizi-tool-sidebar-tooltip" role="tooltip">
+                  <span>{tool.label}</span>
+                  {tool.keyHint && <kbd>[{tool.keyHint}]</kbd>}
+                </span>
               </button>
             </React.Fragment>
           );
@@ -219,23 +230,12 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
           aria-label={`Active tool: ${activeToolMeta.label}. Expand drawing tools`}
           aria-expanded={expanded}
           aria-controls="sketchizi-tool-sidebar-list"
-          title={` ${activeToolMeta.label} — hover or focus to expand tools`}
+          title={activeToolMeta.label}
           disabled={!canEdit && activeToolMeta.id !== "todo"}
           onMouseEnter={expandDock}
           onClick={handleExpandClick}
         >
           <ToolIcon name={activeToolMeta.id} />
-          {activeToolMeta.keyHint && <span className="sketchizi-tool-sidebar-key">{activeToolMeta.keyHint}</span>}
-        </button>
-        <button
-          type="button"
-          className="sketchizi-tool-sidebar-expand"
-          aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
-          aria-expanded={expanded}
-          tabIndex={-1}
-          onMouseEnter={expandDock}
-          onClick={handleExpandClick}
-        >
           <span className="sketchizi-tool-sidebar-indicator" aria-hidden="true" />
           <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
         </button>
