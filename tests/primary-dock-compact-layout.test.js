@@ -8,8 +8,10 @@ function declarations(block) {
   return out;
 }
 function rulesFor(selector, source = css) {
-  const escaped = selector.replace(/[.*+?^$|[\]\\]/g, "\\$&");
-  return [...source.matchAll(new RegExp(escaped + "\\s*\\{([^}]*)\\}", "g"))].map((m) => declarations(m[1]));
+  const re = /([^{}]+)\\{([^}]*)\\}/g;
+  return [...source.matchAll(re)]
+    .filter((m) => m[1].split(",").some((part) => part.trim() === selector))
+    .map((m) => declarations(m[2]));
 }
 function mediaBlock(query) {
   const start = css.indexOf("@media " + query);
