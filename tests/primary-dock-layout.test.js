@@ -42,3 +42,10 @@ test("expanded dock collapses automatically without a redundant text control", (
   assert.match(component, /requestAnimationFrame\(\(\) => firstToolButtonRef\.current\?\.focus\(\)\)/);
   assert.match(component, /requestAnimationFrame\(\(\) => activeButtonRef\.current\?\.focus\(\)\)/);
 });
+
+
+test("primary dock uses a 3-second hover grace period and right-side shortcut hints", () => {
+  assert.match(component, /COLLAPSE_GRACE_MS = 3000/);
+  assert.match(component, /data-shortcut=\{tool\.keyHint \|\| undefined\}/);
+  assert.match(component, /title=\{tool\.label\}/);
+});
