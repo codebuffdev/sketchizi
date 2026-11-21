@@ -940,3 +940,207 @@
 .app.theme-dark .canvas-tabs-recovery-note { background: #252e3c; }
 .app.theme-dark .canvas-tabs-recovery-note strong { color: #e9eef6; }
 .app.theme-dark .canvas-tabs-recovery-note span { color: #aab5c5; }
+
+
+/* Dark document tabs: one unified active pill with no nested capsule. */
+.app.theme-dark .canvas-tabs-list {
+  gap: 6px;
+  min-height: 36px;
+  height: 36px;
+}
+
+.app.theme-dark .canvas-tab-item {
+  box-sizing: border-box;
+  min-height: 36px;
+  height: 36px;
+  gap: 2px;
+  padding: 0 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: #191e2a;
+  box-shadow: none;
+  transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+
+.app.theme-dark .canvas-tab-item:not(.is-active):hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1e2433;
+}
+
+.app.theme-dark .canvas-tab-item.is-active {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 3px 0 0;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 10px;
+  background: #232938;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.app.theme-dark .canvas-tab-item > .canvas-tab,
+.app.theme-dark .canvas-tab-item > .canvas-tab.is-active {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 300px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 9px;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.app.theme-dark .canvas-tab-item > .canvas-tab:hover,
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab,
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab.is-active {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab {
+  color: #f1f5f9;
+  font-weight: 650;
+}
+
+.app.theme-dark .canvas-tab-item .canvas-tab-name {
+  min-width: 0;
+  max-width: 280px;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app.theme-dark .canvas-tab-item .canvas-tab-icon {
+  color: #94a3b8;
+  opacity: .78;
+}
+
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-icon {
+  color: #818cf8;
+  opacity: 1;
+}
+
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-status-dot {
+  flex: 0 0 8px;
+}
+
+.app.theme-dark .canvas-tab-inline-rename {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 34px;
+}
+
+.app.theme-dark .canvas-tab-inline-rename .desktop-app-document-rename,
+.app.theme-dark .canvas-tab-menu-trigger,
+.app.theme-dark .canvas-tab-close {
+  color: #cbd5e1;
+  opacity: .55;
+  transition: opacity .14s ease, background-color .14s ease, color .14s ease;
+}
+
+.app.theme-dark .canvas-tab-inline-rename .desktop-app-document-rename,
+.app.theme-dark .canvas-tab-menu-trigger {
+  width: 24px;
+  height: 26px;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.app.theme-dark .canvas-tab-inline-rename .desktop-app-document-rename:hover,
+.app.theme-dark .canvas-tab-menu-trigger:hover,
+.app.theme-dark .canvas-tab-menu-trigger.is-open {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  opacity: 1;
+}
+
+.app.theme-dark .canvas-tab-item:hover .canvas-tab-inline-rename .desktop-app-document-rename,
+.app.theme-dark .canvas-tab-item:hover .canvas-tab-menu-trigger,
+.app.theme-dark .canvas-tab-item:hover .canvas-tab-close,
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-inline-rename .desktop-app-document-rename,
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-menu-trigger,
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-close {
+  opacity: .55;
+}
+
+.app.theme-dark .canvas-tab-inline-rename .desktop-app-document-rename:hover,
+.app.theme-dark .canvas-tab-menu-trigger:hover,
+.app.theme-dark .canvas-tab-menu-trigger.is-open,
+.app.theme-dark .canvas-tab-close:hover:not(:disabled),
+.app.theme-dark .canvas-tab-inline-rename .desktop-app-document-rename:focus-visible,
+.app.theme-dark .canvas-tab-menu-trigger:focus-visible,
+.app.theme-dark .canvas-tab-close:focus-visible {
+  opacity: 1;
+}
+
+.app.theme-dark .canvas-tab-close {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 26px;
+  margin: 0 0 0 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.app.theme-dark .canvas-tab-close::before {
+  position: absolute;
+  top: 6px;
+  left: -2px;
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  content: "";
+}
+
+.app.theme-dark .canvas-tab-close:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+.app.theme-dark .canvas-tab-item:not(.is-active) .canvas-tab-close {
+  opacity: .55;
+}
+
+.app.theme-dark .canvas-tabs-overflow-trigger,
+.app.theme-dark .canvas-tabs-add,
+.app.theme-dark .desktop-app-menu-trigger-floating {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: #191e2a;
+  color: #94a3b8;
+  box-shadow: none;
+}
+
+.app.theme-dark .canvas-tabs-overflow-trigger:hover,
+.app.theme-dark .canvas-tabs-add:hover,
+.app.theme-dark .desktop-app-menu-trigger-floating:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1e2433;
+  color: #f1f5f9;
+}
+
+@media (max-width: 760px) {
+  .app.theme-dark .canvas-tab-item > .canvas-tab {
+    max-width: 190px;
+  }
+  .app.theme-dark .canvas-tab-item .canvas-tab-name {
+    max-width: 170px;
+  }
+}
