@@ -45,3 +45,10 @@ test("dock waits three seconds after pointer leaves and cancels collapse on re-e
   assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, 3000\)/);
   assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)/);
 });
+
+
+test("selecting a tool collapses the dock immediately and clears the pending hover timer", () => {
+  assert.match(dock, /const collapseDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)[\s\S]*?setExpanded\(false\)/);
+  assert.match(dock, /const chooseTool = \(tool\) => \{[\s\S]*?collapseDock\(\);/);
+  assert.doesNotMatch(dock, /if \(window\.matchMedia\?\.\("\(hover: none\)"\)\.matches\) collapseDock\(\)/);
+});
