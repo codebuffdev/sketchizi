@@ -815,6 +815,12 @@ export default function DesktopAppHeader({
                 </div>
               </section>
 
+              <div className="canvas-tabs-recovery-note">
+                <strong>Local save &amp; recovery</strong>
+                <span>Sketchizi autosaves this canvas in this browser on this device.</span>
+                <span>Local autosave is not a cloud backup.</span>
+              </div>
+
               <section className="canvas-tabs-menu-section" aria-label="Download and export">
                 <h3>Download &amp; export</h3>
                 <div className="canvas-tabs-active-menu-actions">
