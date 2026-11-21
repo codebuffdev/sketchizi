@@ -744,3 +744,24 @@
     max-width: calc(100vw - 24px) !important;
   }
 }
+
+
+/* Final control dimensions from the modular tool matrix. */
+.app .sketchizi-tool-options-dock .sk-tool-text-size-input input {
+  width: 30px !important;
+  min-width: 30px !important;
+  text-align: right !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group[aria-label="Color & fill"] .sk-tool-option-button,
+.app .sketchizi-tool-options-dock .sk-tool-dock-group[aria-label="Fill style"] .sk-tool-option-button {
+  width: 26px !important;
+  min-width: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 !important;
+  border-radius: 7px !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-choice-trigger {
+  min-height: 28px !important;
+  height: 28px !important;
+}
