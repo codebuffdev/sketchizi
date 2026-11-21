@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import CanvasPages from "../../features/pages/CanvasPages.jsx";
 import CanvasTabs from "./CanvasTabs.jsx";
+import CanvasStartDate from "./CanvasStartDate.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
 import CanvasZoomControl from "./CanvasZoomControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
@@ -114,6 +115,12 @@ export default function DesktopAppHeader({
   currentDocumentDirty = false,
   canvasTabs = [],
   activeCanvasId,
+  canvasId,
+  canvasStartDate,
+  canvasActivity = [],
+  onCanvasActivityChange,
+  onCanvasStartDateChange,
+  canvasDateDisabled = false,
   onSelectCanvasTab,
   onCreateCanvasTab,
   onReorderCanvasTabs,
@@ -882,6 +889,7 @@ export default function DesktopAppHeader({
             </div>
           }
           showAddButton
+          trailingControl={!activeIsTodoTab && canvasId ? <CanvasStartDate key={canvasId} canvasId={canvasId} value={canvasStartDate} activity={canvasActivity} onActivityChange={onCanvasActivityChange} onChange={onCanvasStartDateChange} disabled={canvasDateDisabled} /> : null}
         />
       </div>
 
