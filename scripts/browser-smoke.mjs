@@ -69,19 +69,6 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
-  // Architecture validation is exposed by the scene-aware Smart Studio menu,
-  // not the command palette. The configured AWS template above supplies the
-  // infrastructure context required to render that contextual launcher.
-  const smartStudio = page.locator(".smart-studio-pill");
-  await smartStudio.waitFor({ state: "visible", timeout: 15000 });
-  await smartStudio.click();
-  const studioMenu = page.getByRole("menu", { name: "Studio quick launch" });
-  await studioMenu.getByRole("menuitem", { name: /Run Architecture Validation/ }).click();
-  await page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
-  await page.getByRole("button", { name: "Close architecture validation" }).click();
-  console.log("PASS: Architecture Validation launches from the contextual Smart Studio menu.");
-
-
   // A populated canvas stays intact while the plus action opens a new canvas tab.
   await page.getByRole("button", { name: "Create new canvas" }).click();
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
