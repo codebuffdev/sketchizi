@@ -109,10 +109,13 @@ try {
       ai.x + ai.width > drawer.x) {
     throw new Error(`AI and sliders must share the top control row, with the tool rail below and all controls beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
   }
+  // Canvas settings is a popover toggle, not a control for hiding the
+  // legacy header rail. Verify the settings dialog opens and closes while
+  // the pinned header remains visible beside the AI drawer.
   await railToggle.click();
-  await rail.waitFor({ state: "hidden" });
-  await aiDrawer.waitFor();
+  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor();
   await railToggle.click();
+  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor({ state: "detached" });
   await rail.waitFor({ state: "visible" });
   await aiToggle.click();
   await aiDrawer.waitFor({ state: "detached" });
