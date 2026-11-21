@@ -8,7 +8,7 @@ test("Line and Arrow contextual docks expose all geometry styles", () => {
   for (const style of ["straight", "curved", "elbow", "rounded-elbow"]) {
     assert.ok(source.includes(`["${style}",`), `missing ${style} geometry option`);
   }
-  assert.ok(source.includes('{isLine && <DockGroup label="Line routing">'));
+  assert.ok(source.includes('{isLine && <VisualOptionSelect label="Line routing"'));
   assert.ok(source.includes('label="Line routing" value={lineGeometry} onChange={updateLineGeometry} kind="line-geometry"'));
 });
 
