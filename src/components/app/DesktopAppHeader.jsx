@@ -387,6 +387,12 @@ export default function DesktopAppHeader({
     error: "Save issue",
   };
   const saveStateLabel = saveStateLabels[saveState] || "Local save status";
+  const storageLocation = isCloudDocument ? "Cloud" : currentDocumentFileBacked ? "File" : "Local";
+  const documentStatusLabel = isCloudDocument
+    ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace")
+    : currentDocumentFileBacked
+      ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file")
+      : `Local canvas. ${saveStateLabel}`;
   const cloudStatusLabels = {
     loading: "Loading from Cloud Workspace",
     pending: "Cloud changes pending",
@@ -871,8 +877,16 @@ const activeTabActions = (
         <div className="desktop-app-canvas-context-meta">
           {!activeIsTodoTab && activeTabLeadingAction}
           {!documentNameEditing && <strong className="desktop-app-canvas-context-name">{activeCanvasTabName}</strong>}
-          <span className="desktop-app-canvas-context-status" role="status">
-            <span className={`desktop-app-canvas-context-status-dot is-${isCloudDocument ? cloudSaveState : saveState}`} />
+          <span className="desktop-app-canvas-context-status" role="status" title={documentStatusLabel}>
+            {isCloudDocument && <span className={`desktop-app-canvas-context-status-dot is-${cloudSaveState}`} />}
+            {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
+              <span
+                className={`desktop-app-document-identity-dirty-dot is-${saveState}`}
+                aria-label={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+                title={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+              />
+            )}
+            <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
             <span>{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file") : `Local Draft • ${saveStateLabel}`}</span>
           </span>
           {!activeIsTodoTab && activeTabActions}
