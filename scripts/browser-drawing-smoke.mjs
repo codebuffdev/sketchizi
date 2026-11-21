@@ -180,6 +180,23 @@ try {
   await page.getByText("Selected shape actions", { exact: true }).waitFor();
   console.log("PASS: the restored rectangle is selectable and native grid survives browser reload.");
 
+  // Draw again and reload before the debounced write can finish. The same
+  // browser tab must reopen the pending drawing as well as its saved scene.
+  const quickX = Math.round(bounds.x + bounds.width * 0.57);
+  const quickY = Math.round(bounds.y + bounds.height * 0.50);
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("r");
+  await page.mouse.move(quickX, quickY);
+  await page.mouse.down();
+  await page.mouse.move(quickX + 100, quickY + 60, { steps: 6 });
+  await page.mouse.up();
+  await page.reload({ waitUntil: "networkidle", timeout: 60000 });
+  await viewport.waitFor({ state: "visible" });
+  await page.keyboard.press("v");
+  await page.mouse.click(quickX + 50, quickY + 2);
+  await page.getByText("Selected shape actions", { exact: true }).waitFor();
+  console.log("PASS: a rectangle survives immediate reload and remains selectable.");
+
   if (errors.length) throw new Error("Browser runtime exceptions: " + errors.join(" | "));
 } finally {
   await browser.close();
