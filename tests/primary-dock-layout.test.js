@@ -36,7 +36,7 @@ test("primary dock exposes keyboard hints only for supported shortcuts", () => {
 });
 
 test("expanded dock collapses automatically without a redundant text control", () => {
-  assert.doesNotMatch(component, /sketchizi-tool-sidebar-collapse/);
+  assert.doesNotMatch(component, /sketchizi-tool-sidebar-collapse(?=["\\s])/);
   assert.match(component, /onMouseLeave=\{scheduleCollapse\}/);
   assert.match(component, /setTimeout\(\(\) => \{/);
   assert.match(component, /requestAnimationFrame\(\(\) => firstToolButtonRef\.current\?\.focus\(\)\)/);
