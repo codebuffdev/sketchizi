@@ -1,78 +1,146 @@
-/* Compact, minimal left-aligned tool rail.
-   Dimensions are driven by custom properties so the layout contract is testable:
-   rail = 2*border + 2*padding-x + button width; the vertical budget is capped below
-   so a vertically centred rail can never reach the header / hamburger menu. */
+/* Bottom-left hover dock: compact active-tool pill, expanding upward. */
 .sketchizi-tool-sidebar {
-  --sk-dock-btn-w: 34px;
-  --sk-dock-btn-h: 32px;
-  --sk-dock-icon: 19px;
-  --sk-dock-gap: 1px;
-  --sk-dock-pad-x: 4px;
-  --sk-dock-pad-y: 5px;
+  --sk-dock-width: 44px;
+  --sk-dock-button: 32px;
   position: fixed;
   z-index: 10040;
   left: 16px;
-  top: 50%;
+  bottom: 58px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sk-dock-gap);
   box-sizing: border-box;
-  width: calc(var(--sk-dock-btn-w) + 2 * var(--sk-dock-pad-x) + 2px);
-  /* Symmetric about the vertical centre, clear of the header on both sides. */
-  max-height: calc(100vh - 2 * (var(--sketchizi-desktop-header-height, 58px) + 8px));
-  max-height: calc(100dvh - 2 * (var(--sketchizi-desktop-header-height, 58px) + 8px));
-  padding: var(--sk-dock-pad-y) var(--sk-dock-pad-x);
-  overflow-x: hidden;
-  overflow-y: auto;
+  width: var(--sk-dock-width);
+  max-height: calc(100dvh - 112px);
+  padding: 6px;
+  overflow: hidden;
   border: 1px solid rgb(205 210 219 / 82%);
-  border-radius: 14px;
-  background: rgb(248 249 251 / 91%);
-  color: #686d75;
-  box-shadow: 0 3px 12px rgb(25 32 45 / 12%), inset 0 1px 2px rgb(255 255 255 / 96%);
+  border-radius: 15px;
+  background: rgb(255 255 255 / 95%);
+  color: #626873;
+  box-shadow: 0 6px 24px rgb(15 23 42 / 10%), inset 0 1px 2px rgb(255 255 255 / 96%);
   backdrop-filter: blur(15px) saturate(125%);
   -webkit-backdrop-filter: blur(15px) saturate(125%);
-  transform: translateY(-50%);
-  scrollbar-width: none;
   user-select: none;
+  transition: border-radius .2s ease, box-shadow .2s ease, background-color .2s ease;
 }
-.sketchizi-tool-sidebar::-webkit-scrollbar { display: none; }
-.sketchizi-tool-sidebar-button {
+.sketchizi-tool-sidebar-list {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  max-height: 0;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  scrollbar-width: none;
+  transition: max-height .28s cubic-bezier(.22,1,.36,1), opacity .16s ease, margin .2s ease;
+}
+.sketchizi-tool-sidebar-list::-webkit-scrollbar { display: none; }
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
+  max-height: calc(100dvh - 132px);
+  margin-bottom: 4px;
+  opacity: 1;
+  pointer-events: auto;
+}
+.sketchizi-tool-sidebar-button,
+.sketchizi-tool-sidebar-active {
+  position: relative;
   display: grid;
-  flex: 0 0 var(--sk-dock-btn-h);
+  flex: 0 0 var(--sk-dock-button);
   place-items: center;
   box-sizing: border-box;
-  width: var(--sk-dock-btn-w);
-  height: var(--sk-dock-btn-h);
-  min-height: var(--sk-dock-btn-h);
+  width: var(--sk-dock-button);
+  height: var(--sk-dock-button);
+  min-height: var(--sk-dock-button);
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: 10px;
   background: transparent;
   color: inherit;
   cursor: pointer;
-  transition: color .12s ease, background .12s ease, box-shadow .12s ease, transform .12s ease;
+  transition: color .14s ease, background .14s ease, box-shadow .14s ease, transform .14s ease;
 }
-.sketchizi-tool-sidebar-button svg {
+.sketchizi-tool-sidebar-button svg,
+.sketchizi-tool-sidebar-active svg {
   display: block;
-  width: var(--sk-dock-icon);
-  height: var(--sk-dock-icon);
+  width: 19px;
+  height: 19px;
 }
 .sketchizi-tool-sidebar-button:hover:not(:disabled) {
   background: rgb(226 229 234 / 72%);
   color: #30343b;
 }
-.sketchizi-tool-sidebar-button.is-active {
+.sketchizi-tool-sidebar-button.is-active,
+.sketchizi-tool-sidebar-active {
   border-color: #292c31;
   background: linear-gradient(145deg, #30343a, #17191d);
   color: #fff;
   box-shadow: 0 2px 6px rgb(15 18 24 / 26%);
 }
-.sketchizi-tool-sidebar-button:active:not(:disabled) { transform: scale(.96); }
-.sketchizi-tool-sidebar-button:disabled { opacity: .38; cursor: not-allowed; }
-.sketchizi-tool-sidebar-button:focus-visible {
+.sketchizi-tool-sidebar-button:active:not(:disabled),
+.sketchizi-tool-sidebar-active:active:not(:disabled) { transform: scale(.96); }
+.sketchizi-tool-sidebar-button:disabled,
+.sketchizi-tool-sidebar-active:disabled { opacity: .38; cursor: not-allowed; }
+.sketchizi-tool-sidebar-button:focus-visible,
+.sketchizi-tool-sidebar-active:focus-visible,
+.sketchizi-tool-sidebar-expand:focus-visible {
   outline: 2px solid #777f8b;
   outline-offset: 2px;
+}
+.sketchizi-tool-sidebar-key {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  color: rgb(255 255 255 / 62%);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+.sketchizi-tool-sidebar-button:not(.is-active) .sketchizi-tool-sidebar-key {
+  color: #9aa0aa;
+}
+.sketchizi-tool-sidebar-tooltip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 10060;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 9px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 8px;
+  background: #20232a;
+  color: #fff;
+  box-shadow: 0 5px 16px rgb(0 0 0 / 18%);
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-4px, -50%);
+  pointer-events: none;
+  transition: opacity .14s ease, transform .14s ease;
+}
+.sketchizi-tool-sidebar-button:hover .sketchizi-tool-sidebar-tooltip,
+.sketchizi-tool-sidebar-button:focus-visible .sketchizi-tool-sidebar-tooltip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+.sketchizi-tool-sidebar-tooltip kbd {
+  min-width: 17px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 15%);
+  color: #f4f4f5;
+  font: inherit;
+  text-align: center;
 }
 .sketchizi-tool-sidebar-divider {
   flex: 0 0 1px;
@@ -81,51 +149,84 @@
   margin: 3px 0 4px;
   background: rgb(119 125 136 / 25%);
 }
+.sketchizi-tool-sidebar-collapsed {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+  opacity: 1;
+  transition: max-height .2s ease, opacity .14s ease;
+}
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-collapsed {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.sketchizi-tool-sidebar-active {
+  flex: 0 0 var(--sk-dock-button);
+}
+.sketchizi-tool-sidebar-expand {
+  display: grid;
+  place-items: center;
+  flex: 0 0 12px;
+  width: 100%;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+.sketchizi-tool-sidebar-expand span {
+  width: 10px;
+  height: 2px;
+  border-radius: 99px;
+  background: #c5cad2;
+  transition: background .14s ease, width .14s ease;
+}
+.sketchizi-tool-sidebar-expand:hover span { width: 15px; background: #858c98; }
 .sketchizi-tool-sidebar.is-dark {
   border-color: rgb(255 255 255 / 13%);
-  background: rgb(36 40 47 / 94%);
+  background: rgb(31 35 43 / 96%);
   color: #c6cbd3;
-  box-shadow: 0 3px 12px rgb(0 0 0 / 28%), inset 0 1px 2px rgb(255 255 255 / 7%);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 38%), inset 0 1px 2px rgb(255 255 255 / 7%);
 }
 .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button:hover:not(:disabled) {
   background: rgb(255 255 255 / 9%);
   color: #fff;
 }
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button.is-active {
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button.is-active,
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-active {
   border-color: #0b0d10;
   background: linear-gradient(145deg, #30343a, #111316);
   color: #fff;
 }
 .sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-divider { background: rgb(255 255 255 / 17%); }
-@media (max-width: 600px) {
-  .sketchizi-tool-sidebar {
-    --sk-dock-btn-w: 32px;
-    --sk-dock-btn-h: 30px;
-    --sk-dock-icon: 18px;
-    --sk-dock-pad-x: 3px;
-    --sk-dock-pad-y: 4px;
-    left: 8px;
-    border-radius: 12px;
-  }
-}
-/* Touch devices (iPad): keep comfortable hit targets while staying slimmer than before. */
-@media (pointer: coarse) and (min-width: 601px) {
-  .sketchizi-tool-sidebar {
-    --sk-dock-btn-w: 38px;
-    --sk-dock-btn-h: 36px;
-    --sk-dock-icon: 20px;
-    --sk-dock-gap: 2px;
-    left: 12px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sketchizi-tool-sidebar-button { transition: none; }
-}
-
-/* Keep the floating tool rail out of the way while the hamburger menu is open. */
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-expand span { background: #687180; }
 .sketchizi-tool-sidebar.is-menu-open {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translate(-8px, -50%);
+  transform: translateY(8px);
+}
+@media (max-width: 600px) {
+  .sketchizi-tool-sidebar { left: 8px; bottom: 58px; border-radius: 13px; }
+  .sketchizi-tool-sidebar-list { gap: 2px; }
+  .sketchizi-tool-sidebar-button,
+  .sketchizi-tool-sidebar-active { --sk-dock-button: 30px; }
+  .sketchizi-tool-sidebar-button svg,
+  .sketchizi-tool-sidebar-active svg { width: 18px; height: 18px; }
+  .sketchizi-tool-sidebar-tooltip { display: none; }
+}
+@media (pointer: coarse) and (min-width: 601px) {
+  .sketchizi-tool-sidebar-button,
+  .sketchizi-tool-sidebar-active { --sk-dock-button: 36px; }
+  .sketchizi-tool-sidebar-button svg,
+  .sketchizi-tool-sidebar-active svg { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sketchizi-tool-sidebar,
+  .sketchizi-tool-sidebar * { transition: none !important; }
 }
