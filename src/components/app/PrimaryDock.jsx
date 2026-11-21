@@ -107,6 +107,8 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     window.requestAnimationFrame(() => firstToolButtonRef.current?.focus());
   };
   const collapseDock = () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
     setExpanded(false);
     window.requestAnimationFrame(() => activeButtonRef.current?.focus());
   };
@@ -123,7 +125,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
       setActiveTool(tool.id);
       setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
     }
-    if (window.matchMedia?.("(hover: none)").matches) collapseDock();
+    collapseDock();
   };
 
   return (
