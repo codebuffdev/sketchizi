@@ -38,3 +38,22 @@ test("existing contextual dock retains typography and radial opacity controls", 
   assert.match(dock, /strokeDashoffset=\{50\.265 \* \(1 - opacityValue \/ 100\)\}/);
   assert.match(dock, /\[25, 50, 75, 100\]/);
 });
+
+test("floating tool tray prioritizes the requested drawing tools", () => {
+  const primary = read("../src/components/app/PrimaryDock.jsx");
+  const order = ["selection", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "highlighter", "laser"];
+  let previous = -1;
+  for (const tool of order) {
+    const next = primary.indexOf(`id: "${tool}"`);
+    assert.ok(next > previous, `tool ${tool} is missing or out of order`);
+    previous = next;
+  }
+});
+
+test("fill patterns and corner-radius controls are scoped to supported elements", () => {
+  const dock = read("../src/components/app/ToolOptionsDock.jsx");
+  assert.match(dock, /label="Fill style"/);
+  assert.match(dock, /const showCornerRadius = type === "rectangle" \\|\\| type === "diamond";/);
+  assert.match(dock, /\\(isShape \\|\\| isHighlighter\\) && <VisualOptionSelect label="Fill style"/);
+  assert.match(dock, /event.stopPropagation\\(\\);[\\s\\S]*?setIsZenMode\\(false\\)/);
+});
