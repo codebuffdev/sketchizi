@@ -387,12 +387,6 @@ export default function DesktopAppHeader({
     error: "Save issue",
   };
   const saveStateLabel = saveStateLabels[saveState] || "Local save status";
-  const storageLocation = isCloudDocument ? "Cloud" : currentDocumentFileBacked ? "File" : "Local";
-  const documentStatusLabel = isCloudDocument
-    ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace")
-    : currentDocumentFileBacked
-      ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file")
-      : `Local canvas. ${saveStateLabel}`;
   const cloudStatusLabels = {
     loading: "Loading from Cloud Workspace",
     pending: "Cloud changes pending",
@@ -401,6 +395,12 @@ export default function DesktopAppHeader({
     error: "Cloud save failed",
     conflict: "Cloud save conflict",
   };
+  const storageLocation = isCloudDocument ? "Cloud" : currentDocumentFileBacked ? "File" : "Local";
+  const documentStatusLabel = isCloudDocument
+    ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace")
+    : currentDocumentFileBacked
+      ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file")
+      : `Local canvas. ${saveStateLabel}`;
   const lastSavedLabel = saveStatus?.lastSavedAt
     ? new Date(saveStatus.lastSavedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     : "No successful local save yet";
