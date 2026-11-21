@@ -151,6 +151,11 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
       if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
       collapseTimerRef.current = null;
       setExpanded(false);
+      setCustomTool(null);
+      window.requestAnimationFrame(() => {
+        const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
+        if (nextTool) setActiveTool(nextTool);
+      });
     };
     window.addEventListener("keydown", onToolShortcut, true);
     return () => window.removeEventListener("keydown", onToolShortcut, true);
