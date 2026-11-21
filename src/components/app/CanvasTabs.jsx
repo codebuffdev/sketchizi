@@ -117,9 +117,9 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
       >
         {tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}
         <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
-        {activeId === tab.id && activeRenameAction && <span className="canvas-tab-inline-rename">{activeRenameAction}</span>}
         {activeId === tab.id ? <span className={`canvas-tab-status-dot ${activeStatusClass}`} role="status" aria-label={activeStatusLabel} title={activeStatusLabel} /> : tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
       </button>
+      {activeId === tab.id && activeRenameAction && <span className="canvas-tab-inline-rename">{activeRenameAction}</span>}
       {activeId === tab.id && activeMenu && <button type="button" className={`canvas-tab-menu-trigger${activeMenuOpen ? " is-open" : ""}`} aria-label="Canvas options" aria-haspopup="dialog" aria-expanded={activeMenuOpen} title="Canvas options" onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); setActiveMenuOpen((open) => !open); }} disabled={disabled}><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg></button>}
       {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
     </div>
