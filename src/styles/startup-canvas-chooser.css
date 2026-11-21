@@ -167,3 +167,21 @@
   to { opacity: 1; transform: none; filter: blur(0); }
 }
 @media (prefers-reduced-motion: reduce) { .app .sketchizi-tool-sidebar { animation: none; } }
+
+
+/* Welcome and dashboard surfaces must not expose canvas chrome underneath.
+   Most custom docks are unmounted by SketchiziCanvas; this also covers native
+   Excalidraw chrome and any retained/portaled HUD during transitions. */
+.app[data-welcome-open="true"] .sketchizi-tool-sidebar,
+.app[data-welcome-open="true"] .sketchizi-tool-options-dock,
+.app[data-welcome-open="true"] .contextual-formatting-toolbar,
+.app[data-welcome-open="true"] .sketchizi-primary-dock,
+.app[data-welcome-open="true"] .sk-zen-pill,
+.app[data-welcome-open="true"] .sk-zen-ai-capsule,
+.app[data-welcome-open="true"] .canvas-zoom-control,
+.app[data-welcome-open="true"] .excalidraw .App-toolbar-container,
+.app[data-welcome-open="true"] .excalidraw .zoom-actions {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
