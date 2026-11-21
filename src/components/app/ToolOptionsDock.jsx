@@ -663,7 +663,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {!isFill && <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
         {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
-        {isShape && <>
+        {(isShape || isLaser) && <>
           <ToolButton active={fillColor === "transparent"} title="Transparent fill" onClick={() => update({ backgroundColor: "transparent" })}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
           </ToolButton>
