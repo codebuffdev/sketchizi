@@ -718,7 +718,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           {FONT_FAMILIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </DockSelect>
         <div className="sk-tool-text-size" role="group" aria-label="Font size">
-          <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Decrease font size" disabled={fontSize <= 1} onClick={() => update({ fontSize: Math.max(1, fontSize - 1) })}>−</button>
+          <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Decrease font size" disabled={fontSize <= 8} onClick={() => update({ fontSize: Math.max(8, fontSize - 1) })}>−</button>
           <div className="sk-tool-text-size-input-wrap">
             <label className="sk-tool-text-size-input">
               <input ref={fontSizeInputRef} type="text" inputMode="numeric" aria-label="Font size in pixels"
@@ -754,7 +754,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
               </button>)}
             </div>}
           </div>
-          <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Increase font size" disabled={fontSize >= 999} onClick={() => update({ fontSize: Math.min(999, fontSize + 1) })}>+</button>
+          <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Increase font size" disabled={fontSize >= 200} onClick={() => update({ fontSize: Math.min(200, fontSize + 1) })}>+</button>
         </div>
       </DockGroup>}
 
