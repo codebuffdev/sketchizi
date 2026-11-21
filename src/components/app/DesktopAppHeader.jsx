@@ -824,10 +824,16 @@ export default function DesktopAppHeader({
               <section className="canvas-tabs-menu-section" aria-label="Download and export">
                 <h3>Download &amp; export</h3>
                 <div className="canvas-tabs-active-menu-actions">
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { onSaveToFile?.(); setSaveDetailsOpen(false); }} aria-label={currentDocumentFileBacked ? "Save or download file" : "Download file"}>
-                    <CanvasActionIcon name="download" />
-                    <span className="canvas-tabs-active-menu-action-copy"><strong>{currentDocumentFileBacked ? "Save / download file" : "Download file"}</strong><small>Save a copy to your computer</small></span>
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { if (currentDocumentFileBacked) onSaveToFile?.(); else onSaveAs?.(); setSaveDetailsOpen(false); }} aria-label={currentDocumentFileBacked ? "Save" : "Save to file"}>
+                    <CanvasActionIcon name="save" />
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>{currentDocumentFileBacked ? "Save" : "Save to file…"}</strong><small>{currentDocumentFileBacked ? "Save changes to this file" : "Choose where to save this canvas"}</small></span>
                   </button>
+                  {currentDocumentFileBacked && (
+                    <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveAs?.()} aria-label="Save As">
+                      <CanvasActionIcon name="download" />
+                      <span className="canvas-tabs-active-menu-action-copy"><strong>Save As…</strong><small>Save a separate copy to another file</small></span>
+                    </button>
+                  )}
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onDownloadRecoveryBackup?.()} aria-label="Download recovery backup">
                     <CanvasActionIcon name="backup" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Recovery backup</strong><small>Download a portable backup of this canvas</small></span>
