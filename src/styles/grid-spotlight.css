@@ -10,10 +10,10 @@
 }
 
 .app .desktop-canvas-region .excalidraw__canvas-wrapper .sketchizi-grid-spotlight {
-  --sk-grid-size: 20px;
+  --sk-grid-size: 40px;
   --sk-grid-offset-x: 0px;
   --sk-grid-offset-y: 0px;
-  --sk-grid-coarse-size: 80px;
+  --sk-grid-coarse-size: 160px;
   --sk-grid-coarse-offset-x: 0px;
   --sk-grid-coarse-offset-y: 0px;
   --sk-grid-focus-left: 0px;
@@ -42,11 +42,14 @@
   background-repeat: repeat;
 }
 
+.app.theme-dark .desktop-canvas-region { background-color: #12151c; }
+.app.theme-light .desktop-canvas-region { background-color: #f4f6f9; }
+
 /* Always-on, low-contrast LARGE squares over the entire drawing surface. */
 .app .desktop-canvas-region .sketchizi-grid-spotlight::before {
   inset: 0;
   background-image:
-    linear-gradient(to right, rgb(78 96 115 / 9%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(78 96 115 / 4.5%) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(78 96 115 / 9%) 1px, transparent 1px);
   background-size: var(--sk-grid-coarse-size) var(--sk-grid-coarse-size);
   background-position: var(--sk-grid-coarse-offset-x) var(--sk-grid-coarse-offset-y);
@@ -63,7 +66,7 @@
   opacity: 0;
   background-image:
     linear-gradient(to right, rgb(78 96 115 / 9%) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(78 96 115 / 12%) 1px, transparent 1px);
+    linear-gradient(to bottom, rgb(78 96 115 / 4.5%) 1px, transparent 1px);
   background-size: var(--sk-grid-size) var(--sk-grid-size);
   background-position:
     calc(var(--sk-grid-offset-x) - var(--sk-grid-focus-left))
@@ -87,12 +90,12 @@
    with fine lines subordinate to the coarse alignment grid. */
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::before {
   background-image:
-    linear-gradient(to right, rgb(158 173 194 / 6%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(158 173 194 / 5.5%) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(158 173 194 / 6%) 1px, transparent 1px);
 }
 .app.theme-dark .desktop-canvas-region .sketchizi-grid-spotlight::after {
   background-image:
-    linear-gradient(to right, rgb(158 173 194 / 4%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(158 173 194 / 2.8%) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(158 173 194 / 4%) 1px, transparent 1px);
 }
 
