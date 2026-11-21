@@ -1,9 +1,10 @@
 const PREFIX = "/api/workspace";
 const CSRF_URL = "/api/auth/csrf";
 const REQUEST_TIMEOUT_MS = 12000;
+const DRAWING_WRITE_TIMEOUT_MS = 75000;
 
-function timeoutSignal() {
-  return AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+function timeoutSignal(timeout = REQUEST_TIMEOUT_MS) {
+  return AbortSignal.timeout(timeout);
 }
 
 function requestFailure(error, fallback) {
@@ -33,7 +34,7 @@ async function getCsrfHeaders() {
   return { [payload.headerName]: payload.token };
 }
 
-async function request(path, { method = "GET", body, headers = {} } = {}) {
+async function request(path, { method = "GET", body, headers = {}, timeout } = {}) {
   const requestHeaders = new Headers({ accept: "application/json", ...headers });
   let serialized;
   if (body !== undefined) {
@@ -51,7 +52,7 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
       cache: "no-store",
       headers: requestHeaders,
       body: serialized,
-      signal: timeoutSignal(),
+      signal: timeoutSignal(timeout),
     });
   } catch (error) {
     throw requestFailure(error, "Cloud Workspace is temporarily unavailable.");
@@ -76,10 +77,10 @@ export const workspaceClient = Object.freeze({
   updateProject: (projectId, project) => request(`/projects/${encodeURIComponent(projectId)}`, { method: "PATCH", body: project }),
   deleteProject: (projectId) => request(`/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" }),
   listDiagrams: (projectId) => request(`/projects/${encodeURIComponent(projectId)}/diagrams`),
-  createDiagram: (diagram) => request("/diagrams", { method: "POST", body: diagram }),
+  createDiagram: (diagram) => request("/diagrams", { method: "POST", body: diagram, timeout: DRAWING_WRITE_TIMEOUT_MS }),
   getDiagram: (diagramId) => request(`/diagrams/${encodeURIComponent(diagramId)}`),
   saveDiagram: (diagramId, revision, document) => request(`/diagrams/${encodeURIComponent(diagramId)}`, {
-    method: "PUT", headers: { "if-match": String(revision) }, body: document,
+    method: "PUT", headers: { "if-match": String(revision) }, body: document, timeout: DRAWING_WRITE_TIMEOUT_MS,
   }),
   updateDiagram: (diagramId, metadata) => request(`/diagrams/${encodeURIComponent(diagramId)}`, { method: "PATCH", body: metadata }),
   duplicateDiagram: (diagramId) => request(`/diagrams/${encodeURIComponent(diagramId)}/duplicate`, { method: "POST" }),

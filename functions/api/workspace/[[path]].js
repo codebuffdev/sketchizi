@@ -144,8 +144,11 @@ export async function onRequest({ request, env }) {
 
   const duplicateResponse = await rejectDuplicateDiagramName({ method: request.method, targetPath, body: mutationBody, backendOrigin, headers, requestId });
   if (duplicateResponse) return duplicateResponse;
+  const writesDrawing = (request.method === "POST" && targetPath === "/api/workspace/diagrams")
+    || (request.method === "PUT" && /^\/api\/workspace\/diagrams\/[^/]+$/.test(targetPath));
+  const signal = AbortSignal.timeout(writesDrawing ? 45000 : 15000);
   try {
-    const init = { method: request.method, headers, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(15000) };
+    const init = { method: request.method, headers, redirect: "manual", cache: "no-store", signal };
     if (!["GET", "HEAD"].includes(request.method) && request.body !== null) {
       init.body = request.body;
       init.duplex = "half";
@@ -161,6 +164,9 @@ export async function onRequest({ request, env }) {
     }
     return new Response(upstreamResponse.body, { status: upstreamResponse.status, headers: responseHeaders });
   } catch {
+    if (writesDrawing && signal.aborted) {
+      return fail(504, "The Workspace save took too long to confirm. Check whether the drawing was saved before retrying.", "workspace_save_timeout");
+    }
     return fail(502, "Workspace service is temporarily unavailable.", "workspace_service_unavailable");
   }
 }
