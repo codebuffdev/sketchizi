@@ -1,0 +1,231 @@
+/* Canvas workspace HUD system — shared glass surfaces and 1x motion. */
+.app {
+  --sk-hud-dark-bg: rgba(22, 24, 31, .94);
+  --sk-hud-light-bg: rgba(255, 255, 255, .96);
+  --sk-hud-dark-border: rgba(255, 255, 255, .09);
+  --sk-hud-light-border: rgba(15, 23, 42, .08);
+  --sk-hud-dark-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+  --sk-hud-light-shadow: 0 10px 28px rgba(15, 23, 42, .09);
+  --sk-hud-enter: cubic-bezier(.22, 1, .36, 1);
+  --sk-hud-exit: cubic-bezier(.4, 0, 1, 1);
+}
+
+/* Bottom-left active tool trigger: exactly aligned with the 46px stadiums. */
+.app .sketchizi-tool-sidebar {
+  left: 20px !important;
+  right: auto !important;
+  bottom: 20px !important;
+  width: 46px !important;
+  min-width: 46px !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 1px solid var(--sk-hud-dark-border) !important;
+  border-radius: 16px !important;
+  background: var(--sk-hud-dark-bg) !important;
+  color: #e8ebf3 !important;
+  box-shadow: var(--sk-hud-dark-shadow) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: visible !important;
+  transition: transform 150ms var(--sk-hud-exit), opacity 150ms var(--sk-hud-exit), filter 150ms var(--sk-hud-exit);
+}
+.app.theme-light .sketchizi-tool-sidebar {
+  border-color: var(--sk-hud-light-border) !important;
+  background: var(--sk-hud-light-bg) !important;
+  color: #252a35 !important;
+  box-shadow: var(--sk-hud-light-shadow) !important;
+}
+.app .sketchizi-tool-sidebar-collapsed {
+  width: 44px;
+  height: 44px;
+  max-height: 46px;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+.app .sketchizi-tool-sidebar-active {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  flex-basis: 44px !important;
+  border: 0 !important;
+  border-radius: 15px !important;
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+.app .sketchizi-tool-sidebar-expand { display: none !important; }
+.app .sketchizi-tool-sidebar-list {
+  gap: 4px !important;
+  padding: 6px !important;
+  margin: 0 0 4px !important;
+  transform-origin: bottom center;
+  transition: opacity 240ms var(--sk-hud-enter), transform 240ms var(--sk-hud-enter), filter 240ms var(--sk-hud-enter), max-height 240ms var(--sk-hud-enter);
+}
+.app .sketchizi-tool-sidebar:not(.is-expanded) .sketchizi-tool-sidebar-list {
+  opacity: 0;
+  transform: translateY(10px) scale(.95);
+  filter: blur(4px);
+  pointer-events: none;
+}
+.app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+}
+.app .sketchizi-tool-sidebar-button {
+  animation: sk-hud-tool-item-in 240ms var(--sk-hud-enter) both;
+  animation-delay: calc(var(--sk-tool-index, 0) * 14ms);
+}
+.app .sketchizi-tool-sidebar-button:nth-of-type(1) { --sk-tool-index: 0; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(2) { --sk-tool-index: 1; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(3) { --sk-tool-index: 2; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(4) { --sk-tool-index: 3; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(5) { --sk-tool-index: 4; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(6) { --sk-tool-index: 5; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(7) { --sk-tool-index: 6; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(8) { --sk-tool-index: 7; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(9) { --sk-tool-index: 8; }
+.app .sketchizi-tool-sidebar-button:nth-of-type(10) { --sk-tool-index: 9; }
+@keyframes sk-hud-tool-item-in {
+  from { opacity: 0; transform: translateY(10px) scale(.95); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* Bottom-center contextual properties stadium. */
+.app .sketchizi-tool-options-dock {
+  left: 50% !important;
+  right: auto !important;
+  bottom: 20px !important;
+  width: max-content !important;
+  max-width: calc(100vw - 180px) !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 5px !important;
+  gap: 6px !important;
+  border: 1px solid var(--sk-hud-dark-border) !important;
+  border-radius: 9999px !important;
+  background: var(--sk-hud-dark-bg) !important;
+  color: #e8ebf3 !important;
+  box-shadow: var(--sk-hud-dark-shadow) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: visible !important;
+  transform-origin: center bottom;
+  transition: opacity 150ms var(--sk-hud-exit), transform 150ms var(--sk-hud-exit), filter 150ms var(--sk-hud-exit) !important;
+}
+.app .sketchizi-tool-options-dock.is-collapsed {
+  opacity: 0;
+  transform: translate(-50%, 12px) scale(.96) !important;
+  filter: blur(4px);
+  pointer-events: none !important;
+}
+.app .sketchizi-tool-options-dock.is-open {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1) !important;
+  filter: blur(0);
+  pointer-events: auto !important;
+  transition-duration: 240ms !important;
+  transition-timing-function: var(--sk-hud-enter) !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 6px !important;
+  gap: 6px !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, .045) !important;
+  border-color: rgba(255, 255, 255, .035) !important;
+}
+.app.theme-light .sketchizi-tool-options-dock {
+  border-color: var(--sk-hud-light-border) !important;
+  background: var(--sk-hud-light-bg) !important;
+  color: #252a35 !important;
+  box-shadow: var(--sk-hud-light-shadow) !important;
+}
+.app.theme-light .sketchizi-tool-options-dock .sk-tool-dock-group {
+  background: rgba(15, 23, 42, .035) !important;
+  border-color: rgba(15, 23, 42, .035) !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber {
+  width: auto !important;
+  min-width: 84px !important;
+  padding: 0 10px !important;
+  gap: 7px !important;
+  overflow: visible !important;
+  background: transparent !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-opacity-fill { display: none !important; }
+.app .sketchizi-tool-options-dock .sk-tool-opacity-ring { width: 20px !important; height: 20px !important; flex: 0 0 20px; }
+.app .sketchizi-tool-options-dock .sk-tool-opacity-ring-drop { fill: currentColor; stroke: none; transform: scale(.52); transform-origin: center; }
+.app .sketchizi-tool-options-dock .sk-tool-opacity-chevron { font-size: 13px; line-height: 1; }
+.app .sketchizi-tool-options-dock .sk-tool-opacity-popover,
+.app .sk-tool-choice-menu,
+.app .sk-tool-layer-menu,
+.app .sketchizi-tool-options-dock .sk-tool-font-size-presets {
+  animation: sk-hud-popover-in 200ms var(--sk-hud-enter) both;
+  transform-origin: bottom right;
+}
+@keyframes sk-hud-popover-in {
+  from { opacity: 0; transform: translateY(6px) scale(.93); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* Bottom-right Zen stadium, aligned to the exact same 46px centerline. */
+.sketchizi-zen-controls { position: fixed; z-index: 10042; right: 20px; bottom: 20px; height: 46px; display: flex; align-items: center; }
+.sketchizi-zen-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 46px; min-width: 72px; padding: 0 14px;
+  border: 1px solid var(--sk-hud-dark-border); border-radius: 9999px;
+  background: var(--sk-hud-dark-bg); color: #e8ebf3;
+  box-shadow: var(--sk-hud-dark-shadow); backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px); font: 600 12px/1 inherit; cursor: pointer;
+  transition: transform 150ms var(--sk-hud-exit), background 150ms ease;
+}
+.app.theme-light .sketchizi-zen-pill {
+  border-color: var(--sk-hud-light-border); background: var(--sk-hud-light-bg);
+  color: #252a35; box-shadow: var(--sk-hud-light-shadow);
+}
+.sketchizi-zen-pill:hover { transform: translateY(-1px); }
+.sketchizi-zen-ai-pill {
+  position: fixed; z-index: 10043; top: 20px; right: 20px;
+  height: 40px; padding: 0 16px; border: 1px solid var(--sk-hud-dark-border);
+  border-radius: 9999px; background: var(--sk-hud-dark-bg); color: #e8ebf3;
+  box-shadow: var(--sk-hud-dark-shadow); backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px); font: 600 12px/1 inherit; cursor: pointer;
+  animation: sk-hud-zen-ai-in 240ms var(--sk-hud-enter) 60ms both;
+}
+.app.theme-light .sketchizi-zen-ai-pill {
+  border-color: var(--sk-hud-light-border); background: var(--sk-hud-light-bg);
+  color: #252a35; box-shadow: var(--sk-hud-light-shadow);
+}
+@keyframes sk-hud-zen-ai-in { from { opacity: 0; transform: scale(.92); filter: blur(4px); } to { opacity: 1; transform: scale(1); filter: blur(0); } }
+
+/* Zen sweep: retain only the three bottom HUD controls and standalone AI. */
+html.sketchizi-zen-mode .desktop-app-header {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(-14px) scale(.985) !important;
+  filter: blur(4px);
+  pointer-events: none !important;
+  transition: opacity 220ms var(--sk-hud-exit), transform 220ms var(--sk-hud-exit), filter 220ms var(--sk-hud-exit), visibility 0s linear 220ms !important;
+}
+html:not(.sketchizi-zen-mode) .sketchizi-zen-ai-pill { display: none; }
+html.sketchizi-zen-mode .sketchizi-tool-sidebar,
+html.sketchizi-zen-mode .sketchizi-tool-options-dock,
+html.sketchizi-zen-mode .sketchizi-zen-pill { opacity: 1; }
+
+@media (max-width: 760px) {
+  .app .sketchizi-tool-options-dock { max-width: calc(100vw - 136px) !important; }
+  .sketchizi-zen-controls { right: 12px; bottom: 20px; }
+  .app .sketchizi-tool-sidebar { left: 12px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-tool-sidebar,
+  .app .sketchizi-tool-sidebar-list,
+  .app .sketchizi-tool-options-dock,
+  .sketchizi-zen-ai-pill,
+  .desktop-app-header { animation: none !important; transition: none !important; }
+}
