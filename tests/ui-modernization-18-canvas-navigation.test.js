@@ -41,12 +41,14 @@ test('navigation styles load after existing Sketchizi UI layers', () => {
 });
 
 
-test('native hamburger menu and floating catalogs are mutually exclusive', () => {
+test('hamburger menu and icon library share the left edge without touching the right edge', () => {
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
   assert.match(app, /nativeMenuOpenRef\.current = false;[\s\S]*?setNativeMenuOpen\(false\);[\s\S]*?api\.updateScene\(\{ appState: \{ openMenu: null \}/);
-  assert.match(app, /if \(nativeMenuOpen && activePanel\) setActivePanel\(null\)/);
-  assert.match(app, /usePanelState\(\{ apiRef, closeNativeMenu, setAiAskOpen \}\)/);
-  assert.match(app, /setActivePanel\(null\);[\s\S]*?setAiAskOpen\(\(value\) => !value\)/);
+  assert.match(app, /usePanelState\(\{ apiRef, nativeMenuOpen, closeNativeMenu \}\)/);
+  assert.doesNotMatch(app, /setActivePanel/);
   const panelState = readFileSync(new URL('../src/features/navigation/usePanelState.js', import.meta.url), 'utf8');
-  assert.match(panelState, /setAiAskOpen\?\.\(false\)/);
+  assert.match(panelState, /activeLeftPanel/);
+  assert.match(panelState, /activeRightPanel/);
+  assert.match(panelState, /isRightRailPinned/);
+  assert.doesNotMatch(panelState, /setAiAskOpen\?\.\(false\)/);
 });

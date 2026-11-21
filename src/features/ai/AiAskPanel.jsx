@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDrawerPresence } from "../navigation/useDrawerPresence";
 import { fetchCurrentUser, startGoogleSignIn } from "../auth/authClient.js";
 import { aiApiRequest, aiApiRequestWithTimeout, createRequestId } from "./aiApiClient.js";
 import { buildDiagramContext } from "./diagramContextBuilder.js";
@@ -239,6 +240,7 @@ function withRequestDiagnostics(message, error) {
 }
 
 export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, saveTimerRef, pageContext = null }) {
+  const presence = useDrawerPresence(open);
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
   const [chat, setChat] = useState(() => readTranscript());
   const [diagramScope, setDiagramScope] = useState("page");
@@ -471,14 +473,8 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     return () => window.removeEventListener("sketchizi:auth-changed", onAuthChanged);
   }, []);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") onClose?.();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  // Escape is handled centrally by useSketchiziEscape so that it closes only
+  // the most recently opened drawer instead of every open panel at once.
 
   useEffect(() => {
     if (!open || !transcriptRef.current) return;
@@ -1045,10 +1041,10 @@ export default function AiAskPanel({ open, onClose, apiRef, persistSketchNow, sa
     window.addEventListener("pointercancel", onPointerUp);
   };
 
-  if (!open) return null;
+  if (!presence.present) return null;
 
   return (
-    <section ref={panelRef} className="ai-ask-panel" role="dialog" aria-modal="false" aria-labelledby="ai-ask-title">
+    <section ref={panelRef} className="ai-ask-panel" data-edge="right" data-edge-motion={presence.phase} aria-hidden={open ? undefined : true} role="dialog" aria-modal="false" aria-labelledby="ai-ask-title">
       <div className="ai-ask-width-resize" role="separator" aria-orientation="vertical" aria-label="Resize AI chat width" onPointerDown={beginPanelResize}><span /></div>
       <header className="ai-ask-header">
         <div className="ai-ask-heading">

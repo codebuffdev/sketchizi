@@ -82,8 +82,8 @@ test("Properties and Validation controls remain clear of the floating header", a
   assert.match(css, /\.architecture-validation-panel/);
   assert.match(css, /top: calc\(108px \+ var\(--safe-top, 0px\)\)/);
   assert.doesNotMatch(css, /\.sketchizi-layers-panel/);
-  assert.match(app, /\{propertiesOpen && \(/);
-  assert.match(app, /\{architectureValidationOpen && \(/);
+  assert.match(app, /\{renderedRightRailPanel === "properties" && \(/);
+  assert.match(app, /\{renderedRightRailPanel === "rightRail" && \(/);
 });
 
 

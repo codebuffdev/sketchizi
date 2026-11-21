@@ -11,7 +11,8 @@ import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
 import { getInitialThemeMode } from "./features/navigation/themePreference.js";
 import { applyCanvasAppearance, getCanvasAppearanceFromBackground } from "./features/navigation/canvasAppearance.js";
-import { useSketchiziEscape } from "./features/navigation/useSketchiziEscape";
+import { useSketchiziEscape, useSketchiziCanvasDismissal } from "./features/navigation/useSketchiziEscape";
+import { useDrawerPresence } from "./features/navigation/useDrawerPresence";
 import { useSketchPersistence } from "./features/persistence/useSketchPersistence";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
 import { useFileManager } from "./features/files/useFileManager";
@@ -80,15 +81,15 @@ import "./styles/contextual-dock-polish.css";
 import "./styles/todo-canvas-polish.css";
 import "./styles/canvas-top-controls.css";
 import "./styles/hud-capsules.css";
+import "./styles/edge-drawer-motion.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
-  const [aiAskOpen, setAiAskOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
   const isZenModeRef = useRef(false);
-  const aiAskOpenRef = useRef(false);
+  const exitZenMode = useCallback(() => setIsZenMode(false), []);
   useEffect(() => {
     if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
     enableCanvasSpellcheck(document);
@@ -167,7 +168,6 @@ function App() {
   const [minimapOpen, setMinimapOpen] = useState(false);
   const [exportStudioOpen, setExportStudioOpen] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
-  const [iconLibraryPinned, setIconLibraryPinned] = useState(false);
   const minimapDragRef = useRef(null);
   const minimapController = useMinimapController({ apiRef, minimapOpen });
   const { minimapScene, updateMinimap, centerOnMinimap } = minimapController;
@@ -209,32 +209,28 @@ function App() {
     });
   }, []);
 
-  const panelState = usePanelState({ apiRef, closeNativeMenu, setAiAskOpen });
+  const panelState = usePanelState({ apiRef, nativeMenuOpen, closeNativeMenu });
   const commandPalette = useCommandPalette({ closeNativeMenu });
   const { commandPaletteOpen, closeCommandPalette } = commandPalette;
 
-  useEffect(() => {
-    if (!nativeMenuOpen) return undefined;
-    const closeOnEscape = (event) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation?.();
-      closeNativeMenu();
-    };
-    // Capture Escape before Excalidraw's own keyboard handlers so its native
-    // menu closes without triggering a second canvas-level Escape action.
-    window.addEventListener("keydown", closeOnEscape, true);
-    return () => window.removeEventListener("keydown", closeOnEscape, true);
-  }, [nativeMenuOpen, closeNativeMenu]);
+  const {
+    activeLeftPanel, activeRightPanel, activeTransientPanel, legacyPanelClasses,
+    isRightRailPinned, isIconLibraryPinned, setIconLibraryPinned,
+    openPanel, togglePanel, closePanel, closeLeftPanel,
+    closeMostRecentDrawer, dismissUnpinnedDrawersFromCanvas,
+    aiAskOpen, setAiAskOpen, toggleAiAsk,
+    libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen,
+  } = panelState;
+  const rightRailOpen = propertiesOpen || architectureValidationOpen;
+  const libraryPresence = useDrawerPresence(libraryOpen);
+  const rightRailPresence = useDrawerPresence(rightRailOpen);
+  // Remember which right-rail panel was showing so it can finish its exit animation.
+  const lastRightRailPanelRef = useRef("properties");
+  if (rightRailOpen) lastRightRailPanelRef.current = propertiesOpen ? "properties" : "rightRail";
+  const renderedRightRailPanel = lastRightRailPanelRef.current;
 
-  const { activePanel, setActivePanel, openPanel, togglePanel, closePanel, libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen } = panelState;
-
-  // The native hamburger menu and React-powered floating catalogs are mutually
-  // exclusive. Opening the native menu dismisses any active catalog/panel.
-  useEffect(() => {
-    if (nativeMenuOpen && activePanel) setActivePanel(null);
-  }, [nativeMenuOpen, activePanel, setActivePanel]);
+  // The hamburger menu and the icon library share the left edge; usePanelState
+  // swaps them there. Nothing on the right edge is touched.
 
   useEffect(() => {
     wakeBackendOnPageLoad();
@@ -276,7 +272,6 @@ function App() {
     // Keep the native hamburger menu mutually exclusive with modal and
     // floating tool surfaces that are opened outside usePanelState.
     if (
-      aiAskOpen ||
       minimapOpen ||
       exportStudioOpen ||
       templatesModalOpen ||
@@ -290,7 +285,6 @@ function App() {
     }
   }, [
     nativeMenuOpen,
-    aiAskOpen,
     minimapOpen,
     exportStudioOpen,
     templatesModalOpen,
@@ -1487,16 +1481,15 @@ function App() {
   }, [collaborationCanEdit, selectedKubernetesRelationship?.relationshipId]);
 
   useSketchiziEscape({
-    activePanel,
+    activeTransientPanel,
     closePanel,
+    closeMostRecentDrawer,
+    isZenMode,
+    exitZenMode,
     commandPaletteOpen,
     closeCommandPalette,
-    aiAskOpen,
-    setAiAskOpen,
     minimapOpen,
     setMinimapOpen,
-    nativeMenuOpen,
-    closeNativeMenu,
     designStudioOpen,
     setDesignStudioOpen,
     exportStudioOpen,
@@ -1511,12 +1504,13 @@ function App() {
     apiRef,
     closeExportDialog,
   });
+  useSketchiziCanvasDismissal({ dismissUnpinnedDrawersFromCanvas });
   useSketchiziExportLifecycle({ apiRef, showToast, closeExportDialog });
   useEffect(() => {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
   }, [closePanel, collaborationCanEdit, libraryOpen]);
   const preferences = useSketchiziPreferences({
-    apiRef, apiReady, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid,
+    apiRef, apiReady, closePanel, openPanel, togglePanel, connectionMode, selectedCount, toggleGrid,
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
     canvasAppearance, setCanvasAppearance,
   });
@@ -1564,7 +1558,7 @@ function App() {
   });
   useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
-    apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel, lastSelectionSignature,
+    apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen: closeLeftPanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
     collaborationRemoteUpdateRef, collaborationRef, canEdit: collaborationCanEdit,
     onArchitectureSceneChange: updateArchitectureValidation,
@@ -2510,9 +2504,8 @@ function App() {
       onDockerStudio={() => setDockerStudioOpen(true)}
       onBeforeOpen={() => {
         if (nativeMenuOpen) closeNativeMenu();
-        if (activePanel) setActivePanel(null);
       }}
-      dismissWhen={Boolean(nativeMenuOpen || activePanel || aiAskOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen)}
+      dismissWhen={Boolean(nativeMenuOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen)}
     />
   );
 
@@ -2529,10 +2522,8 @@ function App() {
     />
   ) : null;
 
-  aiAskOpenRef.current = aiAskOpen;
   isZenModeRef.current = isZenMode;
   const toggleZenMode = useCallback(() => setIsZenMode((value) => !value), []);
-  const exitZenMode = useCallback(() => setIsZenMode(false), []);
   useEffect(() => {
     const onKeyDown = (event) => {
       const isZenShortcut = event.altKey && !event.ctrlKey && !event.metaKey && (event.code === "KeyZ" || String(event.key).toLowerCase() === "z");
@@ -2543,15 +2534,6 @@ function App() {
         setIsZenMode((value) => !value);
         return;
       }
-      if (event.key !== "Escape" || !isZenModeRef.current || aiAskOpenRef.current) return;
-      const target = event.target;
-      // Let editors and open menus consume Escape first.
-      if (target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
-      if (document.querySelector(".sk-tool-choice-menu, .sk-tool-layer-menu, .sk-tool-opacity-popover, .sk-tool-font-size-presets, .canvas-start-date-popover")) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation?.();
-      setIsZenMode(false);
     };
     const onToggleRequest = () => setIsZenMode((value) => !value);
     window.addEventListener("keydown", onKeyDown, true);
@@ -2590,7 +2572,7 @@ function App() {
   const noOpenCanvas = canvasTabsReady && canvasTabs.length === 0;
 
   return (
-    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
+    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${legacyPanelClasses.join(" ")} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activeLeftPanel === "iconLibrary" ? "icon-library" : activeRightPanel === "properties" ? "properties" : activeRightPanel === "rightRail" ? "architecture-validation" : activeTransientPanel || "none"} data-left-panel={activeLeftPanel || "none"} data-right-panel={activeRightPanel || "none"}>
       {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
@@ -2700,8 +2682,7 @@ function App() {
           type="button"
           className={aiAskOpen ? "ai-ask-toggle active" : "ai-ask-toggle"}
           onClick={() => {
-            setActivePanel(null);
-            setAiAskOpen((value) => !value);
+            toggleAiAsk();
           }}
           title="AI Ask"
           aria-label="AI Ask"
@@ -2717,7 +2698,7 @@ function App() {
 
       <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
         {libraryOverlayHost && createPortal(
-          <aside className={`desktop-resources-region sk-icon-library-portal-host ${libraryOpen ? "mobile-resource-open" : "mobile-resource-closed"}`} aria-label="Resources">
+          <aside className={`desktop-resources-region sk-icon-library-portal-host ${libraryPresence.present ? "mobile-resource-open" : "mobile-resource-closed"}`} data-edge="left" data-edge-motion={libraryPresence.phase} aria-label="Resources">
           {collaborationCanEdit && (
             <IconLibraryPanel
               searchRef={searchRef} search={search} setSearch={setSearch}
@@ -2732,7 +2713,7 @@ function App() {
               draggingIcon={draggingIcon} handleIconClick={handleIconClick}
               handleIconPointerDown={handleIconPointerDown} handleIconMouseDown={handleIconMouseDown} handleDragStart={handleDragStart} createStarterMindMap={createStarterMindMap}
               isFavorite={isFavorite} toggleFavorite={toggleFavorite} remoteError={remoteError}
-              iconLibraryPinned={iconLibraryPinned} setIconLibraryPinned={setIconLibraryPinned}
+              iconLibraryPinned={isIconLibraryPinned} setIconLibraryPinned={setIconLibraryPinned}
               onClose={() => closePanel("icon-library")}
             />
           )}
@@ -2833,12 +2814,12 @@ function App() {
           className={`desktop-context-region ${propertiesOpen || architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
           aria-label="Properties and architecture validation"
         >
-          {(propertiesOpen || architectureValidationOpen) && (
-            <div className={`desktop-validation-host ${propertiesOpen || architectureValidationOpen ? "is-open" : "is-closed"}`}>
-              {propertiesOpen && (
+          {rightRailPresence.present && (
+            <div className="desktop-validation-host is-open" data-edge="right" data-edge-motion={rightRailPresence.phase}>
+              {renderedRightRailPanel === "properties" && (
                 <PropertiesPanel
                   selectedCount={selectedCount}
-                  propertiesOpen={propertiesOpen}
+                  propertiesOpen={true}
                   setPropertiesOpen={(open) => { if (!open) closePanel("properties"); }}
                   firstSelected={firstSelected}
                   hasShapeSelection={hasShapeSelection}
@@ -2870,7 +2851,7 @@ function App() {
                   hideDuplicateFormattingControls={true}
                 />
               )}
-              {architectureValidationOpen && (
+              {renderedRightRailPanel === "rightRail" && (
                 <ArchitectureValidationPanel
                   validation={architectureValidation}
                   sceneElements={apiRef.current?.getSceneElements?.() || []}
@@ -2969,7 +2950,7 @@ function App() {
         isZenMode={isZenMode}
         onToggleZen={toggleZenMode}
         aiOpen={aiAskOpen}
-        onToggleAi={() => { setActivePanel(null); setAiAskOpen((value) => !value); }}
+        onToggleAi={toggleAiAsk}
       />
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
       <CanvasGrammarAssistant />

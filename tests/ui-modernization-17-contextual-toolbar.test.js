@@ -24,7 +24,7 @@ test('contextual toolbar is rendered for editable selections and supported activ
   assert.match(toolbar, /api\.updateScene\(\{ elements: updatedElements, captureUpdate: CaptureUpdateAction\.IMMEDIATELY \}\)/);
   assert.match(toolbar, /version: \(Number\(element\.version\) \|\| 0\) \+ 1/);
   assert.doesNotMatch(toolbar, /if \(!canEdit \|\| propertiesOpen \|\|/);
-  assert.match(app, /\{propertiesOpen && \(/);
+  assert.match(app, /\{renderedRightRailPanel === "properties" && \(/);
   assert.match(app, /<PropertiesPanel/);
   assert.match(canvas, /propertiesOpen=\{propertiesOpen\}/);
   assert.match(app, /propertiesOpen=\{propertiesOpen\}[\s\S]*?selectedElements=\{selectedElements\}/);

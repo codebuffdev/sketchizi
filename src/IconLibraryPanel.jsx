@@ -174,13 +174,7 @@ export default function IconLibraryPanel({
 
   useEffect(() => {
     const handleShortcut = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation?.();
-        onClose?.();
-        return;
-      }
+      // Escape is handled centrally by useSketchiziEscape (layered, edge-scoped).
       if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target;
       const isTyping =
@@ -193,7 +187,7 @@ export default function IconLibraryPanel({
     };
     window.addEventListener("keydown", handleShortcut, true);
     return () => window.removeEventListener("keydown", handleShortcut, true);
-  }, [searchRef, onClose]);
+  }, [searchRef]);
 
   const chooseSource = (source) => {
     setActiveSource(source);

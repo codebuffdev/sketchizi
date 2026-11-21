@@ -1,0 +1,48 @@
+/* Coordinated asymmetric spring choreography for edge-anchored drawers.
+   Enter 240ms / exit 150ms. Left drawers travel from -X, right drawers from +X.
+   Each drawer animates independently, so opening, swapping or closing a drawer
+   on one edge never flickers the drawer on the opposite edge. */
+
+@keyframes sk-edge-left-in {
+  from { opacity: 0; transform: translateX(-14px) scale(0.97); filter: blur(4px); }
+  to   { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+}
+@keyframes sk-edge-left-out {
+  from { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+  to   { opacity: 0; transform: translateX(-10px) scale(0.98); filter: blur(3px); }
+}
+@keyframes sk-edge-right-in {
+  from { opacity: 0; transform: translateX(14px) scale(0.97); filter: blur(4px); }
+  to   { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+}
+@keyframes sk-edge-right-out {
+  from { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+  to   { opacity: 0; transform: translateX(10px) scale(0.98); filter: blur(3px); }
+}
+
+[data-edge="left"][data-edge-motion="enter"] {
+  animation: sk-edge-left-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+[data-edge="left"][data-edge-motion="exit"] {
+  animation: sk-edge-left-out 150ms cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none !important;
+}
+[data-edge="right"][data-edge-motion="enter"] {
+  animation: sk-edge-right-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+[data-edge="right"][data-edge-motion="exit"] {
+  animation: sk-edge-right-out 150ms cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none !important;
+}
+[data-edge][data-edge-motion="exit"] * { pointer-events: none !important; }
+
+/* Hamburger (native Excalidraw menu) is a left-edge drawer. Excalidraw unmounts
+   it on close, so only the enter motion can be applied. */
+.app.native-menu-open .excalidraw .dropdown-menu {
+  animation: sk-edge-left-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-edge][data-edge-motion],
+  .app.native-menu-open .excalidraw .dropdown-menu { animation-duration: 1ms; }
+}

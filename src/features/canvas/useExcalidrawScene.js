@@ -18,7 +18,7 @@ import {
 } from "../collaboration/syncDiagnostics";
 
 export function useExcalidrawScene({
-  apiRef, nativeMenuOpenRef, setNativeMenuOpen, setActivePanel,
+  apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen,
   lastSelectionSignature, setSelectedCount, setSelectedElements, setSelectedConnector,
   updateMinimap, queueSketchSave, collaborationRemoteUpdateRef,
   collaborationRef, canEdit = true, onArchitectureSceneChange = () => {}, onDocumentSceneChange = () => {},
@@ -102,7 +102,7 @@ export function useExcalidrawScene({
       if (nativeOpen !== nativeMenuOpenRef.current) {
         nativeMenuOpenRef.current = nativeOpen;
         setNativeMenuOpen(nativeOpen);
-        if (nativeOpen) setActivePanel(null);
+        if (nativeOpen) onNativeMenuOpen?.();
       }
       if (signature !== lastSelectionSignature.current) {
         lastSelectionSignature.current = signature;
@@ -177,5 +177,5 @@ export function useExcalidrawScene({
         });
       }
     }
-  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, setActivePanel, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap, onDocumentSceneChange]);
+  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, onNativeMenuOpen, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap, onDocumentSceneChange]);
 }

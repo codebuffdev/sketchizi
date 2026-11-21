@@ -201,8 +201,8 @@ test("collaboration dialog stays fully visible and scrollable within viewport", 
 test("Create menu dismisses on overlays, Escape and outside pointerdown", async () => {
   const app = await read("../src/App.jsx");
   const menu = await read("../src/components/app/CreateMenu.jsx");
-  assert.match(app, /dismissWhen=\{Boolean\(nativeMenuOpen \|\| activePanel \|\| aiAskOpen \|\| designStudioOpen \|\| dockerStudioOpen \|\| kubernetesStudioOpen\)\}/);
-  assert.match(app, /onBeforeOpen=\{\(\) => \{[\s\S]*?closeNativeMenu\(\);[\s\S]*?setActivePanel\(null\);/);
+  assert.match(app, /dismissWhen=\{Boolean\(nativeMenuOpen \|\| designStudioOpen \|\| dockerStudioOpen \|\| kubernetesStudioOpen\)\}/);
+  assert.match(app, /onBeforeOpen=\{\(\) => \{[\s\S]*?closeNativeMenu\(\);/);
   assert.match(menu, /if \(dismissWhen\) setOpen\(false\)/);
   assert.match(menu, /event\.key === "Escape"/);
   assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
