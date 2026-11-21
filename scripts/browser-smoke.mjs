@@ -19,20 +19,20 @@ const dismissStartupChooser = async (page) => {
 };
 
 const ensureHeaderVisible = async (page) => {
-  const reveal = page.locator(".desktop-app-header-reveal-handle");
-  await reveal.waitFor({ state: "attached", timeout: 15000 });
-  if (await reveal.getAttribute("aria-expanded") !== "true") {
-    // Floating controls can overlap the collapsed handle; force the actual
-    // button click so its React handler runs without a pointer hit-test.
-    await reveal.click({ force: true });
+  // The old reveal-handle selector now belongs to Canvas Settings. The
+  // application-header visibility control is the pin button: clicking it
+  // both reveals the auto-hidden header and pins it open for this journey.
+  const pin = page.locator(".desktop-app-header-pin-button");
+  await pin.waitFor({ state: "attached", timeout: 15000 });
+  if (await pin.getAttribute("aria-pressed") !== "true" ||
+      await page.locator(".desktop-app-header").getAttribute("aria-hidden") !== "false") {
+    // It can be visually hidden with the header, so invoke its real handler
+    // without relying on pointer hit-testing.
+    await pin.click({ force: true });
   }
   await page.waitForFunction(() =>
     document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "false",
   );
-  // Keep the header open for the whole smoke journey instead of racing its
-  // five-second auto-hide timer between separate browser assertions.
-  const pin = page.locator(".desktop-app-header-pin-button");
-  if (await pin.getAttribute("aria-pressed") !== "true") await pin.click({ force: true });
   await page.waitForFunction(() =>
     document.querySelector(".desktop-app-header-pin-button")?.getAttribute("aria-pressed") === "true",
   );
@@ -87,7 +87,7 @@ try {
   await ensureHeaderVisible(blank.page);
 
   const aiToggle = blank.page.getByRole("button", { name: "AI Ask", exact: true });
-  const railToggle = blank.page.getByRole("button", { name: "Show application header" });
+  const railToggle = blank.page.getByRole("button", { name: "Canvas settings" });
   const aiDrawer = blank.page.locator(".ai-ask-panel");
   const rail = blank.page.locator(".desktop-app-header-right-rail");
   await aiToggle.click();
@@ -101,17 +101,21 @@ try {
     [aiToggle, railToggle, rail, aiDrawer].map((control) => control.boundingBox()),
   );
   if (!ai || !sliders || !tools || !drawer ||
-      ai.y + ai.height > sliders.y || sliders.y + sliders.height > tools.y + 1 ||
-      Math.abs(ai.x + ai.width / 2 - sliders.x - sliders.width / 2) > 2 ||
-      Math.abs(sliders.x + sliders.width / 2 - tools.x - tools.width / 2) > 2 ||
+      Math.abs(ai.y + ai.height / 2 - sliders.y - sliders.height / 2) > 2 ||
+      sliders.y + sliders.height > tools.y + 1 ||
+      // The 34px settings toggle and 40px rail have a small intentional center offset.
+      Math.abs(sliders.x + sliders.width / 2 - tools.x - tools.width / 2) > 6 ||
       tools.x + tools.width > drawer.x || sliders.x + sliders.width > drawer.x ||
       ai.x + ai.width > drawer.x) {
-    throw new Error(`AI, sliders and tool rail must stack on the canvas beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
+    throw new Error(`AI and sliders must share the top control row, with the tool rail below and all controls beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
   }
+  // Canvas settings is a popover toggle, not a control for hiding the
+  // legacy header rail. Verify the settings dialog opens and closes while
+  // the pinned header remains visible beside the AI drawer.
   await railToggle.click();
-  await rail.waitFor({ state: "hidden" });
-  await aiDrawer.waitFor();
+  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor();
   await railToggle.click();
+  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor({ state: "detached" });
   await rail.waitFor({ state: "visible" });
   await aiToggle.click();
   await aiDrawer.waitFor({ state: "detached" });
@@ -230,7 +234,7 @@ try {
   for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
     // Selecting a tool now collapses the dock immediately. Re-open it before
     // choosing the next tool, matching the interaction a user performs.
-    await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
+    await drawingTools.locator(".sketchizi-tool-sidebar-expand").hover();
     await gridSession.page.waitForFunction(() =>
       document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
     );
