@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { getActiveSelectedElementIds } from "./selectedElementIds.js";
+import { FILL_PREFERENCE_EVENT, reconcileFillDefaults } from "./closedShapeFill.js";
 import {
   DEFAULT_FONT_FAMILY_ID,
   detectFontFamilyPreferenceChange,
@@ -28,6 +29,21 @@ export function useExcalidrawScene({
   const previousFontAppStateRef = useRef(null);
   const previousTextFontFamiliesRef = useRef(new Map());
   const preferredFontFamilyRef = useRef(null);
+  const preferredFillRef = useRef(null);
+
+  useEffect(() => {
+    const rememberFillPreference = (event) => {
+      const detail = event.detail || {};
+      const preference = {};
+      if ("currentItemBackgroundColor" in detail) preference.currentItemBackgroundColor = detail.currentItemBackgroundColor;
+      if ("currentItemFillStyle" in detail) preference.currentItemFillStyle = detail.currentItemFillStyle;
+      if (Object.keys(preference).length) {
+        preferredFillRef.current = { ...(preferredFillRef.current || {}), ...preference };
+      }
+    };
+    window.addEventListener(FILL_PREFERENCE_EVENT, rememberFillPreference);
+    return () => window.removeEventListener(FILL_PREFERENCE_EVENT, rememberFillPreference);
+  }, []);
 
   const scheduleArchitectureSceneChange = useCallback((elements) => {
     latestArchitectureElementsRef.current = elements;
@@ -127,6 +143,19 @@ export function useExcalidrawScene({
       // pick while the popup is open and preserve it across subsequent changes.
       const api = apiRef.current;
       const liveAppState = api?.getAppState?.() || appState || {};
+      // Preserve explicit fill choices across Excalidraw's default-state
+      // normalization. A native background popup is treated as a new choice.
+      const fillReconciliation = reconcileFillDefaults({
+        preferred: preferredFillRef.current,
+        liveAppState,
+      });
+      preferredFillRef.current = fillReconciliation.preferred;
+      if (api?.updateScene && fillReconciliation.patch) {
+        api.updateScene({
+          appState: fillReconciliation.patch,
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+      }
       const detectedFontChoice = detectFontFamilyPreferenceChange({
         previousAppState: previousFontAppStateRef.current,
         appState: liveAppState,
