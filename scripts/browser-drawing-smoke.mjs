@@ -8,10 +8,10 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 800 
 const page = await context.newPage();
 page.on("pageerror", (error) => errors.push(error.message));
 
-async function dismissStartupChooser() {
-  const title = page.getByRole("heading", { name: "Start with" });
+async function dismissStartupChooser(target = page) {
+  const title = target.getByRole("heading", { name: "Start with" });
   await title.waitFor({ timeout: 15000 });
-  const chooser = page.getByRole("dialog").filter({ has: title });
+  const chooser = target.getByRole("dialog").filter({ has: title });
   await chooser.getByRole("button", { name: "Infinity" }).click();
   await chooser.waitFor({ state: "detached" });
 }
@@ -196,6 +196,40 @@ try {
   await page.mouse.click(quickX + 50, quickY + 2);
   await page.getByText("Selected shape actions", { exact: true }).waitFor();
   console.log("PASS: a rectangle survives immediate reload and remains selectable.");
+
+  for (const failedKey of ["main", "canvas-tabs-manifest"]) {
+    const failingContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    try {
+      const failingPage = await failingContext.newPage();
+      await failingPage.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
+      await dismissStartupChooser(failingPage);
+      const failureViewport = failingPage.locator(".excalidraw");
+      await failureViewport.waitFor({ state: "visible" });
+      const failureBounds = await failureViewport.boundingBox();
+      if (!failureBounds) throw new Error("Failure test has no visible drawing viewport.");
+      await failingPage.evaluate((keyToFail) => {
+        const originalPut = IDBObjectStore.prototype.put;
+        IDBObjectStore.prototype.put = function (value, key) {
+          if (this.name === "documents" && key === keyToFail) {
+            throw new DOMException("Simulated full storage", "QuotaExceededError");
+          }
+          return originalPut.apply(this, arguments);
+        };
+      }, failedKey);
+      const failureX = Math.round(failureBounds.x + failureBounds.width * 0.35);
+      const failureY = Math.round(failureBounds.y + failureBounds.height * 0.4);
+      await failingPage.mouse.click(failureX - 20, failureY - 20);
+      await failingPage.keyboard.press("r");
+      await failingPage.mouse.move(failureX, failureY);
+      await failingPage.mouse.down();
+      await failingPage.mouse.move(failureX + 120, failureY + 90, { steps: 6 });
+      await failingPage.mouse.up();
+      await failingPage.getByLabel("Local save failed", { exact: true }).waitFor({ timeout: 25000 });
+      console.log(`PASS: a failed ${failedKey} write shows a local save error.`);
+    } finally {
+      await failingContext.close();
+    }
+  }
 
   if (errors.length) throw new Error("Browser runtime exceptions: " + errors.join(" | "));
 } finally {
