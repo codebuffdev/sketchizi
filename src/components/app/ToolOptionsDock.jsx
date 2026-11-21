@@ -359,7 +359,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const tool = customTool === "bucketfill" ? "bucket-fill"
     : customTool === "autoshape" ? "draw-to-shape"
       : ["note", "sticky-note", "stickynote", "notes"].includes(customTool) ? "text"
-        : activeTool;
+        : ["highlighter", "area-mask", "areamask"].includes(customTool) ? customTool
+          : activeTool;
   const type = selectionType || tool;
   const isShape = ["rectangle", "diamond", "ellipse"].includes(type);
   const isLine = ["line", "arrow"].includes(type);
