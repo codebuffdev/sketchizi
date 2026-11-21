@@ -71,28 +71,6 @@ function getLineGeometryStyle(element) {
 }
 
 
-function ContextShapeIcon({ type, title, multiple = false }) {
-  let shape;
-  if (multiple) {
-    shape = <><rect x="4" y="5" width="12" height="12" rx="1" /><rect x="8" y="8" width="12" height="12" rx="1" /></>;
-  } else {
-    switch (type) {
-      case "rectangle": shape = <rect x="4" y="5" width="16" height="14" rx="1" />; break;
-      case "diamond": shape = <path d="M12 3 21 12 12 21 3 12Z" />; break;
-      case "ellipse": shape = <ellipse cx="12" cy="12" rx="9" ry="7" />; break;
-      case "line": shape = <path d="M4 19 20 5" />; break;
-      case "arrow": shape = <path d="M4 19 20 5m-7 0h7v7" />; break;
-      case "freedraw":
-      case "draw": shape = <path d="M4 17c3-9 5 5 8-3s5-7 8-7" />; break;
-      case "text": shape = <><path d="M5 5.5h14M12 5.5v13" /><path d="M9 18.5h6" /></>; break;
-      case "bucket-fill": shape = <><path d="m7 4 9 9-5 5-9-9Z" /><path d="m13 10 5-5 3 3-5 5M15 19h6" /></>; break;
-      case "draw-to-shape": shape = <><path d="M4 5h15v14H4z" strokeDasharray="2 2" /><path d="M7 16 11 8l5 7" /></>; break;
-      default: shape = <><path d="M4 12h16" /><circle cx="12" cy="12" r="8" /></>;
-    }
-  }
-  return <svg className="sk-tool-dock-shape-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label={title} title={title}>{shape}</svg>;
-}
-
 function ToolButton({ active, title, onClick, children }) {
   return <button type="button" className={`sk-tool-option-button${active ? " is-active" : ""}`} title={title} aria-label={title} aria-pressed={Boolean(active)} onClick={onClick}>{children}</button>;
 }
