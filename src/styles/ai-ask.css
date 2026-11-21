@@ -308,12 +308,13 @@
   .ai-ask-mark { width: 30px; height: 30px; padding: 3px; }
 }
 
-/* Keep the AI drawer in its own lane beside the desktop tool rail. In Pages
-   mode, leave a separate bottom lane for the page navigator as well. */
+/* Keep the desktop drawer beyond the canvas rail. In Pages mode, also reserve
+   room for the page navigator. */
 @media (min-width: 1025px) {
   .app.ai-ask-open {
     --ai-ask-panel-width: clamp(400px, calc(100vw - 625px), 540px);
-    --ai-ask-workspace-width: max(420px, calc(100vw - var(--header-rail-right, calc(18px + var(--safe-right, 0px))) - var(--header-rail-width, 56px) - 14px - var(--ai-ask-panel-width) - 16px));
+    --ai-ask-panel-right: calc(14px + var(--safe-right, 0px));
+    --ai-ask-workspace-width: calc(100vw - var(--ai-ask-panel-right) - var(--ai-ask-panel-width) - 10px);
   }
 
   .app.ai-ask-open .desktop-workspace {
@@ -324,7 +325,7 @@
 
   .app.ai-ask-open .ai-ask-panel {
     top: 14px;
-    right: calc(var(--header-rail-right, calc(18px + var(--safe-right, 0px))) + var(--header-rail-width, 56px) + 14px);
+    right: var(--ai-ask-panel-right);
     bottom: 14px;
     box-sizing: border-box;
     width: var(--ai-ask-panel-width);

@@ -503,6 +503,8 @@
     --header-rail-right: calc(18px + var(--safe-right, 0px));
     --header-top: calc(18px + var(--safe-top, 0px));
     --header-top-control-height: 40px;
+    --header-control-gap: 4px;
+    --header-control-right: calc(var(--header-rail-right) + (var(--header-rail-width) - var(--header-top-control-height)) / 2);
   }
 
   .app.canvas-first-header .desktop-app-document-title-float {
@@ -1082,19 +1084,33 @@
   border-radius: 4px !important;
 }
 
-/* When AI Ask is open, dock both controls at the top-right edge of the
-   remaining canvas instead of leaving them beyond the drawer. */
+/* The canvas rail follows the drawer edge as the drawer is resized. */
 @media (min-width: 1025px) {
-  .app.ai-ask-open .desktop-app-global-theme-control {
-    left: calc(var(--ai-ask-workspace-width) - 88px);
-    right: auto;
+  .app.canvas-first-header.ai-ask-open {
+    --header-rail-right: calc(var(--ai-ask-panel-right) + var(--ai-ask-panel-width) + 10px);
   }
-  .app.ai-ask-open .desktop-app-global-ai-control {
-    left: calc(var(--ai-ask-workspace-width) - 44px);
-    right: auto;
+
+  .app.canvas-first-header .desktop-app-global-ai-control {
+    right: var(--header-control-right);
+  }
+
+  .app.canvas-first-header .desktop-app-global-theme-control {
+    right: calc(var(--header-control-right) + var(--header-top-control-height) + 6px);
+  }
+
+  .app.canvas-first-header .desktop-app-header-reveal-handle {
+    top: calc(var(--header-top) + var(--header-top-control-height) + var(--header-control-gap)) !important;
+    right: var(--header-control-right) !important;
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    max-height: calc(100dvh - var(--header-top) - 2 * (var(--header-top-control-height) + var(--header-control-gap)) - 12px - var(--safe-bottom, 0px));
+  }
+
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail:not(.is-hidden) {
+    top: calc(var(--header-top) + 2 * (var(--header-top-control-height) + var(--header-control-gap))) !important;
   }
 }
-
 
 /* Keep the canvas-style chooser fully visible on narrow phone screens. */
 @media (max-width: 520px) {
