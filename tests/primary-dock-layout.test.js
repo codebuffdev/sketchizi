@@ -6,9 +6,9 @@ const component = await readFile(new URL("../src/components/app/PrimaryDock.jsx"
 const styles = await readFile(new URL("../src/styles/workspace-ui-redesign.css", import.meta.url), "utf8");
 
 test("primary tool dock is anchored 12px from the bottom-left and expands upward", () => {
-  assert.match(styles, /\.sketchizi-tool-sidebar\s*\{[^}]*left:\s*16px;[^}]*bottom:\s*58px;/s);
+  assert.match(styles, /\.sketchizi-tool-sidebar\s*\{[^}]*left:\s*12px;[^}]*bottom:\s*12px;/s);
   assert.match(styles, /\.sketchizi-tool-sidebar\.is-expanded \.sketchizi-tool-sidebar-list/);
-  assert.match(styles, /max-height:\s*calc\(100dvh - 132px\)/);
+  assert.match(styles, /max-height:\s*calc\(100dvh - 100px\)/);
   assert.match(styles, /\.sketchizi-tool-sidebar-collapsed/);
 });
 
