@@ -404,7 +404,7 @@
 }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-fill {
   position: absolute;
-  z-index: -1;
+  z-index: 0;
   left: 0;
   top: 0;
   bottom: 0;
