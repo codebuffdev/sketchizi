@@ -42,15 +42,15 @@ test("sidebar hides while the hamburger menu is open to prevent overlap", () => 
   assert.match(sidebarCss, /pointer-events: none/);
 });
 
-test("dock waits 180ms after pointer leaves and cancels collapse on re-entry", () => {
-  assert.match(dock, /const COLLAPSE_GRACE_MS = 180;/);
+test("dock waits three seconds after pointer leaves and cancels collapse on re-entry", () => {
+  assert.match(dock, /const COLLAPSE_GRACE_MS = 3000;/);
   assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, COLLAPSE_GRACE_MS\)/);
-  assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)/);
+  assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?cancelCollapseTimer\(\)/);
 });
 
 
 test("selecting a tool collapses the dock immediately and clears the pending hover timer", () => {
-  assert.match(dock, /const collapseDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)[\s\S]*?setExpanded\(false\)/);
+  assert.match(dock, /const collapseDock = \(\) => \{[\s\S]*?cancelCollapseTimer\(\)[\s\S]*?setExpanded\(false\)/);
   assert.match(dock, /const chooseTool = \(tool\) => \{[\s\S]*?collapseDock\(\);/);
   assert.doesNotMatch(dock, /if \(window\.matchMedia\?\.\("\(hover: none\)"\)\.matches\) collapseDock\(\)/);
 });

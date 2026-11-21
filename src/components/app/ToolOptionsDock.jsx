@@ -278,6 +278,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     document.fonts?.load('16px "Kalam"', "Kalam").catch(() => {});
   }, []);
   const [customTool, setCustomTool] = useState(null);
+  const [dockOpen, setDockOpen] = useState(true);
+  const collapseTimerRef = useRef(null);
+  const pendingCollapseRef = useRef(false);
+  const dockRef = useRef(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
   const [opacityPopoverOpen, setOpacityPopoverOpen] = useState(false);
@@ -287,6 +291,46 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const [fontSizePopoverOpen, setFontSizePopoverOpen] = useState(false);
   const fontSizeInputRef = useRef(null);
   const layerTriggerRef = useRef(null);
+  const cancelDockCollapse = () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
+  };
+  const expandDock = () => {
+    cancelDockCollapse();
+    setDockOpen(true);
+  };
+  const scheduleDockCollapse = () => {
+    const active = document.activeElement;
+    const isInputFocused = Boolean(active && dockRef.current?.contains(active) && active.matches("input, textarea, select"));
+    const isPopoverOpen = opacityPopoverOpen || fontSizePopoverOpen || layerMenuOpen ||
+      Boolean(dockRef.current?.querySelector('[aria-expanded="true"], [role="menu"], [role="dialog"]'));
+    if (opacityDragging || isInputFocused || isPopoverOpen) {
+      pendingCollapseRef.current = true;
+      return;
+    }
+    pendingCollapseRef.current = false;
+    cancelDockCollapse();
+    collapseTimerRef.current = window.setTimeout(() => {
+      setDockOpen(false);
+      collapseTimerRef.current = null;
+    }, 3000);
+  };
+  const collapseDockImmediately = () => {
+    cancelDockCollapse();
+    setDockOpen(false);
+  };
+  useEffect(() => () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
+  }, []);
+  useEffect(() => {
+    if (!pendingCollapseRef.current) return;
+    const active = document.activeElement;
+    const isInputFocused = Boolean(active && dockRef.current?.contains(active) && active.matches("input, textarea, select"));
+    const isPopoverOpen = opacityPopoverOpen || fontSizePopoverOpen || layerMenuOpen ||
+      Boolean(dockRef.current?.querySelector('[aria-expanded="true"], [role="menu"], [role="dialog"]'));
+    if (!opacityDragging && !isInputFocused && !isPopoverOpen) scheduleDockCollapse();
+  }, [opacityDragging, opacityPopoverOpen, fontSizePopoverOpen, layerMenuOpen]);
   const knownLineElementIdsRef = useRef(null);
   useEffect(() => {
     const handleCustomTool = (event) => {
@@ -357,7 +401,21 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   // Excalidraw's live selection is authoritative; React props can still refer
   // to the previous selection for one render after a click.
   const selected = liveSelected.length ? liveSelected : selectedFromProps;
+  const selectionKey = selected.map((element) => element.id).sort().join("|");
+  const previousSelectionKeyRef = useRef(selectionKey);
   const activeTool = String(appState.activeTool?.type || "selection").toLowerCase();
+  useEffect(() => {
+    if (previousSelectionKeyRef.current === selectionKey) return;
+    previousSelectionKeyRef.current = selectionKey;
+    collapseDockImmediately();
+  }, [selectionKey]);
+  useEffect(() => {
+    const revealForCanvasHover = (event) => {
+      if (selected.length && event.target?.closest?.(".excalidraw")) expandDock();
+    };
+    document.addEventListener("pointerover", revealForCanvasHover, true);
+    return () => document.removeEventListener("pointerover", revealForCanvasHover, true);
+  }, [selectionKey]);
   const editingTextElement = appState.editingTextElement?.type === "text" ? appState.editingTextElement : null;
   const selectionType = selected.length ? selected[0].type : editingTextElement?.type || null;
   const tool = customTool === "bucketfill" ? "bucket-fill"
@@ -365,6 +423,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       : ["note", "sticky-note", "stickynote", "notes"].includes(customTool) ? "text"
         : ["highlighter", "area-mask", "areamask"].includes(customTool) ? customTool
           : activeTool;
+  const previousToolRef = useRef(tool);
+  useEffect(() => {
+    if (previousToolRef.current === tool) return;
+    previousToolRef.current = tool;
+    collapseDockImmediately();
+  }, [tool]);
   const type = selectionType || tool;
   const isShape = ["rectangle", "diamond", "ellipse"].includes(type);
   const isLine = ["line", "arrow"].includes(type);
@@ -684,7 +748,30 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   ) : null;
 
   return (
-    <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
+    <div
+      ref={dockRef}
+      className={`sketchizi-tool-options-dock${dockOpen ? " is-open" : " is-collapsed"}`}
+      role="toolbar"
+      aria-label={`${title} options`}
+      data-tool={type}
+      aria-hidden={!dockOpen}
+      onMouseEnter={expandDock}
+      onMouseLeave={scheduleDockCollapse}
+      onFocusCapture={expandDock}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) scheduleDockCollapse();
+      }}
+      onClickCapture={(event) => {
+        const button = event.target?.closest?.("button");
+        if (button && !button.matches('[aria-haspopup="menu"], [aria-haspopup="dialog"]') &&
+          !button.closest(".sk-tool-opacity-scrubber")) {
+          collapseDockImmediately();
+        }
+      }}
+      onChangeCapture={(event) => {
+        if (event.target?.matches?.("select")) collapseDockImmediately();
+      }}
+    >
       {<DockGroup label={isHighlighter ? "Fill style" : isText ? "Text color" : isShape || isLaser ? "Color & fill" : "Stroke color"}>
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {!isFill && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
