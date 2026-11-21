@@ -661,6 +661,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       {!isHighlighter && <DockGroup label={isText ? "Text color" : "Stroke color"}>
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {!isFill && <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
+        {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
         {isShape && <>
           <ToolButton active={fillColor === "transparent"} title="Transparent fill" onClick={() => update({ backgroundColor: "transparent" })}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
@@ -669,10 +670,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
           </ToolButton>
         </>}
-        {isLaser && <ColorPicker label="Laser color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
       </DockGroup>}
 
-      {isHighlighter && <DockGroup label="Fill style">
+      {(isHighlighter || (isFill && !isHighlighter)) && <DockGroup label="Fill style">
         {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>
           <DockOptionGlyph label="Fill style" value={value} optionLabel={label} />
         </ToolButton>)}
