@@ -1270,8 +1270,8 @@
 @media (min-width: 1025px) {
   .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
     position: fixed !important;
-    top: calc(12px + var(--safe-top, 0px)) !important;
-    right: calc(12px + var(--safe-right, 0px)) !important;
+    top: 12px !important;
+    right: 12px !important;
     bottom: auto !important;
     left: auto !important;
     display: flex !important;
