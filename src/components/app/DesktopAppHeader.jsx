@@ -913,6 +913,8 @@ export default function DesktopAppHeader({
           type="button"
           className={`desktop-app-header-reveal-handle desktop-app-settings-toggle${settingsOpen ? " is-expanded" : ""}`}
           onClick={() => {
+            clearHeaderCollapseTimer();
+            setHeaderVisible(true);
             if (!settingsOpen) onBeforeOpenPanel?.();
             setSettingsOpen((open) => !open);
           }}
