@@ -20,7 +20,7 @@ const ICONS = {
 };
 
 // Grace period before the dock collapses after the pointer leaves it.
-const COLLAPSE_GRACE_MS = 180;
+const COLLAPSE_GRACE_MS = 3000;
 
 // Hints are only shown for shortcuts already handled by Excalidraw.
 const TOOLS = [
@@ -133,19 +133,29 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
   // Any change of the active tool (click or keyboard shortcut) collapses the
   // dock. Focus is deliberately left alone so typing shortcuts keep working.
   const previousActiveIdRef = useRef(activeId);
+  const selectionKey = selected.map((element) => element.id).sort().join("|");
+  const previousSelectionKeyRef = useRef(selectionKey);
+  const cancelCollapseTimer = () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
+  };
   useEffect(() => {
     if (previousActiveIdRef.current === activeId) return;
     previousActiveIdRef.current = activeId;
-    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
-    collapseTimerRef.current = null;
+    cancelCollapseTimer();
     setExpanded(false);
   }, [activeId]);
+  useEffect(() => {
+    if (previousSelectionKeyRef.current === selectionKey) return;
+    previousSelectionKeyRef.current = selectionKey;
+    cancelCollapseTimer();
+    setExpanded(false);
+  }, [selectionKey]);
 
   const activeToolMeta = TOOLS.find((tool) => tool.id === displayedTool) || TOOLS[0];
 
   const expandDock = () => {
-    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
-    collapseTimerRef.current = null;
+    cancelCollapseTimer();
     setExpanded(true);
   };
   const handleExpandClick = () => {
@@ -153,13 +163,12 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     window.requestAnimationFrame(() => firstToolButtonRef.current?.focus());
   };
   const collapseDock = () => {
-    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
-    collapseTimerRef.current = null;
+    cancelCollapseTimer();
     setExpanded(false);
     window.requestAnimationFrame(() => activeButtonRef.current?.focus());
   };
   const scheduleCollapse = () => {
-    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    cancelCollapseTimer();
     collapseTimerRef.current = window.setTimeout(() => {
       setExpanded(false);
       collapseTimerRef.current = null;
