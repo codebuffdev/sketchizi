@@ -253,6 +253,7 @@ export default function ContextualFormattingToolbar({
   canEdit = true,
 }) {
   const [openGroup, setOpenGroup] = useState(null);
+  const [colorTarget, setColorTarget] = useState("stroke");
   const [customToolMode, setCustomToolMode] = useState(null);
   const toolbarRef = useRef(null);
   const wasToolModeRef = useRef(false);
@@ -397,6 +398,8 @@ export default function ContextualFormattingToolbar({
 
   const currentStroke = (toolMode ? appState.currentItemStrokeColor : ((noteSelection ? firstTextFormattingElement?.strokeColor : null) || first?.customData?.iconColor || first?.strokeColor))?.toLowerCase() || "#2f2f33";
   const currentFill = (toolMode ? appState.currentItemBackgroundColor : (noteSelection ? firstNoteBackgroundElement?.backgroundColor : first?.backgroundColor))?.toLowerCase() || "transparent";
+  const fillableShape = !noteSelection && (hasShape || (toolMode && activeToolMode === "shape"));
+  const currentFillStyle = toolMode ? (appState.currentItemFillStyle || "hachure") : (first?.fillStyle || "hachure");
   const currentStrokeWidth = Number(toolMode ? appState.currentItemStrokeWidth : (first?.strokeWidth ?? appState.currentItemStrokeWidth)) || 1;
   const currentFontSize = Number(toolMode ? appState.currentItemFontSize : (firstTextFormattingElement?.fontSize ?? appState.currentItemFontSize)) || 20;
   const currentFontFamily = Number(toolMode ? appState.currentItemFontFamily : (firstTextFormattingElement?.fontFamily ?? appState.currentItemFontFamily)) || DEFAULT_FONT_FAMILY_ID;
@@ -432,10 +435,14 @@ export default function ContextualFormattingToolbar({
       // during text-edit/toolbar focus transitions even while this panel remains
       // visible. Updating these ids directly keeps all floating controls reliable.
       const selectedIds = new Set(liveSelection.map((element) => element.id));
-      const patchKeys = Object.keys(patch);
+      const effectivePatch = { ...patch };
+      if ("backgroundColor" in effectivePatch && effectivePatch.backgroundColor !== "transparent" && fillableShape && (first?.backgroundColor === "transparent" || first?.fillStyle === "transparent" || !first?.fillStyle)) {
+        effectivePatch.fillStyle = appState.currentItemFillStyle && appState.currentItemFillStyle !== "transparent" ? appState.currentItemFillStyle : "solid";
+      }
+      const patchKeys = Object.keys(effectivePatch);
       const textOnlyPatch = patchKeys.length > 0 && patchKeys.every((key) => ["strokeColor", "fontFamily", "fontSize", "textAlign"].includes(key));
       const containerOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "verticalAlign";
-      const backgroundOnlyPatch = patchKeys.length === 1 && patchKeys[0] === "backgroundColor";
+      const backgroundOnlyPatch = patchKeys.includes("backgroundColor") && patchKeys.every((key) => key === "backgroundColor" || key === "fillStyle");
       const hasSeparateNoteText = noteSelection && noteContainerIds.size > 0 && noteTextIds.size > 0 && elementsHaveNoteText(sceneElementsForFormatting, noteTextIds);
       const now = Date.now();
       const elements = api.getSceneElements?.() || [];
@@ -462,7 +469,12 @@ export default function ContextualFormattingToolbar({
     }
     const appStatePatch = {};
     if ("strokeColor" in patch) appStatePatch.currentItemStrokeColor = patch.strokeColor;
-    if ("backgroundColor" in patch) appStatePatch.currentItemBackgroundColor = patch.backgroundColor === "transparent" ? "transparent" : patch.backgroundColor;
+    if ("backgroundColor" in patch) {
+      appStatePatch.currentItemBackgroundColor = patch.backgroundColor === "transparent" ? "transparent" : patch.backgroundColor;
+      if (patch.backgroundColor !== "transparent" && fillableShape && (appState.currentItemBackgroundColor === "transparent" || appState.currentItemFillStyle === "transparent")) {
+        appStatePatch.currentItemFillStyle = appState.currentItemFillStyle && appState.currentItemFillStyle !== "transparent" ? appState.currentItemFillStyle : "solid";
+      }
+    }
     if ("strokeWidth" in patch) Object.assign(appStatePatch, strokeWidthAppStatePatch(patch.strokeWidth));
     if ("fillStyle" in patch) appStatePatch.currentItemFillStyle = patch.fillStyle;
     if ("strokeStyle" in patch) appStatePatch.currentItemStrokeStyle = patch.strokeStyle;
@@ -574,40 +586,66 @@ export default function ContextualFormattingToolbar({
     if (groupId === "stroke") return (
       <>
         <div className="format-option-section">
-          <div className="format-option-label">{(onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
-          <div className="format-option-row">
-            {strokePalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
-            <label
-              className="format-custom-color"
-              title="Choose custom color"
-              aria-label="Choose custom color"
-              style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed" }}
-            >
-              <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} />
-            </label>
-          </div>
+          {fillableShape ? (
+            <div className="format-shape-color-row">
+              <div className="format-fill-target-toggle" role="group" aria-label="Color target">
+                <button type="button" className={`format-fill-target${colorTarget === "stroke" ? " is-active" : ""}`} aria-pressed={colorTarget === "stroke"} onClick={() => setColorTarget("stroke")}>
+                  <span className="format-color-preview" style={{ "--preview-color": currentStroke }} />Stroke
+                </button>
+                <button type="button" className={`format-fill-target${colorTarget === "fill" ? " is-active" : ""}`} aria-pressed={colorTarget === "fill"} onClick={() => setColorTarget("fill")}>
+                  <span className={`format-color-preview${currentFill === "transparent" ? " is-transparent" : ""}`} style={{ "--preview-color": currentFill }} />Fill
+                </button>
+              </div>
+              <div className="format-option-row">
+                {(colorTarget === "fill" ? backgroundPalette.filter(([color]) => color !== "transparent") : strokePalette).map(([color, label]) => (
+                  <Swatch key={color} color={color} label={label} selected={(colorTarget === "fill" ? currentFill : currentStroke) === color} fill={colorTarget === "fill"} onClick={() => applyFormatting(colorTarget === "fill" ? { backgroundColor: color } : { strokeColor: color })} />
+                ))}
+                {colorTarget === "fill" && <Swatch color="transparent" label="Transparent" selected={currentFill === "transparent"} fill onClick={() => applyFormatting({ backgroundColor: "transparent" })} />}
+                <label className={`format-custom-color${colorTarget === "fill" ? " format-custom-fill-color" : ""}`} title={colorTarget === "fill" ? "Choose custom fill color" : "Choose custom stroke color"} aria-label={colorTarget === "fill" ? "Choose custom fill color" : "Choose custom stroke color"} style={{ "--custom-color-value": colorTarget === "fill" ? (/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1") : (/^#[0-9a-f]{6}$/i.test(currentStroke) ? currentStroke : "#7c3aed") }}>
+                  <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                  <input type="color" aria-label={colorTarget === "fill" ? "Choose custom fill color" : "Choose custom stroke color"} value={colorTarget === "fill" ? (/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1") : (/^#[0-9a-f]{6}$/i.test(currentStroke) ? currentStroke : "#7c3aed")} onChange={(event) => applyFormatting(colorTarget === "fill" ? { backgroundColor: event.target.value } : { strokeColor: event.target.value })} />
+                </label>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="format-option-label">{(onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
+              <div className="format-option-row">
+                {strokePalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
+                <label className="format-custom-color" title="Choose custom color" aria-label="Choose custom color" style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed" }}>
+                  <span className="format-custom-color-icon" aria-hidden="true">✎</span>
+                  <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} />
+                </label>
+              </div>
+            </>
+          )}
         </div>
-        {(!onlyTextSelection || toolMode || noteSelection) && !hasImageSelection && (
+        {!fillableShape && (!onlyTextSelection || toolMode || noteSelection) && !hasImageSelection && (
           <div className="format-option-section">
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
               {backgroundPalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
-              <label
-                className="format-custom-color format-custom-fill-color"
-                title="Choose custom background color"
-                aria-label="Choose custom background color"
-                style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1" }}
-              >
+              <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color" style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1" }}>
                 <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-                <input
-                  type="color"
-                  aria-label="Choose custom background color"
-                  value={/^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1"}
-                  onChange={(event) => applyFormatting({ backgroundColor: event.target.value })}
-                />
+                <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
               </label>
             </div>
+          </div>
+        )}
+        {fillableShape && (colorTarget === "fill" || currentFill !== "transparent") && (
+          <div className="format-fill-style-group" role="group" aria-label="Fill style">
+            {FILL_STYLES.map(([value, label]) => (
+              <button key={value} type="button" className={`format-fill-style-button${currentFillStyle === value ? " is-selected" : ""}`} aria-label={label} title={label} aria-pressed={currentFillStyle === value} onClick={() => applyFormatting({ fillStyle: value })}>
+                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                  <defs><clipPath id={`fill-preview-${value}`}><rect x="1" y="1" width="14" height="14" rx="3" /></clipPath></defs>
+                  {value === "solid" ? <rect x="1" y="1" width="14" height="14" rx="3" className="format-fill-preview-solid" /> : <g clipPath={`url(#fill-preview-${value})`} className="format-fill-preview-lines">
+                    {Array.from({ length: 7 }, (_, index) => <line key={index} x1={index * 4 - 8} y1="16" x2={index * 4 + 8} y2="0" />)}
+                    {value === "cross-hatch" && Array.from({ length: 7 }, (_, index) => <line key={`cross-${index}`} x1={index * 4 - 8} y1="0" x2={index * 4 + 8} y2="16" />)}
+                    <rect x="1" y="1" width="14" height="14" rx="3" className="format-fill-preview-outline" />
+                  </g>}
+                </svg>
+              </button>
+            ))}
           </div>
         )}
         {!toolMode && !onlyTextSelection && !hasImageSelection && (first?.type === "rectangle" || first?.type === "diamond" || first?.type === "line") && (
@@ -639,10 +677,7 @@ export default function ContextualFormattingToolbar({
             <div className="format-option-row">
               {[1, 2, 4].map((width) => <button key={width} type="button" className={`format-option-button${currentStrokeWidth === width ? " is-selected" : ""}`} aria-pressed={currentStrokeWidth === width} onClick={() => applyFormatting({ strokeWidth: width })}>{width}</button>)}
             </div>
-            {(toolMode ? activeToolMode === "shape" : hasShape) && <>
-              <div className="format-option-label format-sub-label">Fill style</div>
-              <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}</div>
-            </>}
+
             {drawToShapeTool && <>
               <div className="format-option-label format-sub-label">Sloppiness</div>
               <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(toolMode ? appState.currentItemRoughness ?? 1 : first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(toolMode ? appState.currentItemRoughness ?? 1 : first?.roughness ?? 1) === value} title={label} onClick={() => applyFormatting({ roughness: value })}>{label}</button>)}</div>
