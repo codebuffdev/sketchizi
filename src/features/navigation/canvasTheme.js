@@ -1,4 +1,4 @@
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction } from "@excalidraw/element";
 
 export const LIGHT_CANVAS_BACKGROUND = "#ffffff";
 // Excalidraw renders its dark theme by applying the CSS filter

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction } from "@excalidraw/element";
 import {
   applyCanvasAppearance,
   getCanvasAppearanceBackground,
@@ -54,17 +54,18 @@ test("Chalkboard updates its surface and new-element roughness", () => {
   assert.equal(update.appState.viewBackgroundColor, getCanvasAppearanceBackground("chalkboard", false));
   assert.equal(update.appState.currentItemRoughness, 2);
   assert.equal(update.captureUpdate, CaptureUpdateAction.IMMEDIATELY);
-  assert.deepEqual(Object.keys(update.appState).sort(), ["currentItemRoughness", "viewBackgroundColor"]);
+  assert.equal(update.appState.theme, "light");
+  assert.deepEqual(Object.keys(update.appState).sort(), ["currentItemRoughness", "theme", "viewBackgroundColor"]);
 });
 
 test("applying Sketch changes roughness without changing the canvas background", () => {
   let update;
   const api = {
-    getAppState: () => ({ viewBackgroundColor: "#dce8ef", currentItemRoughness: 1 }),
+    getAppState: () => ({ viewBackgroundColor: "#dce8ef", currentItemRoughness: 1, theme: "light" }),
     updateScene: (next) => { update = next; },
   };
   assert.equal(applyCanvasAppearance(api, "sketch", false), true);
-  assert.deepEqual(update.appState, { currentItemRoughness: 2 });
+  assert.deepEqual(update.appState, { currentItemRoughness: 2, theme: "light" });
   assert.equal(update.appState.viewBackgroundColor, undefined);
 });
 
@@ -80,7 +81,7 @@ test("Sketch applies hand-drawn roughness to existing shapes and lines", () => {
     { id: "deleted", type: "ellipse", roughness: 0, isDeleted: true, version: 1, versionNonce: 15 },
   ];
   const api = {
-    getAppState: () => ({ viewBackgroundColor: "#dce8ef", currentItemRoughness: 1 }),
+    getAppState: () => ({ viewBackgroundColor: "#dce8ef", currentItemRoughness: 1, theme: "light" }),
     getSceneElementsIncludingDeleted: () => existing,
     updateScene: (next) => { update = next; },
   };

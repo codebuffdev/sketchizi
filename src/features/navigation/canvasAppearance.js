@@ -1,4 +1,4 @@
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction } from "@excalidraw/element";
 import { canvasColorForScene } from "./canvasColors.js";
 import { getCanvasBackground } from "./canvasTheme.js";
 
