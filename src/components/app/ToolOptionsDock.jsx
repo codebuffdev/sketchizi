@@ -280,6 +280,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const [customTool, setCustomTool] = useState(null);
   const [dockOpen, setDockOpen] = useState(true);
   const collapseTimerRef = useRef(null);
+  const pendingCollapseRef = useRef(false);
   const dockRef = useRef(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
@@ -303,7 +304,11 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     const isInputFocused = Boolean(active && dockRef.current?.contains(active) && active.matches("input, textarea, select"));
     const isPopoverOpen = opacityPopoverOpen || fontSizePopoverOpen || layerMenuOpen ||
       Boolean(dockRef.current?.querySelector('[aria-expanded="true"], [role="menu"], [role="dialog"]'));
-    if (opacityDragging || isInputFocused || isPopoverOpen) return;
+    if (opacityDragging || isInputFocused || isPopoverOpen) {
+      pendingCollapseRef.current = true;
+      return;
+    }
+    pendingCollapseRef.current = false;
     cancelDockCollapse();
     collapseTimerRef.current = window.setTimeout(() => {
       setDockOpen(false);
@@ -314,7 +319,18 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     cancelDockCollapse();
     setDockOpen(false);
   };
-  useEffect(() => () => cancelDockCollapse(), []);
+  useEffect(() => () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
+  }, []);
+  useEffect(() => {
+    if (!pendingCollapseRef.current) return;
+    const active = document.activeElement;
+    const isInputFocused = Boolean(active && dockRef.current?.contains(active) && active.matches("input, textarea, select"));
+    const isPopoverOpen = opacityPopoverOpen || fontSizePopoverOpen || layerMenuOpen ||
+      Boolean(dockRef.current?.querySelector('[aria-expanded="true"], [role="menu"], [role="dialog"]'));
+    if (!opacityDragging && !isInputFocused && !isPopoverOpen) scheduleDockCollapse();
+  }, [opacityDragging, opacityPopoverOpen, fontSizePopoverOpen, layerMenuOpen]);
   const knownLineElementIdsRef = useRef(null);
   useEffect(() => {
     const handleCustomTool = (event) => {
