@@ -540,3 +540,6 @@
     display: none !important;
   }
 }
+
+.app .sketchizi-tool-sidebar { height: 52px; }
+.app .sketchizi-tool-sidebar.is-expanded { height: auto; }
