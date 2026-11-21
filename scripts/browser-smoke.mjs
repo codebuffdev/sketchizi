@@ -483,18 +483,19 @@ try {
   const firstCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[0].name, { exact: true }));
   const secondCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[1].name, { exact: true }));
   await firstCloudTab.waitFor();
-  await cloudTabs.page.getByRole("button", { name: "Return to Cloud Workspace" }).click();
+  await cloudTabs.page.getByRole("button", { name: "Open application menu" }).click();
+  await cloudTabs.page.getByRole("button", { name: "Cloud Files", exact: true }).click();
   await cloudTabs.page.getByRole("article").filter({ hasText: diagrams[1].name })
     .getByRole("button", { name: "Open", exact: true }).click();
   await secondCloudTab.waitFor();
   await firstCloudTab.click();
-  await cloudTabs.page.getByRole("button", { name: "Return to Cloud Workspace" }).waitFor();
+  await cloudTabs.page.getByRole("button", { name: `Saved ${diagrams[0].name} to Cloud Workspace` }).waitFor();
   if (await firstCloudTab.getAttribute("aria-selected") !== "true" ||
       await cloudTabs.page.getByRole("tab").count() !== 2) {
     throw new Error("Opening a second Workspace drawing must keep both cloud tabs without an empty local canvas.");
   }
   await secondCloudTab.click();
-  await cloudTabs.page.getByRole("button", { name: "Return to Cloud Workspace" }).waitFor();
+  await cloudTabs.page.getByRole("button", { name: `Saved ${diagrams[1].name} to Cloud Workspace` }).waitFor();
   if (await secondCloudTab.getAttribute("aria-selected") !== "true") {
     throw new Error("The second drawing must remain selectable as a cloud tab.");
   }
