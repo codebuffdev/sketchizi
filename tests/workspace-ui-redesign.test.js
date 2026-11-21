@@ -35,6 +35,7 @@ test("utility controls are ordered zoom, theme, AI, settings in a 34px row", () 
   assert.match(styles, /right:\s*12px\s*!important/);
   assert.match(styles, /gap:\s*8px\s*!important/);
   assert.match(styles, /height:\s*34px\s*!important/);
+  assert.match(styles, /desktop-app-header-right-rail[\s\S]*?display:\s*none\s*!important/);
   assert.equal((header.match(/desktop-app-settings-row/g) || []).length, 2);
   assert.match(theme, /setThemeMode\(isDarkTheme \? "light" : "dark"\)/);
 });
