@@ -102,7 +102,7 @@ export default function ThemeControl({ setThemeMode, themeMode, isDarkTheme, can
     chooseBackground(canvasColorForScene(color, isDarkTheme));
   };
   return <>
-    <button ref={trigger} type="button" className={`theme-toggle desktop-app-theme-toggle appearance-trigger ${isDarkTheme ? "dark" : "light"}`} aria-label="Appearance and canvas background" title="Appearance and canvas background" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? "sketchizi-appearance" : undefined} onClick={() => setOpen(value => !value)}>
+    <button ref={trigger} type="button" className={`theme-toggle desktop-app-theme-toggle appearance-trigger ${isDarkTheme ? "dark" : "light"}`} aria-label={isDarkTheme ? "Switch to light theme" : "Switch to dark theme"} title={isDarkTheme ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setThemeMode(isDarkTheme ? "light" : "dark")} onContextMenu={(event) => { event.preventDefault(); setOpen(true); }}>
       <AppearanceIcon mode={themeMode === "system" ? "system" : isDarkTheme ? "dark" : "light"} />
     </button>
     {open && createPortal(<div ref={panel} id="sketchizi-appearance" className="sketchizi-appearance" tabIndex={-1} data-dark={isDarkTheme} role="dialog" aria-label="Appearance and canvas background" style={position} onKeyDown={event => { if (event.key !== "Escape") event.stopPropagation(); }}>
