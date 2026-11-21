@@ -1,5 +1,3 @@
-import { applyClosedShapeFill, hasFillKeys, isClosedShape } from "./features/canvas/closedShapeFill.js";
-
 export default function PropertiesPanel({
   selectedCount, propertiesOpen, setPropertiesOpen, firstSelected, hasShapeSelection,
   hasArrowSelection, hasTextSelection, applyToSelected, applyToSelectedArrow, updateSingleSelected,
