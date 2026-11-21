@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const ICONS = {
   selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
@@ -63,6 +63,8 @@ function activateTool({ id, root, apiRef, onOpenTodoTab }) {
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab, nativeMenuOpen = false }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const dockRef = useRef(null);
 
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
@@ -86,16 +88,61 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
   }, []);
 
   const activeId = customTool || activeTool;
+  const activeToolDefinition = TOOLS.find((tool) => tool.id === activeId) || TOOLS[0];
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const closeOnOutside = (event) => {
+      if (!dockRef.current?.contains(event.target)) setExpanded(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setExpanded(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutside, true);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutside, true);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [expanded]);
+
+  useEffect(() => {
+    if (nativeMenuOpen) setExpanded(false);
+  }, [nativeMenuOpen]);
 
   return (
     <nav
-      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}${nativeMenuOpen ? " is-menu-open" : ""}`}
+      ref={dockRef}
+      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}${nativeMenuOpen ? " is-menu-open" : ""}${expanded ? " is-expanded" : " is-collapsed"}`}
       aria-label="Drawing tools"
       aria-hidden={nativeMenuOpen}
       inert={nativeMenuOpen}
       data-canvas-revision={canvasRevision}
     >
-      {TOOLS.map((tool) => {
+      {!expanded ? (
+        <button
+          type="button"
+          className="sketchizi-tool-sidebar-collapsed-button"
+          aria-label={`Expand tools. Current tool: ${activeToolDefinition.label}`}
+          aria-expanded="false"
+          aria-controls="sketchizi-tool-sidebar-list"
+          title={`Current tool: ${activeToolDefinition.label}. Click to expand tools.`}
+          onClick={() => setExpanded(true)}
+        >
+          <ToolIcon name={activeToolDefinition.id} />
+          <span className="sketchizi-tool-sidebar-collapsed-chevron" aria-hidden="true">⌄</span>
+        </button>
+      ) : (
+        <div className="sketchizi-tool-sidebar-expanded-list" id="sketchizi-tool-sidebar-list">
+          <button
+            type="button"
+            className="sketchizi-tool-sidebar-collapse-button"
+            aria-label="Collapse tool dock"
+            title="Collapse tool dock"
+            onClick={() => setExpanded(false)}
+          >⌄</button>
+      )}
+      {expanded && TOOLS.map((tool) => {
         const selected = activeId === tool.id;
         return (
           <React.Fragment key={tool.id}>
@@ -113,6 +160,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
                   setActiveTool(tool.id);
                   setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
                 }
+                setExpanded(false);
               }}
             >
               <ToolIcon name={tool.id} />
@@ -120,6 +168,7 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
           </React.Fragment>
         );
       })}
+      {expanded ? </div> : null}
     </nav>
   );
 }
