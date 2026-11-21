@@ -4,39 +4,20 @@ import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const app = read('../src/App.jsx');
-const canvas = read('../src/components/app/SketchiziCanvas.jsx');
-const tools = read('../src/features/canvas/useCanvasTools.js');
 const commands = read('../src/features/commands/commandRegistry.js');
 const preferences = read('../src/features/navigation/useSketchiziPreferences.js');
-const header = read('../src/components/app/DesktopAppHeader.jsx');
 const shortcuts = read('../src/ShortcutHelp.jsx');
 const panelState = read('../src/features/navigation/usePanelState.js');
-const styles = read('../src/styles.css');
 
-test('Excalidraw owns grid display and snapping', () => {
-  assert.match(app, /const \[gridEnabled, setGridEnabled\] = useState\(false\)/);
-  assert.match(app, /gridEnabled=\{gridEnabled\}/);
-  assert.doesNotMatch(canvas, /gridModeEnabled=\{gridEnabled\}/);
-  assert.match(canvas, /gridModeEnabled: savedSketch\?\.appState\?\.gridModeEnabled \?\? gridEnabled/);
-  assert.match(tools, /gridModeEnabled: enabled/);
-  assert.doesNotMatch(canvas, /sketchizi-grid-overlay|gridSnapBaselineRef|snapChangedSceneElements|gridVisible|gridSnappingEnabled/);
-  assert.doesNotMatch(styles, /ui-modernization-grid\.css/);
-});
-
-test('header owns grid visibility while command and G shortcut remain available', () => {
+test('the command palette exposes the canvas pattern toggle', () => {
   assert.match(commands, /id: "view\.toggle-grid"[\s\S]*?shortcut: "G"[\s\S]*?execute: toggleGrid/);
   assert.match(commands, /label: gridEnabled \? "Hide Grid" : "Show Grid"/);
-  assert.doesNotMatch(commands, /view\.toggle-canvas-grid|gridVisible|toggleCanvasGrid/);
-  assert.doesNotMatch(header, /"view\.toggle-grid"/);
-  assert.match(header, /aria-label="Grid settings"/);
-  assert.match(header, /onToggleGrid\?\.\(\)/);
-  assert.doesNotMatch(header, /view\.toggle-canvas-grid/);
 });
 
-test('G toggles the native grid without a separate Shift+G mode', () => {
+test('G is the canvas pattern shortcut without a separate Shift+G binding', () => {
   assert.match(preferences, /if \(!event\.shiftKey && key === "g"\) \{ event\.preventDefault\(\); toggleGrid\(\); return; \}/);
   assert.doesNotMatch(preferences, /toggleCanvasGrid|if \(event\.shiftKey && key === "g"/);
-  assert.match(shortcuts, /\["G", "Toggle Excalidraw grid"\]/);
+  assert.match(shortcuts, /\["G", "Toggle canvas pattern"\]/);
   assert.doesNotMatch(shortcuts, /Toggle grid snapping|⇧ G/);
 });
 

@@ -192,6 +192,12 @@ try {
   await dismissStartupChooser(gridSession.page);
   await gridSession.page.getByRole("button", { name: "Create new canvas" }).click();
   await gridSession.page.locator(".excalidraw").waitFor({ timeout: 30000 });
+  const drawingTools = gridSession.page.getByRole("navigation", { name: "Drawing tools" });
+  for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
+    await drawingTools.getByRole("button", { name, exact: true }).click();
+    await drawingTools.getByRole("button", { name, exact: true, pressed: true }).waitFor();
+  }
+  console.log("PASS: sidebar quick tools activate directly and return to Select.");
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
   // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
@@ -291,9 +297,6 @@ try {
       !contentGrid.fineSize || contentGrid.fineSize >= contentGrid.coarseSize / 8) {
     throw new Error(`Fine rectangular grid must remain around drawing content: ${JSON.stringify(contentGrid)}`);
   }
-  // Grid ON/OFF behavior is covered by the state-contract regression suite.
-  // The browser smoke test validates the drawing and focused grid without
-  // depending on whether the toolbar stays expanded after drawing.
   await gridSession.page.mouse.move(x - 120, y - 100);
   await gridSession.page.waitForTimeout(100);
   const afterHover = await readGrid();
@@ -306,6 +309,19 @@ try {
   if (!afterIdle.active || !twoLines(afterIdle.baseImage)) {
     throw new Error(`Grid disappeared even though the drawing has content: ${JSON.stringify(afterIdle)}`);
   }
+  await gridSession.page.keyboard.press("v");
+  await gridSession.page.mouse.click(x - 120, y - 100);
+  await gridSession.page.keyboard.press("g");
+  await focusGrid.waitFor({ state: "hidden" });
+  const disabledWithContent = await readGrid();
+  if (disabledWithContent.active || disabledWithContent.display !== "none") {
+    throw new Error(`G must hide both pattern layers with drawing content: ${JSON.stringify(disabledWithContent)}`);
+  }
+  await gridSession.page.keyboard.press("g");
+  await focusGrid.waitFor({ state: "visible" });
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("has-focus"),
+  );
   await gridSession.page.setViewportSize({ width: 390, height: 740 });
   await gridSession.page.waitForTimeout(100);
   const phoneGrid = await readGrid();

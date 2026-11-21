@@ -3,7 +3,7 @@ const SHORTCUTS = [
   ["/", "Open icon library & focus search"],
   ["P", "Toggle Properties (when selected)"],
   ["D", "Toggle Dark / Light theme"],
-  ["G", "Toggle Excalidraw grid"],
+  ["G", "Toggle canvas pattern"],
   ["M", "Show / hide minimap"],
   ["F", "Fit diagram to viewport"],
   ["Esc", "Close panels / exit modes"],
