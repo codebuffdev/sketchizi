@@ -3,6 +3,7 @@ import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
+import { applyClosedShapeFill, hasFillKeys, isClosedShape } from "../../features/canvas/closedShapeFill.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -426,6 +427,14 @@ export default function ContextualFormattingToolbar({
   const applyFormatting = (patch) => {
     const api = apiRef?.current;
     if (!api) return;
+    const closedShapeIds = liveSelection.filter(isClosedShape).map((element) => element.id);
+    if (hasFillKeys(patch) && (closedShapeIds.length || (toolMode && activeToolMode === "shape"))) {
+      const fillPatch = {};
+      if ("backgroundColor" in patch) fillPatch.backgroundColor = patch.backgroundColor;
+      if ("fillStyle" in patch) fillPatch.fillStyle = patch.fillStyle;
+      applyClosedShapeFill(api, fillPatch, { selectedIds: closedShapeIds, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      return;
+    }
     if (!toolMode) {
       // Use the same live selection snapshot that rendered this toolbar. The
       // parent callback re-reads Excalidraw selection state, which can be empty
