@@ -92,6 +92,11 @@ try {
   const rail = blank.page.locator(".desktop-app-header-right-rail");
   await aiToggle.click();
   await aiDrawer.waitFor();
+  await blank.page.waitForFunction(() => {
+    const sliders = document.querySelector(".desktop-app-header-reveal-handle")?.getBoundingClientRect();
+    const tools = document.querySelector(".desktop-app-header-right-rail")?.getBoundingClientRect();
+    return sliders && tools && tools.top >= sliders.bottom - 1;
+  });
   const [ai, sliders, tools, drawer] = await Promise.all(
     [aiToggle, railToggle, rail, aiDrawer].map((control) => control.boundingBox()),
   );
