@@ -189,9 +189,43 @@ try {
   await page.getByText("Selected shape actions", { exact: true }).waitFor();
   console.log("PASS: the restored rectangle is selectable and native grid survives browser reload.");
 
+  if (!previousBuild && process.env.SKETCHIZI_VERIFY_FILE_ROUND_TRIP === "1") {
+    await page.getByRole("button", { name: /Download and save options/ }).click();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /Download recovery backup/ }).click(),
+    ]);
+    const importedContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const importedPage = await importedContext.newPage();
+    importedPage.on("pageerror", (error) => errors.push(error.message));
+    // Use the app's file-input fallback so the download can be selected in CI.
+    await importedPage.addInitScript(() => {
+      Object.defineProperty(window, "showOpenFilePicker", { value: undefined });
+    });
+    await importedPage.goto(baseURL + "/?editor=1", { waitUntil: "networkidle", timeout: 60000 });
+    await importedPage.getByRole("button", { name: "Infinity" }).click();
+    await importedPage.getByRole("button", { name: "Open application menu" }).click();
+    const [chooser] = await Promise.all([
+      importedPage.waitForEvent("filechooser"),
+      importedPage.getByRole("button", { name: "Open file", exact: true }).click(),
+    ]);
+    await chooser.setFiles({
+      name: download.suggestedFilename(),
+      mimeType: "application/json",
+      buffer: await (await import("node:fs/promises")).readFile(await download.path()),
+    });
+    await importedPage.getByText(`Opened ${download.suggestedFilename()}`, { exact: true }).waitFor();
+    await importedPage.keyboard.press("v");
+    await importedPage.mouse.click(x + 82, y + 64);
+    await importedPage.getByText("Selected shape actions", { exact: true }).waitFor();
+    await importedContext.close();
+    await page.bringToFront();
+    console.log("PASS: the exported drawing imports into a fresh editor and is selectable.");
+  }
+
   if (previousBuild) {
     console.log("PASS: a drawing saved by the base build opens and is selectable on the candidate build.");
-  } else {
+  } else if (process.env.SKETCHIZI_VERIFY_FILE_ROUND_TRIP !== "1") {
     // Draw again and reload before the debounced write can finish. The same
     // browser tab must reopen the pending drawing as well as its saved scene.
     const quickX = Math.round(bounds.x + bounds.width * 0.57);
@@ -274,6 +308,11 @@ try {
   }
 
   if (errors.length) throw new Error("Browser runtime exceptions: " + errors.join(" | "));
+} catch (error) {
+  if (process.env.SKETCHIZI_DRAWING_FAILURE_SCREENSHOT) {
+    await page.screenshot({ path: process.env.SKETCHIZI_DRAWING_FAILURE_SCREENSHOT }).catch(() => {});
+  }
+  throw error;
 } finally {
   await browser.close();
 }
