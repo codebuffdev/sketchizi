@@ -717,9 +717,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   if (!isVisible) return null;
 
   const noLayerForTool = isDraw || isLaser || isFill;
-  const showCornerRadius = type === "rectangle" || type === "diamond" || isHighlighter || isLaser;
-  const showRoughness = isShape || isLine || isAutoShape || isLaser;
-  const showStrokeStyle = isShape || isLine || isAutoShape || isLaser;
+  const showCornerRadius = type === "rectangle" || type === "diamond";
+  const showRoughness = isShape || isLine || isAutoShape;
+  const showStrokeStyle = isShape || isLine || isAutoShape;
   const showStrokeWidth = !isText && !isFill;
   const activeRoundness = Boolean(current("roundness", "currentItemRoundness", null));
   const layerDisabled = !selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean);
@@ -775,7 +775,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       {<DockGroup label={isHighlighter ? "Fill style" : isText ? "Text color" : isShape || isLaser ? "Color & fill" : "Stroke color"}>
         {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         {!isFill && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
-        {(isShape || isLaser || isHighlighter) && <>
+        {(isShape || isHighlighter) && <>
           <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
           </ToolButton>
@@ -783,6 +783,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
           </ToolButton>
         </>}
+        {(isShape || isHighlighter) && <VisualOptionSelect label="Fill style" value={fillStyle} onChange={(value) => update({ fillStyle: value })} kind="fill-style" options={FILL_STYLES.map(([value, label]) => ({ value, label }))} />}
         {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
       </DockGroup>}
 
