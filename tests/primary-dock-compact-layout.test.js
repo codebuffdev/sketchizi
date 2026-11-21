@@ -128,3 +128,24 @@ test("phones get a smaller rail and iPad/touch keeps larger hit targets than des
   assert.ok(touch.buttonH > desktop.buttonH);
   assert.ok(touch.width < BEFORE.width, "even on touch the rail is slimmer than before");
 });
+
+
+test("dock starts as one active-tool control at the bottom-left and expands on demand", async () => {
+  const jsx = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
+  const collapsed = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar.is-collapsed"));
+  assert.equal(collapsed.position, undefined, "position is inherited from the shared dock rule");
+  assert.match(css, /\.sketchizi-tool-sidebar\.is-collapsed\s*\{[\s\S]*?width:\s*48px/);
+  assert.match(css, /\.sketchizi-tool-sidebar\.is-collapsed\s*\{[\s\S]*?height:\s*54px/);
+  assert.match(css, /\.sketchizi-tool-sidebar\s*\{[\s\S]*?bottom:\s*12px\s*!important/);
+  assert.match(jsx, /sketchizi-tool-sidebar-collapsed-button/);
+  assert.match(jsx, /onClick=\{\(\) => setExpanded\(true\)\}/);
+});
+
+test("tool selection keeps all existing actions and immediately collapses the expanded dock", async () => {
+  const jsx = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
+  assert.equal((jsx.match(/\{ id: "/g) || []).length, TOOL_COUNT);
+  assert.match(jsx, /activateTool\(\{ id: tool\.id, root: rootRef\.current, apiRef, onOpenTodoTab \}\)/);
+  assert.match(jsx, /setExpanded\(false\)/);
+  assert.match(jsx, /closeOnOutside/);
+  assert.match(jsx, /closeOnEscape/);
+});
