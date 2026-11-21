@@ -532,3 +532,11 @@
   .app .sketchizi-tool-sidebar,
   .app .sketchizi-tool-sidebar * { transition: none !important; }
 }
+
+/* The legacy desktop vertical header rail is superseded by the four-control
+   top-right utility row and the floating application menu. */
+@media (min-width: 1025px) {
+  .app.canvas-first-header .desktop-app-header.desktop-app-header-right-rail {
+    display: none !important;
+  }
+}
