@@ -81,6 +81,20 @@ try {
   await blank.page.getByRole("button", { name: "Create new canvas" }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: the canvas-tab add action opens an editable canvas.");
+  const headerStyles = await blank.page.getByRole("tablist", { name: "Workspace tabs" }).evaluate((strip) => ({
+    stripRadius: parseFloat(getComputedStyle(strip).borderTopLeftRadius),
+    activeRadius: parseFloat(getComputedStyle(strip.querySelector(".canvas-tab-item.is-active")).borderTopLeftRadius),
+    count: strip.querySelectorAll('[role="tab"]').length,
+  }));
+  const addStyles = await blank.page.getByRole("button", { name: "Create new canvas" }).evaluate((button) => {
+    const style = getComputedStyle(button);
+    return { radius: parseFloat(style.borderTopLeftRadius), border: style.borderTopStyle };
+  });
+  if (headerStyles.count < 2 || headerStyles.stripRadius < 18 || headerStyles.activeRadius < 17 ||
+      addStyles.radius < 18 || addStyles.border === "dashed") {
+    throw new Error(`Canvas header must use a connected rounded strip and a circular add action: ${JSON.stringify({ headerStyles, addStyles })}`);
+  }
+  console.log("PASS: the canvas header uses soft tab and utility shapes.");
 
   // The floating header may collapse after canvas interaction; reveal it with
   // the same keyboard shortcut users have before opening header-only actions.
@@ -489,6 +503,7 @@ try {
   await authLayout.page.getByRole("dialog", { name: "Sign in to Sketchizi" }).waitFor({ state: "detached" });
 
   const cloudTabs = await makePage({ width: 1280, height: 800 });
+  await cloudTabs.page.addInitScript(() => localStorage.setItem("diagram-app-theme", "dark"));
   const diagrams = ["First cloud drawing", "Second cloud drawing"].map((name, index) => ({
     id: `cloud-${index + 1}`,
     name,
@@ -514,6 +529,16 @@ try {
   const firstCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[0].name, { exact: true }));
   const secondCloudTab = cloudTabs.page.getByRole("tab").and(cloudTabs.page.getByTitle(diagrams[1].name, { exact: true }));
   await firstCloudTab.waitFor();
+  const darkTab = await firstCloudTab.evaluate((tab) => ({
+    dark: !!tab.closest(".app.theme-dark"),
+    titleSurface: getComputedStyle(tab).backgroundColor,
+    segmentSurface: getComputedStyle(tab.parentElement).backgroundColor,
+    stripSurface: getComputedStyle(tab.closest(".canvas-tabs-bar")).backgroundColor,
+  }));
+  if (!darkTab.dark || darkTab.titleSurface !== "rgba(0, 0, 0, 0)" ||
+      darkTab.segmentSurface === darkTab.stripSurface) {
+    throw new Error(`The active dark tab must use one visible surface: ${JSON.stringify(darkTab)}`);
+  }
   await cloudTabs.page.getByRole("button", { name: "Open application menu" }).click();
   await cloudTabs.page.getByRole("button", { name: "Cloud Files", exact: true }).click();
   await cloudTabs.page.getByRole("article").filter({ hasText: diagrams[1].name })

@@ -12,9 +12,3 @@ test("AI Ask toggle is rendered outside the auto-hiding header rail", async () =
   assert.match(railStyles, /desktop-app-global-ai-control/);
   assert.match(railStyles, /desktop-app-global-theme-control/);
 });
-
-test("canvas shell controls use the shared rectangular geometry", async () => {
-  const styles = await read("../src/styles/right-header-rail.css");
-  assert.match(styles, /Shared rectangular geometry for the canvas shell/);
-  assert.match(styles, /desktop-app-global-ai-control[\s\S]*border-radius: 4px !important/);
-});

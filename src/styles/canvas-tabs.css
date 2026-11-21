@@ -489,7 +489,7 @@
   box-shadow:0 1px 2px rgb(22 34 54 / 5%);
 }
 .app.theme-dark .canvas-tabs-bar {
-  --ct-strip:#171d27;--ct-strip-border:#303a4a;--ct-active:#303a4b;--ct-active-border:#59677e;
+  --ct-strip:#171d27;--ct-strip-border:#303a4a;--ct-active:#222b38;--ct-active-border:#45516a;
   --ct-hover:#252e3d;--ct-text:#aab5c6;--ct-strong:#f4f6fb;--ct-muted:#bdc6d5;
   --ct-separator:#536075;--ct-control-hover:#3a4659;--ct-accent:#b5afff;
   box-shadow:0 1px 3px rgb(0 0 0 / 24%);
@@ -555,97 +555,76 @@
 @media(max-width:760px){.canvas-tab-item.is-active>.canvas-tab-active-actions{padding-left:4px}}
 
 
-/* Final tab interaction model: independent tab buttons, no enclosing pill. */
+/* One canvas tab strip, with a softly raised active segment. */
 .canvas-tabs-bar {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  padding: 2px;
+  border: 1px solid var(--ct-strip-border);
+  border-radius: 999px;
+  background: var(--ct-strip);
+  box-shadow: 0 2px 8px rgb(22 34 54 / 7%);
 }
 .canvas-tabs-list {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 40px;
+  gap: 2px;
+  height: 36px;
 }
-.canvas-tab-item {
-  min-height: 36px;
-  border: 1px solid var(--ct-active-border, #d5dce7);
-  border-radius: 9px;
-  background: var(--ct-strip, #f3f5f8);
-  box-shadow: 0 1px 2px rgb(22 34 54 / 5%);
-}
-.canvas-tab-item:not(.is-active) {
-  background: var(--ct-strip, #f3f5f8);
-  border-color: var(--ct-strip-border, #dfe4ec);
-}
-.canvas-tab-item:not(.is-active):hover {
-  background: var(--ct-hover, #e9edf3);
-  border-color: var(--ct-active-border, #d5dce7);
-  box-shadow: 0 2px 5px rgb(22 34 54 / 8%);
+.canvas-tab-item,
+.canvas-tab-item.is-active {
+  min-height: 34px;
+  border-radius: 999px;
 }
 .canvas-tab-item.is-active {
-  background: var(--ct-active, #fff);
-  border-color: var(--ct-active-border, #d5dce7);
-  box-shadow: 0 2px 5px rgb(22 34 54 / 9%), inset 0 1px 0 rgb(255 255 255 / 55%);
-}
-.app.theme-dark .canvas-tab-item:not(.is-active) {
-  background: #202834;
-  border-color: #354154;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
-}
-.app.theme-dark .canvas-tab-item:not(.is-active):hover {
-  background: #293444;
-  border-color: #53627a;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 24%);
+  border-color: transparent;
+  box-shadow: 0 1px 3px rgb(22 34 54 / 10%);
 }
 .app.theme-dark .canvas-tab-item.is-active {
-  background: #303a4b;
-  border-color: #64738b;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 28%), inset 0 1px 0 rgb(255 255 255 / 6%);
+  border-color: var(--ct-active-border);
+  box-shadow: none;
+}
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab.is-active {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab-close,
+.app.theme-dark .canvas-tab-item.is-active > .canvas-tab-active-actions {
+  border-left-color: transparent;
+}
+.app.theme-dark .canvas-tab-active-actions .desktop-app-document-location {
+  background: transparent;
+  border-radius: 999px;
+}
+.app.theme-dark .canvas-tabs-overflow-trigger:not(:hover):not(.is-open) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  border-radius: 999px;
 }
 .canvas-tab-item .canvas-tab {
-  min-height: 34px;
-  height: 34px;
+  border-radius: 999px;
 }
-.canvas-tab-item.is-active > .desktop-app-save-status-wrap {
-  margin-left: 2px;
+.canvas-tab-item :is(.canvas-tab-close, .desktop-app-save-status-trigger,
+  .desktop-app-save-to-cloud-button, .desktop-app-document-rename) {
+  border-radius: 999px;
 }
-.canvas-tabs-add,
-.desktop-app-canvas-add {
+
+.app .desktop-app-canvas-add,
+.app .canvas-tabs-add {
   flex: 0 0 36px;
   width: 36px;
   min-width: 36px;
   height: 36px;
-  margin-left: 1px;
-  border: 1px dashed var(--ct-active-border, #cbd3df);
-  border-radius: 9px;
+  margin-left: 5px;
+  border: 1px solid transparent;
+  border-radius: 50%;
   background: transparent;
-  color: var(--ct-text, #647084);
-  box-shadow: none;
+  color: var(--text-secondary, #647084);
 }
-.canvas-tabs-add:hover,
-.desktop-app-canvas-add:hover {
-  border-style: solid;
-  border-color: var(--ct-accent, #7168d8);
-  background: var(--ct-hover, #e9edf3);
-  color: var(--ct-strong, #202a3a);
+.app :is(.canvas-tabs-add, .desktop-app-canvas-add):hover {
+  background: var(--ui-hover, rgb(127 127 127 / 12%));
+  color: var(--ui-text, #202a3a);
 }
-.app.theme-dark .canvas-tabs-add,
-.app.theme-dark .desktop-app-canvas-add {
-  border-color: #53627a;
-  color: #c0c9d8;
-  background: #202834;
-}
-.app.theme-dark .canvas-tabs-add:hover,
-.app.theme-dark .desktop-app-canvas-add:hover {
-  border-style: solid;
-  border-color: #aaa3ff;
-  background: #30394a;
-  color: #f5f6ff;
-}
-
 
 /* The document-identity wrapper must not read as a second tab container. */
 .app.canvas-first-header .desktop-app-document-identity.desktop-app-document-title-float {
