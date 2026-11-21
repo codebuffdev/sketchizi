@@ -50,6 +50,10 @@
     margin: 0 !important;
     pointer-events: auto;
   }
+  .app.canvas-first-header .desktop-app-top-controls > .canvas-start-date-wrap {
+    position: relative !important;
+    z-index: 1305;
+  }
   .app.canvas-first-header .desktop-app-top-controls > .desktop-app-zoom-wrap,
   .app.canvas-first-header .desktop-app-top-controls > .desktop-app-settings-wrap {
     position: relative !important;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import CanvasPages from "../../features/pages/CanvasPages.jsx";
 import CanvasTabs from "./CanvasTabs.jsx";
+import CanvasStartDate from "./CanvasStartDate.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
 import CanvasZoomControl from "./CanvasZoomControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
@@ -114,6 +115,12 @@ export default function DesktopAppHeader({
   currentDocumentDirty = false,
   canvasTabs = [],
   activeCanvasId,
+  canvasId,
+  canvasStartDate,
+  canvasActivity = [],
+  onCanvasActivityChange,
+  onCanvasStartDateChange,
+  canvasDateDisabled = false,
   onSelectCanvasTab,
   onCreateCanvasTab,
   onReorderCanvasTabs,
@@ -587,8 +594,37 @@ export default function DesktopAppHeader({
           );
         })}
       </nav>
-
-
+      <button
+        type="button"
+        className={`desktop-app-header-visibility-button desktop-app-header-pin-button${headerPinned ? " is-active" : ""}`}
+        onClick={() => {
+          clearHeaderCollapseTimer();
+          setHeaderPinned((pinned) => !pinned);
+          setHeaderVisible(true);
+        }}
+        aria-label={headerPinned ? "Unpin application header" : "Pin application header"}
+        aria-pressed={headerPinned}
+        data-pin-state={headerPinned ? "pinned" : "auto-hide"}
+        title={headerPinned
+          ? "Pinned — header stays expanded"
+          : "Unpinned — header auto-hides after 5 seconds"}
+      >
+        <svg
+          className="desktop-app-header-pin-glyph"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" />
+          <path d="M12 15v6" />
+        </svg>
+      </button>
 
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
@@ -757,37 +793,7 @@ export default function DesktopAppHeader({
 
       </div>
 
-      <button
-        type="button"
-        className={`desktop-app-header-visibility-button desktop-app-header-pin-button${headerPinned ? " is-active" : ""}`}
-        onClick={() => {
-          clearHeaderCollapseTimer();
-          setHeaderPinned((pinned) => !pinned);
-          setHeaderVisible(true);
-        }}
-        aria-label={headerPinned ? "Unpin application header" : "Pin application header"}
-        aria-pressed={headerPinned}
-        data-pin-state={headerPinned ? "pinned" : "auto-hide"}
-        title={headerPinned
-          ? "Pinned — header stays expanded"
-          : "Unpinned — header auto-hides after 5 seconds"}
-      >
-        <svg
-          className="desktop-app-header-pin-glyph"
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M8 4h8l-1 6 3 3v2H6v-2l3-3-1-6Z" />
-          <path d="M12 15v6" />
-        </svg>
-      </button>
+
     </div>
     </header>
       <div
@@ -886,6 +892,7 @@ export default function DesktopAppHeader({
       </div>
 
       <div className="desktop-app-top-controls">
+        {!activeIsTodoTab && canvasId && <CanvasStartDate key={canvasId} canvasId={canvasId} value={canvasStartDate} activity={canvasActivity} onActivityChange={onCanvasActivityChange} onChange={onCanvasStartDateChange} disabled={canvasDateDisabled} />}
         {!activeIsTodoTab && canvasApi && (
           <CanvasZoomControl
             api={canvasApi}
@@ -905,7 +912,17 @@ export default function DesktopAppHeader({
           type="button"
           className={`desktop-app-header-reveal-handle desktop-app-settings-toggle${settingsOpen ? " is-expanded" : ""}`}
           onClick={() => {
-            if (!settingsOpen) onBeforeOpenPanel?.();
+            clearHeaderCollapseTimer();
+            if (!headerVisible) {
+              setHeaderPinned(true);
+              setHeaderVisible(true);
+              setSettingsOpen(false);
+              return;
+            }
+            if (!settingsOpen) {
+              setHeaderPinned(true);
+              onBeforeOpenPanel?.();
+            }
             setSettingsOpen((open) => !open);
           }}
           aria-haspopup="dialog"
