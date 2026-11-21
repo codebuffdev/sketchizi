@@ -8,7 +8,7 @@ function declarations(block) {
   return out;
 }
 function rulesFor(selector, source = css) {
-  const re = /([^{}]+)\\{([^}]*)\\}/g;
+  const re = /([^{}]+)\{([^}]*)\}/g;
   return [...source.matchAll(re)]
     .filter((m) => m[1].split(",").some((part) => part.trim() === selector))
     .map((m) => declarations(m[2]));
