@@ -395,13 +395,6 @@ export default function DesktopAppHeader({
     error: "Cloud save failed",
     conflict: "Cloud save conflict",
   };
-  const storageLocation = isCloudDocument ? "Cloud" : currentDocumentFileBacked ? "File" : "Local";
-  const documentStatusLabel = isCloudDocument
-    ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace")
-    : currentDocumentFileBacked
-      ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file")
-      : `Local canvas. ${saveStateLabel}`;
-
   const lastSavedLabel = saveStatus?.lastSavedAt
     ? new Date(saveStatus.lastSavedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     : "No successful local save yet";
@@ -865,9 +858,10 @@ const activeTabActions = (
             if (closingTab?.isTodoTab) onCloseTodoTab?.(closingTab.canvasId);
             else onCloseCanvasTab?.(tabId);
           }}
-          onRename={() => {
+          onRename={(tabId) => {
+            const renamedTab = canvasTabs.find((tab) => tab.id === tabId);
             cancelDocumentRenameRef.current = false;
-            setDocumentNameDraft(activeCanvasTabName);
+            setDocumentNameDraft(renamedTab?.name || activeCanvasTabName);
             setDocumentNameEditing(true);
           }}
           showAddButton
