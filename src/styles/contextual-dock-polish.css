@@ -304,7 +304,7 @@
 }
 .app.theme-light .sketchizi-tool-options-dock .sk-tool-text-size-input input { color: #252a35 !important; }
 @media (max-width: 900px) {
-  .app .sketchizi-tool-options-dock { max-width: calc(100vw - 24px) !important; gap: 3px !important; }
+  .app .sketchizi-tool-options-dock { max-width: calc(100vw - 136px) !important; gap: 3px !important; }
   .app .sketchizi-tool-options-dock .sk-tool-dock-group { gap: 2px !important; padding-inline: 4px !important; }
 }
 @media (max-width: 760px) {
@@ -335,7 +335,7 @@
 }
 @media (max-width: 760px) {
   .app .sketchizi-tool-options-dock {
-    max-width: calc(100vw - 88px) !important;
+    max-width: calc(100vw - 136px) !important;
   }
 }
 @media (prefers-reduced-motion: reduce) {
