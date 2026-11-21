@@ -735,7 +735,7 @@
   transform: rotate(180deg);
 }
 .app .sketchizi-tool-options-dock .sk-tool-opacity-popover {
-  right: 0 !important;
+  right: 7px !important;
   bottom: calc(100% + 10px) !important;
 }
 @media (max-width: 760px) {
