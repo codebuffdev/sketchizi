@@ -92,7 +92,10 @@ jobs:
       - name: Run template creation browser smoke test
         run: node scripts/browser-smoke.mjs
 
-      - name: Verify drawing interactions and local persistence
+      - name: Verify drawing persistence and file round trip
+        env:
+          SKETCHIZI_VERIFY_FILE_ROUND_TRIP: "1"
+          SKETCHIZI_DRAWING_FAILURE_SCREENSHOT: /tmp/sketchizi-drawing-failure.png
         run: node scripts/browser-drawing-smoke.mjs
 
       - name: Verify mobile drawing canvas at phone widths
@@ -120,7 +123,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sketchizi-production-verification-logs
-          path: /tmp/sketchizi-preview.log
+          path: |
+            /tmp/sketchizi-preview.log
+            /tmp/sketchizi-drawing-failure.png
           if-no-files-found: ignore
           retention-days: 7
 
