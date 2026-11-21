@@ -456,7 +456,7 @@ export default function ContextualFormattingToolbar({
         if (hasSeparateNoteText && backgroundOnlyPatch && element.type === "text") return element;
         return {
           ...element,
-          ...patch,
+          ...effectivePatch,
           version: (Number(element.version) || 0) + 1,
           versionNonce: Math.floor(Math.random() * 2147483647),
           updated: now,
