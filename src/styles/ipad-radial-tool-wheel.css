@@ -1,7 +1,11 @@
 /* Bottom-left hover dock: compact active-tool pill, expanding upward. */
 .sketchizi-tool-sidebar {
-  --sk-dock-width: 44px;
-  --sk-dock-button: 32px;
+  --sk-dock-btn-w: 32px;
+  --sk-dock-btn-h: 32px;
+  --sk-dock-icon: 19px;
+  --sk-dock-gap: 2px;
+  --sk-dock-pad-x: 6px;
+  --sk-dock-pad-y: 6px;
   position: fixed;
   z-index: 10040;
   left: 16px;
@@ -10,9 +14,10 @@
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  width: var(--sk-dock-width);
+  width: calc(var(--sk-dock-btn-w) + 2 * var(--sk-dock-pad-x) + 2px);
   max-height: calc(100dvh - 112px);
-  padding: 6px;
+  padding: var(--sk-dock-pad-y) var(--sk-dock-pad-x);
+  gap: var(--sk-dock-gap);
   overflow: hidden;
   border: 1px solid rgb(205 210 219 / 82%);
   border-radius: 15px;
@@ -29,7 +34,7 @@
   flex: 0 1 auto;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: var(--sk-dock-gap);
   width: 100%;
   max-height: 0;
   margin: 0;
@@ -51,12 +56,12 @@
 .sketchizi-tool-sidebar-active {
   position: relative;
   display: grid;
-  flex: 0 0 var(--sk-dock-button);
+  flex: 0 0 var(--sk-dock-btn-h);
   place-items: center;
   box-sizing: border-box;
-  width: var(--sk-dock-button);
-  height: var(--sk-dock-button);
-  min-height: var(--sk-dock-button);
+  width: var(--sk-dock-btn-w);
+  height: var(--sk-dock-btn-h);
+  min-height: var(--sk-dock-btn-h);
   padding: 0;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -68,14 +73,19 @@
 .sketchizi-tool-sidebar-button svg,
 .sketchizi-tool-sidebar-active svg {
   display: block;
-  width: 19px;
-  height: 19px;
+  width: var(--sk-dock-icon);
+  height: var(--sk-dock-icon);
 }
 .sketchizi-tool-sidebar-button:hover:not(:disabled) {
   background: rgb(226 229 234 / 72%);
   color: #30343b;
 }
-.sketchizi-tool-sidebar-button.is-active,
+.sketchizi-tool-sidebar-button.is-active {
+  border-color: #292c31;
+  background: linear-gradient(145deg, #30343a, #17191d);
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(15 18 24 / 26%);
+}
 .sketchizi-tool-sidebar-active {
   border-color: #292c31;
   background: linear-gradient(145deg, #30343a, #17191d);
@@ -102,10 +112,7 @@
   line-height: 1;
   pointer-events: none;
 }
-.sketchizi-tool-sidebar-button:not(.is-active) .sketchizi-tool-sidebar-key {
-  color: #9aa0aa;
-}
-
+.sketchizi-tool-sidebar-button:not(.is-active) .sketchizi-tool-sidebar-key { color: #9aa0aa; }
 .sketchizi-tool-sidebar-divider {
   flex: 0 0 1px;
   width: 20px;
@@ -129,9 +136,7 @@
   opacity: 0;
   pointer-events: none;
 }
-.sketchizi-tool-sidebar-active {
-  flex: 0 0 var(--sk-dock-button);
-}
+.sketchizi-tool-sidebar-active { flex: 0 0 var(--sk-dock-btn-h); }
 .sketchizi-tool-sidebar-expand {
   display: grid;
   place-items: center;
@@ -177,19 +182,26 @@
   transform: translateY(8px);
 }
 @media (max-width: 600px) {
-  .sketchizi-tool-sidebar { left: 8px; bottom: 58px; border-radius: 13px; }
+  .sketchizi-tool-sidebar {
+    --sk-dock-btn-w: 30px;
+    --sk-dock-btn-h: 30px;
+    --sk-dock-icon: 18px;
+    --sk-dock-pad-x: 4px;
+    --sk-dock-pad-y: 5px;
+    left: 8px;
+    bottom: 58px;
+    border-radius: 13px;
+  }
   .sketchizi-tool-sidebar-list { gap: 2px; }
-  .sketchizi-tool-sidebar-button,
-  .sketchizi-tool-sidebar-active { --sk-dock-button: 30px; }
-  .sketchizi-tool-sidebar-button svg,
-  .sketchizi-tool-sidebar-active svg { width: 18px; height: 18px; }
-
 }
 @media (pointer: coarse) and (min-width: 601px) {
-  .sketchizi-tool-sidebar-button,
-  .sketchizi-tool-sidebar-active { --sk-dock-button: 36px; }
-  .sketchizi-tool-sidebar-button svg,
-  .sketchizi-tool-sidebar-active svg { width: 20px; height: 20px; }
+  .sketchizi-tool-sidebar {
+    --sk-dock-btn-w: 36px;
+    --sk-dock-btn-h: 36px;
+    --sk-dock-icon: 20px;
+    --sk-dock-pad-x: 4px;
+    --sk-dock-pad-y: 6px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .sketchizi-tool-sidebar,
