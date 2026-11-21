@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const ICONS = {
   selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
@@ -19,27 +19,28 @@ const ICONS = {
   todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
 };
 
+// Hints are only shown for shortcuts already handled by Excalidraw.
 const TOOLS = [
-  { id: "selection", label: "Select" },
-  { id: "hand", label: "Hand" },
-  { id: "rectangle", label: "Rectangle" },
-  { id: "ellipse", label: "Ellipse" },
-  { id: "diamond", label: "Diamond" },
-  { id: "arrow", label: "Arrow" },
-  { id: "line", label: "Line" },
-  { id: "freedraw", label: "Draw" },
-  { id: "text", label: "Text" },
-  { id: "image", label: "Image" },
-  { id: "frame", label: "Frame" },
-  { id: "eraser", label: "Eraser" },
-  { id: "laser", label: "Laser pointer" },
+  { id: "selection", label: "Select", keyHint: "V" },
+  { id: "hand", label: "Pan Canvas", keyHint: "H" },
+  { id: "rectangle", label: "Rectangle", keyHint: "R" },
+  { id: "ellipse", label: "Ellipse", keyHint: "O" },
+  { id: "diamond", label: "Diamond", keyHint: "D" },
+  { id: "arrow", label: "Arrow", keyHint: "A" },
+  { id: "line", label: "Line", keyHint: "L" },
+  { id: "freedraw", label: "Draw", keyHint: "P" },
+  { id: "text", label: "Text", keyHint: "T" },
+  { id: "image", label: "Insert Image", keyHint: "I" },
+  { id: "frame", label: "Frame", keyHint: "F" },
+  { id: "eraser", label: "Eraser", keyHint: "E" },
+  { id: "laser", label: "Laser Pointer", keyHint: "K" },
   { id: "bucketfill", label: "Bucket Fill" },
   { id: "autoshape", label: "Draw to Shape" },
   { id: "todo", label: "Todo List", separated: true },
 ];
 
 function ToolIcon({ name }) {
-  return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
+  return <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
 }
 
 function activateTool({ id, root, apiRef, onOpenTodoTab }) {
@@ -63,6 +64,8 @@ function activateTool({ id, root, apiRef, onOpenTodoTab }) {
 export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab, nativeMenuOpen = false }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const collapseTimerRef = useRef(null);
 
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
@@ -85,41 +88,99 @@ export default function PrimaryDock({ rootRef, apiRef, canEdit = true, isDarkThe
     };
   }, []);
 
+  useEffect(() => () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+  }, []);
+
   const activeId = customTool || activeTool;
+  const activeToolMeta = TOOLS.find((tool) => tool.id === activeId) || TOOLS[0];
+
+  const expandDock = () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
+    setExpanded(true);
+  };
+  const scheduleCollapse = () => {
+    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = window.setTimeout(() => {
+      setExpanded(false);
+      collapseTimerRef.current = null;
+    }, 160);
+  };
+  const chooseTool = (tool) => {
+    activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
+    if (tool.id !== "todo") {
+      setActiveTool(tool.id);
+      setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
+    }
+    if (window.matchMedia?.("(hover: none)").matches) setExpanded(false);
+  };
 
   return (
     <nav
-      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}${nativeMenuOpen ? " is-menu-open" : ""}`}
+      className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}${nativeMenuOpen ? " is-menu-open" : ""}${expanded ? " is-expanded" : ""}`}
       aria-label="Drawing tools"
       aria-hidden={nativeMenuOpen}
       inert={nativeMenuOpen}
       data-canvas-revision={canvasRevision}
+      onMouseEnter={expandDock}
+      onMouseLeave={scheduleCollapse}
+      onFocusCapture={expandDock}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) scheduleCollapse();
+      }}
     >
-      {TOOLS.map((tool) => {
-        const selected = activeId === tool.id;
-        return (
-          <React.Fragment key={tool.id}>
-            {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
-            <button
-              type="button"
-              className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
-              aria-label={tool.label}
-              aria-pressed={selected}
-              title={tool.label}
-              disabled={!canEdit && tool.id !== "todo"}
-              onClick={() => {
-                activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
-                if (tool.id !== "todo") {
-                  setActiveTool(tool.id);
-                  setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
-                }
-              }}
-            >
-              <ToolIcon name={tool.id} />
-            </button>
-          </React.Fragment>
-        );
-      })}
+      <div className="sketchizi-tool-sidebar-list" aria-label="All drawing tools">
+        {TOOLS.map((tool) => {
+          const selected = activeId === tool.id;
+          return (
+            <React.Fragment key={tool.id}>
+              {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
+              <button
+                type="button"
+                className={`sketchizi-tool-sidebar-button${selected ? " is-active" : ""}`}
+                aria-label={tool.label}
+                aria-pressed={selected}
+                title={tool.keyHint ? `${tool.label} (${tool.keyHint})` : tool.label}
+                disabled={!canEdit && tool.id !== "todo"}
+                onClick={() => chooseTool(tool)}
+              >
+                <ToolIcon name={tool.id} />
+                {tool.keyHint && <span className="sketchizi-tool-sidebar-key">{tool.keyHint}</span>}
+                <span className="sketchizi-tool-sidebar-tooltip" role="tooltip">
+                  <span>{tool.label}</span>
+                  {tool.keyHint && <kbd>{tool.keyHint}</kbd>}
+                </span>
+              </button>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      <div className="sketchizi-tool-sidebar-collapsed">
+        <button
+          type="button"
+          className="sketchizi-tool-sidebar-active"
+          aria-label={`Active tool: ${activeToolMeta.label}. Expand drawing tools`}
+          aria-expanded={expanded}
+          aria-controls="sketchizi-tool-sidebar-list"
+          title={` ${activeToolMeta.label} — hover or focus to expand tools`}
+          disabled={!canEdit && activeToolMeta.id !== "todo"}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <ToolIcon name={activeToolMeta.id} />
+          {activeToolMeta.keyHint && <span className="sketchizi-tool-sidebar-key">{activeToolMeta.keyHint}</span>}
+        </button>
+        <button
+          type="button"
+          className="sketchizi-tool-sidebar-expand"
+          aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <span aria-hidden="true" />
+        </button>
+      </div>
     </nav>
   );
 }
