@@ -49,6 +49,8 @@ export default function SketchiziCanvas({
         event.stopPropagation();
         setIsZenMode((active) => !active);
       } else if (event.key === "Escape" && isZenMode) {
+        event.preventDefault();
+        event.stopPropagation();
         setIsZenMode(false);
       }
     };
