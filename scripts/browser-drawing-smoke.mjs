@@ -197,6 +197,34 @@ try {
   await page.getByText("Selected shape actions", { exact: true }).waitFor();
   console.log("PASS: a rectangle survives immediate reload and remains selectable.");
 
+  await page.getByRole("button", { name: "Create new canvas" }).click();
+  const secondTab = page.getByRole("tab", { name: "Canvas 2", exact: true });
+  await secondTab.waitFor();
+  const secondX = Math.round(bounds.x + bounds.width * 0.42);
+  const secondY = Math.round(bounds.y + bounds.height * 0.64);
+  await page.mouse.click(secondX - 20, secondY - 20);
+  await page.keyboard.press("r");
+  await page.mouse.move(secondX, secondY);
+  await page.mouse.down();
+  await page.mouse.move(secondX + 130, secondY + 85, { steps: 8 });
+  await page.mouse.up();
+  await awaitScene(async () => {
+    const active = await currentDrawing();
+    return active?.elements?.some((element) => element.type === "rectangle" && element.id !== drawn.id)
+      && !active?.elements?.some((element) => element.id === drawn.id);
+  }, "rectangle");
+  await page.reload({ waitUntil: "networkidle", timeout: 60000 });
+  await secondTab.waitFor();
+  if (await secondTab.getAttribute("aria-selected") !== "true") throw new Error("Reload did not activate Canvas 2.");
+  await page.keyboard.press("v");
+  await page.mouse.click(secondX + 65, secondY + 2);
+  await page.getByText("Selected shape actions", { exact: true }).waitFor();
+  await page.getByRole("tab", { name: "Canvas 1", exact: true }).click();
+  await page.keyboard.press("v");
+  await page.mouse.click(quickX + 50, quickY + 2);
+  await page.getByText("Selected shape actions", { exact: true }).waitFor();
+  console.log("PASS: both canvas tabs restore their own selectable drawings.");
+
   for (const failedKey of ["main", "canvas-tabs-manifest"]) {
     const failingContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     try {
