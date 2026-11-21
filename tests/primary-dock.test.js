@@ -6,7 +6,7 @@ const dock = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", impor
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const sidebarCss = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
 
-test("primary dock renders the complete tool set in a compact hover sidebar", () => {
+test("primary dock renders the complete tool set in a vertical left sidebar", () => {
   for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill", "autoshape", "todo"]) {
     assert.ok(dock.includes('id: "' + tool + '"'), "missing sidebar tool: " + tool);
   }
@@ -18,7 +18,7 @@ test("primary dock renders the complete tool set in a compact hover sidebar", ()
   assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|tuckedOffset/);
 });
 
-test("sidebar stays bottom-left, expands upward and scrolls within the viewport", () => {
+test("sidebar stays a left-edge, vertically centred, scrollable floating rail", () => {
   const rail = sidebarCss.match(/\.sketchizi-tool-sidebar\s*\{([^}]*)\}/)?.[1] || "";
   assert.match(rail, /position:\s*fixed/);
   assert.match(rail, /left:\s*16px/);
