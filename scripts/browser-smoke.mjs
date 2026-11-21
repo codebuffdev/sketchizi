@@ -87,7 +87,7 @@ try {
   await ensureHeaderVisible(blank.page);
 
   const aiToggle = blank.page.getByRole("button", { name: "AI Ask", exact: true });
-  const railToggle = blank.page.getByRole("button", { name: "Show application header" });
+  const railToggle = blank.page.getByRole("button", { name: "Canvas settings" });
   const aiDrawer = blank.page.locator(".ai-ask-panel");
   const rail = blank.page.locator(".desktop-app-header-right-rail");
   await aiToggle.click();
