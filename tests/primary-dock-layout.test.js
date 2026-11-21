@@ -16,7 +16,8 @@ test("primary dock keeps the active tool visible while collapsed", () => {
   assert.match(component, /sketchizi-tool-sidebar-active/);
   assert.match(component, /Active tool: \$\{activeToolMeta\.label\}/);
   assert.match(component, /inert=\{!expanded\}/);
-  assert.match(component, /inert=\{expanded\}/);
+  // The trigger stays visible and interactive while the tray is open.
+  assert.doesNotMatch(component, /inert=\{expanded\}/);
 });
 
 test("primary dock preserves native, custom, image, and Todo tool activation", () => {

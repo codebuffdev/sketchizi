@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 
 const ICONS = {
   selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
@@ -16,8 +17,11 @@ const ICONS = {
   laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
   bucketfill: <><path d="M4 13.5 13.5 4 20 10.5 10.5 20 4 13.5Z" /><path d="m9 8.5 6.5 6.5M17 16c0 2 1 3 2 3s2-1 2-3" /></>,
   autoshape: <><path d="M3 16c2-7 5-9 7-6" /><path d="M11 12h3m-2-2 2 2-2 2" /><rect x="16" y="6" width="5" height="12" rx="1" /></>,
+  highlighter: <><path d="m9 11 6 6" /><path d="m14.5 5.5 4 4L10 18l-5 1 1-5 8.5-8.5Z" /><path d="M4 21h8" /></>,
   todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
 };
+
+const HIGHLIGHTER_DEFAULTS = { strokeColor: "#ffd60a", opacity: 40, strokeWidth: 8 };
 
 // Grace period before the dock collapses after the pointer leaves it.
 const COLLAPSE_GRACE_MS = 3000;
@@ -33,6 +37,7 @@ const TOOLS = [
   { id: "line", label: "Line", keyHint: "L" },
   { id: "freedraw", label: "Draw", keyHint: "P" },
   { id: "text", label: "Text", keyHint: "T" },
+  { id: "highlighter", label: "Highlighter" },
   { id: "image", label: "Insert Image", keyHint: "I" },
   { id: "frame", label: "Frame", keyHint: "F" },
   { id: "eraser", label: "Eraser", keyHint: "E" },
@@ -57,6 +62,13 @@ function activateTool({ id, root, apiRef, onOpenTodoTab }) {
     else apiRef.current?.setActiveTool?.({ type: "image" });
     return;
   }
+  if (id === "highlighter") {
+    const api = apiRef.current;
+    api?.setActiveTool?.({ type: "freedraw" });
+    api?.updateScene?.({ appState: { currentItemStrokeColor: HIGHLIGHTER_DEFAULTS.strokeColor, currentItemOpacity: HIGHLIGHTER_DEFAULTS.opacity, ...strokeWidthAppStatePatch(HIGHLIGHTER_DEFAULTS.strokeWidth) } });
+    window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: "highlighter" } }));
+    return;
+  }
   if (id === "bucketfill" || id === "autoshape") {
     window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
     return;
@@ -68,6 +80,8 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const customToolRef = useRef(null);
+  const highlighterSavedRef = useRef(null);
   const collapseTimerRef = useRef(null);
   const firstToolButtonRef = useRef(null);
   const activeButtonRef = useRef(null);
@@ -77,12 +91,32 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     if (nextTool) setActiveTool(nextTool);
   }, [apiRef, canvasRevision]);
 
+  customToolRef.current = customTool;
+
+  const restoreHighlighter = () => {
+    const saved = highlighterSavedRef.current;
+    highlighterSavedRef.current = null;
+    if (!saved) return;
+    apiRef.current?.updateScene?.({ appState: { currentItemStrokeColor: saved.strokeColor, currentItemOpacity: saved.opacity, ...strokeWidthAppStatePatch(saved.strokeWidth) } });
+  };
+
+  // Leaving freedraw by any route (shortcut, native toolbar) ends highlighter mode.
+  useEffect(() => {
+    if (customTool === "highlighter" && activeTool !== "freedraw") {
+      setCustomTool(null);
+      restoreHighlighter();
+      window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
+    }
+  }, [activeTool, customTool]);
+
   useEffect(() => {
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
-      if (["bucketfill", "autoshape"].includes(tool)) setCustomTool(tool);
+      if (["bucketfill", "autoshape", "highlighter"].includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
+      // Highlighter is a persistent drawing mode; canvas clicks must not end it.
+      if (customToolRef.current === "highlighter") return;
       if (!event.target?.closest?.(".sketchizi-tool-sidebar button")) setCustomTool(null);
     };
     window.addEventListener("sketchizi:activate-tool", syncCustomTool);
@@ -175,10 +209,22 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     }, COLLAPSE_GRACE_MS);
   };
   const chooseTool = (tool) => {
+    if (customToolRef.current === "highlighter" && tool.id !== "highlighter") {
+      restoreHighlighter();
+      window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
+    }
+    if (tool.id === "highlighter" && customToolRef.current !== "highlighter") {
+      const state = apiRef.current?.getAppState?.() || {};
+      highlighterSavedRef.current = {
+        strokeColor: state.currentItemStrokeColor || "#1e1e1e",
+        opacity: state.currentItemOpacity ?? 100,
+        strokeWidth: state.currentItemStrokeWidth ?? 2,
+      };
+    }
     activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
     if (tool.id !== "todo") {
-      setActiveTool(tool.id);
-      setCustomTool(["bucketfill", "autoshape"].includes(tool.id) ? tool.id : null);
+      setActiveTool(tool.id === "highlighter" ? "freedraw" : tool.id);
+      setCustomTool(["bucketfill", "autoshape", "highlighter"].includes(tool.id) ? tool.id : null);
     }
     collapseDock();
   };
@@ -197,7 +243,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
       }}
     >
       <div className="sketchizi-tool-sidebar-list" id="sketchizi-tool-sidebar-list" aria-label="All drawing tools" inert={!expanded}>
-        {TOOLS.map((tool) => {
+        {TOOLS.map((tool, toolIndex) => {
           const isDisplayed = displayedTool === tool.id;
           return (
             <React.Fragment key={tool.id}>
@@ -210,6 +256,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
                 aria-pressed={isDisplayed}
                 title={tool.keyHint ? `${tool.label} (${tool.keyHint})` : tool.label}
                 disabled={!canEdit && tool.id !== "todo"}
+                style={{ "--sk-i": toolIndex }}
                 onClick={() => chooseTool(tool)}
               >
                 <ToolIcon name={tool.id} />
@@ -220,7 +267,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
         })}
       </div>
 
-      <div className="sketchizi-tool-sidebar-collapsed" inert={expanded}>
+      <div className="sketchizi-tool-sidebar-collapsed">
         <button
           type="button"
           ref={activeButtonRef}

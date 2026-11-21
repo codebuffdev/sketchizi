@@ -1,5 +1,6 @@
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import usePresence from "../../features/hud/usePresence.js";
 import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 
@@ -152,6 +153,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
   const [position, setPosition] = useState(null);
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
+  const { mounted: menuMounted, closing: menuClosing } = usePresence(open, 130);
   const safeOptions = Array.isArray(options) ? options.filter((option) => option && option.value !== undefined) : [];
   const selected = safeOptions.find((option) => String(option.value) === String(value)) || safeOptions[0] || { value: "", label };
 
@@ -220,8 +222,8 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
         {String(label).toLowerCase().includes("width") && <span className="sk-tool-choice-value">{selected.value}px</span>}
         <svg className={`sk-tool-choice-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
-      {open && position && createPortal(
-        <div ref={menuRef} className="sk-tool-choice-menu" role="menu" aria-label={label}
+      {menuMounted && position && createPortal(
+        <div ref={menuRef} className={`sk-tool-choice-menu${menuClosing ? " is-closing" : ""}`} role="menu" aria-label={label}
           style={{ position: "fixed", left: position.left, top: position.top }}>
           {safeOptions.map((option) => {
             const active = String(option.value) === String(value);
@@ -285,12 +287,15 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
   const [opacityPopoverOpen, setOpacityPopoverOpen] = useState(false);
+  const opacityPresence = usePresence(opacityPopoverOpen, 130);
   const [opacityDragging, setOpacityDragging] = useState(false);
   const opacityPointerStartRef = useRef(null);
   const opacityRef = useRef(null);
   const [fontSizePopoverOpen, setFontSizePopoverOpen] = useState(false);
+  const fontPresence = usePresence(fontSizePopoverOpen, 130);
   const fontSizeInputRef = useRef(null);
   const layerTriggerRef = useRef(null);
+  const layerPresence = usePresence(layerMenuOpen, 130);
   const cancelDockCollapse = () => {
     if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
     collapseTimerRef.current = null;
@@ -299,7 +304,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     cancelDockCollapse();
     setDockOpen(true);
   };
+  // The contextual dock is a persistent HUD capsule: it follows the tool and
+  // selection (mounting/unmounting with its own animation) instead of hiding
+  // itself on a timer, so these helpers only keep it open.
+  const AUTO_COLLAPSE_DOCK = false;
   const scheduleDockCollapse = () => {
+    if (!AUTO_COLLAPSE_DOCK) { expandDock(); return; }
     const active = document.activeElement;
     const isInputFocused = Boolean(active && dockRef.current?.contains(active) && active.matches("input, textarea, select"));
     const isPopoverOpen = opacityPopoverOpen || fontSizePopoverOpen || layerMenuOpen ||
@@ -316,6 +326,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     }, 3000);
   };
   const collapseDockImmediately = () => {
+    if (!AUTO_COLLAPSE_DOCK) return;
     cancelDockCollapse();
     setDockOpen(false);
   };
@@ -340,9 +351,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     const clearCustomTool = (event) => {
       if (event.target?.closest?.(".sketchizi-radial-wheel button, .App-toolbar button, .App-toolbar [role='button']")) setCustomTool(null);
     };
+    const clearOnEvent = () => setCustomTool(null);
     window.addEventListener("sketchizi:activate-tool", handleCustomTool);
+    window.addEventListener("sketchizi:clear-custom-tool", clearOnEvent);
     window.addEventListener("click", clearCustomTool, true);
     return () => {
+      window.removeEventListener("sketchizi:clear-custom-tool", clearOnEvent);
       window.removeEventListener("sketchizi:activate-tool", handleCustomTool);
       window.removeEventListener("click", clearCustomTool, true);
     };
@@ -351,6 +365,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   useEffect(() => {
     const handleEscapeToPrimaryDock = (event) => {
       if (event.key !== "Escape") return;
+      if (document.querySelector(".app.is-zen-mode") && !document.querySelector(".sketchizi-tool-sidebar.is-expanded")) return;
       if (document.querySelector('.auth-account-trigger[aria-expanded="true"]')) return;
       const target = event.target;
       // Let Escape close an open dock menu first, and never steal it from
@@ -441,6 +456,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const supported = isShape || isLine || isDraw || isText || isFill || isAutoShape || isLaser;
   const isSelection = selected.length > 0 || Boolean(isText && editingTextElement?.id);
   const isVisible = canEdit && (isSelection ? supported || selected.length > 1 : supported);
+  const dockPresence = usePresence(isVisible, 150);
   const first = selected[0] || editingTextElement;
 
   const current = (elementKey, appKey, fallback) => isSelection
@@ -714,13 +730,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           </div>
   );
 
-  if (!isVisible) return null;
+  if (!isVisible && !dockPresence.mounted) return null;
 
-  const noLayerForTool = isDraw || isLaser || isFill;
-  const showCornerRadius = type === "rectangle" || type === "diamond" || isHighlighter || isLaser;
-  const showRoughness = isShape || isLine || isAutoShape || isLaser;
-  const showStrokeStyle = isShape || isLine || isAutoShape || isLaser;
-  const showStrokeWidth = !isText && !isFill;
+  const noLayerForTool = isDraw || isLaser || (isFill && !isHighlighter);
+  const showCornerRadius = type === "rectangle" || type === "diamond";
+  const showRoughness = isShape || isLine;
+  const showStrokeStyle = isShape || isLine;
+  const showStrokeWidth = !isText && !isLaser && (!isFill || isHighlighter);
+  const showClosedShapeFill = isShape || isHighlighter;
   const activeRoundness = Boolean(current("roundness", "currentItemRoundness", null));
   const layerDisabled = !selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean);
   const opacityValue = Math.max(0, Math.min(100, Number.isFinite(opacity) ? opacity : 100));
@@ -737,8 +754,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         }}>
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Z" /><path d="m4 12 8 4 8-4M4 17l8 4 8-4" /></svg>
       </button>
-      {layerMenuOpen && layerMenuPosition && createPortal(
-        <div className="sk-tool-layer-menu" role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
+      {layerPresence.mounted && layerMenuPosition && createPortal(
+        <div className={`sk-tool-layer-menu${layerPresence.closing ? " is-closing" : ""}`} role="menu" aria-label="Layer order" style={{ position: "fixed", left: layerMenuPosition.left, bottom: layerMenuPosition.bottom }}>
           <button type="button" role="menuitem" onClick={() => moveLayers("front")}><span className="sk-tool-layer-action-icon">⇧</span><span className="sk-tool-layer-action-label">Bring to front</span></button>
           <button type="button" role="menuitem" onClick={() => moveLayers("forward")}><span className="sk-tool-layer-action-icon">↑</span><span className="sk-tool-layer-action-label">Bring forward</span></button>
           <button type="button" role="menuitem" onClick={() => moveLayers("backward")}><span className="sk-tool-layer-action-icon">↓</span><span className="sk-tool-layer-action-label">Send backward</span></button>
@@ -750,11 +767,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   return (
     <div
       ref={dockRef}
-      className={`sketchizi-tool-options-dock${dockOpen ? " is-open" : " is-collapsed"}`}
+      className={`sketchizi-tool-options-dock${dockOpen && isVisible ? " is-open" : " is-collapsed"}`}
       role="toolbar"
       aria-label={`${title} options`}
       data-tool={type}
-      aria-hidden={!dockOpen}
+      aria-hidden={!(dockOpen && isVisible)}
+      inert={!(dockOpen && isVisible)}
       onMouseEnter={expandDock}
       onMouseLeave={scheduleDockCollapse}
       onFocusCapture={expandDock}
@@ -772,21 +790,21 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         if (event.target?.matches?.("select")) collapseDockImmediately();
       }}
     >
-      {<DockGroup label={isHighlighter ? "Fill style" : isText ? "Text color" : isShape || isLaser ? "Color & fill" : "Stroke color"}>
-        {!isFill && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
-        {!isFill && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
-        {(isShape || isLaser || isHighlighter) && <>
+      {<DockGroup label={isText ? "Text color" : isShape || isHighlighter ? "Color & fill" : "Stroke color"}>
+        {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+        {(!isFill || isHighlighter) && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
+        {showClosedShapeFill && <>
           <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
           </ToolButton>
-          <ToolButton active={fillColor !== "transparent"} title="Solid / hachure fill" onClick={() => update({ backgroundColor: fillColor === "transparent" ? "#ffffff" : fillColor })}>
+          <ToolButton active={fillColor !== "transparent"} title="Solid / Hachure fill" onClick={() => update({ backgroundColor: fillColor === "transparent" ? "#ffffff" : fillColor })}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
           </ToolButton>
         </>}
         {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
       </DockGroup>}
 
-      {(showStrokeWidth || showStrokeStyle || isLine || type === "arrow") && <DockGroup label="Stroke & connector">
+      {(showStrokeWidth || showStrokeStyle || isLine || isDraw || type === "arrow") && <DockGroup label="Stroke & connector">
         {showStrokeWidth && <DockSelect label={isDraw ? "Stroke width / thinning preset" : "Stroke width"} value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })}>
           {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth}px</option>}
           {WIDTHS.map((width) => <option key={width} value={width}>{width}px</option>)}
@@ -839,7 +857,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
                 }} />
               <span>px</span>
             </label>
-            {fontSizePopoverOpen && <div className="sk-tool-font-size-presets" role="listbox" aria-label="Font size presets">
+            {fontPresence.mounted && <div className={`sk-tool-font-size-presets${fontPresence.closing ? " is-closing" : ""}`} role="listbox" aria-label="Font size presets">
               {[12, 16, 20, 28, 36, 48, 64].map((size) => <button key={size} type="button" role="option"
                 aria-selected={fontSize === size} onMouseDown={(event) => event.preventDefault()}
                 onClick={() => { setFontSizeDraft(String(size)); update({ fontSize: size }); setFontSizePopoverOpen(false); fontSizeInputRef.current?.focus(); }}>
@@ -849,15 +867,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           </div>
           <button type="button" className="sk-tool-text-size-step" onPointerDown={preserveTextEditorFocus ? (event) => event.preventDefault() : undefined} aria-label="Increase font size" disabled={fontSize >= 200} onClick={() => update({ fontSize: Math.min(200, fontSize + 1) })}>+</button>
         </div>
-        {layerOrderControl}
       </DockGroup>}
 
-      {((showCornerRadius || showRoughness || (!noLayerForTool && !isText)) && <DockGroup label="Shape modifiers & layers">
+      {((showCornerRadius || showRoughness || !noLayerForTool) && <DockGroup label="Shape modifiers & layers">
         {showCornerRadius && <DockSelect label="Corner radius" value={activeRoundness ? "rounded" : "sharp"} onChange={(value) => update({ roundness: value === "rounded" ? { type: 3 } : null })}>
           <option value="sharp">Sharp corners</option><option value="rounded">Rounded corners</option>
         </DockSelect>}
         {showRoughness && <VisualOptionSelect label="Roughness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />}
-        {!isText && layerOrderControl}
+        {layerOrderControl}
       </DockGroup>)}
 
       <DockGroup label="Opacity">
@@ -899,7 +916,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           <span className="sk-tool-dock-opacity-value">{opacityValue}%</span>
           <span className="sk-tool-opacity-chevron" aria-hidden="true">⌃</span>
         </div>
-        {opacityPopoverOpen && <div className="sk-tool-opacity-popover" role="dialog" aria-label="Precise opacity">
+        {opacityPresence.mounted && <div className={`sk-tool-opacity-popover${opacityPresence.closing ? " is-closing" : ""}`} role="dialog" aria-label="Precise opacity">
           <input type="range" aria-label="Precise opacity" min="0" max="100" step="1" value={opacityValue} onChange={(event) => update({ opacity: Number(event.target.value) })} />
           <span>{opacityValue}%</span>
           <div className="sk-tool-opacity-presets">{[25, 50, 75, 100].map((value) => <button key={value} type="button" aria-pressed={opacityValue === value} onClick={() => update({ opacity: value })}>{value}%</button>)}</div>

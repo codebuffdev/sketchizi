@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getLocalDateString, isValidCanvasStartDate } from "../../features/canvas/canvasStartDate.js";
+import usePresence from "../../features/hud/usePresence.js";
 import "./CanvasStartDate.css";
 
 const CHECKPOINT_MS = 5 * 60 * 1000;
@@ -36,6 +37,7 @@ export default function CanvasStartDate({ canvasId, value, activity = [], onActi
   const [open, setOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const rootRef = useRef(null);
+  const popoverPresence = usePresence(open, 130);
   const sessionRef = useRef(null);
   const activityRef = useRef(activity);
   const callbackRef = useRef(onActivityChange);
@@ -131,8 +133,8 @@ export default function CanvasStartDate({ canvasId, value, activity = [], onActi
       <button type="button" className="canvas-start-date-stepper" aria-label="Next day" title="Next day" disabled={disabled} onClick={() => selectDate(addDays(dateValue, 1))}>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
       </button>
-      {open && (
-        <section className="canvas-start-date-popover" role="dialog" aria-label="Choose canvas start date">
+      {popoverPresence.mounted && (
+        <section className={`canvas-start-date-popover${popoverPresence.closing ? " is-closing" : ""}`} role="dialog" aria-label="Choose canvas start date">
           <header className="canvas-start-date-calendar-header">
             <strong>{monthLabel(visibleMonth)}</strong>
             <div>

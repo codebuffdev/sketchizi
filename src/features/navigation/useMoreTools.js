@@ -30,6 +30,7 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
     if (tool === "zen-mode") {
       // Enter Zen Mode from the Tools menu without changing the active drawing tool.
       api.updateScene({ appState: { zenModeEnabled: true } });
+      window.dispatchEvent(new CustomEvent("sketchizi:toggle-zen"));
       return;
     }
     api.setActiveTool({ type: tool });

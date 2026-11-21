@@ -62,6 +62,7 @@ import CreateMenu from "./components/app/CreateMenu";
 const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
+import ZenHud from "./components/app/ZenHud.jsx";
 import { enableCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
 import CanvasGrammarAssistant from "./features/canvas/CanvasGrammarAssistant.jsx";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
@@ -77,12 +78,16 @@ import "./styles/canvas-tabs-dock.css";
 import "./styles/contextual-dock-polish.css";
 import "./styles/todo-canvas-polish.css";
 import "./styles/canvas-top-controls.css";
+import "./styles/hud-capsules.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [aiAskOpen, setAiAskOpen] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
+  const isZenModeRef = useRef(false);
+  const aiAskOpenRef = useRef(false);
   useEffect(() => {
     if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
     enableCanvasSpellcheck(document);
@@ -2528,12 +2533,49 @@ function App() {
   // stacking context so header controls cannot intercept its menu or rows.
   const libraryOverlayHost = typeof document === "undefined" ? null : document.querySelector(".app");
 
+  aiAskOpenRef.current = aiAskOpen;
+  isZenModeRef.current = isZenMode;
+  const toggleZenMode = useCallback(() => setIsZenMode((value) => !value), []);
+  const exitZenMode = useCallback(() => setIsZenMode(false), []);
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const isZenShortcut = event.altKey && !event.ctrlKey && !event.metaKey && (event.code === "KeyZ" || String(event.key).toLowerCase() === "z");
+      if (isZenShortcut) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        setIsZenMode((value) => !value);
+        return;
+      }
+      if (event.key !== "Escape" || !isZenModeRef.current || aiAskOpenRef.current) return;
+      const target = event.target;
+      // Let editors and open menus consume Escape first.
+      if (target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
+      if (document.querySelector(".sk-tool-choice-menu, .sk-tool-layer-menu, .sk-tool-opacity-popover, .sk-tool-font-size-presets, .canvas-start-date-popover")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      setIsZenMode(false);
+    };
+    const onToggleRequest = () => setIsZenMode((value) => !value);
+    window.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("sketchizi:toggle-zen", onToggleRequest);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("sketchizi:toggle-zen", onToggleRequest);
+    };
+  }, []);
+  useEffect(() => {
+    // Keep Excalidraw's own chrome in step with the HUD Zen state.
+    apiRef.current?.updateScene?.({ appState: { zenModeEnabled: isZenMode } });
+  }, [isZenMode, activeCanvasId]);
+
   // No open tab means no canvas: the welcome chooser owns the screen.
   const canvasMounted = hasMountableCanvas({ tabs: canvasTabs, activeCanvasId });
   const noOpenCanvas = canvasTabsReady && canvasTabs.length === 0;
 
   return (
-    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
+    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${activePanel ? `panel-open-${activePanel === "icon-library" ? "library" : activePanel}` : ""} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-open-panel={activePanel || "none"}>
       {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         {cloudSaveState.state === "error" && <>
@@ -2894,6 +2936,12 @@ function App() {
         sendChatMessage={sendChatMessage}
       />
 
+      <ZenHud
+        isZenMode={isZenMode}
+        onToggleZen={toggleZenMode}
+        aiOpen={aiAskOpen}
+        onToggleAi={() => { setActivePanel(null); setAiAskOpen((value) => !value); }}
+      />
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
       <CanvasGrammarAssistant />
 

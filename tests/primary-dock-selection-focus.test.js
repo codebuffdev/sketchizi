@@ -10,7 +10,7 @@ test("the complete sidebar remains available while its active highlight follows 
   const mount = canvas.match(/<PrimaryDock[\s\S]*?\/>/)?.[0] || "";
   assert.match(mount, /<PrimaryDock/);
   assert.match(mount, /selectedElements=\{selectedElements\}/);
-  assert.match(dock, /TOOLS\.map\(\(tool\)/);
+  assert.match(dock, /TOOLS\.map\(\(tool(, toolIndex)?\)/);
   assert.match(dock, /aria-pressed=\{isDisplayed\}/);
   assert.doesNotMatch(dock, /focusedTool|selectedToolIds|selection-focus|sketchizi-radial-wheel/);
 });

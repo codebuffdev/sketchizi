@@ -1,0 +1,322 @@
+/* HUD capsule system — shared glass tokens, bottom baseline, Zen mode and
+   asymmetric (enter 240ms / exit 150ms) animations. Loaded last.
+   Only transform, opacity and filter are animated. */
+
+.app {
+  --hud-ease-in: cubic-bezier(0.22, 1, 0.36, 1);
+  --hud-ease-out: cubic-bezier(0.4, 0, 1, 1);
+}
+.app.theme-dark {
+  --hud-bg: rgba(22, 24, 31, 0.94);
+  --hud-border: 1px solid rgba(255, 255, 255, 0.09);
+  --hud-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --hud-ink: #e8ebf3;
+  --hud-inner: rgba(255, 255, 255, 0.045);
+  --hud-accent: #a5c4fa;
+}
+.app.theme-light {
+  --hud-bg: rgba(255, 255, 255, 0.96);
+  --hud-border: 1px solid rgba(15, 23, 42, 0.08);
+  --hud-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+  --hud-ink: #252a35;
+  --hud-inner: rgba(15, 23, 42, 0.035);
+  --hud-accent: #4f46e5;
+}
+
+/* ---------- Shared glass surface ---------- */
+.app .sketchizi-tool-options-dock,
+.app .sk-zen-pill,
+.app .sk-zen-ai-capsule,
+.app .sketchizi-tool-sidebar-collapsed,
+.app .sketchizi-tool-sidebar-list,
+.app .canvas-start-date-wrap {
+  background: var(--hud-bg) !important;
+  border: var(--hud-border) !important;
+  box-shadow: var(--hud-shadow) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--hud-ink);
+}
+
+/* ---------- Bottom-left tool trigger + tray ---------- */
+.app .sketchizi-tool-sidebar.sketchizi-tool-sidebar {
+  position: fixed !important;
+  left: calc(20px + var(--safe-left, 0px)) !important;
+  bottom: calc(20px + var(--safe-bottom, 0px)) !important;
+  width: 46px !important;
+  height: 46px !important;
+  max-height: none !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 80;
+  transition: none !important;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed {
+  position: relative !important;
+  display: block !important;
+  width: 46px !important;
+  height: 46px !important;
+  max-height: 46px !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  overflow: hidden;
+  border-radius: 16px;
+  transition: none !important;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed .sketchizi-tool-sidebar-active {
+  position: absolute !important;
+  inset: 0 !important;
+  display: grid;
+  place-items: center;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:hover { background: var(--hud-inner) !important; }
+.app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-active { color: var(--hud-accent) !important; }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-expand { display: none !important; }
+
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list {
+  position: absolute !important;
+  left: 0;
+  bottom: calc(100% + 10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 46px;
+  max-height: calc(100dvh - 120px) !important;
+  margin: 0 !important;
+  padding: 6px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: 16px;
+  transform-origin: bottom left;
+  /* collapsed / exit */
+  opacity: 0 !important;
+  transform: translateY(10px) scale(0.95) !important;
+  filter: blur(4px);
+  pointer-events: none !important;
+  visibility: hidden;
+  transition: opacity 140ms var(--hud-ease-out), transform 140ms var(--hud-ease-out), filter 140ms var(--hud-ease-out), visibility 0s linear 140ms !important;
+}
+/* hover bridge across the 10px gap */
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 100%;
+  height: 12px;
+}
+.app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  filter: blur(0);
+  pointer-events: auto !important;
+  visibility: visible;
+  transition: opacity 240ms var(--hud-ease-in), transform 240ms var(--hud-ease-in), filter 240ms var(--hud-ease-in), visibility 0s !important;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 140ms var(--hud-ease-out), transform 140ms var(--hud-ease-out), background .14s ease, color .14s ease !important;
+  transition-delay: 0ms !important; /* collapse has no stagger */
+}
+.app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 240ms var(--hud-ease-in), transform 240ms var(--hud-ease-in), background .14s ease, color .14s ease !important;
+  transition-delay: calc(var(--sk-i, 0) * 14ms) !important;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active {
+  background: var(--hud-inner);
+  color: var(--hud-accent);
+  border-color: color-mix(in srgb, var(--hud-accent) 55%, transparent);
+  box-shadow: none;
+}
+
+/* ---------- Bottom-center contextual dock ---------- */
+.app .sketchizi-tool-options-dock {
+  left: 50% !important;
+  bottom: calc(20px + var(--safe-bottom, 0px)) !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 5px !important;
+  gap: 6px !important;
+  border-radius: 9999px !important;
+  max-width: calc(100vw - 300px) !important;
+  transform: translate(-50%, 0);
+  transform-origin: 50% 100%;
+  opacity: 1;
+  filter: blur(0);
+}
+.app .sketchizi-tool-options-dock.is-open {
+  animation: sk-hud-dock-in 240ms var(--hud-ease-in) both;
+  pointer-events: auto;
+}
+.app .sketchizi-tool-options-dock.is-collapsed {
+  animation: sk-hud-dock-out 150ms var(--hud-ease-out) both;
+  pointer-events: none !important;
+}
+@keyframes sk-hud-dock-in {
+  from { opacity: 0; transform: translate(-50%, 12px) scale(0.96); filter: blur(4px); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); filter: blur(0); }
+}
+@keyframes sk-hud-dock-out {
+  from { opacity: 1; transform: translate(-50%, 0) scale(1); filter: blur(0); }
+  to   { opacity: 0; transform: translate(-50%, 12px) scale(0.96); filter: blur(4px); }
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-group {
+  background: var(--hud-inner) !important;
+  border: 0 !important;
+  animation: sk-hud-pop 180ms var(--hud-ease-in) both !important;
+}
+@keyframes sk-hud-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+/* Opacity ring pill */
+.app .sketchizi-tool-options-dock .sk-tool-opacity-scrubber {
+  height: 36px; padding: 0 10px; gap: 7px; border-radius: 9999px;
+  overflow: visible; cursor: ew-resize;
+}
+.app .sketchizi-tool-options-dock .sk-tool-dock-opacity-value { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ---------- Bottom-right Zen pill ---------- */
+.app .sk-zen-pill {
+  position: fixed;
+  right: calc(20px + var(--safe-right, 0px));
+  bottom: calc(20px + var(--safe-bottom, 0px));
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 150ms var(--hud-ease-out), color 150ms ease;
+}
+.app .sk-zen-pill:hover { color: var(--hud-accent); }
+.app .sk-zen-pill:active { transform: scale(0.97); }
+.app .sk-zen-pill.is-active { color: var(--hud-accent); }
+.app .sk-zen-pill:focus-visible,
+.app .sk-zen-ai-capsule:focus-visible { outline: 2px solid var(--hud-accent); outline-offset: 2px; }
+
+/* Native Excalidraw bottom-right help would collide with the pill. */
+.app .excalidraw .layer-ui__wrapper__footer-right { display: none !important; }
+
+/* ---------- Standalone Zen AI capsule ---------- */
+.app .sk-zen-ai-capsule {
+  position: fixed;
+  top: calc(20px + var(--safe-top, 0px));
+  right: calc(20px + var(--safe-right, 0px));
+  z-index: 1304;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  /* hidden / exit */
+  opacity: 0;
+  transform: scale(0.92);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 150ms var(--hud-ease-out), transform 150ms var(--hud-ease-out), visibility 0s linear 150ms;
+}
+.app .sk-zen-ai-capsule.is-visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 240ms var(--hud-ease-in) 60ms, transform 240ms var(--hud-ease-in) 60ms, visibility 0s;
+}
+.app .sk-zen-ai-capsule.is-active { color: var(--hud-accent); }
+/* Keep the capsule clear of the AI drawer while it is open. */
+.app.ai-ask-open .sk-zen-ai-capsule { right: calc(min(430px, 100vw - 28px) + 32px); }
+
+/* ---------- Zen mode: sweep the header out ---------- */
+.app .desktop-app-header,
+.app .desktop-app-menu-trigger-floating,
+.app .desktop-app-canvas-tabs-topbar,
+.app .desktop-app-top-controls {
+  transition: translate 240ms var(--hud-ease-in), scale 240ms var(--hud-ease-in), opacity 240ms var(--hud-ease-in), filter 240ms var(--hud-ease-in), visibility 0s;
+}
+.app.is-zen-mode .desktop-app-header,
+.app.is-zen-mode .desktop-app-menu-trigger-floating,
+.app.is-zen-mode .desktop-app-canvas-tabs-topbar,
+.app.is-zen-mode .desktop-app-top-controls {
+  translate: 0 -14px;
+  scale: 0.985;
+  opacity: 0;
+  filter: blur(4px);
+  pointer-events: none !important;
+  visibility: hidden;
+  transition: translate 220ms var(--hud-ease-out), scale 220ms var(--hud-ease-out), opacity 220ms var(--hud-ease-out), filter 220ms var(--hud-ease-out), visibility 0s linear 220ms;
+}
+.app.is-zen-mode .desktop-app-top-controls * { pointer-events: none !important; }
+
+/* ---------- Popovers: scale from trigger origin ---------- */
+.app .sk-tool-opacity-popover,
+.sk-tool-choice-menu,
+.sk-tool-layer-menu,
+.app .sk-tool-font-size-presets,
+.app .canvas-start-date-popover {
+  animation: sk-hud-popover-in 200ms var(--hud-ease-in) both;
+}
+.app .sk-tool-opacity-popover { transform-origin: 100% 100%; }
+.sk-tool-choice-menu { transform-origin: 50% 0; }
+.sk-tool-layer-menu { transform-origin: 0 100%; }
+.app .sk-tool-font-size-presets { transform-origin: 50% 100%; }
+.app .canvas-start-date-popover { transform-origin: 0 0; }
+.app .sk-tool-opacity-popover.is-closing,
+.sk-tool-choice-menu.is-closing,
+.sk-tool-layer-menu.is-closing,
+.app .sk-tool-font-size-presets.is-closing,
+.app .canvas-start-date-popover.is-closing {
+  animation: sk-hud-popover-out 130ms var(--hud-ease-out) both;
+  pointer-events: none;
+}
+@keyframes sk-hud-popover-in {
+  from { opacity: 0; transform: scale(0.93) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes sk-hud-popover-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 0; transform: scale(0.93) translateY(6px); }
+}
+/* the font preset menu is centred with translateX; keep that while animating */
+.app .sketchizi-tool-options-dock .sk-tool-font-size-presets { transform: none; left: 50%; translate: -50% 0; }
+
+/* ---------- Date stepper ---------- */
+.app .canvas-start-date-wrap { height: 36px; border-radius: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-tool-options-dock,
+  .app .sketchizi-tool-options-dock .sk-tool-dock-group,
+  .app .sk-tool-opacity-popover,
+  .sk-tool-choice-menu,
+  .sk-tool-layer-menu,
+  .app .sk-tool-font-size-presets,
+  .app .canvas-start-date-popover { animation-duration: 1ms !important; }
+}

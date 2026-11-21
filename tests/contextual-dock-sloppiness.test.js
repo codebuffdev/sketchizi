@@ -46,7 +46,7 @@ test("stroke, fill, corner, arrowhead, font, and pressure controls use the share
   for (const label of ["Stroke width", "Corner radius", "Start arrowhead", "End arrowhead", "Font family", "Pen pressure"]) {
     assert.ok(dock.includes(label), `missing choice control: ${label}`);
   }
-  assert.ok(dock.includes('isHighlighter ? "Fill style"'));
+  assert.ok(dock.includes('isShape || isHighlighter ? "Color & fill"'));
   assert.ok(!dock.includes("function VisualOptionSelect({ label, value, onChange, kind, options }) {\n  const [open"));
 });
 

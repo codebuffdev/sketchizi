@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 const primary = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
 const contextual = await readFile(new URL("../src/components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
 const primaryStyles = await readFile(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
+const hudStyles = await readFile(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
 const contextualStyles = await readFile(new URL("../src/styles/contextual-dock-polish.css", import.meta.url), "utf8");
 
 test("both docks retain hover for three seconds and clear pending timers on re-entry", () => {
@@ -39,7 +40,8 @@ test("contextual dock defers collapse while popovers, inputs, or opacity draggin
 test("both docks use smooth downward fade and disable pointer events when collapsed", () => {
   assert.match(primaryStyles, /transition: opacity 180ms ease, transform 200ms cubic-bezier\(0\.16, 1, 0\.3, 1\)/);
   assert.match(primaryStyles, /translateY\(8px\)/);
-  assert.match(contextualStyles, /transition: opacity 180ms ease, transform 200ms cubic-bezier\(0\.16, 1, 0\.3, 1\)/);
-  assert.match(contextualStyles, /\.sketchizi-tool-options-dock\.is-collapsed/);
-  assert.match(contextualStyles, /pointer-events: none/);
+  assert.match(hudStyles, /sk-hud-dock-in 240ms var\(--hud-ease-in\)/);
+  assert.match(hudStyles, /sk-hud-dock-out 150ms var\(--hud-ease-out\)/);
+  assert.match(hudStyles, /\.sketchizi-tool-options-dock\.is-collapsed/);
+  assert.match(hudStyles, /pointer-events: none/);
 });
