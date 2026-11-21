@@ -807,7 +807,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             <circle className="sk-tool-opacity-ring-track" cx="12" cy="12" r="8" fill="none" strokeWidth="2" />
             <circle className="sk-tool-opacity-ring-progress" cx="12" cy="12" r="8" fill="none" strokeWidth="2" strokeLinecap="round"
               strokeDasharray="50.265" strokeDashoffset={50.265 * (1 - opacityValue / 100)} transform="rotate(-90 12 12)" />
-            <path className="sk-tool-opacity-ring-drop" d="M12 7.5c-1.6 2-3.2 3.7-3.2 5.5a3.2 3.2 0 0 0 6.4 0c0-1.8-1.6-3.5-3.2-5.5Z" />
+            <path className="sk-tool-opacity-ring-drop" d="M12 4.5c-2.7 3.6-5.2 6.4-5.2 9a5.2 5.2 0 0 0 10.4 0c0-2.6-2.5-5.4-5.2-9Z" />
           </svg>
           <span className="sk-tool-dock-opacity-value">{opacityValue}%</span>
           <span className="sk-tool-opacity-chevron" aria-hidden="true">⌃</span>
