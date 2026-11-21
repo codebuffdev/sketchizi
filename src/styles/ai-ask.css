@@ -324,7 +324,7 @@
   }
 
   .app.ai-ask-open .ai-ask-panel {
-    top: 14px;
+    top: 64px;
     right: var(--ai-ask-panel-right);
     bottom: 14px;
     box-sizing: border-box;
