@@ -870,38 +870,32 @@ const activeTabActions = (
             setDocumentNameDraft(renamedTab?.name || activeCanvasTabName);
             setDocumentNameEditing(true);
           }}
+          activeStatusClass={`is-${isCloudDocument ? cloudSaveState : saveState}`}
+          activeStatusLabel={documentStatusLabel}
+          activeMenu={
+            <div className="canvas-tabs-active-menu-content">
+              <div className="canvas-tabs-active-menu-heading">
+                <strong>{activeCanvasTabName}</strong>
+                <span>{documentStatusLabel}</span>
+              </div>
+              <div className="canvas-tabs-active-menu-status">
+                <span className={`canvas-tab-status-dot is-${isCloudDocument ? cloudSaveState : saveState}`} />
+                <span>{isCloudDocument ? "Cloud Workspace" : currentDocumentFileBacked ? "Linked file" : "Local draft"}</span>
+                <span className="canvas-tabs-active-menu-status-detail">{saveStateLabel}</span>
+              </div>
+              <div className="canvas-tabs-active-menu-actions">
+                <div className="canvas-tabs-active-menu-action">{activeTabLeadingAction}</div>
+                <div className="canvas-tabs-active-menu-action">{activeTabActions}</div>
+                <button type="button" className="canvas-tabs-active-menu-export" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5M12 15V3" /></svg>
+                  Export canvas…
+                </button>
+              </div>
+            </div>
+          }
           showAddButton
         />
       </div>
-      <div className="desktop-app-canvas-context-toolbar" aria-label={`Canvas actions for ${activeCanvasTabName}`}>
-        <div className="desktop-app-canvas-context-meta">
-          {!activeIsTodoTab && activeTabLeadingAction}
-          {!documentNameEditing && <strong className="desktop-app-canvas-context-name">{activeCanvasTabName}</strong>}
-          <span className="desktop-app-canvas-context-status" role="status" title={documentStatusLabel}>
-            {isCloudDocument && <span className={`desktop-app-canvas-context-status-dot is-${cloudSaveState}`} />}
-            {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
-              <span
-                className={`desktop-app-document-identity-dirty-dot is-${saveState}`}
-                aria-label={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
-                title={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
-              />
-            )}
-            <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-            <span>{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file") : `Local Draft • ${saveStateLabel}`}</span>
-          </span>
-          {!activeIsTodoTab && activeTabActions}
-        </div>
-        <div className="desktop-app-canvas-context-actions">
-          <button type="button" className="desktop-app-canvas-export-button" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }}>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <path d="m7 10 5 5 5-5M12 15V3" />
-            </svg>
-            Export
-          </button>
-        </div>
-      </div>
-
 
       <div className="desktop-app-global-theme-control">
         <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
