@@ -8,9 +8,12 @@ const css = readFileSync(new URL("../src/styles/contextual-dock-polish.css", imp
 test("opacity is the final shared dock module for every supported tool", () => {
   assert.ok(source.includes('<DockGroup label="Opacity">'));
   assert.ok(source.lastIndexOf('<DockGroup label="Opacity">') > source.lastIndexOf('<DockGroup label="Layer order">'));
-  assert.ok(source.includes('className="sk-tool-opacity-scrubber"'));
+  assert.ok(source.includes('className={`sk-tool-opacity-scrubber${opacityDragging ? " is-dragging" : ""}${opacityPopoverOpen ? " is-open" : ""}`}'));
   assert.ok(source.includes('role="slider" tabIndex={0}'));
   assert.ok(source.includes("opacityPointerStartRef"));
+  assert.ok(source.includes('data-tooltip="Drag to adjust · Click for presets"'));
+  assert.ok(source.includes('aria-expanded={opacityPopoverOpen}'));
+  assert.ok(source.includes('className="sk-tool-opacity-chevron"'));
   assert.ok(source.includes("const step = event.shiftKey ? 5 : 1"));
 });
 
@@ -22,6 +25,11 @@ test("opacity pill has a live fill, precision slider and quick percentage chips"
   assert.ok(css.includes("position: absolute;"));
   assert.ok(css.includes("rgba(165,196,250,.16)"));
   assert.ok(css.includes("rgba(59,130,246,.14)"));
-  assert.ok(css.includes("min-width: 84px"));
+  assert.ok(css.includes("min-width: 96px"));
+  assert.ok(css.includes("rgba(165,196,250,.24)"));
+  assert.ok(css.includes("rgba(59,130,246,.18)"));
+  assert.ok(css.includes("width: 2px;"));
+  assert.ok(css.includes("width: 3px;"));
+  assert.ok(css.includes("cursor: ew-resize"));
   assert.ok(css.includes("height: 36px"));
 });
