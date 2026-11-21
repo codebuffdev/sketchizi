@@ -8,6 +8,7 @@ const DOCUMENT_ID = "main";
 const RECENT_STORE_NAME = "recent-documents";
 const FILE_HANDLE_STORE_NAME = "file-handles";
 const DIRECTORY_HANDLE_STORE_NAME = "directory-handles";
+const CANVAS_TABS_BACKUP_KEY = "sketchizi-canvas-tabs-pagehide";
 const EMERGENCY_KEY = "sketchizi-emergency-backup";
 
 export class PersistenceError extends Error {
@@ -189,13 +190,41 @@ export async function saveSketch({ elements, appState, files, metadata = {}, ext
   }
 }
 
+export function saveCanvasTabsPagehideBackup(tabs) {
+  try {
+    sessionStorage.setItem(CANVAS_TABS_BACKUP_KEY, JSON.stringify({
+      tabs: prepareTabsForPersistence(tabs),
+      savedAt: Date.now(),
+    }));
+  } catch {
+    // The IndexedDB flush still runs when session storage is full or disabled.
+  }
+}
+
+function readCanvasTabsPagehideBackup() {
+  try {
+    const backup = JSON.parse(sessionStorage.getItem(CANVAS_TABS_BACKUP_KEY));
+    return Array.isArray(backup?.tabs) ? backup : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadCanvasTabs() {
   const db = await openDatabase();
   try {
     return await new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const request = transaction.objectStore(STORE_NAME).get("canvas-tabs-manifest");
-      request.onsuccess = () => resolve(Array.isArray(request.result?.tabs) ? request.result.tabs : null);
+      request.onsuccess = () => {
+        const stored = request.result;
+        const backup = readCanvasTabsPagehideBackup();
+        if (backup && backup.savedAt > (stored?.savedAt ?? 0)) {
+          resolve(backup.tabs);
+        } else {
+          resolve(Array.isArray(stored?.tabs) ? stored.tabs : null);
+        }
+      };
       request.onerror = () => reject(toPersistenceError(request.error, "Unable to restore open canvases.", "read"));
       transaction.onerror = () => reject(toPersistenceError(transaction.error, "Unable to restore open canvases.", "read"));
     });
@@ -203,11 +232,12 @@ export async function loadCanvasTabs() {
 }
 
 export async function saveCanvasTabs(tabs) {
+  const savedAt = Date.now();
   const db = await openDatabase();
   try {
     return await new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
-      transaction.objectStore(STORE_NAME).put({ tabs: structuredClone(prepareTabsForPersistence(tabs)), savedAt: Date.now() }, "canvas-tabs-manifest");
+      transaction.objectStore(STORE_NAME).put({ tabs: structuredClone(prepareTabsForPersistence(tabs)), savedAt }, "canvas-tabs-manifest");
       transaction.oncomplete = () => resolve(true);
       transaction.onerror = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));
       transaction.onabort = () => reject(toPersistenceError(transaction.error, "Unable to save open canvases.", "write"));

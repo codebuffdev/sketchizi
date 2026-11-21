@@ -70,7 +70,7 @@ import "./styles/canvas-grammar-assistant.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
-import { loadCanvasTabs, saveCanvasTabs } from "./persistence.js";
+import { loadCanvasTabs, saveCanvasTabs, saveCanvasTabsPagehideBackup } from "./persistence.js";
 import { getLocalDateString, isValidCanvasStartDate } from "./features/canvas/canvasStartDate.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
@@ -150,7 +150,10 @@ function App() {
   const activeCanvasIdRef = useRef("canvas-1");
   const canvasTabsRestoredRef = useRef(false);
   const canvasTabsSaveTimerRef = useRef(null);
-  canvasTabsRef.current = canvasTabs;
+  const commitCanvasTabs = useCallback(() => {
+    if (!canvasTabsRestoredRef.current) return Promise.resolve();
+    return saveCanvasTabs(canvasTabsRef.current);
+  }, []);
   activeCanvasIdRef.current = activeCanvasId;
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
@@ -240,7 +243,7 @@ function App() {
   }, []);
 
   const documentMetadataRef = useRef({ metadata: {}, extensions: {}, format: "excalidraw" });
-  const persistence = useSketchPersistence({ apiRef, documentMetadataRef });
+  const persistence = useSketchPersistence({ apiRef, documentMetadataRef, commitCanvasTabs });
   const { savedSketch, setSavedSketch, sketchReady, storageError, setStorageError, saveStatus, saveTimerRef, queueSketchSave: queueLocalSketchSave, persistSketchNow, retryLocalSave, resetLocalSketch, downloadRecoveryBackup } = persistence;
   const cloudUrlParams = new URLSearchParams(window.location.search);
   const cloudDiagramId = cloudUrlParams.get("cloudDiagramId") || "";
@@ -665,7 +668,7 @@ function App() {
     if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
     canvasTabsSaveTimerRef.current = window.setTimeout(() => {
       canvasTabsSaveTimerRef.current = null;
-      saveCanvasTabs(normalizedTabs).catch((error) => {
+      saveCanvasTabs(canvasTabsRef.current).catch((error) => {
         logger.warn("Canvas tabs could not be saved", { category: "persistence", error });
       });
     }, 450);
@@ -718,7 +721,7 @@ function App() {
     if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
     canvasTabsSaveTimerRef.current = window.setTimeout(() => {
       canvasTabsSaveTimerRef.current = null;
-      saveCanvasTabs(next).catch((error) => {
+      saveCanvasTabs(canvasTabsRef.current).catch((error) => {
         logger.warn("Canvas tabs could not be saved", { category: "persistence", error });
       });
     }, 450);
@@ -1208,11 +1211,14 @@ function App() {
 
   useEffect(() => {
     const flushCanvasTabs = () => {
+      if (!canvasTabsRestoredRef.current) return;
+      const pending = canvasTabsSaveTimerRef.current !== null;
       const snapshot = captureCanvasTabSnapshot();
       const latest = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
         ? { ...tab, snapshot }
         : tab);
       canvasTabsRef.current = latest;
+      if (pending) saveCanvasTabsPagehideBackup(latest);
       saveCanvasTabs(latest).catch(() => {});
     };
     window.addEventListener("pagehide", flushCanvasTabs);

@@ -173,7 +173,12 @@ try {
   if (!rectangle || Math.abs(rectangle.x - drawn.x) <= 15 || !restored?.appState?.gridModeEnabled) {
     throw new Error("Reload did not restore the moved rectangle and native grid state.");
   }
-  console.log("PASS: drawing content and native grid survive browser reload.");
+  // Hit-test the restored shape on the actual canvas. A stored snapshot can
+  // exist even when the editor has restored a different scene.
+  await page.keyboard.press("v");
+  await page.mouse.click(x + 82, y + 64);
+  await page.getByText("Selected shape actions", { exact: true }).waitFor();
+  console.log("PASS: the restored rectangle is selectable and native grid survives browser reload.");
 
   if (errors.length) throw new Error("Browser runtime exceptions: " + errors.join(" | "));
 } finally {
