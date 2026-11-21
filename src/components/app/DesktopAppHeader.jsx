@@ -157,8 +157,8 @@ export default function DesktopAppHeader({
     };
   }, [gridPopoverOpen]);
   const [availableWidth, setAvailableWidth] = useState(0);
-  // The legacy header rail is no longer the default top-right UI; it stays
-  // hidden (but mounted) on desktop and tablet and opens from the settings popover.
+  // The legacy header rail stays hidden by default on desktop and tablet.
+  // Users can reveal it with Ctrl+Shift+H or the pin control.
   const [headerVisible, setHeaderVisible] = useState(() =>
     typeof window === "undefined" || !window.matchMedia("(min-width: 521px)").matches
   );
@@ -270,7 +270,7 @@ export default function DesktopAppHeader({
     // control rail = right edge. Tablet retains the previous top-edge reveal.
     // Canvas wheel gestures remain dedicated to zooming and navigation.
     const revealFromEdge = (event) => {
-      // The rail opens only from the settings popover (or Ctrl+Shift+H).
+      // The rail opens from its pin control or Ctrl+Shift+H.
       void event;
     };
 
