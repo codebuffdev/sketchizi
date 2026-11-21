@@ -507,3 +507,12 @@
     box-shadow: 0 3px 9px rgb(0 0 0 / 22%);
   }
 }
+
+@media (min-width: 601px) {
+  .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active {
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+}
