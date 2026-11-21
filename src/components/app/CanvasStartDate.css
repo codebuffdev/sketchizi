@@ -119,3 +119,10 @@
 
 /* Zoom is available in the top workspace utility cluster; keep the viewport's bottom HUD clear. */
 .app .excalidraw .zoom-actions { display: none !important; }
+
+@media (max-width: 520px) {
+  /* Keep the compact phone header/account controls unobstructed. */
+  .app.canvas-first-header .desktop-app-top-controls > .canvas-start-date-wrap {
+    display: none !important;
+  }
+}
