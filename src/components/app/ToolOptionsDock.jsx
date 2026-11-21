@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import usePresence from "../../features/hud/usePresence.js";
 import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
+import { applyClosedShapeFill, hasFillKeys, isClosedShape } from "../../features/canvas/closedShapeFill.js";
 import { applyDarkModeFilter } from "@excalidraw/common";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
@@ -488,6 +489,15 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const update = (patch) => {
     const api = apiRef?.current;
     if (!api) return;
+    const liveClosedShapeSelection = selected.filter(isClosedShape);
+    if (hasFillKeys(patch) && (isShape || liveClosedShapeSelection.length)) {
+      const { backgroundColor, fillStyle } = patch;
+      const fillPatch = {};
+      if ("backgroundColor" in patch) fillPatch.backgroundColor = backgroundColor;
+      if ("fillStyle" in patch) fillPatch.fillStyle = fillStyle;
+      applyClosedShapeFill(api, fillPatch, { selectedIds: liveClosedShapeSelection.map((element) => element.id), captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      return;
+    }
     if (!isSelection) {
       const appStatePatch = {};
       const mapping = {
