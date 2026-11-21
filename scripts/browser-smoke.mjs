@@ -234,7 +234,7 @@ try {
   for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
     // Selecting a tool now collapses the dock immediately. Re-open it before
     // choosing the next tool, matching the interaction a user performs.
-    await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
+    await drawingTools.locator(".sketchizi-tool-sidebar-expand").hover();
     await gridSession.page.waitForFunction(() =>
       document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
     );
