@@ -287,6 +287,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     document.fonts?.load('16px "Kalam"', "Kalam").catch(() => {});
   }, []);
   const [customTool, setCustomTool] = useState(null);
+  const [shapeColorTarget, setShapeColorTarget] = useState("stroke");
   const [dockOpen, setDockOpen] = useState(true);
   const collapseTimerRef = useRef(null);
   const pendingCollapseRef = useRef(false);
@@ -509,6 +510,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         if (key === "strokeWidth") Object.assign(appStatePatch, strokeWidthAppStatePatch(value));
         else if (mapping[key]) appStatePatch[mapping[key]] = value;
       });
+      if ("backgroundColor" in patch && patch.backgroundColor !== "transparent" && isShape && fillColor === "transparent") {
+        appStatePatch.currentItemFillStyle = "solid";
+      }
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
       return;
     }
@@ -525,9 +529,13 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       : editingTextElement;
     if (isText && activeEditingText?.id) ids.add(activeEditingText.id);
     const now = Date.now();
+    const effectivePatch = { ...patch };
+    if ("backgroundColor" in effectivePatch && effectivePatch.backgroundColor !== "transparent" && isShape && fillColor === "transparent") {
+      effectivePatch.fillStyle = "solid";
+    }
     const elements = api.getSceneElements?.() || [];
     const next = elements.map((element) => ids.has(element.id)
-      ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
+      ? { ...element, ...effectivePatch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
     api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   };
@@ -798,20 +806,40 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       }}
     >
       {<DockGroup label={isText ? "Text color" : isShape || isHighlighter ? "Color & fill" : "Stroke color"}>
-        {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
-        {(!isFill || isHighlighter) && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
-        {showClosedShapeFill && <>
-          <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
-          </ToolButton>
-          <ToolButton active={fillColor !== "transparent"} title="Solid / Hachure fill" onClick={() => update({ backgroundColor: fillColor === "transparent" ? "#ffffff" : fillColor })}>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
-          </ToolButton>
+        {isShape ? <>
+          <div role="group" aria-label="Color target" className="sk-tool-fill-target-toggle" style={{ display:"inline-flex", alignItems:"center", gap:3, padding:3, border:"1px solid var(--color-border, rgba(128,128,128,.25))", borderRadius:999 }}>
+            <button type="button" aria-pressed={shapeColorTarget === "stroke"} onClick={() => setShapeColorTarget("stroke")} style={{ border:0, borderRadius:999, padding:"5px 9px", fontSize:11, fontWeight:600, cursor:"pointer", color:shapeColorTarget === "stroke" ? "#fff" : "inherit", background:shapeColorTarget === "stroke" ? "#6965db" : "transparent" }}>Stroke</button>
+            <button type="button" aria-pressed={shapeColorTarget === "fill"} onClick={() => setShapeColorTarget("fill")} style={{ border:0, borderRadius:999, padding:"5px 9px", fontSize:11, fontWeight:600, cursor:"pointer", color:shapeColorTarget === "fill" ? "#fff" : "inherit", background:shapeColorTarget === "fill" ? "#6965db" : "transparent" }}>Fill</button>
+          </div>
+          {shapeColorTarget === "stroke" ? <>
+            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+            <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />
+          </> : <>
+            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${fillColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Fill ${color}`} title={`Fill ${color}`} onClick={() => update({ backgroundColor: color })} />)}
+            <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
+            </ToolButton>
+            <ColorPicker label="Custom fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />
+          </>}
+          <div role="group" aria-label="Fill style" className="sk-tool-fill-style-options" style={{ display:"inline-flex", alignItems:"center", gap:3, marginLeft:3 }}>
+            {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>
+              {value === "solid" ? <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg> : value === "hachure" ? <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 17 12-12M9 20 20 9M4 11 11 4" /></svg> : <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 5 14 14M12 4l8 8M4 12l8 8M19 5 5 19M20 12l-8 8M12 4 4 12" /></svg>}
+            </ToolButton>)}
+          </div>
+        </> : <>
+          {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+          {(!isFill || isHighlighter) && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
+          {showClosedShapeFill && <>
+            <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
+            </ToolButton>
+            <ToolButton active={fillColor !== "transparent"} title="Solid / Hachure fill" onClick={() => update({ backgroundColor: fillColor === "transparent" ? "#ffffff" : fillColor })}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
+            </ToolButton>
+          </>}
+          {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
         </>}
-        {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
-      </DockGroup>}
-
-      {(showStrokeWidth || showStrokeStyle || isLine || isDraw || type === "arrow") && <DockGroup label="Stroke & connector">
+      </DockGroup>}{(showStrokeWidth || showStrokeStyle || isLine || isDraw || type === "arrow") && <DockGroup label="Stroke & connector">
         {showStrokeWidth && <DockSelect label={isDraw ? "Stroke width / thinning preset" : "Stroke width"} value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })}>
           {!WIDTHS.includes(strokeWidth) && <option value={strokeWidth}>{strokeWidth}px</option>}
           {WIDTHS.map((width) => <option key={width} value={width}>{width}px</option>)}

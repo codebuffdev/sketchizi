@@ -87,7 +87,7 @@ try {
   await ensureHeaderVisible(blank.page);
 
   const aiToggle = blank.page.getByRole("button", { name: "AI Ask", exact: true });
-  const railToggle = blank.page.getByRole("button", { name: "Canvas settings" });
+  const railToggle = blank.page.locator(".desktop-app-header-reveal-handle");
   const aiDrawer = blank.page.locator(".ai-ask-panel");
   const rail = blank.page.locator(".desktop-app-header-right-rail");
   await aiToggle.click();
@@ -109,13 +109,19 @@ try {
       ai.x + ai.width > drawer.x) {
     throw new Error(`AI and sliders must share the top control row, with the tool rail below and all controls beside the drawer: ${JSON.stringify({ ai, sliders, tools, drawer })}`);
   }
-  // Canvas settings is a popover toggle, not a control for hiding the
-  // legacy header rail. Verify the settings dialog opens and closes while
-  // the pinned header remains visible beside the AI drawer.
+  // The utility-rail reveal handle toggles the legacy header rail. Verify
+  // both states directly instead of looking for the retired Canvas settings
+  // popover that no longer exists in the current header implementation.
   await railToggle.click();
-  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor();
+  await blank.page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-reveal-handle")?.getAttribute("aria-expanded") === "false" &&
+    document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "true",
+  );
   await railToggle.click();
-  await blank.page.getByRole("dialog", { name: "Canvas settings" }).waitFor({ state: "detached" });
+  await blank.page.waitForFunction(() =>
+    document.querySelector(".desktop-app-header-reveal-handle")?.getAttribute("aria-expanded") === "true" &&
+    document.querySelector(".desktop-app-header")?.getAttribute("aria-hidden") === "false",
+  );
   await rail.waitFor({ state: "visible" });
   await aiToggle.click();
   await aiDrawer.waitFor({ state: "detached" });
@@ -234,7 +240,7 @@ try {
   for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
     // Selecting a tool now collapses the dock immediately. Re-open it before
     // choosing the next tool, matching the interaction a user performs.
-    await drawingTools.locator(".sketchizi-tool-sidebar-expand").hover();
+    await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
     await gridSession.page.waitForFunction(() =>
       document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
     );
@@ -250,8 +256,11 @@ try {
   // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
   await ensureHeaderVisible(gridSession.page);
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
-  await gridSession.page.getByRole("dialog", { name: "Canvas style" })
-    .getByRole("checkbox", { name: "Show pattern" }).uncheck();
+  const initialPatternSwitch = gridSession.page.getByRole("dialog", { name: "Canvas style" })
+    .getByRole("switch", { name: "Show pattern" });
+  if (await initialPatternSwitch.getAttribute("aria-checked") === "true") {
+    await initialPatternSwitch.click();
+  }
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const canvasLocator = gridSession.page.locator(".desktop-canvas-region .desktop-canvas-view .canvas");
   const sceneBounds = await canvasLocator.boundingBox();
@@ -298,8 +307,10 @@ try {
   await ensureHeaderVisible(gridSession.page);
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const gridToggle = gridSession.page.getByRole("dialog", { name: "Canvas style" })
-    .getByRole("checkbox", { name: "Show pattern" });
-  await gridToggle.check();
+    .getByRole("switch", { name: "Show pattern" });
+  if (await gridToggle.getAttribute("aria-checked") !== "true") {
+    await gridToggle.click();
+  }
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-grid-enabled"),
@@ -307,7 +318,7 @@ try {
   // Legacy content-bound assertions require Focus (Local), not the new default.
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   const gridSettings = gridSession.page.getByRole("dialog", { name: "Canvas style" });
-  await gridSettings.getByRole("button", { name: /Local Focus Grid/ }).click();
+  await gridSettings.getByRole("button", { name: /Local Focus/ }).click();
   await gridSession.page.getByRole("button", { name: "Canvas style" }).click();
   await gridSession.page.waitForFunction(() =>
     document.querySelector(".desktop-canvas-region .sketchizi-grid-spotlight")?.classList.contains("is-local-style"),
@@ -425,8 +436,9 @@ try {
   await blank.page.getByRole("button", { name: "Close export studio" }).click();
   console.log("PASS: Export Studio remains reachable from the save menu.");
 
-  await blank.page.getByRole("button", { name: "Search commands" }).click();
-  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor();
+  // The command palette is opened by its documented keyboard shortcut; it is not a persistent header button.
+  await blank.page.keyboard.press("Control+Shift+P");
+  await blank.page.getByRole("dialog", { name: "Sketchizi command palette" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("searchbox", { name: "Search commands" }).fill("Architecture Validation");
   await blank.page.getByRole("option", { name: /Architecture Validation/ }).click();
   await blank.page.getByRole("region", { name: "Architecture Validation" }).waitFor({ timeout: 10000 });
