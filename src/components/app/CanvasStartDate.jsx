@@ -111,6 +111,7 @@ export default function CanvasStartDate({ canvasId, value, activity = [], onActi
     if (disabled) return;
     onChange?.(next);
     setVisibleMonth(toLocalDate(next));
+    setOpen(false);
   };
   const shiftMonth = (amount) => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
 
