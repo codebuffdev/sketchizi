@@ -210,7 +210,7 @@ try {
     console.log("PASS: a rectangle survives immediate reload and remains selectable.");
 
     await page.getByRole("button", { name: "Create new canvas" }).click();
-    const secondTab = page.getByRole("tab", { name: "Canvas 2", exact: true });
+    const secondTab = page.locator('.canvas-tab[title="Canvas 2"]');
     await secondTab.waitFor();
     const secondX = Math.round(bounds.x + bounds.width * 0.42);
     const secondY = Math.round(bounds.y + bounds.height * 0.64);
