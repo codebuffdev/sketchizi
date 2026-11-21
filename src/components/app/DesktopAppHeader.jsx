@@ -870,7 +870,7 @@ const activeTabActions = (
             setDocumentNameDraft(renamedTab?.name || activeCanvasTabName);
             setDocumentNameEditing(true);
           }}
-          activeStatusClass={`is-${isCloudDocument ? cloudSaveState : saveState}`}
+          activeStatusClass={`is-${isCloudDocument ? cloudSaveState : currentDocumentDirty ? (saveState === "error" ? "error" : "pending") : saveState}`}
           activeStatusLabel={documentStatusLabel}
           activeMenu={
             <div className="canvas-tabs-active-menu-content">
@@ -881,7 +881,7 @@ const activeTabActions = (
               <div className="canvas-tabs-active-menu-status">
                 <span className={`canvas-tab-status-dot is-${isCloudDocument ? cloudSaveState : saveState}`} />
                 <span>{isCloudDocument ? "Cloud Workspace" : currentDocumentFileBacked ? "Linked file" : "Local draft"}</span>
-                <span className="canvas-tabs-active-menu-status-detail">{saveStateLabel}</span>
+                <span className="canvas-tabs-active-menu-status-detail">{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Unsaved file changes" : "Linked file saved") : saveStateLabel}</span>
               </div>
               <div className="canvas-tabs-active-menu-actions">
                 <div className="canvas-tabs-active-menu-action">{activeTabLeadingAction}</div>
