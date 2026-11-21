@@ -40,3 +40,8 @@ test("sidebar hides while the hamburger menu is open to prevent overlap", () => 
   assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-menu-open/);
   assert.match(sidebarCss, /pointer-events: none/);
 });
+
+test("dock waits three seconds after pointer leaves and cancels collapse on re-entry", () => {
+  assert.match(dock, /collapseTimerRef\.current = window\.setTimeout\([\s\S]*?\}, 3000\)/);
+  assert.match(dock, /const expandDock = \(\) => \{[\s\S]*?clearTimeout\(collapseTimerRef\.current\)/);
+});
