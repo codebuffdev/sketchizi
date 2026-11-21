@@ -709,14 +709,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         {isDraw && <DockSelect label="Pen pressure" value={pressure ? "on" : "off"} onChange={(value) => update({ pressure: value === "on" })}>
           <option value="on">Pressure enabled</option><option value="off">Pressure disabled</option>
         </DockSelect>}
-        {type === "arrow" && <>
+        {type === "arrow" && <div role="group" aria-label="Arrowheads" className="sk-tool-arrowhead-pair">
           <DockSelect label="Start arrowhead" value={current("startArrowhead", "currentItemStartArrowhead", null) || "none"} onChange={(value) => update({ startArrowhead: value === "none" ? null : value })}>
             <option value="none">Start: None</option><option value="arrow">Start: Arrow</option><option value="bar">Start: Bar</option><option value="dot">Start: Dot</option>
           </DockSelect>
           <DockSelect label="End arrowhead" value={current("endArrowhead", "currentItemEndArrowhead", "arrow") || "none"} onChange={(value) => update({ endArrowhead: value === "none" ? null : value })}>
             <option value="none">End: None</option><option value="arrow">End: Arrow</option><option value="bar">End: Bar</option><option value="dot">End: Dot</option>
           </DockSelect>
-        </>}
+        </div>}
       </DockGroup>}
 
       {isText && <DockGroup label="Typography">
