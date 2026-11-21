@@ -309,7 +309,8 @@ export default function ContextualFormattingToolbar({
   const textTool = activeToolType === "text" || noteTool;
   const bucketFillTool = customToolMode === "fill" || ["bucket-fill", "bucketfill", "fill"].includes(activeToolType);
   const drawToShapeTool = customToolMode === "shape" || ["draw-to-shape", "drawtoshape"].includes(activeToolType);
-  const activeToolMode = drawingTool ? "draw" : noteTool ? "text" : textTool ? "text" : bucketFillTool ? "fill" : drawToShapeTool ? "shape" : null;
+  const nativeShapeTool = SHAPE_TYPES.has(activeToolType);
+  const activeToolMode = drawingTool ? "draw" : noteTool ? "text" : textTool ? "text" : bucketFillTool ? "fill" : (drawToShapeTool || nativeShapeTool) ? "shape" : null;
   const elementTypes = liveSelection.map((element) => element.type);
   const hasShape = elementTypes.some((type) => SHAPE_TYPES.has(type));
   const hasLine = elementTypes.some((type) => LINE_TYPES.has(type) || type === "freedraw");
@@ -600,7 +601,6 @@ export default function ContextualFormattingToolbar({
                 {(colorTarget === "fill" ? [["transparent", "Transparent"], ...backgroundPalette.filter(([color]) => color !== "transparent")] : strokePalette).map(([color, label]) => (
                   <Swatch key={color} color={color} label={label} selected={(colorTarget === "fill" ? currentFill : currentStroke) === color} fill={colorTarget === "fill"} onClick={() => applyFormatting(colorTarget === "fill" ? { backgroundColor: color } : { strokeColor: color })} />
                 ))}
-                {colorTarget === "fill" && <Swatch color="transparent" label="Transparent" selected={currentFill === "transparent"} fill onClick={() => applyFormatting({ backgroundColor: "transparent" })} />}
                 <label className={`format-custom-color${colorTarget === "fill" ? " format-custom-fill-color" : ""}`} title={colorTarget === "fill" ? "Choose custom fill color" : "Choose custom stroke color"} aria-label={colorTarget === "fill" ? "Choose custom fill color" : "Choose custom stroke color"} style={{ "--custom-color-value": colorTarget === "fill" ? (/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1") : (/^#[0-9a-f]{6}$/i.test(currentStroke) ? currentStroke : "#7c3aed") }}>
                   <span className="format-custom-color-icon" aria-hidden="true">✎</span>
                   <input type="color" aria-label={colorTarget === "fill" ? "Choose custom fill color" : "Choose custom stroke color"} value={colorTarget === "fill" ? (/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1") : (/^#[0-9a-f]{6}$/i.test(currentStroke) ? currentStroke : "#7c3aed")} onChange={(event) => applyFormatting(colorTarget === "fill" ? { backgroundColor: event.target.value } : { strokeColor: event.target.value })} />
