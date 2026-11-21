@@ -65,7 +65,7 @@ test("active-tab status dot follows local autosave state, not file dirty state",
   assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "saved", "error"\]\.includes\(saveState\)/);
   assert.match(header, /desktop-app-document-identity-dirty-dot is-\$\{saveState\}/);
   assert.match(header, /Saved locally on this device/);
-  assert.match(header, /canvas-tab-status-dot is-\$\{isCloudDocument \? cloudSaveState/);
+  assert.match(header, /canvas-tab-status-dot is-\$\{cloudSaveState\}/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-pending/);
   assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-error/);
