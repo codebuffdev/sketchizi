@@ -26,7 +26,6 @@ const COLLAPSE_GRACE_MS = 3000;
 // Hints are only shown for shortcuts already handled by Excalidraw.
 const TOOLS = [
   { id: "selection", label: "Select", keyHint: "V" },
-  { id: "hand", label: "Pan Canvas", keyHint: "H" },
   { id: "rectangle", label: "Rectangle", keyHint: "R" },
   { id: "ellipse", label: "Ellipse", keyHint: "O" },
   { id: "diamond", label: "Diamond", keyHint: "D" },
@@ -35,10 +34,11 @@ const TOOLS = [
   { id: "freedraw", label: "Freehand", keyHint: "P" },
   { id: "text", label: "Text", keyHint: "T" },
   { id: "highlighter", label: "Highlighter" },
+  { id: "laser", label: "Laser Pointer", keyHint: "K" },
+  { id: "hand", label: "Pan Canvas", keyHint: "H", separated: true },
   { id: "image", label: "Insert Image", keyHint: "I" },
   { id: "frame", label: "Frame", keyHint: "F" },
   { id: "eraser", label: "Eraser", keyHint: "E" },
-  { id: "laser", label: "Laser Pointer", keyHint: "K" },
   { id: "bucketfill", label: "Bucket Fill" },
   { id: "autoshape", label: "Draw to Shape" },
   { id: "todo", label: "Todo List", separated: true },
