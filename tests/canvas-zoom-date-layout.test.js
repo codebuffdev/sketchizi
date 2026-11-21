@@ -12,9 +12,11 @@ test("date picker is a fixed-width 36px header control with theme-aware surfaces
   assert.match(dateStyles, /\.app\.theme-dark \.canvas-start-date-wrap\s*\{[^}]*background:\s*rgba\(22,24,31,\.9\)/s);
 });
 
-test("date picker is mounted immediately after the New Board control in the tab controls group", () => {
-  assert.match(tabs, /showAddButton &&[\s\S]*?\{trailingControl\}/);
-  assert.match(header, /trailingControl=\{!activeIsTodoTab && canvasId \? <CanvasStartDate/);
+test("date picker is mounted in the top utility cluster immediately before the zoom control", () => {
+  const dateIndex = header.indexOf('<CanvasStartDate key={canvasId}');
+  const zoomIndex = header.indexOf('<CanvasZoomControl');
+  assert(dateIndex >= 0 && zoomIndex > dateIndex, "date picker must precede the zoom pill in the top utility cluster");
+  assert.match(header, /<div className="desktop-app-top-controls">[\\s\\S]*?CanvasStartDate[\\s\\S]*?CanvasZoomControl/);
 });
 
 test("calendar popover opens below the pill and includes month navigation and Today", () => {
