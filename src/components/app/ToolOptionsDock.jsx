@@ -658,7 +658,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
   return (
     <div className="sketchizi-tool-options-dock" role="toolbar" aria-label={`${title} options`} data-tool={type}>
-      <span className="sk-tool-dock-context" aria-label={title} title={title}><ContextShapeIcon type={type} title={title} multiple={selected.length > 1} /></span>
       <DockGroup label="Stroke color">
         {!isFill && <>{COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
         <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} /></>}
