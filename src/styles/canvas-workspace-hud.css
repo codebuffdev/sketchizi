@@ -181,7 +181,7 @@
   border: 1px solid var(--sk-hud-dark-border); border-radius: 9999px;
   background: var(--sk-hud-dark-bg); color: #e8ebf3;
   box-shadow: var(--sk-hud-dark-shadow); backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px); font: 600 12px/1 inherit; cursor: pointer;
+  -webkit-backdrop-filter: blur(16px); font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1; cursor: pointer;
   transition: transform 150ms var(--sk-hud-exit), background 150ms ease;
 }
 .app.theme-light .sketchizi-zen-pill {
