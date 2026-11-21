@@ -15,7 +15,7 @@ test("the bottom dock exposes compact tool-specific controls, not a properties i
   assert.match(dock, /sketchizi-tool-options-dock/);
   assert.doesNotMatch(dock, /function ContextShapeIcon|<ContextShapeIcon/);
   assert.doesNotMatch(dock, /sk-tool-dock-context/);
-  assert.match(dock, /<DockGroup label="Stroke color">/);
+  assert.match(dock, /<DockGroup label=\{isText \? "Text color" : "Stroke color"\}>/);
   assert.doesNotMatch(dock, /<span className="sk-tool-dock-context">\{title\}<\/span>/);
   assert.match(dock, /Stroke color/);
   assert.match(dock, /Fill style/);
@@ -45,10 +45,10 @@ test("both docks use a neutral theme-aware visual system with visible keyboard f
 
 
 test("stroke width choices use visual line-weight icons instead of numeric labels", () => {
-  assert.match(dock, /sk-tool-stroke-width-icon/);
-  assert.match(dock, /strokeWidth=\{width === 1 \? 1\.5 : width === 2 \? 2\.5 : width === 4 \? 4 : 5\.5\}/);
-  assert.doesNotMatch(dock, /onClick=\{\(\) => update\(\{ strokeWidth: width \}\)\}>\{width\}<\/ToolButton>/);
-  assert.match(dock, /title=\{\`Stroke width \$\{width\}\`\}/);
+  assert.match(dock, /sk-tool-choice-value/);
+  assert.match(dock, /String\(label\)\.toLowerCase\(\)\.includes\("width"\)/);
+  assert.match(dock, /<DockSelect label=\{isDraw \? "Stroke width \/ thinning preset" : "Stroke width"\}/);
+  assert.match(dock, /<span className="sk-tool-choice-value">\{selected.value\}px<\/span>/);
 });
 
 
