@@ -55,5 +55,6 @@ test("fill patterns and corner-radius controls are scoped to supported elements"
   assert.match(dock, /label="Fill style"/);
   assert.match(dock, /const showCornerRadius = type === "rectangle" \\|\\| type === "diamond";/);
   assert.match(dock, /\\(isShape \\|\\| isHighlighter\\) && <VisualOptionSelect label="Fill style"/);
-  assert.match(dock, /event.stopPropagation\\(\\);[\\s\\S]*?setIsZenMode\\(false\\)/);
+  const canvas = read("../src/components/app/SketchiziCanvas.jsx");
+  assert.match(canvas, /event.stopPropagation\\(\\);[\\s\\S]*?setIsZenMode\\(false\\)/);
 });
