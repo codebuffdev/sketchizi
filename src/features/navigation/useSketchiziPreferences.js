@@ -5,6 +5,15 @@ import { applyCanvasThemeBackground } from "./canvasTheme.js";
 import { applyCanvasAppearance } from "./canvasAppearance.js";
 import { readSpellcheckPreference, SPELLCHECK_PREFERENCE_KEY } from "../canvas/nativeSpellcheck.js";
 
+export {
+  RECENT_CUSTOM_COLORS_KEY,
+  MAX_RECENT_CUSTOM_COLORS,
+  addRecentCustomColor,
+  normalizeRecentCustomColors,
+  readRecentCustomColors,
+} from "./recentCustomColors.js";
+export { useRecentCustomColors } from "./useRecentCustomColors.js";
+
 export const SKIP_LOCAL_DRAFT_PROMPT_KEY = "sketchizi-skip-local-draft-prompt";
 
 export function readSkipLocalDraftPrompt() {

@@ -5,6 +5,8 @@ import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 import { normalizeToolKey } from "../../features/canvas/toolStylePresets.js";
 import { applyDarkModeFilter } from "@excalidraw/common";
+import { isHexColor } from "../../features/navigation/recentCustomColors.js";
+import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
 // Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
@@ -92,14 +94,48 @@ function ToolButton({ active, title, onClick, children }) {
   return <button type="button" className={`sk-tool-option-button${active ? " is-active" : ""}`} title={title} aria-label={title} aria-pressed={Boolean(active)} onClick={onClick}>{children}</button>;
 }
 
-function ColorPicker({ label, value, onChange, transparent = false }) {
-  const safeValue = /^#[0-9a-f]{6}$/i.test(value || "") ? value : "#ffffff";
+const sameColor = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
+
+function ColorPicker({ label, value, onChange, transparent = false, presets = [], recentCustomColors = [], onCommit = null, onEndSession = null }) {
+  const inputRef = useRef(null);
+  const endSessionRef = useRef(onEndSession);
+  endSessionRef.current = onEndSession;
+  useEffect(() => {
+    // The native `change` event fires when the picker is dismissed; it closes
+    // the "pick session" so the next pick is stored as a new recent color.
+    const input = inputRef.current;
+    if (!input) return undefined;
+    const end = () => endSessionRef.current?.();
+    input.addEventListener("change", end);
+    return () => input.removeEventListener("change", end);
+  }, []);
+  const hasValue = isHexColor(value);
+  const safeValue = hasValue ? value : (recentCustomColors[0] || "#ffffff");
+  const isCustomActive = hasValue && !presets.some((preset) => sameColor(preset, value));
+  const showRainbow = !transparent && !isCustomActive;
   return (
-    <label className="sk-tool-color-control" title={label}>
-      <span className="sk-tool-color-swatch" style={{ background: transparent ? "transparent" : safeValue }} aria-hidden="true">{transparent ? "∅" : null}</span>
-      <input type="color" aria-label={label} value={safeValue} onChange={(event) => onChange(event.target.value)} />
+    <label className={`sk-tool-color-control${isCustomActive ? " has-custom-color" : ""}`} title="Custom color (click to pick)">
+      <span className={`sk-tool-color-swatch${showRainbow ? " is-rainbow" : ""}`} style={showRainbow ? undefined : { background: transparent ? "transparent" : safeValue }} aria-hidden="true">{transparent ? "∅" : null}</span>
+      <input ref={inputRef} type="color" aria-label={label} title="Custom color (click to pick)" value={safeValue}
+        onChange={(event) => { onChange(event.target.value); onCommit?.(event.target.value); }}
+        onPointerDown={() => onEndSession?.()} onBlur={() => onEndSession?.()} />
     </label>
   );
+}
+
+function RecentCustomSwatches({ colors, presets, activeColor, kind, theme, onPick }) {
+  const visible = colors.filter((color) => !presets.some((preset) => sameColor(preset, color)));
+  if (!visible.length) return null;
+  return visible.map((color) => {
+    const active = sameColor(activeColor, color);
+    return (
+      <button key={`recent-${color}`} type="button"
+        className={`sk-tool-color-dot is-recent-custom${active ? " is-active" : ""}`}
+        style={{ "--tool-color": kind === "stroke" ? displayColorForTheme(color, theme) : color }}
+        aria-label={`Recent custom ${kind} color ${color}`} aria-pressed={active} title={`Recent custom color ${color}`}
+        onClick={() => onPick(color)} />
+    );
+  });
 }
 
 function DockGroup({ label, children }) {
@@ -297,6 +333,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   }, []);
   const [customTool, setCustomTool] = useState(null);
   const [shapeColorTarget, setShapeColorTarget] = useState("stroke");
+  const { recentCustomColors, commitRecent, endPickSession } = useRecentCustomColors();
+  const colorPickerProps = { presets: COLORS, recentCustomColors, onCommit: (color) => commitRecent(color, COLORS), onEndSession: endPickSession };
   const [dockOpen, setDockOpen] = useState(true);
   const collapseTimerRef = useRef(null);
   const pendingCollapseRef = useRef(false);
@@ -852,14 +890,16 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             <button type="button" aria-pressed={shapeColorTarget === "fill"} onClick={() => setShapeColorTarget("fill")} style={{ border:0, borderRadius:999, padding:"5px 9px", fontSize:11, fontWeight:600, cursor:"pointer", color:shapeColorTarget === "fill" ? "#fff" : "inherit", background:shapeColorTarget === "fill" ? "#6965db" : "transparent" }}>Fill</button>
           </div>
           {shapeColorTarget === "stroke" ? <>
-            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
-            <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />
+            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} aria-pressed={strokeColor === color} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+            <RecentCustomSwatches colors={recentCustomColors} presets={COLORS} kind="stroke" activeColor={strokeColor} theme={appState.theme} onPick={(color) => update({ strokeColor: color })} />
+            <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} {...colorPickerProps} />
           </> : <>
-            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${fillColor === color ? " is-active" : ""}`} style={{ "--tool-color": color }} aria-label={`Fill ${color}`} title={`Fill ${color}`} onClick={() => update({ backgroundColor: color })} />)}
+            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${fillColor === color ? " is-active" : ""}`} aria-pressed={fillColor === color} style={{ "--tool-color": color }} aria-label={`Fill ${color}`} title={`Fill ${color}`} onClick={() => update({ backgroundColor: color })} />)}
             <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
             </ToolButton>
-            <ColorPicker label="Custom fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />
+            <RecentCustomSwatches colors={recentCustomColors} presets={COLORS} kind="fill" activeColor={fillColor} theme={appState.theme} onPick={(color) => update({ backgroundColor: color })} />
+            <ColorPicker label="Custom fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} transparent={false} {...colorPickerProps} />
           </>}
           <div role="group" aria-label="Fill style" className="sk-tool-fill-style-options" style={{ display:"inline-flex", alignItems:"center", gap:3, marginLeft:3 }}>
             {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>
@@ -867,8 +907,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             </ToolButton>)}
           </div>
         </> : <>
-          {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
-          {(!isFill || isHighlighter) && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} />}
+          {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} aria-pressed={strokeColor === color} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+          {(!isFill || isHighlighter) && <RecentCustomSwatches colors={recentCustomColors} presets={COLORS} kind="stroke" activeColor={strokeColor} theme={appState.theme} onPick={(color) => update({ strokeColor: color })} />}
+          {(!isFill || isHighlighter) && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} {...colorPickerProps} />}
           {showClosedShapeFill && <>
             <ToolButton active={fillColor === "transparent"} title="Transparent / no fill" onClick={() => update({ backgroundColor: "transparent" })}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 19 14-14" /></svg>
@@ -877,7 +918,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
             </ToolButton>
           </>}
-          {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} />}
+          {isFill && !isHighlighter && <RecentCustomSwatches colors={recentCustomColors} presets={COLORS} kind="fill" activeColor={fillColor} theme={appState.theme} onPick={(color) => update({ backgroundColor: color })} />}
+          {isFill && !isHighlighter && <ColorPicker label="Fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} {...colorPickerProps} />}
         </>}
       </DockGroup>}{(showStrokeWidth || showStrokeStyle || isLine || isDraw || type === "arrow") && <DockGroup label="Stroke & connector">
         {showStrokeWidth && <DockSelect label={isDraw ? "Stroke width / thinning preset" : "Stroke width"} value={strokeWidth} onChange={(value) => update({ strokeWidth: Number(value) })}>

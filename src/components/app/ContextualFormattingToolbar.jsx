@@ -4,6 +4,8 @@ import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults
 import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 import { normalizeToolKey } from "../../features/canvas/toolStylePresets.js";
+import { isHexColor } from "../../features/navigation/recentCustomColors.js";
+import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -243,6 +245,18 @@ function Swatch({ color, label, selected, onClick, fill = false }) {
   );
 }
 
+const sameColor = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
+
+// Last-used custom colors render as ordinary swatches so they can be re-applied
+// with a single click, without reopening the color picker.
+function RecentCustomSwatches({ colors, presets, current, fill = false, onPick }) {
+  return colors
+    .filter((color) => !presets.some(([preset]) => sameColor(preset, color)))
+    .map((color) => (
+      <Swatch key={`recent-${color}`} color={color} label={`Recent custom color ${color}`} selected={sameColor(current, color)} fill={fill} onClick={() => onPick(color)} />
+    ));
+}
+
 export default function ContextualFormattingToolbar({
   apiRef,
   canvasRootRef,
@@ -256,6 +270,7 @@ export default function ContextualFormattingToolbar({
 }) {
   const [openGroup, setOpenGroup] = useState(null);
   const [customToolMode, setCustomToolMode] = useState(null);
+  const { recentCustomColors, commitRecent, endPickSession } = useRecentCustomColors();
   const toolbarRef = useRef(null);
   const wasToolModeRef = useRef(false);
   useEffect(() => {
@@ -593,14 +608,15 @@ export default function ContextualFormattingToolbar({
           <div className="format-option-label">{(onlyTextSelection && !toolMode) || activeToolMode === "text" ? "Text color" : "Stroke color"}</div>
           <div className="format-option-row">
             {strokePalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentStroke === color} onClick={() => applyFormatting({ strokeColor: color })} />)}
+            <RecentCustomSwatches colors={recentCustomColors} presets={strokePalette} current={currentStroke} onPick={(color) => applyFormatting({ strokeColor: color })} />
             <label
-              className="format-custom-color"
-              title="Choose custom color"
+              className={`format-custom-color${isHexColor(currentStroke) && !strokePalette.some(([preset]) => sameColor(preset, currentStroke)) ? "" : " is-rainbow"}`}
+              title="Custom color (click to pick)"
               aria-label="Choose custom color"
               style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed" }}
             >
               <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed"} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} />
+              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : (recentCustomColors[0] || "#7c3aed")} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} onInput={(event) => commitRecent(event.target.value, strokePalette.map(([c]) => c))} onPointerDown={endPickSession} onBlur={endPickSession} />
             </label>
           </div>
         </div>
@@ -609,9 +625,10 @@ export default function ContextualFormattingToolbar({
             <div className="format-option-label">Background</div>
             <div className="format-option-row">
               {backgroundPalette.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
+              <RecentCustomSwatches colors={recentCustomColors} presets={backgroundPalette} current={currentFill} fill onPick={(color) => applyFormatting({ backgroundColor: color })} />
               <label
-                className="format-custom-color format-custom-fill-color"
-                title="Choose custom background color"
+                className={`format-custom-color format-custom-fill-color${isHexColor(currentFill) && !backgroundPalette.some(([preset]) => sameColor(preset, currentFill)) ? "" : " is-rainbow"}`}
+                title="Custom color (click to pick)"
                 aria-label="Choose custom background color"
                 style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1" }}
               >
@@ -619,8 +636,10 @@ export default function ContextualFormattingToolbar({
                 <input
                   type="color"
                   aria-label="Choose custom background color"
-                  value={/^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : "#e7bfc1"}
+                  value={/^#[0-9a-f]{6}$/i.test(currentFill || "") ? currentFill : (recentCustomColors[0] || "#e7bfc1")}
                   onChange={(event) => applyFormatting({ backgroundColor: event.target.value })}
+                  onInput={(event) => commitRecent(event.target.value, backgroundPalette.map(([c]) => c))}
+                  onPointerDown={endPickSession} onBlur={endPickSession}
                 />
               </label>
             </div>
@@ -883,9 +902,10 @@ export default function ContextualFormattingToolbar({
                   <div className="format-option-label">Background</div>
                   <div className="format-option-row">
                     {FILL_COLORS.map(([color, label]) => <Swatch key={color} color={color} label={label} selected={currentFill === color} fill onClick={() => applyFormatting({ backgroundColor: color })} />)}
-                    <label className="format-custom-color format-custom-fill-color" title="Choose custom background color" aria-label="Choose custom background color">
+                    <RecentCustomSwatches colors={recentCustomColors} presets={FILL_COLORS} current={currentFill} fill onPick={(color) => applyFormatting({ backgroundColor: color })} />
+                    <label className={`format-custom-color format-custom-fill-color${isHexColor(currentFill) && !FILL_COLORS.some(([preset]) => sameColor(preset, currentFill)) ? "" : " is-rainbow"}`} title="Custom color (click to pick)" aria-label="Choose custom background color" style={{ "--custom-color-value": isHexColor(currentFill) ? currentFill : "#e7bfc1" }}>
                       <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-                      <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : "#e7bfc1"} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} />
+                      <input type="color" aria-label="Choose custom background color" value={/^#[0-9a-f]{6}$/i.test(currentFill) ? currentFill : (recentCustomColors[0] || "#e7bfc1")} onChange={(event) => applyFormatting({ backgroundColor: event.target.value })} onInput={(event) => commitRecent(event.target.value, FILL_COLORS.map(([c]) => c))} onPointerDown={endPickSession} onBlur={endPickSession} />
                     </label>
                   </div>
                 </div>

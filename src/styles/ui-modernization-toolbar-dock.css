@@ -1571,12 +1571,26 @@
 .app .contextual-formatting-toolbar .format-option-swatch {
   transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
+.app .contextual-formatting-toolbar .format-option-swatch {
+  position: relative;
+  filter: none !important;
+  opacity: 1 !important;
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 140ms ease !important;
+}
 .app .contextual-formatting-toolbar .format-option-swatch:hover {
-  transform: scale(1.15) !important;
+  transform: scale(1.18) !important;
+  box-shadow: 0 0 0 2px rgb(15 23 42 / 16%) !important;
+  z-index: 2;
 }
 .app .contextual-formatting-toolbar .format-option-swatch.is-selected {
-  box-shadow: 0 0 0 2px var(--format-popover-surface, #fff), 0 0 0 4px #7c6bf0 !important;
-  transform: scale(1.08) !important;
+  box-shadow: 0 0 0 2px var(--format-popover-surface, #fff), 0 0 0 4px #6965db !important;
+  transform: scale(1.12) !important;
+  outline: none !important;
+  z-index: 1;
+}
+.app .contextual-formatting-toolbar .format-option-swatch.is-selected:hover { transform: scale(1.18) !important; z-index: 3; }
+.app .contextual-formatting-toolbar .format-custom-color.is-rainbow {
+  background: conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444);
 }
 .app .contextual-formatting-toolbar .format-option-button {
   transition: all 0.14s ease !important;
@@ -3769,8 +3783,11 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
   border: 1px solid rgb(255 255 255 / 38%) !important; box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
   transition: transform 140ms ease, outline-color 140ms ease, box-shadow 140ms ease;
 }
-.app .sk-tool-color-dot:hover { transform: scale(1.12); }
-.app .sk-tool-color-dot.is-active { outline: 2px solid var(--sk-context-focus); outline-offset: 2px; box-shadow: 0 0 0 4px rgb(155 188 232 / 13%); }
+.app .sk-tool-color-dot:hover { transform: scale(1.18); z-index: 2; box-shadow: 0 0 0 2px rgb(255 255 255 / 28%); background: var(--tool-color); filter: none; opacity: 1; }
+.app.theme-light .sk-tool-color-dot:hover { box-shadow: 0 0 0 2px rgb(15 23 42 / 16%); }
+.app .sk-tool-color-dot.is-active { outline: none; transform: scale(1.12); z-index: 1; box-shadow: 0 0 0 2px #1c1f26, 0 0 0 4px #818cf8; }
+.app.theme-light .sk-tool-color-dot.is-active { box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #6965db; }
+.app .sk-tool-color-swatch.is-rainbow { background: conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444); }
 .app .sk-tool-color-control, .app .sk-tool-choice-trigger, .app .sk-tool-layer-trigger {
   border-color: var(--sk-context-border); border-radius: 8px; background: rgb(255 255 255 / 3%);
 }

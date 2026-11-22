@@ -773,3 +773,80 @@
 
 
 /* Enter/exit animation lives in hud-capsules.css. */
+
+/* ------------------------------------------------------------------------
+   Colour swatches: true colour on hover, tactile scale, crisp selection ring.
+   Root cause of the old "muddy" hover: the generic
+   `.sketchizi-tool-options-dock button:hover { background: rgba(255,255,255,.08) !important }`
+   and `button.is-active { background: #2b2e3b !important }` rules replaced the
+   dot's own `background: var(--tool-color)`. Dots now pin their background and
+   never receive a filter, opacity change or overlay.
+   ------------------------------------------------------------------------ */
+.app .sketchizi-tool-options-dock {
+  --sk-swatch-surface: #1c1f26;
+  --sk-swatch-halo: rgba(255, 255, 255, 0.28);
+  --sk-swatch-ring: #818cf8;
+}
+.app.theme-light .sketchizi-tool-options-dock {
+  --sk-swatch-surface: #ffffff;
+  --sk-swatch-halo: rgba(15, 23, 42, 0.16);
+  --sk-swatch-ring: #6965db;
+}
+
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot {
+  position: relative;
+  z-index: 0;
+  margin: 0 2px !important;
+  background: var(--tool-color) !important;
+  background-color: var(--tool-color) !important;
+  filter: none !important;
+  opacity: 1 !important;
+  transform: scale(1);
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 140ms ease !important;
+}
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot:hover,
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot:focus-visible {
+  background: var(--tool-color) !important;
+  background-color: var(--tool-color) !important;
+  filter: none !important;
+  opacity: 1 !important;
+  transform: scale(1.18) !important;
+  box-shadow: 0 0 0 2px var(--sk-swatch-halo) !important;
+  z-index: 2;
+}
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot.is-active,
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot[aria-pressed="true"] {
+  background: var(--tool-color) !important;
+  background-color: var(--tool-color) !important;
+  color: inherit !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 0 0 2px var(--sk-swatch-surface), 0 0 0 4px var(--sk-swatch-ring) !important;
+  z-index: 1;
+}
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot.is-active:not(:focus-visible),
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot[aria-pressed="true"]:not(:focus-visible) {
+  outline: none !important;
+}
+/* Selected + hovered keeps the ring and grows to the hover size. */
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot.is-active:hover,
+.app .sketchizi-tool-options-dock button.sk-tool-color-dot[aria-pressed="true"]:hover {
+  transform: scale(1.18) !important;
+  box-shadow: 0 0 0 2px var(--sk-swatch-surface), 0 0 0 4px var(--sk-swatch-ring) !important;
+  z-index: 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .sketchizi-tool-options-dock button.sk-tool-color-dot { transition: none !important; }
+}
+
+/* Custom colour picker pill: shows the active custom colour, or a rainbow
+   badge when the current colour is one of the presets. */
+.app .sketchizi-tool-options-dock .sk-tool-color-swatch.is-rainbow {
+  background: conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444);
+}
+.app .sketchizi-tool-options-dock .sk-tool-color-control.has-custom-color {
+  border-color: var(--sk-swatch-ring) !important;
+}
+.app .sketchizi-tool-options-dock .sk-tool-color-control:hover,
+.app .sketchizi-tool-options-dock .sk-tool-color-control:focus-within {
+  border-color: var(--sk-swatch-ring) !important;
+}
