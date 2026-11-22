@@ -47,6 +47,7 @@ import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinit
 import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
+import { hydrateFilesSync, hydrateMissingFromCache } from "./features/workspace/binaryFileCache.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
 import { hasMountableCanvas } from "./features/workspace/tabClose.js";
@@ -555,14 +556,16 @@ function App() {
       cloudSceneReadyRef.current = false;
       cloudSessionRef.current = session;
       setCloudDocumentName(loadedCloudName);
+      // Register binary files BEFORE the scene so the first paint already has
+      // every icon (no gray placeholder boxes).
+      const hydrated = hydrateFilesSync(api, elements, document.files || {});
       api.updateScene({
-        elements,
+        elements: hydrated.elements,
         appState: { ...api.getAppState(), ...sanitizeCloudAppState(document.appState || {}), selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
       api.history?.clear?.();
-      const files = Object.values(document.files || {});
-      if (files.length) api.addFiles?.(files);
+      if (hydrated.missing.length) hydrateMissingFromCache(api, hydrated.missing).catch(() => {});
       setCurrentFileRef.current?.(null);
       setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format });
       applied = true;
@@ -788,14 +791,14 @@ function App() {
     cloudSessionRef.current = snapshot.cloudSession || { active: false, diagramId: "", projectId: "", revision: null, name: "" };
     setCloudSaveState(snapshot.cloudSaveState || { state: "inactive", error: "" });
     setCloudDocumentName(snapshot.cloudDocumentName || snapshot.cloudSession?.name || "Cloud diagram");
+    const hydrated = hydrateFilesSync(api, elements, snapshot.files || {});
     api.updateScene({
-      elements,
+      elements: hydrated.elements,
       appState: { ...api.getAppState(), ...sanitizeTabAppState(snapshot.appState), theme: globalThemeRef.current, selectedElementIds: {}, selectedGroupIds: {}, selectedLinearElement: null },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
     api.history?.clear?.();
-    const files = Object.values(snapshot.files || {});
-    if (files.length) api.addFiles?.(files);
+    if (hydrated.missing.length) hydrateMissingFromCache(api, hydrated.missing).catch(() => {});
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });

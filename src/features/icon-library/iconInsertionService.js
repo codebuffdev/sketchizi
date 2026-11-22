@@ -1,3 +1,4 @@
+import { contentFileId, putCachedFiles } from "../workspace/binaryFileCache.js";
 import { CaptureUpdateAction, convertToExcalidrawElements, restoreElements, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
 import { logger } from "../../logging/logger";
 import { insertAwsResource, isIntelligentAwsResourceIcon } from "../aws-resources/awsResourceService";
@@ -306,9 +307,8 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
       return;
     }
 
-    const fileId = `icon-${icon.id}-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 7)}`;
+    // fileId is derived from the SVG content once it is fetched (see addImage),
+    // so identical icons share one cached file across diagrams and tabs.
 
     // Use the Eraser SVG URL itself as the Excalidraw file source.
     // The previous version wrapped the remote SVG inside a data: SVG. Browsers
@@ -318,16 +318,17 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
     // correct path and preserves the real Eraser artwork.
     const imageSource = icon.src;
 
-    const addImage = (dataURL) => {
-      api.addFiles([
-        {
-          id: fileId,
-          dataURL,
-          mimeType: "image/svg+xml",
-          created: Date.now(),
-          lastRetrieved: Date.now(),
-        },
-      ]);
+    const addImage = (dataURL, svgText) => {
+      const fileId = contentFileId("icon", svgText);
+      const fileData = {
+        id: fileId,
+        dataURL,
+        mimeType: "image/svg+xml",
+        created: Date.now(),
+        lastRetrieved: Date.now(),
+      };
+      api.addFiles([fileData]);
+      putCachedFiles({ [fileId]: fileData }).catch(() => {});
 
       const elements = convertToExcalidrawElements([
         {
@@ -337,6 +338,7 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
           width,
           height,
           fileId,
+          status: "saved",
           customData: {
             diagramIcon: true,
             iconId: icon.id,
@@ -359,7 +361,7 @@ export function createIconInserter({ apiRef, gridEnabled, gridSize, markRecently
       })
       .then((svg) => {
         const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
-        addImage(dataURL);
+        addImage(dataURL, svg);
       })
       .catch((error) => {
         logger.error("Could not load library icon", error, { category: "canvas", operation: "icon-insert", iconSource: icon.source || "unknown", iconId: icon.id });

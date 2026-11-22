@@ -1,3 +1,4 @@
+import { putCachedFiles } from "./binaryFileCache.js";
 const EMPTY_CANVAS_MESSAGE = "This canvas is empty. Add at least one element before saving to Cloud Workspace.";
 
 // Excalidraw appState contains runtime-only values (for example, collaborators
@@ -47,8 +48,14 @@ export function createCloudDocument({
     }
   }
 
+  // Keep the local binary cache warm so reopening this diagram is instant.
+  putCachedFiles(files).catch(() => {});
+
   return {
-    elements: liveElements,
+    elements: liveElements.map((element) =>
+      element.type === "image" && files[element.fileId] && element.status !== "saved"
+        ? { ...element, status: "saved" }
+        : element),
     appState: sanitizeCloudAppState(appState || api.getAppState?.() || {}),
     files,
     metadata: metadata.metadata || {},
