@@ -1626,3 +1626,136 @@
   display: block;
   flex: 0 0 auto;
 }
+
+/* ==========================================================================
+   Workspace drawer v2 — shell, theme tokens and dividers.
+   Scoped to the hamburger drawer (the .dropdown-menu that hosts the injected
+   [data-sketchizi-custom-menu-block]). The long selector prefix deliberately
+   out-ranks the earlier layered !important rules instead of editing them.
+   Component rules (tiles, sections, rows, cards, utility rows) live in
+   responsive-menu.css.
+   ========================================================================== */
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+  /* Light theme tokens */
+  --sk-bg: rgba(255, 255, 255, 0.96);
+  --sk-border: rgba(15, 23, 42, 0.1);
+  --sk-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
+  --sk-hairline: rgba(15, 23, 42, 0.08);
+  --sk-text: #1e2433;
+  --sk-muted: #64748b;
+  --sk-muted-strong: #475569;
+  --sk-tile-bg: #f8fafc;
+  --sk-tile-border: rgba(15, 23, 42, 0.08);
+  --sk-tile-border-hover: rgba(15, 23, 42, 0.16);
+  --sk-hover: rgba(15, 23, 42, 0.05);
+  --sk-icon-bg: #e8ecf3;
+  --sk-chip: rgba(15, 23, 42, 0.06);
+  --sk-dash: rgba(15, 23, 42, 0.18);
+  --sk-active-bg: #eef2ff;
+  --sk-active-border: rgba(129, 140, 248, 0.4);
+  --sk-accent: #6366f1;
+  --sk-accent-strong: #4f46e5;
+  --sk-amber-bg: rgba(245, 158, 11, 0.16);
+  --sk-amber-fg: #b45309;
+  --sk-indigo-bg: rgba(99, 102, 241, 0.12);
+  --sk-indigo-fg: #4f46e5;
+  --sk-kbd-bg: rgba(15, 23, 42, 0.05);
+  --sk-kbd-border: rgba(15, 23, 42, 0.12);
+  --sk-rose: #dc2626;
+  --sk-rose-bg: rgba(244, 63, 94, 0.1);
+
+  box-sizing: border-box !important;
+  width: 316px !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 24px) !important;
+  padding: 0 !important;
+  border: 1px solid var(--sk-border) !important;
+  border-radius: 16px !important;
+  background: var(--sk-bg) !important;
+  color: var(--sk-text) !important;
+  box-shadow: var(--sk-shadow) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+html[data-sketchizi-theme="dark"] body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+  /* Dark theme tokens */
+  --sk-bg: rgba(25, 28, 36, 0.96);
+  --sk-border: rgba(255, 255, 255, 0.1);
+  --sk-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+  --sk-hairline: rgba(255, 255, 255, 0.08);
+  --sk-text: #e9edf6;
+  --sk-muted: #9aa6bb;
+  --sk-muted-strong: #b6c0d2;
+  --sk-tile-bg: rgba(255, 255, 255, 0.03);
+  --sk-tile-border: rgba(255, 255, 255, 0.08);
+  --sk-tile-border-hover: rgba(255, 255, 255, 0.18);
+  --sk-hover: rgba(255, 255, 255, 0.06);
+  --sk-icon-bg: rgba(255, 255, 255, 0.07);
+  --sk-chip: rgba(255, 255, 255, 0.08);
+  --sk-dash: rgba(255, 255, 255, 0.16);
+  --sk-active-bg: rgba(99, 102, 241, 0.15);
+  --sk-active-border: rgba(129, 140, 248, 0.4);
+  --sk-amber-bg: rgba(245, 158, 11, 0.18);
+  --sk-amber-fg: #fbbf24;
+  --sk-indigo-bg: rgba(99, 102, 241, 0.2);
+  --sk-indigo-fg: #a5b4fc;
+  --sk-kbd-bg: rgba(255, 255, 255, 0.07);
+  --sk-kbd-border: rgba(255, 255, 255, 0.12);
+  --sk-rose: #f87171;
+  --sk-rose-bg: rgba(244, 63, 94, 0.1);
+}
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) > .dropdown-menu-container {
+  padding: 0 0 8px !important;
+  border-radius: 16px !important;
+}
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-native-settings-section {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-drawer-divider,
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) [role="separator"],
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) hr {
+  height: 1px;
+  margin: 0 14px !important;
+  padding: 0;
+  border: 0 !important;
+  background: var(--sk-hairline) !important;
+}
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 14px 8px;
+}
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-drawer-head .sketchizi-native-settings-title {
+  margin: 0 !important;
+  color: var(--sk-muted) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1.3 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap;
+}
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-drawer-tag {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--sk-chip);
+  color: var(--sk-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+@media (max-width: 620px) {
+  html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) {
+    top: 8px !important;
+    left: 8px !important;
+    width: 316px !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+}

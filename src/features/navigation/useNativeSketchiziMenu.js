@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { describeClosedAt } from "../workspace/closedTabs.js";
+import { countLiveElements, describeClosedAt } from "../workspace/closedTabs.js";
 import { getRecentFileActivityLabel, getRecentFileAvailability, getRecentFileOriginLabel, getRecentFileTypeLabel } from "../files/recentFilePresentation.js";
 import { getRecentFolderActivityLabel, getRecentFolderAvailability, getRecentFolderTypeLabel } from "../files/recentFolderPresentation.js";
 
@@ -11,6 +11,7 @@ export function useNativeSketchiziMenu({
   currentFolderFiles,
   recentFiles,
   recentFolders,
+  canvasMode = "infinite",
   closedTabs = [],
   reopenClosedTab = () => {},
   deleteClosedTab = () => {},
@@ -24,6 +25,9 @@ export function useNativeSketchiziMenu({
   // they read the latest closed-tab actions through a ref instead of a closure.
   const closedTabActionsRef = useRef(null);
   closedTabActionsRef.current = { reopenClosedTab, deleteClosedTab, clearClosedTabs };
+  // Handlers are bound once per injected node; keep the lists they report on fresh.
+  const menuDataRef = useRef({ recentFiles: [], closedTabs: [] });
+  menuDataRef.current = { recentFiles, closedTabs };
   useEffect(() => {
     // Canvas color swatches are intentionally disabled: the global Day/Night
     // switch controls both application chrome and Excalidraw's canvas.
@@ -82,6 +86,15 @@ export function useNativeSketchiziMenu({
     const githubUrl = "https://github.com/codebuffdev";
     let frame = 0;
     const escapeHtml = (value) => String(value).replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
+    const svgIcon = (inner, size = 15) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+    const fileIcon = svgIcon('<path d="M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1-1.5Z"/><path d="M13.5 3.5V8H18"/>', 14);
+    const clockIcon = svgIcon('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', 14);
+    // Guarded writers: the MutationObserver re-runs this routine on every DOM change,
+    // so only touch nodes whose value actually changed or the drawer would loop.
+    const setText = (node, value) => { const next = String(value); if (node && node.textContent !== next) node.textContent = next; };
+    const setAttr = (node, name, value) => { if (node && node.getAttribute(name) !== value) node.setAttribute(name, value); };
+    const setHidden = (node, hidden) => { if (node && node.hidden !== hidden) node.hidden = hidden; };
+    const shortActivity = (label) => String(label || "").replace(/^(Opened|Added)\s+/, "");
     const constrainCanvasBackgroundMenu = () => {
       // The dropdown is anchored to the toolbar, so a viewport-wide max-height
       // calculation that subtracts a guessed header height can still leave the
@@ -193,6 +206,29 @@ export function useNativeSketchiziMenu({
         if ((node.tagName === "BUTTON" || node.getAttribute?.("role") === "button") && text === "Install") node.remove();
       });
 
+      // Canvas utility rows: relabel to the drawer's wording, tag them for styling, and
+      // turn their shortcut hint into a <kbd> badge. Only text/attributes change, never handlers.
+      const utilLabels = [
+        { key: "export", match: /^export image(\.\.\.)?$/i, label: "Export Image", testId: "image-export-button" },
+        { key: "find", match: /^find on canvas$/i, label: "Find on Canvas", testId: "search-menu-button" },
+        { key: "reset", match: /^reset (the )?canvas$/i, label: "Reset Canvas", testId: "clear-canvas-button" },
+      ];
+      document.querySelectorAll(".dropdown-menu:has([data-sketchizi-custom-menu-block]) .dropdown-menu-item, .dropdown-menu:has([data-sketchizi-custom-menu-block]) button[data-testid]").forEach((row) => {
+        const textNode = row.querySelector(".dropdown-menu-item__text") || row;
+        const raw = textNode.textContent?.replace(/\s+/g, " ").trim() || "";
+        const shortcutNode = row.querySelector(".dropdown-menu-item__shortcut");
+        const labelOnly = shortcutNode ? raw.replace(shortcutNode.textContent?.replace(/\s+/g, " ").trim() || "", "").trim() : raw;
+        const util = utilLabels.find((entry) => entry.match.test(labelOnly) || row.getAttribute("data-testid") === entry.testId);
+        if (!util) return;
+        setAttr(row, "data-sketchizi-util", util.key);
+        const labelNode = row.querySelector(".dropdown-menu-item__text");
+        if (labelNode && labelNode.children.length === 0 && labelNode.textContent.trim() !== util.label) labelNode.textContent = util.label;
+        if (shortcutNode && !shortcutNode.querySelector("kbd")) {
+          const text = shortcutNode.textContent?.replace(/\s+/g, " ").trim();
+          if (text) { const kbd = document.createElement("kbd"); kbd.textContent = text; shortcutNode.textContent = ""; shortcutNode.append(kbd); }
+        }
+      });
+
       // Keep only file/folder management in the hamburger. Collaboration,
       // architecture validation, and theme selection already live in the app
       // header, so duplicating them here wastes space and creates ambiguity.
@@ -204,7 +240,7 @@ export function useNativeSketchiziMenu({
           if (node.children.length !== 0) return false;
           const label = node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "";
           return label === "export image..." || label === "export image" ||
-            label === "find on canvas" || label === "reset the canvas";
+            label === "find on canvas" || label === "reset the canvas" || label === "reset canvas";
         });
         const menuParent = [...document.querySelectorAll(".dropdown-menu-container")]
           .find(hasNativeMenuAction);
@@ -214,17 +250,16 @@ export function useNativeSketchiziMenu({
           const recentSection = document.createElement("div");
           recentSection.dataset.sketchiziRecentFilesMenu = "true";
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
-          recentSection.innerHTML = `<div class="sketchizi-native-settings-title">Workspace</div>
-<div class="sketchizi-file-menu-actions sketchizi-canvas-menu-actions" role="group" aria-label="Canvas creation">
-<button type="button" class="sketchizi-recent-save" data-sketchizi-canvas-mode="infinite"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2.2-5.8 5.2-5.8 9 0s6.8 5.8 9 0c-2.2-5.8-5.2-5.8-9 0S5.2 17.8 3 12Z"/></svg></span> Canvas</button>
-<button type="button" class="sketchizi-folder-action" data-sketchizi-canvas-mode="pages"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg></span> Pages</button>
-</div>
-<div class="sketchizi-file-menu-actions sketchizi-file-menu-secondary-actions" role="group" aria-label="File actions">
-<button type="button" class="sketchizi-folder-action" data-sketchizi-open-workspace><span aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.5a3.5 3.5 0 0 0-3.7-3.5 5.5 5.5 0 0 0-10.6-1.3A3.8 3.8 0 0 0 6.5 19H19a3 3 0 0 0 1-2.5Z"/></svg></span> Cloud Files</button>
-<button type="button" class="sketchizi-folder-action" data-sketchizi-open-file><span aria-hidden="true">↗</span> Open file</button>
+          recentSection.innerHTML = `<div class="sketchizi-drawer-head"><div class="sketchizi-native-settings-title">Workspace</div><span class="sketchizi-drawer-tag">Sketchizi</span></div>
+<div class="sketchizi-ws-tiles" role="group" aria-label="Workspace actions">
+<button type="button" class="sketchizi-ws-tile" data-sketchizi-canvas-mode="infinite" aria-pressed="false"><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12c2.2-5.8 5.2-5.8 9 0s6.8 5.8 9 0c-2.2-5.8-5.2-5.8-9 0S5.2 17.8 3 12Z"/></svg></span><span class="sketchizi-ws-tile-label">Canvas</span></button>
+<button type="button" class="sketchizi-ws-tile" data-sketchizi-canvas-mode="pages" aria-pressed="false"><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg></span><span class="sketchizi-ws-tile-label">Pages</span></button>
+<button type="button" class="sketchizi-ws-tile" data-sketchizi-open-workspace><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16.5a3.5 3.5 0 0 0-3.7-3.5 5.5 5.5 0 0 0-10.6-1.3A3.8 3.8 0 0 0 6.5 19H19a3 3 0 0 0 1-2.5Z"/></svg></span><span class="sketchizi-ws-tile-label">Cloud Files</span></button>
+<button type="button" class="sketchizi-ws-tile" data-sketchizi-open-file><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7.5Z"/></svg></span><span class="sketchizi-ws-tile-label">Open File</span></button>
 </div>
 <div class="sketchizi-file-menu-announcement" data-file-menu-announcement role="status" aria-live="polite" aria-atomic="true"></div>
-<section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-files-panel"><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown" data-closed-tabs-menu><summary aria-controls="sketchizi-closed-tabs-panel"><span>Local drafts · recently closed</span><span class="sketchizi-recent-count" data-closed-tabs-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-closed-tabs-panel" class="sketchizi-recent-list" data-closed-tabs-list></div><button type="button" class="sketchizi-recent-clear" data-clear-closed-tabs>Delete all local drafts</button></details></section>`;
+<hr class="sketchizi-drawer-divider">
+<section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><div class="sketchizi-sec" data-sec="recent"><div class="sketchizi-sec-head"><button type="button" class="sketchizi-sec-toggle" aria-expanded="true" aria-controls="sketchizi-recent-files-panel" data-sec-toggle><span class="sketchizi-sec-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span><span class="sketchizi-sec-title">Recent files</span><span class="sketchizi-sec-count" data-recent-files-count data-has-items="false">0</span></button><button type="button" class="sketchizi-sec-action" data-clear-recent-files hidden>Clear</button></div><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list sketchizi-sec-panel" data-recent-list></div></div><div class="sketchizi-recent-dropdown sketchizi-sec" data-sec="drafts" data-closed-tabs-menu><div class="sketchizi-sec-head"><button type="button" class="sketchizi-sec-toggle" aria-expanded="true" aria-controls="sketchizi-closed-tabs-panel" data-sec-toggle><span class="sketchizi-sec-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span><span class="sketchizi-sec-title">Local drafts</span><span class="sketchizi-sec-count" data-closed-tabs-count data-has-items="false">0</span></button><button type="button" class="sketchizi-sec-action" data-clear-closed-tabs hidden>Delete all</button></div><div id="sketchizi-closed-tabs-panel" class="sketchizi-recent-list sketchizi-sec-panel" data-closed-tabs-list></div></div></section>`;
           // Remove only the horizontal rules called out in the menu mockup;
           // retain the existing rows, content, and spacing.
           recentSection.style.setProperty("border-top", "0", "important");
@@ -240,7 +275,7 @@ export function useNativeSketchiziMenu({
           [...menuParent.querySelectorAll("a")].filter((link) => /^(github|connect with coder)$/i.test(link.textContent?.replace(/\s+/g, " ").trim() || "")).forEach((link) => link.remove());
           const communitySection = document.createElement("section");
           communitySection.className = "sketchizi-native-settings-section sketchizi-community-section";
-          communitySection.innerHTML = `<a class="sketchizi-sidebar-community-link" href="/reviews" data-sketchizi-review-link><span class="sketchizi-review-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 14.6 8l5.1 1.1-3.5 3.8.5 5.2-4.7-2.1-4.7 2.1.5-5.2-3.5-3.8L9.4 8 12 3.5Z"/><path d="m9.5 11.7 1.7 1.7 3.5-3.6"/></svg></span><span>Drop a Review</span><span aria-hidden="true">›</span></a><a class="sketchizi-sidebar-community-link" href="${githubUrl}" target="_blank" rel="noreferrer noopener" data-sketchizi-coder-link><span class="sketchizi-git-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M18 17v-2a4 4 0 0 0-4-4H10a4 4 0 0 1-4-4"/></svg></span><span>Connect with Coder</span><span aria-hidden="true">↗</span></a>`;
+          communitySection.innerHTML = `<hr class="sketchizi-drawer-divider"><div class="sketchizi-community-cards"><a class="sketchizi-sidebar-community-link sketchizi-community-card" href="/reviews" data-sketchizi-review-link><span class="sketchizi-card-badge sketchizi-review-icon" data-tone="amber" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 14.6 8.6l5.6.8-4.1 4 1 5.6L12 16.3 6.9 19l1-5.6-4.1-4 5.6-.8L12 3.5Z"/></svg></span><span class="sketchizi-card-label">Drop a Review</span><span class="sketchizi-card-trail" aria-hidden="true">›</span></a><a class="sketchizi-sidebar-community-link sketchizi-community-card" href="${githubUrl}" target="_blank" rel="noreferrer noopener" data-sketchizi-coder-link><span class="sketchizi-card-badge sketchizi-git-icon" data-tone="indigo" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M18 17v-2a4 4 0 0 0-4-4H10a4 4 0 0 1-4-4"/></svg></span><span class="sketchizi-card-label">Connect with Coder</span><span class="sketchizi-card-trail" aria-hidden="true">↗</span></a></div><hr class="sketchizi-drawer-divider">`;
           communitySection.style.setProperty("border-top", "0", "important");
           communitySection.style.setProperty("border-bottom", "0", "important");
           customBlock.append(communitySection);
@@ -266,7 +301,7 @@ export function useNativeSketchiziMenu({
         if (!menuRoot) return;
 
         const resetLabel = [...menuRoot.querySelectorAll("*")].find(
-          (node) => node.children.length === 0 && node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() === "reset the canvas"
+          (node) => node.children.length === 0 && /^reset (the )?canvas$/.test(node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "")
         );
         if (!resetLabel) return;
 
@@ -314,6 +349,18 @@ export function useNativeSketchiziMenu({
       };
       bind(recentMenu?.querySelector("[data-sketchizi-open-folder]"), "bound", () => fileActionsRef.current.openFolderFromDisk?.());
       bind(recentMenu?.querySelector("[data-sketchizi-open-workspace]"), "bound", openCloudWorkspace);
+      recentMenu?.querySelectorAll("[data-sketchizi-canvas-mode]").forEach((tile) => {
+        const active = tile.dataset.sketchiziCanvasMode === canvasMode;
+        setAttr(tile, "data-active", String(active));
+        setAttr(tile, "aria-pressed", String(active));
+      });
+      recentMenu?.querySelectorAll("[data-sec-toggle]").forEach((toggle) => bind(toggle, "bound", () => {
+        const open = toggle.getAttribute("aria-expanded") !== "true";
+        toggle.setAttribute("aria-expanded", String(open));
+        const panel = document.getElementById(toggle.getAttribute("aria-controls") || "");
+        if (panel) panel.hidden = !open;
+        toggle.closest("[data-sec]")?.setAttribute("data-open", String(open));
+      }));
       const currentFolderNode = recentMenu?.querySelector("[data-current-folder]");
       if (currentFolderNode) {
         currentFolderNode.textContent = currentFolder?.name ? `Folder: ${currentFolder.name}` : "No folder selected";
@@ -430,17 +477,24 @@ export function useNativeSketchiziMenu({
       }
 
       const recentFilesCount = recentMenu?.querySelector("[data-recent-files-count]");
-      if (recentFilesCount) recentFilesCount.textContent = `${recentFiles.length} ${recentFiles.length === 1 ? "file" : "files"}`;
+      if (recentFilesCount) { setText(recentFilesCount, recentFiles.length); setAttr(recentFilesCount, "data-has-items", String(recentFiles.length > 0)); }
+      setHidden(recentMenu?.querySelector("[data-clear-recent-files]"), recentFiles.length === 0);
       const closedCount = recentMenu?.querySelector("[data-closed-tabs-count]");
-      if (closedCount) closedCount.textContent = `${closedTabs.length} ${closedTabs.length === 1 ? "draft" : "drafts"}`;
+      if (closedCount) { setText(closedCount, closedTabs.length); setAttr(closedCount, "data-has-items", String(closedTabs.length > 0)); }
+      setHidden(recentMenu?.querySelector("[data-clear-closed-tabs]"), closedTabs.length === 0);
       const closedList = recentMenu?.querySelector("[data-closed-tabs-list]");
       if (closedList) {
         const signature = JSON.stringify(closedTabs.map((item) => [item.closedId, item.name, item.closedAt]));
         if (closedList.dataset.signature !== signature) {
           closedList.dataset.signature = signature;
           closedList.innerHTML = closedTabs.length
-            ? closedTabs.map((item) => `<div class="sketchizi-recent-row"><button type="button" class="sketchizi-recent-item" data-closed-tab-id="${escapeHtml(item.closedId)}" title="Reopen ${escapeHtml(item.name)} as a browser draft"><span class="sketchizi-recent-name">${escapeHtml(item.name)}</span><span class="sketchizi-recent-meta"><small class="sketchizi-recent-type">Browser draft</small><small class="sketchizi-recent-activity">${escapeHtml(describeClosedAt(item))}</small></span></button><button type="button" class="sketchizi-recent-remove" data-remove-closed-tab="${escapeHtml(item.closedId)}" aria-label="Delete draft ${escapeHtml(item.name)}" title="Delete this draft permanently">×</button></div>`).join("")
-            : `<div class="sketchizi-recent-empty">No closed canvases yet. Closed tabs are kept here as local drafts.</div>`;
+            ? closedTabs.map((item) => {
+                const name = escapeHtml(item.name);
+                const shapes = countLiveElements(item);
+                const meta = `${shapes} ${shapes === 1 ? "shape" : "shapes"} · ${describeClosedAt(item)}`;
+                return `<div class="sketchizi-recent-row sketchizi-draft-row"><div class="sketchizi-draft-info" title="${name}"><span class="sketchizi-recent-name">${name}</span><span class="sketchizi-draft-meta">${escapeHtml(meta)}</span></div><button type="button" class="sketchizi-reopen-pill" data-closed-tab-id="${escapeHtml(item.closedId)}" title="Reopen ${name} as a browser draft" aria-label="Reopen ${name} as a browser draft">Reopen</button><button type="button" class="sketchizi-recent-remove" data-remove-closed-tab="${escapeHtml(item.closedId)}" aria-label="Delete draft ${name}" title="Delete this draft permanently">×</button></div>`;
+              }).join("")
+            : `<div class="sketchizi-recent-empty sketchizi-empty-hint"><span aria-hidden="true">${clockIcon}</span><span>Closed canvas tabs are kept here as drafts</span></div>`;
         }
         bind(closedList, "bound", (event) => {
           const remove = event.target.closest?.("[data-remove-closed-tab]");
@@ -452,7 +506,11 @@ export function useNativeSketchiziMenu({
           }
         });
       }
-      bind(recentMenu?.querySelector("[data-clear-closed-tabs]"), "bound", () => closedTabActionsRef.current.clearClosedTabs());
+      bind(recentMenu?.querySelector("[data-clear-closed-tabs]"), "bound", () => {
+        const count = menuDataRef.current.closedTabs.length;
+        closedTabActionsRef.current.clearClosedTabs();
+        announceFileMenuStatus(count ? `Deleted ${count} local ${count === 1 ? "draft" : "drafts"}.` : "Local drafts is already empty.");
+      });
       const recentFoldersCount = recentMenu?.querySelector("[data-recent-folders-count]");
       if (recentFoldersCount) recentFoldersCount.textContent = `${recentFolders.length} ${recentFolders.length === 1 ? "folder" : "folders"}`;
       const recentList = recentMenu?.querySelector("[data-recent-list]");
@@ -466,16 +524,16 @@ export function useNativeSketchiziMenu({
                 const originLabel = getRecentFileOriginLabel(item);
                 const activityLabel = getRecentFileActivityLabel(item);
                 const status = getRecentFileAvailability(item);
-                const title = [typeLabel, originLabel, activityLabel, status?.message].filter(Boolean).join(" · ");
+                const title = [item.name, typeLabel, originLabel, activityLabel, status?.message].filter(Boolean).join(" · ");
                 const rowStatus = item.availability || "available";
-                return `<div class="sketchizi-recent-row" data-recent-availability="${escapeHtml(rowStatus)}"><button type="button" class="sketchizi-recent-item" data-recent-id="${escapeHtml(item.id)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(`${item.name}, ${typeLabel}, ${originLabel}, ${activityLabel}${status ? `, ${status.label}` : ""}`)}"><span class="sketchizi-recent-name">${escapeHtml(item.name)}</span><span class="sketchizi-recent-meta"><small class="sketchizi-recent-type">${escapeHtml(typeLabel)}</small><small class="sketchizi-recent-origin">${escapeHtml(originLabel)}</small><small class="sketchizi-recent-activity">${escapeHtml(activityLabel)}</small>${status ? `<small class="sketchizi-recent-status" role="status">${escapeHtml(status.label)}</small>` : ""}</span></button><button type="button" class="sketchizi-recent-remove" data-remove-recent-file="${escapeHtml(item.id)}" aria-label="Remove ${escapeHtml(item.name)} from Recent files" title="Remove from Recent files">×</button></div>`;
+                return `<div class="sketchizi-recent-row" data-recent-availability="${escapeHtml(rowStatus)}"><button type="button" class="sketchizi-recent-item sketchizi-row-main" data-recent-id="${escapeHtml(item.id)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(`${item.name}, ${typeLabel}, ${originLabel}, ${activityLabel}${status ? `, ${status.label}` : ""}`)}"><span class="sketchizi-row-icon" aria-hidden="true">${fileIcon}</span><span class="sketchizi-recent-name">${escapeHtml(item.name)}</span>${status ? `<small class="sketchizi-recent-status" role="status">${escapeHtml(status.label)}</small>` : ""}<small class="sketchizi-recent-activity">${escapeHtml(shortActivity(activityLabel))}</small></button><button type="button" class="sketchizi-recent-remove" data-remove-recent-file="${escapeHtml(item.id)}" aria-label="Remove ${escapeHtml(item.name)} from Recent files" title="Remove from Recent files">×</button></div>`;
               }).join("")
-            : `<div class="sketchizi-recent-empty">No recent files yet. Open or save a drawing to see it here.</div>`;
+            : `<div class="sketchizi-recent-empty sketchizi-empty-hint"><span aria-hidden="true">${clockIcon}</span><span>No recent files yet</span></div>`;
         }
         bind(recentList, "bound", (event) => {
           const remove = event.target.closest?.("[data-remove-recent-file]");
           if (remove) {
-            const item = recentFiles.find((entry) => entry.id === remove.dataset.removeRecentFile);
+            const item = menuDataRef.current.recentFiles.find((entry) => entry.id === remove.dataset.removeRecentFile);
             fileActionsRef.current.removeRecentFile?.(remove.dataset.removeRecentFile);
             announceFileMenuStatus(item ? `Removed ${item.name} from Recent files.` : "Removed item from Recent files.");
             recentMenu?.querySelector("[data-clear-recent-files]")?.focus();
@@ -483,13 +541,13 @@ export function useNativeSketchiziMenu({
           }
           const button = event.target.closest?.("[data-recent-id]");
           if (button && !button.disabled) {
-            const item = recentFiles.find((entry) => entry.id === button.dataset.recentId);
+            const item = menuDataRef.current.recentFiles.find((entry) => entry.id === button.dataset.recentId);
             runFileMenuOperation(button, () => fileActionsRef.current.openRecentFile?.(button.dataset.recentId), item?.name || "recent drawing");
           }
         });
       }
       bind(recentMenu?.querySelector("[data-clear-recent-files]"), "bound", () => {
-        const count = recentFiles.length;
+        const count = menuDataRef.current.recentFiles.length;
         fileActionsRef.current.clearRecentFiles?.();
         announceFileMenuStatus(count ? `Cleared ${count} ${count === 1 ? "file" : "files"} from Recent files.` : "Recent files is already empty.");
       });
@@ -549,5 +607,5 @@ export function useNativeSketchiziMenu({
       window.visualViewport?.removeEventListener("resize", scheduleCleanup);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, openCloudWorkspace, recentFiles, recentFolders, closedTabs, refreshCurrentFolderFiles, useThemeDefaultBackground]);
+  }, [canvasMode, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, openCloudWorkspace, recentFiles, recentFolders, closedTabs, refreshCurrentFolderFiles, useThemeDefaultBackground]);
 }
