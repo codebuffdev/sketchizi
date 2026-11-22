@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../navigation/themePreference.js";
-import { workspaceClient } from "./workspaceClient.js";
+import { workspaceClient, writeWorkspaceCache } from "./workspaceClient.js";
 import { findDuplicateDiagramName, readDiagramRows } from "./diagramNames.js";
 import { WORKSPACE_GRID_SORTS, findLastOpenedItem, formatWorkspaceDate as dateLabel, mergeWorkspaceActivity, recordWorkspaceItemOpened, sortWorkspaceDiagrams, sortWorkspaceRecentlyUsed } from "./workspacePresentation.js";
 import {
@@ -152,6 +152,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     try {
       const result = await workspaceClient.listProjects();
       const rows = Array.isArray(result) ? result : result?.projects || [];
+      writeWorkspaceCache({ projects: rows.filter((row) => row?.id) });
       setProjects(sortWorkspaceRecentlyUsed(mergeWorkspaceActivity(rows)));
       setActiveId((current) => rows.some((p) => p.id === preferred) ? preferred : rows.some((p) => p.id === current) ? current : rows[0]?.id || "");
     } catch (e) { setError(e.message || "Could not load cloud projects."); }

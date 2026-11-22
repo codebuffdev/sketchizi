@@ -7,11 +7,55 @@ function timeoutSignal(timeout = REQUEST_TIMEOUT_MS) {
   return AbortSignal.timeout(timeout);
 }
 
+const CACHE_KEY = "sketchizi.workspace.cache.v1";
+
 function requestFailure(error, fallback) {
   if (error?.name === "TimeoutError" || error?.name === "AbortError") {
-    return new Error("The Cloud Workspace request timed out. Check your connection and whether the diagram appeared in Cloud Workspace before trying again.");
+    const timeoutError = new Error("The Cloud Workspace request timed out. Check your connection and whether the diagram appeared in Cloud Workspace before trying again.");
+    timeoutError.code = "workspace_timeout";
+    return timeoutError;
   }
   return error instanceof Error ? error : new Error(fallback);
+}
+
+/** True for timeouts and offline failures, never for HTTP errors. */
+export function isWorkspaceTimeout(error) {
+  return error?.code === "workspace_timeout" || error?.name === "TimeoutError" || error?.name === "AbortError" || error instanceof TypeError;
+}
+
+/** True for a signed-out / expired session (HTTP 401). */
+export function isWorkspaceUnauthorized(error) {
+  return error?.status === 401 || /unauthori[sz]ed/i.test(String(error?.message || ""));
+}
+
+/**
+ * Stale-while-revalidate snapshot: { projects, chapters: { [projectId]: rows[] }, savedAt }.
+ * Storage can be blocked or full, so every access is guarded.
+ */
+export function readWorkspaceCache() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(CACHE_KEY) || "null");
+    if (parsed && Array.isArray(parsed.projects)) {
+      return { projects: parsed.projects, chapters: parsed.chapters && typeof parsed.chapters === "object" ? parsed.chapters : {}, savedAt: parsed.savedAt || 0 };
+    }
+  } catch { /* Missing or corrupt cache. */ }
+  return { projects: [], chapters: {}, savedAt: 0 };
+}
+
+export function writeWorkspaceCache(patch) {
+  try {
+    const current = readWorkspaceCache();
+    const next = {
+      projects: patch.projects || current.projects,
+      chapters: patch.chapters ? { ...current.chapters, ...patch.chapters } : current.chapters,
+      savedAt: Date.now(),
+    };
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(next));
+  } catch { /* Quota or privacy mode: the cache is optional. */ }
+}
+
+export function clearWorkspaceCache() {
+  try { window.localStorage.removeItem(CACHE_KEY); } catch { /* Ignore. */ }
 }
 
 async function getCsrfHeaders() {
@@ -44,18 +88,25 @@ async function request(path, { method = "GET", body, headers = {}, timeout } = {
   if (!["GET", "HEAD"].includes(method)) {
     Object.entries(await getCsrfHeaders()).forEach(([key, value]) => requestHeaders.set(key, value));
   }
+  // Reads are idempotent, so one automatic retry on a transient timeout is safe.
+  // Writes are never retried: a timed-out write may still have been applied.
+  const attempts = method === "GET" ? 2 : 1;
   let response;
-  try {
-    response = await fetch(`${PREFIX}${path}`, {
-      method,
-      credentials: "same-origin",
-      cache: "no-store",
-      headers: requestHeaders,
-      body: serialized,
-      signal: timeoutSignal(timeout),
-    });
-  } catch (error) {
-    throw requestFailure(error, "Cloud Workspace is temporarily unavailable.");
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      response = await fetch(`${PREFIX}${path}`, {
+        method,
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: requestHeaders,
+        body: serialized,
+        signal: timeoutSignal(timeout),
+      });
+      break;
+    } catch (error) {
+      const failure = requestFailure(error, "Cloud Workspace is temporarily unavailable.");
+      if (attempt >= attempts || failure.code !== "workspace_timeout") throw failure;
+    }
   }
   if (!response.ok) {
     const payload = await response.json().catch(() => null);

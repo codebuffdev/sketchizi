@@ -1964,3 +1964,40 @@ html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .
   .workspace-popover { animation: workspace-popover-in 140ms ease-out; }
 }
 @keyframes workspace-popover-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Quick Workspace popover: signed-out card, cache chip, project selector ---------- */
+.workspace-popover-auth { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 6px 6px; text-align: center; }
+.workspace-popover-auth-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--wp-soft); color: var(--wp-muted); }
+.workspace-popover-auth strong { font-size: 13.5px; font-weight: 700; }
+.workspace-popover-auth p { margin: 0 0 6px; color: var(--wp-muted); font-size: 12px; line-height: 1.4; }
+.workspace-popover-auth-primary { width: 100%; height: 36px; }
+.workspace-popover-link { border: 0; background: transparent; padding: 6px; color: var(--wp-muted) !important; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.workspace-popover-link:hover { color: var(--wp-text) !important; }
+.workspace-popover-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid rgb(245 158 11 / 35%); border-radius: 10px; background: rgb(245 158 11 / 12%); color: #92400e; font-size: 12.5px; font-weight: 600; }
+.workspace-popover.is-dark .workspace-popover-banner { color: #fcd34d; }
+.workspace-popover-banner button { flex: 0 0 auto; height: 26px; padding: 0 12px; border: 1px solid currentColor; border-radius: 999px; background: transparent; font-size: 12px; font-weight: 700; }
+.workspace-popover-chip-row { display: flex; align-items: center; gap: 6px; }
+.workspace-popover-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--wp-soft); color: var(--wp-muted); font-size: 11px; font-weight: 600; }
+.workspace-popover-chip.is-action { border: 1px solid var(--wp-border); background: transparent; color: var(--wp-text); }
+.workspace-popover-chip.is-action:hover { background: var(--wp-soft); }
+.workspace-popover-selector { position: relative; width: 100%; }
+.workspace-popover-selector-trigger { display: flex; align-items: center; gap: 8px; width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--wp-border); border-radius: 11px; background: var(--wp-soft); text-align: left; }
+.workspace-popover-selector-trigger:hover,
+.workspace-popover-selector-trigger.is-open { background: var(--wp-soft-hover); }
+.workspace-popover-selector-trigger.is-open { border-color: #6366f1; }
+.workspace-popover-selector-name { flex: 1 1 auto; min-width: 0; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-popover-count { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; background: rgb(99 102 241 / 14%); color: var(--wp-muted); font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+.workspace-popover-chevron { flex: 0 0 auto; color: var(--wp-muted); transition: transform 120ms ease; }
+.workspace-popover-selector-trigger.is-open .workspace-popover-chevron { transform: rotate(180deg); }
+.workspace-popover-menu { position: absolute; z-index: 2; top: calc(100% + 6px); left: 0; right: 0; display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid var(--wp-border); border-radius: 12px; background: var(--wp-bg); box-shadow: 0 12px 32px rgb(15 23 42 / 20%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.workspace-popover.is-dark .workspace-popover-menu { background: #1d212b; box-shadow: 0 12px 32px rgb(0 0 0 / 50%); }
+.workspace-popover-menu-search { box-sizing: border-box; width: 100%; height: 30px; padding: 0 10px; border: 1px solid var(--wp-border); border-radius: 8px; background: var(--wp-soft); color: var(--wp-text); font: inherit; font-size: 12.5px; }
+.workspace-popover-menu-list { display: flex; flex-direction: column; gap: 2px; max-height: 180px; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; list-style: none; scrollbar-width: thin; }
+.workspace-popover-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; text-align: left; }
+.workspace-popover-menu-item:hover { background: var(--wp-soft); }
+.workspace-popover-menu-item.is-active { background: rgb(99 102 241 / 12%); }
+.workspace-popover-menu-name { flex: 1 1 auto; min-width: 0; overflow: hidden; font-size: 12.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-popover-menu-check { flex: 0 0 14px; color: #6366f1; font-size: 13px; font-weight: 800; text-align: center; }
+.workspace-popover-menu-create { height: 32px; padding: 0 8px; border: 0; border-top: 1px solid var(--wp-border); border-radius: 0 0 8px 8px; background: transparent; font-size: 12.5px; font-weight: 600; text-align: left; }
+.workspace-popover-menu-create:hover { background: var(--wp-soft); }
+.workspace-popover-menu-form { padding-top: 6px; border-top: 1px solid var(--wp-border); }

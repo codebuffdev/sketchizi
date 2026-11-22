@@ -165,6 +165,11 @@ export default function DesktopAppHeader({
   onOpenFullWorkspace,
   onOpenWorkspaceDiagram,
   onCreateWorkspaceChapter,
+  isAuthenticated,
+  authUser = null,
+  onOpenSignIn,
+  onOpenLocalDrafts,
+  workspaceProjects = null,
   activeCloudProjectId = "",
   activeCloudDiagramId = "",
   onBeforeOpenPanel,
@@ -1070,6 +1075,11 @@ export default function DesktopAppHeader({
         onOpenDiagram={onOpenWorkspaceDiagram}
         onCreateChapter={onCreateWorkspaceChapter}
         onOpenFullWorkspace={onOpenFullWorkspace}
+        isAuthenticated={isAuthenticated}
+        authUser={authUser}
+        onOpenSignIn={onOpenSignIn}
+        onOpenLocalDrafts={onOpenLocalDrafts}
+        workspaceProjects={workspaceProjects}
       />
       <SmartStudioPill
         context={architectureContext}
