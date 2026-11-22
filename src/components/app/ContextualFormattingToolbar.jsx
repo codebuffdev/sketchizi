@@ -5,6 +5,7 @@ import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/s
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 import { normalizeToolKey } from "../../features/canvas/toolStylePresets.js";
 import { normalizeArrowheadPatch, swapArrowheadsPatch, toUiArrowhead } from "../../features/canvas/arrowheads.js";
+import { getRoutingMode, getRoutingPatch } from "../../features/canvas/arrowRouting.js";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 
@@ -179,57 +180,13 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
   };
 }
 
-function straightArrowPatch(element) {
-  const sourcePoints = Array.isArray(element?.points) && element.points.length >= 2
-    ? element.points
-    : [[0, 0], [Number(element?.width) || 0, Number(element?.height) || 0]];
-  const start = sourcePoints[0];
-  const end = sourcePoints[sourcePoints.length - 1];
-  const minX = Math.min(start[0], end[0]);
-  const minY = Math.min(start[1], end[1]);
-  const maxX = Math.max(start[0], end[0]);
-  const maxY = Math.max(start[1], end[1]);
-  return {
-    x: element.x + minX,
-    y: element.y + minY,
-    width: maxX - minX,
-    height: maxY - minY,
-    points: [[start[0] - minX, start[1] - minY], [end[0] - minX, end[1] - minY]],
-    elbowed: false,
-    roundness: null,
-  };
-}
-
-function curvedArrowPatch(element) {
-  const sourcePoints = Array.isArray(element?.points) && element.points.length >= 2
-    ? element.points
-    : [[0, 0], [Number(element?.width) || 0, Number(element?.height) || 0]];
-  const start = sourcePoints[0];
-  const end = sourcePoints[sourcePoints.length - 1];
-  const dx = end[0] - start[0];
-  const dy = end[1] - start[1];
-  const length = Math.hypot(dx, dy) || 1;
-  // Add a perpendicular midpoint so the arrow has a visible curved/bent path.
-  const bend = Math.max(24, Math.min(72, length * 0.18));
-  const middle = [
-    (start[0] + end[0]) / 2 - (dy / length) * bend,
-    (start[1] + end[1]) / 2 + (dx / length) * bend,
-  ];
-  const points = [start, middle, end];
-  const minX = Math.min(...points.map((point) => point[0]));
-  const minY = Math.min(...points.map((point) => point[1]));
-  const maxX = Math.max(...points.map((point) => point[0]));
-  const maxY = Math.max(...points.map((point) => point[1]));
-  return {
-    x: element.x + minX,
-    y: element.y + minY,
-    width: maxX - minX,
-    height: maxY - minY,
-    points: points.map(([x, y]) => [x - minX, y - minY]),
-    elbowed: false,
-    roundness: { type: 2 },
-  };
-}
+// Excalidraw's own arrow-type default for newly drawn arrows.
+const ARROW_TYPE_FOR_MODE = { polyline: "sharp", curve: "round", elbow: "elbow" };
+const ROUTING_OPTIONS = [
+  ["polyline", "Free Polyline", "↗", "Straight segments through every point, any angle"],
+  ["curve", "Curve", "⌒", "Smooth quadratic spline through every point"],
+  ["elbow", "90° Elbow", "⌞", "Orthogonal horizontal / vertical segments"],
+];
 
 function Swatch({ color, label, selected, onClick, fill = false }) {
   return (
@@ -518,6 +475,31 @@ export default function ContextualFormattingToolbar({
       if (presetTool) onToolStyleChange([presetTool], patch);
     }
   };
+  // Routing is computed per element so a multi-selection keeps each arrow's own
+  // waypoints; every mode keeps the points the user placed.
+  const applyRouting = (mode) => {
+    const api = apiRef?.current;
+    if (!api || !canEdit) return;
+    const ids = new Set(liveSelection.filter((element) => element.type === "arrow" || element.type === "line").map((element) => element.id));
+    if (!ids.size) return;
+    const now = Date.now();
+    const scene = api.getSceneElements?.() || [];
+    api.updateScene({
+      elements: scene.map((element) => {
+        if (!ids.has(element.id) || element.isDeleted) return element;
+        if (mode === "elbow" && element.type !== "arrow") return element;
+        return {
+          ...element,
+          ...getRoutingPatch(element, mode),
+          version: (Number(element.version) || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647),
+          updated: now,
+        };
+      }),
+      appState: { currentItemArrowType: ARROW_TYPE_FOR_MODE[mode] },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+  };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const applySmartTheme = (themeId) => {
     const api = apiRef?.current;
@@ -696,14 +678,19 @@ export default function ContextualFormattingToolbar({
             <div className="format-option-row">{STROKE_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.strokeStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.strokeStyle === value} onClick={() => applyFormatting({ strokeStyle: value })}>{glyph}</button>)}</div>
             <div className="format-option-label format-sub-label">Roughness</div>
             <div className="format-option-row">{ROUGHNESS.map(([value, label]) => <button key={value} type="button" className={`format-option-button${Number(first?.roughness ?? 1) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={Number(first?.roughness ?? 1) === value} onClick={() => applyFormatting({ roughness: value })}>{label}</button>)}</div>
+            {(first?.type === "arrow" || first?.type === "line") && (
+              <>
+                <div className="format-option-label format-sub-label">Routing</div>
+                <div className="format-option-row">
+                  {ROUTING_OPTIONS.filter(([value]) => value !== "elbow" || first?.type === "arrow").map(([value, label, glyph, hint]) => {
+                    const selected = getRoutingMode(first) === value;
+                    return <button key={value} type="button" className={`format-option-button${selected ? " is-selected" : ""}`} aria-label={label} aria-pressed={selected} title={`${label} — ${hint}`} onClick={() => applyRouting(value)}>{glyph}</button>;
+                  })}
+                </div>
+              </>
+            )}
             {first?.type === "arrow" && (
               <>
-                <div className="format-option-label format-sub-label">Arrow type</div>
-                <div className="format-option-row">
-                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) <= 2 ? " is-selected" : ""}`} aria-label="Straight arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) <= 2} title="Straight arrow" onClick={() => applyFormatting(straightArrowPatch(first))}>↗</button>
-                  <button type="button" className={`format-option-button${!first?.elbowed && (first?.points?.length || 0) > 2 ? " is-selected" : ""}`} aria-label="Curved arrow" aria-pressed={!first?.elbowed && (first?.points?.length || 0) > 2} title="Curved arrow" onClick={() => applyFormatting(curvedArrowPatch(first))}>⌒</button>
-                  <button type="button" className={`format-option-button${first?.elbowed ? " is-selected" : ""}`} aria-label="Elbow arrow" aria-pressed={Boolean(first?.elbowed)} title="Elbow arrow" onClick={() => applyFormatting({ elbowed: true })}>⌞</button>
-                </div>
                 <div className="format-option-label format-sub-label">Arrowheads</div>
                 <div className="format-option-row format-arrowhead-row">
                   <label className="format-arrowhead-control">

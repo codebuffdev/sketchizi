@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { getActiveSelectedElementIds } from "./selectedElementIds.js";
 import { normalizeArrowheadPatch } from "./arrowheads.js";
+import { getRoutingPatch } from "./arrowRouting.js";
 
 // Mirrors an arrowhead change onto appState so the next arrow inherits it.
 function arrowheadAppStatePatch(patch) {
@@ -57,10 +58,16 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     setSelectedConnector(updated);
   }, [apiRef, canEdit, selectedConnector, setSelectedConnector]);
   const connectorPreset = useCallback((name) => {
-    if (name === "straight") updateSelectedConnector({ elbowed: false, startArrowhead: null, endArrowhead: "arrow" });
-    if (name === "elbow") updateSelectedConnector({ elbowed: true, startArrowhead: null, endArrowhead: "arrow" });
-    if (name === "bidirectional") updateSelectedConnector({ elbowed: false, startArrowhead: "arrow", endArrowhead: "arrow" });
-  }, [updateSelectedConnector]);
+    // Routing patches keep the waypoints the user placed (free polyline) or
+    // normalise them to orthogonal segments (elbow).
+    const routed = (mode) => {
+      const element = apiRef.current?.getSceneElements?.().find((candidate) => candidate.id === selectedConnector?.id);
+      return element ? getRoutingPatch(element, mode) : { elbowed: mode === "elbow" };
+    };
+    if (name === "straight") updateSelectedConnector({ ...routed("polyline"), startArrowhead: null, endArrowhead: "arrow" });
+    if (name === "elbow") updateSelectedConnector({ ...routed("elbow"), startArrowhead: null, endArrowhead: "arrow" });
+    if (name === "bidirectional") updateSelectedConnector({ ...routed("polyline"), startArrowhead: "arrow", endArrowhead: "arrow" });
+  }, [apiRef, selectedConnector, updateSelectedConnector]);
 
   const applyToSelected = useCallback((rawPatch) => {
     if (!canEdit) return;

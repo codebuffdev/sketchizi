@@ -8,6 +8,7 @@ import { normalizeArrowheadPatch, swapArrowheadsPatch, toUiArrowhead } from "../
 import { applyDarkModeFilter } from "@excalidraw/common";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
+import { absolutePointsToPatch, getAbsolutePoints, getRoutingMode, getRoutingPatch, normalizeOrthogonalPath } from "../../features/canvas/arrowRouting.js";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
 // Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
@@ -31,8 +32,33 @@ const LINE_GEOMETRIES = [
   ["rounded-elbow", "Rounded Elbow"],
 ];
 
+// Multi-point lines / arrows keep every waypoint when the routing style changes;
+// only 2-point elements use the compact start/end reshaping below.
+function applyWaypointGeometryStyle(element, style) {
+  const absolute = getAbsolutePoints(element);
+  let patch;
+  if (style === "curved") patch = getRoutingPatch(element, "curve");
+  else if (style === "elbow" && element.type === "arrow") patch = getRoutingPatch(element, "elbow");
+  else if (style === "elbow" || style === "rounded-elbow") {
+    patch = {
+      ...absolutePointsToPatch(normalizeOrthogonalPath(absolute)),
+      ...(element.type === "arrow" ? { elbowed: false } : {}),
+      roundness: style === "rounded-elbow" ? { type: 2 } : null,
+    };
+  } else patch = getRoutingPatch(element, "polyline");
+  return {
+    ...element,
+    ...patch,
+    customData: { ...(element.customData || {}), sketchiziLineGeometry: style },
+    version: (Number(element.version) || 0) + 1,
+    versionNonce: Math.floor(Math.random() * 2147483647),
+    updated: Date.now(),
+  };
+}
+
 function applyLineGeometryStyle(element, style) {
   if (!element || !["line", "arrow"].includes(element.type)) return element;
+  if (Array.isArray(element.points) && element.points.length > 2) return applyWaypointGeometryStyle(element, style);
   const points = Array.isArray(element.points) && element.points.length >= 2
     ? element.points
     : [[0, 0], [Number(element.width) || 0, Number(element.height) || 0]];
@@ -79,7 +105,9 @@ function applyLineGeometryStyle(element, style) {
 function getLineGeometryStyle(element) {
   const saved = element?.customData?.sketchiziLineGeometry;
   if (LINE_GEOMETRIES.some(([value]) => value === saved)) return saved;
-  if (element?.points?.length > 2) return element.roundness ? "rounded-elbow" : "elbow";
+  const mode = getRoutingMode(element);
+  if (mode === "elbow") return "elbow";
+  if (mode === "curve") return element?.points?.length > 2 ? "curved" : "straight";
   return "straight";
 }
 

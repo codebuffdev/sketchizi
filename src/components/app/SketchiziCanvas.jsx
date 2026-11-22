@@ -8,6 +8,7 @@ import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
+import ArrowVertexEditor from "./ArrowVertexEditor";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasAppearanceBackground, getCanvasAppearanceRoughness, getCanvasAppearanceTheme } from "../../features/navigation/canvasAppearance.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
@@ -826,6 +827,7 @@ export default function SketchiziCanvas({
       />
       {!hudSuppressed && <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} onToolStyleChange={onToolStyleChange} />}
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
+      <ArrowVertexEditor apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} canEdit={canEdit} viewModeEnabled={viewModeEnabled || hudSuppressed} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <RectangleTitles
         api={apiRef.current}

@@ -30,6 +30,7 @@ export function useExcalidrawScene({
   const previousFontAppStateRef = useRef(null);
   const previousTextFontFamiliesRef = useRef(new Map());
   const preferredFontFamilyRef = useRef(null);
+  const defaultArrowRoutingAppliedRef = useRef(false);
 
   const scheduleArchitectureSceneChange = useCallback((elements) => {
     latestArchitectureElementsRef.current = elements;
@@ -208,6 +209,17 @@ export function useExcalidrawScene({
             },
             captureUpdate: CaptureUpdateAction.NEVER,
           });
+        }
+      }
+
+      // Free Polyline is the default routing for newly drawn arrows. Excalidraw's
+      // own default ("round") turns every extra waypoint into a smooth curve,
+      // which reads as crooked bends. Apply the sharp default once per session;
+      // Curve / 90° Elbow stay one click away in the contextual toolbar.
+      if (canEdit && !remoteUpdate && !defaultArrowRoutingAppliedRef.current && api?.updateScene) {
+        defaultArrowRoutingAppliedRef.current = true;
+        if (reconciledAppState.currentItemArrowType === "round" && !reconciledAppState.currentItemLineGeometry) {
+          api.updateScene({ appState: { currentItemArrowType: "sharp" }, captureUpdate: CaptureUpdateAction.NEVER });
         }
       }
 

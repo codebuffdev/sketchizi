@@ -6,6 +6,9 @@ const SHORTCUTS = [
   ["G", "Toggle canvas pattern"],
   ["M", "Show / hide minimap"],
   ["F", "Fit diagram to viewport"],
+  ["A / L", "Arrow / Line: click points, double-click or Enter to finish"],
+  ["Alt", "Arrow drawing / handle drag: skip angle snap"],
+  ["Alt + click", "Delete a bend on a selected arrow"],
   ["Esc", "Close panels / exit modes"],
   ["?", "Show keyboard shortcuts"],
 ];

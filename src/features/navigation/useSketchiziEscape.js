@@ -113,6 +113,10 @@ export function useSketchiziEscape({
       // Preserve the existing Sketchizi connection-mode dismissal. With no
       // Sketchizi panel/mode active, do nothing so Excalidraw owns Escape.
       if (connectionMode) {
+        // A multi-point arrow / line that is still being placed is committed by
+        // Excalidraw on Escape; switching tools first would discard the bends.
+        const drawingState = apiRef.current?.getAppState?.();
+        if (drawingState?.multiElement || drawingState?.newElement) return;
         consumeEscape(activateSelectionTool);
       }
     };

@@ -1,0 +1,67 @@
+/* Vertex / midpoint handles, perimeter ports and the angle badge for arrows.
+   Rendered in a viewport-fixed layer above the canvas but below the docks. */
+.sk-arrow-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sk-arrow-handle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  font: 700 12px/1 system-ui, sans-serif;
+  display: grid;
+  place-items: center;
+}
+.sk-arrow-handle:active { cursor: grabbing; }
+.sk-arrow-handle-vertex {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #6965db;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
+}
+.sk-arrow-handle-vertex.is-endpoint { width: 14px; height: 14px; background: #6965db; border-color: #fff; }
+.sk-arrow-handle-vertex:hover,
+.sk-arrow-handle-vertex.is-dragging { transform: translate(-50%, -50%) scale(1.25); }
+/* Ghost midpoint "+": subtle until hovered, enlarged hit area for easy grabbing. */
+.sk-arrow-handle-mid {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgb(105 101 219 / 55%);
+  background: rgb(255 255 255 / 82%);
+  color: #6965db;
+  opacity: 0.55;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.sk-arrow-handle-mid:hover { opacity: 1; transform: translate(-50%, -50%) scale(1.2); background: #fff; }
+.sk-arrow-port {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgb(105 101 219 / 22%);
+  border: 1.5px solid #6965db;
+  pointer-events: none;
+}
+.sk-arrow-port.is-active { width: 16px; height: 16px; background: #6965db; box-shadow: 0 0 0 4px rgb(105 101 219 / 25%); }
+.sk-arrow-badge {
+  position: absolute;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgb(37 41 53 / 88%);
+  color: #f2f1f7;
+  font: 600 11px/1.3 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.sk-arrow-badge.is-snapped { background: #6965db; color: #fff; }

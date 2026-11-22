@@ -276,20 +276,20 @@ test('floating toolbar positions selections from the viewport origin without hal
 test('arrow floating Stroke popover includes arrow type and start/end arrowheads', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
-  assert.ok(toolbar.includes('first?.type === "arrow" && (') && toolbar.includes('aria-label="Straight arrow"') && toolbar.includes('aria-label="Curved arrow"') && toolbar.includes('aria-label="Elbow arrow"'));
+  assert.ok(toolbar.includes('first?.type === "arrow" && (') && toolbar.includes('"Free Polyline"') && toolbar.includes('"Curve"') && toolbar.includes('"90° Elbow"'));
   assert.match(toolbar, /aria-label="Start arrowhead"[\s\S]*?startArrowhead[\s\S]*?aria-label="End arrowhead"[\s\S]*?endArrowhead/);
   assert.match(toolbar, /<option value="arrow">Arrow<\/option>[\s\S]*?<option value="bar">Bar<\/option>[\s\S]*?<option value="dot">Dot<\/option>/);
   assert.match(styles, /\.format-arrowhead-control select/);
 });
 
 
-test('floating arrow type controls include straight, curved, and elbow paths', () => {
+test('floating routing controls offer free polyline, curve and 90° elbow per selected element', () => {
   const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
-  assert.match(toolbar, /function curvedArrowPatch\(element\)/);
-  assert.match(toolbar, /function straightArrowPatch\(element\)/);
-  assert.match(toolbar, /aria-label="Straight arrow"[\s\S]*?straightArrowPatch\(first\)/);
-  assert.match(toolbar, /aria-label="Curved arrow"[\s\S]*?curvedArrowPatch\(first\)/);
-  assert.match(toolbar, /aria-label="Elbow arrow"[\s\S]*?elbowed: true/);
+  assert.match(toolbar, /import \{ getRoutingMode, getRoutingPatch \} from "..\/..\/features\/canvas\/arrowRouting\.js"/);
+  assert.match(toolbar, /const applyRouting = \(mode\) =>/);
+  assert.match(toolbar, /\.\.\.getRoutingPatch\(element, mode\)/);
+  assert.match(toolbar, /currentItemArrowType: ARROW_TYPE_FOR_MODE\[mode\]/);
+  assert.match(toolbar, /onClick=\{\(\) => applyRouting\(value\)\}/);
 });
 
 
