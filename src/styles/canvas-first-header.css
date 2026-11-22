@@ -408,8 +408,7 @@
 }
 
 
-@media (min-width: 1025px) {
-}
+
 
 /* The drawing dock stays bottom-centered whether the floating application
    header is shown or hidden. Header visibility must never reposition tools. */

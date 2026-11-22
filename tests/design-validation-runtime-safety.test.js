@@ -6,14 +6,6 @@ const appSource = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8
 const persistenceSource = readFileSync(new URL("../src/features/persistence/useSketchPersistence.js", import.meta.url), "utf8");
 const profileSource = readFileSync(new URL("../src/features/design/model/designDocument.js", import.meta.url), "utf8");
 
-test("architecture validation avoids scheduling state updates for identical results", () => {
-  assert.match(appSource, /architectureValidationSignatureRef = useRef\(""\)/);
-  assert.match(appSource, /const result = validateArchitectureWithAwsRules\(graph\)/);
-  assert.match(appSource, /const signature = JSON\.stringify\(result\)/);
-  assert.match(appSource, /if \(signature === architectureValidationSignatureRef\.current\) return/);
-  assert.match(appSource, /architectureValidationSignatureRef\.current = signature;\s*setArchitectureValidation\(result\)/);
-});
-
 test("Design Studio handoff guards editor readiness and confirms replacing a non-empty canvas", () => {
   assert.match(appSource, /<CreateDesignScreen[\s\S]*onCreate=\{createDesignFromStudio\}/);
   assert.match(appSource, /if \(!api\?\.updateScene \|\| !sketchReady\)/);

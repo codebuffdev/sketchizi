@@ -6,8 +6,6 @@ const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 
 const OPTIONAL_COMPONENTS = [
   ["CreateDesignScreen", "./features/design/ui/CreateDesignScreen.jsx"],
-  ["DockerComposeStudio", "./features/docker-compose/ui/DockerComposeStudio.jsx"],
-  ["KubernetesStudio", "./features/kubernetes-studio/ui/KubernetesStudio.jsx"],
   ["CloudSaveDialog", "./features/workspace/CloudSaveDialog.jsx"],
   ["ExportStudioModal", "./components/app/ExportStudioModal"],
   ["ArchitectureTemplatesModal", "./components/app/ArchitectureTemplatesModal"],
@@ -24,8 +22,6 @@ test("optional studios load on demand, while core Excalidraw remains eagerly ava
 });
 
 test("each lazy studio retains its original open gate and creation callbacks", () => {
-  assert.match(app, /\{dockerStudioOpen && <DockerComposeStudio onClose=\{\(\) => setDockerStudioOpen\(false\)\} onCreateDiagram=\{createComposeDiagram\}/);
-  assert.match(app, /\{kubernetesStudioOpen && <KubernetesStudio onClose=\{\(\) => setKubernetesStudioOpen\(false\)\} onCreateDiagram=\{createKubernetesDiagram\} onApplyResourceYaml=\{applyKubernetesResourceYaml\}/);
   assert.match(app, /\{designStudioOpen && \(\s*<CreateDesignScreen/);
   assert.match(app, /onCreate=\{createDesignFromStudio\}/);
   assert.match(app, /\{exportStudioOpen && \(\s*<ExportStudioModal/);

@@ -23,6 +23,6 @@ test('modernization does not replace application or canvas behavior', () => {
   assert.match(app, /<SketchiziCanvas/);
   assert.match(app, /<IconLibraryPanel/);
   assert.match(app, /<PropertiesPanel/);
-  assert.match(app, /<ArchitectureValidationPanel/);
+  assert.doesNotMatch(app, /ArchitectureValidationPanel/);
   assert.doesNotMatch(css, /display\s*:\s*none\s*!important/);
 });

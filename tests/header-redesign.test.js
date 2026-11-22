@@ -18,25 +18,6 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.match(header, /Ctrl\+K/);
 });
 
-test("Create icon retains an accessible name and menu semantics", async () => {
-  const app = await read("../src/App.jsx");
-  const menu = await read("../src/components/app/CreateMenu.jsx");
-  const styles = await read("../src/styles/create-menu.css");
-  assert.match(app, /<CreateMenu/);
-  assert.match(menu, /aria-label="Create"/);
-  assert.match(menu, /title="Create"/);
-  assert.match(menu, /aria-haspopup="menu"/);
-  assert.match(menu, /aria-expanded=\{open\}/);
-  assert.match(styles, /min-width: 88px/);
-  assert.match(styles, /@media \(max-width: 760px\)/);
-});
-
-test("Create control is grouped with the current drawing in the center island", async () => {
-  const header = await read("../src/components/app/DesktopAppHeader.jsx");
-  assert.ok(header.indexOf("{workspaceToggle}") > header.indexOf("desktop-app-header-island-center"));
-  assert.ok(header.indexOf("{workspaceToggle}") < header.indexOf("desktop-app-header-island-right"));
-});
-
 test("header Tool menu is positioned relative to its trigger so it remains visible", async () => {
   const styles = await read("../src/styles/header-redesign.css");
   assert.match(styles, /\.desktop-app-header-actions \.sketchizi-more-tools-menu\s*\{\s*position:\s*absolute;/);
@@ -49,17 +30,15 @@ test("Tool control is placed beside command search, outside the feature action g
   const tool = header.indexOf("{moreToolsToggle}", actions);
   const search = header.indexOf('className="desktop-app-header-icon-button desktop-app-search-button"', actions);
   assert.ok(actions >= 0 && tool > actions && search > tool);
-  assert.match(header, /workspaceToggle,/);
   assert.match(header, /moreToolsToggle,/);
 });
 
-test("AI Ask and Architecture Validation remain accessible without cluttering the header", async () => {
+test("AI Ask remains accessible and Architecture Validation entry points are gone", async () => {
   const app = await read("../src/App.jsx");
   const registry = await read("../src/features/commands/commandRegistry.js");
   assert.match(app, /aria-label="AI Ask"/);
-  assert.match(app, /<ArchitectureValidationPanel/);
-  assert.match(registry, /id: "review\.architecture"/);
-  assert.match(registry, /execute: \(\) => openPanel\("architecture-validation"\)/);
+  assert.doesNotMatch(app, /ArchitectureValidationPanel/);
+  assert.doesNotMatch(registry, /review\.architecture|architecture-validation/);
   assert.match(app, /const moreToolsToggle = collaborationCanEdit \?/);
 });
 
@@ -195,18 +174,6 @@ test("collaboration dialog stays fully visible and scrollable within viewport", 
   assert.match(rules, /z-index: 2400 !important/);
   assert.match(rules, /\.collaboration-dialog\s*\{[\s\S]*?max-height: calc\(100dvh/);
   assert.match(rules, /overflow-y: auto !important/);
-});
-
-
-test("Create menu dismisses on overlays, Escape and outside pointerdown", async () => {
-  const app = await read("../src/App.jsx");
-  const menu = await read("../src/components/app/CreateMenu.jsx");
-  assert.match(app, /dismissWhen=\{Boolean\(nativeMenuOpen \|\| designStudioOpen \|\| dockerStudioOpen \|\| kubernetesStudioOpen\)\}/);
-  assert.match(app, /onBeforeOpen=\{\(\) => \{[\s\S]*?closeNativeMenu\(\);/);
-  assert.match(menu, /if \(dismissWhen\) setOpen\(false\)/);
-  assert.match(menu, /event\.key === "Escape"/);
-  assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
-  assert.match(menu, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);
 });
 
 

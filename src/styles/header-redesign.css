@@ -165,33 +165,9 @@
     font-size: 10px;
   }
 
-  .desktop-app-header-panel-actions .architecture-validation-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    position: static;
-    top: auto;
-    right: auto;
-    width: auto;
-    height: 32px;
-    min-height: 32px;
-    padding: 5px 10px;
-    border: 1px solid var(--ui-border, #e0e3eb);
-    border-radius: 8px;
-    background: var(--ui-surface-soft, #f8f8fc);
-    color: var(--ui-text, #3e4050);
-    box-shadow: none;
-    font-size: 11px;
-    font-weight: 620;
-  }
+  
 
-  .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
-  .desktop-app-header-panel-actions .architecture-validation-toggle.active {
-    border-color: #d0d2d5;
-    background: #f0f1f2;
-    color: #454a51;
-  }
+  
 
   .desktop-app-header-panel-actions .properties-toggle:hover,
   .desktop-app-header-panel-actions .properties-toggle.active {
@@ -618,19 +594,16 @@
   }
 
   .app.theme-dark .desktop-app-header-panel-actions .properties-toggle,
-  .app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle,
-  .app.theme-dark .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
+.app.theme-dark .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {
     border-color: #393b48;
     background: #20222b;
     color: #dfe0ec;
   }
 
   .app.theme-dark .desktop-app-header-panel-actions .properties-toggle:hover,
-  .app.theme-dark .desktop-app-header-panel-actions .properties-toggle.active,
-  .app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
-  .app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle.active,
-  .app.theme-dark .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger:hover,
-  .app.theme-dark .desktop-app-header-panel-actions .sketchizi-more-tools-header.open .sketchizi-more-tools-trigger {
+.app.theme-dark .desktop-app-header-panel-actions .properties-toggle.active,
+.app.theme-dark .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger:hover,
+.app.theme-dark .desktop-app-header-panel-actions .sketchizi-more-tools-header.open .sketchizi-more-tools-trigger {
     border-color: #6550a5;
     background: #2b2540;
     color: #d0c1ff;
@@ -864,8 +837,7 @@
     padding-inline: 4px;
   }
 
-  .desktop-app-header-panel-actions .ai-ask-toggle,
-  .desktop-app-header-panel-actions .architecture-validation-toggle {
+  .desktop-app-header-panel-actions .ai-ask-toggle {
     gap: 4px;
     padding-inline: 6px;
     font-size: 9px;
@@ -979,8 +951,7 @@
     display: none;
   }
 
-  .desktop-app-header-panel-actions .ai-ask-toggle,
-  .desktop-app-header-panel-actions .architecture-validation-toggle {
+  .desktop-app-header-panel-actions .ai-ask-toggle {
     width: 28px;
     min-width: 28px;
     padding-inline: 4px;
@@ -992,8 +963,7 @@
     content: none;
   }
 
-  .desktop-app-header-panel-actions .ai-ask-toggle > span:not(.ai-ask-toggle-icon),
-  .desktop-app-header-panel-actions .architecture-validation-toggle > span:not(.architecture-validation-toggle-icon) {
+  .desktop-app-header-panel-actions .ai-ask-toggle > span:not(.ai-ask-toggle-icon) {
     display: none;
   }
 
@@ -1141,8 +1111,7 @@
   }
 
   .desktop-app-header-panel-actions .properties-toggle,
-  .desktop-app-header-panel-actions .architecture-validation-toggle,
-  .desktop-app-header-panel-actions .ai-ask-toggle {
+.desktop-app-header-panel-actions .ai-ask-toggle {
     padding-inline: 6px;
     font-size: 10px;
   }
@@ -1426,7 +1395,6 @@
 }
 
 .app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .properties-toggle,
-.app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .architecture-validation-toggle,
 .app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .ai-ask-toggle,
 .app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .community-reviews-toggle,
 .app .desktop-app-header.is-constrained .desktop-app-header-panel-actions .sketchizi-more-tools-header .sketchizi-more-tools-trigger {

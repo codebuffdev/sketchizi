@@ -124,10 +124,7 @@
 
   /* Keep every flyout inside the viewport, to the left of the scrollable rail. */
   .app.canvas-first-header .desktop-app-header-right-rail :is(
-    .desktop-app-dropdown, .devops-studio-dropdown, .desktop-app-save-status-popover,
-    .sketchizi-header-grid-popover, .sketchizi-more-tools-menu, .auth-account-menu,
-    .collaboration-header-status
-  ) {
+    .desktop-app-dropdown,.desktop-app-save-status-popover,.sketchizi-header-grid-popover,.sketchizi-more-tools-menu,.auth-account-menu,.collaboration-header-status) {
     position: fixed;
     top: calc(18px + var(--safe-top, 0px));
     right: calc(var(--header-rail-right) + var(--header-rail-width) + 12px);
@@ -339,23 +336,7 @@
 
   /* Normalize every actual control and control wrapper to the same slot. */
   .app.canvas-first-header .desktop-app-header-right-rail :is(
-    .desktop-app-menu-trigger,
-    .desktop-app-library-toggle,
-    .desktop-app-nav-button,
-    .desktop-app-save-status-wrap,
-    .sketchizi-create-menu,
-    .desktop-app-start-collaboration-button,
-    .sketchizi-header-grid,
-    .desktop-app-save-to-cloud-button,
-    .desktop-app-theme-toggle,
-    .properties-toggle,
-    .architecture-validation-toggle,
-    .ai-ask-toggle,
-    .sketchizi-more-tools-header,
-    .desktop-app-search-button,
-    .desktop-app-header-pin-button,
-    .auth-control-root
-  ) {
+    .desktop-app-menu-trigger,.desktop-app-library-toggle,.desktop-app-nav-button,.desktop-app-save-status-wrap,.desktop-app-start-collaboration-button,.sketchizi-header-grid,.desktop-app-save-to-cloud-button,.desktop-app-theme-toggle,.properties-toggle,.ai-ask-toggle,.sketchizi-more-tools-header,.desktop-app-search-button,.desktop-app-header-pin-button,.auth-control-root) {
     box-sizing: border-box;
     display: inline-flex;
     flex: 0 0 36px !important;
@@ -374,22 +355,7 @@
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail :is(
-    .desktop-app-menu-trigger,
-    .desktop-app-library-toggle,
-    .desktop-app-nav-button,
-    .desktop-app-save-status-trigger,
-    .design-studio-header-toggle,
-    .desktop-app-start-collaboration-button,
-    .sketchizi-header-grid-trigger,
-    .desktop-app-save-to-cloud-button,
-    .desktop-app-theme-toggle,
-    .properties-toggle,
-    .architecture-validation-toggle,
-    .ai-ask-toggle,
-    .sketchizi-more-tools-trigger,
-    .desktop-app-search-button,
-    .desktop-app-header-pin-button
-  ) {
+    .desktop-app-menu-trigger,.desktop-app-library-toggle,.desktop-app-nav-button,.desktop-app-save-status-trigger,.desktop-app-start-collaboration-button,.sketchizi-header-grid-trigger,.desktop-app-save-to-cloud-button,.desktop-app-theme-toggle,.properties-toggle,.ai-ask-toggle,.sketchizi-more-tools-trigger,.desktop-app-search-button,.desktop-app-header-pin-button) {
     display: inline-flex;
     flex: 0 0 36px !important;
     align-items: center !important;
@@ -405,8 +371,6 @@
   }
 
 
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-create-menu,
-  .app.canvas-first-header .desktop-app-header-right-rail .design-studio-header-toggle,
   .app.canvas-first-header .desktop-app-header-right-rail .ai-ask-toggle {
     box-sizing: border-box;
     display: inline-flex !important;
@@ -424,10 +388,9 @@
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail .desktop-app-save-status-wrap,
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-create-menu,
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid,
-  .app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header,
-  .app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
+.app.canvas-first-header .desktop-app-header-right-rail .sketchizi-header-grid,
+.app.canvas-first-header .desktop-app-header-right-rail .sketchizi-more-tools-header,
+.app.canvas-first-header .desktop-app-header-right-rail .auth-control-root {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -471,10 +434,7 @@
   /* Keep the flyouts anchored to the corresponding control while opening
      leftward, clear of the rail. */
   .app.canvas-first-header .desktop-app-header-right-rail :is(
-    .desktop-app-dropdown, .devops-studio-dropdown, .desktop-app-save-status-popover,
-    .sketchizi-header-grid-popover, .sketchizi-more-tools-menu, .auth-account-menu,
-    .collaboration-header-status
-  ) {
+    .desktop-app-dropdown,.desktop-app-save-status-popover,.sketchizi-header-grid-popover,.sketchizi-more-tools-menu,.auth-account-menu,.collaboration-header-status) {
     position: fixed;
     top: calc(18px + var(--safe-top, 0px));
     right: calc(var(--header-rail-right) + var(--header-rail-width) + 12px);
@@ -841,27 +801,7 @@
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail :is(
-    .desktop-app-menu-trigger,
-    .desktop-app-library-toggle,
-    .desktop-app-nav-button,
-    .desktop-app-save-status-wrap,
-    .sketchizi-create-menu,
-    .desktop-app-start-collaboration-button,
-    .sketchizi-header-grid,
-    .desktop-app-save-to-cloud-button,
-    .desktop-app-theme-toggle,
-    .properties-toggle,
-    .architecture-validation-toggle,
-    .ai-ask-toggle,
-    .sketchizi-more-tools-header,
-    .desktop-app-search-button,
-    .desktop-app-header-pin-button,
-    .auth-control-root,
-    .desktop-app-save-status-trigger,
-    .design-studio-header-toggle,
-    .sketchizi-header-grid-trigger,
-    .sketchizi-more-tools-trigger
-  ) {
+    .desktop-app-menu-trigger,.desktop-app-library-toggle,.desktop-app-nav-button,.desktop-app-save-status-wrap,.desktop-app-start-collaboration-button,.sketchizi-header-grid,.desktop-app-save-to-cloud-button,.desktop-app-theme-toggle,.properties-toggle,.ai-ask-toggle,.sketchizi-more-tools-header,.desktop-app-search-button,.desktop-app-header-pin-button,.auth-control-root,.desktop-app-save-status-trigger,.sketchizi-header-grid-trigger,.sketchizi-more-tools-trigger) {
     flex-basis: 32px !important;
     width: 32px !important;
     min-width: 32px !important;
@@ -929,27 +869,7 @@
   }
 
   .app.canvas-first-header .desktop-app-header-right-rail :is(
-    .desktop-app-menu-trigger,
-    .desktop-app-library-toggle,
-    .desktop-app-nav-button,
-    .desktop-app-save-status-wrap,
-    .sketchizi-create-menu,
-    .desktop-app-start-collaboration-button,
-    .sketchizi-header-grid,
-    .desktop-app-save-to-cloud-button,
-    .desktop-app-theme-toggle,
-    .properties-toggle,
-    .architecture-validation-toggle,
-    .ai-ask-toggle,
-    .sketchizi-more-tools-header,
-    .desktop-app-search-button,
-    .desktop-app-header-pin-button,
-    .auth-control-root,
-    .desktop-app-save-status-trigger,
-    .design-studio-header-toggle,
-    .sketchizi-header-grid-trigger,
-    .sketchizi-more-tools-trigger
-  ) {
+    .desktop-app-menu-trigger,.desktop-app-library-toggle,.desktop-app-nav-button,.desktop-app-save-status-wrap,.desktop-app-start-collaboration-button,.sketchizi-header-grid,.desktop-app-save-to-cloud-button,.desktop-app-theme-toggle,.properties-toggle,.ai-ask-toggle,.sketchizi-more-tools-header,.desktop-app-search-button,.desktop-app-header-pin-button,.auth-control-root,.desktop-app-save-status-trigger,.sketchizi-header-grid-trigger,.sketchizi-more-tools-trigger) {
     flex-basis: 36px !important;
     width: 36px !important;
     min-width: 36px !important;

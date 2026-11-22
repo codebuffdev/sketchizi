@@ -25,6 +25,6 @@ test('Layers panel entry points and automatic opening are removed', () => {
   assert.doesNotMatch(app, /LayersPanel|layersOpen|autoOpenLayers|knownLayerElementIdsRef|auto-open-layers/);
   assert.doesNotMatch(commands, /layers\.open|openPanel\("layers"\)/);
   assert.doesNotMatch(panelState, /layersOpen|activePanel === "layers"/);
-  assert.match(app, /<ArchitectureValidationPanel/);
+  assert.doesNotMatch(app, /ArchitectureValidationPanel/);
   assert.match(app, /<SketchiziCanvas/);
 });

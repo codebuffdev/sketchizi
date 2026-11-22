@@ -159,9 +159,7 @@
   transition: background var(--sk-motion-standard) var(--sk-ease-standard), border-color var(--sk-motion-standard) var(--sk-ease-standard), color var(--sk-motion-standard) var(--sk-ease-standard), box-shadow var(--sk-motion-standard) var(--sk-ease-standard);
 }
 
-.app.theme-light .desktop-app-header .design-studio-header-toggle,
 .app.theme-light .desktop-app-header .ai-ask-toggle,
-.app.theme-light .desktop-app-header .architecture-validation-toggle,
 .app.theme-light .desktop-app-header .community-reviews-toggle {
   border-radius: var(--sk-radius-control-sm);
 }
@@ -296,10 +294,8 @@
   }
 
   .app .desktop-app-header-panel-actions .properties-toggle,
-  .app .desktop-app-header-panel-actions .architecture-validation-toggle,
-  .app .desktop-app-header-panel-actions .design-studio-header-toggle,
-  .app .desktop-app-header-panel-actions .ai-ask-toggle,
-  .app .desktop-app-header-panel-actions .community-reviews-toggle {
+.app .desktop-app-header-panel-actions .ai-ask-toggle,
+.app .desktop-app-header-panel-actions .community-reviews-toggle {
     min-height: 34px;
     height: 34px;
     padding-inline: 11px;
@@ -321,15 +317,11 @@
   }
 
   .app .desktop-app-header-panel-actions .properties-toggle:hover,
-  .app .desktop-app-header-panel-actions .properties-toggle.active,
-  .app .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
-  .app .desktop-app-header-panel-actions .architecture-validation-toggle.active,
-  .app .desktop-app-header-panel-actions .design-studio-header-toggle:hover,
-  .app .desktop-app-header-panel-actions .design-studio-header-toggle.active,
-  .app .desktop-app-header-panel-actions .ai-ask-toggle:hover,
-  .app .desktop-app-header-panel-actions .ai-ask-toggle.active,
-  .app .desktop-app-header-panel-actions .community-reviews-toggle:hover,
-  .app .desktop-app-header-panel-actions .community-reviews-toggle.active {
+.app .desktop-app-header-panel-actions .properties-toggle.active,
+.app .desktop-app-header-panel-actions .ai-ask-toggle:hover,
+.app .desktop-app-header-panel-actions .ai-ask-toggle.active,
+.app .desktop-app-header-panel-actions .community-reviews-toggle:hover,
+.app .desktop-app-header-panel-actions .community-reviews-toggle.active {
     border-color: var(--sk-ui-line-strong, #d9ddea);
     background: var(--sk-ui-accent-soft, #eff0f2);
     color: var(--sk-ui-accent, #555a62);
@@ -443,8 +435,6 @@
 }
 
 .app.theme-dark .desktop-app-header-panel-actions .properties-toggle,
-.app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle,
-.app.theme-dark .desktop-app-header-panel-actions .design-studio-header-toggle,
 .app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle,
 .app.theme-dark .desktop-app-header-panel-actions .community-reviews-toggle,
 .app.theme-dark .desktop-app-search-button {
@@ -456,10 +446,6 @@
 
 .app.theme-dark .desktop-app-header-panel-actions .properties-toggle:hover,
 .app.theme-dark .desktop-app-header-panel-actions .properties-toggle.active,
-.app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
-.app.theme-dark .desktop-app-header-panel-actions .architecture-validation-toggle.active,
-.app.theme-dark .desktop-app-header-panel-actions .design-studio-header-toggle:hover,
-.app.theme-dark .desktop-app-header-panel-actions .design-studio-header-toggle.active,
 .app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle:hover,
 .app.theme-dark .desktop-app-header-panel-actions .ai-ask-toggle.active,
 .app.theme-dark .desktop-app-header-panel-actions .community-reviews-toggle:hover,

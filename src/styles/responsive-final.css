@@ -97,8 +97,7 @@
     margin-left: 0;
   }
 
-  .desktop-app-header-panel-actions .properties-toggle,
-  .desktop-app-header-panel-actions .architecture-validation-toggle {
+  .desktop-app-header-panel-actions .properties-toggle {
     position: static;
     flex: 0 0 auto;
     height: 34px;
@@ -343,8 +342,7 @@
     gap: 3px;
   }
 
-  .desktop-app-header-panel-actions .properties-toggle,
-  .desktop-app-header-panel-actions .architecture-validation-toggle {
+  .desktop-app-header-panel-actions .properties-toggle {
     height: 32px;
     min-height: 32px;
     padding: 5px 7px;

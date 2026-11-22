@@ -32,7 +32,6 @@ const PANEL_ALIASES = {
   aiAsk: { edge: "right", panel: "aiAsk" },
   "ai-ask": { edge: "right", panel: "aiAsk" },
   rightRail: { edge: "right", panel: "rightRail" },
-  "architecture-validation": { edge: "right", panel: "rightRail" },
   properties: { edge: "right", panel: "properties" },
   "more-tools": { edge: "transient", panel: "more-tools" },
   shortcuts: { edge: "transient", panel: "shortcuts" },
@@ -216,7 +215,6 @@ export function usePanelState({ apiRef, nativeMenuOpen = false, closeNativeMenu 
     const classes = [];
     if (activeLeftPanel === "iconLibrary") classes.push("panel-open-library");
     if (activeRightPanel === "properties") classes.push("panel-open-properties");
-    if (activeRightPanel === "rightRail") classes.push("panel-open-architecture-validation");
     if (activeTransientPanel) classes.push(`panel-open-${activeTransientPanel}`);
     return classes;
   }, [activeLeftPanel, activeRightPanel, activeTransientPanel]);
@@ -245,6 +243,5 @@ export function usePanelState({ apiRef, nativeMenuOpen = false, closeNativeMenu 
     propertiesOpen: activeRightPanel === "properties",
     moreToolsOpen: activeTransientPanel === "more-tools",
     shortcutHelpOpen: activeTransientPanel === "shortcuts",
-    architectureValidationOpen: activeRightPanel === "rightRail",
   };
 }

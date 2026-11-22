@@ -1,8 +1,6 @@
 
 .app.panel-open-library .properties-toggle,
-.app.panel-open-properties .library-toggle,
-.app.panel-open-architecture-validation .library-toggle,
-.app.panel-open-architecture-validation .properties-toggle{
+.app.panel-open-properties .library-toggle {
   visibility: hidden;
   pointer-events: none;
 }
@@ -13,10 +11,7 @@
   pointer-events: auto;
 }
 
-.app.panel-open-architecture-validation .architecture-validation-toggle {
-  visibility: visible;
-  pointer-events: auto;
-}
+
 
 /* Keep the open panel anchored to the viewport, not the canvas's internal
  * coordinate system. This prevents clipping and makes the editor feel like

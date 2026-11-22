@@ -6,7 +6,6 @@ import CanvasStartDate from "./CanvasStartDate.jsx";
 import ThemeControl from "../../ThemeControl.jsx";
 import CanvasZoomControl from "./CanvasZoomControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
-import SmartStudioPill from "./SmartStudioPill.jsx";
 import WorkspaceQuickPopover from "./WorkspaceQuickPopover.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
 import { getCommandPaletteShortcut } from "../../features/commands/platformShortcut.js";
@@ -182,7 +181,6 @@ export default function DesktopAppHeader({
   createCollaboration,
   dismissCollaborationCreationFailure,
   libraryToggle,
-  workspaceToggle,
   moreToolsToggle,
   setThemeMode,
   themeMode,
@@ -228,12 +226,6 @@ export default function DesktopAppHeader({
   onToggleMinimap,
   minimapOpen = false,
   isZenMode = false,
-  architectureContext = null,
-  architectureValidation = null,
-  onRunArchitectureValidation,
-  onOpenKubernetesStudio,
-  onOpenDockerComposeStudio,
-  onOpenSystemDesignReview,
   children,
 }) {
   const paletteShortcut = useMemo(() => getCommandPaletteShortcut(), []);
@@ -722,7 +714,6 @@ export default function DesktopAppHeader({
 
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
-        {workspaceToggle}
         {chapterNav && (
           <nav className="desktop-app-chapter-nav" aria-label="Chapter navigation">
             <button type="button" className="desktop-app-chapter-nav-button" disabled={!chapterNav.previous} onClick={() => onNavigateChapter?.(chapterNav.previous)} aria-label={chapterNav.previous ? `Previous chapter: ${chapterNav.previous.name}` : "No previous chapter"} title={chapterNav.previous?.name}>
@@ -1076,16 +1067,6 @@ export default function DesktopAppHeader({
         onOpenSignIn={onOpenSignIn}
         onOpenLocalDrafts={onOpenLocalDrafts}
         workspaceProjects={workspaceProjects}
-      />
-      <SmartStudioPill
-        context={architectureContext}
-        validation={architectureValidation}
-        isZenMode={isZenMode}
-        onBeforeOpen={onBeforeOpenPanel}
-        onRunValidation={onRunArchitectureValidation}
-        onOpenKubernetesStudio={onOpenKubernetesStudio}
-        onOpenDockerComposeStudio={onOpenDockerComposeStudio}
-        onOpenSystemDesignReview={onOpenSystemDesignReview}
       />
       <div className="desktop-app-global-ai-control">{children}</div>
       <div className="desktop-app-settings-wrap">

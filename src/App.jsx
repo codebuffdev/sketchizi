@@ -1,10 +1,8 @@
-import { planComposeDiagram, composeCardDetails } from "./features/docker-compose/composeDiagramLayout.js";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import IconLibraryPanel from "./IconLibraryPanel";
 import PropertiesPanel from "./PropertiesPanel";
-import ArchitectureValidationPanel from "./components/app/ArchitectureValidationPanel";
-import { CaptureUpdateAction, convertToExcalidrawElements, getCommonBounds, restoreElements } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
@@ -35,16 +33,12 @@ import { useIconInsertion } from "./features/icon-library/useIconInsertion";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
 import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
-import { useDetectedArchitectureContext } from "./features/architecture/useDetectedArchitectureContext";
 import { insertArchitecturePack as insertArchitecturePackIntoScene } from "./features/templates/architecturePackInsertion";
 const CreateDesignScreen = lazy(() => import("./features/design/ui/CreateDesignScreen.jsx"));
-const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
-const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
 import { createProfileForTemplate, createTemplateElements } from "./features/design/templates/templateRegistry.js";
 import { withDesignProfile } from "./features/design/model/designDocument.js";
 import { getAwsResourceDefinitionById } from "./awsResourceDefinitions";
 import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinitions";
-import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { sceneFingerprint, createRevisionRegistry, isRevisionConflict, classifyConflict } from "./features/workspace/cloudSaveGuard.js";
@@ -56,8 +50,6 @@ import { findDuplicateTabName, getTabDisplayName } from "./features/workspace/ta
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { createCloudDocument, sanitizeCloudAppState } from "./features/workspace/cloudDocument.js";
 import { allowsEmptyCloudSave, hasCloudSceneChange, isActiveCloudSession, isCloudSceneRestoring, resolveCloudLoadTarget } from "./features/workspace/cloudSavePolicy.js";
-import { analyzeArchitectureGraph } from "./features/architecture/architectureGraphService";
-import { validateArchitectureWithAwsRules } from "./features/architecture/architectureValidationComposition";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
 import { getSelectedKubernetesResource, updateKubernetesResource } from "./features/kubernetes-resources/kubernetesResourceService";
 import { getSelectedNetworkingResource, updateNetworkingResource } from "./features/networking/networkingResourceService.js";
@@ -65,7 +57,6 @@ import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } fr
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetesRelationshipGuidance, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
-import CreateMenu from "./components/app/CreateMenu";
 const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
@@ -103,8 +94,6 @@ function App() {
   const [startupChooserOpen, setStartupChooserOpen] = useState(false);
   const startupChoiceMadeRef = useRef(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
-  const [dockerStudioOpen, setDockerStudioOpen] = useState(false);
-  const [kubernetesStudioOpen, setKubernetesStudioOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [gridEnabled, setGridEnabled] = useState(() => {
     try {
@@ -128,8 +117,6 @@ function App() {
   const [gridSize, setGridSize] = useState(20);
   const [selectedCount, setSelectedCount] = useState(0);
   const [selectedElements, setSelectedElements] = useState([]);
-  const [architectureValidation, setArchitectureValidation] = useState({ errors: [], warnings: [], info: [] });
-  const architectureValidationSignatureRef = useRef("");
   const lastSelectionSignature = useRef("");
   const clearCanvasSelection = useCallback(() => {
     // Keep the scene callback's de-duplication key in sync with the explicit
@@ -232,14 +219,14 @@ function App() {
     openPanel, togglePanel, closePanel, closeLeftPanel,
     closeMostRecentDrawer, dismissUnpinnedDrawersFromCanvas,
     aiAskOpen, setAiAskOpen, toggleAiAsk,
-    libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen, architectureValidationOpen,
+    libraryOpen, propertiesOpen, moreToolsOpen, shortcutHelpOpen,
   } = panelState;
-  const rightRailOpen = propertiesOpen || architectureValidationOpen;
+  const rightRailOpen = propertiesOpen;
   const libraryPresence = useDrawerPresence(libraryOpen);
   const rightRailPresence = useDrawerPresence(rightRailOpen);
   // Remember which right-rail panel was showing so it can finish its exit animation.
   const lastRightRailPanelRef = useRef("properties");
-  if (rightRailOpen) lastRightRailPanelRef.current = propertiesOpen ? "properties" : "rightRail";
+  if (rightRailOpen) lastRightRailPanelRef.current = "properties";
   const renderedRightRailPanel = lastRightRailPanelRef.current;
 
   // The hamburger menu and the icon library share the left edge; usePanelState
@@ -302,8 +289,6 @@ function App() {
       exportStudioOpen ||
       templatesModalOpen ||
       designStudioOpen ||
-      dockerStudioOpen ||
-      kubernetesStudioOpen ||
       cloudSaveDialogOpen ||
       commandPaletteOpen
     ) {
@@ -315,8 +300,6 @@ function App() {
     exportStudioOpen,
     templatesModalOpen,
     designStudioOpen,
-    dockerStudioOpen,
-    kubernetesStudioOpen,
     cloudSaveDialogOpen,
     commandPaletteOpen,
     closeNativeMenu,
@@ -1689,84 +1672,6 @@ function App() {
     const providers = new Set(endpoints.map(providerOf).filter(Boolean));
     return (providers.size > 1 || providers.has("networking")) ? { relationshipId: `architecture:${connector.id}`, relationshipType: "traffic-flow", elementId: connector.id } : null;
   })();
-  // Scene-aware Smart Studio context (debounced 250ms; renders nothing for plain sketches).
-  const { context: architectureContext, notifySceneChange: notifyArchitectureContext } = useDetectedArchitectureContext();
-  const updateArchitectureValidation = useCallback((elements) => {
-    notifyArchitectureContext(elements);
-    const graph = analyzeArchitectureGraph(elements);
-    const result = validateArchitectureWithAwsRules(graph);
-    const signature = JSON.stringify(result);
-    if (signature === architectureValidationSignatureRef.current) return;
-    architectureValidationSignatureRef.current = signature;
-    setArchitectureValidation(result);
-  }, [notifyArchitectureContext]);
-  const applyKubernetesSuggestion = useCallback((diagnostic, relationshipType) => {
-    if (!collaborationCanEdit) {
-      showToast("You do not have permission to modify this diagram.", "error");
-      return;
-    }
-    if (diagnostic?.provider !== "kubernetes") {
-      showToast("Only Kubernetes relationship findings can be corrected here.", "error");
-      return;
-    }
-    const api = apiRef.current;
-    if (!api?.getSceneElements || !api?.updateScene) {
-      showToast("The editor is not ready. Run validation again.", "error");
-      return;
-    }
-    const confirmed = window.confirm(
-      `Change this Kubernetes relationship to “${relationshipType}”? Only the relationship type will change. Resource IDs, endpoints and other metadata will be preserved.`,
-    );
-    if (!confirmed) return;
-
-    const result = applyKubernetesRelationshipSuggestion(api.getSceneElements(), diagnostic, relationshipType);
-    if (!result.changed) {
-      showToast(result.error || "The correction could not be applied. Run validation again.", "error");
-      return;
-    }
-    api.updateScene({ elements: result.elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-    showToast(`Relationship updated to ${relationshipType}. Run validation again to verify the design.`);
-  }, [collaborationCanEdit, showToast, eraserCatalog, networkingIcons]);
-
-  const selectArchitectureDiagnostic = useCallback((diagnostic) => {
-    const api = apiRef.current;
-    if (!api || (!diagnostic?.relationshipId && !diagnostic?.resourceId)) return;
-
-    const elements = api.getSceneElements();
-    const target = elements.find((element) => {
-      const metadata = diagnostic.relationshipId
-        ? [
-            { provider: "aws", entry: element.customData?.awsRelationship },
-            { provider: "kubernetes", entry: element.customData?.kubernetesRelationship },
-            { provider: "architecture", entry: element.customData?.architectureRelationship },
-          ]
-        : [
-            { provider: "aws", entry: element.customData?.awsResource },
-            { provider: "kubernetes", entry: element.customData?.kubernetesResource },
-            { provider: "networking", entry: element.customData?.networkingResource },
-          ];
-      return metadata.some(({ provider, entry }) => {
-        if (!entry) return false;
-        if (diagnostic.provider && provider && provider !== diagnostic.provider) return false;
-        return diagnostic.relationshipId
-          ? entry.relationshipId === diagnostic.relationshipId
-          : entry.awsResourceId === diagnostic.resourceId || entry.kubernetesResourceId === diagnostic.resourceId || entry.networkingResourceId === diagnostic.resourceId;
-      });
-    });
-
-    if (!target) return;
-
-    api.updateScene({
-      appState: {
-        ...api.getAppState(),
-        selectedElementIds: { [target.id]: true },
-        selectedGroupIds: {},
-        selectedGroupForOperation: null,
-      },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-    api.scrollToContent?.([target], { fitToViewport: false, animate: true });
-  }, []);
   const updateSelectedAwsResource = useCallback((patch) => {
     if (!collaborationCanEdit || !selectedAwsResource?.awsResourceId) return;
     updateAwsResource(apiRef.current, selectedAwsResource.awsResourceId, patch);
@@ -1875,14 +1780,6 @@ function App() {
     const rect = canvas.getBoundingClientRect();
     iconInsertion.addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
   };
-  const openSystemDesignReview = () => {
-    openPanel("architecture-validation");
-    // The review dashboard is the first section of the validation panel; wait
-    // for the drawer to mount, then bring it into view.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.querySelector(".system-design-review")?.scrollIntoView?.({ block: "start", behavior: "smooth" });
-    }));
-  };
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -1907,11 +1804,7 @@ function App() {
     reopenClosedTab,
     closedTabCount: closedTabs.length,
     openExportStudio: () => setExportStudioOpen(true),
-    architectureContext,
     insertCatalogIcon: insertCatalogIconAtViewportCenter,
-    openKubernetesStudio: () => setKubernetesStudioOpen(true),
-    openDockerComposeStudio: () => setDockerStudioOpen(true),
-    openSystemDesignReview,
     insertArchitecturePack: (pack) => insertArchitecturePackIntoScene(apiRef.current, pack, { captureUpdate: CaptureUpdateAction.IMMEDIATELY }),
     openArchitectureTemplates: () => setTemplatesModalOpen(true),
     openDesignTemplates: () => setDesignStudioOpen(true),
@@ -1921,7 +1814,6 @@ function App() {
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen: closeLeftPanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
     collaborationRemoteUpdateRef, collaborationRef, canEdit: collaborationCanEdit,
-    onArchitectureSceneChange: updateArchitectureValidation,
     onDocumentSceneChange: markCurrentDocumentChanged,
     toolStylePresets: toolStyles,
   });
@@ -2004,875 +1896,7 @@ function App() {
     return () => window.removeEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
   }, [chooseStartupCanvas]);
 
-  const applyKubernetesResourceYaml = useCallback((resource) => {
-    const api = apiRef.current;
-    if (!api?.updateScene || !collaborationCanEdit || !resource?.manifest) {
-      throw new Error("The canvas is not ready for Kubernetes resource updates.");
-    }
-    const current = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-    const targetElements = current.filter((element) => {
-      if (element.isDeleted) return false;
-      const metadata = element.customData?.kubernetesManifestResource;
-      return metadata?.properties?.manifestResourceId === resource.id;
-    });
-    if (!targetElements.length) {
-      showToast("This resource is not on the canvas yet. Create the diagram first, then edit its YAML.", "warning");
-      return;
-    }
-    const manifest = resource.manifest;
-    const kind = String(manifest.kind || resource.kind);
-    const name = String(manifest.metadata?.name || resource.name);
-    const namespace = String(manifest.metadata?.namespace || (kind === "Namespace" ? name : "default"));
-    const apiVersion = String(manifest.apiVersion || resource.apiVersion);
-    const spec = manifest.spec || {};
-    const workloadKinds = ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"];
-    const podSpec = kind === "CronJob" ? spec.jobTemplate?.spec?.template?.spec
-      : kind === "Job" ? spec.template?.spec
-      : ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(kind) ? spec.template?.spec
-      : spec;
-    const images = (podSpec?.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2);
-    const ports = (spec.ports || []).map((port) => `${port.port}${port.targetPort ? `→${port.targetPort}` : ""}/${port.protocol || "TCP"}`).slice(0, 3);
-    const selector = Object.entries(spec.selector?.matchLabels || spec.selector || {}).map(([key, value]) => `${key}=${value}`).slice(0, 2);
-    const details = [
-      `Namespace: ${namespace}`,
-      workloadKinds.includes(kind) ? `Replicas: ${spec.replicas ?? (kind === "DaemonSet" ? "node-managed" : 1)}` : "",
-      images.length ? `Images: ${images.join(", ")}` : "",
-      kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
-      ports.length ? `Ports: ${ports.join(", ")}` : "",
-      selector.length ? `Selector: ${selector.join(", ")}` : "",
-      kind === "Ingress" ? `Hosts: ${(spec.rules || []).map((rule) => rule.host).filter(Boolean).slice(0, 2).join(", ") || "default backend"}` : "",
-      kind === "ConfigMap" ? `Keys: ${Object.keys(manifest.data || {}).slice(0, 3).join(", ")}` : "",
-      apiVersion,
-    ].filter(Boolean).join("\n");
-    // Remove generated connectors involving this resource before its metadata changes.
-    // Their reciprocal card bindings must be removed too, otherwise Excalidraw can retain stale
-    // boundElements references after the YAML is reapplied.
-    const staleRelationshipIds = new Set(current
-      .filter((element) => !element.isDeleted
-        && element.type === "arrow"
-        && (element.customData?.kubernetesRelationship?.fromResourceId === resource.id
-          || element.customData?.kubernetesRelationship?.toResourceId === resource.id))
-      .map((element) => element.id));
-    const updated = current.map((element) => {
-      if (element.isDeleted) return element;
-      if (staleRelationshipIds.has(element.id)) return { ...element, isDeleted: true, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now() };
-      const metadata = element.customData?.kubernetesManifestResource;
-      if (metadata?.properties?.manifestResourceId !== resource.id) {
-        if (!Array.isArray(element.boundElements) || !element.boundElements.some((bound) => staleRelationshipIds.has(bound.id))) return element;
-        return { ...element, boundElements: element.boundElements.filter((bound) => !staleRelationshipIds.has(bound.id)), version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now() };
-      }
-      const isTitle = element.type === "text" && String(element.text || "").startsWith(kind + "\n");
-      const isDetails = element.type === "text" && String(element.text || "").startsWith("Namespace:");
-      return {
-        ...element,
-        ...(isTitle ? { text: `${kind}\n${name}` } : {}),
-        ...(isDetails ? { text: details } : {}),
-        customData: {
-          ...element.customData,
-          kubernetesManifestResource: {
-            ...metadata,
-            resourceType: kind.toLowerCase(),
-            properties: { ...metadata.properties, name, namespace, apiVersion, manifestResourceId: resource.id },
-            manifest,
-          },
-        },
-        version: (element.version || 0) + 1,
-        versionNonce: Math.floor(Math.random() * 0x7fffffff),
-        updated: Date.now(),
-      };
-    });
-    // Rebuild the supported generated relationships from the current canvas manifests.
-    // Keep card coordinates and authored connectors; only regenerate Kubernetes-tagged arrows.
-    const liveElements = updated.filter((element) => !element.isDeleted);
-    const cards = new Map();
-    liveElements.forEach((element) => {
-      const metadata = element.customData?.kubernetesManifestResource;
-      const resourceId = metadata?.properties?.manifestResourceId;
-      if (!resourceId || element.type !== "rectangle") return;
-      cards.set(resourceId, {
-        id: resourceId,
-        kind: metadata.manifest?.kind || metadata.resourceType,
-        name: metadata.manifest?.metadata?.name || metadata.properties?.name,
-        namespace: metadata.manifest?.metadata?.namespace || metadata.properties?.namespace || "default",
-        manifest: metadata.manifest || {},
-        element,
-      });
-    });
-    const allResources = [...cards.values()];
-    const byName = (kind, name, namespace) => allResources.find((item) => item.kind === kind && item.name === name && item.namespace === (namespace || "default"));
-    const matches = (selector, labels) => Boolean(selector && labels && Object.entries(selector).every(([key, value]) => labels[key] === value));
-    const labelsFor = (item) => item.kind === "Pod" ? item.manifest.metadata?.labels
-      : item.manifest.spec?.template?.metadata?.labels || item.manifest.spec?.selector?.matchLabels || {};
-    const relationships = [];
-    const addLink = (from, to, label, color = "#22a6b9") => {
-      if (!from || !to || from.id === to.id || relationships.some((link) => link.from.id === from.id && link.to.id === to.id && link.label === label)) return;
-      relationships.push({ from, to, label, color });
-    };
-    const workloads = allResources.filter((item) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(item.kind));
-    const services = allResources.filter((item) => item.kind === "Service");
-    services.forEach((service) => {
-      const selector = service.manifest.spec?.selector;
-      if (!selector || !Object.keys(selector).length) return;
-      workloads.filter((workload) => workload.namespace === service.namespace && matches(selector, labelsFor(workload)))
-        .forEach((workload) => addLink(service, workload, "routes to"));
-    });
-    allResources.filter((item) => item.kind === "Ingress").forEach((ingress) => {
-      const names = new Set((ingress.manifest.spec?.rules || []).flatMap((rule) => (rule.http?.paths || []).map((path) => path.backend?.service?.name).filter(Boolean)));
-      const defaultName = ingress.manifest.spec?.defaultBackend?.service?.name;
-      if (defaultName) names.add(defaultName);
-      names.forEach((serviceName) => addLink(ingress, byName("Service", serviceName, ingress.namespace), "routes to", "#9b78ef"));
-    });
-    allResources.filter((item) => item.kind === "Namespace").forEach((namespace) => {
-      allResources.filter((item) => item.id !== namespace.id && item.namespace === namespace.name
-        && ["Ingress", "Service", "Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(item.kind))
-        .forEach((item) => addLink(namespace, item, "contains", "#6e91c9"));
-    });
-    workloads.forEach((workload) => {
-      const podSpec = workload.manifest.spec?.template?.spec || workload.manifest.spec || {};
-      const refs = new Map();
-      const remember = (resourceKind, resourceName) => { if (resourceName) refs.set(resourceKind + "/" + resourceName, resourceKind); };
-      (podSpec.volumes || []).forEach((volume) => {
-        remember("PersistentVolumeClaim", volume.persistentVolumeClaim?.claimName);
-        remember("ConfigMap", volume.configMap?.name);
-        remember("Secret", volume.secret?.secretName);
-        (volume.projected?.sources || []).forEach((source) => { remember("ConfigMap", source.configMap?.name); remember("Secret", source.secret?.name); });
-      });
-      [...(podSpec.initContainers || []), ...(podSpec.containers || [])].forEach((container) => {
-        (container.envFrom || []).forEach((entry) => { remember("ConfigMap", entry.configMapRef?.name); remember("Secret", entry.secretRef?.name); });
-        (container.env || []).forEach((entry) => { remember("ConfigMap", entry.valueFrom?.configMapKeyRef?.name); remember("Secret", entry.valueFrom?.secretKeyRef?.name); });
-      });
-      refs.forEach((resourceKind, key) => {
-        const resourceName = key.slice(resourceKind.length + 1);
-        const target = byName(resourceKind, resourceName, workload.namespace);
-        if (target) addLink(workload, target, resourceKind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d");
-      });
-    });
-    allResources.filter((item) => item.kind === "NetworkPolicy").forEach((policy) => {
-      const selector = policy.manifest.spec?.podSelector?.matchLabels || {};
-      workloads.filter((workload) => workload.namespace === policy.namespace && (!Object.keys(selector).length || matches(selector, labelsFor(workload))))
-        .forEach((workload) => addLink(policy, workload, "applies to", "#b68bea"));
-    });
-    allResources.filter((item) => item.kind === "ServiceMonitor").forEach((monitor) => {
-      const selector = monitor.manifest.spec?.selector?.matchLabels || {};
-      services.filter((service) => service.namespace === monitor.namespace && (!Object.keys(selector).length || matches(selector, service.manifest.metadata?.labels || {})))
-        .forEach((service) => addLink(monitor, service, "monitors", "#b68bea"));
-    });
-    allResources.filter((claim) => claim.kind === "PersistentVolumeClaim").forEach((claim) => {
-      const volume = allResources.find((item) => item.kind === "PersistentVolume" && item.manifest.spec?.claimRef?.name === claim.name
-        && (!item.manifest.spec.claimRef.namespace || item.manifest.spec.claimRef.namespace === claim.namespace));
-      if (volume) addLink(claim, volume, "bound to", "#c59b4d");
-    });
-    workloads.forEach((workload) => {
-      const podSpec = workload.manifest.spec?.template?.spec || workload.manifest.spec || {};
-      const templateLabels = workload.manifest.spec?.template?.metadata?.labels || workload.manifest.metadata?.labels || {};
-      const account = podSpec.serviceAccountName && byName("ServiceAccount", podSpec.serviceAccountName, workload.namespace);
-      if (account) addLink(workload, account, "uses identity", "#b68bea");
-      const hpa = allResources.find((item) => item.kind === "HorizontalPodAutoscaler" && item.namespace === workload.namespace
-        && item.manifest.spec?.scaleTargetRef?.name === workload.name
-        && (!item.manifest.spec.scaleTargetRef.kind || item.manifest.spec.scaleTargetRef.kind === workload.kind));
-      if (hpa) addLink(hpa, workload, "scales", "#b68bea");
-      const pdb = allResources.find((item) => item.kind === "PodDisruptionBudget" && item.namespace === workload.namespace
-        && matches(item.manifest.spec?.selector?.matchLabels || {}, templateLabels));
-      if (pdb) addLink(pdb, workload, "protects", "#b68bea");
-      if (workload.kind === "CronJob") {
-        const jobSpec = workload.manifest.spec?.jobTemplate?.spec?.template?.spec || {};
-        const names = new Set([
-          ...(jobSpec.volumes || []).flatMap((volume) => [volume.configMap?.name, volume.secret?.secretName, volume.persistentVolumeClaim?.claimName].filter(Boolean)),
-          ...(jobSpec.containers || []).flatMap((container) => [
-            ...(container.envFrom || []).flatMap((entry) => [entry.configMapRef?.name, entry.secretRef?.name].filter(Boolean)),
-            ...(container.env || []).flatMap((entry) => [entry.valueFrom?.configMapKeyRef?.name, entry.valueFrom?.secretKeyRef?.name].filter(Boolean)),
-          ]),
-        ]);
-        allResources.filter((item) => names.has(item.name) && item.namespace === workload.namespace && ["ConfigMap", "Secret", "PersistentVolumeClaim"].includes(item.kind))
-          .forEach((item) => addLink(workload, item, item.kind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d"));
-      }
-    });
-    allResources.filter((binding) => ["RoleBinding", "ClusterRoleBinding"].includes(binding.kind)).forEach((binding) => {
-      const roleRef = binding.manifest.roleRef;
-      if (roleRef?.name) {
-        const role = allResources.find((item) => item.kind === roleRef.kind && item.name === roleRef.name
-          && (binding.kind === "ClusterRoleBinding" || item.namespace === binding.namespace));
-        if (role) addLink(binding, role, "grants role", "#b68bea");
-      }
-      (binding.manifest.subjects || []).filter((subject) => subject.kind === "ServiceAccount").forEach((subject) => {
-        const account = byName("ServiceAccount", subject.name, subject.namespace || binding.namespace);
-        if (account) addLink(binding, account, "binds identity", "#b68bea");
-      });
-    });
-    const relationshipArrows = relationships.map(({ from, to, label, color }) => {
-      const source = from.element;
-      const target = to.element;
-      const sx = source.x + source.width / 2;
-      const sy = source.y + source.height / 2;
-      const tx = target.x + target.width / 2;
-      const ty = target.y + target.height / 2;
-      const dx = tx - sx;
-      const dy = ty - sy;
-      const sourceScale = 1 / Math.max(Math.abs(dx) / Math.max(source.width / 2, 1), Math.abs(dy) / Math.max(source.height / 2, 1), 1);
-      const targetScale = 1 / Math.max(Math.abs(dx) / Math.max(target.width / 2, 1), Math.abs(dy) / Math.max(target.height / 2, 1), 1);
-      const startPoint = { x: sx + dx * sourceScale, y: sy + dy * sourceScale };
-      const endPoint = { x: tx - dx * targetScale, y: ty - dy * targetScale };
-      const x = Math.min(startPoint.x, endPoint.x);
-      const y = Math.min(startPoint.y, endPoint.y);
-      const id = `k8s-link-${Math.random().toString(36).slice(2, 13)}`;
-      source.boundElements = [...(source.boundElements || []), { id, type: "arrow" }];
-      target.boundElements = [...(target.boundElements || []), { id, type: "arrow" }];
-      return {
-        id, type: "arrow", x, y, width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y),
-        points: [[startPoint.x - x, startPoint.y - y], [endPoint.x - x, endPoint.y - y]],
-        start: { id: source.id }, end: { id: target.id },
-        startBinding: { elementId: source.id, focus: 0, gap: 8 }, endBinding: { elementId: target.id, focus: 0, gap: 8 },
-        strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
-        customData: { kubernetesRelationship: { fromResourceId: from.id, toResourceId: to.id, label } },
-        label: { text: label, fontSize: 11 },
-        version: 1, versionNonce: Math.floor(Math.random() * 0x7fffffff), updated: Date.now(), isDeleted: false,
-        fillStyle: "solid", strokeStyle: "solid", roundness: { type: 2 }, opacity: 100, angle: 0,
-        groupIds: [], frameId: null, boundElements: null, link: null, locked: false,
-      };
-    });
-    const finalElements = [...updated, ...relationshipArrows];
-    api.updateScene({ elements: finalElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || finalElements, api.getAppState?.() || {});
-    showToast(`Updated ${kind}/${name} and rebuilt ${relationshipArrows.length} generated Kubernetes relationships.`);
-  }, [collaborationCanEdit, queueSketchSave, showToast]);
 
-  const createKubernetesDiagram = useCallback(async (resources, { appendToCanvas = false } = {}) => {
-    const api = apiRef.current;
-    if (!api?.updateScene || !collaborationCanEdit) {
-      showToast("The editor is not ready or you do not have permission to edit.", "error");
-      return false;
-    }
-    if (!Array.isArray(resources) || !resources.length) {
-      showToast("No Kubernetes resources were found in the YAML.", "error");
-      return false;
-    }
-
-    const cardWidth = 284;
-    const cardHeight = 132;
-    const gapX = 92;
-    const gapY = 78;
-    const positions = new Map();
-    const normalizedIconToken = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const iconAliases = {
-      EndpointSlice: ["endpointslice", "endpoints"], PersistentVolumeClaim: ["persistentvolumeclaim", "pvc"],
-      PersistentVolume: ["persistentvolume", "pv"], StorageClass: ["storageclass"], HorizontalPodAutoscaler: ["horizontalpodautoscaler", "hpa"],
-      NetworkPolicy: ["networkpolicy"], ServiceAccount: ["serviceaccount"], ClusterRoleBinding: ["clusterrolebinding"],
-      ClusterRole: ["clusterrole"], RoleBinding: ["rolebinding"], CustomResourceDefinition: ["customresourcedefinition", "crd"],
-      PodSecurityPolicy: ["podsecuritypolicy"], ConfigMap: ["configmap"], CronJob: ["cronjob"],
-      ResourceQuota: ["resourcequota"], LimitRange: ["limitrange"],
-      ServiceMonitor: ["servicemonitor", "service"], PodDisruptionBudget: ["poddisruptionbudget", "pdb", "pod"], Deployment: ["deployment"], StatefulSet: ["statefulset"], DaemonSet: ["daemonset"],
-      ReplicaSet: ["replicaset"], Service: ["service"], Ingress: ["ingress"], Pod: ["pod"], Namespace: ["namespace"],
-      Secret: ["secret"], Job: ["job"], Node: ["node"], Role: ["role"],
-    };
-    const iconForKind = (kind) => {
-      const tokens = new Set([normalizedIconToken(kind), ...(iconAliases[kind] || [])]);
-      const candidates = kubernetesIcons.map((icon) => {
-        const id = normalizedIconToken(String(icon.id || "").replace(/^k8s:/, ""));
-        const name = normalizedIconToken(icon.name);
-        const srcName = normalizedIconToken(String(icon.src || "").split(/[/?#]/).filter(Boolean).pop() || "");
-        const category = normalizedIconToken(icon.category);
-        const exact = tokens.has(id) || tokens.has(name) || tokens.has(srcName);
-        const partial = [...tokens].some((token) => token.length >= 4 && (id.endsWith(token) || name === token || name.startsWith(token) || srcName === token || srcName.startsWith(token)));
-        return { icon, score: exact ? 100 : partial ? 60 : category === "kubernetes" && [...tokens].some((token) => id.includes(token)) ? 30 : 0 };
-      }).sort((a, b) => b.score - a.score);
-      return candidates[0]?.score ? candidates[0].icon : null;
-    };
-    const layoutRank = (resource) => {
-      const kind = resource.kind;
-      if (kind === "Ingress" || kind === "Gateway" || kind === "HTTPRoute") return 0;
-      if (kind === "Service") return 1;
-      if (["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(kind)) return 2;
-      if (["PersistentVolumeClaim", "PersistentVolume", "StorageClass", "ConfigMap", "Secret", "ServiceAccount"].includes(kind)) return 3;
-      if (["HorizontalPodAutoscaler", "PodDisruptionBudget", "NetworkPolicy"].includes(kind)) return 4;
-      return 5;
-    };
-    const buckets = new Map();
-    resources.forEach((resource) => {
-      const rank = layoutRank(resource);
-      if (!buckets.has(rank)) buckets.set(rank, []);
-      buckets.get(rank).push(resource);
-    });
-    const resourcePositions = new Map();
-    const maxPerRow = 4;
-    let nextLayoutY = 90;
-    [...buckets.entries()].sort((a, b) => a[0] - b[0]).forEach(([rank, items]) => {
-      // Stable ordering makes regenerated diagrams easier to compare and groups
-      // similarly named resources instead of following YAML document order.
-      items.sort((a, b) => String(a.namespace || "default").localeCompare(String(b.namespace || "default"))
-        || String(a.kind).localeCompare(String(b.kind))
-        || String(a.name).localeCompare(String(b.name)));
-      const rowCount = Math.ceil(items.length / maxPerRow);
-      items.forEach((resource, index) => {
-        const row = Math.floor(index / maxPerRow);
-        const column = index % maxPerRow;
-        const x = 120 + column * (cardWidth + gapX);
-        const y = nextLayoutY + row * (cardHeight + 42);
-        resourcePositions.set(resource.id, { x, y, rank, row, column });
-        positions.set(resource.id, { x, y });
-      });
-      nextLayoutY += rowCount * (cardHeight + 42) + 84;
-    });
-
-    const iconAssets = await Promise.all(resources.map(async (resource) => {
-      const { x, y } = positions.get(resource.id);
-      const icon = iconForKind(resource.kind);
-      if (!icon) return { resource, x, y, icon: null, fileId: null };
-      try {
-        const response = await fetch(icon.src, { cache: "force-cache" });
-        if (!response.ok) throw new Error(`Kubernetes icon request failed (${response.status})`);
-        const svg = await response.text();
-        const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
-        const fileId = `k8s-import-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-        return { resource, x, y, icon, fileId, dataURL };
-      } catch (error) {
-        showToast(`Could not load the ${resource.kind} icon; using a labeled resource card instead.`, "warning");
-        return { resource, x, y, icon, fileId: null };
-      }
-    }));
-
-    const fileAssets = iconAssets.filter((asset) => asset.dataURL).map((asset) => ({
-      id: asset.fileId, dataURL: asset.dataURL, mimeType: "image/svg+xml", created: Date.now(), lastRetrieved: Date.now(),
-    }));
-    if (fileAssets.length) api.addFiles(fileAssets);
-
-    const nodes = [];
-    const resourceRectangles = new Map();
-    const resourceElementIds = new Map(resources.map((resource) => [resource.id, `k8s-resource-${Math.random().toString(36).slice(2, 13)}`]));
-    const labelsMatch = (selector, labels) => selector && labels && Object.entries(selector).length > 0
-      && Object.entries(selector).every(([key, value]) => labels[key] === value);
-    iconAssets.forEach(({ resource, x, y, icon, fileId }) => {
-      const manifest = resource.manifest || {};
-      const spec = manifest.spec || {};
-      const resourceElementId = resourceElementIds.get(resource.id);
-      const resourceGroup = `k8s-import-${appendToCanvas ? resourceElementId : resource.id}`;
-      const workloadKinds = ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"];
-      const podSpec = resource.kind === "CronJob" ? spec.jobTemplate?.spec?.template?.spec
-        : resource.kind === "Job" ? spec.template?.spec
-        : ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) ? spec.template?.spec
-        : spec;
-      const images = (podSpec?.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2);
-      const ports = (spec.ports || []).map((port) => `${port.port}${port.targetPort ? `→${port.targetPort}` : ""}/${port.protocol || "TCP"}`).slice(0, 3);
-      const selector = Object.entries(spec.selector?.matchLabels || spec.selector || {}).map(([key, value]) => `${key}=${value}`).slice(0, 2);
-      const details = [
-        `Namespace: ${resource.namespace || "default"}`,
-        workloadKinds.includes(resource.kind) ? `Replicas: ${spec.replicas ?? (resource.kind === "DaemonSet" ? "node-managed" : 1)}` : "",
-        images.length ? `Images: ${images.join(", ")}` : "",
-        resource.kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
-        ports.length ? `Ports: ${ports.join(", ")}` : "",
-        selector.length ? `Selector: ${selector.join(", ")}` : "",
-        resource.kind === "Ingress" ? `Hosts: ${(spec.rules || []).map((rule) => rule.host).filter(Boolean).slice(0, 2).join(", ") || "default backend"}` : "",
-        resource.kind === "ConfigMap" ? `Keys: ${Object.keys(manifest.data || {}).slice(0, 3).join(", ")}` : "",
-        resource.apiVersion || "",
-      ].filter(Boolean).slice(0, 5).join("\n");
-      const metadata = {
-        provider: "kubernetes", resourceType: String(resource.kind || "resource").toLowerCase(),
-        catalog: "kubernetes", importedFromYaml: !appendToCanvas,
-        properties: { name: resource.name, namespace: resource.namespace || "default", apiVersion: resource.apiVersion, manifestResourceId: resource.id },
-        manifest,
-      };
-      const resourceMetadata = appendToCanvas ? { kubernetesPracticeResource: metadata } : { kubernetesManifestResource: metadata };
-      const resourceRectangle = {
-        id: resourceElementId,
-        type: "rectangle", x, y, width: cardWidth, height: cardHeight,
-        boundElements: [],
-        strokeColor: resource.kind === "Service" ? "#0891b2" : resource.kind === "Ingress" ? "#805ad5" : "#4779bf",
-        backgroundColor: resource.kind === "Service" ? "#e6f8fb" : resource.kind === "Ingress" ? "#f1eaff" : "#eaf2ff",
-        fillStyle: "solid", strokeWidth: 1.5, roughness: 0, roundness: { type: 3 },
-        groupIds: [resourceGroup],
-        customData: { diagramIcon: true, iconId: icon?.id || null, iconName: icon?.name || resource.kind, iconCategory: icon?.category || "Kubernetes", iconSource: "kubernetes", ...resourceMetadata },
-      };
-      resourceRectangles.set(resource.id, resourceRectangle);
-      nodes.push(resourceRectangle);
-      if (fileId) {
-        nodes.push({
-          type: "image", x: x + 16, y: y + 31, width: 52, height: 52, fileId,
-          groupIds: [resourceGroup],
-          customData: { diagramIcon: true, iconId: icon.id, iconName: icon.name, iconCategory: icon.category, iconSource: "kubernetes", ...resourceMetadata },
-        });
-      } else {
-        nodes.push({
-          type: "text", x: x + 16, y: y + 34, width: 66, height: 44, text: String(resource.kind).replace(/([a-z])([A-Z])/g, "$1 $2").split(/\s+/).map((part) => part.slice(0, 1)).join("").slice(0, 4).toUpperCase(),
-          fontSize: 15, fontFamily: 2, textAlign: "center", verticalAlign: "middle", strokeColor: "#9fc5ff",
-          groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", ...resourceMetadata },
-        });
-      }
-      nodes.push({
-        type: "text", x: x + 82, y: y + 14, width: cardWidth - 98, height: 38,
-        text: `${resource.kind}\n${resource.name}`, fontSize: 15, fontFamily: 2, textAlign: "left",
-        verticalAlign: "top", strokeColor: "#182b45", backgroundColor: "transparent", autoResize: false,
-        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", ...resourceMetadata },
-      });
-      nodes.push({
-        type: "text", x: x + 82, y: y + 54, width: cardWidth - 98, height: 70,
-        text: details, fontSize: 11, fontFamily: 2, textAlign: "left",
-        verticalAlign: "top", strokeColor: "#475b73", backgroundColor: "transparent", autoResize: false,
-        groupIds: [resourceGroup], customData: { diagramIcon: true, iconSource: "kubernetes", ...resourceMetadata },
-      });
-    });
-
-    const edges = [];
-    const edgePairs = new Set();
-    const addRelationship = (fromResource, toResource, label, color = "#22a6b9") => {
-      if (!fromResource || !toResource || fromResource.id === toResource.id) return;
-      const pairKey = `${fromResource.id}->${toResource.id}:${label}`;
-      if (edgePairs.has(pairKey)) return;
-      edgePairs.add(pairKey);
-      const from = positions.get(fromResource.id);
-      const to = positions.get(toResource.id);
-      const fromElementId = resourceElementIds.get(fromResource.id);
-      const toElementId = resourceElementIds.get(toResource.id);
-      const fromRectangle = resourceRectangles.get(fromResource.id);
-      const toRectangle = resourceRectangles.get(toResource.id);
-      if (!from || !to || !fromElementId || !toElementId || !fromRectangle || !toRectangle) return;
-      const fromCenter = { x: from.x + cardWidth / 2, y: from.y + cardHeight / 2 };
-      const toCenter = { x: to.x + cardWidth / 2, y: to.y + cardHeight / 2 };
-      const dx = toCenter.x - fromCenter.x;
-      const dy = toCenter.y - fromCenter.y;
-      if (Math.abs(dx) + Math.abs(dy) < 1) return;
-      const fromScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
-      const toScale = 1 / Math.max(Math.abs(dx) / (cardWidth / 2), Math.abs(dy) / (cardHeight / 2));
-      const startPoint = { x: fromCenter.x + dx * fromScale, y: fromCenter.y + dy * fromScale };
-      const endPoint = { x: toCenter.x - dx * toScale, y: toCenter.y - dy * toScale };
-      const left = Math.min(startPoint.x, endPoint.x);
-      const top = Math.min(startPoint.y, endPoint.y);
-      const arrowId = `k8s-link-${Math.random().toString(36).slice(2, 13)}`;
-      // Excalidraw requires both arrow bindings and reciprocal boundElements
-      // on the resource cards; without both, moving a card leaves a detached line.
-      fromRectangle.boundElements.push({ id: arrowId, type: "arrow" });
-      toRectangle.boundElements.push({ id: arrowId, type: "arrow" });
-      edges.push({
-        id: arrowId,
-        type: "arrow", x: left, y: top,
-        width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y),
-        points: [[startPoint.x - left, startPoint.y - top], [endPoint.x - left, endPoint.y - top]],
-        // Skeleton API uses start/end IDs to create real Excalidraw bindings.
-        start: { id: fromElementId },
-        end: { id: toElementId },
-        startBinding: { elementId: fromElementId, focus: 0, gap: 8 },
-        endBinding: { elementId: toElementId, focus: 0, gap: 8 },
-        strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
-        customData: { [appendToCanvas ? "kubernetesPracticeRelationship" : "kubernetesRelationship"]: { fromResourceId: fromResource.id, toResourceId: toResource.id, label } },
-        label: { text: label, fontSize: 11 },
-      });
-    };
-    const workloads = resources.filter((resource) => ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Pod", "Job", "CronJob"].includes(resource.kind));
-    const services = resources.filter((resource) => resource.kind === "Service");
-    const ingressResources = resources.filter((resource) => resource.kind === "Ingress");
-    services.forEach((service) => {
-      const selector = service.manifest?.spec?.selector;
-      if (selector && Object.keys(selector).length) {
-        workloads.forEach((workload) => {
-          const labels = workload.kind === "Pod"
-            ? workload.manifest?.metadata?.labels
-            : workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.spec?.selector?.matchLabels;
-          if (labelsMatch(selector, labels)) addRelationship(service, workload, "routes to");
-        });
-      }
-    });
-    ingressResources.forEach((ingress) => {
-      const rules = ingress.manifest?.spec?.rules || [];
-      const serviceNames = new Set(rules.flatMap((rule) => (rule.http?.paths || []).map((path) => path.backend?.service?.name).filter(Boolean)));
-      const defaultName = ingress.manifest?.spec?.defaultBackend?.service?.name;
-      if (defaultName) serviceNames.add(defaultName);
-      serviceNames.forEach((name) => addRelationship(ingress, services.find((service) => service.name === name && service.namespace === ingress.namespace), "routes to", "#9b78ef"));
-    });
-    resources.filter((resource) => resource.kind === "Namespace").forEach((namespace) => {
-      // Namespace membership applies to every namespaced object, not just the
-      // common networking and workload kinds. Omitted metadata.namespace means
-      // the default namespace; cluster-scoped resources are deliberately excluded.
-      const clusterScopedKinds = new Set([
-        "Namespace", "Node", "PersistentVolume", "StorageClass", "ClusterRole",
-        "ClusterRoleBinding", "CustomResourceDefinition",
-      ]);
-      resources.filter((resource) => resource.id !== namespace.id
-        && !clusterScopedKinds.has(resource.kind)
-        && (resource.manifest?.metadata?.namespace || "default") === namespace.name)
-        .forEach((resource) => addRelationship(namespace, resource, "contains", "#6e91c9"));
-    });
-    resources.filter((resource) => resource.kind === "NetworkPolicy").forEach((policy) => {
-      const selector = policy.manifest?.spec?.podSelector?.matchLabels || {};
-      workloads.filter((workload) => workload.namespace === policy.namespace).forEach((workload) => {
-        const labels = workload.kind === "Pod" ? workload.manifest?.metadata?.labels
-          : workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.spec?.selector?.matchLabels;
-        if (Object.keys(selector).length === 0 || labelsMatch(selector, labels)) addRelationship(policy, workload, "applies to", "#b68bea");
-      });
-    });
-    resources.filter((resource) => resource.kind === "ServiceMonitor").forEach((monitor) => {
-      const selector = monitor.manifest?.spec?.selector?.matchLabels || {};
-      services.filter((service) => service.namespace === monitor.namespace).forEach((service) => {
-        const labels = service.manifest?.metadata?.labels || {};
-        if (Object.keys(selector).length === 0 || labelsMatch(selector, labels)) addRelationship(monitor, service, "monitors", "#b68bea");
-      });
-    });
-    resources.filter((resource) => resource.kind === "PersistentVolumeClaim").forEach((claim) => {
-      const volume = resources.find((resource) => resource.kind === "PersistentVolume"
-        && resource.manifest?.spec?.claimRef?.name === claim.name
-        && (!resource.manifest?.spec?.claimRef?.namespace || resource.manifest.spec.claimRef.namespace === claim.namespace));
-      if (volume) addRelationship(claim, volume, "bound to", "#c59b4d");
-      const storageClassName = claim.manifest?.spec?.storageClassName;
-      if (storageClassName) {
-        const storageClass = resources.find((resource) => resource.kind === "StorageClass" && resource.name === storageClassName);
-        if (storageClass) addRelationship(claim, storageClass, "provisioned by", "#c59b4d");
-      }
-    });
-    resources.filter((resource) => resource.kind === "StatefulSet").forEach((statefulSet) => {
-      const serviceName = statefulSet.manifest?.spec?.serviceName;
-      if (!serviceName) return;
-      const service = services.find((candidate) => candidate.name === serviceName && candidate.namespace === statefulSet.namespace);
-      if (service) addRelationship(statefulSet, service, "governed by", "#22a6b9");
-    });
-    resources.filter((resource) => resource.kind === "Pod" && resource.manifest?.spec?.nodeName).forEach((pod) => {
-      const node = resources.find((candidate) => candidate.kind === "Node" && candidate.name === pod.manifest.spec.nodeName);
-      if (node) addRelationship(pod, node, "runs on", "#6e91c9");
-    });
-    workloads.forEach((workload) => {
-      const podSpec = workload.kind === "CronJob"
-        ? workload.manifest?.spec?.jobTemplate?.spec?.template?.spec || {}
-        : workload.manifest?.spec?.template?.spec || workload.manifest?.spec || {};
-      const podTemplateLabels = workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.metadata?.labels || {};
-      const referencedResources = new Map();
-      const remember = (kind, name) => { if (name) referencedResources.set(kind + "/" + name, { kind, name }); };
-      (podSpec.volumes || []).forEach((volume) => {
-        remember("PersistentVolumeClaim", volume.persistentVolumeClaim?.claimName);
-        remember("ConfigMap", volume.configMap?.name);
-        remember("Secret", volume.secret?.secretName);
-        (volume.projected?.sources || []).forEach((source) => {
-          remember("ConfigMap", source.configMap?.name);
-          remember("Secret", source.secret?.name);
-        });
-      });
-      [...(podSpec.initContainers || []), ...(podSpec.containers || []), ...(podSpec.ephemeralContainers || [])].forEach((container) => {
-        (container.envFrom || []).forEach((item) => {
-          remember("ConfigMap", item.configMapRef?.name);
-          remember("Secret", item.secretRef?.name);
-        });
-        (container.env || []).forEach((item) => {
-          remember("ConfigMap", item.valueFrom?.configMapKeyRef?.name);
-          remember("Secret", item.valueFrom?.secretKeyRef?.name);
-        });
-      });
-      resources.filter((resource) => referencedResources.has(resource.kind + "/" + resource.name)
-        && resource.namespace === workload.namespace
-        && ["ConfigMap", "Secret", "PersistentVolumeClaim"].includes(resource.kind))
-        .forEach((resource) => addRelationship(workload, resource, resource.kind === "PersistentVolumeClaim" ? "mounts" : "uses", "#c59b4d"));
-      if (podSpec.serviceAccountName) {
-        const account = resources.find((resource) => resource.kind === "ServiceAccount" && resource.name === podSpec.serviceAccountName && resource.namespace === workload.namespace);
-        if (account) addRelationship(workload, account, "uses identity", "#b68bea");
-      }
-      const hpa = resources.find((resource) => resource.kind === "HorizontalPodAutoscaler"
-        && resource.namespace === workload.namespace
-        && resource.manifest?.spec?.scaleTargetRef?.name === workload.name
-        && (!resource.manifest.spec.scaleTargetRef.kind || resource.manifest.spec.scaleTargetRef.kind === workload.kind));
-      if (hpa) addRelationship(hpa, workload, "scales", "#b68bea");
-      const pdb = resources.find((resource) => resource.kind === "PodDisruptionBudget"
-        && resource.namespace === workload.namespace
-        && labelsMatch(resource.manifest?.spec?.selector?.matchLabels, podTemplateLabels));
-      if (pdb) addRelationship(pdb, workload, "protects", "#b68bea");
-      if (workload.kind === "CronJob") {
-        const jobTemplate = workload.manifest?.spec?.jobTemplate?.spec?.template?.spec || {};
-        const cronReferences = new Set([
-          ...(jobTemplate.volumes || []).flatMap((volume) => [volume.configMap?.name, volume.secret?.secretName, volume.persistentVolumeClaim?.claimName].filter(Boolean)),
-          ...(jobTemplate.containers || []).flatMap((container) => [
-            ...(container.envFrom || []).flatMap((item) => [item.configMapRef?.name, item.secretRef?.name].filter(Boolean)),
-          ]),
-        ]);
-        resources.filter((resource) => cronReferences.has(resource.name) && resource.namespace === workload.namespace
-          && ["ConfigMap", "Secret", "PersistentVolumeClaim"].includes(resource.kind))
-          .forEach((resource) => addRelationship(workload, resource, "uses", "#c59b4d"));
-      }
-    });
-    resources.filter((resource) => ["RoleBinding", "ClusterRoleBinding"].includes(resource.kind)).forEach((binding) => {
-      const roleRef = binding.manifest?.roleRef;
-      if (roleRef?.name) {
-        const targetKind = roleRef.kind;
-        const target = resources.find((resource) => resource.kind === targetKind && resource.name === roleRef.name
-          && (binding.kind === "ClusterRoleBinding" || targetKind === "ClusterRole" || resource.namespace === binding.namespace));
-        if (target) addRelationship(binding, target, "grants role", "#b68bea");
-      }
-      (binding.manifest?.subjects || []).filter((subject) => subject.kind === "ServiceAccount").forEach((subject) => {
-        const account = resources.find((resource) => resource.kind === "ServiceAccount" && resource.name === subject.name
-          && resource.namespace === (subject.namespace || binding.namespace));
-        if (account) addRelationship(binding, account, "binds identity", "#b68bea");
-      });
-    });
-
-    const existing = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-    if (appendToCanvas) {
-      const drawings = existing.filter((element) => !element.isDeleted);
-      if (drawings.length) {
-        const [, top, right] = getCommonBounds(drawings);
-        [...edges, ...nodes].forEach((element) => {
-          element.x += right + gapX - 120;
-          element.y += top - 90;
-        });
-      }
-    }
-
-    // Preserve authored element IDs so the arrow start/end references remain
-    // valid when the skeletons are converted into fully qualified elements.
-    const converted = convertToExcalidrawElements([...edges, ...nodes], { regenerateIds: false });
-    const created = restoreElements(converted, null, { deleteInvisibleElements: true });
-
-    // Reapply connector bindings after Excalidraw normalizes the imported
-    // skeletons. This ensures the final restored elements reference the exact
-    // IDs of the rectangle cards that are inserted into the scene.
-    const createdById = new Map(created.map((element) => [element.id, element]));
-    edges.forEach((edge) => {
-      const arrow = createdById.get(edge.id);
-      const startElement = createdById.get(edge.startBinding?.elementId);
-      const endElement = createdById.get(edge.endBinding?.elementId);
-      if (!arrow || !startElement || !endElement) return;
-      arrow.startBinding = { elementId: startElement.id, focus: edge.startBinding?.focus ?? 0, gap: edge.startBinding?.gap ?? 8 };
-      arrow.endBinding = { elementId: endElement.id, focus: edge.endBinding?.focus ?? 0, gap: edge.endBinding?.gap ?? 8 };
-      startElement.boundElements = [
-        ...(startElement.boundElements || []).filter((binding) => binding.id !== arrow.id),
-        { id: arrow.id, type: "arrow" },
-      ];
-      endElement.boundElements = [
-        ...(endElement.boundElements || []).filter((binding) => binding.id !== arrow.id),
-        { id: arrow.id, type: "arrow" },
-      ];
-    });
-    const importedResourceIds = new Set(appendToCanvas ? [] : existing.filter((element) => {
-      const metadata = element.customData?.kubernetesManifestResource;
-      return !element.isDeleted && Boolean(metadata?.importedFromYaml || metadata?.properties?.importedFromYaml);
-    }).map((element) => element.customData?.kubernetesManifestResource?.properties?.manifestResourceId).filter(Boolean));
-    const staleRelationshipIds = new Set(appendToCanvas ? [] : existing.filter((element) => {
-      const relationship = element.customData?.kubernetesRelationship;
-      return !element.isDeleted && element.type === "arrow" && relationship
-        && (importedResourceIds.has(relationship.fromResourceId) || importedResourceIds.has(relationship.toResourceId));
-    }).map((element) => element.id));
-    const retained = appendToCanvas ? existing : existing.filter((element) => {
-      if (element.isDeleted) return true;
-      const metadata = element.customData?.kubernetesManifestResource;
-      if (metadata?.importedFromYaml || metadata?.properties?.importedFromYaml) return false;
-      if (staleRelationshipIds.has(element.id)) return false;
-      return true;
-    }).map((element) => {
-      if (!Array.isArray(element.boundElements) || !element.boundElements.some((binding) => staleRelationshipIds.has(binding.id))) return element;
-      return { ...element, boundElements: element.boundElements.filter((binding) => !staleRelationshipIds.has(binding.id)), version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
-    });
-    api.updateScene({
-      elements: [...retained, ...created],
-      appState: { ...api.getAppState(), selectedElementIds: Object.fromEntries(created.map((element) => [element.id, true])) },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-    });
-    api.scrollToContent?.(created, { fitToContent: true, animate: true });
-    queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || created, api.getAppState?.() || {});
-    showToast(`Created Kubernetes diagram with ${resources.length} resources`);
-    return true;
-  }, [collaborationCanEdit, queueSketchSave, showToast]);
-  const createComposeDiagram = useCallback(async (composeDocument) => {
-    const api = apiRef.current;
-    if (!api?.updateScene || !collaborationCanEdit) return;
-    const services = Object.entries(composeDocument.services || {});
-    if (!services.length) {
-      showToast("Add at least one service before creating a diagram.", "error");
-      return;
-    }
-
-    const layout = planComposeDiagram(composeDocument);
-    const { positions, edges, resources, cardWidth, cardHeight, left, top, resourceWidth, resourceHeight } = layout;
-    const skeleton = [];
-    const projectName = composeDocument.name || "Docker Compose project";
-    skeleton.push({
-      type: "rectangle", x: left - 40, y: top - 90, width: layout.width, height: layout.height,
-      strokeColor: "#64748b", backgroundColor: "transparent", fillStyle: "solid",
-      strokeStyle: "dashed"
-    });
-    skeleton.push({ type: "text", x: left - 24, y: top - 68, text: "COMPOSE  /  " + projectName, fontSize: 18, fontFamily: 2, strokeColor: "#a7b6cb" });
-    // Place arrows between card edges, not through their labels.
-    edges.forEach(({ from, to }) => {
-      const start = positions.get(from), end = positions.get(to);
-      if (!start || !end) return;
-      const rightward = end.x > start.x;
-      const x1 = rightward ? start.x + cardWidth : start.x;
-      const x2 = rightward ? end.x : end.x + cardWidth;
-      const y1 = start.y + cardHeight / 2, y2 = end.y + cardHeight / 2;
-      skeleton.push({
-        type: "arrow", x: x1, y: y1, width: x2 - x1, height: y2 - y1,
-        points: [[0, 0], [x2 - x1, y2 - y1]], strokeColor: "#8aa3c1", strokeWidth: 2,
-        endArrowhead: "arrow"
-      });
-    });
-
-    // Prefer recognizable artwork from Sketchizi's own icon catalogs. The
-    // bundled service icons remain a fallback for services without a catalog match.
-    const libraryIcons = [...eraserCatalog, ...awsIcons, ...kubernetesIcons, ...networkingIcons, ...umlIcons, ...mindMapIcons];
-    const iconTermsForService = (name, service) => {
-      const value = `${name} ${service.image || ""} ${service.build?.context || ""}`.toLowerCase();
-      if (/postgres|postgresql/.test(value)) return ["postgres", "postgresql", "database", "sql"];
-      if (/mysql|mariadb/.test(value)) return ["mysql", "mariadb", "database", "sql"];
-      if (/mongo/.test(value)) return ["mongodb", "mongo", "document database"];
-      if (/redis/.test(value)) return ["redis", "cache", "in-memory database"];
-      if (/rabbitmq|kafka|queue|messaging/.test(value)) return ["rabbitmq", "message queue", "messaging", "kafka"];
-      if (/prometheus|grafana|loki|monitor|observability/.test(value)) return ["prometheus", "grafana", "monitoring", "observability", "logging"];
-      if (/traefik|nginx|haproxy|envoy|proxy|gateway|ingress/.test(value)) return ["nginx", "proxy", "load balancer", "gateway", "web server"];
-      if (/node|frontend|web|ui/.test(value)) return ["node.js", "web application", "frontend", "web server", "application"];
-      if (/docker|container/.test(value)) return ["docker", "container"];
-      return [name.toLowerCase(), "server", "application", "container"];
-    };
-    const findLibraryIcon = (name, service) => {
-      const terms = iconTermsForService(name, service);
-      let best = null;
-      let bestScore = 0;
-      for (const icon of libraryIcons) {
-        if (!icon?.src || typeof icon.src !== "string") continue;
-        const haystack = [icon.name, icon.id, icon.category, icon.subtitle, ...(icon.tags || []), ...(icon.searchAliases || [])].filter(Boolean).join(" ").toLowerCase();
-        let score = 0;
-        for (const term of terms) {
-          if (haystack === term) score += 12;
-          else if (haystack.includes(term)) score += term.length > 5 ? 5 : 2;
-        }
-        if (score > bestScore) { best = icon; bestScore = score; }
-      }
-      return bestScore ? best : null;
-    };
-    const fallbackIconForService = (service) => {
-      const image = String(service.image || service.build?.context || "").toLowerCase();
-      if (image.includes("nginx")) return "/icons/web-server.svg";
-      if (image.includes("node")) return "/icons/node.svg";
-      if (image.includes("postgres")) return "/icons/postgres.svg";
-      if (image.includes("redis")) return "/icons/redis.svg";
-      if (image.includes("mysql")) return "/icons/mysql.svg";
-      if (image.includes("mariadb")) return "/icons/mariadb.svg";
-      if (image.includes("mongo")) return "/icons/mongodb.svg";
-      if (image.includes("rabbitmq")) return "/icons/queue.svg";
-      if (image.includes("traefik") || image.includes("haproxy") || image.includes("envoy")) return "/icons/proxy.svg";
-      if (image.includes("prometheus") || image.includes("grafana")) return "/icons/monitoring.svg";
-      if (image.includes("docker")) return "/icons/docker.svg";
-      return "/icons/container.svg";
-    };
-    const serviceIconSources = new Map(services.map(([name, service]) => {
-      const libraryIcon = findLibraryIcon(name, service);
-      return [name, libraryIcon?.src || fallbackIconForService(service)];
-    }));
-    const iconAssets = new Map();
-    await Promise.all(services.map(async ([name]) => {
-      const source = serviceIconSources.get(name);
-      if (iconAssets.has(source)) return;
-      try {
-        if (source.startsWith("data:image/")) {
-          iconAssets.set(source, { fileId: `compose-icon-${iconAssets.size}`, dataURL: source, mimeType: source.match(/^data:([^;,]+)/)?.[1] || "image/svg+xml" });
-          return;
-        }
-        const response = await fetch(source);
-        if (!response.ok) return;
-        const blob = await response.blob();
-        const dataURL = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-        iconAssets.set(source, {
-          fileId: "compose-icon-" + iconAssets.size,
-          dataURL,
-          mimeType: blob.type || "image/svg+xml"
-        });
-      } catch {
-        // The diagram can still be generated if an optional icon fails to load.
-      }
-    }));
-    if (iconAssets.size && typeof api.addFiles === "function") {
-      api.addFiles(Array.from(iconAssets.values()).map((asset) => ({
-        id: asset.fileId,
-        dataURL: asset.dataURL,
-        mimeType: asset.mimeType || "image/svg+xml",
-        created: Date.now()
-      })));
-    }
-
-    // Explicit text elements avoid Excalidraw label-theme overrides and allow reliable contrast.
-    const addText = (x, y, text, fontSize, color, width = 240) => skeleton.push({
-      type: "text", x, y, text, fontSize, fontFamily: 2, strokeColor: color,
-      width, textAlign: "left"
-    });
-    services.forEach(([name, service]) => {
-      const { x, y } = positions.get(name);
-      const iconAsset = iconAssets.get(serviceIconSources.get(name));
-      const details = composeCardDetails(service);
-      skeleton.push({
-        type: "rectangle", x, y, width: cardWidth, height: cardHeight,
-        strokeColor: "#6685bd", backgroundColor: "#18263b", fillStyle: "solid",
-        strokeWidth: 2, roundness: { type: 3 }
-      });
-      skeleton.push({ type: "line", x: x + 12, y: y + 41, width: cardWidth - 24, height: 0, points: [[0, 0], [cardWidth - 24, 0]], strokeColor: "#344b68", strokeWidth: 1 });
-      addText(x + 16, y + 13, name, 20, "#f1f5ff", cardWidth - 76);
-      details.forEach((detail, index) => addText(x + 16, y + 50 + index * 23, detail, 13, "#c1d1e9", cardWidth - 32));
-      if (iconAsset) skeleton.push({
-        type: "image", x: x + cardWidth - 43, y: y + 8,
-        width: 28, height: 28, fileId: iconAsset.fileId, status: "saved", scale: [1, 1]
-      });
-    });
-    // Resource membership is a real relationship: connect each network or named
-    // volume to its members, with thin orthogonal paths behind the resource cards.
-    resources.forEach((resource) => {
-      const pos = layout.resourcePositions.get(resource.kind + ":" + resource.name);
-      if (!pos) return;
-      const resourceCenterX = pos.x + resourceWidth / 2;
-      resource.members.forEach((member) => {
-        const servicePos = positions.get(member);
-        if (!servicePos) return;
-        const startX = servicePos.x + cardWidth / 2;
-        const startY = servicePos.y + cardHeight;
-        const endY = pos.y;
-        const midY = startY + Math.max(14, (endY - startY) / 2);
-        skeleton.push({
-          type: "line", x: startX, y: startY, width: resourceCenterX - startX, height: endY - startY,
-          points: [[0, 0], [0, midY - startY], [resourceCenterX - startX, midY - startY], [resourceCenterX - startX, endY - startY]],
-          strokeColor: resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8", strokeWidth: 1.5, strokeStyle: resource.kind === "VOLUME" ? "solid" : "dashed"
-        });
-      });
-    });
-    resources.forEach((resource) => {
-      const pos = layout.resourcePositions.get(resource.kind + ":" + resource.name);
-      if (!pos) return;
-      const { x, y } = pos;
-      const accent = resource.kind === "VOLUME" ? "#2dd4bf" : "#38bdf8";
-      skeleton.push({
-        type: "rectangle", x, y, width: resourceWidth, height: resourceHeight,
-        strokeColor: accent, backgroundColor: "#142b39",
-        fillStyle: "solid", strokeWidth: 1, roundness: { type: 3 }
-      });
-      addText(x + 12, y + 9, resource.kind + " · " + resource.name, 13, "#e2f3ff", resourceWidth - 24);
-      addText(x + 12, y + 35, resource.members.join(" · "), 12, "#a6c8da", resourceWidth - 24);
-    });
-
-    // Excalidraw inverts element colors in dark mode. Pre-invert our authored
-    // palette so the visible diagram keeps its intended dark cards and light text.
-    const invertHex = (value) => {
-      if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) return value;
-      return "#" + [1, 3, 5].map((index) => (255 - parseInt(value.slice(index, index + 2), 16)).toString(16).padStart(2, "0")).join("");
-    };
-    if (api.getAppState?.().theme === "dark") {
-      skeleton.forEach((element) => {
-        if (element.type === "image") return;
-        element.strokeColor = invertHex(element.strokeColor);
-        element.backgroundColor = invertHex(element.backgroundColor);
-      });
-    }
-    // Tag generated cards so the Smart Studio pill can recognise a Compose board.
-    skeleton.forEach((element) => {
-      element.customData = { ...(element.customData || {}), composeDiagram: true };
-    });
-    const elements = convertToExcalidrawElements(skeleton);
-    api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-    api.scrollToContent?.(elements, { fitToContent: true, animate: true });
-    setDockerStudioOpen(false);
-    showToast("Compose architecture diagram created. Select any element to edit it.");
-  }, [collaborationCanEdit, showToast]);
-
-  const workspaceToggle = (
-    <CreateMenu
-      onKubernetesStudio={() => setKubernetesStudioOpen(true)}
-      onDockerStudio={() => setDockerStudioOpen(true)}
-      onBeforeOpen={() => {
-        if (nativeMenuOpen) closeNativeMenu();
-      }}
-      dismissWhen={Boolean(nativeMenuOpen || designStudioOpen || dockerStudioOpen || kubernetesStudioOpen)}
-    />
-  );
 
   const moreToolsToggle = collaborationCanEdit ? (
     <MoreTools
@@ -2907,7 +1931,6 @@ function App() {
     closeCommandPalette();
     closeLeftPanel();
     closePanel("properties");
-    closePanel("architecture-validation");
     closePanel("shortcuts");
     setMinimapOpen(false);
     apiRef.current?.setActiveTool?.({ type: "selection" });
@@ -3018,7 +2041,7 @@ function App() {
   const noOpenCanvas = canvasTabsReady && canvasTabs.length === 0;
 
   return (
-    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${legacyPanelClasses.join(" ")} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-welcome-open={isWelcomeOrDashboardOpen ? "true" : "false"} data-open-panel={activeLeftPanel === "iconLibrary" ? "icon-library" : activeRightPanel === "properties" ? "properties" : activeRightPanel === "rightRail" ? "architecture-validation" : activeTransientPanel || "none"} data-left-panel={activeLeftPanel || "none"} data-right-panel={activeRightPanel || "none"}>
+    <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${legacyPanelClasses.join(" ")} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-welcome-open={isWelcomeOrDashboardOpen ? "true" : "false"} data-open-panel={activeLeftPanel === "iconLibrary" ? "icon-library" : activeRightPanel === "properties" ? "properties" : activeTransientPanel || "none"} data-left-panel={activeLeftPanel || "none"} data-right-panel={activeRightPanel || "none"}>
       {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} hidden={cloudSaveState.state === "conflict" && cloudConflictDismissed} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
         <span className="cloud-editor-save-status-text">{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         <span className="cloud-editor-save-status-actions">
@@ -3090,12 +2113,6 @@ function App() {
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
         isZenMode={isZenMode}
-        architectureContext={architectureContext}
-        architectureValidation={architectureValidation}
-        onRunArchitectureValidation={() => openPanel("architecture-validation")}
-        onOpenKubernetesStudio={() => setKubernetesStudioOpen(true)}
-        onOpenDockerComposeStudio={() => setDockerStudioOpen(true)}
-        onOpenSystemDesignReview={openSystemDesignReview}
         canvasTabs={canvasTabs.map((tab) => ({ ...tab, syncMeta: getTabCloudMeta(tab, tab.id === activeCanvasId ? { dirty: documentDirty, cloudSaveState } : null) })).flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id }] : [tab])}
         activeCanvasId={activeWorkspaceTabId}
         canvasId={activeCanvasId}
@@ -3114,7 +2131,6 @@ function App() {
         onReopenClosedTab={reopenClosedTab}
         onDeleteClosedTab={deleteClosedTab}
         onClearClosedTabs={clearClosedTabs}
-        workspaceToggle={workspaceToggle}
         moreToolsToggle={moreToolsToggle}
         libraryToggle={collaborationCanEdit ? (
           <button
@@ -3166,7 +2182,7 @@ function App() {
 
       </DesktopAppHeader>
 
-      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen || architectureValidationOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
+      <div className={`desktop-workspace ${collaborationCanEdit ? "desktop-workspace-editable" : "desktop-workspace-viewer"} ${libraryOpen ? "desktop-workspace-library-open" : "desktop-workspace-library-closed"} ${propertiesOpen ? "desktop-workspace-context-open" : "desktop-workspace-context-closed"}`}>
         {libraryOverlayHost && createPortal(
           <aside className={`desktop-resources-region sk-icon-library-portal-host ${libraryPresence.present ? "mobile-resource-open" : "mobile-resource-closed"}`} data-edge="left" data-edge-motion={libraryPresence.phase} aria-label="Resources">
           {collaborationCanEdit && (
@@ -3282,8 +2298,8 @@ function App() {
 
 
         <aside
-          className={`desktop-context-region ${propertiesOpen || architectureValidationOpen ? "validation-state-open" : "validation-state-closed"}`}
-          aria-label="Properties and architecture validation"
+          className={`desktop-context-region ${propertiesOpen ? "validation-state-open" : "validation-state-closed"}`}
+          aria-label="Properties"
         >
           {rightRailPresence.present && (
             <div className="desktop-validation-host is-open" data-edge="right" data-edge-motion={rightRailPresence.phase}>
@@ -3320,16 +2336,6 @@ function App() {
                   kubernetesRelationshipGuidance={selectedKubernetesRelationshipGuidance}
                   readOnly={!collaborationCanEdit}
                   hideDuplicateFormattingControls={true}
-                />
-              )}
-              {renderedRightRailPanel === "rightRail" && (
-                <ArchitectureValidationPanel
-                  validation={architectureValidation}
-                  sceneElements={apiRef.current?.getSceneElements?.() || []}
-                  onClose={() => closePanel("architecture-validation")}
-                  onSelectDiagnostic={selectArchitectureDiagnostic}
-                  onApplyKubernetesSuggestion={applyKubernetesSuggestion}
-                  canApplyCorrections={collaborationCanEdit}
                 />
               )}
             </div>
@@ -3553,8 +2559,6 @@ function App() {
         </section>
       </div>}
       {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudSessionRef.current.active && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
-      {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
-      {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
       {designStudioOpen && (
         <CreateDesignScreen
           isDarkTheme={isDarkTheme}

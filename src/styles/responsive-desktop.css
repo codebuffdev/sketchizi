@@ -165,8 +165,7 @@
     color: #1d4ed8;
   }
 
-  .desktop-app-header-panel-actions .properties-toggle,
-  .desktop-app-header-panel-actions .architecture-validation-toggle {
+  .desktop-app-header-panel-actions .properties-toggle {
     position: static;
     top: auto;
     right: auto;
@@ -185,9 +184,7 @@
   }
 
   .desktop-app-header-panel-actions .properties-toggle:hover,
-  .desktop-app-header-panel-actions .properties-toggle.active,
-  .desktop-app-header-panel-actions .architecture-validation-toggle:hover,
-  .desktop-app-header-panel-actions .architecture-validation-toggle.active {
+.desktop-app-header-panel-actions .properties-toggle.active {
     border-color: #bfdbfe;
     background: #eff6ff;
     color: #1d4ed8;

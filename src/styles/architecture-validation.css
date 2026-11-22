@@ -1,33 +1,8 @@
-.architecture-validation-toggle {
-  position: fixed;
-  top: 16px;
-  right: 210px;
-  z-index: 36;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 40px;
-  padding: 8px 11px;
-  border: 1px solid #e1e1e1;
-  border-radius: 9px;
-  background: rgba(255,255,255,.96);
-  color: #444;
-  box-shadow: 0 5px 18px rgba(0,0,0,.08);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 650;
-}
 
-.architecture-validation-toggle:hover,
-.architecture-validation-toggle.active {
-  background: #f0eff9;
-  border-color: #d9d6f4;
-}
 
-.architecture-validation-toggle-icon {
-  font-size: 16px;
-  line-height: 1;
-}
+
+
+
 
 .architecture-validation-panel {
   position: fixed;
@@ -154,22 +129,15 @@
   font-size: 9px;
 }
 
-.app.theme-dark .architecture-validation-toggle,
 .app.theme-dark .architecture-validation-panel {
   background: rgba(31,31,34,.98);
   border-color: #45454a;
   color: #eee;
 }
 
-.app.theme-dark .architecture-validation-toggle {
-  color: #ddd;
-}
 
-.app.theme-dark .architecture-validation-toggle:hover,
-.app.theme-dark .architecture-validation-toggle.active {
-  background: #35343d;
-  border-color: #5b5870;
-}
+
+
 
 .app.theme-dark .architecture-validation-header {
   border-color: #414146;
@@ -204,15 +172,9 @@
 }
 
 @media (max-width: 760px) {
-  .architecture-validation-toggle {
-    top: calc(52px + var(--safe-top));
-    right: calc(8px + var(--safe-right));
-  }
+  
 
-  .app.panel-open-architecture-validation .architecture-validation-toggle {
-    visibility: visible;
-    pointer-events: auto;
-  }
+  
 
   .architecture-validation-panel {
     top: calc(100px + var(--safe-top));

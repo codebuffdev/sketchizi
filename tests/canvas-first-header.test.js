@@ -79,11 +79,9 @@ test("Properties and Validation controls remain clear of the floating header", a
   assert.match(css, /\.app\.canvas-first-header:has\(\.desktop-app-header:not\(\.is-hidden\)\)/);
   assert.match(css, /\.desktop-context-region \.desktop-validation-host/);
   assert.match(css, /padding-top: calc\(68px \+ var\(--safe-top, 0px\)\)/);
-  assert.match(css, /\.architecture-validation-panel/);
-  assert.match(css, /top: calc\(108px \+ var\(--safe-top, 0px\)\)/);
   assert.doesNotMatch(css, /\.sketchizi-layers-panel/);
   assert.match(app, /\{renderedRightRailPanel === "properties" && \(/);
-  assert.match(app, /\{renderedRightRailPanel === "rightRail" && \(/);
+  assert.doesNotMatch(app, /ArchitectureValidationPanel/);
 });
 
 

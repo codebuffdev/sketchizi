@@ -61,8 +61,7 @@
   /* Keep Sketchizi-owned access points compact and outside the drawing area.
      They remain overlays, so opening/closing them never resizes the canvas. */
   .library-toggle,
-  .properties-toggle,
-  .architecture-validation-toggle {
+.properties-toggle {
     top: calc(50px + var(--safe-top, 0px));
     width: 44px;
     height: 44px;
@@ -82,20 +81,16 @@
     right: calc(8px + var(--safe-right, 0px));
   }
 
-  .architecture-validation-toggle {
-    right: calc(60px + var(--safe-right, 0px));
-  }
+  
 
   .library-toggle svg,
-  .properties-toggle-icon,
-  .architecture-validation-toggle-icon {
+.properties-toggle-icon {
     width: 20px;
     height: 20px;
     font-size: 19px;
   }
 
-  .properties-toggle > span:not(.properties-toggle-icon),
-  .architecture-validation-toggle > span:not(.architecture-validation-toggle-icon) {
+  .properties-toggle > span:not(.properties-toggle-icon) {
     display: none;
   }
 
@@ -284,8 +279,7 @@
 
   /* Validation drawer: preserve the K6 data/selection behavior, changing only
      the surface geometry and typography needed for a phone viewport. */
-  .architecture-validation-panel,
-  .app.panel-open-architecture-validation .architecture-validation-panel {
+  .architecture-validation-panel {
     top: 0;
     right: 0;
     bottom: 0;
@@ -438,15 +432,13 @@
   /* When a mobile drawer is open, its own close button is the primary control;
      keep the canvas tools underneath it rather than stacking extra chrome. */
   .app.panel-open-library .library-toggle,
-  .app.panel-open-properties .properties-toggle,
-  .app.panel-open-architecture-validation .architecture-validation-toggle {
+.app.panel-open-properties .properties-toggle {
     visibility: hidden;
     pointer-events: none;
   }
 
   .app.panel-open-library .library-panel,
-  .app.panel-open-properties .properties-panel,
-  .app.panel-open-architecture-validation .architecture-validation-panel {
+.app.panel-open-properties .properties-panel {
     visibility: visible;
     pointer-events: auto;
   }

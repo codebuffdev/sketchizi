@@ -5,20 +5,6 @@ import { createCloudDocument, sanitizeCloudAppState } from "../src/features/work
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("studio menu uses official Kubernetes and Docker brand artwork", async () => {
-  const menu = await read("../src/components/app/CreateMenu.jsx");
-  const kubernetes = await read("../public/icons/kubernetes.svg");
-  const docker = await read("../public/icons/docker.svg");
-  assert.match(menu, /src="\/icons\/kubernetes\.svg"/);
-  assert.match(menu, /src="\/icons\/docker\.svg"/);
-  assert.match(kubernetes, /<title>Kubernetes<\/title>/);
-  assert.match(kubernetes, /fill="#326ce5"/);
-  assert.match(docker, /<title>Docker<\/title>/);
-  assert.match(docker, /fill="#2496ed"/);
-  assert.doesNotMatch(kubernetes, />KUB<\/text>/);
-  assert.doesNotMatch(docker, />DOC<\/text>/);
-});
-
 test("Tool menu only contains tools not already on the dock and uses labeled SVG icons", async () => {
   const menu = await read("../src/components/app/MoreTools.jsx");
   const styles = await read("../src/styles/header-redesign.css");
@@ -38,13 +24,9 @@ test("Tool menu only contains tools not already on the dock and uses labeled SVG
 
 test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
   const app = await read("../src/App.jsx");
-  const createMenu = await read("../src/components/app/CreateMenu.jsx");
-  assert.match(createMenu, /className="workspaces-menu-icon"/);
-  assert.match(createMenu, /M12 5v14M5 12h14/);
   assert.match(app, /aria-label="AI Ask"\s+aria-expanded=\{aiAskOpen\}\s*>\s*<AiAskIcon className="ai-ask-toggle-icon"\s*\/>/);
   const registry = await read("../src/features/commands/commandRegistry.js");
-  assert.match(registry, /label: "Validate Architecture"/);
-  assert.match(registry, /openPanel\("architecture-validation"\)/);
+  assert.doesNotMatch(registry, /Validate Architecture|architecture-validation/);
   assert.doesNotMatch(app, /<span className="ai-ask-toggle-icon" aria-hidden="true">✳<\/span>/);
   assert.doesNotMatch(app, /<span className="architecture-validation-toggle-icon">✓<\/span>/);
 });
