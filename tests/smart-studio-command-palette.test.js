@@ -173,15 +173,28 @@ test("command registry groups engineering actions", async () => {
   }
 });
 
-test("header Workspace icon button opens the Cloud Workspace in one click", async () => {
+test("header Workspace icon button toggles a quick popover instead of jumping to /workspace", async () => {
   const header = await read("src/components/app/DesktopAppHeader.jsx");
+  const popover = await read("src/components/app/WorkspaceQuickPopover.jsx");
   const app = await read("src/App.jsx");
   const css = await read("src/styles/header-redesign.css");
   assert.match(header, /className=\{`desktop-app-workspace-button/);
   assert.match(header, /aria-label="Open Cloud Workspace"/);
   assert.match(header, /"Cloud Workspace \(Synced\)" : "Cloud Workspace"/);
-  assert.match(header, /onOpenWorkspace\?\.\(\)/);
-  assert.match(app, /onOpenWorkspace=\{openCloudWorkspace\}/);
-  assert.match(css, /\.desktop-app-workspace-button \{[^}]*width: 36px;[^}]*height: 36px;/);
+  assert.match(header, /setIsWorkspacePopoverOpen\(\(open\) => !open\)/);
+  // Explicit inline 4-square icon: no icon-font / import dependency.
+  assert.match(header, /<svg\s+width="16"\s+height="16"\s+viewBox="0 0 24 24"[\s\S]*?strokeWidth="1\.9"[\s\S]*?<rect x="3" y="14" width="7" height="7" rx="1\.5" \/>/);
+  // Popover: Escape + outside click, Full View, project pills, chapter rows, quick create.
+  assert.match(popover, /event\.key !== "Escape"/);
+  assert.match(popover, /pointerdown/);
+  assert.match(popover, /Full View ↗/);
+  assert.match(popover, /Switch chapters without leaving the editor/);
+  assert.match(popover, /\+ New Chapter in \{project\?\.name\}/);
+  assert.match(popover, /formatChapterLabel\(chapter\.chapterNumber\)/);
+  // App: only the explicit Full View goes to /workspace; chapters open in the editor.
+  assert.match(app, /onOpenFullWorkspace=\{openCloudWorkspace\}/);
+  assert.match(app, /onOpenWorkspaceDiagram=\{openWorkspaceDiagram\}/);
+  assert.match(app, /onCreateWorkspaceChapter=\{createWorkspaceChapter\}/);
+  assert.match(css, /\.workspace-popover \{[\s\S]*?border-radius: 16px;/);
   assert.match(css, /#10b981/);
 });

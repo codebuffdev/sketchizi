@@ -70,6 +70,8 @@ import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
 import { buildChapterEditorUrl, useChapterNavigation } from "./features/workspace/useChapterNavigation.js";
 import { recordWorkspaceItemOpened } from "./features/workspace/workspacePresentation.js";
+import { findDuplicateDiagramName, readDiagramRows } from "./features/workspace/diagramNames.js";
+import { appendChapter, buildChapterLayout, readChapterLayout, resolveChapterSequence, writeChapterLayout } from "./features/workspace/chapterSequence.js";
 import ZenHud from "./components/app/ZenHud.jsx";
 import { applyCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
@@ -1406,6 +1408,76 @@ function App() {
     }
     window.location.assign("/workspace");
   }, [captureOpenCanvasTabs, showToast]);
+
+  // Header Workspace quick switcher. Before leaving for another chapter: flush a
+  // pending cloud save, confirm if it cannot be saved, and persist every open
+  // canvas tab so the editor restores them (and focuses / adds the chapter's tab).
+  const prepareEditorExit = useCallback(async () => {
+    if (cloudSessionRef.current.active) {
+      if (["pending", "saving"].includes(cloudSaveStateRef.current.state)) {
+        saveCloudDiagramNow();
+        await new Promise((resolve) => setTimeout(resolve, 60));
+        await cloudSaveQueueRef.current.catch(() => {});
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      }
+      if (["error", "conflict", "pending", "saving"].includes(cloudSaveStateRef.current.state)
+        && !window.confirm("This chapter has changes that are not saved to Cloud Workspace. Switch chapters anyway?")) return false;
+    }
+    if (canvasTabsRestoredRef.current) {
+      const latest = captureOpenCanvasTabs();
+      canvasTabsRef.current = latest;
+      try {
+        await saveCanvasTabs(latest);
+      } catch (error) {
+        showToast(error.message || "Unable to preserve open canvases. Try again.", "error");
+        return false;
+      }
+    }
+    return true;
+  }, [captureOpenCanvasTabs, saveCloudDiagramNow, showToast]);
+
+  const openWorkspaceDiagram = useCallback(async (project, diagram) => {
+    if (!project?.id || !diagram?.id) return;
+    if (!(await prepareEditorExit())) return;
+    const usedAt = new Date().toISOString();
+    recordWorkspaceItemOpened(diagram.id, usedAt);
+    await Promise.race([
+      workspaceClient.updateDiagram(diagram.id, { lastOpenedAt: usedAt }).catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, 1200)),
+    ]);
+    window.location.assign(buildChapterEditorUrl(project.id, diagram.id));
+  }, [prepareEditorExit]);
+
+  // Appends a blank chapter to the END of the project's sequence, then opens it.
+  // Throws a readable Error so the popover can show it inline.
+  const createWorkspaceChapter = useCallback(async (project, name) => {
+    const chapterName = String(name || "").trim();
+    if (!project?.id || !chapterName) return;
+    if (!(await prepareEditorExit())) throw new Error("Chapter was not created.");
+    const currentDiagrams = readDiagramRows(await workspaceClient.listDiagrams(project.id));
+    if (findDuplicateDiagramName(currentDiagrams, chapterName)) {
+      throw new Error("A diagram with this name already exists in this project.");
+    }
+    const limits = await workspaceClient.getLimits();
+    if (!limits?.admin && Number(limits?.diagramCount || 0) >= Number(limits?.diagramLimit || 3)) {
+      throw new Error("Your Cloud Workspace diagram limit has been reached. Delete a diagram before creating another.");
+    }
+    const createdResult = await workspaceClient.createDiagram({
+      projectId: project.id, name: chapterName, format: "excalidraw",
+      document: { elements: [], appState: {}, files: {}, metadata: {}, extensions: {} },
+    });
+    const created = createdResult?.diagram || createdResult;
+    if (!created?.id) throw new Error("Cloud Workspace did not return the new chapter.");
+    const chapters = resolveChapterSequence(currentDiagrams, readChapterLayout(project.id));
+    const next = appendChapter(chapters, { ...created, name: created.name || chapterName, chapterStatus: "up-next" });
+    writeChapterLayout(project.id, buildChapterLayout(next));
+    recordWorkspaceItemOpened(created.id);
+    await Promise.race([
+      workspaceClient.updateDiagramChapter(created.id, next[next.length - 1]).catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, 1500)),
+    ]);
+    window.location.assign(buildChapterEditorUrl(project.id, created.id));
+  }, [prepareEditorExit]);
 
   useEffect(() => {
     const flushCanvasTabs = () => {
@@ -2892,7 +2964,11 @@ function App() {
         onToggleSpellcheck={toggleSpellcheck}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
-        onOpenWorkspace={openCloudWorkspace}
+        onOpenFullWorkspace={openCloudWorkspace}
+        onOpenWorkspaceDiagram={openWorkspaceDiagram}
+        onCreateWorkspaceChapter={createWorkspaceChapter}
+        activeCloudProjectId={cloudSessionRef.current.active && !cloudDetached ? (cloudSessionRef.current.projectId || cloudProjectId || "") : ""}
+        activeCloudDiagramId={cloudSessionRef.current.active && !cloudDetached ? (cloudSessionRef.current.diagramId || cloudDiagramId || "") : ""}
         onBeforeOpenPanel={closeNativeMenu}
         startCollaboration={startCollaboration}
         collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}

@@ -7,6 +7,7 @@ import ThemeControl from "../../ThemeControl.jsx";
 import CanvasZoomControl from "./CanvasZoomControl.jsx";
 import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx";
 import SmartStudioPill from "./SmartStudioPill.jsx";
+import WorkspaceQuickPopover from "./WorkspaceQuickPopover.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
 import { getCommandPaletteShortcut } from "../../features/commands/platformShortcut.js";
 import { BROWSER_DRAFT_LABEL } from "../../features/workspace/tabCloudState.js";
@@ -161,7 +162,11 @@ export default function DesktopAppHeader({
   onToggleSpellcheck,
   onGridStyleChange,
   openCommandPalette,
-  onOpenWorkspace,
+  onOpenFullWorkspace,
+  onOpenWorkspaceDiagram,
+  onCreateWorkspaceChapter,
+  activeCloudProjectId = "",
+  activeCloudDiagramId = "",
   onBeforeOpenPanel,
   startCollaboration,
   collaborationActive,
@@ -300,6 +305,8 @@ export default function DesktopAppHeader({
   useEffect(() => () => clearHeaderCollapseTimer(), []);
   const [saveDetailsOpen, setSaveDetailsOpen] = useState(false);
   const [documentNameEditing, setDocumentNameEditing] = useState(false);
+  const [isWorkspacePopoverOpen, setIsWorkspacePopoverOpen] = useState(false);
+  const workspaceButtonRef = useRef(null);
   const activeWorkspaceTab = canvasTabs.find((tab) => tab.id === activeCanvasId);
   const activeIsTodoTab = Boolean(activeWorkspaceTab?.isTodoTab);
   const activeCanvasTabName = activeWorkspaceTab?.name || currentDocumentName;
@@ -1023,23 +1030,47 @@ export default function DesktopAppHeader({
       <div className="desktop-app-global-theme-control">
         <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
       </div>
-      {/* Direct 1-click link to the Cloud Workspace. Ctrl/Cmd+K still opens the
-          command palette globally (useCommandPalette) and the menu keeps "Search Commands". */}
+      {/* Workspace quick switcher. Ctrl/Cmd+K still opens the command palette
+          globally (useCommandPalette) and the menu keeps "Search Commands". */}
       <button
+        ref={workspaceButtonRef}
         type="button"
-        className={`desktop-app-workspace-button${isCloudDocument ? " is-synced" : ""}`}
-        onClick={() => { setOpenMenu(null); onBeforeOpenPanel?.(); onOpenWorkspace?.(); }}
+        className={`desktop-app-workspace-button${isCloudDocument ? " is-synced" : ""}${isWorkspacePopoverOpen ? " is-open" : ""}`}
+        onClick={() => { setOpenMenu(null); onBeforeOpenPanel?.(); setIsWorkspacePopoverOpen((open) => !open); }}
         aria-label="Open Cloud Workspace"
+        aria-haspopup="dialog"
+        aria-expanded={isWorkspacePopoverOpen}
         title={isCloudDocument ? "Cloud Workspace (Synced)" : "Cloud Workspace"}
       >
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-          <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-          <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-          <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
         </svg>
         {isCloudDocument && <span className="desktop-app-workspace-button-dot" aria-hidden="true" />}
       </button>
+      <WorkspaceQuickPopover
+        open={isWorkspacePopoverOpen}
+        anchorRef={workspaceButtonRef}
+        isDark={Boolean(isDarkTheme)}
+        activeProjectId={activeCloudProjectId}
+        activeDiagramId={activeCloudDiagramId}
+        onClose={() => setIsWorkspacePopoverOpen(false)}
+        onOpenDiagram={onOpenWorkspaceDiagram}
+        onCreateChapter={onCreateWorkspaceChapter}
+        onOpenFullWorkspace={onOpenFullWorkspace}
+      />
       <SmartStudioPill
         context={architectureContext}
         validation={architectureValidation}

@@ -64,6 +64,7 @@
   /* One shared pill style for every control in the row. */
   .app.canvas-first-header .desktop-app-top-controls .desktop-app-zoom-control,
   .app.canvas-first-header .desktop-app-top-controls .theme-toggle,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-workspace-button,
   .app.canvas-first-header .desktop-app-top-controls .ai-ask-toggle,
   .app.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle {
     position: static !important;
@@ -81,6 +82,7 @@
 
   .app.theme-dark.canvas-first-header .desktop-app-top-controls .desktop-app-zoom-control,
   .app.theme-dark.canvas-first-header .desktop-app-top-controls .theme-toggle,
+  .app.theme-dark.canvas-first-header .desktop-app-top-controls .desktop-app-workspace-button,
   .app.theme-dark.canvas-first-header .desktop-app-top-controls .ai-ask-toggle,
   .app.theme-dark.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle {
     border-color: rgb(148 163 184 / 18%) !important;
@@ -97,6 +99,7 @@
   }
 
   .app.canvas-first-header .desktop-app-top-controls .theme-toggle,
+  .app.canvas-first-header .desktop-app-top-controls .desktop-app-workspace-button,
   .app.canvas-first-header .desktop-app-top-controls .desktop-app-header-reveal-handle {
     display: inline-flex !important;
     align-items: center;
@@ -448,4 +451,10 @@
   bottom: calc(20px + var(--safe-bottom, 0px)) !important;
   top: auto !important;
   transform: none !important;
+}
+
+/* The shared pill rules force position: static; the Workspace button needs a
+   positioned box so its synced status dot anchors to its corner. */
+.app.canvas-first-header .desktop-app-top-controls .desktop-app-workspace-button {
+  position: relative !important;
 }

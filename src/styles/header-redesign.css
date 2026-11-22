@@ -1761,52 +1761,206 @@ html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .
 }
 
 /* ---------- Workspace icon button (replaces the Search Ctrl+K pill) ----------
-   Same 36px square, 1px border, radius and Light/Dark hover surfaces as the
-   adjacent Theme toggle and Settings (sliders) buttons. */
+   Same square size, 1px border, radius and Light/Dark hover surfaces as the
+   adjacent Theme toggle and Settings (sliders) buttons. Size follows the shared
+   --top-control-size token so all three always match. */
 .desktop-app-workspace-button {
   position: relative;
   display: inline-flex;
-  flex: 0 0 36px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
+  width: var(--top-control-size, 36px);
+  min-width: var(--top-control-size, 36px);
+  height: var(--top-control-size, 36px);
   padding: 0;
   border: 1px solid var(--ui-border, #d8dce5);
   border-radius: var(--top-control-radius, 12px);
   background: var(--ui-surface-solid, #fff);
-  color: var(--ui-text-muted, #5b6275);
+  color: var(--ui-text, #252631);
   cursor: pointer;
+  opacity: 1;
+  visibility: visible;
   transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
 }
-.desktop-app-workspace-button:hover {
+.desktop-app-workspace-button:hover,
+.desktop-app-workspace-button.is-open {
   background: var(--ui-surface-soft, #f4f5f8);
-  color: var(--ui-text, #252631);
 }
 .app.theme-dark .desktop-app-workspace-button {
   border-color: rgb(148 163 184 / 18%);
   background: #161a22;
-  color: #a7b0c0;
-}
-.app.theme-dark .desktop-app-workspace-button:hover {
-  background: #1d222c;
   color: #e6e9ef;
 }
+.app.theme-dark .desktop-app-workspace-button:hover,
+.app.theme-dark .desktop-app-workspace-button.is-open {
+  background: #1d222c;
+}
+/* The icon is a plain stroked inline SVG; keep global svg rules from hiding it. */
 .desktop-app-workspace-button svg {
   display: block;
+  flex: 0 0 16px;
   width: 16px;
   height: 16px;
-}
-/* Synced to a Cloud Workspace project: tiny emerald corner dot. */
-.desktop-app-workspace-button-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #10b981;
+  fill: none;
+  stroke: currentColor;
   pointer-events: none;
 }
+.desktop-app-workspace-button svg rect {
+  fill: none !important;
+  stroke: currentColor !important;
+}
+/* Synced to a Cloud Workspace project: emerald corner dot. */
+.desktop-app-workspace-button-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 1.5px var(--ui-surface-solid, #fff);
+  pointer-events: none;
+}
+.app.theme-dark .desktop-app-workspace-button-dot { box-shadow: 0 0 0 1.5px #161a22; }
+
+/* ---------- Quick Workspace popover (portalled to <body>) ---------- */
+.workspace-popover {
+  --wp-bg: rgb(255 255 255 / 94%);
+  --wp-border: rgb(15 23 42 / 12%);
+  --wp-text: #1b1e27;
+  --wp-muted: #667085;
+  --wp-soft: #f2f4f8;
+  --wp-soft-hover: #e8ebf2;
+  position: fixed;
+  z-index: 2600;
+  box-sizing: border-box;
+  max-height: min(520px, calc(100vh - 80px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid var(--wp-border);
+  border-radius: 16px;
+  background: var(--wp-bg);
+  color: var(--wp-text);
+  box-shadow: 0 18px 48px rgb(15 23 42 / 18%);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  font-size: 13px;
+}
+.workspace-popover.is-dark {
+  --wp-bg: rgb(24 27 34 / 94%);
+  --wp-border: rgb(148 163 184 / 18%);
+  --wp-text: #e6e9ef;
+  --wp-muted: #9aa4b5;
+  --wp-soft: #222733;
+  --wp-soft-hover: #2b3140;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 45%);
+}
+.workspace-popover-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.workspace-popover-heading { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.workspace-popover-heading strong { font-size: 14px; font-weight: 700; }
+.workspace-popover-heading small { color: var(--wp-muted); font-size: 11.5px; line-height: 1.35; }
+.workspace-popover button { font: inherit; color: inherit; cursor: pointer; }
+.workspace-popover button:disabled { cursor: default; opacity: 0.55; }
+.workspace-popover button:focus-visible,
+.workspace-popover input:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+.workspace-popover-full {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wp-border);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.workspace-popover-full:hover { background: var(--wp-soft); }
+.workspace-popover-projects { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.workspace-popover-pill {
+  flex: 0 0 auto;
+  max-width: 160px;
+  height: 28px;
+  padding: 0 12px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--wp-soft);
+  color: var(--wp-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-popover-pill:hover { background: var(--wp-soft-hover); color: var(--wp-text); }
+.workspace-popover-pill.is-active { border-color: #6366f1; background: rgb(99 102 241 / 14%); color: var(--wp-text); }
+.workspace-popover-chapters { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; overflow-y: auto; list-style: none; min-height: 0; }
+.workspace-popover-chapter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+}
+.workspace-popover-chapter:hover { background: var(--wp-soft); }
+.workspace-popover-chapter.is-current { border-color: var(--wp-border); background: var(--wp-soft); }
+.workspace-popover-chapter-number { flex: 0 0 auto; color: var(--wp-muted); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.workspace-popover-chapter-name { flex: 1 1 auto; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-popover-status { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; }
+.workspace-popover-status.is-done { background: rgb(16 185 129 / 16%); color: #059669; }
+.workspace-popover-status.is-active { background: rgb(99 102 241 / 16%); color: #4f46e5; }
+.workspace-popover-status.is-up-next { background: var(--wp-soft-hover); color: var(--wp-muted); }
+.workspace-popover.is-dark .workspace-popover-status.is-done { color: #34d399; }
+.workspace-popover.is-dark .workspace-popover-status.is-active { color: #a5b4fc; }
+.workspace-popover-note { margin: 0; padding: 8px 4px; color: var(--wp-muted); font-size: 12.5px; list-style: none; }
+.workspace-popover-note.is-error { color: #dc2626; }
+.workspace-popover.is-dark .workspace-popover-note.is-error { color: #f87171; }
+.workspace-popover-footer {
+  height: 36px;
+  padding: 0 12px;
+  overflow: hidden;
+  border: 1px dashed var(--wp-border);
+  border-radius: 10px;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-popover-footer:hover:not(:disabled) { background: var(--wp-soft); }
+.workspace-popover-form { display: flex; gap: 6px; }
+.workspace-popover-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--wp-border);
+  border-radius: 8px;
+  background: var(--wp-soft);
+  color: var(--wp-text);
+  font: inherit;
+}
+.workspace-popover-primary {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #6366f1;
+  color: #fff !important;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-popover { animation: workspace-popover-in 140ms ease-out; }
+}
+@keyframes workspace-popover-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
