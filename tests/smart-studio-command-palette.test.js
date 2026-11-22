@@ -153,8 +153,11 @@ test("command palette opens on Ctrl/Cmd+K and exposes the platform hint", async 
   assert.match(palette, /COMMAND_PALETTE_ENTER_MS = 200/);
   assert.match(palette, /COMMAND_PALETTE_EXIT_MS = 130/);
   assert.match(palette, /ArrowDown[\s\S]*ArrowUp[\s\S]*Enter[\s\S]*Escape/);
-  assert.match(header, /className="desktop-app-command-trigger"/);
+  // The visible header pill was replaced by the Workspace icon button; the
+  // global shortcut and the menu / rail "Search" entries remain.
+  assert.doesNotMatch(header, /desktop-app-command-trigger/);
   assert.match(header, /paletteShortcut\.label/);
+  assert.match(header, /Search Commands/);
   assert.doesNotMatch(header, />Ctrl\+K<\/kbd>/);
 });
 
@@ -168,4 +171,17 @@ test("command registry groups engineering actions", async () => {
   for (const label of ["Validate Architecture", "Open Kubernetes Studio", "Open Docker Compose Studio", "Open System Design Review", "Export Diagram / YAML / PNG"]) {
     assert.ok(registry.includes(`label: "${label}"`), label);
   }
+});
+
+test("header Workspace icon button opens the Cloud Workspace in one click", async () => {
+  const header = await read("src/components/app/DesktopAppHeader.jsx");
+  const app = await read("src/App.jsx");
+  const css = await read("src/styles/header-redesign.css");
+  assert.match(header, /className=\{`desktop-app-workspace-button/);
+  assert.match(header, /aria-label="Open Cloud Workspace"/);
+  assert.match(header, /"Cloud Workspace \(Synced\)" : "Cloud Workspace"/);
+  assert.match(header, /onOpenWorkspace\?\.\(\)/);
+  assert.match(app, /onOpenWorkspace=\{openCloudWorkspace\}/);
+  assert.match(css, /\.desktop-app-workspace-button \{[^}]*width: 36px;[^}]*height: 36px;/);
+  assert.match(css, /#10b981/);
 });

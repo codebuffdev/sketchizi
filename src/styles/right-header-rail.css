@@ -1075,6 +1075,7 @@
 
 /* Shared rectangular geometry for the canvas shell and its floating controls. */
 .app.canvas-first-header .desktop-app-global-theme-control .theme-toggle,
+.app.canvas-first-header .desktop-app-workspace-button,
 .app.canvas-first-header .desktop-app-global-ai-control .ai-ask-toggle,
 .app.canvas-first-header .desktop-app-header-right-rail,
 .app.canvas-first-header .desktop-app-header-right-rail > .desktop-app-header-island,

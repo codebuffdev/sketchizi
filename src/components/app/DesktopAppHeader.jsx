@@ -161,6 +161,7 @@ export default function DesktopAppHeader({
   onToggleSpellcheck,
   onGridStyleChange,
   openCommandPalette,
+  onOpenWorkspace,
   onBeforeOpenPanel,
   startCollaboration,
   collaborationActive,
@@ -1022,20 +1023,22 @@ export default function DesktopAppHeader({
       <div className="desktop-app-global-theme-control">
         <ThemeControl setThemeMode={setThemeMode} themeMode={themeMode} isDarkTheme={isDarkTheme} canvasAppearance={canvasAppearance} onCanvasAppearanceChange={onCanvasAppearanceChange} api={canvasApi} canEdit={canEditCanvas} />
       </div>
+      {/* Direct 1-click link to the Cloud Workspace. Ctrl/Cmd+K still opens the
+          command palette globally (useCommandPalette) and the menu keeps "Search Commands". */}
       <button
         type="button"
-        className="desktop-app-command-trigger"
-        onClick={() => { setOpenMenu(null); onBeforeOpenPanel?.(); openCommandPalette?.(); }}
-        aria-label="Open command palette"
-        aria-keyshortcuts={paletteShortcut.mac ? "Meta+K" : "Control+K"}
-        title={`Command palette (${paletteShortcut.label})`}
+        className={`desktop-app-workspace-button${isCloudDocument ? " is-synced" : ""}`}
+        onClick={() => { setOpenMenu(null); onBeforeOpenPanel?.(); onOpenWorkspace?.(); }}
+        aria-label="Open Cloud Workspace"
+        title={isCloudDocument ? "Cloud Workspace (Synced)" : "Cloud Workspace"}
       >
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="10.8" cy="10.8" r="6.3" />
-          <path d="m16 16 4.2 4.2" />
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+          <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+          <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+          <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
         </svg>
-        <span className="desktop-app-command-trigger-label">Search</span>
-        <kbd className="sk-kbd" aria-label={paletteShortcut.ariaLabel}>{paletteShortcut.label}</kbd>
+        {isCloudDocument && <span className="desktop-app-workspace-button-dot" aria-hidden="true" />}
       </button>
       <SmartStudioPill
         context={architectureContext}

@@ -1759,3 +1759,54 @@ html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .
     max-width: calc(100vw - 16px) !important;
   }
 }
+
+/* ---------- Workspace icon button (replaces the Search Ctrl+K pill) ----------
+   Same 36px square, 1px border, radius and Light/Dark hover surfaces as the
+   adjacent Theme toggle and Settings (sliders) buttons. */
+.desktop-app-workspace-button {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--ui-border, #d8dce5);
+  border-radius: var(--top-control-radius, 12px);
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-muted, #5b6275);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.desktop-app-workspace-button:hover {
+  background: var(--ui-surface-soft, #f4f5f8);
+  color: var(--ui-text, #252631);
+}
+.app.theme-dark .desktop-app-workspace-button {
+  border-color: rgb(148 163 184 / 18%);
+  background: #161a22;
+  color: #a7b0c0;
+}
+.app.theme-dark .desktop-app-workspace-button:hover {
+  background: #1d222c;
+  color: #e6e9ef;
+}
+.desktop-app-workspace-button svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+/* Synced to a Cloud Workspace project: tiny emerald corner dot. */
+.desktop-app-workspace-button-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #10b981;
+  pointer-events: none;
+}

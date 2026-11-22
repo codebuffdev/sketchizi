@@ -2892,6 +2892,7 @@ function App() {
         onToggleSpellcheck={toggleSpellcheck}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
+        onOpenWorkspace={openCloudWorkspace}
         onBeforeOpenPanel={closeNativeMenu}
         startCollaboration={startCollaboration}
         collaborationActive={Boolean(collaborationRoom && collaborationStatus !== "disconnected")}
