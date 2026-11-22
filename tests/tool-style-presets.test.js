@@ -448,17 +448,18 @@ test("theme and appearance code never rewrites remembered colours", () => {
 
 // ------------------------------------------------- default + remembered arrow
 
-test("fresh canvases default arrows to solid Elbow, no start head, arrow end head", () => {
+test("fresh canvases default arrows to solid Straight, no start head, arrow end head", () => {
   const store = createToolStylePresetStore();
   const preset = store.resolve("canvas-1", "arrow");
-  assert.equal(preset.lineGeometry, "elbow");
-  assert.equal(preset.elbowed, true);
+  assert.equal(preset.lineGeometry, "straight");
+  assert.equal(preset.elbowed, false);
   assert.equal(preset.roundness, null);
   assert.equal(preset.strokeStyle, "solid");
   assert.equal(preset.startArrowhead, null);
   assert.equal(preset.endArrowhead, "arrow");
   const appState = stylePatchToAppState(preset);
-  assert.equal(appState.currentItemArrowType, "elbow");
+  assert.equal(appState.currentItemArrowType, "sharp");
+  assert.equal(appState.currentItemRoundness, "sharp");
   assert.equal(appState.currentItemStrokeStyle, "solid");
   assert.equal(appState.currentItemStartArrowhead, null);
   assert.equal(appState.currentItemEndArrowhead, "arrow");
@@ -505,5 +506,13 @@ test("every arrow customization carries to the next arrow on the same canvas onl
   );
   // A different canvas still gets the defaults.
   const other = createToolStylePresetStore();
-  assert.equal(other.resolve("canvas-2", "arrow").lineGeometry, "elbow");
+  assert.equal(other.resolve("canvas-2", "arrow").lineGeometry, "straight");
+});
+
+test("switching an arrow to Elbow is remembered over the Straight default", () => {
+  const store = createToolStylePresetStore();
+  store.record("canvas-1", "arrow", { lineGeometry: "elbow" });
+  assert.equal(store.resolve("canvas-1", "arrow").elbowed, true);
+  assert.equal(stylePatchToAppState(store.resolve("canvas-1", "arrow")).currentItemArrowType, "elbow");
+  assert.equal(store.resolve("canvas-2", "arrow").lineGeometry, "straight");
 });

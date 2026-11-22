@@ -44,9 +44,10 @@ export const DEFAULT_TOOL_STYLE_PRESETS = deepFreeze({
     endArrowhead: null,
     lineGeometry: "straight",
   },
-  // Fresh canvases draw clean orthogonal arrows: Elbow routing, solid stroke,
-  // no start head, plain arrow end head. `elbowed` / `roundness` always mirror
-  // `lineGeometry` (see filterStyleForTool).
+  // Fresh canvases draw Straight arrows: solid stroke, no start head, plain
+  // arrow end head. `elbowed` / `roundness` always mirror `lineGeometry` (see
+  // filterStyleForTool), so choosing Curved / Elbow / Rounded Elbow later is
+  // remembered per canvas and carried to the next arrow.
   arrow: {
     strokeColor: INK,
     backgroundColor: "transparent",
@@ -56,8 +57,8 @@ export const DEFAULT_TOOL_STYLE_PRESETS = deepFreeze({
     opacity: 100,
     startArrowhead: null,
     endArrowhead: "arrow",
-    lineGeometry: "elbow",
-    elbowed: true,
+    lineGeometry: "straight",
+    elbowed: false,
     roundness: null,
   },
   rectangle: {
