@@ -11,7 +11,7 @@ import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences, readSkipLocalDraftPrompt } from "./features/navigation/useSketchiziPreferences";
 import { buildClosedTabRecord, countLiveElements, describeClosedAt, normalizeClosedTabs, pushClosedTab, removeClosedTab, restoreClosedTab, isTabBackedByFileOrCloud } from "./features/workspace/closedTabs.js";
 import { getInitialThemeMode } from "./features/navigation/themePreference.js";
-import { applyCanvasAppearance, getCanvasAppearanceFromBackground } from "./features/navigation/canvasAppearance.js";
+import { applyCanvasAppearance, getCanvasAppearanceFromBackground, getCanvasAppearanceRoughness } from "./features/navigation/canvasAppearance.js";
 import { useSketchiziEscape, useSketchiziCanvasDismissal } from "./features/navigation/useSketchiziEscape";
 import { useDrawerPresence } from "./features/navigation/useDrawerPresence";
 import { useSketchPersistence } from "./features/persistence/useSketchPersistence";
@@ -23,6 +23,7 @@ import { mindMapIcons } from "./mindMapLibrary";
 import { awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives, AWS_CATALOG_LOGO, AWS_CATALOG_LOGO_DARK } from "./awsArchitectureLibrary";
 import { kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives } from "./kubernetesArchitectureLibrary";
 import { useCanvasTools } from "./features/canvas/useCanvasTools";
+import { useToolStylePresets } from "./features/canvas/useToolStylePresets";
 import { useMinimapController } from "./features/canvas/useMinimapController";
 import { useExcalidrawScene } from "./features/canvas/useExcalidrawScene";
 import SketchiziCanvas from "./components/app/SketchiziCanvas";
@@ -166,6 +167,9 @@ function App() {
     return saveCanvasTabs(canvasTabsRef.current);
   }, []);
   activeCanvasIdRef.current = activeCanvasId;
+  // toolPresetsByCanvasId: the last style chosen for each drawing tool, kept per
+  // canvas tab (and saved in the tab snapshot), restored when that tool is re-picked.
+  const toolStyles = useToolStylePresets({ apiRef, activeCanvasIdRef });
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
   const [minimapOpen, setMinimapOpen] = useState(false);
@@ -662,8 +666,10 @@ function App() {
       cloudDetached: cloudDetachedRef.current,
       cloudSaveState: { ...live.cloudSaveState },
       cloudDocumentName: live.cloudDocumentName,
+      // Per-tool style memory travels with the tab so it survives tab switches and reloads.
+      toolStylePresets: toolStyles.exportCanvas(activeCanvasIdRef.current) || undefined,
     };
-  }, [apiRef, currentFileRef, getCurrentFileSceneSignature]);
+  }, [apiRef, currentFileRef, getCurrentFileSceneSignature, toolStyles]);
 
   const persistCanvasTabs = useCallback((nextTabs) => {
     const normalizedTabs = nextTabs.map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
@@ -735,6 +741,7 @@ function App() {
     const api = apiRef.current;
     if (!api?.updateScene) return;
     const snapshot = tab?.snapshot || {};
+    if (tab?.id) toolStyles.hydrateCanvas(tab.id, snapshot.toolStylePresets);
     const elements = restoreElements(Array.isArray(snapshot.elements) ? snapshot.elements : [], null, { repairBindings: true });
     documentMetadataRef.current = {
       metadata: snapshot.metadata || {},
@@ -758,7 +765,7 @@ function App() {
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
-  }, [apiRef, setCurrentFile, setSavedSketch]);
+  }, [apiRef, setCurrentFile, setSavedSketch, toolStyles]);
 
   useEffect(() => {
     if (!apiReady || !apiRef.current) return;
@@ -1057,8 +1064,10 @@ function App() {
     // tab's todoTabActive). Re-derive the remaining tabs from the live manifest
     // instead of persisting the copy taken before the switch.
     persistCanvasTabs(isActive ? canvasTabsRef.current.filter((item) => item.id !== tabId) : remainingTabs);
+    // The archived draft already carries the snapshot (with its tool presets).
+    toolStyles.forgetCanvas(tabId);
     setCloseTabPrompt(null);
-  }, [archiveClosedTab, persistCanvasTabs, returnToWelcomeScreen, showClosedTabToast, switchCanvasTab]);
+  }, [archiveClosedTab, persistCanvasTabs, returnToWelcomeScreen, showClosedTabToast, switchCanvasTab, toolStyles]);
 
   const closeCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
@@ -1470,7 +1479,7 @@ function App() {
   const iconInsertion = useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit: collaborationCanEdit });
   const { draggingIcon, handleDragStart, handleIconMouseDown, handleIconPointerDown, handleIconClick, handleDragOver, handleDrop, createStarterMindMap } = iconInsertion;
 
-  const canvasTools = useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit: collaborationCanEdit });
+  const canvasTools = useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit: collaborationCanEdit, toolStylePresets: toolStyles });
   const { toggleGrid, activateArrowTool, activateSelectionTool, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected, hasTextSelection, hasArrowSelection, hasShapeSelection } = canvasTools;
   const selectedAwsResource = getSelectedAwsResource(selectedElements);
   const selectedAwsResourceDefinition = getAwsResourceDefinitionById(selectedAwsResource?.definitionId);
@@ -1667,9 +1676,12 @@ function App() {
   const handleCanvasAppearanceChange = useCallback((appearance) => {
     if (!collaborationCanEdit) return;
     setCanvasAppearance(appearance);
+    // Sketch / Clean / Chalkboard restyle the whole canvas, so they replace the
+    // roughness remembered per tool. Colours, widths and dashes are untouched.
+    toolStyles.applyCanvasRoughness(getCanvasAppearanceRoughness(appearance));
     if (appearance === "clean") preferences.useThemeDefaultBackground();
     else applyCanvasAppearance(apiRef.current, appearance, isDarkTheme);
-  }, [collaborationCanEdit, isDarkTheme, preferences.useThemeDefaultBackground]);
+  }, [collaborationCanEdit, isDarkTheme, preferences.useThemeDefaultBackground, toolStyles]);
   const insertCatalogIconAtViewportCenter = (icon) => {
     const canvas = document.querySelector(".excalidraw");
     if (!canvas || !icon) return;
@@ -1724,6 +1736,7 @@ function App() {
     collaborationRemoteUpdateRef, collaborationRef, canEdit: collaborationCanEdit,
     onArchitectureSceneChange: updateArchitectureValidation,
     onDocumentSceneChange: markCurrentDocumentChanged,
+    toolStylePresets: toolStyles,
   });
   const syncStartupChooser = useCallback((elements, useRestoredFallback = false, appState = null) => {
     if (cloudDiagramId || !collaborationCanEdit) return;
@@ -2992,6 +3005,7 @@ function App() {
             pageContext={canvasPageContext}
             key={activeCanvasId}
             canvasId={activeCanvasId}
+            onToolStyleChange={toolStyles.recordToolStyle}
             todoItems={canvasTabs.find((tab) => tab.id === activeCanvasId)?.todoItems || []}
             onTodoItemsChange={updateCanvasTodoItems}
             onOpenTodoTab={openTodoTab}

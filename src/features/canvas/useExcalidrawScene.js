@@ -22,6 +22,7 @@ export function useExcalidrawScene({
   lastSelectionSignature, setSelectedCount, setSelectedElements, setSelectedConnector,
   updateMinimap, queueSketchSave, collaborationRemoteUpdateRef,
   collaborationRef, canEdit = true, onArchitectureSceneChange = () => {}, onDocumentSceneChange = () => {},
+  toolStylePresets = null,
 }) {
   const architectureFrameRef = useRef(null);
   const latestArchitectureElementsRef = useRef(null);
@@ -110,6 +111,10 @@ export function useExcalidrawScene({
         setSelectedElements(selected);
         setSelectedConnector(selected.length === 1 && selected[0]?.type === "arrow" ? selected[0] : null);
       }
+      // Tool activation (dock, radial wheel, shortcuts L/A/R/P/T, API) restores the
+      // style last used with that tool on this canvas. Selection and other
+      // non-drawing tools never touch the stored presets.
+      toolStylePresets?.handleSceneChange?.(appState, { canEdit });
       measureSyncDiagnostic("client.minimapUpdate", { elementCount: effectiveElements.length }, () => updateMinimap(effectiveElements, appState));
       // Prefer Excalidraw's live app state over the possibly stale onChange
       // snapshot when saving. This matters for currentItemFontFamily because it
@@ -134,7 +139,15 @@ export function useExcalidrawScene({
         elements: effectiveElements,
         ignoreElementChanges: Boolean(remoteUpdate),
       });
-      if (detectedFontChoice !== null) {
+      // A font restored from (or saved to) the Text tool preset is a deliberate
+      // choice: adopt it so the reconciliation below does not revert it.
+      const presetFontChoice = toolStylePresets?.consumeFontOverride?.();
+      const normalizedPresetFont = presetFontChoice === null || presetFontChoice === undefined
+        ? null
+        : normalizeFontFamilyId(presetFontChoice);
+      if (normalizedPresetFont !== null) {
+        preferredFontFamilyRef.current = normalizedPresetFont;
+      } else if (detectedFontChoice !== null) {
         preferredFontFamilyRef.current = detectedFontChoice;
       } else if (preferredFontFamilyRef.current === null) {
         preferredFontFamilyRef.current = normalizeFontFamilyId(liveAppState.currentItemFontFamily)
@@ -177,5 +190,5 @@ export function useExcalidrawScene({
         });
       }
     }
-  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, onNativeMenuOpen, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap, onDocumentSceneChange]);
+  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, onNativeMenuOpen, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap, onDocumentSceneChange, toolStylePresets, canEdit]);
 }

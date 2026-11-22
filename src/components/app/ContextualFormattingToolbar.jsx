@@ -3,6 +3,7 @@ import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
 import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
+import { normalizeToolKey } from "../../features/canvas/toolStylePresets.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -251,6 +252,7 @@ export default function ContextualFormattingToolbar({
   onOpenProperties,
   propertiesOpen = false,
   canEdit = true,
+  onToolStyleChange = null,
 }) {
   const [openGroup, setOpenGroup] = useState(null);
   const [customToolMode, setCustomToolMode] = useState(null);
@@ -458,6 +460,13 @@ export default function ContextualFormattingToolbar({
       if (updatedElements.some((element, index) => element !== elements[index])) {
         api.updateScene({ elements: updatedElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
       }
+      // Editing an existing element also teaches its tool: the next line/rectangle/
+      // text drawn on this canvas inherits the look. Sticky notes keep their own
+      // palette and never write into the standard tool presets.
+      if (typeof onToolStyleChange === "function" && !noteSelection) {
+        const targets = [...new Set(liveSelection.map((element) => normalizeToolKey(element.type)).filter(Boolean))];
+        if (targets.length) onToolStyleChange(targets, patch);
+      }
       return;
     }
     const appStatePatch = {};
@@ -477,6 +486,13 @@ export default function ContextualFormattingToolbar({
     if ("endArrowhead" in patch) appStatePatch.currentItemEndArrowhead = patch.endArrowhead;
     if ("pressure" in patch) appStatePatch.currentItemPressure = patch.pressure;
     api.updateScene({ appState: appStatePatch });
+    // Only plain pen / text tools are remembered; notes, bucket fill and
+    // draw-to-shape are custom modes, and the highlighter is filtered by the
+    // preset controller.
+    if (typeof onToolStyleChange === "function" && !noteTool && !bucketFillTool && !drawToShapeTool) {
+      const presetTool = drawingTool ? "freedraw" : textTool ? "text" : null;
+      if (presetTool) onToolStyleChange([presetTool], patch);
+    }
   };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const applySmartTheme = (themeId) => {

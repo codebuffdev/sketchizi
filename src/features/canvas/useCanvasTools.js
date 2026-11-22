@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { getActiveSelectedElementIds } from "./selectedElementIds.js";
 
-export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit = true }) {
+export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit = true, toolStylePresets = null }) {
   const getSelectedElements = useCallback(() => {
     const api = apiRef.current;
     if (!api) return [];
@@ -22,7 +22,18 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     api.updateScene({ appState: { gridModeEnabled: Boolean(api.getAppState?.()?.gridModeEnabled), gridSize: safeSize, gridStep: safeSize }, captureUpdate: CaptureUpdateAction.NEVER });
   }, [apiRef, canEdit, gridSize, setGridEnabled, setGridSize]);
   const toggleGrid = useCallback(() => setGrid(!gridEnabled, gridSize), [gridEnabled, gridSize, setGrid]);
-  const activateArrowTool = useCallback(() => { if (!apiRef.current || !canEdit) return; apiRef.current.setActiveTool({ type: "arrow" }); setConnectionMode(true); }, [apiRef, setConnectionMode]);
+  // Activate a drawing tool and restore its remembered style (per canvas) first, so
+  // the contextual dock and the very first pointer-down already use it. Keyboard
+  // shortcuts, the radial wheel and the native toolbar reach the same restore
+  // through useExcalidrawScene's tool-change detection.
+  const activateDrawingTool = useCallback((toolType) => {
+    const api = apiRef.current;
+    if (!api || !canEdit || !toolType) return false;
+    toolStylePresets?.applyToolPreset?.(toolType);
+    api.setActiveTool({ type: toolType });
+    return true;
+  }, [apiRef, canEdit, toolStylePresets]);
+  const activateArrowTool = useCallback(() => { if (!activateDrawingTool("arrow")) return; setConnectionMode(true); }, [activateDrawingTool, setConnectionMode]);
   const activateSelectionTool = useCallback(() => { if (!apiRef.current) return; apiRef.current.setActiveTool({ type: "selection" }); setConnectionMode(false); }, [apiRef, setConnectionMode]);
 
   const updateSelectedConnector = useCallback((patch) => {
@@ -72,5 +83,5 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
   }, [apiRef, canEdit, getSelectedElements]);
   const updateSingleSelected = useCallback((patch) => { if (selectedElements.length === 1) applyToSelected(patch); }, [selectedElements.length, applyToSelected]);
 
-  return { getSelectedElements, toggleGrid, activateArrowTool, activateSelectionTool, updateSelectedConnector, connectorPreset, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected: selectedElements[0] || null, hasTextSelection: selectedElements.some((e) => e.type === "text"), hasArrowSelection: selectedElements.some((e) => e.type === "arrow"), hasShapeSelection: selectedElements.some((e) => ["rectangle", "diamond", "ellipse", "line", "arrow"].includes(e.type)) };
+  return { getSelectedElements, toggleGrid, activateDrawingTool, activateArrowTool, activateSelectionTool, updateSelectedConnector, connectorPreset, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected: selectedElements[0] || null, hasTextSelection: selectedElements.some((e) => e.type === "text"), hasArrowSelection: selectedElements.some((e) => e.type === "arrow"), hasShapeSelection: selectedElements.some((e) => ["rectangle", "diamond", "ellipse", "line", "arrow"].includes(e.type)) };
 }

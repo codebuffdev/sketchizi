@@ -1,4 +1,5 @@
 import { sanitizeCloudAppState } from "./cloudDocument.js";
+import { sanitizeCanvasToolStyleState } from "../canvas/toolStylePresets.js";
 
 /**
  * Canvas tab snapshots used to embed Excalidraw's raw appState. That object
@@ -9,6 +10,25 @@ import { sanitizeCloudAppState } from "./cloudDocument.js";
  */
 export function sanitizeTabAppState(appState) {
   return sanitizeCloudAppState(appState && typeof appState === "object" ? appState : {});
+}
+
+/**
+ * Per-tool style memory (last line/arrow/rectangle/... style chosen on this
+ * canvas). Stored beside the view settings as plain JSON; invalid or unknown
+ * entries are dropped so a corrupt manifest can never poison a tool preset.
+ */
+export function sanitizeTabToolStylePresets(toolStylePresets) {
+  return sanitizeCanvasToolStyleState(toolStylePresets);
+}
+
+function sanitizeTabSnapshot(snapshot) {
+  const { toolStylePresets, ...rest } = snapshot;
+  const cleanPresets = sanitizeTabToolStylePresets(toolStylePresets);
+  return {
+    ...rest,
+    appState: sanitizeTabAppState(snapshot.appState),
+    ...(cleanPresets ? { toolStylePresets: cleanPresets } : {}),
+  };
 }
 
 function isStructuredCloneable(value) {
@@ -32,7 +52,7 @@ export function prepareTabsForPersistence(tabs) {
   return (Array.isArray(tabs) ? tabs : []).map((tab) => {
     if (!tab || typeof tab !== "object") return tab;
     const candidate = tab.snapshot && typeof tab.snapshot === "object"
-      ? { ...tab, snapshot: { ...tab.snapshot, appState: sanitizeTabAppState(tab.snapshot.appState) } }
+      ? { ...tab, snapshot: sanitizeTabSnapshot(tab.snapshot) }
       : tab;
     if (isStructuredCloneable(candidate)) return candidate;
     const jsonCopy = viaJson(candidate);

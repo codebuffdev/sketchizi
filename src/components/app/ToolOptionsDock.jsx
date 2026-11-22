@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import usePresence from "../../features/hud/usePresence.js";
 import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
+import { normalizeToolKey } from "../../features/canvas/toolStylePresets.js";
 import { applyDarkModeFilter } from "@excalidraw/common";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
@@ -78,6 +79,14 @@ function getLineGeometryStyle(element) {
   return "straight";
 }
 
+
+function isNoteLikeElement(element) {
+  const data = element?.customData || {};
+  const type = String(element?.type || "").toLowerCase();
+  return ["note", "sticky-note", "stickynote", "sticky_note"].includes(type) ||
+    data.isNote === true || data.isStickyNote === true || data.stickyNote === true ||
+    data.kind === "note" || data.type === "note" || data.noteId != null;
+}
 
 function ToolButton({ active, title, onClick, children }) {
   return <button type="button" className={`sk-tool-option-button${active ? " is-active" : ""}`} title={title} aria-label={title} aria-pressed={Boolean(active)} onClick={onClick}>{children}</button>;
@@ -281,7 +290,7 @@ function OptionGlyph({ kind, value }) {
 function VisualOptionSelect({ label, value, onChange, kind, options }) {
   return <DockChoiceMenu label={label} value={value} onChange={onChange} options={options} kind={kind} />;
 }
-export default function ToolOptionsDock({ apiRef, selectedElements = [], onClearSelection, canvasRevision, canEdit = true }) {
+export default function ToolOptionsDock({ apiRef, selectedElements = [], onClearSelection, canvasRevision, canEdit = true, onToolStyleChange = null }) {
   useEffect(() => {
     // Warm the host-provided font so canvas text measurement uses Kalam immediately.
     document.fonts?.load('16px "Kalam"', "Kalam").catch(() => {});
@@ -486,10 +495,35 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const [fontSizeDraft, setFontSizeDraft] = useState(String(fontSize));
   useEffect(() => setFontSizeDraft(String(fontSize)), [fontSize]);
 
+  // Which remembered tool presets an edit belongs to. While a drawing tool is
+  // active that is the tool itself; while elements are selected it is each
+  // selected element type, so the next shape of that type inherits the look.
+  // Custom modes (notes, bucket fill, highlighter, draw-to-shape) never write
+  // into the standard tool presets.
+  const getStylePresetTargets = () => {
+    if (customTool) return [];
+    if (isSelection) {
+      // Sticky notes carry their own palette; keep it out of the Text preset.
+      const types = selected.filter((element) => !isNoteLikeElement(element)).map((element) => element.type);
+      if (editingTextElement?.type && !isNoteLikeElement(editingTextElement)) types.push(editingTextElement.type);
+      return [...new Set(types.map(normalizeToolKey).filter(Boolean))];
+    }
+    const key = normalizeToolKey(tool);
+    return key ? [key] : [];
+  };
+  const rememberStyle = (stylePatch, targets = getStylePresetTargets()) => {
+    if (typeof onToolStyleChange !== "function" || !targets.length) return;
+    onToolStyleChange(targets, stylePatch);
+  };
+
   const update = (patch) => {
     const api = apiRef?.current;
     if (!api) return;
     if (!isSelection) {
+      const effectiveToolPatch = { ...patch };
+      if ("backgroundColor" in patch && patch.backgroundColor !== "transparent" && isShape && fillColor === "transparent") {
+        effectiveToolPatch.fillStyle = "solid";
+      }
       const appStatePatch = {};
       const mapping = {
         strokeColor: "currentItemStrokeColor",
@@ -506,14 +540,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         endArrowhead: "currentItemEndArrowhead",
         roundness: "currentItemRoundness",
       };
-      Object.entries(patch).forEach(([key, value]) => {
+      Object.entries(effectiveToolPatch).forEach(([key, value]) => {
         if (key === "strokeWidth") Object.assign(appStatePatch, strokeWidthAppStatePatch(value));
+        // Excalidraw's appState stores "round" | "sharp"; elements store {type} | null.
+        else if (key === "roundness") appStatePatch.currentItemRoundness = value ? "round" : "sharp";
         else if (mapping[key]) appStatePatch[mapping[key]] = value;
       });
-      if ("backgroundColor" in patch && patch.backgroundColor !== "transparent" && isShape && fillColor === "transparent") {
-        appStatePatch.currentItemFillStyle = "solid";
-      }
       if (Object.keys(appStatePatch).length) api.updateScene({ appState: appStatePatch });
+      rememberStyle(effectiveToolPatch);
       return;
     }
     // Read selection from Excalidraw at the moment of the click as well as
@@ -538,6 +572,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       ? { ...element, ...effectivePatch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
     api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    rememberStyle(effectivePatch);
   };
 
 
@@ -564,6 +599,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     if (!textTargets.length) {
       // No selected text element: set the font for the next text object.
       api.updateScene({ appState: { currentItemFontFamily: Number(value) } });
+      rememberStyle({ fontFamily: Number(value) }, customTool ? [] : ["text"]);
       return;
     }
     const now = Date.now();
@@ -574,6 +610,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         : element),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
+    rememberStyle({ fontFamily: Number(value) }, customTool ? [] : ["text"]);
   };
 
   const updateLineGeometry = (value) => {
@@ -581,15 +618,18 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     if (!api) return;
     if (!isSelection) {
       api.updateScene({ appState: { currentItemLineGeometry: value } });
+      rememberStyle({ lineGeometry: value });
       return;
     }
-    const ids = new Set(selected.filter((element) => ["line", "arrow"].includes(element.type)).map((element) => element.id));
+    const lineSelection = selected.filter((element) => ["line", "arrow"].includes(element.type));
+    const ids = new Set(lineSelection.map((element) => element.id));
     if (!ids.size) return;
     const elements = api.getSceneElements?.() || [];
     api.updateScene({
       elements: elements.map((element) => ids.has(element.id) ? applyLineGeometryStyle(element, value) : element),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
+    rememberStyle({ lineGeometry: value }, customTool ? [] : [...new Set(lineSelection.map((element) => element.type))]);
   };
 
   useEffect(() => {
@@ -753,7 +793,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const showStrokeStyle = isShape || isLine;
   const showStrokeWidth = !isText && !isLaser && (!isFill || isHighlighter);
   const showClosedShapeFill = isShape || isHighlighter;
-  const activeRoundness = Boolean(current("roundness", "currentItemRoundness", null));
+  const activeRoundness = isSelection ? Boolean(first?.roundness) : appState.currentItemRoundness === "round";
   const layerDisabled = !selected.length && !editingTextElement?.id && !Object.values(appState.selectedElementIds || {}).some(Boolean);
   const opacityValue = Math.max(0, Math.min(100, Number.isFinite(opacity) ? opacity : 100));
 

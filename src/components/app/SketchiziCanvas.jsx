@@ -30,6 +30,7 @@ export default function SketchiziCanvas({
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
   nativeMenuOpen = false,
   hudSuppressed = false,
+  onToolStyleChange = null,
 }) {
   const canvasRootRef = useRef(null);
   const collaborationCursorFrameRef = useRef(0);
@@ -823,7 +824,7 @@ export default function SketchiziCanvas({
         onChange={handleSceneChange}
         onScrollChange={handleViewportChange}
       />
-      {!hudSuppressed && <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} />}
+      {!hudSuppressed && <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} onToolStyleChange={onToolStyleChange} />}
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
       <RectangleTitles
