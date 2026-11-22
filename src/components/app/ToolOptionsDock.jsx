@@ -58,6 +58,9 @@ function applyWaypointGeometryStyle(element, style) {
 
 function applyLineGeometryStyle(element, style) {
   if (!element || !["line", "arrow"].includes(element.type)) return element;
+  // Arrow "Elbow" is Excalidraw's native orthogonal routing (elbowed: true), also
+  // for a fresh 2-point arrow, so it stays elbowed and re-routes when bound.
+  if (element.type === "arrow" && style === "elbow") return applyWaypointGeometryStyle(element, style);
   if (Array.isArray(element.points) && element.points.length > 2) return applyWaypointGeometryStyle(element, style);
   const points = Array.isArray(element.points) && element.points.length >= 2
     ? element.points
@@ -761,7 +764,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     if (!fresh.length) return;
     const style = appState.currentItemLineGeometry || "straight";
     if (style === "straight") return;
-    const freshIds = new Set(fresh.map((element) => element.id));
+    // Excalidraw already created these natively elbowed (currentItemArrowType).
+    const needsStyle = fresh.filter((element) => !(style === "elbow" && element.type === "arrow" && element.elbowed));
+    if (!needsStyle.length) return;
+    const freshIds = new Set(needsStyle.map((element) => element.id));
     api.updateScene({
       elements: elements.map((element) => freshIds.has(element.id) ? applyLineGeometryStyle(element, style) : element),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,

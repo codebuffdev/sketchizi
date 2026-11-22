@@ -86,6 +86,7 @@ test("style patches map onto Excalidraw currentItem* appState", () => {
     currentItemVerticalAlign: "top",
     currentItemPressure: false,
     currentItemLineGeometry: "elbow",
+    currentItemArrowType: "elbow", // what Excalidraw reads when it creates the next arrow
   });
 });
 
@@ -443,4 +444,66 @@ test("theme and appearance code never rewrites remembered colours", () => {
   const presets = read("../src/features/canvas/toolStylePresets.js");
   assert.ok(!/theme/i.test(controller.replace(/Excalidraw/g, "")));
   assert.ok(!/theme|f8fafc/i.test(presets.replace(/\/\*[\s\S]*?\*\//g, "")));
+});
+
+// ------------------------------------------------- default + remembered arrow
+
+test("fresh canvases default arrows to solid Elbow, no start head, arrow end head", () => {
+  const store = createToolStylePresetStore();
+  const preset = store.resolve("canvas-1", "arrow");
+  assert.equal(preset.lineGeometry, "elbow");
+  assert.equal(preset.elbowed, true);
+  assert.equal(preset.roundness, null);
+  assert.equal(preset.strokeStyle, "solid");
+  assert.equal(preset.startArrowhead, null);
+  assert.equal(preset.endArrowhead, "arrow");
+  const appState = stylePatchToAppState(preset);
+  assert.equal(appState.currentItemArrowType, "elbow");
+  assert.equal(appState.currentItemStrokeStyle, "solid");
+  assert.equal(appState.currentItemStartArrowhead, null);
+  assert.equal(appState.currentItemEndArrowhead, "arrow");
+});
+
+test("routing fields stay consistent whichever one a patch carries", () => {
+  assert.deepEqual(filterStyleForTool("arrow", { lineGeometry: "rounded-elbow" }), { lineGeometry: "rounded-elbow", roundness: { type: 2 }, elbowed: false });
+  assert.deepEqual(filterStyleForTool("arrow", { lineGeometry: "curved" }), { lineGeometry: "curved", roundness: { type: 2 }, elbowed: false });
+  assert.deepEqual(filterStyleForTool("arrow", { elbowed: true }), { lineGeometry: "elbow", roundness: null, elbowed: true });
+  assert.deepEqual(filterStyleForTool("arrow", { elbowed: false, roundness: null }), { lineGeometry: "straight", roundness: null, elbowed: false });
+  assert.ok(!("elbowed" in filterStyleForTool("line", { lineGeometry: "curved" })), "only arrows are elbowed");
+  assert.equal(stylePatchToAppState({ lineGeometry: "rounded-elbow" }).currentItemArrowType, "sharp");
+  assert.equal(stylePatchToAppState({ lineGeometry: "curved" }).currentItemArrowType, "round");
+});
+
+test("dot arrowheads are stored as the renderable circle value", () => {
+  assert.deepEqual(filterStyleForTool("arrow", { endArrowhead: "dot" }), { endArrowhead: "circle" });
+  assert.equal(stylePatchToAppState({ startArrowhead: "dot" }).currentItemStartArrowhead, "circle");
+});
+
+test("every arrow customization carries to the next arrow on the same canvas only", async () => {
+  const appStates = [];
+  const api = {
+    getAppState: () => ({}),
+    updateScene: ({ appState }) => appStates.push(appState),
+  };
+  const controller = createToolStyleController({ apiRef: { current: api }, activeCanvasIdRef: { current: "canvas-1" }, captureNever: 0 });
+  controller.recordToolStyle(["arrow"], { strokeColor: "#e03131" });
+  controller.recordToolStyle(["arrow"], { strokeStyle: "dashed", strokeWidth: 4 });
+  controller.recordToolStyle(["arrow"], { lineGeometry: "rounded-elbow" });
+  controller.recordToolStyle(["arrow"], { endArrowhead: "dot" });
+  // Arrow edits reach currentItem* immediately, without a tool switch.
+  const last = appStates.at(-1);
+  assert.equal(last.currentItemStrokeColor, "#e03131");
+  assert.equal(last.currentItemStrokeStyle, "dashed");
+  assert.equal(last.currentItemArrowType, "sharp");
+  assert.equal(last.currentItemEndArrowhead, "circle");
+
+  appStates.length = 0;
+  assert.equal(controller.applyToolPreset("arrow"), true);
+  assert.deepEqual(
+    { c: appStates[0].currentItemStrokeColor, s: appStates[0].currentItemStrokeStyle, g: appStates[0].currentItemLineGeometry, e: appStates[0].currentItemEndArrowhead },
+    { c: "#e03131", s: "dashed", g: "rounded-elbow", e: "circle" },
+  );
+  // A different canvas still gets the defaults.
+  const other = createToolStylePresetStore();
+  assert.equal(other.resolve("canvas-2", "arrow").lineGeometry, "elbow");
 });

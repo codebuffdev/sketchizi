@@ -1,4 +1,5 @@
 import { strokeWidthAppStatePatch } from "./strokeWidthKey.js";
+import { toCanvasArrowhead } from "./arrowheads.js";
 
 /**
  * Per-canvas, per-tool style memory.
@@ -43,6 +44,9 @@ export const DEFAULT_TOOL_STYLE_PRESETS = deepFreeze({
     endArrowhead: null,
     lineGeometry: "straight",
   },
+  // Fresh canvases draw clean orthogonal arrows: Elbow routing, solid stroke,
+  // no start head, plain arrow end head. `elbowed` / `roundness` always mirror
+  // `lineGeometry` (see filterStyleForTool).
   arrow: {
     strokeColor: INK,
     backgroundColor: "transparent",
@@ -52,7 +56,9 @@ export const DEFAULT_TOOL_STYLE_PRESETS = deepFreeze({
     opacity: 100,
     startArrowhead: null,
     endArrowhead: "arrow",
-    lineGeometry: "straight",
+    lineGeometry: "elbow",
+    elbowed: true,
+    roundness: null,
   },
   rectangle: {
     strokeColor: INK,
@@ -103,6 +109,7 @@ const LINEAR_KEYS = [
   "strokeColor", "backgroundColor", "fillStyle", "strokeWidth", "strokeStyle", "roughness", "roundness",
   "opacity", "startArrowhead", "endArrowhead", "lineGeometry",
 ];
+const ARROW_KEYS = [...LINEAR_KEYS, "elbowed"];
 
 /** Which style properties each tool is allowed to remember. */
 export const TOOL_STYLE_KEYS = Object.freeze({
@@ -110,7 +117,7 @@ export const TOOL_STYLE_KEYS = Object.freeze({
   diamond: Object.freeze([...SHAPE_KEYS, "roundness"]),
   ellipse: Object.freeze([...SHAPE_KEYS]),
   line: Object.freeze([...LINEAR_KEYS]),
-  arrow: Object.freeze([...LINEAR_KEYS]),
+  arrow: Object.freeze([...ARROW_KEYS]),
   freedraw: Object.freeze(["strokeColor", "backgroundColor", "strokeWidth", "opacity", "pressure"]),
   text: Object.freeze(["strokeColor", "opacity", "fontFamily", "fontSize", "textAlign"]),
 });
@@ -179,7 +186,8 @@ export function normalizeStyleValue(key, value) {
     case "startArrowhead":
     case "endArrowhead":
       if (value === null || value === "none") return null;
-      return VALID_ARROWHEADS.has(value) ? value : undefined;
+      // "dot" is the UI label; the renderer draws the filled dot for "circle".
+      return VALID_ARROWHEADS.has(value) ? toCanvasArrowhead(value) : undefined;
     case "fontFamily": {
       const family = Number(value);
       return Number.isInteger(family) && family > 0 && family < 100 ? family : undefined;
@@ -194,6 +202,8 @@ export function normalizeStyleValue(key, value) {
       return typeof value === "boolean" ? value : undefined;
     case "lineGeometry":
       return VALID_LINE_GEOMETRY.has(value) ? value : undefined;
+    case "elbowed":
+      return typeof value === "boolean" ? value : undefined;
     default:
       return undefined;
   }
@@ -207,13 +217,45 @@ export function filterStyleForTool(toolKey, patch) {
   const key = normalizeToolKey(toolKey);
   if (!key || !isPlainObject(patch)) return {};
   const allowed = TOOL_STYLE_KEYS[key];
+  const source = key === "arrow" || key === "line" ? withRoutingFields(key, patch) : patch;
   const result = {};
   for (const styleKey of allowed) {
-    if (!(styleKey in patch)) continue;
-    const value = normalizeStyleValue(styleKey, patch[styleKey]);
+    if (!(styleKey in source)) continue;
+    const value = normalizeStyleValue(styleKey, source[styleKey]);
     if (value !== undefined) result[styleKey] = value;
   }
   return result;
+}
+
+/** Excalidraw `currentItemArrowType` for a Sketchizi line geometry. */
+export function lineGeometryToArrowType(geometry) {
+  if (geometry === "curved") return "round";
+  if (geometry === "elbow") return "elbow";
+  // Rounded Elbow is an orthogonal polyline Sketchizi rounds after drawing, so
+  // the arrow is created sharp first.
+  return "sharp";
+}
+
+/**
+ * Routing is stored three ways (lineGeometry / elbowed / roundness). Whichever
+ * one a patch carries, derive the others so a remembered preset can never
+ * contradict itself, e.g. "Rounded Elbow" with elbowed: true.
+ */
+function withRoutingFields(key, patch) {
+  let geometry = VALID_LINE_GEOMETRY.has(patch.lineGeometry) ? patch.lineGeometry : null;
+  if (!geometry && key === "arrow" && typeof patch.elbowed === "boolean") {
+    if (patch.elbowed) geometry = "elbow";
+    else if ("roundness" in patch) geometry = normalizeRoundness(patch.roundness) ? "curved" : "straight";
+    else geometry = "straight";
+  }
+  if (!geometry) return patch;
+  const rounded = geometry === "curved" || geometry === "rounded-elbow";
+  return {
+    ...patch,
+    lineGeometry: geometry,
+    roundness: rounded ? { type: 2 } : null,
+    ...(key === "arrow" ? { elbowed: geometry === "elbow" } : {}),
+  };
 }
 
 /**
@@ -238,14 +280,19 @@ export function stylePatchToAppState(patch) {
     const roundness = normalizeRoundness(patch.roundness);
     if (roundness !== undefined) appState.currentItemRoundness = roundness ? "round" : "sharp";
   }
-  if ("startArrowhead" in patch) appState.currentItemStartArrowhead = patch.startArrowhead;
-  if ("endArrowhead" in patch) appState.currentItemEndArrowhead = patch.endArrowhead;
+  if ("startArrowhead" in patch) appState.currentItemStartArrowhead = toCanvasArrowhead(patch.startArrowhead);
+  if ("endArrowhead" in patch) appState.currentItemEndArrowhead = toCanvasArrowhead(patch.endArrowhead);
   if ("fontFamily" in patch) appState.currentItemFontFamily = patch.fontFamily;
   if ("fontSize" in patch) appState.currentItemFontSize = patch.fontSize;
   if ("textAlign" in patch) appState.currentItemTextAlign = patch.textAlign;
   if ("verticalAlign" in patch) appState.currentItemVerticalAlign = patch.verticalAlign;
   if ("pressure" in patch) appState.currentItemPressure = patch.pressure;
-  if ("lineGeometry" in patch) appState.currentItemLineGeometry = patch.lineGeometry;
+  if ("lineGeometry" in patch) {
+    appState.currentItemLineGeometry = patch.lineGeometry;
+    // Excalidraw reads currentItemArrowType (not currentItemElbowed) when it
+    // creates the next arrow, so this is what makes Elbow stick.
+    appState.currentItemArrowType = lineGeometryToArrowType(patch.lineGeometry);
+  } else if (patch.elbowed === true) appState.currentItemArrowType = "elbow";
   return appState;
 }
 

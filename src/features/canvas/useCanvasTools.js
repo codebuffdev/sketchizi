@@ -12,6 +12,13 @@ function arrowheadAppStatePatch(patch) {
   return out;
 }
 
+// Element patches carry geometry fields (points, x, y ...) the preset must not
+// store; the preset filter keeps only style keys and derives routing from
+// `elbowed` / `roundness`.
+function rememberablePatch(patch) {
+  return patch && typeof patch === "object" ? patch : {};
+}
+
 export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit = true, toolStylePresets = null }) {
   const getSelectedElements = useCallback(() => {
     const api = apiRef.current;
@@ -56,7 +63,9 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     const updated = { ...selected, ...patch, version: selected.version + 1 };
     api.updateScene({ elements: api.getSceneElements().map((element) => element.id === selected.id ? updated : element), captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     setSelectedConnector(updated);
-  }, [apiRef, canEdit, selectedConnector, setSelectedConnector]);
+    // Remember it so the next arrow on this canvas starts with the same look.
+    toolStylePresets?.recordToolStyle?.("arrow", rememberablePatch(patch));
+  }, [apiRef, canEdit, selectedConnector, setSelectedConnector, toolStylePresets]);
   const connectorPreset = useCallback((name) => {
     // Routing patches keep the waypoints the user placed (free polyline) or
     // normalise them to orthogonal segments (elbow).
@@ -102,7 +111,8 @@ export function useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, 
     const ids = new Set(selected.map((element) => element.id)); const now = Date.now();
     const arrowheadState = arrowheadAppStatePatch(patch);
     api.updateScene({ elements: api.getSceneElements().map((element) => ids.has(element.id) ? { ...element, ...patch, version: element.version + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now } : element), ...(Object.keys(arrowheadState).length ? { appState: arrowheadState } : {}), captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-  }, [apiRef, canEdit, getSelectedElements]);
+    toolStylePresets?.recordToolStyle?.("arrow", rememberablePatch(patch));
+  }, [apiRef, canEdit, getSelectedElements, toolStylePresets]);
   const updateSingleSelected = useCallback((patch) => { if (selectedElements.length === 1) applyToSelected(patch); }, [selectedElements.length, applyToSelected]);
 
   return { getSelectedElements, toggleGrid, activateDrawingTool, activateArrowTool, activateSelectionTool, updateSelectedConnector, connectorPreset, applyToSelected, applyToSelectedArrow, updateSingleSelected, firstSelected: selectedElements[0] || null, hasTextSelection: selectedElements.some((e) => e.type === "text"), hasArrowSelection: selectedElements.some((e) => e.type === "arrow"), hasShapeSelection: selectedElements.some((e) => ["rectangle", "diamond", "ellipse", "line", "arrow"].includes(e.type)) };

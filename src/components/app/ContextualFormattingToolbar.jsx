@@ -182,6 +182,7 @@ function getSelectionPosition(api, elements, root, isPopoverOpen = false) {
 
 // Excalidraw's own arrow-type default for newly drawn arrows.
 const ARROW_TYPE_FOR_MODE = { polyline: "sharp", curve: "round", elbow: "elbow" };
+const LINE_GEOMETRY_FOR_MODE = { polyline: "straight", curve: "curved", elbow: "elbow" };
 const ROUTING_OPTIONS = [
   ["polyline", "Free Polyline", "↗", "Straight segments through every point, any angle"],
   ["curve", "Curve", "⌒", "Smooth quadratic spline through every point"],
@@ -491,6 +492,8 @@ export default function ContextualFormattingToolbar({
         return {
           ...element,
           ...getRoutingPatch(element, mode),
+          // Keeps the dock's Line routing select in step with this button.
+          customData: { ...(element.customData || {}), sketchiziLineGeometry: LINE_GEOMETRY_FOR_MODE[mode] },
           version: (Number(element.version) || 0) + 1,
           versionNonce: Math.floor(Math.random() * 2147483647),
           updated: now,
@@ -499,6 +502,12 @@ export default function ContextualFormattingToolbar({
       appState: { currentItemArrowType: ARROW_TYPE_FOR_MODE[mode] },
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
+    // Routing is part of the arrow / line preset: the next one drawn on this
+    // canvas starts with the same routing.
+    if (typeof onToolStyleChange === "function") {
+      const targets = [...new Set(liveSelection.filter((element) => ids.has(element.id) && !(mode === "elbow" && element.type !== "arrow")).map((element) => normalizeToolKey(element.type)).filter(Boolean))];
+      if (targets.length) onToolStyleChange(targets, { lineGeometry: LINE_GEOMETRY_FOR_MODE[mode] });
+    }
   };
   const activeGroup = visibleGroups.some((group) => group.id === openGroup) ? openGroup : null;
   const applySmartTheme = (themeId) => {

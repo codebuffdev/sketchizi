@@ -71,7 +71,9 @@ export function createToolStyleController({ apiRef, activeCanvasIdRef, captureNe
       if (!recorded) continue;
       recordedAny = true;
       noteFont(recorded);
-      if (options.syncAppState) syncAppState(recorded);
+      // Arrow edits (tool active or an arrow selected) reach currentItem*
+      // immediately, so the very next arrow drawn on this canvas inherits them.
+      if (options.syncAppState || key === "arrow") syncAppState(key === "arrow" ? store.resolve(canvasId, key) : recorded);
     }
     return recordedAny;
   };
@@ -91,9 +93,13 @@ export function createToolStyleController({ apiRef, activeCanvasIdRef, captureNe
 
     if (state.lastCanvasId !== canvasId) {
       // A freshly mounted canvas starts on its own tool; never "activate" it.
+      const hadCanvas = state.lastCanvasId !== null;
       state.lastCanvasId = canvasId;
       state.previousTool = type;
       store.ensureBaseRoughness(canvasId, appState?.currentItemRoughness);
+      // Switching tabs while the Arrow tool stays active would otherwise leave
+      // the previous canvas' arrow style in currentItem*.
+      if (hadCanvas && canEdit && type === "arrow") queueMicrotask(() => applyToolPreset("arrow"));
       return;
     }
     if (type === state.previousTool) return;
